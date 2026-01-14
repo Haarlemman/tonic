@@ -1,5 +1,6 @@
 // Playlists for each room (3 tracks each)
 // Video playlists for living room and bedroom (3 clips each)
+// V6 - Root Relative Paths Verified
 const roomContent = {
     hall: {
         title: "Welcome Hall",
