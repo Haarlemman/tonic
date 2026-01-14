@@ -1,0 +1,24 @@
+# Task Checklist
+
+- [ ] **Fix Asset Paths in Subdirectories**
+  - [x] Verify `house/index.html` and other sub-projects.
+  - [ ] Create script to correct paths (e.g., `assets/` -> `../assets/`).
+  - [x] Run script and verify.
+- [ ] **Refine "Little Room" (Toilet)**
+  - [x] Apply Black Toilet Seat change.
+  - [x] Move Shelf Up (3.2).
+  - [x] Enlarge Notepad.
+  - [x] Add "WRITE IDEAS" Hologram.
+  - [x] Adjust Lighting (Cozy/Dim).
+  - [x] Toilet Room V2 Feedback
+    - [x] Change Lid to Seat (Torus).
+    - [x] Implement Hologram Style (Glow/Additive).
+    - [x] Add High Contrast Back Wall Light.
+  - [x] Toilet Room V3 Feedback
+    - [x] Remove Lid.
+    - [x] Smooth Seat (Fix dent).
+    - [x] Visible Lamp Model + Darker Scene.
+    - [x] Clickable Hologram + "NOTEPAD" text on pad.
+- [ ] **Verification**
+  - [x] Commit changes.
+  - [x] Push to GitHub.
