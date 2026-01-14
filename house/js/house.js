@@ -259,12 +259,10 @@ window.enterExperience = function () {
     audio.volume = 0.8;
     audio.currentTime = 1;
 
-    // V54: Audio Sequencing FIX - Listen to THIS audio object
     audio.addEventListener('ended', () => {
         if (audioPlayer) {
-            audioPlayer.src = "assets/audio/NightDrive-RobSimonsen.mp3";
+            audioPlayer.src = "/assets/audio/quantumleap.mp3";
             audioPlayer.loop = true;
-            // V200: 3 second delay as requested
             setTimeout(() => {
                 audioPlayer.play().catch(e => console.warn("NightDrive Play Fail", e));
             }, 3000);
@@ -277,19 +275,13 @@ window.enterExperience = function () {
     const btn = document.getElementById('start-btn');
     if (btn) btn.style.display = 'none';
 
-    // 5. Start Animation (with slight delay to let fullscreen settle?)
-    // Using the 3s delay requested before? 
-    // "play the sound and go fullscreen... there should be a brief pause (3 seconds)"
-    // let's keep the 3s delay for the MOVEMENT, but the sound starts immediately.
+    // 5. Start Animation 
     startOpeningAnimation();
 
     // 5. Show Exit Button
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) exitBtn.classList.remove('hidden');
 
-    // V528: Hide the 3D "Enter" Sign on the lamppost
-    // It is located in the global worldGroup -> poleGroup -> sign
-    // We can search for it by name since we tagged it.
     worldGroup.traverse((child) => {
         if (child.userData && child.userData.name === 'enterSign') {
             child.visible = false;
