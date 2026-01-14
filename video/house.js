@@ -15,6 +15,7 @@ let textureLoader;
 let worldGroup, interiorGroup;
 let raycaster, mouse;
 let animationId;
+// V137: Global Lights for "Dark Mode"
 let dirLight, rimLight, ambientLight, hemiLight;
 
 let noteTextSprite = null;
@@ -36,12 +37,12 @@ const interiorClickables = [];
 
 let tvMesh = null, currentSlideIndex = 0;
 let phoneScreenMesh = null;
-var videoElement = null, videoTexture = null;
-var audioPlayer = null;
-var musicSwitchMesh = null;
-var musicPanelMesh = null;
-var playlistPanelMesh = null;
-var isMusicPlaying = false;
+let videoElement = null, videoTexture = null;
+let audioPlayer = null;
+let musicSwitchMesh = null;
+let musicPanelMesh = null;
+let playlistPanelMesh = null;
+let isMusicPlaying = false;
 
 // Effects
 let atomGroup = null;
@@ -52,13 +53,13 @@ let audioContext, audioAnalyser, audioDataArray;
 let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 function init() {
-    // V516: Fixed Step Glitch & Removing Mist Shader
-    console.log("--- HOUSE.JS V516 LOADED ---");
+    /* house.js */
+    console.log("--- HOUSE.JS V134 LOADED ---");
     scene = new THREE.Scene();
 
     // Opening mist
-    // Opening mist (V59: Less misty) -> V200: Mistier as requested
-    scene.fog = new THREE.Fog(0x0a0a14, 10, 80);
+    // Opening mist (V59: Less misty)
+    scene.fog = new THREE.Fog(0x0a0a14, 20, 150);
     openingFog = scene.fog;
 
 
@@ -187,8 +188,7 @@ function init() {
         const startTop = isMobile ? 30 : 50;
 
         // Start Percent Target
-        // V528: Smaller title on mobile
-        const startPct = isMobile ? 0.55 : 0.8;
+        const startPct = isMobile ? 0.9 : 0.8;
         const startScale = (window.innerWidth * startPct) / naturalWidth;
 
         // Set Initial Visually
@@ -220,28 +220,8 @@ function init() {
     const infoHeader = document.querySelector('#room-info .room-header-flex');
     if (infoHeader) infoHeader.addEventListener('click', toggleInfo);
 
-    try {
-        animate();
-    } catch (e) {
-        console.error(e);
-        alert("Animate Error: " + e.message);
-    }
+    animate();
 }
-
-// Global Error Handler for Mobile Debugging
-window.onerror = function (msg, url, line, col, error) {
-    alert("Error: " + msg + "\nLine: " + line);
-};
-
-// V532: Ensure init is robust
-try {
-    // init is called onload usually? 
-    // Wait, typical three.js setup calls init() at start.
-    // Let's check where init is called.
-    // It's usually `init();` at the end or `window.onload = init;`
-    // Looking at previous file views, I didn't see the call.
-    // I will add the handler at the top of file or here.
-} catch (e) { }
 
 window.enterExperience = function () {
     // 1. Fullscreen
@@ -255,17 +235,18 @@ window.enterExperience = function () {
     // if (headerEl) headerEl.style.display = 'none';
 
     // 3. Play Sound
-    const audio = new Audio('/assets/audio/Tension_Short_07.wav');
+    // 3. Play Sound
+    const audio = new Audio('assets/audio/Tension_Short_07.wav');
     audio.volume = 0.8;
-    audio.currentTime = 1;
+    // V21: Skip first 2 seconds
+    audio.currentTime = 2;
 
+    // V54: Audio Sequencing FIX - Listen to THIS audio object
     audio.addEventListener('ended', () => {
         if (audioPlayer) {
-            audioPlayer.src = "/assets/audio/quantumleap.mp3";
+            audioPlayer.src = "assets/audio/NightDrive-RobSimonsen.mp3";
             audioPlayer.loop = true;
-            setTimeout(() => {
-                audioPlayer.play().catch(e => console.warn("Quantum Leap Play Fail", e));
-            }, 3000);
+            audioPlayer.play().catch(e => console.warn("NightDrive Play Fail", e));
         }
     });
 
@@ -275,18 +256,15 @@ window.enterExperience = function () {
     const btn = document.getElementById('start-btn');
     if (btn) btn.style.display = 'none';
 
-    // 5. Start Animation 
+    // 5. Start Animation (with slight delay to let fullscreen settle?)
+    // Using the 3s delay requested before? 
+    // "play the sound and go fullscreen... there should be a brief pause (3 seconds)"
+    // let's keep the 3s delay for the MOVEMENT, but the sound starts immediately.
     startOpeningAnimation();
 
     // 5. Show Exit Button
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) exitBtn.classList.remove('hidden');
-
-    worldGroup.traverse((child) => {
-        if (child.userData && child.userData.name === 'enterSign') {
-            child.visible = false;
-        }
-    });
 };
 
 window.exitExperience = function () {
@@ -313,13 +291,6 @@ window.exitExperience = function () {
     // So we show the button:
     const startBtn = document.getElementById('start-btn');
     if (startBtn) startBtn.style.display = 'inline-block';
-
-    // V528: Restore Enter Sign visibility
-    worldGroup.traverse((child) => {
-        if (child.userData && child.userData.name === 'enterSign') {
-            child.visible = true;
-        }
-    });
 };
 
 // --- AUDIO ANALYSER SETUP ---
@@ -500,8 +471,14 @@ function buildHouse() {
         { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: -0.2 }
     ]);
 
-    // -- ENLARGED CLICK AREA FOR LIVING ROOM (REMOVED V528 - Too Loose) --
-    // Using createHitBox() later for tighter control
+    // -- ENLARGED CLICK AREA FOR LIVING ROOM --
+    const liveHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 4.0, 6.0),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    liveHitBox.position.set(-1.0, 2.5, 0); // Higher and much larger
+    liveHitBox.userData = { name: 'living', type: 'room' };
+    worldGroup.add(liveHitBox);
 
     createRoomBlock('studio', 1.0, 1.8, 0, 2.0, 2, 5, roomContent.studio.hex, [
         { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: 0.2 },
@@ -554,30 +531,49 @@ function buildHouse() {
     plate.add(numMesh);
     worldGroup.add(plate); // Add to world, not door
 
-    // -- ENLARGED CLICK AREA FOR HALL (REMOVED V528 - Too Loose) --
-    // Using createHitBox() later
+    // -- ENLARGED CLICK AREA FOR HALL (Refined) --
+    // Narrower box to avoid overlap with Living Room/Studio
+    const hallHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.3, 3.0, 2.0), // Width 1.3 (was 2.0)
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hallHitBox.position.set(0, 1.5, 3.0);
+    hallHitBox.userData = { name: 'hall', type: 'room' };
+    worldGroup.add(hallHitBox);
     const stepMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
     const stepWidth = 1.4;
-    const step1 = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.6, 0.5), stepMat);
-    // V536: Solid Shifted forward to 2.85 to clear wall
-    step1.position.set(0, 0.3, 2.85);
+    const step1 = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.2, 0.5), stepMat);
+    step1.position.set(0, 0.6, 2.75);
     worldGroup.add(step1);
-    const step2 = new THREE.Mesh(new THREE.BoxGeometry(stepWidth + 0.2, 0.4, 0.5), stepMat);
-    step2.position.set(0, 0.2, 3.25); // Solid fill
+    const step2 = new THREE.Mesh(new THREE.BoxGeometry(stepWidth + 0.2, 0.2, 0.5), stepMat);
+    step2.position.set(0, 0.4, 3.15);
     worldGroup.add(step2);
     const step3 = new THREE.Mesh(new THREE.BoxGeometry(stepWidth + 0.4, 0.2, 0.5), stepMat);
-    // V536: Lowered to ground (Y=0.1 for Height 0.2)
-    step3.position.set(0, 0.1, 3.65);
+    step3.position.set(0, 0.2, 3.55);
     worldGroup.add(step3);
     createRoomBlock('toilet', 0, 1.1, -3.5, 1.2, 2.2, 2.0, roomContent.toilet.hex, [
         { type: 'dark', scale: 0.6, side: 'left', narrow: true },
         { type: 'dark', scale: 0.6, side: 'right', narrow: true }
     ]);
-    // -- ENLARGED CLICK AREA FOR TOILET (REMOVED V528) --
-    // Using createHitBox() later
+    // -- ENLARGED CLICK AREA FOR TOILET --
+    const toiletHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(2.5, 3.5, 3.5), // Much larger target
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    toiletHitBox.position.set(0, 1.1, -3.5);
+    toiletHitBox.userData = { name: 'toilet', type: 'room' };
+    worldGroup.add(toiletHitBox);
     createRoomBlock('bedroom', -1.0, 3.8, 0, 2.0, 2, 5, roomContent.bedroom.hex, [{ type: 'dark', side: 'front' }, { type: 'dark', side: 'back' }]);
-    // -- ENLARGED CLICK AREA FOR BEDROOM (REMOVED V528) --
-    // Using createHitBox() later
+    // -- ENLARGED CLICK AREA FOR BEDROOM (V5) --
+    // Bedroom block is approx -1.0, 3.8, 0 with size 2.0, 2, 5. 
+    // Hitbox should be larger. 
+    const bedHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 3.5, 7.0),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    bedHitBox.position.set(-1.5, 3.8, 1.0);
+    bedHitBox.userData = { name: 'bedroom', type: 'room' };
+    worldGroup.add(bedHitBox);
 
     createRoomBlock('bathroom', 1.0, 3.8, 0, 2.0, 2, 5, roomContent.bathroom.hex, [{ type: 'dark', side: 'front' }, { type: 'dark', side: 'back' }]);
     const roofShape = new THREE.Shape();
@@ -603,8 +599,6 @@ function buildHouse() {
     roof.add(atticWinFrameBack);
     worldGroup.add(roof);
 
-
-    worldGroup.add(roof);
 }
 
 function createRoofTexture() {
@@ -728,7 +722,7 @@ function createIntroSign() {
 function startInteractiveIntro() {
     // 1. Play Audio (Immediately)
     // Sound should start immediately after clicking 'ENTER'
-    const audio = new Audio('/assets/audio/Tension_Short_07.wav');
+    const audio = new Audio('assets/audio/Tension_Short_07.wav');
     audio.volume = 0.8;
     audio.play().catch(e => console.warn("Audio play error", e));
 
@@ -842,22 +836,12 @@ function buildStreetlight(x, z, rotationY = 0) {
     glowSprite.scale.set(3, 3, 3); glowSprite.position.y = -0.4;
     lanternGroup.add(glowSprite);
     poleGroup.add(lanternGroup);
-    // Modified buildStreetlight to fix glowing sprite position or remove it if problematic
-    // The previous implementation added a sprite below the lantern.
-    // ...
-    // poleGroup.add(sign); // Code continues below...
-
-    // Keeping original code structure but verifying the insertion point for Mist Layer.
-    // The Mist Layer logic will be added inside buildEnvironment().
-
     const signTex = createSignTexture();
     const signWidth = 1.4; const signHeight = 0.7;
     const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.05);
     const signMat = new THREE.MeshStandardMaterial({ map: signTex });
     const signBackMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
     const sign = new THREE.Mesh(signGeo, [signBackMat, signBackMat, signBackMat, signBackMat, signMat, signBackMat]);
-    // V528: Tag for hiding later
-    sign.userData = { name: 'enterSign' };
     if (Math.abs(rotationY) > 0.1) {
         sign.position.set(0, 3.0, -0.15); sign.rotation.y = Math.PI;
     } else {
@@ -876,8 +860,7 @@ function buildStreetlight(x, z, rotationY = 0) {
 
 function buildEnvironment() {
     const groundTex = createGrassTexture();
-    // V528: DoubleSide to prevent disappearance at angles
-    const planeMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1, color: 0x666666, side: THREE.DoubleSide });
+    const planeMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1, color: 0x666666 });
 
     // V80: Planet "Mini-Earth" Environment
     const PLANET_RADIUS = 120;
@@ -886,10 +869,7 @@ function buildEnvironment() {
     planetGroup.position.set(0, -PLANET_RADIUS, 0);
 
     const sphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS, 128, 128), planeMat);
-    // V528: Disable frustum culling to prevent ground flicker/disappearance
-    sphere.frustumCulled = false;
     planetGroup.add(sphere);
-
     worldGroup.add(planetGroup);
 
     // V84: Spherical Road (Visible Fix)
@@ -908,9 +888,6 @@ function buildEnvironment() {
     const rIndices = [];
     const rUVs = [];
 
-    // V537: Thicken Road (Slab)
-    const roadThickness = 0.4;
-
     for (let i = 0; i <= roadSegments; i++) {
         const ratio = i / roadSegments;
         const z = roadStartZ + (roadEndZ - roadStartZ) * ratio;
@@ -919,49 +896,23 @@ function buildEnvironment() {
         const currentWidth = widthAtHouse + (widthAtHorizon - widthAtHouse) * ratio;
 
         // V84: Offset 0.1 to obscure z-fighting with plane
-        const yTop = getPlanetY(0, z) + 0.1;
-        const yBot = yTop - roadThickness;
+        const y = getPlanetY(0, z) + 0.1;
 
-        // 4 Vertices per segment
-        // 0: TL (-x, top), 1: TR (+x, top), 2: BL (-x, bot), 3: BR (+x, bot)
-        rVertices.push(-currentWidth / 2, yTop, z);
-        rVertices.push(currentWidth / 2, yTop, z);
-        rVertices.push(-currentWidth / 2, yBot, z);
-        rVertices.push(currentWidth / 2, yBot, z);
+        // Normal at (0, y, z)
+        const normal = new THREE.Vector3(0, y + PLANET_RADIUS, z).normalize();
 
-        // UVs
+        rVertices.push(-currentWidth / 2, y, z);
+        rVertices.push(currentWidth / 2, y, z);
+
         rUVs.push(0, ratio);
-        rUVs.push(1, ratio);
-        rUVs.push(0, ratio); // Sides reuse edge UVs
         rUVs.push(1, ratio);
 
         if (i < roadSegments) {
-            const base = i * 4;
-            const next = base + 4;
-
-            // Top Face
-            rIndices.push(base, base + 1, next);
-            rIndices.push(next, base + 1, next + 1);
-
-            // Left Face (TL, BL, NextTL, NextBL)
-            // Normal -X. (BL, TL, NextTL) -> (2, 0, 4)
-            rIndices.push(base + 2, base + 4, base);
-            rIndices.push(base + 2, base + 6, base + 4);
-
-            // Right Face (TR, BR, NextTR, NextBR)
-            // Normal +X. (TR, BR, NextTR) -> (1, 3, 5) ? No.
-            // (TR, NextTR, BR) ?
-            // TR(1), BR(3), NextTR(5), NextBR(7)
-            // CounterClockwise: 1, 5, 3; 3, 5, 7.
-            rIndices.push(base + 1, base + 5, base + 3);
-            rIndices.push(base + 3, base + 5, base + 7);
+            const base = i * 2;
+            rIndices.push(base, base + 1, base + 2);
+            rIndices.push(base + 2, base + 1, base + 3);
         }
     }
-
-    // Cap the Start (Facing the house)
-    // 0(TL), 1(TR), 3(BR), 2(BL)
-    rIndices.push(0, 1, 3);
-    rIndices.push(3, 2, 0);
 
     const roadMeshGeo = new THREE.BufferGeometry();
     roadMeshGeo.setAttribute('position', new THREE.Float32BufferAttribute(rVertices, 3));
@@ -1113,10 +1064,6 @@ function buildEnvironment() {
     // Y=4.0. Height 2.5. Z=3.5.
     createHitBox('bedroom', -1.0, 4.0, 3.5, 2.0, 2.5, 1.0);
 
-    // V528: Toilet Hit Box (Precise)
-    // Center 0. Y=1.1. Z=-3.5.
-    createHitBox('toilet', 0, 1.1, -3.5, 1.4, 2.4, 2.2);
-
     // Add more random trees
     // V6: More trees (increased loop)
     for (let i = 0; i < 60; i++) {
@@ -1131,9 +1078,6 @@ function buildEnvironment() {
         tree.scale.setScalar(s);
 
         alignToPlanet(tree, x, z);
-
-        // V200: No Trees on Path (Approx X between -4 and 4)
-        if (Math.abs(x) < 5) continue;
 
         worldGroup.add(tree);
 
@@ -1334,7 +1278,7 @@ function startOpeningAnimation() {
         .start();
 
     // Fog Animation (Clearer)
-    const fogTargetClear = { near: 20, far: 120 }; // V200: Still misty (was 200)
+    const fogTargetClear = { near: 20, far: 200 }; // V59: Much clearer
     new TWEEN.Tween(openingFog)
         .to({ near: fogTargetClear.near, far: fogTargetClear.far }, 5000)
         .easing(TWEEN.Easing.Quadratic.Out)
@@ -1974,11 +1918,9 @@ function checkIntersectionExternal() {
             if (hoveredObject !== target) {
                 hoveredObject = target;
                 document.body.style.cursor = 'pointer';
-                if (roomContent[hoveredObject.userData.name]) {
-                    const tooltip = document.getElementById('tooltip');
-                    tooltip.textContent = roomContent[hoveredObject.userData.name].title;
-                    tooltip.style.opacity = 1;
-                }
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = roomContent[hoveredObject.userData.name].title;
+                tooltip.style.opacity = 1;
             }
             return;
         }
