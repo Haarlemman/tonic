@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic Audio: Twilight Dunes (Surreal 3D)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #010915; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            cursor: crosshair;
+        }
+
+        /* --- CANVAS LAYERING --- */
+        #canvas-bg {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1; 
+        }
+
+        #bg-titles {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 5; 
+            font-family: 'Courier New', Courier, monospace;
+            pointer-events: none;
+            opacity: 0.5;
+            transition: opacity 2s ease;
+        }
+
+        #canvas-battle {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10; 
+            pointer-events: none;
+        }
+
+        /* --- UI STYLES --- */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 280px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            cursor: default;
+        }
+
+        .playlist-container {
+            width: 100%;
+            max-height: 120px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .playlist-container::-webkit-scrollbar { width: 4px; }
+        .playlist-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .playlist-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 2px; }
+
+        .track-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .track-item:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .track-item.active { background: rgba(255, 255, 255, 0.1); color: #a78bfa; font-weight: 500; }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+        
+        .status { color: rgba(255, 255, 255, 0.4); font-size: 10px; text-align: center; margin-top: 5px; }
+        .controls { display: flex; gap: 8px; width: 100%; }
+        input[type="file"] { display: none; }
+        
+        .progress-area { margin-top: 4px; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%;
+            background: #a78bfa; cursor: pointer; margin-top: -3px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px;
+        }
+        .time-display { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255, 255, 255, 0.5); font-family: monospace; }
+        
+        .title-text { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+        .subtitle-text { font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem; text-shadow: 0 0 5px rgba(0,0,0,0.8); }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div id="bg-titles">
+        <h1 class="title-text text-4xl text-red-500">RED <span class="text-xs text-red-300 align-middle">(BASS)</span></h1>
+        <h1 class="title-text text-4xl text-blue-500">& BLUE <span class="text-xs text-blue-300 align-middle">(TREBLE)</span></h1>
+        <p class="subtitle-text text-slate-300">Hover to Conduct / Drag to Gather</p>
+    </div>
+
+    <canvas id="canvas-battle"></canvas>
+
+    <div id="ui-layer">
+        <div class="playlist-container" id="playlist"></div>
+        <div class="progress-area">
+            <input type="range" id="progressBar" value="0" min="0" step="0.1">
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+        <div class="controls">
+            <label class="btn">
+                Upload
+                <input type="file" id="fileInput" accept="audio/*">
+            </label>
+            <button class="btn" id="playBtn" disabled>Play</button>
+            <button class="btn" id="pauseBtn" style="display:none;">Pause</button>
+        </div>
+        <div class="status" id="statusText">Select a track to begin</div>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // ==========================================
+        // SHARED AUDIO ENGINE
+        // ==========================================
+        const audioPlayer = document.getElementById('audioPlayer');
+        let audioContext, analyser, source;
+        let dataArray;
+        let isPlaying = false;
+        
+        let bassEnergy = 0, trebleEnergy = 0; 
+        let bassNorm = 0, trebleNorm = 0; 
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; 
+                analyser.smoothingTimeConstant = 0.85;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        function analyzeAudio() {
+            if (!analyser) return;
+            analyser.getByteFrequencyData(dataArray);
+
+            let bassSum = 0;
+            for (let i = 0; i < 15; i++) bassSum += dataArray[i];
+            bassEnergy = bassSum / 15;
+            
+            let trebleSum = 0;
+            let trebleCount = 0;
+            for (let i = 100; i < 250; i++) {
+                trebleSum += dataArray[i];
+                trebleCount++;
+            }
+            trebleEnergy = trebleSum / trebleCount;
+
+            bassNorm = Math.min(1, (bassEnergy / 255) * 1.8);
+            trebleNorm = Math.min(1, (trebleEnergy / 255) * 3.5);
+            bassEnergy *= 1.2;
+            trebleEnergy *= 1.4;
+        }
+
+        // ==========================================
+        // LAYER 1: BACKGROUND (Surreal Greens & Dunes)
+        // ==========================================
+        const bgCanvas = document.getElementById('canvas-bg');
+        const bgCtx = bgCanvas.getContext('2d');
+        let bgWidth, bgHeight;
+
+        const cloudParticles = [];
+
+        class CloudParticle {
+            constructor(index) {
+                this.index = index;
+                this.init(true);
+            }
+
+            init(initial = false) {
+                this.x = initial ? Math.random() * bgWidth : -200;
+                // Clouds constrained to top 30%
+                this.y = Math.random() * (bgHeight * 0.3); 
+                
+                // Steady passing motion
+                this.vx = Math.random() * 0.3 + 0.1; 
+                
+                // De Chirico Palette: Surreal Greens/Teals
+                const greens = [
+                    {r: 60, g: 100, b: 80},  // Deep Sea Green
+                    {r: 85, g: 107, b: 47},  // Dark Olive
+                    {r: 47, g: 79, b: 79},   // Dark Slate Gray
+                    {r: 100, g: 140, b: 100} // Muted Pale Green
+                ];
+                const color = greens[Math.floor(Math.random() * greens.length)];
+                
+                this.baseSize = 40 + Math.random() * 80; 
+                this.size = this.baseSize;
+                this.alpha = 0.05 + Math.random() * 0.1;
+                this.color = `rgba(${color.r}, ${color.g}, ${color.b}, ${this.alpha})`;
+            }
+
+            update(bass) {
+                this.x += this.vx;
+                // Slight wobble
+                this.y += Math.sin(this.x * 0.005 + this.index) * 0.05;
+
+                // Reset when off screen right
+                if (this.x > bgWidth + 200) {
+                    this.init(false);
+                }
+
+                // Minimal audio reactivity - just slight pulsing
+                this.size = this.baseSize + (bass * 0.1);
+            }
+
+            draw() {
+                bgCtx.beginPath();
+                bgCtx.fillStyle = this.color;
+                // De Chirico style: somewhat flattened, stylized
+                bgCtx.ellipse(this.x, this.y, this.size * 2.0, this.size * 0.4, 0, 0, Math.PI * 2);
+                bgCtx.fill();
+            }
+        }
+
+        function initClouds() {
+            cloudParticles.length = 0;
+            // Fewer clouds for that stark De Chirico feel
+            for(let i=0; i<80; i++) cloudParticles.push(new CloudParticle(i)); 
+        }
+
+        // --- LANDSCAPE RENDERER ---
+        function drawLandscape() {
+            const landscapeHeight = bgHeight * 0.25; 
+            const startY = bgHeight - landscapeHeight;
+            
+            // 1. The Horizon/Water Line (Cyan Hint)
+            bgCtx.shadowBlur = 20;
+            bgCtx.shadowColor = "cyan";
+            bgCtx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            bgCtx.fillRect(0, startY - 1, bgWidth, 3);
+            bgCtx.shadowBlur = 0;
+
+            // 2. Dunes with Light Tops
+            const drawDuneLayer = (speed, amplitude, frequency, color, yOffset, highlight) => {
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, bgHeight);
+                
+                // Construct path
+                for (let x = 0; x <= bgWidth; x += 10) {
+                    const noise = Math.sin((x + (Date.now() * speed)) * frequency) * amplitude;
+                    const detail = Math.sin((x + (Date.now() * speed)) * frequency * 3) * (amplitude * 0.2);
+                    const y = startY + yOffset + noise + detail;
+                    bgCtx.lineTo(x, y);
+                }
+                
+                bgCtx.lineTo(bgWidth, bgHeight);
+                bgCtx.lineTo(0, bgHeight);
+                bgCtx.closePath();
+                
+                bgCtx.fillStyle = color;
+                bgCtx.fill();
+
+                // Draw Top Highlights
+                if (highlight) {
+                    bgCtx.beginPath();
+                    // Re-trace just the top line
+                    for (let x = 0; x <= bgWidth; x += 10) {
+                        const noise = Math.sin((x + (Date.now() * speed)) * frequency) * amplitude;
+                        const detail = Math.sin((x + (Date.now() * speed)) * frequency * 3) * (amplitude * 0.2);
+                        const y = startY + yOffset + noise + detail;
+                        if(x===0) bgCtx.moveTo(x,y);
+                        else bgCtx.lineTo(x,y);
+                    }
+                    bgCtx.strokeStyle = 'rgba(100, 255, 255, 0.15)'; // Cyan-ish white highlight
+                    bgCtx.lineWidth = 2;
+                    bgCtx.stroke();
+                }
+            };
+
+            // Darker colors for stark contrast
+            drawDuneLayer(0.01, 20, 0.002, 'rgba(20, 35, 45, 0.6)', 30, true);  // Back
+            drawDuneLayer(0.02, 30, 0.003, 'rgba(15, 25, 35, 0.8)', 60, true);  // Mid
+            drawDuneLayer(0.03, 40, 0.004, 'rgba(5, 10, 15, 0.95)', 90, true);   // Front
+        }
+
+        function animateBg() {
+            // Background Gradient
+            const grad = bgCtx.createLinearGradient(0, 0, 0, bgHeight);
+            grad.addColorStop(0, '#011510');   // Dark Greenish Black
+            grad.addColorStop(0.4, '#0a3034'); // Deep Teal
+            grad.addColorStop(0.8, '#2e4e3f'); // Horizon Green
+            grad.addColorStop(1, '#05262c');   // Bottom
+            
+            bgCtx.fillStyle = grad;
+            bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+            // DRAW CLOUDS (Passing by)
+            bgCtx.globalCompositeOperation = 'source-over';
+            cloudParticles.forEach(p => {
+                p.update(bassEnergy);
+                p.draw();
+            });
+
+            // DRAW LANDSCAPE
+            drawLandscape();
+        }
+
+        // ==========================================
+        // LAYER 2: THE 3D BATTLE (FOREGROUND)
+        // ==========================================
+        const battleCanvas = document.getElementById('canvas-battle');
+        const bCtx = battleCanvas.getContext('2d');
+        let bWidth, bHeight;
+        let battleParticles = [];
+        let mouse = { x: null, y: null, active: false, isDown: false };
+
+        class BattleParticle {
+            constructor(type) {
+                this.type = type;
+                this.reset(true);
+            }
+            reset(initial = false) {
+                this.x = initial 
+                    ? (this.type==='red' ? Math.random()*bWidth*0.4 : (bWidth*0.6)+Math.random()*bWidth*0.4)
+                    : Math.random() * bWidth;
+                this.y = Math.random() * bHeight;
+                
+                // 3D Depth simulation (0 = far, 1 = close)
+                this.z = Math.random(); 
+                
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.baseSize = Math.random() * 3 + 2; 
+                this.angle = Math.random() * Math.PI * 2;
+                this.speedMod = this.type === 'red' ? 0.02 : 0.015;
+            }
+            update(bLvl, tLvl) {
+                let energy = (this.type === 'red') ? bLvl : tLvl;
+                
+                // Swirl movement
+                if(this.type === 'red') {
+                    this.angle += this.speedMod;
+                    this.vx += Math.sin(this.angle) * 0.01;
+                    this.vy += Math.cos(this.angle) * 0.01;
+                } else {
+                    this.angle -= this.speedMod;
+                    this.vx += Math.cos(this.angle) * 0.01;
+                    this.vy += Math.sin(this.angle) * 0.01;
+                }
+                
+                this.vx += (Math.random()-0.5) * energy * 2.0;
+                this.vy += (Math.random()-0.5) * energy * 2.0;
+
+                // Mouse interaction (Physics)
+                if (mouse.active && mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 400) {
+                        const force = (400 - dist) / 400;
+                        const angle = Math.atan2(dy, dx);
+                        const strength = mouse.isDown ? 2.0 : (0.2 + energy);
+                        // Closer particles react more strongly
+                        const zFactor = 0.5 + this.z; 
+                        this.vx += Math.cos(angle) * force * strength * zFactor;
+                        this.vy += Math.sin(angle) * force * strength * zFactor;
+                    }
+                }
+
+                this.vx *= 0.96; this.vy *= 0.96;
+                this.x += this.vx; this.y += this.vy;
+
+                // Wrap around
+                if (this.x < -50) this.x = bWidth + 50;
+                if (this.x > bWidth + 50) this.x = -50;
+                if (this.y < -50) this.y = bHeight + 50;
+                if (this.y > bHeight + 50) this.y = -50;
+            }
+
+            draw(bLvl, tLvl) {
+                let energy = (this.type === 'red') ? bLvl : tLvl;
+                
+                // Calculate Scale based on Z
+                const perspective = 0.5 + (this.z * 1.5); // Scale 0.5x to 2.0x
+                const drawSize = this.baseSize * perspective * (1 + energy);
+
+                // 3D Sphere Look using Radial Gradient
+                const grad = bCtx.createRadialGradient(
+                    this.x - drawSize * 0.3, this.y - drawSize * 0.3, drawSize * 0.1, // Highlight offset
+                    this.x, this.y, drawSize
+                );
+
+                if (this.type === 'red') {
+                    grad.addColorStop(0, `rgba(255, 200, 200, ${0.8 + this.z * 0.2})`);
+                    grad.addColorStop(1, `rgba(200, 40, 40, ${0.6 + this.z * 0.4})`);
+                } else {
+                    grad.addColorStop(0, `rgba(200, 200, 255, ${0.8 + this.z * 0.2})`);
+                    grad.addColorStop(1, `rgba(40, 60, 200, ${0.6 + this.z * 0.4})`);
+                }
+
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, drawSize, 0, Math.PI*2);
+                bCtx.fillStyle = grad;
+                bCtx.fill();
+            }
+        }
+
+        function initBattle() {
+            battleParticles = [];
+            // Slightly reduced count to improve performance with gradients
+            for(let i=0; i<80; i++) battleParticles.push(new BattleParticle('red'));
+            for(let i=0; i<80; i++) battleParticles.push(new BattleParticle('blue'));
+            
+            // Sort by Z so we draw far particles first (Painter's algorithm)
+            // Note: This is computationally expensive to do every frame, 
+            // so we rely on transparency blending, but sorting once helps initially.
+        }
+
+        function animateBattle() {
+            bCtx.clearRect(0, 0, bWidth, bHeight);
+            
+            if (mouse.active) {
+                bCtx.beginPath();
+                bCtx.arc(mouse.x, mouse.y, 20, 0, Math.PI*2);
+                bCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                bCtx.stroke();
+            }
+
+            // Draw Lines First (Behind nodes)
+            // Optimize: Only check connections for "close enough" Z values? 
+            // For now, standard check but weight alpha by Z.
+            
+            bCtx.beginPath();
+            for (let i = 0; i < battleParticles.length; i++) {
+                const p1 = battleParticles[i];
+                p1.update(bassNorm, trebleNorm); // Update positions here
+
+                for (let j = i + 1; j < battleParticles.length; j++) {
+                    const p2 = battleParticles[j];
+                    
+                    // Optimization: Check screen distance first
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx*dx + dy*dy;
+                    
+                    if (distSq < 15000) {
+                        // Check Z distance - only connect if relatively close in depth?
+                        // Or simply weight line by average Z
+                        const zAvg = (p1.z + p2.z) / 2;
+                        
+                        if(p1.type === p2.type) {
+                            const dist = Math.sqrt(distSq);
+                            const opacityBase = 1 - (dist/122);
+                            
+                            // 3D Logic: Lines closer to camera (z=1) are thicker and more opaque
+                            const zWeight = 0.1 + (zAvg * 0.9); // 0.1 to 1.0
+                            
+                            if (opacityBase > 0) {
+                                const color = p1.type==='red' ? '255,60,60' : '60,100,255';
+                                const pulse = p1.type==='red' ? bassNorm : trebleNorm;
+                                
+                                // Thicker lines in foreground
+                                bCtx.lineWidth = 0.2 + (zAvg * 1.5); 
+                                bCtx.strokeStyle = `rgba(${color}, ${opacityBase * zWeight * (0.5 + pulse)})`;
+                                
+                                bCtx.moveTo(p1.x, p1.y);
+                                bCtx.lineTo(p2.x, p2.y);
+                            }
+                        }
+                    }
+                }
+            }
+            bCtx.stroke();
+
+            // Draw Nodes on top
+            // To do this properly we should re-sort or loop again. 
+            // Looping again is safer for z-ordering vs lines.
+            for (let i = 0; i < battleParticles.length; i++) {
+                battleParticles[i].draw(bassNorm, trebleNorm);
+            }
+        }
+
+        // ==========================================
+        // MAIN LOOP
+        // ==========================================
+        function resize() {
+            bgWidth = bgCanvas.width = window.innerWidth;
+            bgHeight = bgCanvas.height = window.innerHeight;
+            bWidth = battleCanvas.width = window.innerWidth;
+            bHeight = battleCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+        initClouds();
+        initBattle();
+
+        function masterAnimate() {
+            if(isPlaying) analyzeAudio();
+            else {
+                bassEnergy *= 0.95; trebleEnergy *= 0.95;
+                bassNorm *= 0.9; trebleNorm *= 0.9;
+            }
+
+            animateBg();     
+            animateBattle(); 
+
+            requestAnimationFrame(masterAnimate);
+        }
+        masterAnimate();
+
+        // ==========================================
+        // UI INTERACTION
+        // ==========================================
+        const playlistData = [
+            { title: "Lovin U - Coco Bryce", src: "songs/LovinU-CocoBryce.mp3" },
+            { title: "Nespole", src: "songs/Nespole.mp3" },
+            { title: "Andrea Parker - Unconnected.mp3", src: "songs/AndreaParker-Unconnected.mp3" },
+            { title: "Spring Is Coming", src: "songs/SpringIsComing.mp3" },
+            { title: "Eutow - Autechre", src: "songs/Eutow.mp3" },
+            { title: "Kalkbrenner & Stromae", src: "songs/KalkbrennerStromae.mp3" },
+            { title: "Evening Breeze", src: "songs/EveningBreeze.mp3" },
+            { title: "MONDO GROSSO ラビリンス", src: "songs/MondoGrosso.mp3" },
+            { title: "Freestyle - Drum & Bass", src: "songs/Freestyle.mp3" }
+        ];
+
+        const playlistContainer = document.getElementById('playlist');
+        const statusText = document.getElementById('statusText');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        playlistData.forEach((track, index) => {
+            const div = document.createElement('div');
+            div.className = 'track-item';
+            div.innerHTML = `<span>${index+1}. ${track.title}</span>`;
+            div.onclick = () => loadTrack(index);
+            playlistContainer.appendChild(div);
+        });
+
+        function loadTrack(index) {
+            const track = playlistData[index];
+            document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            playlistContainer.children[index].classList.add('active');
+            audioPlayer.src = track.src;
+            statusText.textContent = `Selected: ${track.title}`;
+            statusText.style.color = "#a78bfa";
+            playBtn.disabled = false;
+            if(audioContext && audioContext.state === 'running') playBtn.click();
+        }
+
+        playBtn.addEventListener('click', () => {
+            initAudio();
+            if(audioContext.state === 'suspended') audioContext.resume();
+            
+            audioPlayer.play().then(() => {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+                statusText.textContent = "Flowing...";
+                isPlaying = true;
+            }).catch(e => console.error(e));
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            isPlaying = false;
+            statusText.textContent = "Paused";
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const file = this.files[0];
+            if(file) {
+                audioPlayer.src = URL.createObjectURL(file);
+                playBtn.disabled = false;
+                statusText.textContent = `Ready: ${file.name}`;
+                document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            }
+        });
+
+        function handleMouse(x, y, active, down) {
+            mouse.x = x; mouse.y = y; mouse.active = active; mouse.isDown = down;
+        }
+        window.addEventListener('mousemove', e => handleMouse(e.clientX, e.clientY, true, mouse.isDown));
+        window.addEventListener('mousedown', e => handleMouse(e.clientX, e.clientY, true, true));
+        window.addEventListener('mouseup', e => {
+            handleMouse(e.clientX, e.clientY, true, false);
+            // Explosion effect on click
+            battleParticles.forEach(p => {
+                const dx = p.x - e.clientX;
+                const dy = p.y - e.clientY;
+                if(Math.sqrt(dx*dx+dy*dy) < 300) {
+                    const angle = Math.atan2(dy, dx);
+                    // Push harder on z-axis too for effect
+                    p.vx += Math.cos(angle) * 15;
+                    p.vy += Math.sin(angle) * 15;
+                }
+            });
+        });
+        
+        const progressBar = document.getElementById('progressBar');
+        const cTime = document.getElementById('currentTime');
+        const dTime = document.getElementById('duration');
+        
+        function formatTime(s) {
+            const m = Math.floor(s/60);
+            const sec = Math.floor(s%60);
+            return `${m}:${sec<10?'0':''}${sec}`;
+        }
+        audioPlayer.addEventListener('timeupdate', () => {
+            if(audioPlayer.duration) {
+                progressBar.value = (audioPlayer.currentTime/audioPlayer.duration)*100;
+                cTime.textContent = formatTime(audioPlayer.currentTime);
+                dTime.textContent = formatTime(audioPlayer.duration);
+            }
+        });
+        progressBar.addEventListener('input', () => {
+            audioPlayer.currentTime = (progressBar.value/100)*audioPlayer.duration;
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Studio v2</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; user-select: none; }
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; height: 100vh; width: 100vw; overflow: hidden; }
+
+        /* --- SETUP SCREEN --- */
+        #setup {
+            position: absolute; inset: 0; background: #111; z-index: 20; display: flex; flex-direction: column;
+        }
+
+        #viewport {
+            flex: 1; position: relative; overflow: hidden; background: #222;
+            /* Checkerboard to show transparency */
+            background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-size: 20px 20px;
+        }
+
+        #source-img-canvas {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+
+        /* The Focus Box */
+        #lens {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100px; height: 100px;
+            border: 4px solid #00ff00;
+            box-shadow: 0 0 0 100vmax rgba(0,0,0,0.85); /* Dims everything else */
+            pointer-events: none; z-index: 10;
+        }
+
+        #controls {
+            height: 240px; background: #18181b; padding: 10px; display: grid; grid-template-rows: auto 1fr; gap: 10px;
+        }
+
+        .btn-main {
+            background: #6366f1; color: white; border: none; padding: 0;
+            border-radius: 12px; font-size: 18px; font-weight: bold; width: 100%; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* D-Pad Layout */
+        .dpad {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; height: 100%;
+        }
+        .pad-btn {
+            background: #27272a; border: 1px solid #3f3f46; border-radius: 8px;
+            color: #e4e4e7; font-size: 24px; display: flex; align-items: center; justify-content: center;
+        }
+        .pad-btn:active { background: #3f3f46; border-color: #6366f1; }
+
+        /* --- GAME SCREEN --- */
+        #game { display: none; position: absolute; inset: 0; background: #000; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #game-ui {
+            position: absolute; bottom: 20px; left: 0; width: 100%; height: 100px;
+            display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none;
+        }
+        .t-btn {
+            pointer-events: auto; width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+            display: flex; align-items: center; justify-content: center; font-size: 32px;
+        }
+        .t-btn:active { background: rgba(255,255,255,0.3); }
+
+        #reset { position: absolute; top: 10px; right: 10px; padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; pointer-events: auto; font-size: 12px; }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="setup">
+    <div id="viewport">
+        <canvas id="source-img-canvas"></canvas>
+        <div id="lens"></div>
+        <div class="absolute top-2 w-full text-center text-gray-400 text-xs font-bold pointer-events-none">
+            Tap arrows to put character in Green Box
+        </div>
+    </div>
+    
+    <div id="controls">
+        <input type="file" id="file" accept="image/*" style="display:none">
+        
+        <button id="loadBtn" class="btn-main">1. Tap to Load Image</button>
+        
+        <div id="nav-panel" class="dpad hidden">
+            <button class="pad-btn" onclick="move(-1,-1)">↖</button>
+            <button class="pad-btn" onclick="move(0,-1)">↑</button>
+            <button class="pad-btn" onclick="move(1,-1)">↗</button>
+            <button class="pad-btn" onclick="move(-1,0)">←</button>
+            <button class="pad-btn" onclick="zoomToggle()">🔍</button>
+            <button class="pad-btn" onclick="move(1,0)">→</button>
+            <button class="pad-btn" onclick="move(-1,1)">↙</button>
+            <button class="pad-btn" onclick="move(0,1)">↓</button>
+            <button class="pad-btn" onclick="move(1,1)">↘</button>
+        </div>
+    </div>
+    <div id="play-container" class="absolute bottom-[10px] left-[10px] right-[10px] hidden" style="height: 50px;">
+         <button id="playBtn" class="btn-main" style="background: #22c55e;">2. PLAY GAME</button>
+    </div>
+</div>
+
+<div id="game">
+    <button id="reset">Edit</button>
+    <canvas id="gCanvas"></canvas>
+    <div id="game-ui">
+        <div style="display:flex; gap:15px;">
+            <div id="btn-L" class="t-btn">←</div>
+            <div id="btn-R" class="t-btn">→</div>
+        </div>
+        <div id="btn-J" class="t-btn" style="border-color:#6366f1; color:#6366f1;">↑</div>
+    </div>
+</div>
+
+<script>
+// --- SYSTEM ---
+const sys = {
+    img: null,
+    canvas: document.getElementById('source-img-canvas'),
+    ctx: document.getElementById('source-img-canvas').getContext('2d'),
+    px: 0, py: 0,
+    scale: 1,
+    char: null // The processed sprite
+};
+
+// UI REFS
+const ui = {
+    loadBtn: document.getElementById('loadBtn'),
+    file: document.getElementById('file'),
+    nav: document.getElementById('nav-panel'),
+    playCon: document.getElementById('play-container'),
+    playBtn: document.getElementById('playBtn'),
+    setup: document.getElementById('setup'),
+    game: document.getElementById('game'),
+    reset: document.getElementById('reset')
+};
+
+// 1. LOAD & CLEAN
+ui.loadBtn.onclick = () => ui.file.click();
+ui.file.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    
+    const img = new Image();
+    img.onload = () => {
+        // Process Image: Draw to canvas and remove black background
+        sys.canvas.width = img.width;
+        sys.canvas.height = img.height;
+        sys.ctx.drawImage(img, 0, 0);
+        
+        // AUTO-CLEAN BLACK BACKGROUND
+        const imageData = sys.ctx.getImageData(0,0, img.width, img.height);
+        const data = imageData.data;
+        
+        // Scan for black (RGB 0,0,0) and make transparent
+        // We use a small threshold (approx < 15) to catch compression artifacts
+        for(let i=0; i<data.length; i+=4) {
+            const r = data[i];
+            const g = data[i+1];
+            const b = data[i+2];
+            
+            if(r < 15 && g < 15 && b < 15) {
+                data[i+3] = 0; // Alpha 0
+            }
+        }
+        sys.ctx.putImageData(imageData, 0, 0);
+        
+        // Setup UI
+        sys.img = sys.canvas; // Use the canvas as source now
+        sys.px = -img.width/2;
+        sys.py = -img.height/2;
+        updateView();
+        
+        ui.loadBtn.style.display = 'none';
+        ui.nav.classList.remove('hidden');
+        ui.playCon.classList.remove('hidden');
+        
+        // Adjust controls grid to fit Play button space
+        document.getElementById('controls').style.gridTemplateRows = "1fr auto";
+    };
+    img.src = URL.createObjectURL(file);
+};
+
+// 2. NAVIGATE
+function move(x, y) {
+    const step = 25;
+    sys.px -= x * step;
+    sys.py -= y * step;
+    updateView();
+}
+function zoomToggle() {
+    sys.scale = sys.scale === 1 ? 1.5 : 1;
+    updateView();
+}
+function updateView() {
+    // We move the canvas via CSS transform
+    sys.canvas.style.transform = `translate(-50%, -50%) translate(${sys.px}px, ${sys.py}px) scale(${sys.scale})`;
+}
+
+// 3. START GAME
+ui.playBtn.onclick = () => {
+    // Capture Center 100x100 relative to transform
+    const crop = document.createElement('canvas');
+    crop.width = 100; crop.height = 100;
+    const ctx = crop.getContext('2d');
+    
+    // Math: Image Center + Offset - CropHalf
+    const cx = (sys.canvas.width/2) - (sys.px / sys.scale);
+    const cy = (sys.canvas.height/2) - (sys.py / sys.scale);
+    const size = 100 / sys.scale;
+    
+    ctx.drawImage(sys.canvas, cx - size/2, cy - size/2, size, size, 0, 0, 100, 100);
+    sys.char = crop;
+    
+    ui.setup.style.display = 'none';
+    ui.game.style.display = 'block';
+    
+    initGame();
+};
+
+ui.reset.onclick = () => {
+    ui.game.style.display = 'none';
+    ui.setup.style.display = 'flex';
+};
+
+// 4. GAME ENGINE
+const gCanvas = document.getElementById('gCanvas');
+const gCtx = gCanvas.getContext('2d');
+let p = { x: 100, y: 0, vx: 0, vy: 0, face: 1, sx: 1, sy: 1 };
+let input = { l: false, r: false, j: false };
+
+function initGame() {
+    gCanvas.width = window.innerWidth;
+    gCanvas.height = window.innerHeight;
+    p.x = gCanvas.width/2; p.y = 0;
+    requestAnimationFrame(loop);
+}
+
+const touch = (id, k) => {
+    const b = document.getElementById(id);
+    b.ontouchstart = (e) => { e.preventDefault(); input[k] = true; };
+    b.ontouchend = (e) => { e.preventDefault(); input[k] = false; };
+    b.onmousedown = (e) => { e.preventDefault(); input[k] = true; };
+    b.onmouseup = (e) => { e.preventDefault(); input[k] = false; };
+};
+touch('btn-L', 'l'); touch('btn-R', 'r'); touch('btn-J', 'j');
+
+function loop() {
+    if(ui.game.style.display === 'none') return;
+    
+    const W = gCanvas.width; const H = gCanvas.height;
+    
+    // Logic
+    if(input.l) { p.vx -= 1.5; p.face = -1; }
+    if(input.r) { p.vx += 1.5; p.face = 1; }
+    p.vx *= 0.85; p.vy += 0.8;
+    p.x += p.vx; p.y += p.vy;
+    
+    const floor = H - 150;
+    if(p.y > floor) { p.y = floor; p.vy = 0; p.sx=1; p.sy=1; }
+    
+    if(input.j && p.y >= floor) { p.vy = -20; p.sx=0.7; p.sy=1.3; }
+    
+    // Anim
+    p.sx += (1 - p.sx)*0.1; p.sy += (1 - p.sy)*0.1;
+    
+    // Draw
+    gCtx.fillStyle = '#111'; gCtx.fillRect(0,0,W,H);
+    gCtx.fillStyle = '#222'; gCtx.fillRect(0, floor+50, W, H);
+    gCtx.strokeStyle='#444'; gCtx.beginPath(); gCtx.moveTo(0,floor+50); gCtx.lineTo(W,floor+50); gCtx.stroke();
+    
+    gCtx.save();
+    gCtx.translate(p.x, p.y + 50);
+    gCtx.scale(p.face * p.sx, p.sy);
+    gCtx.drawImage(sys.char, -50, -100, 100, 100);
+    gCtx.restore();
+    
+    requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

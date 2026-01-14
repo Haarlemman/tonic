@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Biblical Genealogy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            overflow: hidden;
+            color: #fff;
+        }
+        
+        #controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .control-btn.active {
+            background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+            position: relative;
+        }
+        
+        #canvas-container.grabbing {
+            cursor: grabbing;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        #tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 999;
+            max-width: 300px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            font-size: 12px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button class="control-btn" onclick="resetView()">Reset View</button>
+        <button class="control-btn" onclick="expandAll()">Expand All</button>
+        <button class="control-btn" onclick="collapseAll()">Collapse All</button>
+        <button class="control-btn" id="highlightBtn" onclick="toggleHighlight()">Highlight Davidic Line</button>
+        <button class="control-btn" onclick="toggleNames()">Toggle Details</button>
+    </div>
+    
+    <div id="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f39c12;"></div>
+            <span>Patriarch</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #3498db;"></div>
+            <span>Descendant</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #e74c3c;"></div>
+            <span>Davidic Line</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #9b59b6;"></div>
+            <span>Historical Figure</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #27ae60;"></div>
+            <span>Modern Peoples</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFD700;"></div>
+            <span>Mashiach (Future)</span>
+        </div>
+        <hr style="margin: 8px 0; border-color: rgba(255,255,255,0.2);">
+        <div class="legend-item">
+            <svg width="30" height="2" style="margin-right: 10px;">
+                <line x1="0" y1="1" x2="30" y2="1" stroke="white" stroke-width="2"/>
+            </svg>
+            <span>Direct lineage</span>
+        </div>
+        <div class="legend-item">
+            <svg width="30" height="2" style="margin-right: 10px;">
+                <line x1="0" y1="1" x2="30" y2="1" stroke="#27ae60" stroke-width="2" stroke-dasharray="5,5"/>
+            </svg>
+            <span>To modern peoples</span>
+        </div>
+        <div class="legend-item">
+            <svg width="30" height="2" style="margin-right: 10px;">
+                <line x1="0" y1="1" x2="30" y2="1" stroke="#FFD700" stroke-width="3" stroke-dasharray="5,5"/>
+            </svg>
+            <span>To Mashiach</span>
+        </div>
+        <div class="legend-item">
+            <svg width="30" height="2" style="margin-right: 10px;">
+                <line x1="0" y1="1" x2="30" y2="1" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5"/>
+            </svg>
+            <span>Cultural/Religious line</span>
+        </div>
+    </div>
+    
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    
+    <div id="tooltip"></div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        const container = document.getElementById('canvas-container');
+        
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        let scale = 0.3;
+        let offsetX = width / 2;
+        let offsetY = 50;
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        let showDetails = true;
+        let highlightDavidicLine = false;
+        
+        const genealogyData = {
+            name: "Adam & Eve",
+            details: "Innocent awareness",
+            davidicLine: true,
+            children: [{
+                name: "Seth",
+                details: "Moral awareness",
+                davidicLine: true,
+                children: [{
+                    name: "... → Noah",
+                    details: "Descent into density",
+                    davidicLine: true,
+                    children: [{
+                        name: "Noah",
+                        details: "Reset of psyche",
+                        davidicLine: true,
+                        children: [
+                            {
+                                name: "Shem",
+                                details: "Spirit/Semitic",
+                                davidicLine: true,
+                                children: [{
+                                    name: "... → Terah",
+                                    davidicLine: true,
+                                    children: [{
+                                        name: "Abraham",
+                                        details: "Covenant",
+                                        davidicLine: true,
+                                        children: [
+                                            { 
+                                                name: "Ishmael",
+                                                details: "Son of Hagar",
+                                                children: [{
+                                                    name: "... → Adnan",
+                                                    children: [{
+                                                        name: "... → Quraysh",
+                                                        children: [{
+                                                            name: "Mohammed",
+                                                            details: "Prophet of Islam (570-632 CE)",
+                                                            historical: true,
+                                                            modernPeople: ["Arabs", "Muslims"]
+                                                        }]
+                                                    }]
+                                                }]
+                                            },
+                                            {
+                                                name: "Isaac",
+                                                details: "Son of Promise",
+                                                davidicLine: true,
+                                                children: [
+                                                    { 
+                                                        name: "Esau",
+                                                        details: "Edom"
+                                                    },
+                                                    {
+                                                        name: "Jacob (Israel)",
+                                                        details: "Wrestling with divine",
+                                                        davidicLine: true,
+                                                        children: [
+                                                            {
+                                                                name: "Reuben",
+                                                                details: "Instability"
+                                                            },
+                                                            {
+                                                                name: "Simeon",
+                                                                details: "Violence tempered"
+                                                            },
+                                                            {
+                                                                name: "Levi",
+                                                                details: "Sacred service",
+                                                                modernPeople: ["Levites", "Kohanim"]
+                                                            },
+                                                            {
+                                                                name: "Judah",
+                                                                details: "Royalty",
+                                                                davidicLine: true,
+                                                                children: [{
+                                                                    name: "... → Boaz & Ruth",
+                                                                    details: "Gentile grafted",
+                                                                    davidicLine: true,
+                                                                    children: [{
+                                                                        name: "... → Jesse",
+                                                                        davidicLine: true,
+                                                                        children: [{
+                                                                            name: "King David",
+                                                                            details: "Artist-king",
+                                                                            davidicLine: true,
+                                                                            children: [{
+                                                                                name: "Solomon",
+                                                                                details: "Wisdom, Temple",
+                                                                                davidicLine: true,
+                                                                                children: [{
+                                                                                    name: "... → Exile",
+                                                                                    details: "Through diaspora",
+                                                                                    davidicLine: true,
+                                                                                    children: [
+                                                                                        {
+                                                                                            name: "... → Joseph",
+                                                                                            details: "Husband of Mary",
+                                                                                            davidicLine: true,
+                                                                                            children: [{
+                                                                                                name: "Jesus",
+                                                                                                details: "Historical figure (c. 4 BCE - 30 CE)",
+                                                                                                historical: true,
+                                                                                                davidicLine: true,
+                                                                                                modernPeople: ["Christians"]
+                                                                                            }]
+                                                                                        },
+                                                                                        {
+                                                                                            name: "... → Present",
+                                                                                            details: "Davidic descendants",
+                                                                                            davidicLine: true,
+                                                                                            modernPeople: ["Jews (Judah)", "Ashkenazi", "Sephardic", "Mizrahi", "Beta Israel"],
+                                                                                            mashiachLine: true
+                                                                                        }
+                                                                                    ]
+                                                                                }]
+                                                                            }]
+                                                                        }]
+                                                                    }]
+                                                                }],
+                                                                modernPeople: ["Jews (Judah)"]
+                                                            },
+                                                            {
+                                                                name: "Dan",
+                                                                details: "Judgment"
+                                                            },
+                                                            {
+                                                                name: "Naphtali",
+                                                                details: "Struggle"
+                                                            },
+                                                            {
+                                                                name: "Gad",
+                                                                details: "Fortune"
+                                                            },
+                                                            {
+                                                                name: "Asher",
+                                                                details: "Happiness"
+                                                            },
+                                                            {
+                                                                name: "Issachar",
+                                                                details: "Scholarship"
+                                                            },
+                                                            {
+                                                                name: "Zebulun",
+                                                                details: "Commerce"
+                                                            },
+                                                            {
+                                                                name: "Joseph",
+                                                                details: "Dreams, provider",
+                                                                children: [
+                                                                    { name: "Ephraim" },
+                                                                    { name: "Manasseh" }
+                                                                ]
+                                                            },
+                                                            {
+                                                                name: "Benjamin",
+                                                                details: "Youngest",
+                                                                modernPeople: ["Jews (Benjamin)"]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }]
+                                }]
+                            },
+                            {
+                                name: "Japheth",
+                                details: "Mind/Reason",
+                                modernPeople: ["Indo-Europeans"]
+                            },
+                            {
+                                name: "Ham",
+                                details: "Body/Material",
+                                modernPeople: ["Africans"]
+                            }
+                        ]
+                    }]
+                }]
+            },
+            {
+                name: "Cain",
+                details: "Violence"
+            },
+            {
+                name: "Abel",
+                details: "Innocence"
+            }]
+        };
+        
+        const modernPeoples = {
+            "Arabs": { x: -800, group: "ishmael" },
+            "Muslims": { x: -600, group: "ishmael" },
+            "Christians": { x: -400, group: "jesus" },
+            "Indo-Europeans": { x: -200, group: "japheth" },
+            "Africans": { x: 200, group: "ham" },
+            "Levites": { x: 400, group: "levi" },
+            "Kohanim": { x: 550, group: "levi" },
+            "Jews (Judah)": { x: 700, group: "judah" },
+            "Jews (Benjamin)": { x: 850, group: "benjamin" },
+            "Ashkenazi": { x: 600, subgroup: true },
+            "Sephardic": { x: 750, subgroup: true },
+            "Mizrahi": { x: 900, subgroup: true },
+            "Beta Israel": { x: 1050, subgroup: true }
+        };
+        
+        function addCollapsedState(node) {
+            node.collapsed = false;
+            if (node.children) {
+                node.children.forEach(addCollapsedState);
+            }
+        }
+        addCollapsedState(genealogyData);
+        
+        let ancientNodes = [];
+        let modernPeopleNodes = [];
+        let mashiachNode = null;
+        
+        function drawNode(x, y, node, isPatriarch = false, isModern = false, isMashiach = false, isHistorical = false) {
+            const nodeRadius = isMashiach ? 14 : (isHistorical ? 10 : (isModern ? 9 : 8));
+            let color;
+            
+            if (node.collapsed && node.children) {
+                color = '#9b59b6';
+            } else if (isMashiach) {
+                color = '#FFD700';
+            } else if (isHistorical) {
+                color = '#9b59b6';
+            } else if (isModern) {
+                color = '#27ae60';
+            } else if (highlightDavidicLine && node.davidicLine) {
+                color = '#e74c3c';
+            } else if (isPatriarch) {
+                color = '#f39c12';
+            } else {
+                color = '#3498db';
+            }
+            
+            if (isMashiach) {
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#FFD700';
+            }
+            
+            ctx.beginPath();
+            ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = '#fff';
+            let fontSize = isMashiach ? '18px' : (isHistorical ? '14px' : (isModern ? '12px' : '13px'));
+            let fontWeight = isMashiach || isHistorical ? 'bold' : (isModern ? 'italic' : 'bold');
+            ctx.font = `${fontWeight} ${fontSize} Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText(node.name || node, x, y - (isMashiach ? 20 : 15));
+            
+            if (showDetails && node.details) {
+                ctx.font = '10px Arial';
+                ctx.fillStyle = '#aaa';
+                ctx.fillText(node.details, x, y + 25);
+            }
+            
+            if (node.children && node.children.length > 0) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText(node.collapsed ? '+' : '−', x, y + 4);
+            }
+            
+            return { x, y, radius: nodeRadius, node, isModern, isMashiach };
+        }
+        
+        function drawTree(node, x, y, level = 0, parent = null) {
+            const verticalSpacing = 100;
+            const horizontalSpacing = 90;
+            const levelY = y + level * verticalSpacing;
+            
+            if (parent) {
+                ctx.beginPath();
+                ctx.moveTo(parent.x, parent.y);
+                ctx.lineTo(x, levelY);
+                
+                if (highlightDavidicLine && node.davidicLine) {
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                }
+                ctx.stroke();
+            }
+            
+            const nodeInfo = drawNode(x, levelY, node, level === 0, false, false, node.historical);
+            nodeInfo.level = level;
+            ancientNodes.push(nodeInfo);
+            
+            if (node.children && !node.collapsed) {
+                const totalWidth = (node.children.length - 1) * horizontalSpacing;
+                const startX = x - totalWidth / 2;
+                
+                node.children.forEach((child, i) => {
+                    const childX = startX + i * horizontalSpacing;
+                    drawTree(child, childX, y, level + 1, { x, y: levelY });
+                });
+            }
+        }
+        
+        function collectModernPeople(node, connections = []) {
+            if (node.modernPeople) {
+                node.modernPeople.forEach(people => {
+                    if (!connections.find(c => c.people === people)) {
+                        connections.push({
+                            people: people,
+                            node: node,
+                            isHistorical: node.historical,
+                            isDavidic: node.mashiachLine
+                        });
+                    }
+                });
+            }
+            if (node.children && !node.collapsed) {
+                node.children.forEach(child => collectModernPeople(child, connections));
+            }
+            return connections;
+        }
+        
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+            
+            ancientNodes = [];
+            modernPeopleNodes = [];
+            
+            // Draw ancient genealogy
+            drawTree(genealogyData, 0, 0);
+            
+            // Find deepest level
+            let maxY = 0;
+            ancientNodes.forEach(node => {
+                const nodeY = node.y;
+                if (nodeY > maxY) maxY = nodeY;
+            });
+            
+            const presentY = maxY + 180;
+            
+            // Draw PRESENT TIME label
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('━━━ PRESENT TIME ━━━', 0, presentY - 80);
+            
+            // Collect all connections to modern peoples
+            const connections = collectModernPeople(genealogyData);
+            
+            // Draw modern peoples
+            Object.keys(modernPeoples).forEach(peopleName => {
+                const peopleData = modernPeoples[peopleName];
+                const peopleX = peopleData.x;
+                const peopleY = presentY + (peopleData.subgroup ? 100 : 0);
+                
+                // Find connections from ancient nodes
+                connections.forEach(conn => {
+                    if (conn.people === peopleName) {
+                        const ancientNode = ancientNodes.find(n => n.node === conn.node);
+                        if (ancientNode) {
+                            ctx.beginPath();
+                            ctx.moveTo(ancientNode.x, ancientNode.y);
+                            ctx.lineTo(peopleX, peopleY);
+                            ctx.setLineDash([5, 5]);
+                            
+                            if (conn.isHistorical) {
+                                ctx.strokeStyle = 'rgba(231, 76, 60, 0.4)';
+                            } else {
+                                ctx.strokeStyle = 'rgba(39, 174, 96, 0.4)';
+                            }
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                    }
+                });
+                
+                const modernNode = drawNode(peopleX, peopleY, { name: peopleName }, false, true);
+                modernPeopleNodes.push(modernNode);
+                ancientNodes.push(modernNode);
+            });
+            
+            // Find deepest modern people
+            let deepestModernY = presentY;
+            modernPeopleNodes.forEach(node => {
+                if (node.y > deepestModernY) deepestModernY = node.y;
+            });
+            
+            const futureY = deepestModernY + 180;
+            
+            // Draw FUTURE label
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('━━━ FUTURE ━━━', 0, futureY - 50);
+            
+            // Draw Mashiach
+            const mashiachY = futureY + 30;
+            
+            // Find Davidic line modern people
+            const davidicConnections = connections.filter(c => c.isDavidic);
+            davidicConnections.forEach(conn => {
+                modernPeopleNodes.forEach(modernNode => {
+                    if (modernNode.node.name === conn.people || 
+                        (modernNode.node.name && modernNode.node.name.includes("Jews")) ||
+                        (modernNode.node.name && modernNode.node.name.includes("Ashkenazi")) ||
+                        (modernNode.node.name && modernNode.node.name.includes("Sephardic")) ||
+                        (modernNode.node.name && modernNode.node.name.includes("Mizrahi")) ||
+                        (modernNode.node.name && modernNode.node.name.includes("Beta"))) {
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(modernNode.x, modernNode.y);
+                        ctx.lineTo(0, mashiachY);
+                        ctx.setLineDash([8, 8]);
+                        ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                });
+            });
+            
+            mashiachNode = drawNode(0, mashiachY, { 
+                name: "Mashiach ben David",
+                details: "Collective awakening"
+            }, false, false, true);
+            ancientNodes.push(mashiachNode);
+            
+            ctx.restore();
+        }
+        
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left - offsetX) / scale,
+                y: (e.clientY - rect.top - offsetY) / scale
+            };
+        }
+        
+        function findNodeAtPosition(x, y) {
+            for (let node of ancientNodes) {
+                const dx = x - node.x;
+                const dy = y - node.y;
+                if (Math.sqrt(dx * dx + dy * dy) <= node.radius * 2) {
+                    return node;
+                }
+            }
+            return null;
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            const node = findNodeAtPosition(pos.x, pos.y);
+            
+            if (node && node.node.children) {
+                node.node.collapsed = !node.node.collapsed;
+                render();
+            } else {
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                container.classList.add('grabbing');
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                offsetX += e.clientX - lastX;
+                offsetY += e.clientY - lastY;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                render();
+            } else {
+                const pos = getMousePos(e);
+                const node = findNodeAtPosition(pos.x, pos.y);
+                
+                if (node) {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.left = e.clientX + 15 + 'px';
+                    tooltip.style.top = e.clientY + 15 + 'px';
+                    
+                    let content = `<strong>${node.node.name || node.node}</strong>`;
+                    if (node.node.details) content += `<br><em>${node.node.details}</em>`;
+                    if (node.node.davidicLine && highlightDavidicLine) content += '<br>⭐ Davidic lineage';
+                    if (node.isMashiach) content += '<br>✡️ Future collective consciousness';
+                    if (node.isModern) content += '<br>🌍 Present day';
+                    if (node.node.children) content += `<br><small>Click to ${node.node.collapsed ? 'expand' : 'collapse'}</small>`;
+                    
+                    tooltip.innerHTML = content;
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    tooltip.style.opacity = '0';
+                    canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+                }
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            container.classList.remove('grabbing');
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = scale * delta;
+            
+            if (newScale >= 0.1 && newScale <= 2) {
+                const mouseX = e.clientX - offsetX;
+                const mouseY = e.clientY - offsetY;
+                
+                offsetX -= mouseX * (delta - 1);
+                offsetY -= mouseY * (delta - 1);
+                scale = newScale;
+                render();
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            render();
+        });
+        
+        function resetView() {
+            scale = 0.3;
+            offsetX = width / 2;
+            offsetY = 50;
+            render();
+        }
+        
+        function expandAll() {
+            function expand(node) {
+                node.collapsed = false;
+                if (node.children) node.children.forEach(expand);
+            }
+            expand(genealogyData);
+            render();
+        }
+        
+        function collapseAll() {
+            function collapse(node) {
+                node.collapsed = true;
+                if (node.children) node.children.forEach(collapse);
+            }
+            collapse(genealogyData);
+            render();
+        }
+        
+        function toggleHighlight() {
+            highlightDavidicLine = !highlightDavidicLine;
+            document.getElementById('highlightBtn').classList.toggle('active');
+            render();
+        }
+        
+        function toggleNames() {
+            showDetails = !showDetails;
+            render();
+        }
+        
+        render();
+    </script>
+</body>
+</html>

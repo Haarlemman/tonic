@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleeples</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 2rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .typewriter {
+      white-space: pre-wrap;
+      font-size: 1.2rem;
+      max-width: 800px;
+      line-height: 1.6;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 1ch;
+      background-color: white;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { background-color: transparent; }
+    }
+
+    .enter-button {
+      margin-top: 2rem;
+      background: transparent;
+      border: 1px solid #555;
+      color: #999;
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .enter-button:hover {
+      color: #fff;
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .poem {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(135deg, #003153, #8B0000);
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 4vh 5vw;
+      box-sizing: border-box;
+      overflow: hidden;
+      animation: fadeIn 2s ease-in-out forwards;
+    }
+
+    .poem-line {
+      position: absolute;
+      opacity: 0;
+      animation: floatIn 1s ease forwards;
+    }
+
+    .poem-line:nth-child(1) { top: 10%; left: 20%; animation-delay: 0.5s; }
+    .poem-line:nth-child(2) { top: 20%; left: 60%; animation-delay: 1.5s; }
+    .poem-line:nth-child(3) { top: 35%; left: 30%; animation-delay: 2.5s; }
+    .poem-line:nth-child(4) { top: 50%; left: 50%; animation-delay: 3.5s; }
+    .poem-line:nth-child(5) { top: 65%; left: 25%; animation-delay: 4.5s; }
+    .poem-line:nth-child(6) { top: 75%; left: 60%; animation-delay: 5.5s; }
+    .poem-line:nth-child(7) { top: 85%; left: 40%; animation-delay: 6.5s; }
+
+    @keyframes floatIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="intro">
+    <div class="typewriter" id="typewriter"></div>
+    <button class="enter-button" id="enterButton">enter</button>
+  </div>
+
+  <div class="poem" id="poem">
+    <div class="poem-line">some nights</div>
+    <div class="poem-line">don’t end</div>
+    <div class="poem-line">they dissolve</div>
+    <div class="poem-line">into</div>
+    <div class="poem-line">sketches</div>
+    <div class="poem-line">and</div>
+    <div class="poem-line">light</div>
+  </div>
+
+  <!-- Ambient Audio Setup (optional activation) -->
+  <!-- <audio id="ambientAudio" src="ambient.mp3" loop autoplay></audio> -->
+
+  <script>
+    const text = `i cannot sleep\nso i make this instead\n\none line\nthen another\n\nwhite text on black\nlike dreams inverted\n\nscroll or don't\nthis is not a trap\njust a mirror.`
+
+    let i = 0;
+    const speed = 50;
+    const output = document.getElementById('typewriter');
+    const cursor = document.createElement('span');
+    cursor.classList.add('cursor');
+    cursor.innerHTML = '&nbsp;';
+    output.appendChild(cursor);
+
+    function type() {
+      if (i < text.length) {
+        if (text.charAt(i) === '\n') {
+          cursor.insertAdjacentHTML('beforebegin', '<br />');
+        } else {
+          cursor.insertAdjacentText('beforebegin', text.charAt(i));
+        }
+        i++;
+        setTimeout(type, text.charAt(i - 1) === '\n' ? 300 : speed);
+      }
+    }
+
+    document.getElementById('enterButton').addEventListener('click', () => {
+      document.getElementById('intro').style.display = 'none';
+      const poem = document.getElementById('poem');
+      poem.style.display = 'block';
+
+      // Restart animations for poem lines
+      const poemLines = poem.querySelectorAll('.poem-line');
+      poemLines.forEach(line => {
+        line.style.animation = 'none';
+        void line.offsetWidth; // trigger reflow
+        line.style.animation = '';
+      });
+
+      // Uncomment to play audio
+      // document.getElementById('ambientAudio').play();
+    });
+
+    type();
+  </script>
+</body>
+</html>

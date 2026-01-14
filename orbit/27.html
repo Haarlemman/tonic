@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom – Final Perfect Balance</title>
+<style>
+    body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; }
+    .atom-container { position:relative; width:600px; height:600px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:160px; height:160px; margin:-80px 0 0 -80px;
+        background:radial-gradient(circle,#fff,#ffeb3b);
+        border-radius:50%; box-shadow:0 0 80px #ffeb3b, 0 0 120px #ff9800;
+        z-index:100;
+    }
+    .electron {
+        position:absolute; width:36px; height:36px; border-radius:50%; margin:-18px 0 0 -18px;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #fff, #f44336); box-shadow:0 0 40px #ff3366, inset -8px -8px 15px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #fff, #4488ff); box-shadow:0 0 40px #4488ff, inset -8px -8px 15px #0033aa; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #fff, #ffeb3b); box-shadow:0 0 40px #ffeb3b, inset -8px -8px 15px #cc9900; }
+    canvas { position:absolute; inset:0; pointer-events:none; z-index:300; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="trails" width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('trails');
+const ctx = canvas.getContext('2d');
+const radius = 240;
+const centerX = 300;
+const centerY = 300;
+
+// Perfect symmetry: blue & yellow identical, red much flatter
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff4466', offset:   0, tilt:   0,           flatten: 0.88 }, // red: very flat
+    { el: document.getElementById('e2'), color: '#4488ff', offset: 120, tilt: 120*Math.PI/180, flatten: 0.42 }, // blue: nice ellipse
+    { el: document.getElementById('e3'), color: '#ffdd44', offset: 240, tilt: 240*Math.PI/180, flatten: 0.42 }  // yellow: same as blue
+];
+
+let time = 0;
+
+function animate() {
+    time += 0.018;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.07)';
+    ctx.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const angle = time + e.offset * Math.PI / 180;
+
+        let x = Math.cos(angle) * radius;
+        let y = Math.sin(angle) * radius * (1 - e.flatten);
+        let z = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+
+        const cosT = Math.cos(e.tilt);
+        const sinT = Math.sin(e.tilt);
+        const rotX =  x * cosT + z * sinT;
+        const rotZ = -x * sinT + z * cosT;
+
+        const scale = 1 + rotZ * 0.0012;
+        const brightness = 1 + rotZ * 0.001;
+
+        // Electron — bright and visible
+        e.el.style.left = (centerX + rotX) + 'px';
+        e.el.style.top  = (centerY + y)   + 'px';
+        e.el.style.transform = `scale(${scale})`;
+        e.el.style.filter = `brightness(${brightness})`;
+        e.el.style.zIndex = rotZ > 0 ? 250 : 50;
+
+        // Glowing trail — always visible on top
+        ctx.globalAlpha = 0.45;
+        ctx.beginPath();
+        ctx.arc(centerX + rotX, centerY + y, 5.5, 0, Math.PI*2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+
+        ctx.globalAlpha = 0.22;
+        ctx.beginPath();
+        ctx.arc(centerX + rotX, centerY + y, 16, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Body-Mind-Soul Triangle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Raleway:wght@300;400;500;700&family=Nunito:wght@400;600;700&family=Roboto+Mono:wght@400;700&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: radial-gradient(ellipse at center, #1e3a5f 0%, #0a1828 50%, #000000 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 0;
+            touch-action: pan-x pan-y;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+            cursor: grab;
+        }
+
+        .container:active {
+            cursor: grabbing;
+        }
+
+        .triangle-system {
+            position: relative;
+            width: 720px;
+            height: 630px;
+            transform-origin: center center;
+        }
+
+        /* Central eye - clickable and interactive */
+        .central-eye {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 144px;
+            height: 144px;
+            background: radial-gradient(circle, #00ffff 20%, #004466 40%, #000000 60%, #004466 80%);
+            border-radius: 50%;
+            box-shadow: 0 0 72px #00ffff, inset 0 0 36px #000000;
+            z-index: 10;
+            animation: eyePulse 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .central-eye:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .central-eye::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            background: #000000;
+            border-radius: 50%;
+            animation: pupilDilate 4s ease-in-out infinite;
+        }
+
+        .central-eye::after {
+            content: '∞';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        /* Vertex circles */
+        .vertex {
+            position: absolute;
+            width: 168px;
+            height: 168px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 5;
+        }
+
+        .vertex:hover {
+            transform: scale(1.1);
+        }
+
+        .soul {
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: radial-gradient(circle, #00ffff 30%, #0066aa 70%);
+            box-shadow: 0 0 60px #309a9a, 0 0 120px #bcffff;
+            animation: soulGlow 2s ease-in-out infinite alternate;
+        }
+
+        .soul:hover {
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .body {
+            bottom: 12px;
+            left: 0px;
+            background: radial-gradient(circle, #ff3366 30%, #aa1144 70%);
+            box-shadow: 0 0 60px #ff3366, 0 0 120px #ff3366;
+            animation: bodyGlow 2.5s ease-in-out infinite alternate;
+        }
+
+        .mind {
+            bottom: 12px;
+            right: 0px;
+            background: radial-gradient(circle, #ffff00 30%, #cccc00 70%);
+            box-shadow: 0 0 60px #ffff00, 0 0 120px #ffff00;
+            animation: mindGlow 3s ease-in-out infinite alternate;
+        }
+
+        /* Geometric symbols inside vertices */
+        .vertex-symbol {
+            font-size: 2.4em;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.8);
+            animation: symbolPulse 2s ease-in-out infinite;
+        }
+
+        /* Connection lines with rainbow effect */
+        .connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .connection-line {
+            stroke-width: 9.6px;
+            filter: blur(1.2px);
+            opacity: 0.8;
+            animation: lineFlow 3s linear infinite;
+        }
+
+        .line-soul-body {
+            stroke: url(#gradientSoulBody);
+        }
+
+        .line-body-mind {
+            stroke: url(#gradientBodyMind);
+        }
+
+        .line-mind-soul {
+            stroke: url(#gradientMindSoul);
+        }
+
+        /* Orange dotted line between Body and Mind */
+        .line-art-science {
+            stroke: #ff9900;
+            stroke-width: 7.2px;
+            stroke-dasharray: 9.6, 14.4;
+            animation: dashAnimationCorrect 3s linear infinite;
+        }
+
+        /* Text labels - simplified to just main titles */
+        .label {
+            position: absolute;
+            text-align: center;
+            z-index: 15;
+            cursor: pointer;
+        }
+
+        /* Main titles - bold and prominent, using Space Grotesk */
+        .main-title {
+            font-family: 'Space Grotesk', 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 3em;
+            text-shadow: 0 0 24px currentColor;
+            animation: textGlow 2s ease-in-out infinite alternate;
+            letter-spacing: 3px;
+        }
+
+        /* Soul label - positioned above the soul sphere */
+        .label-soul {
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .label-soul .main-title {
+            color: #00ffff;
+        }
+
+        /* Body label - positioned below the body sphere */
+        .label-body {
+            bottom: -60px;
+            left: 84px;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .label-body .main-title {
+            color: #ff3366;
+        }
+
+        /* Mind label - positioned below the mind sphere */
+        .label-mind {
+            bottom: -60px;
+            right: 84px;
+            transform: translateX(50%);
+            text-align: center;
+        }
+
+        .label-mind .main-title {
+            color: #ffff00;
+        }
+
+        /* Info panel styling - fixed position, higher z-index, no transform */
+        .info-panel {
+            position: fixed;
+            background: rgba(15, 15, 15, 0.95);
+            border: 3px solid;
+            border-radius: 20px;
+            padding: 30px;
+            width: min(90vw, 500px);
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Ensure content overflows to trigger scrollbar */
+        .info-panel-content {
+            min-height: 100%;
+            padding-right: 15px; /* Space for scrollbar */
+        }
+
+        /* Custom scrollbar */
+        .info-panel::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .info-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .info-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            border: 2px solid rgba(15, 15, 15, 0.95);
+        }
+
+        .info-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .info-panel {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.5) rgba(255, 255, 255, 0.1);
+        }
+
+        #body-info {
+            border-color: #ff3366;
+            box-shadow: 0 0 50px rgba(255, 51, 102, 0.4);
+        }
+
+        #mind-info {
+            border-color: #ffff00;
+            box-shadow: 0 0 50px rgba(255, 255, 0, 0.4);
+        }
+
+        #soul-info {
+            border-color: #00ffff;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.4);
+        }
+
+        #infinity-info {
+            border-color: #fff;
+            background: rgba(0, 0, 0, 0.98);
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+        }
+
+        .info-panel h3 {
+            margin-top: 0;
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .info-panel h2 {
+            margin-top: 0;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+
+        .info-section strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: #ffffff;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #ff0000;
+            transform: scale(1.2);
+        }
+
+        /* Animations */
+        @keyframes eyePulse {
+            0%, 100% { box-shadow: 0 0 72px #00ffff, inset 0 0 36px #000000; }
+            50% { box-shadow: 0 0 96px #00ffff, inset 0 0 48px #000000; }
+        }
+
+        @keyframes pupilDilate {
+            0%, 100% { width: 48px; height: 48px; }
+            50% { width: 36px; height: 36px; }
+        }
+
+        @keyframes soulGlow {
+            from { box-shadow: 0 0 60px #00ffff, 0 0 120px #00ffff; }
+            to { box-shadow: 0 0 96px #00ffff, 0 0 180px #00ffff; }
+        }
+
+        @keyframes bodyGlow {
+            from { box-shadow: 0 0 60px #ff3366, 0 0 120px #ff3366; }
+            to { box-shadow: 0 0 96px #ff3366, 0 0 180px #ff3366; }
+        }
+
+        @keyframes mindGlow {
+            from { box-shadow: 0 0 60px #ffff00, 0 0 120px #ffff00; }
+            to { box-shadow: 0 0 96px #ffff00, 0 0 180px #ffff00; }
+        }
+
+        @keyframes textGlow {
+            from { text-shadow: 0 0 24px currentColor; }
+            to { text-shadow: 0 0 48px currentColor, 0 0 72px currentColor; }
+        }
+
+        @keyframes symbolPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes lineFlow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 48px; }
+        }
+
+        @keyframes dashAnimationCorrect {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 24px; }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            body {
+                touch-action: none;
+            }
+            
+            .triangle-system {
+                width: 540px;
+                height: 472px;
+            }
+            
+            .main-title {
+                font-size: 2.2em;
+            }
+            
+            .info-panel {
+                width: 95vw;
+                height: 90vh;
+                max-height: 90vh;
+                padding: 25px;
+            }
+            
+            .info-panel h3 {
+                font-size: 2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .triangle-system {
+                width: 360px;
+                height: 315px;
+            }
+            
+            .vertex {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .central-eye {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .main-title {
+                font-size: 1.8em;
+            }
+            
+            .label-soul {
+                top: -48px;
+            }
+            
+            .label-body, .label-mind {
+                bottom: -48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="zoomContainer">
+        <div class="triangle-system">
+            <!-- Central eye - clickable -->
+            <div class="central-eye" onclick="toggleInfo('infinity-info')" data-info="infinity-info"></div>
+
+            <!-- Connection lines with gradients -->
+            <svg class="connections" viewBox="0 0 720 630">
+                <defs>
+                    <linearGradient id="gradientSoulBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00ffff"/>
+                        <stop offset="50%" style="stop-color:#aa00aa"/>
+                        <stop offset="100%" style="stop-color:#ff3366"/>
+                    </linearGradient>
+                    <linearGradient id="gradientBodyMind" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#ff3366"/>
+                        <stop offset="50%" style="stop-color:#ff9900"/>
+                        <stop offset="100%" style="stop-color:#ffff00"/>
+                    </linearGradient>
+                    <linearGradient id="gradientMindSoul" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#ffff00"/>
+                        <stop offset="50%" style="stop-color:#00aa00"/>
+                        <stop offset="100%" style="stop-color:#00ffff"/>
+                    </linearGradient>
+                </defs>
+                
+                <line class="connection-line line-soul-body" x1="360" y1="72" x2="63" y2="558" 
+                      stroke-dasharray="12,6" />
+                <line class="connection-line line-body-mind" x1="63" y1="558" x2="657" y2="558" 
+                      stroke-dasharray="12,6" />
+                <line class="connection-line line-mind-soul" x1="657" y1="558" x2="360" y2="72" 
+                      stroke-dasharray="12,6" />
+                <!-- Orange dotted line between Body and Mind -->
+                <line class="connection-line line-art-science" x1="63" y1="558" x2="657" y2="558" />
+            </svg>
+
+            <!-- Vertices -->
+            <div class="vertex soul" onclick="toggleInfo('soul-info')" data-info="soul-info">
+                <div class="vertex-symbol">●</div>
+            </div>
+
+            <div class="vertex body" onclick="toggleInfo('body-info')" data-info="body-info">
+                <div class="vertex-symbol" style="color: #000;">■</div>
+            </div>
+
+            <div class="vertex mind" onclick="toggleInfo('mind-info')" data-info="mind-info">
+                <div class="vertex-symbol">▲</div>
+            </div>
+
+            <!-- Labels - simplified to just main titles, now clickable -->
+            <div class="label label-soul" onclick="toggleInfo('soul-info')" data-info="soul-info">
+                <div class="main-title">Soul</div>
+            </div>
+
+            <div class="label label-body" onclick="toggleInfo('body-info')" data-info="body-info">
+                <div class="main-title">Body</div>
+            </div>
+
+            <div class="label label-mind" onclick="toggleInfo('mind-info')" data-info="mind-info">
+                <div class="main-title">Mind</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panels - Outside container to prevent rotation -->
+    <div id="soul-info" class="info-panel">
+        <div class="close-btn" onclick="closePanel()">&times;</div>
+        <div class="info-panel-content">
+            <h3 style="color: #00ffff;">● SOUL</h3>
+            <h2 style="color: #66bbff;">THE REALM OF BEING</h2>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Core Essence:</strong>
+                Spirit, Religion, Mystery, Connection to the Divine
+            </div>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Primary Focus:</strong>
+                Being present in the moment, spiritual awareness, transcendence
+            </div>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Experience Types:</strong>
+                Wisdom, Faith, Being, Unity, Enlightenment, Peace
+            </div>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Approach:</strong>
+                Universal, Spiritual, Holistic, Interconnected
+            </div>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Ultimate Goal:</strong>
+                Infinity, Unity with all existence, Deep Meaning
+            </div>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Origin & Nature:</strong>
+                Creation, The beginning of consciousness, The eternal spark
+            </div>
+            <div class="info-section">
+                <strong style="color: #00ffff;">Practices:</strong>
+                Meditation, Prayer, Contemplation, Mindfulness, Sacred rituals
+            </div>
+        </div>
+    </div>
+
+    <div id="body-info" class="info-panel">
+        <div class="close-btn" onclick="closePanel()">&times;</div>
+        <div class="info-panel-content">
+            <h3 style="color: #ff3366;">■ BODY</h3>
+            <h2 style="color: #ff6699;">THE REALM OF EXPERIENCE</h2>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Core Essence:</strong>
+                Heart, Art, Sensuality, Physical embodiment, Emotional expression
+            </div>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Primary Fields:</strong>
+                Literature, Painting, Music, Dance, Theater, All creative arts
+            </div>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Experience Types:</strong>
+                Beauty, Sensory pleasure, Feelings, Emotions, Aesthetic appreciation
+            </div>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Approach:</strong>
+                Subjective, Sensual, Intuitive, Experiential, Expressive
+            </div>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Ultimate Goal:</strong>
+                Idealism, Bliss, Pure Happiness, Aesthetic perfection
+            </div>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Origin & Nature:</strong>
+                Birth, Physical manifestation, The miracle of embodied existence
+            </div>
+            <div class="info-section">
+                <strong style="color: #ff3366;">Practices:</strong>
+                Creative expression, Physical movement, Sensory exploration, Emotional processing
+            </div>
+        </div>
+    </div>
+
+    <div id="mind-info" class="info-panel">
+        <div class="close-btn" onclick="closePanel()">&times;</div>
+        <div class="info-panel-content">
+            <h3 style="color: #ffff00;">▲ MIND</h3>
+            <h2 style="color: #cccc00;">THE REALM OF REASON</h2>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Core Essence:</strong>
+                Brain, Science, Logic, Analysis, Rational thought
+            </div>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Primary Fields:</strong>
+                Physics, Mathematics, Astronomy, Technology, Scientific research
+            </div>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Experience Types:</strong>
+                Reason, Knowledge, Facts, Understanding, Discovery, Problem-solving
+            </div>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Approach:</strong>
+                Objective, Empirical, Methodical, Evidence-based, Systematic
+            </div>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Ultimate Goal:</strong>
+                Truth, Order, Perfect understanding, Logical consistency
+            </div>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Origin & Nature:</strong>
+                Big Bang, The emergence of physical laws, Cosmic order
+            </div>
+            <div class="info-section">
+                <strong style="color: #ffff00;">Practices:</strong>
+                Research, Analysis, Experimentation, Logical reasoning, Mathematical modeling
+            </div>
+        </div>
+    </div>
+
+    <div id="infinity-info" class="info-panel">
+        <div class="close-btn" onclick="closePanel()">&times;</div>
+        <div class="info-panel-content">
+            <h3 style="color: #fff;">∞ INFINITY</h3>
+            <h2 style="color: #aaa;">THE REALM OF THE UNKNOWN</h2>
+            <div class="info-section">
+                <strong style="color: #ccc;">Core Essence:</strong>
+                Mystery, Void, Infinite potential, The unknowable, Pure possibility
+            </div>
+            <div class="info-section">
+                <strong style="color: #ccc;">Primary Fields:</strong>
+                Dark Matter, Black Holes, Quantum mysteries, Consciousness studies
+            </div>
+            <div class="info-section">
+                <strong style="color: #ccc;">Experience Types:</strong>
+                Awe, Wonder, Unknowing, Humility, Cosmic perspective
+            </div>
+            <div class="info-section">
+                <strong style="color: #ccc;">Approach:</strong>
+                Transcendent, Limitless, Beyond categories, Non-dual awareness
+            </div>
+            <div class="info-section">
+                <strong style="color: #ccc;">Ultimate Goal:</strong>
+                Truth Beyond Understanding, Unity that transcends all divisions
+            </div>
+            <div class="info-section">
+                <strong style="color: #ccc;">Origin & Nature:</strong>
+                Before Time, Beyond Space, The source from which all emerges
+            </div>
+            <div class="info-section">
+                <strong style="color: #ccc;">Practices:</strong>
+                Deep contemplation, Surrendering to mystery, Embracing uncertainty
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentZoom = 1;
+        let currentRotation = 0;
+        const container = document.getElementById('zoomContainer');
+        
+        // Touch handling variables
+        let initialDistance = 0;
+        let initialRotation = 0;
+        let isRotating = false;
+        let isZooming = false;
+        
+        function updateTransform() {
+            container.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+        }
+        
+        // Touch gesture handling
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        function getTouchAngle(touches) {
+            const dx = touches[1].clientX - touches[0].clientX;
+            const dy = touches[1].clientY - touches[0].clientY;
+            return Math.atan2(dy, dx) * 180 / Math.PI;
+        }
+        
+        // Touch event listeners
+        container.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                initialDistance = getTouchDistance(e.touches);
+                initialRotation = getTouchAngle(e.touches);
+                isZooming = true;
+                isRotating = true;
+            }
+        });
+        
+        container.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 2 && (isZooming || isRotating)) {
+                e.preventDefault();
+                
+                // Handle pinch zoom
+                if (isZooming) {
+                    const currentDistance = getTouchDistance(e.touches);
+                    const zoomFactor = currentDistance / initialDistance;
+                    currentZoom = Math.min(Math.max(currentZoom * zoomFactor, 0.3), 3);
+                    initialDistance = currentDistance;
+                }
+                
+                // Handle rotation
+                if (isRotating) {
+                    const currentAngle = getTouchAngle(e.touches);
+                    const angleDiff = currentAngle - initialRotation;
+                    currentRotation += angleDiff;
+                    initialRotation = currentAngle;
+                }
+                
+                updateTransform();
+            }
+        });
+        
+        container.addEventListener('touchend', function(e) {
+            if (e.touches.length < 2) {
+                isZooming = false;
+                isRotating = false;
+            }
+        });
+        
+        // Info panel handling
+        let activePanel = null;
+        
+        function toggleInfo(panelId) {
+            if (activePanel) {
+                activePanel.style.display = 'none';
+            }
+            
+            const panel = document.getElementById(panelId);
+            panel.style.display = 'block';
+            activePanel = panel;
+            container.style.pointerEvents = 'none';
+        }
+        
+        function closePanel() {
+            if (activePanel) {
+                activePanel.style.display = 'none';
+                activePanel = null;
+                container.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            if (activePanel && !activePanel.contains(e.target) && !e.target.closest('.vertex') && !e.target.closest('.central-eye') && !e.target.closest('.label')) {
+                closePanel();
+            }
+        });
+        
+        // Prevent panel click from propagating to document
+        document.querySelectorAll('.info-panel').forEach(panel => {
+            panel.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+        
+        // Mouse drag rotation for desktop
+        let isDragging = false;
+        let previousX = 0;
+        
+        container.addEventListener('mousedown', function(e) {
+            if (!activePanel) {
+                isDragging = true;
+                previousX = e.clientX;
+                container.style.cursor = 'grabbing';
+            }
+        });
+        
+        container.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                const deltaX = e.clientX - previousX;
+                currentRotation += deltaX * 0.5;
+                previousX = e.clientX;
+                updateTransform();
+            }
+        });
+        
+        container.addEventListener('mouseup', function() {
+            isDragging = false;
+            container.style.cursor = 'grab';
+        });
+        
+        container.addEventListener('mouseleave', function() {
+            isDragging = false;
+            container.style.cursor = 'grab';
+        });
+        
+        // Mouse wheel zoom
+        container.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            if (!activePanel) {
+                const zoomDelta = e.deltaY > 0 ? 0.8 : 1.2;
+                currentZoom = Math.min(Math.max(currentZoom * zoomDelta, 0.3), 3);
+                updateTransform();
+            }
+        });
+    </script>
+</body>
+</html>

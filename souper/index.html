@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Souper - The Green Gang Attack</title>
+    <style>
+        body { 
+            background-color: #222; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            font-family: 'Courier New', sans-serif; /* Iets meer 'game' lettertype */
+            color: white;
+            overflow: hidden; /* Geen scrollbalken */
+        }
+        canvas { 
+            border: 4px solid #fff; 
+            box-shadow: 0 0 30px rgba(0,255,0,0.2); /* Groene gloed voor de schurken! */
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="500"></canvas>
+
+<script>
+    // --- INSTELLINGEN VOOR YARON ---
+    let springKracht = -18;   // Iets hoger springen
+    let zwaartekracht = 0.9; 
+    let startSnelheid = 7;    // Het spel begint iets sneller
+    // -------------------------------
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // 1. Alle plaatjes inladen
+    const heldPlaatje = new Image(); heldPlaatje.src = "held.png";
+    const heldGameOver = new Image(); heldGameOver.src = "held2.png";
+    const achtergrond = new Image(); achtergrond.src = "bg.jpg";
+
+    // Hier laden we de hele bende in!
+    const schurk1 = new Image(); schurk1.src = "villan1.png"; // De vlieger
+    const schurk2 = new Image(); schurk2.src = "villan2.png"; // De spierbundel
+    const schurk3 = new Image(); schurk3.src = "villan3.png"; // Laser ogen
+    const schurk4 = new Image(); schurk4.src = "villan4.png"; // De schieter
+
+    // We stoppen ze in een lijstje (een array)
+    const schurkenLijst = [schurk1, schurk2, schurk3, schurk4];
+
+    // Spel variabelen
+    let held = { x: 100, y: 300, breedte: 60, hoogte: 100, vy: 0, opGrond: false };
+    let vijanden = [];
+    let frameTeller = 0;
+    let gameOver = false;
+    let score = 0;
+    let spelSnelheid = startSnelheid;
+    let achtergrondX = 0;
+
+    document.addEventListener("keydown", function(event) {
+        if (event.code === "Space") {
+            if (gameOver) {
+                resetSpel();
+            } else if (held.opGrond) {
+                held.vy = springKracht;
+                held.opGrond = false;
+            }
+        }
+    });
+
+    function resetSpel() {
+        held.y = 300;
+        held.vy = 0;
+        vijanden = [];
+        gameOver = false;
+        score = 0;
+        spelSnelheid = startSnelheid;
+        frameTeller = 0;
+    }
+
+    function update() {
+        if (gameOver) return;
+
+        // Held fysica
+        held.vy += zwaartekracht;
+        held.y += held.vy;
+        
+        // Vloer (iets lager gezet zodat ze beter op de weg lijken te staan)
+        let vloerHoogte = 380; 
+        if (held.y > vloerHoogte - held.hoogte) { 
+            held.y = vloerHoogte - held.hoogte;
+            held.vy = 0;
+            held.opGrond = true;
+        }
+
+        // Achtergrond
+        achtergrondX -= spelSnelheid / 2;
+        if (achtergrondX <= -800) achtergrondX = 0;
+
+        // Vijanden maken
+        frameTeller++;
+        
+        // Elke keer iets sneller vijanden (tussen 60 en 100 frames)
+        let spawnTijd = 100 - Math.floor(score / 50); 
+        if (spawnTijd < 50) spawnTijd = 50; // Niet té gek maken
+
+        if (frameTeller % spawnTijd === 0) { 
+            // KIES EEN WILLEKEURIGE SCHURK!
+            // Math.random() kiest een getal tussen 0 en 3
+            let willekeurigNummer = Math.floor(Math.random() * schurkenLijst.length);
+            let gekozenPlaatje = schurkenLijst[willekeurigNummer];
+
+            vijanden.push({ 
+                x: 800, 
+                y: 380 - 80, // Zorgt dat ze netjes op de vloer staan
+                breedte: 60, 
+                hoogte: 80, 
+                plaatje: gekozenPlaatje // Het gekozen plaatje wordt onthouden
+            }); 
+        }
+
+        // Vijanden bewegen
+        for (let i = 0; i < vijanden.length; i++) {
+            let v = vijanden[i];
+            v.x -= spelSnelheid;
+
+            // Botsing (Hitbox iets kleiner gemaakt voor eerlijkheid: +10 en -20)
+            if (
+                held.x < v.x + v.breedte - 10 &&
+                held.x + held.breedte - 10 > v.x + 10 &&
+                held.y < v.y + v.hoogte - 10 &&
+                held.y + held.hoogte > v.y + 10
+            ) {
+                gameOver = true;
+            }
+        }
+
+        // Score en snelheid verhogen
+        score++;
+        if (score % 200 === 0) spelSnelheid += 0.5; // Elke 200 punten gaat het sneller!
+    }
+
+    function tekenen() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Achtergrond
+        ctx.drawImage(achtergrond, achtergrondX, 0, 800, 500);
+        ctx.drawImage(achtergrond, achtergrondX + 800, 0, 800, 500);
+
+        // Vijanden
+        for (let i = 0; i < vijanden.length; i++) {
+            let v = vijanden[i];
+            // Hier tekenen we het plaatje dat we eerder willekeurig kozen
+            ctx.drawImage(v.plaatje, v.x, v.y, v.breedte, v.hoogte);
+        }
+
+        // Held
+        if (gameOver) {
+            ctx.drawImage(heldGameOver, held.x, held.y, held.breedte, held.hoogte);
+            
+            // Schaduw achter tekst voor leesbaarheid
+            ctx.fillStyle = "black";
+            ctx.font = "bold 50px Courier New";
+            ctx.fillText("GAME OVER!", 253, 203);
+            
+            ctx.fillStyle = "red";
+            ctx.fillText("GAME OVER!", 250, 200);
+            
+            ctx.fillStyle = "white";
+            ctx.font = "20px Courier New";
+            ctx.fillText("Score: " + Math.floor(score/10), 350, 250);
+            ctx.fillText("Druk op Spatiebalk", 300, 290);
+        } else {
+            ctx.drawImage(heldPlaatje, held.x, held.y, held.breedte, held.hoogte);
+            
+            // Score teller
+            ctx.fillStyle = "white";
+            ctx.font = "bold 24px Courier New";
+            ctx.fillText("Score: " + Math.floor(score/10), 20, 40);
+        }
+    }
+
+    function loop() {
+        update();
+        tekenen();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+
+</script>
+</body>
+</html>

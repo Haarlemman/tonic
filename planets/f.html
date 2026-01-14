@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elliptical Orbits Solar System</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #181e21;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('solarSystemCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const sun = { x: canvas.width / 2, y: canvas.height / 2, radius: 80, color: 'yellow' };
+
+    const planets = [
+      { name: 'Mercury', radius: 10, semiMajor: 100, semiMinor: 70, speed: 0.02, color: 'gray', rotationSpeed: 0.1, moons: [{ radius: 3, distance: 15, speed: 0.05, angle: 0 }] },
+      { name: 'Venus', radius: 15, semiMajor: 160, semiMinor: 120, speed: 0.015, color: 'yellow', rotationSpeed: 0.08, moons: [] },
+      { name: 'Earth', radius: 20, semiMajor: 230, semiMinor: 180, speed: 0.012, color: 'blue', rotationSpeed: 0.07, moons: [{ radius: 5, distance: 30, speed: 0.04, angle: 0 }] },
+      { name: 'Mars', radius: 18, semiMajor: 310, semiMinor: 240, speed: 0.01, color: 'red', rotationSpeed: 0.06, moons: [{ radius: 4, distance: 25, speed: 0.03, angle: 0 }, { radius: 3, distance: 35, speed: 0.02, angle: 1 }] },
+      { name: 'Jupiter', radius: 50, semiMajor: 420, semiMinor: 350, speed: 0.007, color: 'orange', rotationSpeed: 0.03, moons: [{ radius: 7, distance: 50, speed: 0.05, angle: 0 }, { radius: 6, distance: 70, speed: 0.03, angle: 2 }] },
+      { name: 'Saturn', radius: 45, semiMajor: 530, semiMinor: 460, speed: 0.005, color: 'goldenrod', rotationSpeed: 0.025, moons: [{ radius: 6, distance: 45, speed: 0.04, angle: 0 }, { radius: 5, distance: 65, speed: 0.02, angle: 1 }] },
+      { name: 'Uranus', radius: 35, semiMajor: 620, semiMinor: 550, speed: 0.004, color: 'lightblue', rotationSpeed: 0.02, moons: [{ radius: 4, distance: 40, speed: 0.03, angle: 0 }] },
+      { name: 'Neptune', radius: 30, semiMajor: 700, semiMinor: 630, speed: 0.003, color: 'darkblue', rotationSpeed: 0.015, moons: [{ radius: 3, distance: 35, speed: 0.02, angle: 0 }] }
+    ];
+
+    function drawPlanet(planet, angleOffset) {
+      const x = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+      const y = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, planet.radius, 0, Math.PI * 2);
+      ctx.fillStyle = planet.color;
+      ctx.fill();
+      
+      drawMeridians(x, y, planet.radius, angleOffset);
+      drawEquator(x, y, planet.radius, angleOffset);
+      
+      planet.moons.forEach(moon => {
+        moon.angle += moon.speed;
+        const moonX = x + Math.cos(moon.angle) * moon.distance;
+        const moonY = y + Math.sin(moon.angle) * moon.distance;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'lightgray';
+        ctx.fill();
+      });
+    }
+
+    function drawMeridians(x, y, radius, rotationAngle) {
+      const meridianCount = 12; 
+      for (let i = 0; i < meridianCount; i++) {
+        const angle = (Math.PI * 2 / meridianCount) * i + rotationAngle; 
+        ctx.beginPath();
+        for (let t = -1; t <= 1; t += 0.05) {
+          const meridianX = x + radius * Math.sin(angle) * Math.cos(t * Math.PI / 2);
+          const meridianY = y + radius * Math.sin(t * Math.PI / 2);
+          if (t === -1) ctx.moveTo(meridianX, meridianY);
+          else ctx.lineTo(meridianX, meridianY);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+      ctx.fillStyle = sun.color;
+      ctx.fill();
+      
+      planets.forEach(planet => {
+        planet.orbitAngle = (planet.orbitAngle || 0) + planet.speed;
+        planet.rotationAngle = (planet.rotationAngle || 0) + planet.rotationSpeed;
+        drawPlanet(planet, planet.rotationAngle);
+      });
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The University of Free Will</title>
+  <!-- Google Fonts: Alegreya and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital@1&family=Inter:wght@400;700&family=Workbench&display=swap" rel="stylesheet">
+  <style>
+        :root {
+            --swiss-red: #e11d48;
+            --swiss-bg: #f8fafc;
+            --swiss-text: #0f172a;
+            --swiss-border: #cbd5e1;
+            --accent: #334155;
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: var(--swiss-bg); 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            color: var(--swiss-text);
+        }
+        
+        #canvas-container { width: 100vw; height: 100vh; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        
+        /* Intro Overlay */
+        #intro-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(248, 250, 252, 0.85); 
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+        #intro-text {
+            font-family: 'Alegreya', serif;
+            font-style: italic;
+            font-weight: 400;
+            font-size: 2.4rem;
+            max-width: 750px;
+            min-height: 140px;
+            line-height: 1.5;
+            margin-bottom: 50px;
+            padding: 0 40px;
+            color: var(--swiss-text);
+            display: inline-block;
+        }
+
+        .action-btn {
+            background: #000;
+            border: none;
+            color: #fff;
+            padding: 16px 45px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover {
+            background: var(--swiss-red);
+            transform: translateY(-2px);
+        }
+
+        /* Modals */
+        #custom-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 450px;
+            background: #fff;
+            border: 2px solid #000;
+            color: #000;
+            padding: 40px;
+            z-index: 200;
+            display: none;
+            box-shadow: 20px 20px 0px rgba(0,0,0,0.1);
+        }
+        #custom-modal h2 { font-weight: 900; text-transform: uppercase; margin-top: 0; letter-spacing: -1px; }
+        #modal-close {
+            margin-top: 25px;
+            padding: 12px 24px;
+            background: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Faculty Screen Overlay */
+        #faculty-screen {
+            position: absolute;
+            width: 300px;
+            background: #fff;
+            border: 1px solid var(--swiss-border);
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            z-index: 80;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: left;
+            transform: translate(-50%, -120%);
+        }
+        #faculty-screen.active { display: flex; opacity: 1; }
+        .neon-text {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            line-height: 1.2;
+            color: var(--swiss-text);
+        }
+        .screen-sub { font-size: 0.65rem; letter-spacing: 2px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+
+        /* HUD */
+        #hud-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+            box-sizing: border-box;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        .brand-box {
+            background: transparent;
+            color: var(--swiss-text);
+            pointer-events: auto;
+            border-left: 8px solid var(--swiss-red);
+            padding-left: 20px;
+        }
+
+        h1 { margin: 0; font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -1.5px; }
+        .sub-brand { font-size: 0.75rem; margin-top: 10px; font-weight: 700; letter-spacing: 1px; color: #64748b; }
+
+        .status-box { pointer-events: auto; display: flex; gap: 4px; }
+        
+        .hud-btn {
+            background: #fff;
+            color: #000;
+            border: 1px solid #000;
+            padding: 8px 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: 0.2s;
+        }
+        .hud-btn:hover { background: #000; color: #fff; }
+
+        #general-menu {
+            position: absolute;
+            top: 90px;
+            right: 40px;
+            background: #fff;
+            border: 1px solid #000;
+            width: 240px;
+            display: none;
+            flex-direction: column;
+            pointer-events: auto;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.05);
+        }
+        #general-menu.active { display: flex; }
+        .menu-link {
+            color: #000;
+            text-decoration: none;
+            font-size: 0.75rem;
+            padding: 15px 20px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #eee;
+        }
+        .menu-link:hover { background: var(--swiss-red); color: #fff; }
+
+        .directory-box { pointer-events: auto; }
+        .building-tag {
+            display: block;
+            background: #fff;
+            padding: 12px 20px;
+            margin-bottom: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            border: 1px solid #000;
+            transition: all 0.2s;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+        .building-tag:hover { background: #000; color: #fff; transform: translateX(5px); }
+
+        #tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            background: #000;
+            color: #fff;
+            pointer-events: none;
+            display: none;
+            font-size: 10px;
+            font-weight: 800;
+            z-index: 60;
+            transform: translate(-50%, -100%);
+            text-transform: uppercase;
+        }
+    </style>
+ </head>
+ <body>
+
+  <audio id="bg-music" loop crossorigin="anonymous">
+    <source src="audio/MysteriousHeartbeat1.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="intro-overlay">
+    <div id="intro-text"></div>
+    <div class="intro-btns">
+        <button id="skip-btn" class="action-btn">Enter Campus</button>
+    </div>
+  </div>
+
+  <div id="custom-modal">
+    <h2 id="modal-title">SYSTEM DATA</h2>
+    <p id="modal-body"></p>
+    <button id="modal-close" onclick="closeModal()">Close</button>
+  </div>
+
+  <div id="faculty-screen">
+    <div id="screen-content" class="neon-text"></div>
+    <div class="screen-sub">DISPATCH LOG</div>
+  </div>
+
+  <div id="hud-layer">
+    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+        <div class="brand-box">
+            <h1>University<br>of Free Will</h1>
+            <div class="sub-brand">ADVERSITY IS YOUR TEACHER</div>
+        </div>
+        <div class="status-box">
+            <button class="hud-btn" onclick="toggleMusic()" id="music-toggle">Audio: On</button>
+            <button class="hud-btn" onclick="toggleMenu()">Menu</button>
+        </div>
+        <div id="general-menu">
+            <a href="about.html" class="menu-link">How it Started</a>
+            <a href="#" class="menu-link" onclick="focusBuilding('art')">Beauty / Art</a>
+            <a href="#" class="menu-link" onclick="focusBuilding('science')">Knowledge / Science</a>
+            <a href="#" class="menu-link" onclick="focusBuilding('spirit')">Wisdom / Spirit</a>
+            <a href="#" class="menu-link" onclick="showNotification('REGISTRY', 'Registrar is currently out of office.')">Registry</a>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div style="font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #000; background: #fff; padding: 20px; border: 1px solid #000; pointer-events: auto;">
+            <div style="border-bottom:1px solid #000; margin-bottom:10px; padding-bottom:5px; font-weight:900; text-transform:uppercase;">Campus Status</div>
+            <div style="display:flex; justify-content:space-between; gap: 40px; margin-bottom: 4px;"><span>VISUAL FEED</span> <span>STABLE</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>PERSPECTIVE</span> <span>FLUID</span></div>
+        </div>
+
+        <div class="directory-box">
+            <div class="building-tag" onclick="focusBuilding('art')">Beauty</div>
+            <div class="building-tag" onclick="focusBuilding('science')">Knowledge</div>
+            <div class="building-tag" onclick="focusBuilding('spirit')">Wisdom</div>
+        </div>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+  <div id="canvas-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script>
+        let scene, camera, renderer, raycaster, mouse, controls;
+        let specialBlocks = [];
+        let leaderLines = [];
+        let atomGroup, spiritBeam, spiritGlowVolume;
+        
+        let audioCtx, analyser, dataArray;
+        let audioInitialized = false;
+        let beatLevel = 0;
+
+        let introActive = true;
+        let skipRequested = false;
+        let cinematicTarget = null;
+        let lastZoomTime = 0;
+        let lastQuoteTime = 0;
+        const ZOOM_INTERVAL = 14000; 
+        const QUOTE_INTERVAL = 3000; 
+
+        const tooltip = document.getElementById('tooltip');
+        const introTextEl = document.getElementById('intro-text');
+        const skipBtn = document.getElementById('skip-btn');
+        const hudLayer = document.getElementById('hud-layer');
+        const bgMusic = document.getElementById('bg-music');
+        const musicToggleBtn = document.getElementById('music-toggle');
+        const facultyScreen = document.getElementById('faculty-screen');
+        const screenContent = document.getElementById('screen-content');
+
+        const facultyData = {
+            art: {
+                quotes: ["TRUTH IS BEAUTY", "CREATION IS DISCOVERY", "ESTHETICS OF THE SOUL", "FORM FOLLOWS FREEDOM"],
+                quoteIndex: 0
+            },
+            science: {
+                quotes: ["ADVERSITY IS YOUR TEACHER", "MAP IS NOT TERRITORY", "ENTROPY IS KING", "OBSERVATION COLLAPSES"],
+                quoteIndex: 0
+            },
+            spirit: {
+                quotes: ["FREE WILL IS A PARADOX", "LETTING GO IS POWER", "SILENCE SPEAKS VOLUMES", "WISDOM THROUGH SURRENDER"],
+                quoteIndex: 0
+            }
+        };
+
+        const introQuotes = [
+            "Welcome to the University of Free Will.",
+            "A framework of knowledge, wisdom and beauty.",
+            "The more you learn, the more you realize you know nothing.",
+            "Letting go of control is the ultimate freedom.",
+            "Where adversity becomes your teacher."
+        ];
+
+        window.onload = function() {
+            init();
+            animate();
+            runIntroSequence();
+            skipBtn.onclick = (e) => { e.stopPropagation(); startExperience(); };
+        };
+
+        function showNotification(title, body) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerText = body;
+            document.getElementById('custom-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').style.display = 'none';
+        }
+
+        function toggleMusic() {
+            if (!audioInitialized) initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            if (bgMusic.paused) {
+                bgMusic.play();
+                musicToggleBtn.innerText = "Audio: On";
+            } else {
+                bgMusic.pause();
+                musicToggleBtn.innerText = "Audio: Off";
+            }
+        }
+
+        async function typeText(text, element) {
+            element.innerHTML = '';
+            for (let i = 0; i < text.length; i++) {
+                if (skipRequested) return;
+                element.innerHTML += text.charAt(i);
+                await new Promise(r => setTimeout(r, 40));
+            }
+        }
+
+        async function runIntroSequence() {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+            for (let quote of introQuotes) {
+                if (skipRequested) break;
+                await typeText(quote, introTextEl);
+                if (skipRequested) break;
+                await new Promise(r => setTimeout(r, 2500));
+                if (skipRequested) break;
+                introTextEl.style.transition = 'opacity 0.5s';
+                introTextEl.style.opacity = 0;
+                await new Promise(r => setTimeout(r, 600));
+                introTextEl.innerHTML = '';
+                introTextEl.style.opacity = 1;
+            }
+        }
+
+        function initAudio() {
+            if (audioInitialized) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                const source = audioCtx.createMediaElementSource(bgMusic);
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                audioInitialized = true;
+            } catch(e) {}
+        }
+
+        function startExperience() {
+            skipRequested = true;
+            introActive = false;
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            bgMusic.volume = 0.4;
+            bgMusic.play().catch(() => {});
+            document.getElementById('intro-overlay').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('intro-overlay').style.visibility = 'hidden';
+                hudLayer.style.opacity = 1;
+                lastZoomTime = Date.now();
+            }, 1000);
+        }
+
+        function focusBuilding(type) {
+            toggleMenu(false);
+            const b = specialBlocks.find(b => b.userData.type === type);
+            if (b) {
+                cinematicTarget = b;
+                lastZoomTime = Date.now();
+                lastQuoteTime = Date.now();
+                updateFacultyScreen(type);
+                facultyScreen.classList.add('active');
+            }
+        }
+
+        function updateFacultyScreen(type) {
+            const data = facultyData[type];
+            if (!data) return;
+            screenContent.innerText = data.quotes[data.quoteIndex];
+            data.quoteIndex = (data.quoteIndex + 1) % data.quotes.length;
+        }
+
+        function createTextSprite(text, color = "#000000") {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024; canvas.height = 256;
+            ctx.fillStyle = 'rgba(255,255,255,1)';
+            ctx.fillRect(200, 64, 624, 128);
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(200, 64, 624, 128);
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.font = 'Bold 52px Inter, Helvetica'; ctx.fillText(text, 512, 128);
+            const texture = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
+            sprite.scale.set(7.5, 1.875, 1);
+            return sprite;
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe2e8f0); 
+            scene.fog = new THREE.Fog(0xe2e8f0, 40, 150);
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = 16;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(45, 45, 45);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(20, 50, 20); sun.castShadow = true;
+            scene.add(sun);
+            createCampus();
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('mousemove', onMouseMove, false);
+        }
+
+        function createCampus() {
+            const SPACING = 1.6; const GRID = 14; const centerOffset = (GRID * SPACING) / 2;
+            const materials = {
+                campus: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.9 }),
+                museumWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }),
+                museumAccent: new THREE.MeshStandardMaterial({ color: 0xe11d48 }),
+                science: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.1 }),
+                spiritCore: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x000000 }),
+                spiritGlow: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.05 }),
+                SwissLine: new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 })
+            };
+
+            for (let x = 0; x < GRID; x++) {
+                for (let z = 0; z < GRID; z++) {
+                    let mesh; let type = "campus"; let labelText = ""; let labelY = 0;
+                    if (x === 6 && z === 7) {
+                        type = "art"; labelText = "BEAUTY"; labelY = 11.5;
+                        const g = new THREE.Group();
+                        const core = new THREE.Mesh(new THREE.BoxGeometry(1.2, 7, 1.2), materials.museumAccent); core.position.y = 3.5; g.add(core);
+                        const shards = [{ size: [4, 0.5, 4], pos: [0, 2, 0], rot: [0.1, 0, 0.1] }, { size: [4, 0.5, 4], pos: [0, 4, 0], rot: [-0.1, 0.4, 0] }, { size: [4, 0.5, 4], pos: [0, 6, 0], rot: [0, -0.4, 0.2] }];
+                        shards.forEach(s => { const sh = new THREE.Mesh(new THREE.BoxGeometry(...s.size), materials.museumWhite); sh.position.set(...s.pos); sh.rotation.set(...s.rot); g.add(sh); });
+                        mesh = g;
+                    } else if (x === 10 && z === 3) {
+                        type = "science"; labelText = "KNOWLEDGE"; labelY = 11.5;
+                        const g = new THREE.Group();
+                        const ped = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 1.5), materials.museumWhite); ped.position.y = 1.75; g.add(ped);
+                        atomGroup = new THREE.Group();
+                        atomGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32), materials.science));
+                        const rGeom = new THREE.TorusGeometry(1.6, 0.02, 16, 100);
+                        const rMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 });
+                        [0, Math.PI/2, Math.PI/4].forEach((rot, i) => { const r = new THREE.Mesh(rGeom, rMat); r.rotation.x = rot; if(i===2) r.rotation.y = Math.PI/2; atomGroup.add(r); });
+                        atomGroup.position.y = 5.5; g.add(atomGroup);
+                        mesh = g;
+                    } else if (x === 3 && z === 10) {
+                        type = "spirit"; labelText = "WISDOM"; labelY = 3.6;
+                        mesh = new THREE.Group();
+                        spiritBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 20, 4), materials.spiritCore); spiritBeam.position.y = 10; mesh.add(spiritBeam);
+                        spiritGlowVolume = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 20, 4), materials.spiritGlow); spiritGlowVolume.position.y = 10; mesh.add(spiritGlowVolume);
+                    } else {
+                        let h = 0.5 + Math.random() * 2;
+                        mesh = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1, 1.1), materials.campus); mesh.scale.set(1, h, 1); mesh.position.y = h/2;
+                    }
+                    mesh.position.set(x * SPACING - centerOffset, 0, z * SPACING - centerOffset);
+                    mesh.userData = { type, label: labelText || type };
+                    scene.add(mesh);
+                    if (type !== "campus") {
+                        specialBlocks.push(mesh);
+                        const label = createTextSprite(labelText);
+                        label.position.set(mesh.position.x + 1.2, labelY, mesh.position.z + 1.2);
+                        scene.add(label);
+                        const pts = [new THREE.Vector3(mesh.position.x, 0.5, mesh.position.z), new THREE.Vector3(label.position.x, label.position.y, label.position.z)];
+                        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), materials.SwissLine);
+                        scene.add(line); leaderLines.push(line);
+                    }
+                }
+            }
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+        }
+
+        function onMouseMove(event) {
+            if (introActive) return;
+            mouse = mouse || new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster = raycaster || new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                let t = intersects[0].object; while (t.parent && !t.userData.type) t = t.parent;
+                tooltip.style.display = 'block'; tooltip.style.left = event.clientX + 'px'; tooltip.style.top = event.clientY + 'px';
+                tooltip.innerHTML = t.userData.label;
+            } else tooltip.style.display = 'none';
+        }
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight; const d = 16;
+            camera.left = -d * aspect; camera.right = d * aspect; camera.top = d; camera.bottom = -d;
+            camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function toggleMenu(force) { 
+            const m = document.getElementById('general-menu');
+            if (force === undefined) m.classList.toggle('active');
+            else if (force) m.classList.add('active');
+            else m.classList.remove('active');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+            const now = Date.now();
+            if (audioInitialized && !bgMusic.paused) {
+                analyser.getByteFrequencyData(dataArray);
+                let bass = 0; for(let i=0; i<16; i++) bass += dataArray[i];
+                beatLevel = (bass / 16 / 255); 
+                if (controls.autoRotate) controls.autoRotateSpeed = 0.2 + (beatLevel * 3.0);
+            } else { beatLevel = 0; if (controls.autoRotate && !introActive) controls.autoRotateSpeed = 0.2; }
+            
+            if (atomGroup) { atomGroup.rotation.y += 0.01 + beatLevel * 0.1; atomGroup.rotation.z += 0.01; }
+            if (spiritBeam) {
+                const s = 1 + Math.sin(time * 2) * 0.05;
+                spiritBeam.scale.set(s, 1, s);
+            }
+
+            if (!introActive && now - lastZoomTime > ZOOM_INTERVAL) {
+                if (cinematicTarget) { cinematicTarget = null; facultyScreen.classList.remove('active'); } 
+                else { cinematicTarget = specialBlocks[Math.floor(Math.random() * specialBlocks.length)]; facultyScreen.classList.add('active'); }
+                lastZoomTime = now;
+            }
+            if (cinematicTarget) {
+                controls.target.lerp(cinematicTarget.position.clone(), 0.08);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.2, 0.04);
+                if (now - lastQuoteTime > QUOTE_INTERVAL) { updateFacultyScreen(cinematicTarget.userData.type); lastQuoteTime = now; }
+                const v = cinematicTarget.position.clone(); v.y += 3.5; v.project(camera);
+                facultyScreen.style.left = (v.x * .5 + .5) * window.innerWidth + 'px';
+                facultyScreen.style.top = (v.y * -.5 + .5) * window.innerHeight + 'px';
+            } else {
+                controls.target.lerp(new THREE.Vector3(0,0,0), 0.03);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.0, 0.03);
+            }
+            camera.updateProjectionMatrix(); controls.update(); renderer.render(scene, camera);
+        }
+    </script>
+ </body>
+</html>

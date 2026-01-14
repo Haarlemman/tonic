@@ -1,0 +1,150 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar System</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #181e21;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('solarSystemCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const sun = { x: canvas.width / 2, y: canvas.height / 2, radius: 40 };
+    const planets = [
+      { name: 'Mercury', distance: 100, speed: 0.02, radius: 4, color: 'gray', angle: -Math.PI/2 }, // No moons
+      { name: 'Venus', distance: 150, speed: 0.015, radius: 8, color: 'orange', angle: -Math.PI/2 }, // No moons
+      { name: 'Earth', distance: 200, speed: 0.01, radius: 8, color: 'green', angle: -Math.PI/2, moons: [
+          { distance: 20, speed: 0.03, radius: 3, color: 'lightgray', angle: -Math.PI/2 }] }, // 1 moon
+      { name: 'Mars', distance: 250, speed: 0.008, radius: 7, color: 'red', angle: -Math.PI/2, moons: [
+          { distance: 12, speed: 0.05, radius: 2, color: 'gray', angle: -Math.PI/2 },
+          { distance: 14, speed: 0.04, radius: 2, color: 'darkgray', angle: -Math.PI/2 }
+      ]}, // 2 moons
+      { name: 'Jupiter', distance: 300, speed: 0.005, radius: 25, color: '#9b8762', angle: -Math.PI/2, moons: Array.from({length: 79}, (_, i) => ({
+          distance: 28 + i * 2,
+          speed: 0.02 + Math.random() * 0.03,
+          radius: 1 + Math.random() * 2,
+          color: i % 2 === 0 ? 'grey' : 'white',
+          angle: -Math.PI/2
+      }))}, // 79 moons
+      { name: 'Saturn', distance: 350, speed: 0.003, radius: 18, color: '#c8a572', angle: -Math.PI/2, moons: Array.from({length: 82}, (_, i) => ({
+          distance: 25 + i * 2,
+          speed: 0.015 + Math.random() * 0.02,
+          radius: 1 + Math.random() * 2,
+          color: i % 2 === 0 ? 'beige' : 'lightgrey',
+          angle: -Math.PI/2
+      }))}, // 82 moons
+      { name: 'Uranus', distance: 400, speed: 0.008, radius: 20, color: '#9ab2be', angle: -Math.PI/2, moons: Array.from({length: 27}, (_, i) => ({
+          distance: 28 + i * 2,
+          speed: 0.02 + Math.random() * 0.02,
+          radius: 1 + Math.random() * 2,
+          color: i % 2 === 0 ? 'grey' : 'white',
+          angle: -Math.PI/2
+      }))}, // 27 moons
+      { name: 'Neptune', distance: 450, speed: 0.009, radius: 18, color: 'blue', angle: -Math.PI/2, moons: Array.from({length: 14}, (_, i) => ({
+          distance: 25 + i * 2,
+          speed: 0.018 + Math.random() * 0.02,
+          radius: 1 + Math.random() * 2,
+          color: i % 2 === 0 ? 'beige' : 'lightgrey',
+          angle: -Math.PI/2
+      }))}, // 14 moons
+    ];
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+      planets.forEach(planet => {
+        planet.angle = planet.angle + planet.speed;
+        const x = sun.x + Math.cos(planet.angle) * planet.distance;
+        const y = sun.y + Math.sin(planet.angle) * planet.distance;
+        ctx.beginPath();
+        ctx.arc(x, y, planet.radius, 0, Math.PI * 2);
+        // Draw planet base
+        // Draw planet base
+        ctx.fillStyle = planet.color;
+        ctx.fill();
+        
+        // Draw rotation meridians
+        const rotationSpeed = {
+            'Mercury': 0.0083, 'Venus': -0.0037, 'Earth': 0.0365,
+            'Mars': 0.0352, 'Jupiter': 0.095, 'Saturn': 0.093,
+            'Uranus': -0.059, 'Neptune': 0.062
+        };
+        
+        planet.rotationAngle = (planet.rotationAngle || 0) + rotationSpeed[planet.name];
+        
+        // Draw meridian lines
+        for (let i = 0; i < 6; i++) {
+            const meridianAngle = (Math.PI / 3) * i + planet.rotationAngle;
+            ctx.beginPath();
+            ctx.arc(x, y, planet.radius, meridianAngle, meridianAngle, false);
+            ctx.moveTo(x - planet.radius * Math.cos(meridianAngle), 
+                      y - planet.radius * Math.sin(meridianAngle));
+            ctx.lineTo(x + planet.radius * Math.cos(meridianAngle), 
+                      y + planet.radius * Math.sin(meridianAngle));
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // Draw rotation pattern
+        const rotationSpeed = {
+            'Mercury': 0.0083, 'Venus': -0.0037, 'Earth': 0.0365,
+            'Mars': 0.0352, 'Jupiter': 0.095, 'Saturn': 0.093,
+            'Uranus': -0.059, 'Neptune': 0.062
+        };
+        
+        // Add spinning pattern inside each planet
+        planet.rotationAngle = (planet.rotationAngle || 0) + rotationSpeed[planet.name];
+        const pattern = new Path2D();
+        const segments = 3;
+        for (let i = 0; i < segments; i++) {
+            const segmentAngle = (Math.PI * 2 / segments) * i + planet.rotationAngle;
+            pattern.arc(x, y, planet.radius * 0.6, segmentAngle, segmentAngle + Math.PI/segments);
+        }
+        ctx.strokeStyle = planet.name === 'Jupiter' ? '#7a6a4f' : 
+                         planet.name === 'Saturn' ? '#a88b5e' :
+                         'rgba(255,255,255,0.3)';
+        ctx.lineWidth = planet.radius * 0.3;
+        ctx.stroke(pattern);
+        
+        // Draw Saturn's rings
+        if (planet.name === 'Saturn') {
+          ctx.beginPath();
+          ctx.ellipse(x, y, planet.radius * 2.2, planet.radius * 0.5, planet.angle, 0, Math.PI * 2);
+          ctx.strokeStyle = '#DAA520';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+        if (planet.moons) {
+          planet.moons.forEach(moon => {
+            moon.angle = moon.angle + moon.speed;
+            const moonX = x + Math.cos(moon.angle) * moon.distance;
+            const moonY = y + Math.sin(moon.angle) * moon.distance;
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+            ctx.fillStyle = moon.color;
+            ctx.fill();
+          });
+        }
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>z

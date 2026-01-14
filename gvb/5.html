@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Good vs. Bad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #222; color: white; font-family: sans-serif; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        canvas { background-color: #4ade80; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 4px solid #333; }
+        #ui-layer { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 20; }
+        .hud-text { font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px black; }
+        
+        /* Lobby Styles */
+        #lobby, #game-over { position: absolute; z-index: 9999; background: rgba(0,0,0,0.9); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #game-over { display: none; }
+        
+        /* Input Styles */
+        input { 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 3px solid #555; 
+            margin-bottom: 20px; 
+            color: #000000 !important; 
+            background-color: #ffffff !important; 
+            width: 300px; 
+            text-align: center; 
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: auto !important;
+            user-select: text !important;
+            position: relative;
+            z-index: 10000;
+        }
+        input:focus {
+            outline: none;
+            border-color: #facc15; 
+            box-shadow: 0 0 15px #facc15;
+            background-color: #fffbeb !important;
+        }
+
+        button { 
+            padding: 20px 40px; 
+            background: #ef4444; 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 24px; 
+            transition: all 0.2s; 
+            position: relative; 
+            z-index: 10000; 
+            pointer-events: auto; 
+            box-shadow: 0 6px 0 #b91c1c; 
+            min-width: 250px;
+        }
+        button:hover { background: #dc2626; transform: translateY(-2px); }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        
+        .status-line { margin-top: 20px; color: #fbbf24; font-size: 18px; font-weight: bold; min-height: 24px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Lobby Screen -->
+    <div id="lobby">
+        <h1 class="text-6xl mb-8 font-bold text-yellow-400" style="text-shadow: 4px 4px 0 #000;">Good vs. Bad</h1>
+        
+        <label class="text-lg text-gray-300 mb-2">Wie ben jij?</label>
+        <input type="text" id="playerNameInput" placeholder="Typ hier je naam..." maxlength="12" autocomplete="off">
+        
+        <button id="joinBtn">START SPEL</button>
+        <p id="statusMsg" class="status-line">Status: Klaar voor start...</p>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over">
+        <h1 id="winnerTitle" class="text-6xl mb-4 font-bold text-white">GAME OVER</h1>
+        <button onclick="location.reload()">Opnieuw Spelen</button>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- HUD -->
+    <div id="ui-layer">
+        <div class="hud-text" id="playerInfo"></div>
+        <div class="hud-text text-yellow-300" style="font-size: 14px; margin-top: 5px;">Besturing: Pijltjes = Bewegen | Spatie = Schieten | TAB = Wissel Soldaat</div>
+    </div>
+</div>
+
+<!-- Firebase Setup -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- CONFIGURATIE ---
+    const ASSETS = {
+        soldier: null, 
+        tank: null,    
+        plane: null,   
+        tower: null,
+        king: null,
+        potion: null,
+        bg: null
+    };
+
+    // Firebase Init
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+
+    // Game Variabelen
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let userId = null;
+    
+    const FIXED_ROOM_ID = "YaronVsPapa_Arena";
+    
+    let playerRole = null; 
+    let myName = "Speler";
+    let gameState = null;
+    let gameActive = false;
+    
+    canvas.width = 1000;
+    canvas.height = 600;
+
+    // Constanten
+    const TEAM_RED = 'red';   // Links
+    const TEAM_BLUE = 'blue'; // Rechts
+    const UNIT_TYPES = {
+        KING: { hp: 500, speed: 0, width: 60, height: 60, color: '#FFD700', label: 'Koning' },
+        TOWER: { hp: 300, speed: 0, width: 50, height: 80, color: '#888', label: 'Toren' },
+        TANK: { hp: 150, speed: 2, width: 50, height: 40, color: '#225522', label: 'Tank' },
+        PLANE: { hp: 80, speed: 5, width: 40, height: 40, color: '#5555AA', label: 'Vliegtuig' },
+        SOLDIER: { hp: 50, speed: 3, width: 20, height: 30, color: '#552222', label: 'Soldaat' }
+    };
+
+    let activeUnitIndex = 0;
+    let keys = {};
+    let lastShotTime = 0;
+
+    // Input Focus Fix
+    const nameInput = document.getElementById('playerNameInput');
+    nameInput.addEventListener('keydown', (e) => e.stopPropagation());
+    nameInput.addEventListener('keypress', (e) => e.stopPropagation());
+    nameInput.addEventListener('keyup', (e) => e.stopPropagation());
+    
+    setTimeout(() => { nameInput.focus(); }, 500);
+
+    // --- AUTHENTICATIE (ROBUUST) ---
+    async function initAuth() {
+        const statusMsg = document.getElementById('statusMsg');
+        statusMsg.innerText = "Bezig met inloggen...";
+        statusMsg.style.color = "yellow";
+
+        try {
+            // Stap 1: Probeer Custom Token als die er is
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                try {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    return; // Gelukt
+                } catch (e) {
+                    console.log("Custom token mislukt, probeer anoniem...");
+                }
+            }
+            
+            // Stap 2: Probeer Anoniem
+            await signInAnonymously(auth);
+            
+        } catch (error) {
+            console.error("Auth Error:", error);
+            statusMsg.innerText = "Klik op START om te forceren.";
+            statusMsg.style.color = "orange";
+        }
+    }
+    
+    // Start login direct
+    initAuth();
+
+    // Luister naar Auth State changes
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            userId = user.uid;
+            const btn = document.getElementById('joinBtn');
+            const statusMsg = document.getElementById('statusMsg');
+            
+            btn.style.backgroundColor = "#22c55e"; // Groen
+            btn.innerText = "START SPEL NU";
+            
+            statusMsg.innerText = "Verbonden! Je kunt beginnen.";
+            statusMsg.style.color = '#4ade80';
+        }
+    });
+
+    // --- LOBBY LOGICA ---
+    document.getElementById('joinBtn').addEventListener('click', async () => {
+        const statusMsg = document.getElementById('statusMsg');
+        
+        // Failsafe: Als nog niet ingelogd, probeer opnieuw te forceren
+        if (!userId) {
+            statusMsg.innerText = "Opnieuw proberen te verbinden...";
+            await signInAnonymously(auth).catch(e => {
+                statusMsg.innerText = "Fout: " + e.message;
+                statusMsg.style.color = "red";
+            });
+            // We gaan niet returnen, we proberen gewoon door te gaan als de auth in de achtergrond alsnog lukt
+            if (!auth.currentUser) return; 
+            userId = auth.currentUser.uid;
+        }
+
+        const nameInputVal = document.getElementById('playerNameInput').value.trim();
+        myName = nameInputVal || "Speler"; 
+        
+        const btn = document.getElementById('joinBtn');
+        btn.disabled = true;
+        btn.innerText = "Even geduld...";
+        statusMsg.innerText = "Arena betreden...";
+        statusMsg.style.color = 'white';
+
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${FIXED_ROOM_ID}`);
+        
+        try {
+            const roomSnap = await getDoc(roomRef);
+
+            if (!roomSnap.exists()) {
+                statusMsg.innerText = "Nieuw spel starten...";
+                playerRole = TEAM_RED;
+                await createGame(roomRef);
+                startGame();
+            } else {
+                const data = roomSnap.data();
+                
+                if (!data.playerBlue && data.playerRed !== userId) {
+                    playerRole = TEAM_BLUE;
+                    await updateDoc(roomRef, { 
+                        playerBlue: userId, 
+                        nameBlue: myName,
+                        status: 'playing' 
+                    });
+                    startGame();
+                } else if (data.playerRed === userId) {
+                    playerRole = TEAM_RED;
+                    if (data.nameRed !== myName) await updateDoc(roomRef, { nameRed: myName });
+                    startGame();
+                } else if (data.playerBlue === userId) {
+                    playerRole = TEAM_BLUE; 
+                    if (data.nameBlue !== myName) await updateDoc(roomRef, { nameBlue: myName });
+                    startGame();
+                } else {
+                    // Forceer join als blauw als fallback voor testen
+                    playerRole = TEAM_BLUE;
+                    statusMsg.innerText = "Spel is vol, meekijken...";
+                    startGame();
+                }
+            }
+        } catch (e) {
+            console.error("Join Error:", e);
+            statusMsg.innerText = "Foutje: " + e.message;
+            btn.disabled = false;
+            btn.innerText = "Probeer Opnieuw";
+        }
+    });
+
+    async function createGame(ref) {
+        const initialUnits = createArmy(TEAM_RED).concat(createArmy(TEAM_BLUE));
+        const potions = [
+            {id: 'hp1', x: 400, y: 100, used: false}, 
+            {id: 'hp2', x: 600, y: 500, used: false},
+            {id: 'hp3', x: 500, y: 300, used: false}
+        ];
+
+        await setDoc(ref, {
+            playerRed: userId,
+            nameRed: myName,
+            playerBlue: null,
+            nameBlue: "Tegenstander...",
+            status: 'waiting',
+            units: initialUnits,
+            potions: potions,
+            lastUpdated: Date.now()
+        });
+    }
+
+    function createArmy(team) {
+        let units = [];
+        const isRed = team === TEAM_RED;
+        const baseX = isRed ? 50 : 900;
+        const forwardDir = isRed ? 1 : -1;
+        
+        let idCounter = 0;
+        const genId = () => `${team}_${idCounter++}`;
+
+        // 1 Koning
+        units.push({ ...UNIT_TYPES.KING, id: genId(), team, x: baseX, y: 270, maxHp: UNIT_TYPES.KING.hp });
+        
+        // 1 Toren
+        units.push({ ...UNIT_TYPES.TOWER, id: genId(), team, x: baseX + (100 * forwardDir), y: 260, maxHp: UNIT_TYPES.TOWER.hp });
+
+        // 2 Tanks
+        units.push({ ...UNIT_TYPES.TANK, id: genId(), team, x: baseX + (150 * forwardDir), y: 100, maxHp: UNIT_TYPES.TANK.hp });
+        units.push({ ...UNIT_TYPES.TANK, id: genId(), team, x: baseX + (150 * forwardDir), y: 450, maxHp: UNIT_TYPES.TANK.hp });
+
+        // 3 Vliegtuigen
+        for(let i=0; i<3; i++) {
+            units.push({ ...UNIT_TYPES.PLANE, id: genId(), team, x: baseX + (50 * forwardDir), y: 50 + (i*200), maxHp: UNIT_TYPES.PLANE.hp });
+        }
+
+        // 8 Soldaten
+        for(let i=0; i<8; i++) {
+            units.push({ ...UNIT_TYPES.SOLDIER, id: genId(), team, x: baseX + (200 * forwardDir), y: 50 + (i * 60), maxHp: UNIT_TYPES.SOLDIER.hp });
+        }
+
+        return units;
+    }
+
+    function enableGameControls() {
+        if(document.activeElement) document.activeElement.blur();
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                activeUnitIndex++;
+            }
+        });
+        window.addEventListener('keyup', (e) => keys[e.key] = false);
+    }
+
+    function startGame() {
+        document.getElementById('lobby').style.display = 'none';
+        gameActive = true;
+        
+        enableGameControls();
+
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${FIXED_ROOM_ID}`);
+        onSnapshot(roomRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                gameState = data;
+                
+                const redName = data.nameRed || "Rood";
+                const blueName = data.nameBlue || "Blauw";
+                
+                document.getElementById('playerInfo').innerHTML = 
+                    `<span style="color:#ff6b6b; font-size:24px;">${redName}</span> <span style="font-size:16px; color:#aaa;">VS</span> <span style="color:#4dabf7; font-size:24px;">${blueName}</span>`;
+
+                const kings = gameState.units.filter(u => u.label === 'Koning');
+                const redKing = kings.find(k => k.team === TEAM_RED);
+                const blueKing = kings.find(k => k.team === TEAM_BLUE);
+
+                if (redKing && redKing.hp <= 0) endGame(`${blueName} WINT!`, '#4dabf7');
+                if (blueKing && blueKing.hp <= 0) endGame(`${redName} WINT!`, '#ff6b6b');
+            }
+        });
+
+        requestAnimationFrame(gameLoop);
+    }
+    
+    function endGame(msg, color) {
+        gameActive = false;
+        const goScreen = document.getElementById('game-over');
+        const title = document.getElementById('winnerTitle');
+        title.innerText = msg;
+        title.style.color = color;
+        goScreen.style.display = 'flex';
+    }
+
+    function gameLoop() {
+        if (!gameActive) return;
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function update() {
+        if (!gameState) return;
+
+        const myUnits = gameState.units.filter(u => u.team === playerRole && u.hp > 0);
+        if (activeUnitIndex >= myUnits.length) activeUnitIndex = 0;
+        const activeUnit = myUnits[activeUnitIndex];
+
+        let moved = false;
+        if (activeUnit && activeUnit.speed > 0) {
+            if (keys['ArrowUp'] && activeUnit.y > 0) { activeUnit.y -= activeUnit.speed; moved = true; }
+            if (keys['ArrowDown'] && activeUnit.y < canvas.height - activeUnit.height) { activeUnit.y += activeUnit.speed; moved = true; }
+            if (keys['ArrowLeft'] && activeUnit.x > 0) { activeUnit.x -= activeUnit.speed; moved = true; }
+            if (keys['ArrowRight'] && activeUnit.x < canvas.width - activeUnit.width) { activeUnit.x += activeUnit.speed; moved = true; }
+        }
+
+        if (keys[' '] && activeUnit) {
+            const now = Date.now();
+            if (now - lastShotTime > 500) { 
+                shoot(activeUnit);
+                lastShotTime = now;
+            }
+        }
+
+        gameState.potions.forEach((pot) => {
+            if (!pot.used && activeUnit && checkCollision(activeUnit, {x: pot.x, y: pot.y, width: 20, height: 20})) {
+                activeUnit.hp = Math.min(activeUnit.hp + 50, activeUnit.maxHp);
+                pot.used = true;
+                moved = true;
+            }
+        });
+
+        if (moved) pushUpdates();
+    }
+
+    function shoot(unit) {
+        const isRed = unit.team === TEAM_RED;
+        const enemies = gameState.units.filter(u => u.team !== playerRole && u.hp > 0);
+        let hit = false;
+        
+        const bulletX = unit.x + (unit.width/2);
+        const bulletY = unit.y + (unit.height/2);
+        const range = unit.label === 'Soldaat' ? 100 : 600;
+
+        for (let enemy of enemies) {
+            const dist = Math.abs(enemy.x - bulletX);
+            const yDist = Math.abs(enemy.y - bulletY);
+            
+            if (isRed && enemy.x > bulletX && dist < range && yDist < 30) {
+                enemy.hp -= 10;
+                hit = true;
+                break;
+            } else if (!isRed && enemy.x < bulletX && dist < range && yDist < 30) {
+                enemy.hp -= 10;
+                hit = true;
+                break;
+            }
+        }
+        
+        if (hit) pushUpdates();
+    }
+
+    let updateTimeout;
+    function pushUpdates() {
+        if (updateTimeout) return;
+        updateTimeout = setTimeout(async () => {
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${FIXED_ROOM_ID}`);
+            await updateDoc(roomRef, {
+                units: gameState.units,
+                potions: gameState.potions
+            });
+            updateTimeout = null;
+        }, 50);
+    }
+
+    function draw() {
+        ctx.fillStyle = '#3f6b2f';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (!gameState) return;
+
+        gameState.potions.forEach(pot => {
+            if (!pot.used) drawAsset(pot.x, pot.y, 20, 20, 'potion', 'purple');
+        });
+
+        gameState.units.forEach(unit => {
+            if (unit.hp <= 0) return;
+
+            const isMine = unit.team === playerRole;
+            const myUnits = gameState.units.filter(u => u.team === playerRole && u.hp > 0);
+            const isActive = isMine && myUnits[activeUnitIndex] && myUnits[activeUnitIndex].id === unit.id;
+
+            if (isActive) {
+                ctx.strokeStyle = 'yellow';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(unit.x - 5, unit.y - 5, unit.width + 10, unit.height + 10);
+            }
+
+            let color = unit.team === TEAM_RED ? '#d32f2f' : '#1976d2';
+            drawAsset(unit.x, unit.y, unit.width, unit.height, unit.label.toLowerCase(), color, unit.label);
+
+            const hpPct = unit.hp / unit.maxHp;
+            ctx.fillStyle = 'red';
+            ctx.fillRect(unit.x, unit.y - 10, unit.width, 5);
+            ctx.fillStyle = '#0f0';
+            ctx.fillRect(unit.x, unit.y - 10, unit.width * hpPct, 5);
+        });
+    }
+
+    function drawAsset(x, y, w, h, type, fallbackColor, label) {
+        ctx.fillStyle = fallbackColor;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 5;
+        ctx.fillRect(x, y, w, h);
+        ctx.shadowBlur = 0;
+        
+        if (label) {
+            ctx.fillStyle = 'white';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + w/2, y + h/2 + 3);
+        }
+    }
+
+    function checkCollision(rect1, rect2) {
+        return (rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y);
+    }
+
+</script>
+</body>
+</html>

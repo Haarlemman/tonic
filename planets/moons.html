@@ -1,0 +1,98 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar System</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #181e21;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('solarSystemCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const sun = { x: canvas.width / 2, y: canvas.height / 2, radius: 40 };
+    const planets = [
+      { name: 'Mercury', distance: 60, speed: 0.02, radius: 4, color: 'gray', angle: -Math.PI/2 },
+      { name: 'Venus', distance: 90, speed: 0.015, radius: 8, color: 'orange', angle: -Math.PI/2 },
+      { name: 'Earth', distance: 120, speed: 0.01, radius: 8, color: 'green', angle: -Math.PI/2, moons: [
+          { distance: 20, speed: 0.03, radius: 3, color: 'lightgray', angle: -Math.PI/2 }] },
+      { name: 'Mars', distance: 150, speed: 0.008, radius: 7, color: 'red', angle: -Math.PI/2, moons: [
+        { distance: 12, speed: 0.05, radius: 2, color: 'gray', angle: -Math.PI/2 },
+        { distance: 14, speed: 0.04, radius: 2, color: 'darkgray', angle: -Math.PI/2 }
+      ]},
+      { name: 'Jupiter', distance: 200, speed: 0.005, radius: 25, color: '#9b8762', angle: -Math.PI/2, moons: [
+          { distance: 28, speed: 0.05, radius: 2, color: 'grey', angle: -Math.PI/2 },
+          { distance: 30, speed: 0.02, radius: 3, color: 'white', angle: -Math.PI/2 },
+          { distance: 32, speed: 0.03, radius: 3, color: 'grey', angle: -Math.PI/2 },
+          { distance: 34, speed: 0.06, radius: 1, color: 'white', angle: -Math.PI/2 },
+          { distance: 36, speed: 0.078, radius: 2, color: 'grey', angle: -Math.PI/2 },
+          { distance: 38, speed: 0.09, radius: 3, color: 'white', angle: -Math.PI/2 },
+          { distance: 40, speed: 0.035, radius: 3, color: 'grey', angle: -Math.PI/2 },
+          { distance: 42, speed: 0.045, radius: 2, color: 'white', angle: -Math.PI/2 }
+      ]},
+      { name: 'Saturn', distance: 250, speed: 0.003, radius: 18, color: '#c8a572', angle: -Math.PI/2, moons: [
+          { distance: 25, speed: 0.018, radius: 3, color: 'beige', angle: -Math.PI/2 }
+      ]},
+      { name: 'Uranus', distance: 300, speed: 0.008, radius: 20, color: '#9ab2be', angle: -Math.PI/2, moons: [
+          { distance: 28, speed: 0.05, radius: 1, color: 'grey', angle: -Math.PI/2 },
+          { distance: 30, speed: 0.02, radius: 2, color: 'white', angle: -Math.PI/2 },
+          { distance: 32, speed: 0.03, radius: 3, color: 'grey', angle: -Math.PI/2 },
+          { distance: 34, speed: 0.04, radius: 4, color: 'white', angle: -Math.PI/2 }
+      ]},
+      { name: 'Neptune', distance: 350, speed: 0.009, radius: 18, color: 'blue', angle: -Math.PI/2, moons: [
+          { distance: 25, speed: 0.018, radius: 3, color: 'beige', angle: -Math.PI/2 }
+      ]},
+    ];
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+      planets.forEach(planet => {
+        planet.angle = planet.angle + planet.speed;
+        const x = sun.x + Math.cos(planet.angle) * planet.distance;
+        const y = sun.y + Math.sin(planet.angle) * planet.distance;
+        ctx.beginPath();
+        ctx.arc(x, y, planet.radius, 0, Math.PI * 2);
+        ctx.fillStyle = planet.color;
+        ctx.fill();
+        
+        // Draw Saturn's rings
+        if (planet.name === 'Saturn') {
+          ctx.beginPath();
+          ctx.ellipse(x, y, planet.radius * 2.2, planet.radius * 0.5, planet.angle, 0, Math.PI * 2);
+          ctx.strokeStyle = '#DAA520';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+        if (planet.moons) {
+          planet.moons.forEach(moon => {
+            moon.angle = moon.angle + moon.speed;
+            const moonX = x + Math.cos(moon.angle) * moon.distance;
+            const moonY = y + Math.sin(moon.angle) * moon.distance;
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+            ctx.fillStyle = moon.color;
+            ctx.fill();
+          });
+        }
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

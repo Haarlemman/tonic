@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tilted Plane Orbits — True Occlusion</title>
+<style>
+  html,body{height:100%;margin:0;background:#000;display:flex;align-items:center;justify-content:center}
+  canvas{width:88vmin;height:88vmin;box-shadow:0 8px 30px rgba(0,0,0,.6);border-radius:6px}
+  .hint{position:fixed;left:12px;bottom:12px;color:#ddd;font-family:system-ui; font-size:13px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hint">Red=body • Yellow=mind • Blue=soul — planes tilted, orbits occlude correctly.</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const DPR = window.devicePixelRatio || 1;
+
+  function resize(){
+    const size = Math.min(window.innerWidth, window.innerHeight) * 0.88;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    canvas.width = Math.round(size * DPR);
+    canvas.height = Math.round(size * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const center = () => ({ x: canvas.width / (2*DPR), y: canvas.height / (2*DPR) });
+
+  // central core
+  const core = { radius: 76 };
+
+  // orbiters: azimuthDeg rotates the plane around Z (0,120,240)
+  // inclinationDeg tilts the plane (only the plane is tilted)
+  const orbiters = [
+    { name:'body',  color:'#ff2b2b', azimuthDeg: 0,   inclinationDeg: 12,  radius: 150, speed: 1.05, size: 14, phase: 0 },
+    { name:'mind',  color:'#ffd34b', azimuthDeg: 120, inclinationDeg: 34,  radius: 185, speed: 0.75, size: 12, phase: Math.PI/3 },
+    { name:'soul',  color:'#3b6bff', azimuthDeg: 240, inclinationDeg:-38,  radius: 220, speed: 0.55, size: 14, phase: Math.PI*2/3 }
+  ];
+
+  // small constant camera tilt gives pleasing perspective (rotate around X slightly)
+  const cameraTiltDeg = -18;
+  const focal = 900; // higher => less perspective
+
+  // helpers
+  const deg = d => d * Math.PI / 180;
+  function rotateX(p, a){ const c=Math.cos(a), s=Math.sin(a); return { x:p.x, y:p.y*c - p.z*s, z:p.y*s + p.z*c }; }
+  function rotateZ(p, a){ const c=Math.cos(a), s=Math.sin(a); return { x:p.x*c - p.y*s, y:p.x*s + p.y*c, z:p.z }; }
+
+  function project(p){
+    const c = center();
+    const scale = focal / (focal + p.z);
+    return { x: c.x + p.x * scale, y: c.y + p.y * scale, z: p.z, s: scale };
+  }
+
+  // build points around a circle in plane, rotate plane by inclination+azimuth, then camera tilt
+  function planePoints(o, steps=240){
+    const pts = [];
+    for(let i=0;i<=steps;i++){
+      const theta = (i/steps) * Math.PI * 2;
+      // point on local plane circle before rotation (z=0 initially)
+      let p = { x: Math.cos(theta) * o.radius, y: Math.sin(theta) * o.radius, z: 0 };
+      // tilt plane (rotate around X)
+      p = rotateX(p, deg(o.inclinationDeg));
+      // rotate plane around Z by azimuth to place plane at 0/120/240
+      p = rotateZ(p, deg(o.azimuthDeg));
+      // camera tilt to give perspective
+      p = rotateX(p, deg(cameraTiltDeg));
+      pts.push({ ...p, theta });
+    }
+    return pts;
+  }
+
+  // draw connected contiguous segments where condition(pt.z) true
+  function drawSegmentsFromPts(pts, condition, strokeStyle, lineWidth=3){
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = strokeStyle;
+    ctx.beginPath();
+    let drawing = false;
+    for(let i=0;i<pts.length;i++){
+      const P = project(pts[i]);
+      const ok = condition(pts[i].z);
+      if(ok){
+        if(!drawing){ ctx.moveTo(P.x, P.y); drawing = true; }
+        else ctx.lineTo(P.x, P.y);
+      } else {
+        drawing = false;
+      }
+    }
+    // allow wrap-around: check start points if both ends satisfy condition -> connect
+    // if both first and last satisfy, draw the wrap segment
+    const firstOk = condition(pts[0].z);
+    const lastOk  = condition(pts[pts.length-1].z);
+    if(firstOk && lastOk){
+      // connect end -> start by drawing small segment around wrap
+      // (we simply stroke again: canvas will handle continuity visually)
+    }
+    ctx.stroke();
+  }
+
+  // draw orb path back arcs (z<0), then core, then front arcs (z>=0)
+  function drawOrbitPath(o){
+    const pts = planePoints(o, 360);
+
+    // back arcs (behind core): z < 0
+    drawSegmentsFromPts(pts, z => z < 0, o.color, 3);
+
+    // we'll return pts for later front arc drawing and orb positions
+    return pts;
+  }
+
+  // draw front arcs (z >= 0)
+  function drawOrbitFront(pts, color){
+    drawSegmentsFromPts(pts, z => z >= 0, color, 3.5);
+  }
+
+  // draw orb (single point) at current angle along plane
+  function orbPositionOnPlane(o, angle){
+    // local point on circle
+    let p = { x: Math.cos(angle) * o.radius, y: Math.sin(angle) * o.radius, z: 0 };
+    p = rotateX(p, deg(o.inclinationDeg));
+    p = rotateZ(p, deg(o.azimuthDeg));
+    p = rotateX(p, deg(cameraTiltDeg));
+    return project(p);
+  }
+
+  // animation state
+  let t0 = performance.now();
+
+  // render loop
+  function frame(now){
+    const t = (now - t0) / 1000;
+
+    // clear
+    ctx.clearRect(0,0, canvas.width/DPR, canvas.height/DPR);
+
+    // subtle vignette / bg
+    ctx.fillStyle = 'rgba(4,4,6,0.14)';
+    ctx.fillRect(0,0, canvas.width/DPR, canvas.height/DPR);
+
+    // draw back arcs for all orbits (they will be behind core)
+    const ptsArray = orbiters.map(o => drawOrbitPath(o));
+
+    // draw central glow
+    const c = center();
+    const glow = ctx.createRadialGradient(c.x, c.y, 10, c.x, c.y, 180);
+    glow.addColorStop(0, 'rgba(255,245,200,0.98)');
+    glow.addColorStop(0.12, 'rgba(255,220,110,0.85)');
+    glow.addColorStop(0.6, 'rgba(255,140,20,0.08)');
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 170, 0, Math.PI*2);
+    ctx.fill();
+
+    // draw core (white) — this clips back arcs visually
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, core.radius, 0, Math.PI*2);
+    ctx.fill();
+
+    // draw front arcs for each orbit (the parts that should appear in front of core)
+    orbiters.forEach((o, idx) => {
+      drawOrbitFront(ptsArray[idx], o.color);
+    });
+
+    // draw orbiters (spheres) — decide front/back from their z after same transforms
+    // compute z to decide occlusion: we recompute 3D z (after plane transforms) and use threshold 0
+    orbiters.forEach(o => {
+      // angle advances with speed
+      o._angle = (o._angle || o.phase || 0) + o.speed * 0.016; // approx per-frame advance
+      // get 3D point BEFORE projection to check z
+      let p3 = { x: Math.cos(o._angle) * o.radius, y: Math.sin(o._angle) * o.radius, z: 0 };
+      p3 = rotateX(p3, deg(o.inclinationDeg));
+      p3 = rotateZ(p3, deg(o.azimuthDeg));
+      p3 = rotateX(p3, deg(cameraTiltDeg));
+      const isFront = p3.z >= 0;
+
+      const P = project(p3);
+
+      // draw a subtle shadow/halo behind when front for depth
+      if(isFront){
+        // inner glow + crisp sphere
+        const g = ctx.createRadialGradient(P.x - 6, P.y - 6, 0, P.x, P.y, 30);
+        g.addColorStop(0, o.color);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(P.x, P.y, Math.max(1, o.size*1.4), 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      // draw sphere (only visible if front)
+      if(isFront){
+        ctx.beginPath();
+        ctx.fillStyle = o.color;
+        ctx.arc(P.x, P.y, o.size, 0, Math.PI*2);
+        ctx.fill();
+
+        // white highlight
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.arc(P.x - o.size*0.36, P.y - o.size*0.36, Math.max(1.8, o.size*0.45), 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        // when behind, draw a dim blurred bead to suggest it's on the back (optional)
+        // comment out to make it fully invisible behind core
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(0,0,0,0)'; // fully invisible behind the core
+
+        // if you'd rather show a faint dot behind core uncomment below:
+        // ctx.fillStyle = hexToRgba(o.color, 0.18);
+        // ctx.arc(P.x, P.y, Math.max(1.6, o.size*0.9), 0, Math.PI*2);
+        // ctx.fill();
+      }
+    });
+
+    requestAnimationFrame(frame);
+  }
+
+  function hexToRgba(hex, a){
+    const c = hex.replace('#','');
+    const r = parseInt(c.substring(0,2),16);
+    const g = parseInt(c.substring(2,4),16);
+    const b = parseInt(c.substring(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

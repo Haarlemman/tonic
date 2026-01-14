@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Interactive World Map</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <style>
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #map {
+            margin: 20px auto;
+        }
+        button {
+            background-color: #333;
+            color: #eee;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        .dot {
+            animation: flicker 3s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div>
+        <button id="none">None</button>
+        <button id="religion">Religion</button>
+        <button id="freedom">Freedom</button>
+        <button id="gdp">GDP/Wealth</button>
+    </div>
+    <script>
+        const width = 960;
+        const height = 500;
+        const totalDots = 8000; // Adjust for density
+
+        const svg = d3.select("#map").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g");
+
+        const projection = d3.geoMercator()
+            .scale(150)
+            .translate([width / 2, height / 1.7]);
+
+        svg.call(d3.zoom()
+            .scaleExtent([1, 8])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            }));
+
+        // Name mapping: mapName -> dataName
+        const nameMapping = {
+            "United States of America": "United States",
+            "Czech Republic": "Czechia",
+            "Myanmar": "Burma",
+            "Republic of Congo": "Congo, Republic of the",
+            "Dem. Rep. Congo": "Congo, Democratic Republic of the",
+            "Bahamas": "Bahamas, The",
+            "Gambia": "Gambia, The",
+            "South Korea": "Korea, South",
+            "North Korea": "Korea, North",
+            "Bosnia and Herzeg.": "Bosnia and Herzegovina",
+            "Macedonia": "North Macedonia",
+            "Lao PDR": "Laos",
+            "Timor-Leste": "Timor-Leste",
+            "Tanzania": "Tanzania",
+            "Viet Nam": "Vietnam",
+            "Brunei": "Brunei",
+            "Russia": "Russia",
+            "Iran": "Iran",
+            "Egypt": "Egypt",
+            "Syria": "Syria",
+            "Yemen": "Yemen",
+            "Sudan": "Sudan",
+            "South Sudan": "South Sudan",
+            "Central African Rep.": "Central African Republic",
+            "Somalia": "Somalia",
+            "Turkey": "Turkey",
+            "United Arab Emirates": "United Arab Emirates",
+            "Saudi Arabia": "Saudi Arabia",
+            "Iraq": "Iraq",
+            "Israel": "Israel",
+            "Jordan": "Jordan",
+            "Lebanon": "Lebanon",
+            "Oman": "Oman",
+            "Qatar": "Qatar",
+            "Kuwait": "Kuwait",
+            "Bahrain": "Bahrain",
+            "Pakistan": "Pakistan",
+            "India": "India",
+            "Bangladesh": "Bangladesh",
+            "Indonesia": "Indonesia",
+            "Malaysia": "Malaysia",
+            "Philippines": "Philippines",
+            "Thailand": "Thailand",
+            "Cambodia": "Cambodia",
+            "Singapore": "Singapore",
+            "Australia": "Australia",
+            "New Zealand": "New Zealand",
+            "China": "China",
+            "Japan": "Japan",
+            "Taiwan": "Taiwan",
+            "Hong Kong": "Hong Kong",
+            "Mongolia": "Mongolia",
+            "Kazakhstan": "Kazakhstan",
+            "Uzbekistan": "Uzbekistan",
+            "Kyrgyzstan": "Kyrgyzstan",
+            "Tajikistan": "Tajikistan",
+            "Turkmenistan": "Turkmenistan",
+            "Afghanistan": "Afghanistan",
+            "Azerbaijan": "Azerbaijan",
+            "Armenia": "Armenia",
+            "Georgia": "Georgia",
+            "Ukraine": "Ukraine",
+            "Belarus": "Belarus",
+            "Poland": "Poland",
+            "Germany": "Germany",
+            "France": "France",
+            "United Kingdom": "United Kingdom",
+            "Italy": "Italy",
+            "Spain": "Spain",
+            "Portugal": "Portugal",
+            "Greece": "Greece",
+            "Albania": "Albania",
+            "North Macedonia": "North Macedonia",
+            "Serbia": "Serbia",
+            "Montenegro": "Montenegro",
+            "Bosnia and Herzegovina": "Bosnia and Herzegovina",
+            "Croatia": "Croatia",
+            "Slovenia": "Slovenia",
+            "Austria": "Austria",
+            "Hungary": "Hungary",
+            "Slovakia": "Slovakia",
+            "Romania": "Romania",
+            "Bulgaria": "Bulgaria",
+            "Moldova": "Moldova",
+            "Estonia": "Estonia",
+            "Latvia": "Latvia",
+            "Lithuania": "Lithuania",
+            "Finland": "Finland",
+            "Sweden": "Sweden",
+            "Norway": "Norway",
+            "Denmark": "Denmark",
+            "Iceland": "Iceland",
+            "Ireland": "Ireland",
+            "Netherlands": "Netherlands",
+            "Belgium": "Belgium",
+            "Luxembourg": "Luxembourg",
+            "Switzerland": "Switzerland",
+            "Canada": "Canada",
+            "Mexico": "Mexico",
+            "Guatemala": "Guatemala",
+            "Belize": "Belize",
+            "Honduras": "Honduras",
+            "El Salvador": "El Salvador",
+            "Nicaragua": "Nicaragua",
+            "Costa Rica": "Costa Rica",
+            "Panama": "Panama",
+            "Colombia": "Colombia",
+            "Venezuela": "Venezuela",
+            "Guyana": "Guyana",
+            "Suriname": "Suriname",
+            "Ecuador": "Ecuador",
+            "Peru": "Peru",
+            "Brazil": "Brazil",
+            "Bolivia": "Bolivia",
+            "Paraguay": "Paraguay",
+            "Chile": "Chile",
+            "Argentina": "Argentina",
+            "Uruguay": "Uruguay",
+            "Cuba": "Cuba",
+            "Haiti": "Haiti",
+            "Dominican Republic": "Dominican Republic",
+            "Jamaica": "Jamaica",
+            "Trinidad and Tobago": "Trinidad and Tobago",
+            "Bahamas": "Bahamas",
+            "Barbados": "Barbados",
+            "Algeria": "Algeria",
+            "Tunisia": "Tunisia",
+            "Libya": "Libya",
+            "Morocco": "Morocco",
+            "Mauritania": "Mauritania",
+            "Mali": "Mali",
+            "Niger": "Niger",
+            "Chad": "Chad",
+            "Nigeria": "Nigeria",
+            "Cameroon": "Cameroon",
+            "Central African Republic": "Central African Republic",
+            "Equatorial Guinea": "Equatorial Guinea",
+            "Gabon": "Gabon",
+            "Republic of Congo": "Republic of the Congo",
+            "DR Congo": "DR Congo",
+            "Angola": "Angola",
+            "Namibia": "Namibia",
+            "Botswana": "Botswana",
+            "South Africa": "South Africa",
+            "Lesotho": "Lesotho",
+            "Eswatini": "Eswatini",
+            "Zimbabwe": "Zimbabwe",
+            "Zambia": "Zambia",
+            "Malawi": "Malawi",
+            "Mozambique": "Mozambique",
+            "Madagascar": "Madagascar",
+            "Mauritius": "Mauritius",
+            "Seychelles": "Seychelles",
+            "Comoros": "Comoros",
+            "Rwanda": "Rwanda",
+            "Burundi": "Burundi",
+            "Uganda": "Uganda",
+            "Kenya": "Kenya",
+            "Tanzania": "Tanzania",
+            "Ethiopia": "Ethiopia",
+            "Djibouti": "Djibouti",
+            "Eritrea": "Eritrea",
+            "Somalia": "Somalia",
+            "Sudan": "Sudan",
+            "South Sudan": "South Sudan",
+            "Benin": "Benin",
+            "Togo": "Togo",
+            "Ghana": "Ghana",
+            "Ivory Coast": "Ivory Coast",
+            "Guinea-Bissau": "Guinea-Bissau",
+            "Guinea": "Guinea",
+            "Sierra Leone": "Sierra Leone",
+            "Liberia": "Liberia",
+            "Senegal": "Senegal",
+            "Gambia": "Gambia",
+            "Cape Verde": "Cape Verde",
+            "Sao Tome and Principe": "Sao Tome and Principe",
+            "Bhutan": "Bhutan",
+            "Nepal": "Nepal",
+            "Sri Lanka": "Sri Lanka",
+            "Maldives": "Maldives",
+            "Papua New Guinea": "Papua New Guinea",
+            "Fiji": "Fiji",
+            "Solomon Islands": "Solomon Islands",
+            "Vanuatu": "Vanuatu",
+            "Samoa": "Samoa",
+            "Tonga": "Tonga",
+            "Micronesia": "Micronesia, Federated States of",
+            "Marshall Islands": "Marshall Islands",
+            "Palau": "Palau",
+            "Kiribati": "Kiribati",
+            "Tuvalu": "Tuvalu",
+            "Nauru": "Nauru"
+        };
+
+        // Religion data
+        const religionList = [
+  {"country": "Afghanistan", "religion": "Islam"},
+  {"country": "Albania", "religion": "Islam"},
+  {"country": "Algeria", "religion": "Islam"},
+  {"country": "American Samoa", "religion": "Christianity"},
+  {"country": "Andorra", "religion": "Christianity"},
+  {"country": "Angola", "religion": "Christianity"},
+  {"country": "Anguilla", "religion": "Christianity"},
+  {"country": "Antigua and Barbuda", "religion": "Christianity"},
+  {"country": "Argentina", "religion": "Christianity"},
+  {"country": "Armenia", "religion": "Christianity"},
+  {"country": "Aruba", "religion": "Christianity"},
+  {"country": "Australia", "religion": "Christianity"},
+  {"country": "Austria", "religion": "Christianity"},
+  {"country": "Azerbaijan", "religion": "Islam"},
+  {"country": "Bahamas, The", "religion": "Christianity"},
+  {"country": "Bahrain", "religion": "Islam"},
+  {"country": "Bangladesh", "religion": "Islam"},
+  {"country": "Barbados", "religion": "Christianity"},
+  {"country": "Belarus", "religion": "Christianity"},
+  {"country": "Belgium", "religion": "Christianity"},
+  {"country": "Belize", "religion": "Christianity"},
+  {"country": "Benin", "religion": "Christianity"},
+  {"country": "Bermuda", "religion": "Christianity"},
+  {"country": "Bhutan", "religion": "Other"},
+  {"country": "Bolivia", "religion": "Christianity"},
+  {"country": "Bosnia and Herzegovina", "religion": "Islam"},
+  {"country": "Botswana", "religion": "Christianity"},
+  {"country": "Brazil", "religion": "Christianity"},
+  {"country": "British Virgin Islands", "religion": "Christianity"},
+  {"country": "Brunei", "religion": "Islam"},
+  {"country": "Bulgaria", "religion": "Christianity"},
+  {"country": "Burkina Faso", "religion": "Islam"},
+  {"country": "Burma", "religion": "Buddhism"},
+  {"country": "Burundi", "religion": "Christianity"},
+  {"country": "Cabo Verde", "religion": "Christianity"},
+  {"country": "Cambodia", "religion": "Buddhism"},
+  {"country": "Cameroon", "religion": "Christianity"},
+  {"country": "Canada", "religion": "Christianity"},
+  {"country": "Cayman Islands", "religion": "Christianity"},
+  {"country": "Central African Republic", "religion": "Christianity"},
+  {"country": "Chad", "religion": "Islam"},
+  {"country": "Chile", "religion": "Christianity"},
+  {"country": "China", "religion": "None"},
+  {"country": "Christmas Island", "religion": "Other"},
+  {"country": "Cocos (Keeling) Islands", "religion": "Islam"},
+  {"country": "Colombia", "religion": "Christianity"},
+  {"country": "Comoros", "religion": "Islam"},
+  {"country": "Congo, Democratic Republic of the", "religion": "Christianity"},
+  {"country": "Congo, Republic of the", "religion": "Christianity"},
+  {"country": "Cook Islands", "religion": "Christianity"},
+  {"country": "Costa Rica", "religion": "Christianity"},
+  {"country": "Cote d'Ivoire", "religion": "Islam"},
+  {"country": "Croatia", "religion": "Christianity"},
+  {"country": "Cuba", "religion": "Christianity"},
+  {"country": "Curacao", "religion": "Christianity"},
+  {"country": "Cyprus", "religion": "Christianity"},
+  {"country": "Czechia", "religion": "None"},
+  {"country": "Denmark", "religion": "Christianity"},
+  {"country": "Djibouti", "religion": "Islam"},
+  {"country": "Dominica", "religion": "Christianity"},
+  {"country": "Dominican Republic", "religion": "Christianity"},
+  {"country": "Ecuador", "religion": "Christianity"},
+  {"country": "Egypt", "religion": "Islam"},
+  {"country": "El Salvador", "religion": "Christianity"},
+  {"country": "Equatorial Guinea", "religion": "Christianity"},
+  {"country": "Eritrea", "religion": "Christianity"},
+  {"country": "Estonia", "religion": "None"},
+  {"country": "Eswatini", "religion": "Christianity"},
+  {"country": "Ethiopia", "religion": "Christianity"},
+  {"country": "European Union", "religion": "Christianity"},
+  {"country": "Falkland Islands (Islas Malvinas)", "religion": "Christianity"},
+  {"country": "Faroe Islands", "religion": "Christianity"},
+  {"country": "Fiji", "religion": "Christianity"},
+  {"country": "Finland", "religion": "Christianity"},
+  {"country": "France", "religion": "Christianity"},
+  {"country": "French Polynesia", "religion": "Christianity"},
+  {"country": "Gabon", "religion": "Christianity"},
+  {"country": "Gambia, The", "religion": "Islam"},
+  {"country": "Gaza Strip", "religion": "Islam"},
+  {"country": "Georgia", "religion": "Christianity"},
+  {"country": "Germany", "religion": "Christianity"},
+  {"country": "Ghana", "religion": "Christianity"},
+  {"country": "Gibraltar", "religion": "Christianity"},
+  {"country": "Greece", "religion": "Christianity"},
+  {"country": "Greenland", "religion": "Christianity"},
+  {"country": "Grenada", "religion": "Christianity"},
+  {"country": "Guam", "religion": "Christianity"},
+  {"country": "Guatemala", "religion": "Christianity"},
+  {"country": "Guernsey", "religion": "Christianity"},
+  {"country": "Guinea", "religion": "Islam"},
+  {"country": "Guinea-Bissau", "religion": "Islam"},
+  {"country": "Guyana", "religion": "Christianity"},
+  {"country": "Haiti", "religion": "Christianity"},
+  {"country": "Holy See (Vatican City)", "religion": "Christianity"},
+  {"country": "Honduras", "religion": "Christianity"},
+  {"country": "Hong Kong", "religion": "None"},
+  {"country": "Hungary", "religion": "Christianity"},
+  {"country": "Iceland", "religion": "Christianity"},
+  {"country": "India", "religion": "Hinduism"},
+  {"country": "Indonesia", "religion": "Islam"},
+  {"country": "Iran", "religion": "Islam"},
+  {"country": "Iraq", "religion": "Islam"},
+  {"country": "Ireland", "religion": "Christianity"},
+  {"country": "Isle of Man", "religion": "Christianity"},
+  {"country": "Israel", "religion": "Judaism"},
+  {"country": "Italy", "religion": "Christianity"},
+  {"country": "Jamaica", "religion": "Christianity"},
+  {"country": "Japan", "religion": "Other"},
+  {"country": "Jersey", "religion": "Christianity"},
+  {"country": "Jordan", "religion": "Islam"},
+  {"country": "Kazakhstan", "religion": "Islam"},
+  {"country": "Kenya", "religion": "Christianity"},
+  {"country": "Kiribati", "religion": "Christianity"},
+  {"country": "Korea, North", "religion": "Other"},
+  {"country": "Korea, South", "religion": "None"},
+  {"country": "Kosovo", "religion": "Islam"},
+  {"country": "Kuwait", "religion": "Islam"},
+  {"country": "Kyrgyzstan", "religion": "Islam"},
+  {"country": "Laos", "religion": "Buddhism"},
+  {"country": "Latvia", "religion": "Christianity"},
+  {"country": "Lebanon", "religion": "Christianity"},
+  {"country": "Lesotho", "religion": "Christianity"},
+  {"country": "Liberia", "religion": "Christianity"},
+  {"country": "Libya", "religion": "Islam"},
+  {"country": "Liechtenstein", "religion": "Christianity"},
+  {"country": "Lithuania", "religion": "Christianity"},
+
+  {"country": "Luxembourg", "religion": "Christianity"},
+  {"country": "Macau", "religion": "None"},
+  {"country": "Madagascar", "religion": "Christianity"},
+  {"country": "Malawi", "religion": "Christianity"},
+  {"country": "Malaysia", "religion": "Islam"},
+  {"country": "Maldives", "religion": "Islam"},
+  {"country": "Mali", "religion": "Islam"},
+  {"country": "Malta", "religion": "Christianity"},
+  {"country": "Marshall Islands", "religion": "Christianity"},
+  {"country": "Mauritania", "religion": "Islam"},
+  {"country": "Mauritius", "religion": "Hinduism"},
+  {"country": "Mexico", "religion": "Christianity"},
+  {"country": "Micronesia, Federated States of", "religion": "Christianity"},
+  {"country": "Moldova", "religion": "Christianity"},
+  {"country": "Monaco", "religion": "Christianity"},
+  {"country": "Mongolia", "religion": "Buddhism"},
+  {"country": "Montenegro", "religion": "Christianity"},
+  {"country": "Montserrat", "religion": "Christianity"},
+  {"country": "Morocco", "religion": "Islam"},
+  {"country": "Mozambique", "religion": "Christianity"},
+  {"country": "Namibia", "religion": "Christianity"},
+  {"country": "Nauru", "religion": "Christianity"},
+  {"country": "Nepal", "religion": "Hinduism"},
+  {"country": "Netherlands", "religion": "Christianity"},
+  {"country": "New Caledonia", "religion": "Christianity"},
+  {"country": "New Zealand", "religion": "Christianity"},
+  {"country": "Nicaragua", "religion": "Christianity"},
+  {"country": "Niger", "religion": "Islam"},
+  {"country": "Nigeria", "religion": "Christianity"},
+  {"country": "Niue", "religion": "Christianity"},
+  {"country": "Norfolk Island", "religion": "Christianity"},
+  {"country": "North Macedonia", "religion": "Christianity"},
+  {"country": "Northern Mariana Islands", "religion": "Christianity"},
+  {"country": "Norway", "religion": "Christianity"},
+  {"country": "Oman", "religion": "Islam"},
+  {"country": "Pakistan", "religion": "Islam"},
+  {"country": "Palau", "religion": "Christianity"},
+  {"country": "Panama", "religion": "Christianity"},
+  {"country": "Papua New Guinea", "religion": "Christianity"},
+  {"country": "Paraguay", "religion": "Christianity"},
+  {"country": "Peru", "religion": "Christianity"},
+  {"country": "Philippines", "religion": "Christianity"},
+  {"country": "Pitcairn Islands", "religion": "Christianity"},
+  {"country": "Poland", "religion": "Christianity"},
+  {"country": "Portugal", "religion": "Christianity"},
+  {"country": "Puerto Rico", "religion": "Christianity"},
+  {"country": "Qatar", "religion": "Islam"},
+  {"country": "Romania", "religion": "Christianity"},
+  {"country": "Russia", "religion": "Christianity"},
+  {"country": "Rwanda", "religion": "Christianity"},
+  {"country": "Saint Barthelemy", "religion": "Christianity"},
+  {"country": "Saint Helena, Ascension, and Tristan da Cunha", "religion": "Christianity"},
+  {"country": "Saint Kitts and Nevis", "religion": "Christianity"},
+  {"country": "Saint Lucia", "religion": "Christianity"},
+  {"country": "Saint Martin", "religion": "Christianity"},
+  {"country": "Saint Pierre and Miquelon", "religion": "Christianity"},
+  {"country": "Saint Vincent and the Grenadines", "religion": "Christianity"},
+  {"country": "Samoa", "religion": "Christianity"},
+  {"country": "San Marino", "religion": "Christianity"},
+  {"country": "Sao Tome and Principe", "religion": "Christianity"},
+  {"country": "Saudi Arabia", "religion": "Islam"},
+  {"country": "Senegal", "religion": "Islam"},
+  {"country": "Serbia", "religion": "Christianity"},
+  {"country": "Seychelles", "religion": "Christianity"},
+  {"country": "Sierra Leone", "religion": "Islam"},
+  {"country": "Singapore", "religion": "Buddhism"},
+  {"country": "Sint Maarten", "religion": "Christianity"},
+  {"country": "Slovakia", "religion": "Christianity"},
+  {"country": "Slovenia", "religion": "Christianity"},
+  {"country": "Solomon Islands", "religion": "Christianity"},
+  {"country": "Somalia", "religion": "Islam"}
+];
+
+        // Freedom data
+        const freedomList = [
+  {"country": "Thailand", "score": 9.14},
+  {"country": "Switzerland", "score": 9.14},
+  {"country": "New Zealand", "score": 9.08},
+  {"country": "Denmark", "score": 9.04},
+  {"country": "Luxembourg", "score": 8.93},
+  {"country": "Ireland", "score": 8.91},
+  {"country": "Finland", "score": 8.84},
+  {"country": "Tanzania", "score": 8.8},
+  {"country": "Australia", "score": 8.8},
+  {"country": "Sweden", "score": 8.8},
+  {"country": "Iceland", "score": 8.8},
+  {"country": "Estonia", "score": 8.78},
+  {"country": "Canada", "score": 8.74},
+  {"country": "Japan", "score": 8.73},
+  {"country": "Norway", "score": 8.73},
+  {"country": "Germany", "score": 8.67},
+  {"country": "Netherlands", "score": 8.66},
+  {"country": "Czechia", "score": 8.66},
+  {"country": "United States", "score": 8.64},
+  {"country": "United Kingdom", "score": 8.64},
+  {"country": "Taiwan", "score": 8.61},
+  {"country": "Togo", "score": 8.61},
+  {"country": "Portugal", "score": 8.57},
+  {"country": "Latvia", "score": 8.49},
+  {"country": "Austria", "score": 8.48},
+  {"country": "Malta", "score": 8.48},
+  {"country": "Belgium", "score": 8.47},
+  {"country": "Lithuania", "score": 8.38},
+  {"country": "Spain", "score": 8.34},
+  {"country": "Cape Verde", "score": 8.29},
+  {"country": "Italy", "score": 8.26},
+  {"country": "Slovenia", "score": 8.26},
+  {"country": "Cyprus", "score": 8.25},
+  {"country": "Chile", "score": 8.24},
+  {"country": "South Korea", "score": 8.23},
+  {"country": "Costa Rica", "score": 8.23},
+  {"country": "France", "score": 8.21},
+  {"country": "Slovakia", "score": 8.2},
+  {"country": "Uruguay", "score": 8.19},
+  {"country": "Romania", "score": 8.03},
+  {"country": "Seychelles", "score": 8.01},
+  {"country": "Panama", "score": 8},
+  {"country": "Croatia", "score": 8},
+  {"country": "Albania", "score": 7.92},
+  {"country": "Armenia", "score": 7.91},
+  {"country": "Dominican Republic", "score": 7.85},
+  {"country": "Singapore", "score": 7.85},
+  {"country": "Bahamas", "score": 7.82},
+  {"country": "Jamaica", "score": 7.8},
+  {"country": "Bulgaria", "score": 7.77},
+  {"country": "Montenegro", "score": 7.77},
+  {"country": "Barbados", "score": 7.75},
+  {"country": "Hong Kong", "score": 7.73},
+  {"country": "Poland", "score": 7.72},
+  {"country": "Georgia", "score": 7.7},
+  {"country": "Mauritius", "score": 7.66},
+  {"country": "Peru", "score": 7.62},
+  {"country": "Mongolia", "score": 7.61},
+  {"country": "North Macedonia", "score": 7.61},
+  {"country": "Greece", "score": 7.58},
+  {"country": "Israel", "score": 7.54},
+  {"country": "Namibia", "score": 7.48},
+  {"country": "Belize", "score": 7.48},
+  {"country": "Botswana", "score": 7.46},
+  {"country": "Hungary", "score": 7.44},
+  {"country": "Moldova", "score": 7.43},
+  {"country": "Suriname", "score": 7.29},
+  {"country": "Paraguay", "score": 7.24},
+  {"country": "Guatemala", "score": 7.21},
+  {"country": "Fiji", "score": 7.19},
+  {"country": "Brazil", "score": 7.18},
+  {"country": "Papua New Guinea", "score": 7.17},
+  {"country": "Bosnia and Herzegovina", "score": 7.15},
+  {"country": "South Africa", "score": 7.1},
+  {"country": "El Salvador", "score": 7.1},
+  {"country": "Serbia", "score": 7.08},
+  {"country": "Ghana", "score": 7.07},
+  {"country": "Malaysia", "score": 7.06},
+  {"country": "Ecuador", "score": 6.99},
+  {"country": "Colombia", "score": 6.95},
+  {"country": "Argentina", "score": 6.93},
+  {"country": "Benin", "score": 6.93},
+  {"country": "Guyana", "score": 6.91},
+  {"country": "Nepal", "score": 6.9},
+  {"country": "Honduras", "score": 6.9},
+  {"country": "Bolivia", "score": 6.88},
+  {"country": "Malawi", "score": 6.85},
+  {"country": "Indonesia", "score": 6.82},
+  {"country": "Senegal", "score": 6.73},
+  {"country": "Gambia", "score": 6.71},
+  {"country": "Bhutan", "score": 6.7},
+  {"country": "Lesotho", "score": 6.69},
+  {"country": "Madagascar", "score": 6.67},
+  {"country": "Mexico", "score": 6.66},
+  {"country": "Zambia", "score": 6.66},
+  {"country": "Kenya", "score": 6.62},
+  {"country": "Ivory Coast", "score": 6.6},
+  {"country": "Kyrgyzstan", "score": 6.57},
+  {"country": "Philippines", "score": 6.54},
+  {"country": "Liberia", "score": 6.52},
+  {"country": "Jordan", "score": 6.48},
+  {"country": "Guinea-Bissau", "score": 6.43},
+  {"country": "Mozambique", "score": 6.41},
+  {"country": "Kazakhstan", "score": 6.38},
+  {"country": "Sierra Leone", "score": 6.34},
+  {"country": "Gabon", "score": 6.32},
+  {"country": "Burkina Faso", "score": 6.31},
+  {"country": "India", "score": 6.26},
+  {"country": "Niger", "score": 6.26},
+  {"country": "Haiti", "score": 6.15},
+  {"country": "Cambodia", "score": 6.14},
+  {"country": "Sri Lanka", "score": 6.11},
+  {"country": "Kuwait", "score": 6.1},
+  {"country": "Tunisia", "score": 5.97},
+  {"country": "Lebanon", "score": 5.96},
+  {"country": "Uganda", "score": 5.92},
+  {"country": "United Arab Emirates", "score": 5.9},
+  {"country": "Brunei", "score": 5.88},
+  {"country": "Rwanda", "score": 5.87},
+  {"country": "Ukraine", "score": 5.84},
+  {"country": "Mali", "score": 5.75},
+  {"country": "Angola", "score": 5.74},
+  {"country": "Oman", "score": 5.62},
+  {"country": "Nigeria", "score": 5.61},
+  {"country": "Azerbaijan", "score": 5.54},
+  {"country": "Bahrain", "score": 5.53},
+  {"country": "Bangladesh", "score": 5.52},
+  {"country": "Morocco", "score": 5.49},
+  {"country": "Djibouti", "score": 5.49},
+  {"country": "Vietnam", "score": 5.43},
+  {"country": "Comoros", "score": 5.43},
+  {"country": "Mauritania", "score": 5.41},
+  {"country": "Qatar", "score": 5.41},
+  {"country": "Pakistan", "score": 5.4},
+  {"country": "Republic of the Congo", "score": 5.4},
+  {"country": "Tajikistan", "score": 5.38},
+  {"country": "Trinidad and Tobago", "score": 5.38},
+  {"country": "Russia", "score": 5.35},
+  {"country": "Belarus", "score": 5.32},
+  {"country": "DR Congo", "score": 5.29},
+  {"country": "Turkey", "score": 5.28},
+  {"country": "Nicaragua", "score": 5.27},
+  {"country": "Cameroon", "score": 5.26},
+  {"country": "Central African Republic", "score": 5.18},
+  {"country": "Ethiopia", "score": 5.16},
+  {"country": "Guinea", "score": 5.16},
+  {"country": "Laos", "score": 5.15},
+  {"country": "Eswatini", "score": 5.11},
+  {"country": "China", "score": 4.93},
+  {"country": "Libya", "score": 4.92},
+  {"country": "Burundi", "score": 4.88},
+  {"country": "Zimbabwe", "score": 4.87},
+  {"country": "Chad", "score": 4.81},
+  {"country": "Saudi Arabia", "score": 4.8},
+  {"country": "Iraq", "score": 4.71},
+  {"country": "Algeria", "score": 4.7},
+  {"country": "Somalia", "score": 4.67},
+  {"country": "Venezuela", "score": 4.18},
+  {"country": "Egypt", "score": 4.17},
+  {"country": "Sudan", "score": 4.05},
+  {"country": "Myanmar", "score": 3.97},
+  {"country": "Iran", "score": 3.96},
+  {"country": "Yemen", "score": 3.78},
+  {"country": "Syria", "score": 3.1},
+  {"country": "Timor-Leste", "score": 3.1}
+];
+
+        // GDP data (using provided data, assuming full list)
+        const gdpList = [
+  {"country": "Luxembourg", "gdp": 141080},
+  {"country": "Switzerland", "gdp": 111716},
+  {"country": "Ireland", "gdp": 107243},
+  {"country": "Singapore", "gdp": 93956},
+  {"country": "Norway", "gdp": 90320},
+  {"country": "Iceland", "gdp": 90111},
+  {"country": "United States", "gdp": 89678},
+  {"country": "Macau", "gdp": 84276},
+  {"country": "Qatar", "gdp": 72760},
+  {"country": "Denmark", "gdp": 71967},
+  {"country": "Netherlands", "gdp": 70606},
+  {"country": "Australia", "gdp": 67979},
+  {"country": "San Marino", "gdp": 61518},
+  {"country": "Austria", "gdp": 61080},
+  {"country": "Sweden", "gdp": 59508},
+  {"country": "Belgium", "gdp": 58248},
+  {"country": "Germany", "gdp": 57914},
+  {"country": "Finland", "gdp": 57183},
+  {"country": "Canada", "gdp": 55890},
+  {"country": "Hong Kong", "gdp": 55608},
+  {"country": "Israel", "gdp": 54370},
+  {"country": "United Kingdom", "gdp": 54280},
+  {"country": "United Arab Emirates", "gdp": 51294},
+  {"country": "France", "gdp": 49527},
+  {"country": "New Zealand", "gdp": 48234},
+  {"country": "Malta", "gdp": 46644},
+  {"country": "Andorra", "gdp": 45995},
+  {"country": "Italy", "gdp": 41714},
+  {"country": "Aruba", "gdp": 41493},
+  {"country": "Cyprus", "gdp": 40552},
+  {"country": "Puerto Rico", "gdp": 38515},
+  {"country": "South Korea", "gdp": 37675},
+  {"country": "Spain", "gdp": 37362},
+  {"country": "Bahamas", "gdp": 37180},
+  {"country": "Brunei", "gdp": 37023},
+  {"country": "Slovenia", "gdp": 36495},
+  {"country": "Japan", "gdp": 35611},
+  {"country": "Taiwan", "gdp": 34924},
+  {"country": "Saudi Arabia", "gdp": 33287},
+  {"country": "Estonia", "gdp": 33225},
+  {"country": "Czechia", "gdp": 33038},
+  {"country": "Kuwait", "gdp": 31682},
+  {"country": "Portugal", "gdp": 30947},
+  {"country": "Guyana", "gdp": 30650},
+  {"country": "Lithuania", "gdp": 30514},
+  {"country": "Bahrain", "gdp": 29886},
+  {"country": "Slovakia", "gdp": 28177},
+  {"country": "Barbados", "gdp": 26228},
+  {"country": "Hungary", "gdp": 25703},
+  {"country": "Latvia", "gdp": 25681},
+  {"country": "Greece", "gdp": 25616},
+  {"country": "Saint Kitts and Nevis", "gdp": 25514},
+  {"country": "Croatia", "gdp": 25081},
+  {"country": "Poland", "gdp": 25041},
+  {"country": "Uruguay", "gdp": 24080},
+  {"country": "Antigua and Barbuda", "gdp": 23216},
+  {"country": "Seychelles", "gdp": 22001},
+  {"country": "Romania", "gdp": 21570},
+  {"country": "Trinidad and Tobago", "gdp": 20376},
+  {"country": "Oman", "gdp": 20230},
+  {"country": "Panama", "gdp": 20092},
+  {"country": "Palau", "gdp": 20088},
+  {"country": "Costa Rica", "gdp": 18722},
+  {"country": "Maldives", "gdp": 18599},
+  {"country": "Bulgaria", "gdp": 18456},
+  {"country": "Chile", "gdp": 17927},
+  {"country": "Turkey", "gdp": 16876},
+  {"country": "Kazakhstan", "gdp": 15112},
+  {"country": "Russia", "gdp": 15077},
+  {"country": "Saint Lucia", "gdp": 14561},
+  {"country": "Malaysia", "gdp": 14423},
+  {"country": "Montenegro", "gdp": 13961},
+  {"country": "China", "gdp": 13873},
+  {"country": "Turkmenistan", "gdp": 13657},
+  {"country": "Mexico", "gdp": 13630},
+  {"country": "Serbia", "gdp": 13490},
+  {"country": "Nauru", "gdp": 13476},
+  {"country": "Mauritius", "gdp": 13099},
+  {"country": "Grenada", "gdp": 12722},
+  {"country": "Dominican Republic", "gdp": 12452},
+  {"country": "Argentina", "gdp": 12054},
+  {"country": "Saint Vincent and the Grenadines", "gdp": 11194},
+  {"country": "Brazil", "gdp": 10816},
+  {"country": "Albania", "gdp": 10386},
+  {"country": "Dominica", "gdp": 9942},
+  {"country": "Georgia", "gdp": 9613},
+  {"country": "North Macedonia", "gdp": 9439},
+  {"country": "Gabon", "gdp": 9094},
+  {"country": "Armenia", "gdp": 8965},
+  {"country": "Bosnia and Herzegovina", "gdp": 8668},
+  {"country": "Peru", "gdp": 8570},
+  {"country": "Belarus", "gdp": 8460},
+  {"country": "Belize", "gdp": 8355},
+  {"country": "Moldova", "gdp": 8161},
+  {"country": "Botswana", "gdp": 8003},
+  {"country": "Colombia", "gdp": 7895},
+  {"country": "Equatorial Guinea", "gdp": 7893},
+  {"country": "Jamaica", "gdp": 7841},
+  {"country": "Thailand", "gdp": 7754},
+  {"country": "Tuvalu", "gdp": 7713},
+  {"country": "Mongolia", "gdp": 7576},
+  {"country": "Suriname", "gdp": 7545},
+  {"country": "Azerbaijan", "gdp": 7428},
+  {"country": "Marshall Islands", "gdp": 7151},
+  {"country": "Ecuador", "gdp": 6941},
+  {"country": "Libya", "gdp": 6874},
+  {"country": "Guatemala", "gdp": 6682},
+  {"country": "Fiji", "gdp": 6551},
+  {"country": "South Africa", "gdp": 6517},
+  {"country": "Paraguay", "gdp": 6033},
+  {"country": "Iraq", "gdp": 5951},
+  {"country": "El Salvador", "gdp": 5893},
+  {"country": "Ukraine", "gdp": 5759},
+  {"country": "Tonga", "gdp": 5757},
+  {"country": "Cape Verde", "gdp": 5712},
+  {"country": "Algeria", "gdp": 5593},
+  {"country": "Micronesia", "gdp": 5364},
+  {"country": "Samoa", "gdp": 5350},
+  {"country": "Iran", "gdp": 5300},
+  {"country": "Indonesia", "gdp": 5248},
+  {"country": "Vietnam", "gdp": 4986},
+  {"country": "Jordan", "gdp": 4904},
+  {"country": "Namibia", "gdp": 4711},
+  {"country": "Eswatini", "gdp": 4562},
+  {"country": "Bhutan", "gdp": 4495},
+  {"country": "Morocco", "gdp": 4471},
+  {"country": "Philippines", "gdp": 4439},
+  {"country": "Djibouti", "gdp": 4417},
+  {"country": "Tunisia", "gdp": 4396},
+  {"country": "Venezuela", "gdp": 4122},
+  {"country": "Bolivia", "gdp": 4121},
+  {"country": "Sao Tome and Principe", "gdp": 3933},
+  {"country": "Honduras", "gdp": 3594},
+  {"country": "Vanuatu", "gdp": 3401},
+  {"country": "Uzbekistan", "gdp": 3379},
+  {"country": "Egypt", "gdp": 3160},
+  {"country": "Nicaragua", "gdp": 3074},
+  {"country": "Angola", "gdp": 2991},
+  {"country": "Cambodia", "gdp": 2948},
+  {"country": "India", "gdp": 2937},
+  {"country": "Ivory Coast", "gdp": 2902},
+  {"country": "Bangladesh", "gdp": 2774},
+  {"country": "Kiribati", "gdp": 2578},
+  {"country": "Papua New Guinea", "gdp": 2550},
+  {"country": "Republic of the Congo", "gdp": 2454},
+  {"country": "Haiti", "gdp": 2435},
+  {"country": "Kyrgyzstan", "gdp": 2405},
+  {"country": "Mauritania", "gdp": 2394},
+  {"country": "Solomon Islands", "gdp": 2300},
+  {"country": "Ghana", "gdp": 2189},
+  {"country": "Kenya", "gdp": 2187},
+  {"country": "Zimbabwe", "gdp": 2127},
+  {"country": "Senegal", "gdp": 1972},
+  {"country": "Cameroon", "gdp": 1923},
+  {"country": "Laos", "gdp": 1854},
+  {"country": "Guinea", "gdp": 1727},
+  {"country": "Comoros", "gdp": 1687},
+  {"country": "Benin", "gdp": 1587},
+  {"country": "Timor-Leste", "gdp": 1533},
+  {"country": "Nepal", "gdp": 1486},
+  {"country": "Zambia", "gdp": 1466},
+  {"country": "Tajikistan", "gdp": 1367},
+  {"country": "Uganda", "gdp": 1304},
+  {"country": "Tanzania", "gdp": 1272},
+  {"country": "Myanmar", "gdp": 1187},
+  {"country": "Guinea-Bissau", "gdp": 1166},
+  {"country": "Ethiopia", "gdp": 1108},
+  {"country": "Lesotho", "gdp": 1107},
+  {"country": "Togo", "gdp": 1099},
+  {"country": "Gambia", "gdp": 1074},
+  {"country": "Chad", "gdp": 1036},
+  {"country": "Rwanda", "gdp": 990},
+  {"country": "Burkina Faso", "gdp": 952},
+  {"country": "Mali", "gdp": 933},
+  {"country": "Liberia", "gdp": 887},
+  {"country": "Sierra Leone", "gdp": 883},
+  {"country": "Nigeria", "gdp": 835},
+  {"country": "Somalia", "gdp": 819},
+  {"country": "Niger", "gdp": 752},
+  {"country": "DR Congo", "gdp": 744},
+  {"country": "Mozambique", "gdp": 685},
+  {"country": "Sudan", "gdp": 595},
+  {"country": "Madagascar", "gdp": 576},
+  {"country": "Central African Republic", "gdp": 549},
+  {"country": "Yemen", "gdp": 455},
+  {"country": "Malawi", "gdp": 448},
+  {"country": "South Sudan", "gdp": 400} // Assumed completion for last entry
+        ];
+
+        const religionColors = {
+            "Islam": "green",
+            "Christianity": "purple",
+            "Hinduism": "orange",
+            "Buddhism": "yellow",
+            "Judaism": "cyan",
+            "Other": "#555",
+            "None": "#555"
+        };
+
+        let currentMode = "none";
+
+        function getColor(country, mode) {
+            const dataName = nameMapping[country] || country;
+            if (mode === "religion") {
+                const relEntry = religionList.find(e => e.country === dataName);
+                const rel = relEntry ? relEntry.religion : "Other";
+                return religionColors[rel] || "#555";
+            } else if (mode === "freedom") {
+                const entry = freedomList.find(e => e.country === dataName);
+                const score = entry ? entry.score : null;
+                if (score === null) return "#555";
+                if (score > 8) return "green";
+                if (score > 6.5) return "yellow";
+                return "red";
+            } else if (mode === "gdp") {
+                const entry = gdpList.find(e => e.country === dataName);
+                const gdp = entry ? entry.gdp : null;
+                if (gdp === null) return "#555";
+                if (gdp > 50000) return "yellow";
+                if (gdp > 10000) return "orange";
+                return "blue";
+            } else {
+                return "#555";
+            }
+        }
+
+        function randomPointInPoly(poly) {
+            const bbox = turf.bbox(poly);
+            let count = 0;
+            while (count < 200) { // Increased max tries
+                const pt = turf.randomPoint(1, {bbox: bbox}).features[0];
+                if (turf.booleanPointInPolygon(pt, poly)) {
+                    return pt;
+                }
+                count++;
+            }
+            return null; // Fallback
+        }
+
+        // Load the world data
+        d3.json("https://unpkg.com/world-atlas@2.0.2/countries-110m.json").then((world) => {
+            const countries = topojson.feature(world, world.objects.countries);
+
+            // Compute total land area (in km²)
+            let totalLandArea = 0;
+            countries.features.forEach((feature) => {
+                if (feature.properties.name !== "Antarctica") {
+                    totalLandArea += turf.area(feature) / 1e6;
+                }
+            });
+
+            const dots = [];
+            countries.features.forEach((feature) => {
+                const name = feature.properties.name;
+                if (name === "Antarctica") return;
+
+                const area = turf.area(feature) / 1e6;
+                let numDots = Math.max(1, Math.round(area / totalLandArea * totalDots));
+                if (name === "Israel") numDots = 1; // As per user request
+
+                for (let i = 0; i < numDots; i++) {
+                    let pt;
+                    if (numDots === 1) {
+                        pt = turf.centroid(feature);
+                    } else {
+                        pt = randomPointInPoly(feature);
+                    }
+                    if (pt) {
+                        dots.push({coord: pt.geometry.coordinates, country: name});
+                    }
+                }
+            });
+
+            g.selectAll("circle")
+                .data(dots)
+                .enter()
+                .append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => projection(d.coord)[0])
+                .attr("cy", d => projection(d.coord)[1])
+                .attr("r", 0.5)
+                .attr("fill", d => getColor(d.country, currentMode))
+                .style("animation-delay", () => -Math.random() * 3 + "s");
+
+            // Update colors function
+            function updateColors(mode) {
+                currentMode = mode;
+                g.selectAll(".dot")
+                    .attr("fill", d => getColor(d.country, mode));
+            }
+
+            // Button listeners
+            document.getElementById("none").addEventListener("click", () => updateColors("none"));
+            document.getElementById("religion").addEventListener("click", () => updateColors("religion"));
+            document.getElementById("freedom").addEventListener("click", () => updateColors("freedom"));
+            document.getElementById("gdp").addEventListener("click", () => updateColors("gdp"));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblical Genealogy to Jesus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+       
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            overflow: hidden;
+            color: #fff;
+        }
+       
+        #controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+       
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+       
+        .control-btn:hover {
+            transform: scale(1.05);
+        }
+       
+        .control-btn.active {
+            background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+        }
+       
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+            position: relative;
+        }
+       
+        #canvas-container.grabbing {
+            cursor: grabbing;
+        }
+       
+        canvas {
+            display: block;
+        }
+       
+        #tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 999;
+            max-width: 250px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+       
+        #legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            font-size: 12px;
+        }
+       
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+       
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button class="control-btn" onclick="resetView()">Reset View</button>
+        <button class="control-btn" onclick="expandAll()">Expand All</button>
+        <button class="control-btn" onclick="collapseAll()">Collapse All</button>
+        <button class="control-btn" id="highlightBtn" onclick="toggleHighlight()">Highlight Jesus Line</button>
+        <button class="control-btn" onclick="toggleNames()">Toggle Details</button>
+    </div>
+   
+    <div id="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f39c12;"></div>
+            <span>Patriarch</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #3498db;"></div>
+            <span>Descendant</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #e74c3c;"></div>
+            <span>Jesus' Lineage</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #9b59b6;"></div>
+            <span>Collapsed Branch</span>
+        </div>
+    </div>
+   
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+   
+    <div id="tooltip"></div>
+   
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const tooltip = document.getElementById('tooltip');
+            const container = document.getElementById('canvas-container');
+           
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+           
+            let scale = 1;
+            let offsetX = 0;
+            let offsetY = 0;
+            let isDragging = false;
+            let lastX = 0;
+            let lastY = 0;
+            let showDetails = true;
+            let highlightJesusLine = false;
+           
+			
+			const genealogyData = {
+            name: "Adam & Eve",
+            details: "First humans",
+            jesusLine: true,
+            children: [
+                {
+                    name: "Cain",
+                    children: [
+                        { name: "Enoch" },
+                        { name: "Irad" },
+                        { name: "Mehujael" },
+                        { name: "Methushael" },
+                        { name: "Lamech" }
+                    ]
+                },
+                {
+                    name: "Abel",
+                    details: "Killed by Cain"
+                },
+                {
+                    name: "Seth & Azura",
+                    jesusLine: true,
+                    children: [
+                        {
+                            name: "Enos",
+                            jesusLine: true,
+                            children: [
+                                {
+                                    name: "Kenan",
+                                    jesusLine: true,
+                                    children: [
+                                        {
+                                            name: "Mahalalel",
+                                            jesusLine: true,
+                                            children: [
+                                                {
+                                                    name: "Jared",
+                                                    jesusLine: true,
+                                                    children: [
+                                                        {
+                                                            name: "Enoch",
+                                                            jesusLine: true,
+                                                            children: [
+                                                                {
+                                                                    name: "Methuselah",
+                                                                    jesusLine: true,
+                                                                    children: [
+                                                                        {
+                                                                            name: "Lamech",
+                                                                            jesusLine: true,
+                                                                            children: [
+                                                                                {
+                                                                                    name: "Noah",
+                                                                                    details: "Builder of the Ark",
+                                                                                    jesusLine: true,
+                                                                                    children: [
+                                                                                        {
+                                                                                            name: "Shem",
+                                                                                            details: "Semitic peoples",
+                                                                                            jesusLine: true,
+                                                                                            children: [
+                                                                                                { name: "Elam" },
+                                                                                                { name: "Asshur" },
+                                                                                                { name: "Arphaxad",
+                                                                                                  jesusLine: true,
+                                                                                                  children: [
+                                                                                                    { name: "Shelah",
+                                                                                                      jesusLine: true,
+                                                                                                      children: [
+                                                                                                        { name: "Eber",
+                                                                                                          jesusLine: true,
+                                                                                                          children: [
+                                                                                                            { name: "Peleg",
+                                                                                                              jesusLine: true,
+                                                                                                              children: [
+                                                                                                                { name: "Reu",
+                                                                                                                  jesusLine: true,
+                                                                                                                  children: [
+                                                                                                                    { name: "Serug",
+                                                                                                                      jesusLine: true,
+                                                                                                                      children: [
+                                                                                                                        { name: "Nahor",
+                                                                                                                          jesusLine: true,
+                                                                                                                          children: [
+                                                                                                                            { name: "Terah",
+                                                                                                                              jesusLine: true,
+                                                                                                                              children: [
+                                                                                                                                {
+                                                                                                                                  name: "Abraham",
+                                                                                                                                  details: "Father of Nations",
+                                                                                                                                  jesusLine: true,
+                                                                                                                                  children: [
+                                                                                                                                    {
+                                                                                                                                      name: "Isaac",
+                                                                                                                                      details: "Son of Promise",
+                                                                                                                                      jesusLine: true,
+                                                                                                                                      children: [
+                                                                                                                                        {
+                                                                                                                                          name: "Esau",
+                                                                                                                                          details: "Edomites"
+                                                                                                                                        },
+                                                                                                                                        {
+                                                                                                                                          name: "Jacob (Israel)",
+                                                                                                                                          details: "12 Tribes",
+                                                                                                                                          jesusLine: true,
+                                                                                                                                          children: [
+                                                                                                                                            { name: "Reuben" },
+                                                                                                                                            { name: "Simeon" },
+                                                                                                                                            { name: "Levi" },
+                                                                                                                                            { 
+                                                                                                                                              name: "Judah",
+                                                                                                                                              jesusLine: true,
+                                                                                                                                              children: [
+                                                                                                                                                { 
+                                                                                                                                                  name: "Perez",
+                                                                                                                                                  jesusLine: true,
+                                                                                                                                                  children: [
+                                                                                                                                                    {
+                                                                                                                                                      name: "Hezron",
+                                                                                                                                                      jesusLine: true,
+                                                                                                                                                      children: [
+                                                                                                                                                        {
+                                                                                                                                                          name: "Ram",
+                                                                                                                                                          jesusLine: true,
+                                                                                                                                                          children: [
+                                                                                                                                                            {
+                                                                                                                                                              name: "Amminadab",
+                                                                                                                                                              jesusLine: true,
+                                                                                                                                                              children: [
+                                                                                                                                                                {
+                                                                                                                                                                  name: "Nahshon",
+                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                  children: [
+                                                                                                                                                                    {
+                                                                                                                                                                      name: "Salmon",
+                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                      children: [
+                                                                                                                                                                        {
+                                                                                                                                                                          name: "Boaz",
+                                                                                                                                                                          details: "Married Ruth",
+                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                          children: [
+                                                                                                                                                                            {
+                                                                                                                                                                              name: "Obed",
+                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                              children: [
+                                                                                                                                                                                {
+                                                                                                                                                                                  name: "Jesse",
+                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                  children: [
+                                                                                                                                                                                    {
+                                                                                                                                                                                      name: "King David",
+                                                                                                                                                                                      details: "King of Israel",
+                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                      children: [
+                                                                                                                                                                                        {
+                                                                                                                                                                                          name: "Solomon",
+                                                                                                                                                                                          details: "Built the Temple",
+                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                          children: [
+                                                                                                                                                                                            {
+                                                                                                                                                                                              name: "Rehoboam",
+                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                              children: [
+                                                                                                                                                                                                {
+                                                                                                                                                                                                  name: "Abijah",
+                                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                                  children: [
+                                                                                                                                                                                                    {
+                                                                                                                                                                                                      name: "Asa",
+                                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                                      children: [
+                                                                                                                                                                                                        {
+                                                                                                                                                                                                          name: "Jehoshaphat",
+                                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                                          children: [
+                                                                                                                                                                                                            {
+                                                                                                                                                                                                              name: "Jehoram",
+                                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                                              children: [
+                                                                                                                                                                                                                {
+                                                                                                                                                                                                                  name: "Uzziah",
+                                                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                                                  children: [
+                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                      name: "Jotham",
+                                                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                                                      children: [
+                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                          name: "Ahaz",
+                                                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                                                          children: [
+                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                              name: "Hezekiah",
+                                                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                                                              children: [
+                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                  name: "Manasseh",
+                                                                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                                                                  children: [
+                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                      name: "Amon",
+                                                                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                                                                      children: [
+                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                          name: "Josiah",
+                                                                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                                                                          children: [
+                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                              name: "Jeconiah",
+                                                                                                                                                                                                                                              details: "Babylonian Exile",
+                                                                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                                                                              children: [
+                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                  name: "Shealtiel",
+                                                                                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                                                                                  children: [
+                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                      name: "Zerubbabel",
+                                                                                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                                                                                      children: [
+                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                          name: "Abiud",
+                                                                                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                                                                                          children: [
+                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                              name: "Eliakim",
+                                                                                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                                                                                              children: [
+                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                  name: "Azor",
+                                                                                                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                                                                                                  children: [
+                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                      name: "Zadok",
+                                                                                                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                                                                                                      children: [
+                                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                                          name: "Achim",
+                                                                                                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                                                                                                          children: [
+                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                              name: "Eliud",
+                                                                                                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                                                                                                              children: [
+                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                  name: "Eleazar",
+                                                                                                                                                                                                                                                                                  jesusLine: true,
+                                                                                                                                                                                                                                                                                  children: [
+                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                      name: "Matthan",
+                                                                                                                                                                                                                                                                                      jesusLine: true,
+                                                                                                                                                                                                                                                                                      children: [
+                                                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                                                          name: "Jacob",
+                                                                                                                                                                                                                                                                                          jesusLine: true,
+                                                                                                                                                                                                                                                                                          children: [
+                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                              name: "Joseph",
+                                                                                                                                                                                                                                                                                              details: "Husband of Mary",
+                                                                                                                                                                                                                                                                                              jesusLine: true,
+                                                                                                                                                                                                                                                                                              children: [
+                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                  name: "JESUS CHRIST",
+                                                                                                                                                                                                                                                                                                  details: "The Messiah, Son of God",
+                                                                                                                                                                                                                                                                                                  jesusLine: true
+                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                              ]
+                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                          ]
+                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                      ]
+                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                  ]
+                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                              ]
+                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                          ]
+                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                      ]
+                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                  ]
+                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                              ]
+                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                          ]
+                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                      ]
+                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                  ]
+                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                              ]
+                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                          ]
+                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                      ]
+                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                  ]
+                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                              ]
+                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                          ]
+                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                      ]
+                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                  ]
+                                                                                                                                                                                                                }
+                                                                                                                                                                                                              ]
+                                                                                                                                                                                                            }
+                                                                                                                                                                                                          ]
+                                                                                                                                                                                                        }
+                                                                                                                                                                                                      ]
+                                                                                                                                                                                                    }
+                                                                                                                                                                                                  ]
+                                                                                                                                                                                                }
+                                                                                                                                                                                              ]
+                                                                                                                                                                                            }
+                                                                                                                                                                                          ]
+                                                                                                                                                                                        }
+                                                                                                                                                                                      ]
+                                                                                                                                                                                    }
+                                                                                                                                                                                  ]
+                                                                                                                                                                                }
+                                                                                                                                                                              ]
+                                                                                                                                                                            }
+                                                                                                                                                                          ]
+                                                                                                                                                                        }
+                                                                                                                                                                      ]
+                                                                                                                                                                    }
+                                                                                                                                                                  ]
+                                                                                                                                                                }
+                                                                                                                                                              ]
+                                                                                                                                                            }
+                                                                                                                                                          ]
+                                                                                                                                                        }
+                                                                                                                                                      ]
+                                                                                                                                                    }
+                                                                                                                                                  ]
+                                                                                                                                                }
+                                                                                                                                              ]
+                                                                                                                                            },
+                                                                                                                                            { name: "Dan" },
+                                                                                                                                            { name: "Naphtali" },
+                                                                                                                                            { name: "Gad" },
+                                                                                                                                            { name: "Asher" },
+                                                                                                                                            { name: "Issachar" },
+                                                                                                                                            { name: "Zebulun" },
+                                                                                                                                            { name: "Joseph" },
+                                                                                                                                            { name: "Benjamin" }
+                                                                                                                                          ]
+                                                                                                                                        }
+                                                                                                                                      ]
+                                                                                                                                    },
+                                                                                                                                    { name: "Ishmael", details: "Arabs" }
+                                                                                                                                  ]
+                                                                                                                                },
+                                                                                                                                { name: "Nahor" },
+                                                                                                                                { name: "Haran" }
+                                                                                                                              ]
+                                                                                                                            }
+                                                                                                                          ]
+                                                                                                                        }
+                                                                                                                      ]
+                                                                                                                    }
+                                                                                                                  ]
+                                                                                                                }
+                                                                                                              ]
+                                                                                                            },
+                                                                                                            { name: "Joktan" }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  ]
+                                                                                                },
+                                                                                                { name: "Lud" },
+                                                                                                { name: "Aram" }
+                                                                                            ]
+                                                                                        },
+                                                                                        {
+                                                                                            name: "Japheth",
+                                                                                            details: "Indo-Europeans",
+                                                                                            children: [
+                                                                                                { name: "Gomer" },
+                                                                                                { name: "Magog" },
+                                                                                                { name: "Madai" },
+                                                                                                { name: "Javan" },
+                                                                                                { name: "Tubal" },
+                                                                                                { name: "Meshech" },
+                                                                                                { name: "Tiras" }
+                                                                                            ]
+                                                                                        },
+                                                                                        {
+                                                                                            name: "Ham",
+                                                                                            details: "Africans",
+                                                                                            children: [
+                                                                                                { name: "Cush" },
+                                                                                                { name: "Mizraim" },
+                                                                                                { name: "Put" },
+                                                                                                { name: "Canaan" }
+                                                                                            ]
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+			
+			
+            // Add collapsed state to nodes
+            function addCollapsedState(node) {
+                node.collapsed = false;
+                if (node.children) {
+                    node.children.forEach(addCollapsedState);
+                }
+            }
+            addCollapsedState(genealogyData);
+           
+            function drawNode(x, y, node, isPatriarch = false) {
+                const nodeRadius = node.name === "JESUS CHRIST" ? 12 : 8;
+                let color;
+               
+                if (node.collapsed && node.children) {
+                    color = '#9b59b6';
+                } else if (node.name === "JESUS CHRIST") {
+                    color = '#FFD700';
+                } else if (highlightJesusLine && node.jesusLine) {
+                    color = '#e74c3c';
+                } else if (isPatriarch) {
+                    color = '#f39c12';
+                } else {
+                    color = '#3498db';
+                }
+               
+                if (node.name === "JESUS CHRIST") {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#FFD700';
+                }
+               
+                ctx.beginPath();
+                ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+               
+                if (showDetails && node.details) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(node.name + ' (' + node.details + ')', x + 15, y + 5);
+                } else {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(node.name, x + 15, y + 5);
+                }
+               
+                return { x: x, y: y, radius: nodeRadius };
+            }
+           
+            function drawTree(x, y, node, level = 0, isPatriarch = false) {
+                const nodePos = drawNode(x, y, node, isPatriarch);
+                if (node.children && !node.collapsed) {
+                    const angleStep = (2 * Math.PI) / Math.max(1, node.children.length);
+                    const radius = 100 + (level * 20);
+                    node.children.forEach((child, index) => {
+                        const childAngle = index * angleStep - Math.PI / 2;
+                        const childX = x + radius * Math.cos(childAngle);
+                        const childY = y + radius * Math.sin(childAngle);
+                        ctx.beginPath();
+                        ctx.moveTo(nodePos.x, nodePos.y);
+                        ctx.lineTo(childX, childY);
+                        ctx.strokeStyle = node.jesusLine && highlightJesusLine ? '#e74c3c' : '#fff';
+                        ctx.stroke();
+                        drawTree(childX, childY, child, level + 1, false);
+                    });
+                }
+            }
+           
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(offsetX, offsetY);
+                ctx.scale(scale, scale);
+                drawTree(width / 2 / scale, height / 4 / scale, genealogyData, 0, true);
+                ctx.restore();
+            }
+           
+            // Event Listeners
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastX = e.clientX - offsetX;
+                lastY = e.clientY - offsetY;
+                container.classList.add('grabbing');
+            });
+           
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const newX = e.clientX - offsetX;
+                    const newY = e.clientY - offsetY;
+                    offsetX += newX - lastX;
+                    offsetY += newY - lastY;
+                    lastX = newX;
+                    lastY = newY;
+                    render();
+                }
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left - offsetX) / scale;
+                const mouseY = (e.clientY - rect.top - offsetY) / scale;
+                const nodes = [];
+                function findNodes(node, x, y, level = 0) {
+                    const nodePos = { x: x, y: y, radius: node.name === "JESUS CHRIST" ? 12 : 8 };
+                    if (Math.hypot(mouseX - nodePos.x, mouseY - nodePos.y) < nodePos.radius) {
+                        nodes.push({ node, x: nodePos.x, y: nodePos.y });
+                    }
+                    if (node.children && !node.collapsed) {
+                        const angleStep = (2 * Math.PI) / Math.max(1, node.children.length);
+                        const radius = 100 + (level * 20);
+                        node.children.forEach((child, index) => {
+                            const childAngle = index * angleStep - Math.PI / 2;
+                            const childX = x + radius * Math.cos(childAngle);
+                            const childY = y + radius * Math.sin(childAngle);
+                            findNodes(child, childX, childY, level + 1);
+                        });
+                    }
+                }
+                findNodes(genealogyData, width / 2 / scale, height / 4 / scale, 0);
+                if (nodes.length > 0) {
+                    const node = nodes[0].node;
+                    tooltip.style.left = (e.clientX + 10) + 'px';
+                    tooltip.style.top = (e.clientY + 10) + 'px';
+                    tooltip.style.opacity = 1;
+                    tooltip.innerHTML = `<strong>${node.name}</strong><br>${node.details || ''}`;
+                } else {
+                    tooltip.style.opacity = 0;
+                }
+            });
+           
+            container.addEventListener('mouseup', () => {
+                isDragging = false;
+                container.classList.remove('grabbing');
+            });
+           
+            container.addEventListener('mouseleave', () => {
+                isDragging = false;
+                container.classList.remove('grabbing');
+                tooltip.style.opacity = 0;
+            });
+           
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomSpeed = 0.1;
+                const zoom = e.deltaY < 0 ? 1 + zoomSpeed : 1 - zoomSpeed;
+                scale = Math.min(Math.max(0.1, scale * zoom), 10);
+                render();
+            });
+           
+            // Control Functions
+            window.resetView = function() {
+                scale = 1;
+                offsetX = 0;
+                offsetY = 0;
+                render();
+            };
+           
+            window.expandAll = function() {
+                function expand(node) {
+                    node.collapsed = false;
+                    if (node.children) {
+                        node.children.forEach(expand);
+                    }
+                }
+                expand(genealogyData);
+                render();
+            };
+           
+            window.collapseAll = function() {
+                function collapse(node) {
+                    node.collapsed = true;
+                    if (node.children) {
+                        node.children.forEach(collapse);
+                    }
+                }
+                collapse(genealogyData);
+                render();
+            };
+           
+            window.toggleHighlight = function() {
+                highlightJesusLine = !highlightJesusLine;
+                document.getElementById('highlightBtn').classList.toggle('active', highlightJesusLine);
+                render();
+            };
+           
+            window.toggleNames = function() {
+                showDetails = !showDetails;
+                render();
+            };
+           
+            // Click to toggle collapse
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left - offsetX) / scale;
+                const mouseY = (e.clientY - rect.top - offsetY) / scale;
+                function toggleCollapse(node, x, y, level = 0) {
+                    const nodePos = { x: x, y: y, radius: node.name === "JESUS CHRIST" ? 12 : 8 };
+                    if (Math.hypot(mouseX - nodePos.x, mouseY - nodePos.y) < nodePos.radius) {
+                        if (node.children) {
+                            node.collapsed = !node.collapsed;
+                            render();
+                            return true;
+                        }
+                    }
+                    if (node.children && !node.collapsed) {
+                        const angleStep = (2 * Math.PI) / Math.max(1, node.children.length);
+                        const radius = 100 + (level * 20);
+                        for (let i = 0; i < node.children.length; i++) {
+                            const childAngle = i * angleStep - Math.PI / 2;
+                            const childX = x + radius * Math.cos(childAngle);
+                            const childY = y + radius * Math.sin(childAngle);
+                            if (toggleCollapse(node.children[i], childX, childY, level + 1)) return true;
+                        }
+                    }
+                    return false;
+                }
+                toggleCollapse(genealogyData, width / 2 / scale, height / 4 / scale, 0);
+            });
+           
+            // Initial render
+            render();
+        });
+    </script>
+</body>
+</html>

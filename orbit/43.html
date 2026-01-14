@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom — With Safe-Dial View Rotation</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:600px; height:600px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        background:radial-gradient(circle, #000, #333 80%, #666);
+        border-radius:50%;
+        box-shadow:0 0 90px #ccc, 0 0 180px #ffea88, 0 0 300px rgba(0,0,0,0.8);
+        z-index:500;
+    }
+    .electron {
+        position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px;
+        pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow:0 0 55px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow:0 0 55px #55aa99, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow:0 0 55px #ffee66, inset -8px -8px 20px #ccaa00; }
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index:550; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="trailsBack"  width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" width="600" height="600" class="trail-front"></canvas>
+</div>
+
+<script>
+// ========================== TWEAK THESE ==========================
+const baseSpeed      = 0.04;
+const trailFade      = 0.009;
+const trailThickness = 4;
+// ================================================================
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 300;
+const centerY = 300;
+const nucleusRadius = 90;
+
+// Your original beautiful orbits (fully independent)
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff3355',
+	 speedMultiplier: 0.9,  
+	 radius: 225, 
+	 inclinationDeg: 90, 
+	 planeRotDeg:   10 },
+    { el: document.getElementById('e2'), color: '#4488ff', 
+	 speedMultiplier: 0.75, 
+	 radius: 200, 
+	 inclinationDeg: 12,
+	 planeRotDeg:   40 },
+    { el: document.getElementById('e3'), color: '#ffdd33', 
+	 speedMultiplier: 1.2,  
+	 radius: 160, 
+	 inclinationDeg: 68, 
+	 planeRotDeg: 125 }
+];
+
+// Convert degrees to radians once
+electrons.forEach(e => {
+    e.inc = e.inclinationDeg * Math.PI / 180;
+    e.rot = e.planeRotDeg    * Math.PI / 180;
+});
+
+// NEW: Safe-dial global view rotation (drag or mouse wheel)
+let viewRotation = 0;
+document.addEventListener('wheel', e => {
+    viewRotation += e.deltaY * 0.005;
+});
+let isDragging = false, prevX = 0;
+document.addEventListener('mousedown', e => { isDragging = true; prevX = e.clientX; });
+document.addEventListener('mouseup', () => isDragging = false);
+document.addEventListener('mousemove', e => {
+    if (isDragging) {
+        viewRotation += (e.clientX - prevX) * 0.01;
+        prevX = e.clientX;
+    }
+});
+
+let time = 0;
+function animate() {
+    time += baseSpeed;
+
+    ctxBack.fillStyle  = `rgba(0,0,0,${trailFade})`; ctxBack.fillRect(0,0,600,600);
+    ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`; ctxFront.fillRect(0,0,600,600);
+
+    const cosV = Math.cos(viewRotation);
+    const sinV = Math.sin(viewRotation);
+
+    electrons.forEach(e => {
+        const a = time * e.speedMultiplier;
+
+        // Local orbital motion
+        const localX = Math.cos(a) * e.radius;
+        const localY = Math.sin(a) * e.radius;
+        const localZ = 0;
+
+        // Apply inclination
+        const sinI = Math.sin(e.inc);
+        const cosI = Math.cos(e.inc);
+        let X = localX * cosI;
+        let Y = localY;
+        let Z = localX * sinI;
+
+        // Apply individual plane rotation
+        const cosR = Math.cos(e.rot);
+        const sinR = Math.sin(e.rot);
+        const tempX = X * cosR + Z * sinR;
+        const tempZ = -X * sinR + Z * cosR;
+        X = tempX; Z = tempZ;
+
+        // === NEW: Apply global safe-dial view rotation around vertical Y axis ===
+        const finalX = X * cosV - Z * sinV;
+        const finalZ = X * sinV + Z * cosV;
+        const finalY = Y;
+
+        const scale = 1 + finalZ * 0.0038;
+        const screenX = centerX + finalX;
+        const screenY = centerY + finalY;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = finalZ < -20 && Math.hypot(finalX, finalY) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = finalZ < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

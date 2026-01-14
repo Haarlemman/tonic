@@ -1,0 +1,106 @@
+<script>
+const baseSpeed      = 0.04;
+const trailThickness = 4.2;           // a bit thicker for beauty
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 300;
+const centerY = 300;
+const nucleusRadius = 90;
+
+// ≈60 fps × 10 seconds = 600 frames → we want trails gone after ~600 frames
+const trailLife = 600;
+ctxBack.fillStyle  = 'rgba(0,0,0,0.018)';
+ctxFront.fillStyle = 'rgba(0,0,0,0.018)';
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff3355',
+      baseSpeed:1, speedAmp:0.15, speedFreq:0.0008,
+      baseRadius:225, radiusAmp:18, radiusFreq:0.0009,
+      baseIncl:90, inclAmp:12, inclFreq:0.0007,
+      basePlane:7, planeAmp:20, planeFreq:0.0006,
+      baseRoll:0, rollAmp:25, rollFreq:0.0011 },
+
+    { el: document.getElementById('e2'), color: '#4488ff',
+      baseSpeed:0.4, speedAmp:0.08, speedFreq:0.0013,
+      baseRadius:290, radiusAmp:24, radiusFreq:0.0005,
+      baseIncl:15, inclAmp:8, inclFreq:0.0010,
+      basePlane:95, planeAmp:30, planeFreq:0.0008,
+      baseRoll:90, rollAmp:35, rollFreq:0.0007 },
+
+    { el: document.getElementById('e3'), color: '#ffdd33',
+      baseSpeed:3, speedAmp:0.4, speedFreq:0.0011,
+      baseRadius:210, radiusAmp:15, radiusFreq:0.0014,
+      baseIncl:15, inclAmp:10, inclFreq:0.0009,
+      basePlane:110, planeAmp:25, planeFreq:0.0012,
+      baseRoll:-60, rollAmp:40, rollFreq:0.0006 }
+];
+
+let time = 0;
+function animate() {
+    time += baseSpeed;
+
+    // Perfect 10-second trail fade
+    ctxBack.fillRect(0,0,600,600);
+    ctxFront.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const speed = e.baseSpeed + e.speedAmp * Math.sin(time * e.speedFreq);
+        const radius = e.baseRadius + e.radiusAmp * Math.sin(time * e.radiusFreq);
+        const inclinationDeg = e.baseIncl + e.inclAmp * Math.sin(time * e.inclFreq);
+        const planeRotDeg = e.basePlane + e.planeAmp * Math.sin(time * e.planeFreq);
+        const rollDeg = e.baseRoll + e.rollAmp * Math.sin(time * e.rollFreq);
+
+        const rad = deg => deg * Math.PI / 180;
+        const i = rad(inclinationDeg);
+        const r = rad(planeRotDeg);
+        const o = rad(rollDeg);
+        const a = time * speed;
+
+        let x = Math.cos(a) * radius;
+        let y = Math.sin(a) * radius;
+        let z = 0;
+
+        // 3D rotations
+        let tx = x * Math.cos(i) + z * Math.sin(i);
+        z = -x * Math.sin(i) + z * Math.cos(i);
+        x = tx;
+
+        tx = x * Math.cos(r) - z * Math.sin(r);
+        z = x * Math.sin(r) + z * Math.cos(r);
+        x = tx;
+
+        tx = x * Math.cos(o) - y * Math.sin(o);
+        const ty = x * Math.sin(o) + y * Math.cos(o);
+        x = tx; y = ty;
+
+        const scale = 1 + z * 0.0038;
+        const screenX = centerX + x;
+        const screenY = centerY + y;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x, y) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        // Draw bright fresh trail segment
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>

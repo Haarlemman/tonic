@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Atomic Orbit Animation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: black;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+
+    .scene {
+      width: 80vmin;
+      height: 80vmin;
+      perspective: 1000px;
+      position: relative;
+    }
+
+    .nucleus {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 10vmin;
+      height: 10vmin;
+      background: radial-gradient(circle, white 0%, #ccc 100%);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 30px white;
+      z-index: 2;
+    }
+
+    .orbit {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      animation: rotate 12s linear infinite;
+    }
+
+    .orbit:nth-child(2) { transform: rotateX(60deg); animation-duration: 10s; }
+    .orbit:nth-child(3) { transform: rotateX(-60deg); animation-duration: 8s; }
+
+    .electron {
+      position: absolute;
+      width: 3vmin;
+      height: 3vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff 0%, #3aa8ff 100%);
+      box-shadow: 0 0 10px #3aa8ff;
+      transform: translate(-50%, -50%);
+      animation: orbitPath 12s linear infinite;
+    }
+
+    .orbit:nth-child(2) .electron {
+      background: radial-gradient(circle at 30% 30%, #fff 0%, #ff5a5a 100%);
+      box-shadow: 0 0 10px #ff5a5a;
+      animation-duration: 10s;
+    }
+
+    .orbit:nth-child(3) .electron {
+      background: radial-gradient(circle at 30% 30%, #fff 0%, #ffd452 100%);
+      box-shadow: 0 0 10px #ffd452;
+      animation-duration: 8s;
+    }
+
+    @keyframes rotate {
+      from { transform: rotateY(0deg) rotateX(var(--incline)); }
+      to   { transform: rotateY(360deg) rotateX(var(--incline)); }
+    }
+
+    @keyframes orbitPath {
+      0%   { top: 50%; left: 100%; opacity: 1; }
+      25%  { top: 100%; left: 50%; opacity: 0.3; }
+      50%  { top: 50%; left: 0%;   opacity: 0; }
+      75%  { top: 0%;   left: 50%; opacity: 0.3; }
+      100% { top: 50%; left: 100%; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="nucleus"></div>
+    <div class="orbit" style="--incline:0deg;">
+      <div class="electron"></div>
+    </div>
+    <div class="orbit" style="--incline:60deg;">
+      <div class="electron"></div>
+    </div>
+    <div class="orbit" style="--incline:-60deg;">
+      <div class="electron"></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rothko Experience</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap" rel="stylesheet">
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { 
+    overflow:hidden; 
+    font-family:"Cal Sans", -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; 
+    background:#594C2A;
+    color:#DDD7C1;
+  }
+
+  /* === OPENING SCREEN === */
+  #start-overlay {
+    position:fixed; inset:0; 
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    color:#E11515; font-size:18px; text-align:center; z-index:2000;
+    opacity:1; pointer-events:auto;
+    transition: opacity 1.2s ease;
+    background: hsl(30, 25%, 15%);
+  }
+  #start-overlay.hidden { opacity:0; pointer-events:none; }
+
+  .rothko-static {
+    position: absolute; inset: 0; 
+    display: flex; flex-direction: column;
+    padding: 8vh 6vw;
+    gap: 6vh;
+    filter: blur(4px) brightness(0.82);
+    z-index: -1;
+  }
+  .static-block {
+    background: linear-gradient(to bottom, 
+      rgba(255,255,255,0.18), 
+      rgba(0,0,0,0.22)
+    );
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .static-block::before {
+    content: ''; position: absolute; inset: 0;
+    background: inherit;
+    filter: blur(10px);
+    z-index: -1;
+  }
+
+  #start-overlay h1 { 
+    font-size: 4.5rem; margin-bottom: 1rem;
+    opacity: 0.9; line-height: 0.68;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+  #start-overlay p { 
+    opacity: 0.9; line-height: 1;
+    font-size: 1.5rem; font-weight: 400; margin-bottom: 1rem;
+  }
+  #start-overlay .hint {
+    font-size: 1.85rem; margin-top: 1rem; opacity: 0.7; font-weight: 400;
+  }
+
+  /* START BUTTON - Mobile Safe */
+  #start-btn {
+    background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.7); color: white;
+    padding: 16px 32px; font-size: 16px; font-weight: 400; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; border-radius: 8px;
+    margin-top: 1.5rem; transition: all 0.3s ease;
+    min-height: 56px; min-width: 200px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #start-btn:hover, #start-btn:active {
+    background: rgba(255,255,255,0.4); border-color: white;
+    transform: scale(1.04);
+  }
+
+  /* === MAIN CANVAS === */
+  #canvas {
+    width:100vw; height:100vh;
+    display:flex; flex-direction:column; justify-content:center; align-items:stretch;
+    padding:5vh 5vw;
+    gap:1.5vh;
+    transition:background-color 2s ease;
+    opacity:0;
+  }
+  #canvas.visible { opacity: 1; }
+
+  /* .color-block holds the variable and acts as the container */
+  .color-block {
+    width:100%;
+    position:relative;
+    border-radius: 20px;
+    transition: height 1.5s ease, transform 1.5s ease;
+    overflow: hidden;
+    /* CSS variable --block-color is set here by JS */
+  }
+
+  /* TOP GLOSS LAYER (::before) */
+  .color-block::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,rgba(0,0,0,0.06) 100%);
+    pointer-events:none; z-index:2;
+  }
+
+  /* FIX: BLURRED COLOR LAYER (::after) - uses CSS variable */
+  .color-block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--block-color); /* Uses the JS-set variable for the color */
+    filter: blur(10px); /* APPLY BLUR HERE */
+    transition: background-color 1.5s ease;
+    z-index: 0; /* Behind the texture layer */
+  }
+
+  /* TEXTURE LAYER - Must be crisp and on top of the blurred color */
+  .color-block canvas.texture {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    mix-blend-mode: overlay;
+    opacity: 0.95; /* High opacity for testing/visibility */
+    pointer-events: none;
+    z-index: 1; /* Above the blurred ::after layer */
+  }
+  /* === BUTTONS === */
+  .fullscreen-btn, .exit-fullscreen-btn {
+    position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,0.25); backdrop-filter:blur(10px);
+    border:2px solid rgba(255,255,255,0.7); color:white;
+    padding:14px 28px; font-size:14px; font-weight:400; letter-spacing:1px; text-transform:uppercase;
+    cursor:pointer; border-radius:6px;
+    z-index:1000; mix-blend-mode:difference;
+    transition:all 0.2s ease;
+  }
+  .fullscreen-btn:hover, .exit-fullscreen-btn:hover {
+    background:rgba(255,255,255,0.4); border-color:rgba(255,255,255,0.9);
+    transform:translateX(-50%) scale(1.05);
+  }
+  .exit-fullscreen-btn {
+    opacity:0.1; transition:opacity 2s ease;
+    pointer-events:none; display:none;
+  }
+  .exit-fullscreen-btn.visible { display:block; pointer-events:auto; }
+  .exit-fullscreen-btn:hover { opacity:1; }
+  body:fullscreen .fullscreen-btn { display:none; }
+
+  .refresh-hint {
+    position:fixed; bottom:20px; right:20px;
+    color:rgba(255,255,255,0.4); font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    pointer-events:none; mix-blend-mode:difference; z-index:1000;
+    font-weight:400;
+  }
+
+  /* === VOLUME SLIDER === */
+  #volume-control {
+    position: fixed; bottom: 20px; left: 20px;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.25); backdrop-filter: blur(12px);
+    padding: 8px 14px; border-radius: 30px;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    z-index: 1000;
+    opacity: 0.1;
+    transition: opacity 2s ease;
+    pointer-events: none;
+    mix-blend-mode: difference;
+    font-size: 12px; color: white;
+    font-weight: 400;
+  }
+  #volume-control.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #volume-control:hover {
+    opacity: 1;
+  }
+
+  #volume-slider {
+    -webkit-appearance: none;
+    width: 90px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.3);
+    outline: none;
+    cursor: pointer;
+  }
+  #volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    cursor: grab;
+  }
+  #volume-slider::-webkit-slider-thumb:active { cursor: grabbing; }
+</style>
+</head>
+<body>
+
+<div id="start-overlay">
+  <div class="rothko-static" id="static-rothko"></div>
+  <h1>Rothko</h1>
+  <p>A meditative experience</p>
+  <button id="start-btn">Start</button>
+</div>
+
+<div id="canvas"></div>
+
+<button class="fullscreen-btn">View Fullscreen</button>
+<button class="exit-fullscreen-btn">Exit</button>
+<div class="refresh-hint">Click to refresh</div>
+
+<div id="volume-control">
+  <span>Vol</span>
+  <input type="range" id="volume-slider" min="0" max="100" value="90">
+  <span id="volume-value">90%</span>
+</div>
+
+<audio id="bg-music" loop>
+  <source src="immortality.mp3" type="audio/mpeg">
+  Your browser does not support audio.
+</audio>
+
+<script>
+const palettes = [
+  ['#8B0000','#FF4500','#FFD700'],
+  ['#4B0082','#8B008B','#FF1493'],
+  ['#DC143C','#FF6347','#FFA07A'],
+  ['#2F4F4F','#1C1C1C','#8B4513'],
+  ['#191970','#000080','#4B0082'],
+  ['#CD853F','#D2691E','#8B4513'],
+  ['#FF4500','#FFD700','#FF8C00'],
+  ['#00CED1','#4682B4','#1E90FF'],
+  ['#BC8F8F','#CD5C5C','#F08080'],
+  ['#708090','#778899','#B0C4DE']
+];
+
+let blocks = [];
+let bgHueShift = 0;
+let musicStarted = false;
+
+const canvas = document.getElementById('canvas');
+const bgMusic = document.getElementById('bg-music');
+const startOverlay = document.getElementById('start-overlay');
+const staticRothko = document.getElementById('static-rothko');
+const startBtn = document.getElementById('start-btn');
+const fullscreenBtn = document.querySelector('.fullscreen-btn');
+const exitBtn = document.querySelector('.exit-fullscreen-btn');
+const volumeControl = document.getElementById('volume-control');
+const volumeSlider = document.getElementById('volume-slider');
+const volumeValue = document.getElementById('volume-value');
+
+bgMusic.volume = 0.9;
+	
+	
+	
+// === NOISE TEXTURE - CORRECTED ===
+function createNoiseTexture() {
+  const canvas = document.createElement('canvas');
+  const size = 256;
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  const data = new Uint32Array(img.data.buffer);
+  
+  // Set a low, fixed alpha value (e.g., 50/255) for subtle transparency
+  const alphaValue = 50; 
+  
+  for (let i = 0; i < data.length; i++) {
+    // Generate random grayscale value for R, G, B
+    const v = Math.random() * 255;
+    
+    // Set AARRGGBB: Alpha (50), Red (v), Green (v), Blue (v)
+    data[i] = (alphaValue << 24) | (v << 16) | (v << 8) | v;
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+const noiseTexture = createNoiseTexture();
+	
+	
+	
+
+// === HSL CONVERSION ===
+function hexToHSL(hex) {
+  let r = parseInt(hex.substr(1,2),16)/255;
+  let g = parseInt(hex.substr(3,2),16)/255;
+  let b = parseInt(hex.substr(5,2),16)/255;
+  let max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if(max===min){h=s=0;}
+  else {
+    let d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d+(g<b?6:0); break;
+      case g: h=(b-r)/d+2; break;
+      case b: h=(r-g)/d+4; break;
+    }
+    h/=6;
+  }
+  return {h: h*360, s: s*100, l: l*100};
+}
+
+// === RANDOMIZE STATIC ROTHKO: 1 or 2 blocks + matching BG ===
+function initStaticRothko() {
+  staticRothko.innerHTML = '';
+  const palette = palettes[Math.floor(Math.random() * palettes.length)];
+  const blockCount = Math.random() < 0.5 ? 1 : 2;
+  const heights = blockCount === 1 ? [100] : [55, 45];
+
+  const hsls = palette.slice(0, blockCount).map(hexToHSL);
+  const avgHue = hsls.reduce((a,c) => a + c.h, 0) / hsls.length;
+  startOverlay.style.background = `hsl(${avgHue}, 25%, 15%)`;
+
+  for (let i = 0; i < blockCount; i++) {
+    const block = document.createElement('div');
+    block.className = 'static-block';
+    const color = palette[i % palette.length];
+    block.style.background = `linear-gradient(to bottom, ${color}, ${adjustBrightness(color, -30)})`;
+    block.style.height = `${heights[i]}%`;
+    staticRothko.appendChild(block);
+  }
+}
+
+function adjustBrightness(hex, percent) {
+  const num = parseInt(hex.slice(1), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x00FF) + amt;
+  return "#" + (0x1000000 + 
+         (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + 
+         (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + 
+         (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+}
+
+// === FADE CONTROL ===
+let controlTimeout;
+function showControls() {
+  if (!musicStarted) return;
+  if (document.fullscreenElement) {
+    exitBtn.style.opacity = '1';
+    exitBtn.classList.add('visible');
+  }
+  volumeControl.style.opacity = '1';
+  volumeControl.classList.add('visible');
+  clearTimeout(controlTimeout);
+  controlTimeout = setTimeout(hideControls, 3000);
+}
+function hideControls() {
+  if (document.fullscreenElement) exitBtn.style.opacity = '0.1';
+  volumeControl.style.opacity = '0.1';
+}
+
+// Volume events
+volumeSlider.addEventListener('input', () => {
+  const vol = volumeSlider.value / 100;
+  bgMusic.volume = vol;
+  volumeValue.textContent = `${Math.round(vol * 100)}%`;
+  showControls();
+});
+volumeSlider.addEventListener('mousedown', showControls);
+volumeSlider.addEventListener('touchstart', showControls);
+volumeControl.addEventListener('mouseenter', showControls);
+volumeControl.addEventListener('mouseleave', () => {
+  if (!volumeSlider.matches(':active')) controlTimeout = setTimeout(hideControls, 1000);
+});
+document.addEventListener('mousemove', showControls);
+document.addEventListener('touchstart', showControls);
+
+// === START EXPERIENCE - AUTO FULLSCREEN ===
+function startExperience() {
+  if (musicStarted) return;
+  musicStarted = true;
+
+  // Function to start the experience
+  function startContent() {
+    startOverlay.classList.add('hidden');
+    setTimeout(() => {
+      startOverlay.style.display = 'none';
+      canvas.classList.add('visible');
+      showControls();
+    }, 1200);
+    initRothko();
+    requestAnimationFrame(animate);
+  }
+
+  // Try fullscreen, but don't block on it
+  const fullscreenPromise = document.body.requestFullscreen?.() || Promise.resolve();
+  
+  fullscreenPromise.catch(err => {
+    console.log("Fullscreen not available or denied:", err);
+  });
+
+  // Start audio (this is the critical part)
+  bgMusic.play()
+    .then(() => {
+      console.log("Audio started successfully");
+      startContent();
+    })
+    .catch(err => {
+      console.error("Audio failed:", err);
+      alert("Audio failed. Tap again or check file.");
+      musicStarted = false;
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    });
+}
+	
+// Direct button triggers
+startBtn.addEventListener('click', startExperience);
+startBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  startExperience();
+});
+
+// === DYNAMIC ROTHKO ===
+function backgroundFromPalette(palette) {
+  const hsls = palette.map(hexToHSL);
+  const avgHue = hsls.reduce((a,c)=>a+c.h,0)/hsls.length;
+  bgHueShift = avgHue;
+  return "hsl(${avgHue}, 30%, 18%)";
+}
+
+function initRothko() {
+  canvas.innerHTML = '';
+  const palette = palettes[Math.floor(Math.random()*palettes.length)];
+  canvas.style.backgroundColor = backgroundFromPalette(palette);
+  const count = Math.random() > 0.3 ? 3 : 2;
+  blocks = [];
+
+  for(let i = 0; i < count; i++){
+    const block = document.createElement('div');
+    block.className = 'color-block';
+    const color = palette[i % palette.length];
+    const hsl = hexToHSL(color);
+    
+    // FIX: Set the color as a CSS variable for the ::after element to use
+    block.style.setProperty('--block-color', color); 
+    
+    block.style.height = `${30 + Math.random()*30}%`;
+
+    // Add texture
+    const tex = noiseTexture.cloneNode();
+    tex.className = 'texture';
+    block.appendChild(tex);
+
+    canvas.appendChild(block);
+    blocks.push({
+      el: block,
+      hueShift: hsl.h,
+      height: parseFloat(block.style.height),
+      speed: Math.random() * 0.4 + 0.1
+    });
+  }
+}
+
+function animate() {
+  blocks.forEach(b => {
+    b.height += Math.sin(Date.now() / 2000 * b.speed) * 0.25;
+    b.el.style.height = `${Math.max(15, Math.min(60, b.height))}%`;
+    b.hueShift += b.speed * 0.8;
+    
+    // FIX: Update the color via the CSS variable
+    b.el.style.setProperty('--block-color', `hsl(${b.hueShift % 360}, 70%, 50%)`); 
+    
+    const float = Math.sin(Date.now() / 1500 * b.speed) * 15;
+    b.el.style.transform = `translateY(${float}px)`;
+  });
+  bgHueShift += 0.08;
+  canvas.style.backgroundColor = `hsl(${bgHueShift % 360}, 30%, 20%)`;
+  requestAnimationFrame(animate);
+}
+
+// === Fullscreen ===
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    document.body.requestFullscreen();
+  }
+}
+
+function updateFullscreenButton() {
+  if (document.fullscreenElement) {
+    fullscreenBtn.style.display = 'none';
+    exitBtn.classList.add('visible');
+    showControls();
+  } else {
+    fullscreenBtn.style.display = 'block';
+    exitBtn.classList.remove('visible');
+    // When exiting fullscreen, return to start screen
+    if (musicStarted) {
+      canvas.classList.remove('visible');
+      canvas.style.opacity = '0';
+      startOverlay.style.display = 'flex';
+      startOverlay.classList.remove('hidden');
+      musicStarted = false;
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+      initStaticRothko(); // Regenerate static background
+    }
+  }
+}
+
+fullscreenBtn.addEventListener('click', () => { toggleFullscreen(); startExperience(); });
+exitBtn.addEventListener('click', toggleFullscreen);
+document.addEventListener('fullscreenchange', updateFullscreenButton);
+
+exitBtn.addEventListener('mouseenter', () => {
+  clearTimeout(controlTimeout);
+  exitBtn.style.opacity = '1';
+});
+exitBtn.addEventListener('mouseleave', () => {
+  controlTimeout = setTimeout(hideControls, 500);
+});
+
+// === Refresh ===
+document.addEventListener('keydown', e => {
+  if ((e.key === 'r' || e.key === 'R') && musicStarted) initRothko();
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('button') && !e.target.closest('#volume-control') && musicStarted) initRothko();
+});
+
+// === INIT: Draw static background FIRST ===
+initStaticRothko();
+</script>
+</body>
+</html>

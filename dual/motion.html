@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWIN CITY | MOTION CAPTURE</title>
+    <style>
+        :root {
+            --day-grad: linear-gradient(to bottom,
+                    rgba(0, 17, 34, 0) 0%,
+                    rgba(0, 150, 255, 0.95) 25%,
+                    rgba(30, 100, 240, 0.98) 47%,
+                    rgba(0, 20, 180, 0.9) 65%,
+                    rgba(0, 10, 100, 0.7) 85%,
+                    rgba(0, 33, 100, 0) 100%);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #101223;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #day-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: var(--day-grad);
+            background-size: 200% 200%;
+            background-position: 50% 50%;
+            transition: opacity 0.6s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #day-bg.hidden { opacity: 0; }
+
+        #stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #stars.visible { opacity: 1; }
+
+        .star {
+            position: absolute;
+            transition: transform 0.3s ease-out;
+            border-radius: 50%;
+        }
+
+        #light-bloom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            background: radial-gradient(circle at center, rgba(200, 150, 30, 0.4) 0%, rgba(150, 100, 10, 0.3) 40%, transparent 70%);
+            mix-blend-mode: screen;
+            transition: opacity 0.5s ease;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        /* HUD & RECORDER UI */
+        #hud {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+            transition: color 0.6s ease-in-out;
+        }
+
+        #recorder-panel {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 100;
+            background: rgba(16, 18, 35, 0.85);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            backdrop-filter: blur(15px);
+            min-width: 200px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .rec-btn {
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .rec-btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+        .rec-btn.active { background: #ff3366; border-color: #ff3366; color: white; box-shadow: 0 0 20px rgba(255, 51, 102, 0.4); }
+        .rec-btn.playing { background: #00ffcc; border-color: #00ffcc; color: #000; }
+        .rec-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        #stats { font-size: 9px; opacity: 0.5; font-family: 'JetBrains Mono', monospace; text-align: center; }
+
+        #hud.day-mode { color: #ffffff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+        #hud.night-mode { color: #e0b0ff; text-shadow: 0 0 5px #bf00ff, 0 0 10px #bf00ff, 0 0 20px #bf00ff; }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: 14px;
+            text-transform: uppercase;
+            margin: 0;
+            border-left: 6px solid #f1c40f;
+            padding-left: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: border-left-color 0.6s ease-in-out;
+        }
+
+        #hud.day-mode h1 { border-left-color: #f1c40f; color: #FDE3E3; }
+        #hud.night-mode h1 { border-left-color: #00ffff; }
+
+        .subtitle {
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: inherit;
+            margin-top: 8px;
+            padding-left: 26px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="day-bg"></div>
+    <div id="stars"></div>
+    <div id="light-bloom"></div>
+
+    <div id="hud">
+        <h1>Twin City</h1>
+        <div class="subtitle" id="side-indicator">ART • SCIENCE • SPIRIT</div>
+    </div>
+
+    <!-- MOTION CONTROL INTERFACE -->
+    <div id="recorder-panel">
+        <div style="font-size: 9px; font-weight: 900; letter-spacing: 3px; margin-bottom: 4px; opacity: 0.7;">MOTION RECORDER</div>
+        <button id="btn-record" class="rec-btn">
+            <div class="dot"></div> CAPTURE PATH
+        </button>
+        <button id="btn-play" class="rec-btn" disabled>
+            <div class="dot" style="border-radius: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 7px solid currentColor; background: transparent;"></div> AUTOMATE
+        </button>
+        <button id="btn-smooth" class="rec-btn" disabled>
+            TEMPER COORDINATES
+        </button>
+        <div id="stats">SYSTEM READY</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let ambientLight, sunLight, nightLight;
+        let upperGroup, lowerGroup, beamGroup;
+        let upperTrails = [], lowerTrails = [];
+        let lastSide = null;
+        let mouseX = 0, mouseY = 0;
+
+        // Motion Logic
+        let isRecording = false;
+        let isPlaying = false;
+        let recordedData = [];
+        let playbackIndex = 0;
+
+        const NEON_PALETTE = [0x00ffff, 0xff00ff, 0x00ff00, 0xffff00];
+
+        window.onload = init;
+
+        function init() {
+            const starsContainer = document.getElementById('stars');
+            if (starsContainer) {
+                for (let i = 0; i < 200; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    const size = (1 + Math.random() * 2) + 'px';
+                    star.style.width = size;
+                    star.style.height = size;
+                    star.style.backgroundColor = Math.random() < 0.5 ? '#9933ff' : '#00ffff';
+                    star.style.animation = 'blink ' + (1 + Math.random() * 2) + 's infinite ease-in-out';
+                    starsContainer.appendChild(star);
+                }
+            }
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x4dabff, 100, 3500);
+
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(400, 400, 400);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x000000, 0);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            ambientLight = new THREE.AmbientLight(0xffeeaa, 1.3);
+            scene.add(ambientLight);
+
+            sunLight = new THREE.DirectionalLight(0xffeedd, 1.6);
+            sunLight.position.set(100, 500, 100);
+            scene.add(sunLight);
+
+            nightLight = new THREE.PointLight(0x6633ff, 4.5, 2500);
+            nightLight.position.set(0, -300, 0);
+            scene.add(nightLight);
+
+            upperGroup = new THREE.Group();
+            lowerGroup = new THREE.Group();
+            scene.add(upperGroup);
+            scene.add(lowerGroup);
+
+            buildWorld();
+
+            prepareGhostMaterials(upperGroup);
+            prepareGhostMaterials(lowerGroup);
+
+            setupMotionUI();
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function setupMotionUI() {
+            const btnRec = document.getElementById('btn-record');
+            const btnPlay = document.getElementById('btn-play');
+            const btnSmooth = document.getElementById('btn-smooth');
+            const stats = document.getElementById('stats');
+
+            btnRec.onclick = () => {
+                isRecording = !isRecording;
+                if (isRecording) {
+                    recordedData = [];
+                    btnRec.classList.add('active');
+                    btnRec.innerHTML = '<div class="dot"></div> STOP CAPTURE';
+                    btnPlay.disabled = true;
+                    btnSmooth.disabled = true;
+                    isPlaying = false;
+                } else {
+                    btnRec.classList.remove('active');
+                    btnRec.innerHTML = '<div class="dot"></div> CAPTURE PATH';
+                    if (recordedData.length > 0) {
+                        btnPlay.disabled = false;
+                        btnSmooth.disabled = false;
+                        stats.innerText = `${recordedData.length} FRAMES RECORDED`;
+                    }
+                }
+            };
+
+            btnPlay.onclick = () => {
+                isPlaying = !isPlaying;
+                if (isPlaying) {
+                    playbackIndex = 0;
+                    btnPlay.classList.add('playing');
+                    btnPlay.innerText = 'RELEASE CONTROL';
+                    controls.enabled = false;
+                } else {
+                    btnPlay.classList.remove('playing');
+                    btnPlay.innerText = 'AUTOMATE';
+                    controls.enabled = true;
+                }
+            };
+
+            btnSmooth.onclick = () => {
+                if (recordedData.length < 10) return;
+                const windowSize = 10;
+                let smoothed = [];
+                for (let i = 0; i < recordedData.length; i++) {
+                    let sumP = { x: 0, y: 0, z: 0 };
+                    let sumT = { x: 0, y: 0, z: 0 };
+                    let count = 0;
+                    for (let j = -windowSize; j <= windowSize; j++) {
+                        let idx = i + j;
+                        if (idx >= 0 && idx < recordedData.length) {
+                            sumP.x += recordedData[idx].pos.x;
+                            sumP.y += recordedData[idx].pos.y;
+                            sumP.z += recordedData[idx].pos.z;
+                            sumT.x += recordedData[idx].tar.x;
+                            sumT.y += recordedData[idx].tar.y;
+                            sumT.z += recordedData[idx].tar.z;
+                            count++;
+                        }
+                    }
+                    smoothed.push({
+                        pos: { x: sumP.x/count, y: sumP.y/count, z: sumP.z/count },
+                        tar: { x: sumT.x/count, y: sumT.y/count, z: sumT.z/count }
+                    });
+                }
+                recordedData = smoothed;
+                stats.innerText = "COORDINATES TEMPERED";
+            };
+        }
+
+        const GHOST_COLOR = new THREE.Color(0x336699);
+        const GHOST_OPACITY = 0.15;
+
+        function prepareGhostMaterials(group) {
+            group.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material = child.material.clone();
+                    child.material.transparent = true;
+                    child.userData.origColor = child.material.color.clone();
+                    child.userData.origOpacity = child.material.opacity !== undefined ? child.material.opacity : 1.0;
+                    child.userData.origEmissive = child.material.emissive ? child.material.emissive.clone() : new THREE.Color(0x000000);
+                }
+            });
+        }
+
+        function applyGhostState(group, realness) {
+            group.traverse((child) => {
+                if (child.isMesh && child.material && child.userData.origColor) {
+                    const mat = child.material;
+                    const ud = child.userData;
+                    mat.color.lerpColors(GHOST_COLOR, ud.origColor, realness);
+                    const targetOpacity = THREE.MathUtils.lerp(GHOST_OPACITY, ud.origOpacity, realness);
+                    mat.opacity = targetOpacity;
+                    if (mat.emissive && ud.origEmissive) {
+                        mat.emissive.lerpColors(new THREE.Color(0x000000), ud.origEmissive, realness);
+                    }
+                    mat.depthWrite = realness > 0.5;
+                }
+            });
+        }
+
+        function createBeamGradient() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 64;
+            const context = canvas.getContext('2d');
+            const gradient = context.createLinearGradient(0, 0, 0, 64);
+            gradient.addColorStop(0.0, 'rgba(255, 255, 255, 0.0)');
+            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.0)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+            gradient.addColorStop(1.0, 'rgba(255, 255, 255, 1.0)');
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, 32, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function buildWorld() {
+            const rings = 6;
+            const ringSpacing = 12;
+            const cityEdgeRadius = (rings + 1) * ringSpacing;
+            const roadRadius = cityEdgeRadius + 22;
+            const dividerRadius = roadRadius + 40;
+
+            const baseFloor = new THREE.Mesh(
+                new THREE.CircleGeometry(dividerRadius, 64),
+                new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide })
+            );
+            baseFloor.rotation.x = Math.PI / 2;
+            scene.add(baseFloor);
+
+            const whiteRing = new THREE.Mesh(
+                new THREE.RingGeometry(cityEdgeRadius + 2, roadRadius - 6, 64),
+                new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0, metalness: 0 })
+            );
+            whiteRing.rotation.x = -Math.PI / 2;
+            whiteRing.position.y = 0.12;
+            upperGroup.add(whiteRing);
+
+            const roadGeom = new THREE.TorusGeometry(roadRadius, 4.5, 16, 128);
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+
+            const uRoad = new THREE.Mesh(roadGeom, roadMat);
+            uRoad.rotation.x = Math.PI / 2;
+            uRoad.position.y = 0.35;
+            upperGroup.add(uRoad);
+
+            const lRoad = new THREE.Mesh(roadGeom, roadMat);
+            lRoad.rotation.x = Math.PI / 2;
+            lRoad.position.y = -0.35;
+            lowerGroup.add(lRoad);
+
+            const dayBuildingColors = [0x1a3a52, 0x2c4a5e, 0x1e384a, 0x263d50, 0x4a3a2a, 0x3e2e1e, 0x4d3d2d, 0x5a4a3a];
+
+            for (let r = 2; r <= rings + 1; r++) {
+                const radius = r * ringSpacing;
+                const count = Math.floor(radius * 0.9);
+                const heightMultiplier = (rings + 2 - r) / rings;
+
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2;
+                    const px = Math.cos(angle) * radius;
+                    const pz = Math.sin(angle) * radius;
+
+                    // Upper World Buildings
+                    const hT = (8 + Math.random() * 15) * (0.5 + heightMultiplier * 2);
+                    const dayHouse = new THREE.Group();
+                    const box = new THREE.Mesh(new THREE.BoxGeometry(4, hT, 4), new THREE.MeshStandardMaterial({ color: dayBuildingColors[Math.floor(Math.random() * dayBuildingColors.length)], roughness: 0.9 }));
+                    box.position.y = hT / 2;
+                    dayHouse.add(box);
+                    dayHouse.position.set(px, 0.05, pz);
+                    dayHouse.rotation.y = -angle;
+                    upperGroup.add(dayHouse);
+
+                    // Lower World Buildings
+                    const hB = (10 + Math.random() * 45) * ((rings + 2 - r) / rings * 2.5);
+                    const nHouse = new THREE.Group();
+                    const bBox = new THREE.Mesh(new THREE.BoxGeometry(4.5, hB, 4.5), new THREE.MeshStandardMaterial({ color: 0x010105 }));
+                    bBox.position.y = -hB / 2;
+                    nHouse.add(bBox);
+                    const neonCol = NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)];
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.7, 4.6), new THREE.MeshStandardMaterial({ color: neonCol, emissive: neonCol, emissiveIntensity: 12 }));
+                    win.position.y = -Math.random() * hB;
+                    nHouse.add(win);
+                    nHouse.position.set(px, -0.05, pz);
+                    nHouse.rotation.y = -angle;
+                    lowerGroup.add(nHouse);
+                }
+            }
+
+            // Central Paradox Beam
+            beamGroup = new THREE.Group();
+            const beamGradient = createBeamGradient();
+
+            // Upper (Day) Beam
+            const upCore = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0xfff0aa, transparent: true, opacity: 0.95, alphaMap: beamGradient, depthWrite: false, side: THREE.DoubleSide 
+            }));
+            upCore.position.y = 500;
+            upCore.userData.side = 'upper';
+            upCore.userData.origOpacity = 0.95;
+            beamGroup.add(upCore);
+
+            const upNeonShell = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0xffcc00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, alphaMap: beamGradient, depthWrite: false 
+            }));
+            upNeonShell.position.y = 500;
+            upNeonShell.userData.side = 'upper';
+            upNeonShell.userData.origOpacity = 0.8;
+            beamGroup.add(upNeonShell);
+
+            const upGlow = new THREE.Mesh(new THREE.CylinderGeometry(22, 6, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0xffbb00, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, alphaMap: beamGradient, depthWrite: false 
+            }));
+            upGlow.position.y = 500;
+            upGlow.userData.side = 'upper';
+            upGlow.userData.origOpacity = 0.45;
+            beamGroup.add(upGlow);
+
+            // Lower World Beam
+            const downCorePurple = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0x9900ff, transparent: true, opacity: 0.95 
+            }));
+            downCorePurple.position.y = -500;
+            downCorePurple.userData.side = 'lower';
+            downCorePurple.userData.origOpacity = 0.95;
+            beamGroup.add(downCorePurple);
+
+            const downGlow = new THREE.Mesh(new THREE.CylinderGeometry(18, 10, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0x7700ff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, side: THREE.DoubleSide 
+            }));
+            downGlow.position.y = -500;
+            downGlow.userData.side = 'lower';
+            downGlow.userData.origOpacity = 0.6;
+            beamGroup.add(downGlow);
+
+            const downMidGlow = new THREE.Mesh(new THREE.CylinderGeometry(24, 12, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0x5500dd, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, side: THREE.DoubleSide 
+            }));
+            downMidGlow.position.y = -500;
+            downMidGlow.userData.side = 'lower';
+            downMidGlow.userData.origOpacity = 0.4;
+            beamGroup.add(downMidGlow);
+
+            const downOuterGlow = new THREE.Mesh(new THREE.CylinderGeometry(60, 30, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ 
+                color: 0x3300aa, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, side: THREE.DoubleSide 
+            }));
+            downOuterGlow.position.y = -500;
+            downOuterGlow.userData.side = 'lower';
+            downOuterGlow.userData.origOpacity = 0.2;
+            beamGroup.add(downOuterGlow);
+
+            scene.add(beamGroup);
+
+            // Vehicles
+            const mCols = [0xdc143c, 0xffd700, 0x0047ab];
+            for (let lane = 0; lane < 2; lane++) {
+                const laneRadius = roadRadius + (lane === 0 ? -10 : 10);
+                for (let i = 0; i < 40; i++) {
+                    const car = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 7), new THREE.MeshBasicMaterial({ color: mCols[i % mCols.length] }));
+                    const speed = 0.015 + Math.random() * 0.02; 
+                    car.userData = { angle: (i / 40) * Math.PI * 2, speed: speed, radius: laneRadius, y: 3.5 };
+                    upperGroup.add(car);
+                    upperTrails.push(car);
+                }
+            }
+
+            for (let lane = 0; lane < 2; lane++) {
+                const inner = lane === 0;
+                const laneRadius = roadRadius + (inner ? -12 : 12);
+                for (let i = 0; i < 12; i++) {
+                    const trailGroup = new THREE.Group();
+                    const col = NEON_PALETTE[i % NEON_PALETTE.length];
+                    const trailSegments = 35;
+                    for (let seg = 0; seg < trailSegments; seg++) {
+                        const progress = seg / trailSegments;
+                        const angle = -progress * 0.35 * (inner ? 1 : -1);
+                        const trail = new THREE.Mesh(new THREE.BoxGeometry(2.0 - progress, 0.5, 1.2), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1 - progress * 0.9, blending: THREE.AdditiveBlending }));
+                        trail.position.set(Math.cos(angle) * laneRadius, 0, Math.sin(angle) * laneRadius);
+                        trail.rotation.y = -angle + Math.PI / 2;
+                        trailGroup.add(trail);
+                    }
+                    const speed = (0.08 + Math.random() * 0.04) * (inner ? 1 : -1);
+                    trailGroup.userData = { angle: (i / 12) * Math.PI * 2, speed: speed, radius: laneRadius, y: -3.5 };
+                    lowerGroup.add(trailGroup);
+                    lowerTrails.push(trailGroup);
+                }
+            }
+        }
+
+        function updateEnvironment() {
+            const y = camera.position.y;
+            const isDay = y > 0;
+            const bloomEl = document.getElementById('light-bloom');
+
+            const camDir = new THREE.Vector3();
+            camera.getWorldDirection(camDir);
+            const dot = Math.abs(camDir.dot(new THREE.Vector3(0, 1, 0)));
+            if (new THREE.Vector3(camera.position.x, 0, camera.position.z).length() < 160) {
+                const intensity = Math.pow(dot, 5) * 2.2;
+                bloomEl.style.opacity = Math.min(intensity, 0.9);
+                bloomEl.style.background = `radial-gradient(circle at center, ${isDay ? "rgba(255,200,50,0.5)" : "rgba(140,50,255,0.4)"} 0%, transparent 80%)`;
+            } else {
+                bloomEl.style.opacity = 0;
+            }
+
+            const transitionRange = 150;
+            const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+            const upperRealness = clamp((y + transitionRange) / (transitionRange * 1.5), 0, 1);
+            const lowerRealness = clamp((-y + transitionRange) / (transitionRange * 1.5), 0, 1);
+            
+            applyGhostState(upperGroup, upperRealness);
+            applyGhostState(lowerGroup, lowerRealness);
+
+            beamGroup.children.forEach(child => {
+                const isUpperBeam = child.userData.side === 'upper';
+                const realness = isUpperBeam ? upperRealness : lowerRealness;
+                const minVisibility = isUpperBeam ? 0.1 : 0.25; 
+                child.material.opacity = THREE.MathUtils.lerp(minVisibility, child.userData.origOpacity, realness);
+                const blurScaleFactor = isUpperBeam ? 1.4 : 1.15;
+                const ghostScale = THREE.MathUtils.lerp(blurScaleFactor, 1.0, realness);
+                child.scale.set(ghostScale, 1, ghostScale);
+            });
+
+            if (isDay === lastSide) return;
+            lastSide = isDay;
+
+            const starsContainer = document.getElementById('stars');
+            const dayBg = document.getElementById('day-bg');
+            if (isDay) {
+                dayBg.classList.remove('hidden');
+                starsContainer.classList.remove('visible');
+                document.getElementById('hud').className = 'day-mode';
+                scene.fog.color.set(0x4dabff);
+                ambientLight.intensity = 1.4;
+                sunLight.intensity = 2.0;
+                nightLight.intensity = 0;
+            } else {
+                dayBg.classList.add('hidden');
+                starsContainer.classList.add('visible');
+                document.getElementById('hud').className = 'night-mode';
+                scene.fog.color.set(0x050210);
+                ambientLight.intensity = 0.2;
+                sunLight.intensity = 0;
+                nightLight.intensity = 6.0;
+            }
+            document.getElementById('side-indicator').innerText = isDay ? "UPPER WORLD" : "NETHER WORLD";
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Capture Motion
+            if (isRecording) {
+                recordedData.push({
+                    pos: camera.position.clone(),
+                    tar: controls.target.clone()
+                });
+                document.getElementById('stats').innerText = `CAPTURING: ${recordedData.length}`;
+            }
+
+            // Playback Motion
+            if (isPlaying && recordedData.length > 0) {
+                const data = recordedData[playbackIndex];
+                camera.position.copy(data.pos);
+                controls.target.copy(data.tar);
+                playbackIndex = (playbackIndex + 1) % recordedData.length;
+            }
+
+            controls.update();
+            updateEnvironment();
+
+            const azimuthal = controls.getAzimuthalAngle();
+            const polar = controls.getPolarAngle();
+            mouseX = azimuthal / Math.PI;
+            mouseY = (polar / Math.PI) * 2 - 1;
+
+            const dayBg = document.getElementById('day-bg');
+
+            if (!dayBg.classList.contains('hidden')) {
+                dayBg.style.backgroundPosition = `${50 + mouseX * 20}% ${50 + mouseY * 20}%`;
+                dayBg.style.transform = `scale(1.15) rotateZ(${mouseX * 8}deg) rotateX(${mouseY * 4}deg)`;
+            }
+
+            beamGroup.children.forEach((child, i) => {
+                if (child.material.transparent) {
+                    child.rotation.y += 0.005 * (i % 2 === 0 ? 1 : -1);
+                    const shimmer = 1 + Math.sin(Date.now() * 0.002 + i) * 0.08;
+                    const baseScale = child.scale.x; 
+                    child.scale.set(baseScale * shimmer, 1, baseScale * shimmer);
+                }
+            });
+
+            const move = (trails) => {
+                trails.forEach(t => {
+                    t.userData.angle += t.userData.speed;
+                    t.position.y = t.userData.y;
+                    t.rotation.y = -t.userData.angle;
+                    if (t.children.length <= 1) {
+                        t.position.x = Math.cos(t.userData.angle) * t.userData.radius;
+                        t.position.z = Math.sin(t.userData.angle) * t.userData.radius;
+                        t.rotation.y = -t.userData.angle + (t.userData.speed > 0 ? 0 : Math.PI);
+                    }
+                });
+            };
+
+            move(upperTrails);
+            move(lowerTrails);
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>

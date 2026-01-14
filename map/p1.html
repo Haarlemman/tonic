@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Dot World Map</title>
+<style>
+  body {
+    margin: 0;
+    background: #05060a;
+    color: #eee;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #map {
+    margin-top: 20px;
+  }
+  .controls {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    background: #222;
+    color: #eee;
+    border: 1px solid #555;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background: #333;
+  }
+
+  /* Flickering dot land style */
+  .land-dot {
+    fill: #777;
+    stroke: none;
+    opacity: 0.5;
+    animation: flicker 1.8s infinite alternate;
+  }
+  @keyframes flicker {
+    0%   { opacity: 0.25; }
+    50%  { opacity: 0.6; }
+    100% { opacity: 0.35; }
+  }
+
+  /* Religion highlight colors */
+  .rel-islam       { fill: #00c853; }
+  .rel-christian   { fill: #aa00ff; }
+  .rel-hindu       { fill: #ff6d00; }
+  .rel-buddhist    { fill: #ffd600; }
+  .rel-jewish      { fill: #00e5ff; }
+
+  /* Freedom colors (just an example scale) */
+  .free-high   { fill: #4caf50; }
+  .free-mid    { fill: #ffb300; }
+  .free-low    { fill: #e53935; }
+
+  /* GDP colors (simple 3‑class scale) */
+  .gdp-high  { fill: #d4af37; }
+  .gdp-mid   { fill: #90caf9; }
+  .gdp-low   { fill: #546e7a; }
+
+  .country {
+    cursor: pointer;
+    transition: fill 0.3s ease, opacity 0.3s ease;
+  }
+</style>
+</head>
+<body>
+<h2>Interactive Dot World Map</h2>
+<svg id="map" width="900" height="460"></svg>
+
+<div class="controls">
+  <button id="btn-religion">Religion</button>
+  <button id="btn-freedom">Freedom</button>
+  <button id="btn-gdp">GDP / Wealth</button>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script>
+  const width = 900, height = 460;
+  const svg = d3.select("#map");
+  const projection = d3.geoEquirectangular()
+    .scale(150)
+    .translate([width / 2, height / 2]);
+  const path = d3.geoPath().projection(projection);
+
+  // Load a standard TopoJSON world file (countries)
+  d3.json("https://unpkg.com/world-atlas@2/countries-110m.json").then(world => {
+    const countries = topojson.feature(world, world.objects.countries).features;
+
+    // Draw many small circles over each country path to create a dotted land effect
+    const landGroup = svg.append("g");
+    countries.forEach(f => {
+      const bounds = path.bounds(f);
+      const [x0, y0] = bounds[0];
+      const [x1, y1] = bounds[1];
+      const step = 6; // dot spacing
+
+      const dots = [];
+      for (let x = x0; x <= x1; x += step) {
+        for (let y = y0; y <= y1; y += step) {
+          const p = [x, y];
+          if (d3.geoContains(f, projection.invert(p))) {
+            dots.push({ x, y });
+          }
+        }
+      }
+
+      landGroup.selectAll(null)
+        .data(dots)
+        .enter()
+        .append("circle")
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .attr("r", 1.4)
+        .attr("class", "land-dot");
+    });
+
+    // Solid country layer above dots, initially invisible (used for highlighting)
+    const countryGroup = svg.append("g");
+    const countryPaths = countryGroup.selectAll("path")
+      .data(countries)
+      .enter()
+      .append("path")
+      .attr("d", path)
+      .attr("class", "country")
+      .attr("fill", "transparent")
+      .attr("stroke", "none")
+      .attr("data-id", d => d.id);
+
+    // Example mappings (very rough demo data)
+    // Map from numeric ISO code string to category
+    const religionData = {
+      // Islam (green)
+      "760": "islam",  // Syria
+      "586": "islam",  // Pakistan
+      "732": "islam",  // Western Sahara (example)
+      // Christianity (purple)
+      "840": "christian", // USA
+      "124": "christian", // Canada
+      "276": "christian", // Germany
+      "076": "christian", // Brazil
+      // Hinduism (orange)
+      "356": "hindu", // India
+      // Buddhism (yellow)
+      "704": "buddhist", // Vietnam
+      "764": "buddhist", // Thailand
+      // Judaism (cyan) – treat Israel as the “one dot” highlight
+      "376": "jewish" // Israel
+    };
+
+    const freedomData = {
+      "840": "high", "124": "high", "276": "high", "352": "high", // examples
+      "250": "mid",  "380": "mid",  "392": "mid",
+      "156": "low",  "643": "low",  "760": "low"
+    };
+
+    const gdpData = {
+      "840": "high", "156": "high", "276": "high", "392": "high",
+      "356": "mid",  "076": "mid",  "643": "mid",
+      "450": "low",  "120": "low",  "204": "low"
+    };
+
+    function clearStyles() {
+      countryPaths
+        .attr("class", "country")
+        .attr("fill", "transparent");
+    }
+
+    function showReligion() {
+      clearStyles();
+      countryPaths.each(function(d) {
+        const code = String(d.id);
+        const rel = religionData[code];
+        if (!rel) return;
+        let cls = "country ";
+        if (rel === "islam")      cls += "rel-islam";
+        if (rel === "christian")  cls += "rel-christian";
+        if (rel === "hindu")      cls += "rel-hindu";
+        if (rel === "buddhist")   cls += "rel-buddhist";
+        if (rel === "jewish")     cls += "rel-jewish";
+        d3.select(this)
+          .attr("class", cls)
+          .attr("fill-opacity", rel === "jewish" ? 1 : 0.85);
+      });
+    }
+
+    function showFreedom() {
+      clearStyles();
+      countryPaths.each(function(d) {
+        const lvl = freedomData[String(d.id)];
+        if (!lvl) return;
+        let cls = "country ";
+        if (lvl === "high") cls += "free-high";
+        if (lvl === "mid")  cls += "free-mid";
+        if (lvl === "low")  cls += "free-low";
+        d3.select(this)
+          .attr("class", cls)
+          .attr("fill-opacity", 0.8);
+      });
+    }
+
+    function showGDP() {
+      clearStyles();
+      countryPaths.each(function(d) {
+        const lvl = gdpData[String(d.id)];
+        if (!lvl) return;
+        let cls = "country ";
+        if (lvl === "high") cls += "gdp-high";
+        if (lvl === "mid")  cls += "gdp-mid";
+        if (lvl === "low")  cls += "gdp-low";
+        d3.select(this)
+          .attr("class", cls)
+          .attr("fill-opacity", 0.85);
+      });
+    }
+
+    document.getElementById("btn-religion").onclick = showReligion;
+    document.getElementById("btn-freedom").onclick = showFreedom;
+    document.getElementById("btn-gdp").onclick = showGDP;
+  });
+</script>
+</body>
+</html>

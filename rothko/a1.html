@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rothko Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { overflow:hidden; font-family:"Cal Sans", sans-serif; background:#594C2A; color:#DDD7C1; }
+
+  #canvas {
+    width:100vw; height:100vh;
+    display:flex; flex-direction:column; justify-content:center; align-items:stretch;
+    padding:5vh 5vw;
+    gap:1.5vh;
+    transition:background-color 2s ease;
+    opacity:1;
+  }
+
+  .color-block {
+    width:100%;
+    position:relative;
+    filter: blur(10px);
+    border-radius: 20px;
+    transition: background-color 1.5s ease, height 1.5s ease, transform 1.5s ease;
+    overflow:hidden;
+    padding:2vh 2vw;
+  }
+
+  .color-block::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,rgba(0,0,0,0.06) 100%);
+    pointer-events:none; z-index:2;
+  }
+
+  .color-block canvas.texture {
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    mix-blend-mode:overlay;
+    opacity:0.95;
+    pointer-events:none;
+    z-index:1;
+  }
+</style>
+</head>
+<body>
+<div id="canvas"></div>
+
+<script>
+const palettes = [
+  ['#8B0000','#FF4500','#FFD700'],
+  ['#4B0082','#8B008B','#FF1493'],
+  ['#DC143C','#FF6347','#FFA07A'],
+  ['#2F4F4F','#1C1C1C','#8B4513'],
+  ['#191970','#000080','#4B0082'],
+  ['#CD853F','#D2691E','#8B4513'],
+  ['#FF4500','#FFD700','#FF8C00'],
+  ['#00CED1','#4682B4','#1E90FF'],
+  ['#BC8F8F','#CD5C5C','#F08080'],
+  ['#708090','#778899','#B0C4DE']
+];
+
+let blocks = [];
+let bgHueShift = 0;
+
+function hexToHSL(hex) {
+  let r = parseInt(hex.substr(1,2),16)/255;
+  let g = parseInt(hex.substr(3,2),16)/255;
+  let b = parseInt(hex.substr(5,2),16)/255;
+  let max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if(max===min){h=s=0;}
+  else {
+    let d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d+(g<b?6:0); break;
+      case g: h=(b-r)/d+2; break;
+      case b: h=(r-g)/d+4; break;
+    }
+    h/=6;
+  }
+  return {h: h*360, s: s*100, l: l*100};
+}
+
+// Noise texture generator
+function createNoiseTexture(size = 256) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  const data = img.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const v = Math.random() * 255;
+    data[i] = data[i+1] = data[i+2] = v;
+    data[i+3] = 40; // alpha
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+
+function initRothko() {
+  const canvasEl = document.getElementById('canvas');
+  canvasEl.innerHTML = '';
+  const palette = palettes[Math.floor(Math.random()*palettes.length)];
+  const hsls = palette.map(hexToHSL);
+  const avgHue = hsls.reduce((a,c)=>a+c.h,0)/hsls.length;
+  bgHueShift = avgHue;
+  canvasEl.style.backgroundColor = `hsl(${avgHue}, 30%, 18%)`;
+  const count = Math.random() > 0.3 ? 3 : 2;
+  blocks = [];
+
+  for(let i=0;i<count;i++){
+    const block = document.createElement('div');
+    block.className = 'color-block';
+    const color = palette[i % palette.length];
+    const hsl = hexToHSL(color);
+    block.style.backgroundColor = color;
+    block.style.height = `${30 + Math.random()*30}%`;
+
+    const tex = createNoiseTexture();
+    tex.className = 'texture';
+    block.appendChild(tex);
+
+    canvasEl.appendChild(block);
+    blocks.push({
+      el:block,
+      hueShift:hsl.h,
+      height:parseFloat(block.style.height),
+      speed:Math.random()*0.4+0.1
+    });
+  }
+}
+
+function animate() {
+  blocks.forEach(b=>{
+    b.height += Math.sin(Date.now()/2000*b.speed)*0.25;
+    b.el.style.height = `${Math.max(15,Math.min(60,b.height))}%`;
+    b.hueShift += b.speed*0.8;
+    b.el.style.backgroundColor = `hsl(${b.hueShift%360},70%,50%)`;
+    const float = Math.sin(Date.now()/1500*b.speed)*15;
+    b.el.style.transform = `translateY(${float}px)`;
+  });
+  bgHueShift += 0.08;
+  document.getElementById('canvas').style.backgroundColor = `hsl(${bgHueShift%360},30%,20%)`;
+  requestAnimationFrame(animate);
+}
+
+// Refresh textures periodically
+function refreshTextures() {
+  blocks.forEach(b=>{
+    const tex = b.el.querySelector('.texture');
+    const ctx = tex.getContext('2d');
+    const newTex = createNoiseTexture(tex.width);
+    ctx.drawImage(newTex,0,0);
+  });
+}
+setInterval(refreshTextures, 500);
+
+initRothko();
+animate();
+</script>
+</body>
+</html>

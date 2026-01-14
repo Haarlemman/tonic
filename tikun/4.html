@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Holographic Map · Chaos & Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            deep: '#030508',
+            panel: '#0d121f',
+            gold: '#cba137',
+            'gold-dim': '#8a7028',
+            ink: '#cbd5e1',
+            blood: '#7f1d1d',
+            muted: '#64748b'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cormorant Garamond', 'serif'],
+            display: ['Cinzel', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #030508;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(203, 161, 55, 0.05) 0%, transparent 40%),
+        linear-gradient(to bottom, transparent, #030508);
+      color: var(--ink);
+    }
+    .glass-panel {
+      background: rgba(13, 18, 31, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .node-btn {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .node-btn:hover, .node-btn.active {
+      box-shadow: 0 0 15px rgba(203, 161, 55, 0.2);
+      border-color: rgba(203, 161, 55, 0.6);
+    }
+    .synthesis-box {
+      border-left: 2px solid #cba137;
+      background: linear-gradient(90deg, rgba(203, 161, 55, 0.05) 0%, transparent 100%);
+    }
+    
+    /* Reveal Animation */
+    .reveal-text {
+      animation: reveal 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Desktop Scrollbar */
+    @media (min-width: 1024px) {
+      .custom-scroll::-webkit-scrollbar { width: 6px; }
+      .custom-scroll::-webkit-scrollbar-track { background: #030508; }
+      .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col lg:h-screen lg:overflow-hidden selection:bg-gold selection:text-deep">
+
+  <!-- Header -->
+  <header class="flex-none p-4 md:p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center bg-deep/95 backdrop-blur z-20 sticky top-0 lg:relative">
+    <div class="mb-4 md:mb-0">
+      <h1 class="text-xl md:text-3xl font-display text-white tracking-widest">The Fracture & The Glue</h1>
+      <p class="text-xs text-muted uppercase tracking-[0.2em] mt-1">Integrated Narrative Map</p>
+    </div>
+    <!-- Node Selector (Desktop) -->
+    <div class="hidden lg:flex gap-2">
+      <button onclick="loadNode(1)" class="node-selector px-3 py-1 rounded border border-white/10 text-xs uppercase hover:bg-white/5 transition-colors" id="nav-1">I. Adaptation</button>
+      <button onclick="loadNode(2)" class="node-selector px-3 py-1 rounded border border-white/10 text-xs uppercase hover:bg-white/5 transition-colors" id="nav-2">II. The Study</button>
+      <button onclick="loadNode(3)" class="node-selector px-3 py-1 rounded border border-white/10 text-xs uppercase hover:bg-white/5 transition-colors" id="nav-3">III. The Shattering</button>
+      <button onclick="loadNode(4)" class="node-selector px-3 py-1 rounded border border-white/10 text-xs uppercase hover:bg-white/5 transition-colors" id="nav-4">IV. The Contest</button>
+      <button onclick="loadNode(5)" class="node-selector px-3 py-1 rounded border border-white/10 text-xs uppercase hover:bg-white/5 transition-colors" id="nav-5">V. The Truth</button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col lg:flex-row relative">
+
+    <!-- LEFT: THE TENSION (Data/Layers) -->
+    <!-- Mobile: Height Auto / Desktop: Full Height Scrollable -->
+    <section class="lg:w-7/12 flex flex-col p-6 lg:p-12 lg:overflow-y-auto custom-scroll relative border-b lg:border-b-0 border-white/5">
+      
+      <!-- Background Graphic -->
+      <div class="absolute right-0 top-0 w-1/2 h-full opacity-[0.03] pointer-events-none">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="h-full w-full">
+          <path d="M0,0 L100,0 L50,100 Z" fill="#fff"/>
+        </svg>
+      </div>
+
+      <div class="max-w-3xl mx-auto w-full z-10">
+        
+        <div class="mb-8 flex items-baseline gap-4">
+          <span class="text-6xl font-display text-white/10" id="display-roman">I</span>
+          <h2 class="text-2xl md:text-5xl font-display text-white leading-tight" id="display-title">Adaptation & Exile</h2>
+        </div>
+
+        <!-- LAYER 1: PERSONAL -->
+        <div class="mb-6 group">
+          <h3 class="text-xs font-bold text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 bg-gold rounded-full"></span> Personal Reality
+          </h3>
+          <div class="glass-panel p-6 rounded-lg border-l-4 border-l-transparent group-hover:border-l-gold transition-all">
+            <h4 class="text-xl font-serif text-white mb-2" id="p-title">The Portable Self</h4>
+            <p class="text-ink/90 leading-relaxed text-sm md:text-base" id="p-text">
+              Born into distance. The body as the first home that proved unstable.
+            </p>
+          </div>
+        </div>
+
+        <!-- LAYER 2: COLLECTIVE -->
+        <div class="mb-6 group">
+          <h3 class="text-xs font-bold text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Jewish Collective
+          </h3>
+          <div class="glass-panel p-6 rounded-lg border-l-4 border-l-transparent group-hover:border-l-blue-500 transition-all">
+            <h4 class="text-xl font-serif text-white mb-2" id="c-title">Professions of Air</h4>
+            <p class="text-ink/90 leading-relaxed text-sm md:text-base" id="c-text">
+              Barred from the land, we mastered the portable: Law, Medicine, Finance, Comedy, Science.
+            </p>
+          </div>
+        </div>
+
+        <!-- LAYER 3: COSMIC -->
+        <div class="mb-8 group">
+          <h3 class="text-xs font-bold text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span> Cosmic/Abstract
+          </h3>
+          <div class="glass-panel p-6 rounded-lg border-l-4 border-l-transparent group-hover:border-l-purple-500 transition-all">
+            <h4 class="text-xl font-serif text-white mb-2" id="u-title">Vacuum & Creation</h4>
+            <p class="text-ink/90 leading-relaxed text-sm md:text-base" id="u-text">
+              Tzimtzum. God withdraws to create space for the Other.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT: THE MEANING (Synthesis) -->
+    <!-- Mobile: Height Auto / Desktop: Full Height Scrollable -->
+    <section class="lg:w-5/12 bg-panel border-l border-white/5 relative flex flex-col lg:overflow-hidden">
+      
+      <div class="p-8 lg:p-12 flex-1 lg:overflow-y-auto custom-scroll">
+        
+        <div class="sticky top-0 bg-panel z-10 pb-6 mb-2 border-b border-white/5 lg:border-none">
+          <h3 class="font-mono text-xs text-gold uppercase tracking-widest mb-2">// The Synthesis</h3>
+          <h2 class="text-2xl font-display text-white">What does it mean?</h2>
+        </div>
+
+        <div id="synthesis-content" class="space-y-6 pt-4 lg:pt-0">
+          <!-- Injected via JS -->
+        </div>
+
+      </div>
+
+      <!-- Mobile Nav (Sticky Bottom) -->
+      <div class="lg:hidden sticky bottom-0 p-4 border-t border-white/10 bg-deep/95 backdrop-blur flex justify-between gap-2 overflow-x-auto z-30 shadow-2xl">
+         <button onclick="loadNode(1)" class="mob-selector flex-shrink-0 w-10 h-10 flex items-center justify-center border border-white/10 rounded bg-white/5 text-xs text-white font-bold" id="mob-1">I</button>
+         <button onclick="loadNode(2)" class="mob-selector flex-shrink-0 w-10 h-10 flex items-center justify-center border border-white/10 rounded bg-white/5 text-xs text-white font-bold" id="mob-2">II</button>
+         <button onclick="loadNode(3)" class="mob-selector flex-shrink-0 w-10 h-10 flex items-center justify-center border border-white/10 rounded bg-white/5 text-xs text-white font-bold" id="mob-3">III</button>
+         <button onclick="loadNode(4)" class="mob-selector flex-shrink-0 w-10 h-10 flex items-center justify-center border border-white/10 rounded bg-white/5 text-xs text-white font-bold" id="mob-4">IV</button>
+         <button onclick="loadNode(5)" class="mob-selector flex-shrink-0 w-10 h-10 flex items-center justify-center border border-white/10 rounded bg-white/5 text-xs text-white font-bold" id="mob-5">V</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const data = {
+      1: {
+        roman: "I",
+        title: "Adaptation & Exile",
+        personal: {
+          title: "The Shift to the Mind",
+          text: "When the body becomes unreliable (Parkinson's), you retreat to the fortress of the mind. You chose design, writing, and art—professions that do not require physical might, but intellectual agility. This was an instinctive 'Exile' from the physical realm into the conceptual one."
+        },
+        collective: {
+          title: "Professions of Air",
+          text: "Barred from owning land for centuries, Jews gravitated toward portable assets: Law, Medicine, Finance, Science, and Comedy. Why Comedy? Because when you have no army, humor is your only defense mechanism against absurdity. Adaptation is the Jewish superpower."
+        },
+        cosmic: {
+          title: "Tzimtzum (Withdrawal)",
+          text: "Creation required God to withdraw (Tzimtzum). Adaptation requires you to withdraw from the 'perfect' image of yourself to make space for the 'actual' self."
+        },
+        synthesis: `
+          <p class="text-lg leading-relaxed text-ink mb-4 reveal-text">
+            <strong>Meaning:</strong> Survival is not about strength; it is about <em>flexibility</em>.
+          </p>
+          <div class="synthesis-box p-4 rounded mb-4 reveal-text" style="animation-delay: 100ms">
+            <p class="text-sm text-ink/80 italic">
+              Just as the Jews survived by turning land into text (Torah) and farming into finance, you survive by turning physical limitation into artistic expression. <strong>Adaptation is the refusal to accept the end of the story.</strong>
+            </p>
+          </div>
+        `
+      },
+      2: {
+        roman: "II",
+        title: "Lernen & The Wilderness",
+        personal: {
+          title: "The New Syllabus",
+          text: "Diagnosis is a form of enrollment. You are suddenly a student of neurology, pharmacology, and your own nervous system. You must 'Lern' your body anew every morning. The paradox: 'The more you learn, the more you realize you know nothing.'"
+        },
+        collective: {
+          title: "People of the Book",
+          text: "In the wilderness (Bamidbar), we did not build cities; we built a mobile structure of law and study. The Yeshiva replaces the Temple. We argue, we debate, we interpret. The truth is not a statue; it is a conversation."
+        },
+        cosmic: {
+          title: "Encoding",
+          text: "The universe is written in mathematics. To study science or medicine is to read the 'mind of God' (Spinoza). Study is a cosmic duty."
+        },
+        synthesis: `
+          <p class="text-lg leading-relaxed text-ink mb-4 reveal-text">
+            <strong>Meaning:</strong> Control is found in <em>understanding</em>, even if you cannot change the outcome.
+          </p>
+          <div class="synthesis-box p-4 rounded mb-4 reveal-text" style="animation-delay: 100ms">
+            <p class="text-sm text-ink/80 italic">
+              Jewish tradition values the question over the answer. Your journey with Parkinson's is not about 'solving' it (a cure), but studying it. <strong>Dignity comes from looking the beast in the eye and naming it.</strong>
+            </p>
+          </div>
+        `
+      },
+      3: {
+        roman: "III",
+        title: "The Shattering",
+        personal: {
+          title: "Betrayal of the Self",
+          text: "The tremor. The loss of automatic movement. This is the personal Shoah—the moment the benevolent 'God' (your healthy body) seems to vanish, leaving you vulnerable."
+        },
+        collective: {
+          title: "Shoah & Antisemitism",
+          text: "The ultimate rupture. How can there be one God/Truth after Auschwitz? The covenant was broken. The world showed its face as hostile. The shadow of antisemitism (the hatred of the 'other') is the constant reminder that safety is an illusion."
+        },
+        cosmic: {
+          title: "Entropy",
+          text: "The Second Law. All systems tend toward disorder. The universe is not 'kind'; it is indifferent. Chaos is the baseline."
+        },
+        synthesis: `
+          <p class="text-lg leading-relaxed text-ink mb-4 reveal-text">
+            <strong>Meaning:</strong> Faith is not believing that things will be okay; it is continuing <em>after</em> they are not.
+          </p>
+          <div class="synthesis-box p-4 rounded mb-4 reveal-text" style="animation-delay: 100ms">
+            <p class="text-sm text-ink/80 italic">
+              There is no 'reason' for the Shoah, just as there is no 'reason' for Parkinson's. They are the Shattering. The ultimate meaning here is <strong>Resilience</strong>: The refusal to let the brokenness have the final word.
+            </p>
+          </div>
+        `
+      },
+      4: {
+        roman: "IV",
+        title: "The Contested Return",
+        personal: {
+          title: "Ailish & Yaron",
+          text: "You built a home. You have a wife and a son (7 years old, smart, funny). This is your Israel—your stake in the future. But you worry: Can I protect them? Can I be the father I want to be?"
+        },
+        collective: {
+          title: "Israel & October 7",
+          text: "1948 was the miracle; October 7, 2023 was the reminder of the cost. Israel is 'controversial' because it challenges the victim narrative. It is the transition from 'symbolic' survival to 'real' power, with all the moral complexity, war, and sacrifice that entails."
+        },
+        cosmic: {
+          title: "Fusion",
+          text: "Gravity pulls matter together to form stars, but the pressure is immense. Cohesion creates heat. To exist as a solid entity in a chaotic universe requires energy."
+        },
+        synthesis: `
+          <p class="text-lg leading-relaxed text-ink mb-4 reveal-text">
+            <strong>Meaning:</strong> The 'Safe Haven' is a myth. There is only the <em>Defended Haven</em>.
+          </p>
+          <div class="synthesis-box p-4 rounded mb-4 reveal-text" style="animation-delay: 100ms">
+            <p class="text-sm text-ink/80 italic">
+              Israel is not a fairy tale; it is a gritty reality. Your life with Ailish and Yaron is not a fairy tale; it is a daily effort against the disease. <strong>To return to life is to accept the risk of pain.</strong> Oct 7 proved that even the 'safe' place requires constant vigilance.
+            </p>
+          </div>
+        `
+      },
+      5: {
+        roman: "V",
+        title: "Truth & One God",
+        personal: {
+          title: "Tonic for the Bones",
+          text: "You write. You design. You assert 'Free Will' within the 'Framework.' This is the paradox: You cannot stop the shaking, but you can choose how to hold the pen."
+        },
+        collective: {
+          title: "One God / One Truth",
+          text: "Monotheism isn't just about 'one guy in the sky.' It is the assertion that there is an Objective Moral Truth in the universe. That healing is better than destruction. That despite the chaos, there is Meaning."
+        },
+        cosmic: {
+          title: "Consciousness",
+          text: "We are the universe observing itself. Through your art, you force the chaotic universe to make sense."
+        },
+        synthesis: `
+          <p class="text-lg leading-relaxed text-ink mb-4 reveal-text">
+            <strong>Ultimately:</strong> We repair the world (Tikkun) not because it will be perfect, but because <em>we</em> must be.
+          </p>
+          <div class="synthesis-box p-4 rounded mb-4 reveal-text" style="animation-delay: 100ms">
+            <p class="text-sm text-ink/80 italic">
+              The ultimate meaning is the <strong>Creative Act</strong>. <br><br>
+              In a world of Antisemitism, you choose Jewish pride.<br>
+              In a body of entropy, you choose Art.<br>
+              In a history of exile, you choose Family.<br><br>
+              <strong>That is the victory.</strong>
+            </p>
+          </div>
+        `
+      }
+    };
+
+    function loadNode(id) {
+      const node = data[id];
+      
+      // Update Title Area
+      document.getElementById('display-roman').innerText = node.roman;
+      document.getElementById('display-title').innerText = node.title;
+
+      // Update Layer Content
+      document.getElementById('p-title').innerText = node.personal.title;
+      document.getElementById('p-text').innerText = node.personal.text;
+
+      document.getElementById('c-title').innerText = node.collective.title;
+      document.getElementById('c-text').innerText = node.collective.text;
+
+      document.getElementById('u-title').innerText = node.cosmic.title;
+      document.getElementById('u-text').innerText = node.cosmic.text;
+
+      // Update Synthesis (with animation reset)
+      const synthContainer = document.getElementById('synthesis-content');
+      synthContainer.innerHTML = '';
+      setTimeout(() => {
+        synthContainer.innerHTML = node.synthesis;
+      }, 50);
+
+      // Update Desktop Buttons
+      document.querySelectorAll('.node-selector').forEach((btn, index) => {
+        const isActive = index + 1 === id;
+        btn.classList.toggle('bg-white/10', isActive);
+        btn.classList.toggle('border-gold', isActive);
+        btn.classList.toggle('text-gold', isActive);
+        btn.classList.toggle('border-white/10', !isActive);
+      });
+
+      // Update Mobile Buttons
+      document.querySelectorAll('.mob-selector').forEach((btn, index) => {
+        const isActive = index + 1 === id;
+        btn.classList.toggle('bg-gold', isActive);
+        btn.classList.toggle('text-black', isActive);
+        btn.classList.toggle('border-gold', isActive);
+        btn.classList.toggle('bg-white/5', !isActive);
+        btn.classList.toggle('text-white', !isActive);
+      });
+      
+      // Mobile: Smooth Scroll to top of content
+      if (window.innerWidth < 1024) {
+        document.querySelector('main').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Init
+    loadNode(1);
+
+  </script>
+</body>
+</html>
+

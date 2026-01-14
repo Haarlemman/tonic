@@ -1,0 +1,460 @@
+ /* THE SWISS SYSTEM [Source 1, 166] */
+    :root {
+        --ink: #111111;
+        --red: #ff3300;    /* Body / Physics [Source 49] */
+        --yellow: #ffcc00; /* Mind / Logic [Source 53] */
+        --blue: #0033cc;   /* Soul / Faith [Source 139] */
+    }
+
+    body { margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; }
+
+    /* 1. TARGETING YOUR EXISTING LAYERS */
+    #hud-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; /* CRITICAL: Allows clicking through to the 3D campus */
+        z-index: 100; /* Forces it to the front */
+        display: flex; flex-direction: column; justify-content: space-between;
+        padding: 30px; box-sizing: border-box;
+    }
+
+    /* 2. INTERFACE ELEMENTS */
+    .hud-pointer { pointer-events: auto; } /* Re-enables clicking for buttons */
+
+    .brand-box {
+        background: var(--ink); color: white; padding: 10px 15px;
+        text-transform: uppercase; font-size: 1.5rem; display: inline-block; font-weight: bold;
+    }
+    .subtitle {
+        background: white; color: var(--ink); border: 2px solid var(--ink);
+        padding: 5px; font-weight: bold; font-size: 0.8rem; margin-top: 5px; 
+        display: inline-block; font-family: 'Courier New', monospace;
+    }
+
+    /* 3. THE GATES (Navigation) [Source 4] */
+    .gates-container {
+        display: flex; gap: 20px; justify-content: center; width: 100%;
+    }
+    .gate-btn {
+        background: white; padding: 20px 30px; text-decoration: none; color: var(--ink);
+        border: 4px solid var(--ink); font-weight: 900; text-transform: uppercase;
+        transition: transform 0.2s; text-align: center; display: block;
+    }
+    .gate-btn:hover { transform: translateY(-10px); background: var(--ink); color: white; }
+    .gate-btn span { display: block; font-family: 'Courier New'; font-size: 0.7rem; font-weight: normal; margin-top:5px; }
+
+    /* 4. COLOR CODING [Source 159] */
+    .gate-body { border-top: 10px solid var(--red); }
+    .gate-mind { border-top: 10px solid var(--yellow); }
+    .gate-soul { border-top: 10px solid var(--blue); }
+
+    /* 5. UTILITY BUTTONS */
+    .util-btn {
+        background: white; border: 2px solid var(--ink); color: var(--ink);
+        padding: 10px 20px; font-weight: bold; text-transform: uppercase; cursor: pointer;
+        margin-left: 10px; text-decoration: none;
+    }
+
+
+
+
+
+
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #64748b;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+#canvas-container {
+    width: 100vw;
+    height: 100vh;
+    cursor: grab;
+}
+
+#canvas-container:active {
+    cursor: grabbing;
+}
+
+/* Intro Overlay */
+#intro-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    transition: opacity 1.5s ease, visibility 1.5s;
+}
+
+#intro-text {
+    font-size: 1.5rem;
+    font-weight: 300;
+    max-width: 600px;
+    min-height: 100px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    padding: 0 20px;
+    letter-spacing: 1px;
+    transition: opacity 0.8s ease;
+    font-style: italic;
+}
+
+.intro-btns {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.action-btn {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    opacity: 1;
+    pointer-events: auto;
+    min-width: 260px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn:hover {
+    background: white;
+    color: #1e293b;
+    border-color: white;
+    transform: scale(1.05);
+}
+
+/* Faculty Screen Overlay */
+#faculty-screen {
+    position: absolute;
+    width: 260px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 80;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    text-align: center;
+    transform: translate(-50%, -120%);
+}
+
+#faculty-screen.active {
+    display: flex;
+    opacity: 1;
+}
+
+.neon-text {
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    min-height: 3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neon-art {
+    color: #ff3e3e;
+    text-shadow: 0 0 8px #ef4444;
+}
+
+.neon-science {
+    color: #3e9bff;
+    text-shadow: 0 0 8px #3b82f6;
+}
+
+.neon-spirit {
+    color: #ffff3e;
+    text-shadow: 0 0 8px #facc15;
+}
+
+.screen-sub {
+    color: #666;
+    font-size: 0.5rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 6px;
+}
+
+/* HUD */
+#hud-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.brand-box {
+    background: #111;
+    color: white;
+    padding: 12px 20px;
+    display: inline-block;
+    pointer-events: auto;
+    border-left: 4px solid #ffcc00;
+    transition: all 0.3s ease;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.sub-brand {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    margin-top: 4px;
+}
+
+.status-box {
+    pointer-events: auto;
+    text-align: right;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.hud-btn {
+    background: #111;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    transition: 0.2s;
+}
+
+.hud-btn:hover {
+    background: white;
+    color: black;
+    border-color: white;
+}
+
+.btn-red {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+#general-menu {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    width: 180px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    pointer-events: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+#general-menu.active {
+    display: flex;
+}
+
+.menu-link {
+    color: #999;
+    text-decoration: none;
+    font-size: 0.7rem;
+    padding: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: color 0.2s;
+}
+
+.menu-link:hover {
+    color: white;
+}
+
+.controls-box {
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    color: #333;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+    max-width: 220px;
+    backdrop-filter: blur(10px);
+}
+
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.key {
+    font-weight: bold;
+    color: #000;
+}
+
+.directory-box {
+    pointer-events: auto;
+    text-align: right;
+}
+
+.building-tag {
+    display: block;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 12px;
+    margin-bottom: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-right: 4px solid #ccc;
+    transition: all 0.2s;
+    cursor: pointer;
+    color: #111;
+}
+
+.tag-red {
+    border-color: #ef4444;
+}
+
+.tag-blue {
+    border-color: #3b82f6;
+}
+
+.tag-yellow {
+    border-color: #facc15;
+}
+
+.building-tag:hover {
+    transform: translateX(-5px);
+    background: #111;
+    color: white;
+}
+
+/* Mobile Specifics */
+@media (max-width: 600px) {
+    #hud-layer { padding: 12px; }
+    h1 { font-size: 0.9rem; }
+    .brand-box { padding: 8px 12px; border-left-width: 3px; }
+    .sub-brand { font-size: 0.5rem; letter-spacing: 1px; }
+    .hud-btn { padding: 6px 8px; font-size: 0.55rem; }
+    .controls-box { max-width: 160px; padding: 8px; font-size: 0.6rem; }
+    .building-tag { padding: 4px 8px; font-size: 0.6rem; }
+    #faculty-screen { width: 180px; padding: 8px; }
+    .neon-text { font-size: 0.8rem; min-height: 2.5em; }
+}
+
+#tooltip {
+    position: absolute;
+    padding: 8px 12px;
+    background: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    pointer-events: none;
+    display: none;
+    font-size: 10px;
+    font-weight: 700;
+    z-index: 60;
+    transform: translate(-50%, -100%);
+    margin-top: -15px;
+}
+
+.highlight-art { color: #fff; text-decoration: underline #ef4444; }
+.highlight-science { color: #fff; text-decoration: underline #4444ef; }
+.highlight-spirit { color: #fff; text-decoration: underline #efef44; }
+
+#audio-status {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 2s;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* FORCE THE MENU TO THE FRONT */
+#hud-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 999; /* High number ensures it sits on top of canvas */
+    pointer-events: none; /* Lets you click the 3D buildings behind the empty parts */
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 30px;
+}
+
+/* MAKE BUTTONS CLICKABLE */
+.hud-interactive { pointer-events: auto; }
+
+/* SWISS STYLING [Source 166] */
+.swiss-btn {
+    background: white; border: 2px solid #111; color: #111;
+    padding: 10px 20px; font-weight: bold; text-transform: uppercase; cursor: pointer;
+}
+.gate-btn {
+    background: white; border: 4px solid #111; padding: 15px 30px; 
+    text-transform: uppercase; font-weight: 900; text-decoration: none; color: #111;
+}
+/* Department Colors [Source 159] */
+.border-red { border-top: 10px solid #ff3300; }
+.border-yellow { border-top: 10px solid #ffcc00; }
+.border-blue { border-top: 10px solid #0033cc; }

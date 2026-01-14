@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleeples</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 2rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .typewriter {
+      white-space: pre-wrap;
+      font-size: 1.2rem;
+      max-width: 800px;
+      line-height: 1.6;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 1ch;
+      background-color: white;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { background-color: transparent; }
+    }
+
+    .enter-button, .next-button {
+      margin-top: 2rem;
+      background: transparent;
+      border: 1px solid #555;
+      color: #999;
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .enter-button:hover, .next-button:hover {
+      color: #fff;
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .poem {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(135deg, #003153, #8B0000);
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 4vh 5vw;
+      box-sizing: border-box;
+      overflow: hidden;
+      animation: fadeIn 2s ease-in-out forwards;
+    }
+
+    .poem-line {
+      position: absolute;
+      opacity: 0;
+      animation: floatIn 1s ease forwards;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,0.3));
+    }
+
+    .poem-line:nth-child(1) { top: 8%; left: 15%; animation-delay: 0.5s; }
+    .poem-line:nth-child(2) { top: 18%; left: 55%; animation-delay: 1.5s; }
+    .poem-line:nth-child(3) { top: 32%; left: 25%; animation-delay: 2.5s; }
+    .poem-line:nth-child(4) { top: 46%; left: 50%; animation-delay: 3.5s; }
+    .poem-line:nth-child(5) { top: 60%; left: 30%; animation-delay: 4.5s; }
+    .poem-line:nth-child(6) { top: 74%; left: 65%; animation-delay: 5.5s; }
+    .poem-line:nth-child(7) { top: 85%; left: 35%; animation-delay: 6.5s; }
+    .poem-line:nth-child(8) { top: 92%; left: 10%; animation-delay: 7.5s; }
+
+    @keyframes floatIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .haiku {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(17, 17, 17, 0.85); /* changed from solid #111 */
+      overflow: hidden;
+    }
+
+    .haiku-content {
+      position: relative;
+      z-index: 2;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      font-size: 2rem;
+      animation: fadeIn 2s ease forwards, floatText 5s ease-in-out infinite alternate;
+      text-shadow: 0 0 10px #c33, 0 0 20px #339;
+    }
+
+   .blob-bg {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle at center, rgba(255, 20, 100, 0.6), rgba(0, 100, 255, 0.6));
+  animation: morph 25s infinite alternate ease-in-out;
+  filter: blur(120px);
+  opacity: 0.9;
+  z-index: 1;
+  border-radius: 60% 40% 70% 30% / 50% 60% 30% 70%; /* initial shape */
+  box-shadow:
+    0 0 80px 40px rgba(255, 20, 100, 0.5),
+    0 0 100px 60px rgba(0, 100, 255, 0.4);
+}
+
+
+  @keyframes morph {
+  0% { border-radius: 60% 40% 70% 30% / 50% 60% 30% 70%; }
+  33% { border-radius: 40% 60% 30% 70% / 60% 30% 70% 40%; }
+  66% { border-radius: 70% 30% 60% 40% / 30% 70% 40% 60%; }
+  100% { border-radius: 60% 40% 70% 30% / 50% 60% 30% 70%; }
+}
+
+
+    @keyframes floatText {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="intro">
+    <div class="typewriter" id="typewriter"></div>
+    <button class="enter-button" id="enterButton">enter</button>
+  </div>
+
+  <div class="poem" id="poem">
+    <div class="poem-line">some nights</div>
+    <div class="poem-line">don’t end</div>
+    <div class="poem-line">they dissolve</div>
+    <div class="poem-line">into</div>
+    <div class="poem-line">sketches</div>
+    <div class="poem-line">and</div>
+    <div class="poem-line">light</div>
+    <div class="poem-line">without warning</div>
+    <button class="next-button" id="nextButton" style="display:none; position:absolute; bottom:20px; right:20px;">next</button>
+  </div>
+
+  <div class="haiku" id="haiku">
+    <div class="blob-bg"></div>
+    <div class="haiku-content">
+      <div>red moon above fields</div>
+      <div>whispers caught between branches</div>
+      <div>the sky forgets us</div>
+    </div>
+  </div>
+
+  <script>
+    const text = `i cannot sleep\nso i make this instead\n\none line\nthen another\n\nwhite text on black\nlike dreams inverted\n\nscroll or don't\nthis is not a trap\njust a mirror.`
+
+    let i = 0;
+    const speed = 50;
+    const output = document.getElementById('typewriter');
+    const cursor = document.createElement('span');
+    cursor.classList.add('cursor');
+    cursor.innerHTML = '&nbsp;';
+    output.appendChild(cursor);
+
+    function type() {
+      if (i < text.length) {
+        if (text.charAt(i) === '\n') {
+          cursor.insertAdjacentHTML('beforebegin', '<br />');
+        } else {
+          cursor.insertAdjacentText('beforebegin', text.charAt(i));
+        }
+        i++;
+        setTimeout(type, text.charAt(i - 1) === '\n' ? 300 : speed);
+      }
+    }
+
+    document.getElementById('enterButton').addEventListener('click', () => {
+      document.getElementById('intro').style.display = 'none';
+      document.getElementById('poem').style.display = 'block';
+      const ambient = new Audio('ambient.mp3');
+      ambient.loop = true;
+      ambient.play().catch(err => console.log('Audio play failed:', err));
+
+      setTimeout(() => {
+        document.getElementById('nextButton').style.display = 'block';
+      }, 9000);
+    });
+
+    document.getElementById('nextButton').addEventListener('click', () => {
+      document.getElementById('poem').style.display = 'none';
+      document.getElementById('haiku').style.display = 'block';
+    });
+
+    type();
+  </script>
+</body>
+</html>

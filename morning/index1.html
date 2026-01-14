@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morning Light</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Scrollbar for smoother feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            overflow-x: hidden;
+            background-color: #020b1c; /* Fallback */
+            color: white;
+            transition: background-color 0.5s ease;
+        }
+
+        /* The dynamic background canvas */
+        #sky-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(to bottom, #091c38, #020b1c);
+            transition: opacity 2s ease;
+        }
+
+        /* Typography & Animation Classes */
+        .verse-container {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .verse-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-family: 'Montserrat', sans-serif;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+
+        p {
+            font-size: 1.8rem;
+            line-height: 1.6;
+            margin: 0.5rem 0;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .sub-text {
+            font-size: 1.2rem;
+            font-style: italic;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        /* Scroll Indicator */
+        .scroll-arrow {
+            margin-top: 2rem;
+            opacity: 0.6;
+            animation: bounce-slow 3s infinite;
+        }
+
+        @keyframes bounce-slow {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(10px);}
+            60% {transform: translateY(5px);}
+        }
+
+        /* Specific Animation Effects */
+        .pulse-text {
+            animation: pulse-dim 4s infinite ease-in-out;
+        }
+
+        @keyframes pulse-dim {
+            0%, 100% { opacity: 0.6; text-shadow: 0 0 0 transparent; }
+            50% { opacity: 1; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+        }
+
+        .glimmer {
+            background: linear-gradient(90deg, #fff, #ffd700, #fff);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .sun-text {
+            color: #fffacd;
+            text-shadow: 0 0 20px #ffd700, 0 0 40px #ff8c00;
+            transition: all 1s ease;
+        }
+
+        /* Deconstructed Falling Text */
+        .falling-container {
+            position: relative;
+            height: 150vh; /* Extra long for the fall */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10vh;
+        }
+
+        .falling-char {
+            display: inline-block;
+            transition: transform 1s ease, opacity 1s ease;
+            font-size: 2rem;
+            opacity: 0.6;
+        }
+
+        .dot {
+            font-size: 3rem;
+            line-height: 1rem;
+            color: #ffd700;
+        }
+
+        /* The Little Sun at the end */
+        .little-sun-wrapper {
+            margin-top: 150vh !important; /* Force override and increased space */
+            margin-bottom: 30vh;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 2.5s ease;
+        }
+        
+        .little-sun-wrapper.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .little-sun {
+            width: 35px;
+            height: 35px;
+            background: #ffe600; /* Pure intense yellow */
+            border-radius: 50%;
+            /* Brighter yellow glow */
+            box-shadow: 0 0 25px #ffd700, 0 0 50px #ffff00; 
+            animation: little-sun-rise 4s infinite ease-in-out;
+        }
+
+        @keyframes little-sun-rise {
+            0% { 
+                transform: scale(1); 
+                opacity: 0.9; 
+                box-shadow: 0 0 25px #ffd700; 
+            }
+            50% { 
+                transform: scale(1.4); 
+                opacity: 1; 
+                box-shadow: 0 0 60px #ffd700, 0 0 90px #ffff00; 
+            }
+            100% { 
+                transform: scale(1); 
+                opacity: 0.9; 
+                box-shadow: 0 0 25px #ffd700; 
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Dynamic Background -->
+    <div id="sky-canvas"></div>
+
+    <!-- Content Wrapper -->
+    <main class="relative z-10 w-full max-w-2xl mx-auto pb-40">
+
+        <!-- Section 1: Intro -->
+        <section class="verse-container" id="v1">
+            <h1>Morning Light</h1>
+            <div class="scroll-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+        </section>
+
+        <!-- Section 2: The Night -->
+        <section class="verse-container" id="v2">
+            <p>Late</p>
+            <p class="sub-text pl-12">Awake</p>
+            <p class="mt-8">Too much</p>
+            <p class="sub-text pl-12">Anxiety</p>
+        </section>
+
+        <!-- Section 3: Insomnia -->
+        <section class="verse-container" id="v3">
+            <p class="pulse-text tracking-widest text-2xl">Waking Nights</p>
+            <p class="italic text-xl mt-4 opacity-80">Again and Again</p>
+            <p class="mt-8 text-xl">Nocturnal Days</p>
+            <p class="sub-text text-right w-full pr-12">Afternoon evaporates</p>
+        </section>
+
+        <!-- Section 4: The Turn -->
+        <section class="verse-container" id="v4">
+            <p class="text-gray-400">In the Darkest of Hours</p>
+            <p class="font-semibold text-white mt-2 transform scale-105">Everything changes</p>
+            <div class="mt-12 border-l-2 border-white/20 pl-6 text-left">
+                <p>A crack in the dark</p>
+                <p class="glimmer text-2xl font-serif italic">A glimmer of hope</p>
+            </div>
+        </section>
+
+        <!-- Section 5: The Sunrise -->
+        <section class="verse-container" id="v5">
+            <p class="sun-text text-4xl font-light">The sun will rise</p>
+            <p class="mt-4 text-xl tracking-wide">As always</p>
+        </section>
+
+        <!-- Section 6: Deconstruction -->
+        <section class="verse-container" id="v6">
+            <p class="text-3xl mb-8">Again,</p>
+            <p class="text-2xl opacity-80 mb-12">again</p>
+            <p class="mb-4">and</p>
+            
+            <div class="flex flex-col items-center space-y-4 mt-8">
+                <span class="falling-char" style="transform: translateX(-20px);">ag</span>
+                <span class="falling-char" style="transform: translateX(10px);">ai</span>
+                <span class="falling-char" style="transform: translateX(-5px);">n</span>
+                <span class="dot mt-8">.</span>
+                <span class="dot opacity-50">.</span>
+                <span class="dot opacity-25">.</span>
+
+                <!-- The Little Sun -->
+                <div class="little-sun-wrapper">
+                    <div class="little-sun"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Background Management
+        const bg = document.getElementById('sky-canvas');
+        
+        // Colors for interpolation
+        // Deep Blue (Night) -> Purple/Blue (Dawn) -> Gold/Yellow (Morning)
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const progress = Math.min(scrollTop / scrollHeight, 1);
+
+            // Update Background Gradient based on scroll percentage
+            if (progress < 0.4) {
+                // Night Phase
+                bg.style.background = `linear-gradient(to bottom, #091c38, #020b1c)`;
+            } else if (progress >= 0.4 && progress < 0.7) {
+                // Transition / Dawn Phase (Purples/Teals)
+                bg.style.background = `linear-gradient(to bottom, #2b32b2, #1488cc)`;
+            } else {
+                // Morning Phase (Yellows/Blues)
+                bg.style.background = `linear-gradient(to bottom, #56CCF2, #F2994A)`; // A nice sunrise gradient
+                // Make text darker for contrast in the last phase
+                if (progress > 0.85) {
+                    document.body.style.color = "#0f172a"; 
+                    document.querySelectorAll('.sun-text').forEach(el => {
+                        el.style.textShadow = "none";
+                        el.style.color = "#b45309";
+                        el.classList.remove('sun-text-glow');
+                    });
+                } else {
+                    document.body.style.color = "white";
+                    document.querySelectorAll('.sun-text').forEach(el => {
+                        el.style.textShadow = "0 0 20px #ffd700, 0 0 40px #ff8c00";
+                        el.style.color = "#fffacd";
+                        el.classList.add('sun-text-glow');
+                    });
+                }
+            }
+        });
+
+        // Intersection Observer for revealing text
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.3
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    // Special trigger for "falling" letters if needed, 
+                    // though they are styled static in the flex column for now.
+                } else {
+                    // Optional: remove class to fade out when scrolling back up
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.verse-container').forEach(section => {
+            observer.observe(section);
+        });
+        
+        // Observe the sun separately to ensure it pops in at the very end
+        const sunObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.little-sun-wrapper').forEach(sun => {
+            sunObserver.observe(sun);
+        });
+
+    </script>
+</body>
+</html>

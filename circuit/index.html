@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI // THE CIRCUIT</title>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Share Tech Mono', monospace; }
+        canvas { display: block; }
+        
+        .scanlines {
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.15),
+                rgba(0,0,0,0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            position: absolute; inset: 0; pointer-events: none; z-index: 20;
+        }
+        
+        .glitch {
+            animation: glitch-anim 0.3s infinite;
+        }
+        
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const PALETTE = {
+            grid: "#00A8FF", // Tron Blue
+            data: "#39FF14", // Terminal Green
+            error: "#FF0033", // Glitch Red
+            core: "#FFD700"  // Gold/Synthesis
+        };
+
+        // --- ROBUST AUDIO ENGINE ---
+        class Synth {
+            constructor() {
+                this.ctx = null;
+                this.isPlaying = false;
+            }
+            init() {
+                if (this.ctx) return;
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.isPlaying = true;
+                this.scheduleNext(this.ctx.currentTime);
+            }
+            
+            // Scheduling loop to prevent 'sticking'
+            scheduleNext(time) {
+                if(!this.isPlaying) return;
+                
+                const stepTime = 0.25; // 120 BPM 16th notes roughly
+                
+                // We schedule notes 1 second ahead
+                const ahead = time + 1.0; 
+                
+                // Recursion happens via setTimeout, but Audio is scheduled precisely
+                setTimeout(() => this.scheduleNext(time + stepTime), stepTime * 1000);
+            }
+
+            playTone(freq, type, duration, vol=0.1, time=0) {
+                if (!this.ctx) return;
+                const t = time || this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t);
+                
+                g.gain.setValueAtTime(vol, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+                
+                osc.connect(g);
+                g.connect(this.ctx.destination);
+                osc.start(t);
+                osc.stop(t + duration);
+            }
+        }
+        const audio = new Synth();
+
+        const App = () => {
+            const canvasRef = useRef(null);
+            const requestRef = useRef(null);
+            const [scene, setScene] = useState({ 
+                title: "INITIALIZING...", 
+                sub: "WAITING FOR INPUT",
+                color: PALETTE.grid 
+            });
+            const [started, setStarted] = useState(false);
+
+            // --- ANIMATION LOOP ---
+            useEffect(() => {
+                if(!started) return;
+
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                
+                // Resize handling inside the loop to prevent layout breakage
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+                window.addEventListener('resize', resize);
+                resize();
+
+                const startTime = Date.now();
+                const DURATION = 60000; // 60s
+                
+                // PERSPECTIVE VARS
+                let gridOffset = 0;
+                
+                const animate = () => {
+                    const now = Date.now();
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / DURATION, 1);
+                    const loopTime = elapsed * 0.001; // Seconds
+
+                    const w = canvas.width;
+                    const h = canvas.height;
+                    const cx = w/2;
+                    const cy = h/2;
+
+                    // --- SCENE LOGIC ---
+                    let mode = 0; // 0:Framework, 1:Input, 2:Glitch, 3:Synthesis
+                    if (progress > 0.25) mode = 1;
+                    if (progress > 0.50) mode = 2;
+                    if (progress > 0.75) mode = 3;
+
+                    // Sync React State (Throttled slightly naturally by React)
+                    if (mode === 0 && scene.title !== "THE FRAMEWORK") 
+                        setScene({title: "THE FRAMEWORK", sub: "LOGIC IS ABSOLUTE", color: PALETTE.grid});
+                    if (mode === 1 && scene.title !== "THE INPUT") 
+                        setScene({title: "THE INPUT", sub: "WE FEED THE MACHINE", color: PALETTE.data});
+                    if (mode === 2 && scene.title !== "THE PARADOX") 
+                        setScene({title: "THE PARADOX", sub: "SYSTEM UNSTABLE", color: PALETTE.error});
+                    if (mode === 3 && scene.title !== "SYNTHESIS") 
+                        setScene({title: "SYNTHESIS", sub: "TONIC FOR THE BONES", color: PALETTE.core});
+
+                    // --- AUDIO TRIGGERS (Simple check) ---
+                    // "Motorik" Beat
+                    if (Math.floor(elapsed / 250) > Math.floor((elapsed - 16) / 250)) {
+                        // Kick
+                        if (mode === 0) audio.playTone(100, 'square', 0.1, 0.2);
+                        // Bass
+                        if (mode >= 1) audio.playTone(55, 'sawtooth', 0.2, 0.1);
+                        // Hi-Hat
+                        if (mode >= 2) audio.playTone(1000 + Math.random()*500, 'square', 0.05, 0.05);
+                        // Chord
+                        if (mode === 3) {
+                            audio.playTone(220, 'sine', 0.5, 0.05);
+                            audio.playTone(277, 'sine', 0.5, 0.05); // C#
+                            audio.playTone(329, 'sine', 0.5, 0.05); // E
+                        }
+                    }
+
+
+                    // --- DRAWING ---
+                    // 1. CLEAR & FADE
+                    ctx.fillStyle = `rgba(0,0,0, ${mode === 2 ? 0.1 : 0.2})`; // More trail in glitch mode
+                    ctx.fillRect(0, 0, w, h);
+
+                    // 2. THE GRID (TRON FLOOR)
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    
+                    // Shake effect in Phase 2
+                    if (mode === 2) {
+                        ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
+                    }
+
+                    ctx.beginPath();
+                    const color = mode === 0 ? PALETTE.grid : (mode === 1 ? PALETTE.data : (mode === 2 ? PALETTE.error : PALETTE.core));
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1;
+                    
+                    // Horizon
+                    const horizon = -50;
+                    
+                    // Vertical Lines (Perspective)
+                    for (let i = -10; i <= 10; i++) {
+                        // Bend the lines in Phase 3 (Synthesis)
+                        if (mode === 3) {
+                            ctx.beginPath();
+                            ctx.moveTo(i * 100, h);
+                            ctx.quadraticCurveTo(i * 50, 100, 0, horizon);
+                            ctx.stroke();
+                        } else {
+                            ctx.moveTo(0, horizon);
+                            ctx.lineTo(i * (w/2 + 200), h/2);
+                        }
+                    }
+
+                    // Horizontal Moving Lines
+                    const speed = mode === 0 ? 1 : (mode === 1 ? 4 : (mode === 2 ? 20 : 2));
+                    gridOffset = (loopTime * 100 * speed) % 100;
+                    
+                    for (let i = 0; i < 10; i++) {
+                        let y = horizon + Math.pow(i/10, 2) * (h/2);
+                        // Move them
+                        y += (gridOffset / 100) * (Math.pow((i+1)/10, 2) * (h/2) - Math.pow(i/10, 2) * (h/2));
+                        
+                        ctx.moveTo(-w, y);
+                        ctx.lineTo(w, y);
+                    }
+                    ctx.stroke();
+
+                    // 3. THE OBJECT (CENTER PIECE)
+                    // Phase 0: CUBE (Logic)
+                    // Phase 1: SPHERE (Data)
+                    // Phase 2: NOISE (Chaos)
+                    // Phase 3: SUN (Synthesis)
+                    
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = color;
+                    ctx.fillStyle = "#000";
+                    ctx.lineWidth = 2;
+
+                    if (mode === 0) {
+                        // Rotating Cube
+                        const size = 60;
+                        ctx.strokeRect(-size, -size - 50, size*2, size*2);
+                        // Inner square
+                        ctx.strokeRect(-size*0.5, -size*0.5 - 50, size, size);
+                        // Connectors
+                        ctx.beginPath();
+                        ctx.moveTo(-size, -size - 50); ctx.lineTo(-size*0.5, -size*0.5 - 50);
+                        ctx.moveTo(size, -size - 50); ctx.lineTo(size*0.5, -size*0.5 - 50);
+                        ctx.moveTo(size, size - 50); ctx.lineTo(size*0.5, size*0.5 - 50);
+                        ctx.moveTo(-size, size - 50); ctx.lineTo(-size*0.5, size*0.5 - 50);
+                        ctx.stroke();
+                    } 
+                    else if (mode === 1) {
+                        // Wireframe Sphere
+                        ctx.beginPath();
+                        ctx.arc(0, -50, 80, 0, Math.PI*2);
+                        ctx.stroke();
+                        // Latitude
+                        ctx.beginPath();
+                        ctx.ellipse(0, -50, 80, 30, loopTime, 0, Math.PI*2);
+                        ctx.stroke();
+                        // Longitude
+                        ctx.beginPath();
+                        ctx.ellipse(0, -50, 30, 80, loopTime, 0, Math.PI*2);
+                        ctx.stroke();
+                    }
+                    else if (mode === 2) {
+                        // Glitch Shapes
+                        for(let k=0; k<5; k++) {
+                            const rx = (Math.random()-0.5) * 200;
+                            const ry = -50 + (Math.random()-0.5) * 200;
+                            const rw = Math.random() * 100;
+                            const rh = Math.random() * 20;
+                            ctx.strokeRect(rx, ry, rw, rh);
+                        }
+                        ctx.font = "20px 'Share Tech Mono'";
+                        ctx.fillStyle = color;
+                        ctx.fillText("ERROR: FREE_WILL", -80, -50);
+                    }
+                    else if (mode === 3) {
+                        // The Sun (Synthesis)
+                        const r = 80 + Math.sin(loopTime * 5) * 5;
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.arc(0, -50, r, 0, Math.PI*2);
+                        ctx.fill();
+                        
+                        // Rays
+                        ctx.beginPath();
+                        for(let k=0; k<12; k++) {
+                            const ang = (k/12) * Math.PI*2 + loopTime;
+                            ctx.moveTo(Math.cos(ang)*r, Math.sin(ang)*r - 50);
+                            ctx.lineTo(Math.cos(ang)*(r+30), Math.sin(ang)*(r+30) - 50);
+                        }
+                        ctx.stroke();
+                    }
+
+                    ctx.shadowBlur = 0;
+                    ctx.restore();
+
+                    // 4. PROGRESS BAR (BOTTOM)
+                    ctx.fillStyle = color;
+                    ctx.fillRect(0, h-4, w * progress, 4);
+
+                    if (progress < 1.0) {
+                        requestRef.current = requestAnimationFrame(animate);
+                    } else {
+                        // End State
+                        setScene({title: "SEQUENCE COMPLETE", sub: "MAN MACHINE INTERFACE ACTIVE", color: PALETTE.core});
+                    }
+                };
+                
+                requestRef.current = requestAnimationFrame(animate);
+                
+                return () => {
+                    cancelAnimationFrame(requestRef.current);
+                    window.removeEventListener('resize', resize);
+                };
+            }, [started]);
+
+            const start = () => {
+                setStarted(true);
+                audio.init();
+            };
+
+            return (
+                <div className="w-full h-full relative cursor-pointer" onClick={!started ? start : null}>
+                    <div className="scanlines"></div>
+                    
+                    <canvas ref={canvasRef} />
+                    
+                    {/* UI LAYER - React manages text for crispness */}
+                    <div className="absolute top-0 left-0 w-full p-8 flex justify-between items-start pointer-events-none mix-blend-screen">
+                        <div>
+                            <h1 className={`text-4xl md:text-6xl font-bold tracking-tighter transition-colors duration-500 ${scene.title === 'THE PARADOX' ? 'glitch' : ''}`}
+                                style={{color: scene.color, textShadow: `0 0 20px ${scene.color}`}}>
+                                {scene.title}
+                            </h1>
+                            <p className="text-white/80 text-sm md:text-xl tracking-[0.2em] mt-2 font-bold">
+                                {scene.sub}
+                            </p>
+                        </div>
+                        <div className="text-right hidden md:block">
+                            <div className="text-xs text-white/50 mb-1">SYS.TIME</div>
+                            <div className="text-xl text-white font-bold tabular-nums">
+                                {started ? "RUNNING" : "STANDBY"}
+                            </div>
+                        </div>
+                    </div>
+
+                    {!started && (
+                        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/80">
+                            <div className="border border-[#39FF14] p-8 text-center shadow-[0_0_30px_rgba(57,255,20,0.3)] hover:bg-[#39FF14]/10 transition-colors">
+                                <h2 className="text-[#39FF14] text-2xl tracking-widest mb-2 font-bold">MAN MACHINE</h2>
+                                <p className="text-white text-xs font-mono animate-pulse">CLICK TO INITIATE SEQUENCE</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

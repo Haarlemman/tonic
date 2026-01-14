@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+    <title>Solar System</title>
+
+<meta name="title" content="The Solar System">
+<meta name="description" content="An interactive display of our Solar System">
+<meta name="keywords" content="game, play, online game, action game, adventure game">
+<meta name="author" content="David Enker">
+<meta name="robots" content="index, follow">
+<meta name="language" content="English">
+<meta name="revisit-after" content="1 days">
+<meta name="generator" content="VS Code">
+<meta name="rating" content="general">
+<meta name="distribution" content="global">
+<meta name="theme-color" content="#032c5e">
+<meta name="msapplication-TileColor" content="#032c5e">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.davidenker.com/planets/">
+<meta property="og:title" content="The Solar System">
+<meta property="og:description" content="An interactive display of our Solar System">
+<meta property="og:image" content="https://www.davidenker.com/planets/images/solar.jpg">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://www.davidenker.com/planets/">
+
+<meta property="twitter:title" content="SOLAR SPRINT">
+<meta property="twitter:description" content="An interactive display of our Solar System">
+<meta property="twitter:image" content="https://www.davidenker.com/planets/images/solar.jpg">
+
+	
+    
+<!-- More specific SEO and social meta tags -->
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+	
+	
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0417NHLL8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-S0417NHLL8');
+</script>
+	
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@600&family=Nabla&family=Sixtyfour+Convergence&family=Bungee+Spice?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+	
+	<link href="https://fonts.googleapis.com/css2?family=Bungee+Spice&display=swap" rel="stylesheet">
+
+	
+<link rel="icon" type="image/svg+xml" href="/nav/images/sun.svg">
+<link rel="icon" type="image/png" href="/planets/images/zon.png">
+<link rel="icon" type="image/x-icon" href="/planets/images/favicon.ico">
+		
+<link rel="stylesheet" href="ruimte.css">
+	
+</head>
+	
+<body>
+	
+    <canvas id="solarSystemCanvas"></canvas>
+	
+    <div id="tooltip" class="tooltip"></div>
+    <div class="bungee-spice-regular" style="filter: drop-shadow(0 0 20px rgba(255, 155, 0, 1));">The Solar System</div>
+    <div class="sun"></div>
+    <div class="container"></div>
+	
+    <div id="controls">
+        <button id="pauseButton">Pause</button>
+        <input type="range" id="speedSlider" min="0" max="25" step="0.1" value="1">
+        <label for="speedSlider">Speed: <span id="speedValue">1x</span></label>
+    </div>
+	
+<script>
+	
+        const canvas = document.getElementById('solarSystemCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const tooltip = document.getElementById('tooltip');
+        const pauseButton = document.getElementById('pauseButton');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+
+        let isPaused = false;
+        let speedMultiplier = 1;
+        let animationId;
+
+        const sun = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 50,
+            color: 'yellow',
+        };
+
+        const planets = [
+            { name: 'Mercury', distance: 100, speed: 0.02, radius: 10, color: 'gray', spinSpeed: 0.01, image: 'images/planet1.png' },
+            { name: 'Venus', distance: 150, speed: 0.015, radius: 15, color: 'orange', spinSpeed: 0.04, image: 'images/planet2.png' },
+            { name: 'Earth', distance: 220, speed: 0.01, radius: 20, color: 'blue', spinSpeed: 0.05, image: 'images/planet3.png', moons: [
+                { name: 'Moon', distance: 40, speed: 0.05, radius: 7, color: 'lightgray', angle: Math.random() * Math.PI * 2, image: 'images/moon.png' }
+            ] },
+            { name: 'Mars', distance: 300, speed: 0.008, radius: 12, color: 'red', spinSpeed: 0.02, image: 'images/planet4.png', moons: [
+                { name: 'Phobos', distance: 22, speed: 0.04, radius: 4, color: 'gray', angle: Math.random() * Math.PI * 2 },
+                { name: 'Deimos', distance: 26, speed: 0.02, radius: 4, color: 'lightgray', angle: Math.random() * Math.PI * 2 }
+            ] },
+            { name: 'Jupiter', distance: 366, speed: 0.005, radius: 20, color: 'brown', spinSpeed: 0.03, image: 'images/planet5.png', moons: [
+                { name: 'Io', distance: 65, speed: 0.04, radius: 5, color: 'yellow', angle: Math.random() * Math.PI * 2 },
+                { name: 'Europa', distance: 80, speed: 0.025, radius: 4, color: 'white', angle: Math.random() * Math.PI * 2 }
+            ] },
+            { name: 'Saturn', distance: 480, speed: 0.004, radius: 28, color: 'goldenrod', spinSpeed: 0.025, image: 'images/planet6.png', moons: [
+                { name: 'Titan', distance: 60, speed: 0.05, radius: 5, color: 'darkgoldenrod', angle: Math.random() * Math.PI * 2 }
+            ] },
+            { name: 'Uranus', distance: 570, speed: 0.003, radius: 35, color: 'lightblue', spinSpeed: 0.025, image: 'images/planet7.png' },
+            { name: 'Neptune', distance: 650, speed: 0.002, radius: 15, color: 'blue', spinSpeed: 0.03, image: 'images/planet8.png' }
+        ];
+
+        function scalePlanets() {
+            const isMobile = window.innerWidth < 768;
+            const minDimension = Math.min(canvas.width, canvas.height);
+            const baseScale = isMobile ? 0.7 : 1.0;
+
+            sun.radius = minDimension * 0.07;
+
+            planets.forEach(planet => {
+                const originalRadius = planet.radius;
+                const originalDistance = planet.distance;
+
+                planet.distance = originalDistance * baseScale;
+                planet.radius = originalRadius * (isMobile ? 0.85 : 1);
+
+                if (planet.moons) {
+                    planet.moons.forEach(moon => {
+                        moon.distance = moon.distance * baseScale;
+                        moon.radius = moon.radius * (isMobile ? 0.85 : 1);
+                    });
+                }
+            });
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            scalePlanets();
+            updateSunPosition();
+            planets.forEach(planet => {
+                planet.x = sun.x + Math.cos(planet.angle) * planet.distance;
+                planet.y = sun.y + Math.sin(planet.angle) * planet.distance;
+                if (planet.moons) {
+                    planet.moons.forEach(moon => {
+                        moon.x = planet.x + Math.cos(moon.angle) * moon.distance;
+                        moon.y = planet.y + Math.sin(moon.angle) * moon.distance;
+                    });
+                }
+            });
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function updateSunPosition() {
+            sun.x = canvas.width / 2;
+            sun.y = canvas.height / 2;
+        }
+
+        let imagesLoaded = 0;
+        const hoverDetails = { planet: null, moon: null };
+
+        function countMoons() {
+            let moonCount = 0;
+            planets.forEach(planet => {
+                if (planet.moons) {
+                    moonCount += planet.moons.length;
+                }
+            });
+            return moonCount;
+        }
+
+        planets.forEach(planet => {
+            planet.spinAngle = Math.random() * Math.PI * 2;
+            planet.angle = Math.random() * Math.PI * 2;
+
+            planet.x = sun.x + Math.cos(planet.angle) * planet.distance;
+            planet.y = sun.y + Math.sin(planet.angle) * planet.distance;
+
+            if (planet.moons) {
+                planet.moons.forEach(moon => {
+                    moon.angle = Math.random() * Math.PI * 2;
+                    moon.x = planet.x + Math.cos(moon.angle) * moon.distance;
+                    moon.y = planet.y + Math.sin(moon.angle) * moon.distance;
+
+                    if (moon.image) {
+
+						
+						
+						
+						
+						moon.img = new Image();
+                        moon.img.src = moon.image;
+                        moon.img.onload = () => {
+                            imagesLoaded++;
+                            if (imagesLoaded === planets.length + countMoons()) {
+                                startAnimation();
+                            }
+                        };
+                        moon.img.onerror = () => {
+                            console.error("Error loading image:", moon.image);
+                            moon.img = null;
+                            imagesLoaded++;
+                            if (imagesLoaded === planets.length + countMoons()) {
+                                startAnimation();
+                            }
+                        };
+                    } else {
+                        moon.img = null;
+                        imagesLoaded++;
+                        if (imagesLoaded === planets.length + countMoons()) {
+                            startAnimation();
+                        }
+                    }
+                });
+            }
+
+            if (planet.image) {
+                planet.img = new Image();
+                planet.img.src = planet.image;
+                planet.img.onload = () => {
+                    imagesLoaded++;
+                    if (imagesLoaded === planets.length + countMoons()) {
+                        startAnimation();
+                    }
+                };
+                planet.img.onerror = () => {
+                    console.error("Error loading image:", planet.image);
+                    planet.img = null;
+                    imagesLoaded++;
+                    if (imagesLoaded === planets.length + countMoons()) {
+                        startAnimation();
+                    }
+                };
+            } else {
+                planet.img = null;
+                imagesLoaded++;
+                if (imagesLoaded === planets.length + countMoons()) {
+                    startAnimation();
+                }
+            }
+        });
+
+        function showTooltip(e, content) {
+            tooltip.innerText = content;
+            tooltip.style.opacity = 1;
+            tooltip.style.left = `${e.clientX + 10}px`;
+            tooltip.style.top = `${e.clientY + 10}px`;
+        }
+
+        function hideTooltip() {
+            tooltip.style.opacity = 0;
+        }
+
+        function checkHover(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            hoverDetails.planet = null;
+            hoverDetails.moon = null;
+
+            planets.forEach(planet => {
+                const distanceToPlanet = Math.hypot(planet.x - mouseX, planet.y - mouseY);
+                if (distanceToPlanet < planet.radius + 10) {
+                    hoverDetails.planet = planet.name;
+                }
+
+                if (planet.moons) {
+                    planet.moons.forEach(moon => {
+                        const distanceToMoon = Math.hypot(moon.x - mouseX, moon.y - mouseY);
+                        if (distanceToMoon < moon.radius + 10) {
+                            hoverDetails.moon = moon.name;
+                        }
+                    });
+                }
+            });
+        }
+
+        let lastTime = 0;
+
+        function startAnimation() {
+            lastTime = performance.now(); // Initialize lastTime correctly
+
+            function animate(currentTime) {
+                requestAnimationFrame(animate);
+
+                if (!isPaused) {
+                    const deltaTime = (currentTime - lastTime) * 0.001;
+                    lastTime = currentTime;
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    updateSunPosition();
+
+                    planets.forEach((planet, index) => {
+                        planet.angle += planet.speed * speedMultiplier * deltaTime;
+                        planet.x = sun.x + Math.cos(planet.angle) * planet.distance;
+                        planet.y = sun.y + Math.sin(planet.angle) * planet.distance;
+
+                        let radius = planet.radius;
+                        if (index >= 4) {
+                            radius *= 2;
+                        }
+
+                        if (planet.img && planet.img.complete) {
+                            ctx.save();
+                            ctx.translate(planet.x, planet.y);
+                            ctx.rotate(planet.spinAngle);
+                            ctx.drawImage(planet.img, -radius, -radius, radius * 2, radius * 2);
+                            ctx.restore();
+                        } else {
+                            ctx.beginPath();
+                            ctx.arc(planet.x, planet.y, radius, 0, Math.PI * 2);
+                            ctx.fillStyle = planet.color;
+                            ctx.fill();
+                        }
+                        planet.spinAngle += planet.spinSpeed * speedMultiplier * deltaTime;
+
+                        if (planet.moons) {
+                            planet.moons.forEach(moon => {
+                                moon.angle += moon.speed * speedMultiplier * deltaTime;
+                                moon.x = planet.x + Math.cos(moon.angle) * moon.distance;
+                                moon.y = planet.y + Math.sin(moon.angle) * moon.distance;
+
+                                if (moon.img && moon.img.complete) {
+                                    ctx.drawImage(moon.img, moon.x - moon.radius, moon.y - moon.radius, moon.radius * 2, moon.radius * 2);
+                                } else {
+                                    ctx.beginPath();
+                                    ctx.arc(moon.x, moon.y, moon.radius, 0, Math.PI * 2);
+                                    ctx.fillStyle = moon.color;
+                                    ctx.fill();
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    lastTime = currentTime;
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+
+        function updateTooltip(e) {
+            if (hoverDetails.planet) {
+                showTooltip(e, hoverDetails.planet);
+            } else if (hoverDetails.moon) {
+                showTooltip(e, hoverDetails.moon);
+            } else {
+                hideTooltip();
+            }
+        }
+
+        function throttle(func, limit) {
+            let inThrottle;
+            return function () {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            }
+        }
+
+        canvas.addEventListener('mousemove', throttle((e) => {
+            checkHover(e);
+            updateTooltip(e);
+        }, 50));
+
+        canvas.addEventListener('mouseout', hideTooltip);
+
+        pauseButton.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+        });
+
+        speedSlider.addEventListener('input', () => {
+            speedMultiplier = parseFloat(speedSlider.value);
+            speedValue.textContent = speedMultiplier.toFixed(1) + 'x';
+        });
+
+
+    </script>
+</body>
+</html>

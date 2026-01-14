@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Solar System</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: absolute; top: 10px; left: 10px; color: white;">
+        <button id="pauseButton">Pause</button>
+    </div>
+
+    <div style="position: absolute; top: 10px; right: 10px; color: white;">
+        <label for="speedSlider">Speed:</label>
+        <input type="range" id="speedSlider" min="0.1" max="2.0" value="1.0" step="0.1">
+        <span id="speedValue">1.0x</span>
+    </div>
+
+    <canvas id="solarSystemCanvas"></canvas>
+
+    <div id="planetInfo" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.8); color: white; padding: 20px; border-radius: 15px; border: 1px solid white; font-family: Arial, sans-serif; text-align: left; width: 300px;">
+        <h2 id="infoTitle" style="text-align: center; margin-top: 0;">Planet Name</h2>
+        <div id="infoContent">
+            <p>Size: <span id="infoSize"></span></p>
+            <p>Mass: <span id="infoMass"></span></p>
+            <p>Distance from Sun: <span id="infoDistance"></span></p>
+            <p>Day Length: <span id="infoDay"></span></p>
+            <p>Year Length: <span id="infoYear"></span></p>
+        </div>
+        <button id="closeInfoButton" style="position: absolute; top: 10px; right: 10px; background: none; color: white; border: none; font-size: 18px; cursor: pointer;">X</button>
+    </div>
+
+
+    <script>
+        let isPaused = false;
+        let animationSpeedFactor = 1.0;
+        let currentlyFocusedPlanet = null; // Track currently focused planet/sun
+
+        const pauseButton = document.getElementById('pauseButton');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValueDisplay = document.getElementById('speedValue');
+        const planetInfoDiv = document.getElementById('planetInfo'); // Get info window div
+        const infoTitleElement = document.getElementById('infoTitle'); // Get title element
+        const infoSizeElement = document.getElementById('infoSize'); // Get size span
+        const infoMassElement = document.getElementById('infoMass'); // Get mass span
+        const infoDistanceElement = document.getElementById('infoDistance'); // Get distance span
+        const infoDayElement = document.getElementById('infoDay'); // Get day span
+        const infoYearElement = document.getElementById('infoYear'); // Get year span
+        const closeInfoButton = document.getElementById('closeInfoButton'); // Get close button
+
+
+        pauseButton.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseButton.textContent = 'Resume';
+            } else {
+                pauseButton.textContent = 'Pause';
+                animate();
+            }
+        });
+
+        speedSlider.addEventListener('input', () => {
+            animationSpeedFactor = parseFloat(speedSlider.value);
+            speedValueDisplay.textContent = animationSpeedFactor.toFixed(1) + 'x';
+        });
+
+
+        const canvas = document.getElementById('solarSystemCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let hoveredPlanetName = null;
+        let focusedPlanetName = null;
+
+        // Event listeners remain the same
+        canvas.addEventListener('mousemove', function(event) {
+            const mouseX = event.offsetX;
+            const mouseY = event.offsetY;
+            hoveredPlanetName = null;
+
+            for (const planet of planets) {
+                const planetX = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+                const planetY = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+                const distance = Math.sqrt((mouseX - planetX) ** 2 + (mouseY - planetY) ** 2);
+
+                if (distance < planet.radius) {
+                    hoveredPlanetName = planet.name;
+                    break;
+                }
+            }
+        });
+function displayPlanetInfo(celestialBody) {
+            infoTitleElement.textContent = celestialBody.name;
+            infoSizeElement.textContent = `${celestialBody.sizeRelativeToEarth.toFixed(2)}x Earth size`;
+            infoMassElement.textContent = `${celestialBody.massRelativeToEarth.toFixed(2)}x Earth mass`;
+            infoDistanceElement.textContent = `${celestialBody.distanceFromSunAU} AU`;
+            infoDayElement.textContent = `${celestialBody.dayLengthEarthDays.toFixed(2)} Earth days`;
+            infoYearElement.textContent = `${celestialBody.yearLengthEarthYears.toFixed(2)} Earth years`;
+            planetInfoDiv.style.display = 'block'; // Make info window visible
+        }
+	
+		function hidePlanetInfo() {
+        planetInfoDiv.style.display = 'none'; // Hide info window
+        currentlyFocusedPlanet = null; // Clear focused planet
+    }
+		
+        canvas.addEventListener('click', function(event) {
+			            console.log("Canvas clicked!"); // **DEBUGGING - STEP 1**
+
+            if (!isPaused) return; // **NEW: Only process clicks if paused**
+
+            const mouseX = event.offsetX;
+            const mouseY = event.offsetY;
+            currentlyFocusedPlanet = null; // Reset focus
+
+            // Check for Sun click
+            const sunDistanceToClick = Math.sqrt((mouseX - sun.x) ** 2 + (mouseY - sun.y) ** 2);
+            if (sunDistanceToClick < sun.radius) {
+                currentlyFocusedPlanet = sun; // Set focus to Sun
+            } else {
+                for (const planet of planets) {
+                    const planetX = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+                    const planetY = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+                    const distance = Math.sqrt((mouseX - planetX) ** 2 + (mouseY - planetY) ** 2);
+
+                    if (distance < planet.radius) {
+                        currentlyFocusedPlanet = planet; // Set focus to planet
+                        break;
+                    }
+                }
+            }
+
+            if (currentlyFocusedPlanet) {
+                displayPlanetInfo(currentlyFocusedPlanet); // Call function to display info
+            } else {
+                hidePlanetInfo(); // Hide info window if no planet/sun clicked
+            }
+            focusedPlanetName = currentlyFocusedPlanet ? currentlyFocusedPlanet.name : null; // Update focused planet name
+        });
+
+        closeInfoButton.addEventListener('click', () => {
+			            console.log("Close button clicked!"); // **DEBUGGING - STEP 1**
+
+            hidePlanetInfo(); // Call hidePlanetInfo when close button is clicked
+        });
+
+
+      const sun = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 40,
+            color: '#FFD700',
+            name: 'Sun',
+            sizeRelativeToEarth: 109,
+            massRelativeToEarth: 333000,
+            distanceFromSunAU: 0,
+            dayLengthEarthDays: 27,
+            yearLengthEarthYears: 0
+        };
+
+        const planets = [
+            {
+                name: 'Mercury', radius: 8, semiMajor: 100, semiMinor: 95, speed: 0.02, color: '#A0522D', rotationSpeed: 0.1, moons: [],
+                sizeRelativeToEarth: 0.38,
+                massRelativeToEarth: 0.055,
+                distanceFromSunAU: 0.39,
+                dayLengthEarthDays: 59,
+                yearLengthEarthYears: 0.24
+            },
+            {
+                name: 'Venus', radius: 12, semiMajor: 150, semiMinor: 145, speed: 0.015, color: '#DEB887', rotationSpeed: 0.08, moons: [],
+                sizeRelativeToEarth: 0.95,
+                massRelativeToEarth: 0.815,
+                distanceFromSunAU: 0.72,
+                dayLengthEarthDays: 243,
+                yearLengthEarthYears: 0.62
+            },
+            {
+                name: 'Earth', radius: 16, semiMajor: 200, semiMinor: 190, speed: 0.012, color: '#4169E1', rotationSpeed: 0.07, moons: [ { radius: 8, distance: 30, speed: 0.05, angle: 3 } ],
+                sizeRelativeToEarth: 1.0,
+                massRelativeToEarth: 1.0,
+                distanceFromSunAU: 1.0,
+                dayLengthEarthDays: 1.0,
+                yearLengthEarthYears: 1.0
+            },
+            {
+                name: 'Mars', radius: 12, semiMajor: 250, semiMinor: 235, speed: 0.01, color: '#CD5C5C', rotationSpeed: 0.06, moons: [ { radius: 3, distance: 20, speed: 0.03, angle: 0 }, { radius: 4, distance: 22, speed: 0.043, angle: 0 } ],
+                sizeRelativeToEarth: 0.53,
+                massRelativeToEarth: 0.107,
+                distanceFromSunAU: 1.52,
+                dayLengthEarthDays: 1.03,
+                yearLengthEarthYears: 1.88
+            },
+            {
+                name: 'Jupiter', radius: 35, semiMajor: 350, semiMinor: 330, speed: 0.007, color: '#DAA520', rotationSpeed: 0.03, moons: [ { radius: 4, distance: 50, speed: 0.06, angle: 1 }, { radius: 3, distance: 60, speed: 0.045, angle: 2 }, { radius: 3.5, distance: 75, speed: 0.035, angle: 0 } ],
+                sizeRelativeToEarth: 11.2,
+                massRelativeToEarth: 318,
+                distanceFromSunAU: 5.20,
+                dayLengthEarthDays: 0.41,
+                yearLengthEarthYears: 11.86
+            },
+            {
+                name: 'Saturn', radius: 30, semiMajor: 450, semiMinor: 425, speed: 0.005, color: '#F4A460', rotationSpeed: 0.025, moons: [ { radius: 3.8, distance: 45, speed: 0.055, angle: 0.5 }, { radius: 3, distance: 55, speed: 0.04, angle: 1.5 }, { radius: 2.5, distance: 68, speed: 0.03, angle: 2.5 } ],
+                sizeRelativeToEarth: 9.45,
+                massRelativeToEarth: 95,
+                distanceFromSunAU: 9.54,
+                dayLengthEarthDays: 0.44,
+                yearLengthEarthYears: 29.46
+            },
+            {
+                name: 'Uranus', radius: 25, semiMajor: 550, semiMinor: 520, speed: 0.004, color: '#87CEEB', rotationSpeed: 0.02, moons: [ { radius: 3, distance: 40, speed: 0.04, angle: 0.8 } ],
+                sizeRelativeToEarth: 4.0,
+                massRelativeToEarth: 14.5,
+                distanceFromSunAU: 19.2,
+                dayLengthEarthDays: 0.72,
+                yearLengthEarthYears: 84.01
+            },
+            {
+                name: 'Neptune', radius: 24, semiMajor: 650, semiMinor: 615, speed: 0.003, color: '#1E90FF', rotationSpeed: 0.015, moons: [ { radius: 2.8, distance: 38, speed: 0.035, angle: 1.2 } ],
+                sizeRelativeToEarth: 3.88,
+                massRelativeToEarth: 17.1,
+                distanceFromSunAU: 30.06,
+                dayLengthEarthDays: 0.67,
+                yearLengthEarthYears: 164.8
+            }
+        ];
+		
+
+        // Enhanced color manipulation functions
+        function lightenColor(color, amount) {
+            const hex = color.replace('#', '');
+            const r = Math.min(255, parseInt(hex.substring(0, 2), 16) + (255 * amount));
+            const g = Math.min(255, parseInt(hex.substring(2, 4), 16) + (255 * amount));
+            const b = Math.min(255, parseInt(hex.substring(4, 6), 16) + (255 * amount));
+            return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+        }
+
+        function getDarkerShade(color, transparency) {
+            const hex = color.replace('#', '');
+            const r = Math.round(parseInt(hex.substring(0, 2), 16) * 0.7);
+            const g = Math.round(parseInt(hex.substring(2, 4), 16) * 0.7);
+            const b = Math.round(parseInt(hex.substring(4, 6), 16) * 0.7);
+            return `rgba(${r}, ${g}, ${b}, ${transparency})`;
+        }
+
+        function drawPlanet(planet, angleOffset, offsetX, offsetY) {
+            offsetX = offsetX || 0;
+            offsetY = offsetY || 0;
+
+            // Draw orbit path (faint ellipse)
+            ctx.beginPath();
+            ctx.ellipse(
+                sun.x + offsetX,
+                sun.y + offsetY,
+                planet.semiMajor,
+                planet.semiMinor,
+                0, 0, Math.PI * 2
+            );
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.stroke();
+
+            const planetX = sun.x + offsetX + Math.cos(planet.orbitAngle) * planet.semiMajor;
+            const planetY = sun.y + offsetY + Math.sin(planet.orbitAngle) * planet.semiMinor;
+
+            // Enhanced lighting calculation
+            const sunDirectionX = planetX - (sun.x + offsetX);
+            const sunDirectionY = planetY - (sun.y + offsetY);
+            const sunDistance = Math.sqrt(sunDirectionX**2 + sunDirectionY**2);
+            const lightDirectionX = sunDirectionX / sunDistance;
+            const lightDirectionY = sunDirectionY / sunDistance;
+            const sunAngle = Math.atan2(lightDirectionY, lightDirectionX);
+
+            // Create gradient for better 3D effect
+            const gradient = ctx.createRadialGradient(
+                planetX - lightDirectionX * planet.radius * 0.9,
+                planetY - lightDirectionY * planet.radius * 0.1,
+                0,
+                planetX,
+                planetY,
+                planet.radius
+            );
+
+            // Enhanced gradient stops with larger bright spot
+            gradient.addColorStop(0.3, lightenColor(planet.color, 0.4));
+            gradient.addColorStop(0.5, planet.color);  // Increased from 0.3 to 0.5 for larger bright area
+            gradient.addColorStop(0.75, getDarkerShade(planet.color, 0.75));
+            gradient.addColorStop(1, getDarkerShade(planet.color, 0.5));
+
+            // Draw planet
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, planet.radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+
+            // Draw moons with enhanced lighting
+            planet.moons.forEach(moon => {
+                moon.angle += moon.speed;
+                const moonX = planetX + Math.cos(moon.angle) * moon.distance;
+                const moonY = planetY + Math.sin(moon.angle) * moon.distance;
+
+                // Moon gradient
+                const moonGradient = ctx.createRadialGradient(
+                    moonX - lightDirectionX * moon.radius * 0.5,
+                    moonY - lightDirectionY * moon.radius * 0.5,
+                    0,
+                    moonX,
+                    moonY,
+                    moon.radius
+                );
+
+                moonGradient.addColorStop(0, '#fff');
+                moonGradient.addColorStop(0.5, '#999');
+                moonGradient.addColorStop(1, '#000');
+
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+                ctx.fillStyle = moonGradient;
+                ctx.fill();
+            });
+        }
+
+
+        function drawPlanetLabel() {
+            if (hoveredPlanetName) {
+                const planet = planets.find(p => p.name === hoveredPlanetName);
+                if (planet) {
+                    const planetX = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+                    const planetY = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(planet.name, planetX, planetY - planet.radius - 10);
+                }
+            }
+        }
+
+        function animate() {
+            if (isPaused) {
+                return;
+            }
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let focusPlanet = null;
+            if (focusedPlanetName) {
+                focusPlanet = planets.find(p => p.name === focusedPlanetName);
+            }
+
+            let sunX = sun.x;
+            let sunY = sun.y;
+            if (focusPlanet) {
+                sunX = canvas.width / 2 - Math.cos(focusPlanet.orbitAngle) * focusPlanet.semiMajor;
+                sunY = canvas.height / 2 - Math.sin(focusPlanet.orbitAngle) * focusPlanet.semiMinor;
+            }
+
+            // Draw sun with gradient
+            const sunGradient = ctx.createRadialGradient(
+                sunX, sunY, 0,
+                sunX, sunY, sun.radius
+            );
+            sunGradient.addColorStop(0.2, '#FFE033');
+            sunGradient.addColorStop(0.5, '#FFD700');
+            sunGradient.addColorStop(1, '#FFA500');
+
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sun.radius, 0, Math.PI * 2);
+            ctx.fillStyle = sunGradient;
+            ctx.fill();
+
+            // Add sun glow effect
+            const glowGradient = ctx.createRadialGradient(
+                sunX, sunY, sun.radius,
+                sunX, sunY, sun.radius * 2
+            );
+            glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+            glowGradient.addColorStop(1, 'rgba(200, 120, 0, 0.0)');
+
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sun.radius * 2, 0, Math.PI * 2);
+            ctx.fillStyle = glowGradient;
+            ctx.fill();
+
+            planets.forEach(planet => {
+                planet.orbitAngle = (planet.orbitAngle || 0) + planet.speed * animationSpeedFactor;
+                planet.rotationAngle = (planet.rotationAngle || 0) + planet.rotationSpeed;
+                drawPlanet(planet, planet.rotationAngle, sunX - sun.x, sunY - sun.y);
+            });
+
+            drawPlanetLabel();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

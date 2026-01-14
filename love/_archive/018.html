@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic Audio: Digital Twilight</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #010915; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            cursor: crosshair;
+            touch-action: none; /* Prevent scrolling on mobile to improve canvas interaction */
+        }
+
+        /* --- CANVAS LAYERING --- */
+        #canvas-bg {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1; 
+        }
+
+        #bg-titles {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 5; 
+            pointer-events: none;
+            opacity: 0.8;
+            font-family: 'Share Tech Mono', monospace; 
+        }
+
+        #canvas-battle {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10; 
+            pointer-events: none;
+        }
+
+        /* --- UI STYLES --- */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.75); 
+            padding: 10px 15px; /* Slightly reduced padding */
+            border-radius: 4px; 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 280px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            cursor: default;
+            font-family: 'Share Tech Mono', monospace; 
+            transition: all 0.4s ease;
+        }
+
+        /* --- HEADER & TOGGLE --- */
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            cursor: pointer;
+            padding-bottom: 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .ui-header:hover { color: white; }
+
+        /* --- COLLAPSIBLE CONTENT CONTAINER --- */
+        #ui-content {
+            overflow: hidden;
+            max-height: 500px; /* Large enough to fit content */
+            opacity: 1;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Minimized State */
+        #ui-content.minimized {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* The arrow icon rotation */
+        #toggleIcon { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .rotated { transform: rotate(180deg); }
+
+
+        /* --- PLAYLIST --- */
+        .playlist-container {
+            width: 100%;
+            max-height: 120px; 
+            overflow-y: auto;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+        }
+
+        .playlist-container::-webkit-scrollbar { width: 4px; }
+        .playlist-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .playlist-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+
+        .track-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .track-item:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .track-item.active { background: rgba(255, 255, 255, 0.1); color: #a78bfa; }
+        
+        /* --- CONTROLS --- */
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+        
+        .status { color: rgba(255, 255, 255, 0.4); font-size: 10px; text-align: center; margin-top: 5px; }
+        .controls { display: flex; gap: 8px; width: 100%; }
+        input[type="file"] { display: none; }
+        
+        .progress-area { margin-top: 4px; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 0; 
+            background: #a78bfa; cursor: pointer; margin-top: -3px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px;
+        }
+        .time-display { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255, 255, 255, 0.5); font-family: 'Share Tech Mono', monospace; }
+        
+        .title-text { 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            font-weight: 400; 
+            line-height: 1.1; 
+            text-shadow: 0 0 10px rgba(0,0,0,0.8); 
+        }
+        .subtitle-text { font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem; text-shadow: 0 0 5px rgba(0,0,0,0.8); }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div id="bg-titles">
+        <h1 class="title-text text-4xl" id="titleRed">BASS <span class="text-xs opacity-60 align-middle">(LOW)</span></h1>
+        <h1 class="title-text text-4xl" id="titleBlue">TREBLE <span class="text-xs opacity-60 align-middle">(HIGH)</span></h1>
+        <p class="subtitle-text text-slate-300">Hover or Touch to Conduct</p>
+    </div>
+
+    <canvas id="canvas-battle"></canvas>
+
+    <div id="ui-layer">
+        <!-- Main Header acts as the master toggle -->
+        <div class="ui-header" id="mainUiToggle">
+            <span>TONIC AUDIO</span>
+            <!-- Icon starts pointing UP (indicating open), rotates to point DOWN (closed) -->
+            <svg id="toggleIcon" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor">
+                <path d="M1 5L5 1L9 5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+        <!-- This wrapper contains all controls to be minimized -->
+        <div id="ui-content">
+            <div class="playlist-container" id="playlist"></div>
+
+            <div class="progress-area">
+                <input type="range" id="progressBar" value="0" min="0" step="0.1">
+                <div class="time-display">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="controls">
+                <label class="btn">
+                    Upload
+                    <input type="file" id="fileInput" accept="audio/*">
+                </label>
+                <button class="btn" id="playBtn" disabled>Play</button>
+                <button class="btn" id="pauseBtn" style="display:none;">Pause</button>
+            </div>
+            <div class="status" id="statusText">Select a track to begin</div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION (EDIT COLORS HERE)
+        // ==========================================
+        const BASS_COLOR_HEX = "#8d086f";   // Red-ish
+        const TREBLE_COLOR_HEX = "#00ffca"; // Blue-ish
+
+        // ==========================================
+        // SHARED STATE & AUDIO
+        // ==========================================
+        const audioPlayer = document.getElementById('audioPlayer');
+        let audioContext, analyser, source;
+        let dataArray;
+        let isPlaying = false;
+        
+        let bassEnergy = 0, trebleEnergy = 0; 
+        let bassNorm = 0, trebleNorm = 0; 
+
+        // Color Setup
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : {r:255, g:255, b:255};
+        }
+        
+        const bassRGB = hexToRgb(BASS_COLOR_HEX);
+        const trebleRGB = hexToRgb(TREBLE_COLOR_HEX);
+
+        // Apply colors to DOM
+        document.getElementById('titleRed').style.color = BASS_COLOR_HEX;
+        document.getElementById('titleBlue').style.color = TREBLE_COLOR_HEX;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; 
+                analyser.smoothingTimeConstant = 0.85;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        function analyzeAudio() {
+            if (!analyser) return;
+            analyser.getByteFrequencyData(dataArray);
+
+            let bassSum = 0;
+            for (let i = 0; i < 15; i++) bassSum += dataArray[i];
+            bassEnergy = bassSum / 15;
+            
+            let trebleSum = 0;
+            let trebleCount = 0;
+            for (let i = 100; i < 250; i++) {
+                trebleSum += dataArray[i];
+                trebleCount++;
+            }
+            trebleEnergy = trebleSum / trebleCount;
+
+            bassNorm = Math.min(1, (bassEnergy / 255) * 1.8);
+            trebleNorm = Math.min(1, (trebleEnergy / 255) * 3.5);
+            bassEnergy *= 1.2;
+            trebleEnergy *= 1.4;
+        }
+
+        // ==========================================
+        // LAYER 1: BACKGROUND (Digital Clouds & Dunes)
+        // ==========================================
+        const bgCanvas = document.getElementById('canvas-bg');
+        const bgCtx = bgCanvas.getContext('2d');
+        let bgWidth, bgHeight;
+
+        const cloudParticles = [];
+
+        class DigitalCloud {
+            constructor() {
+                this.init(true);
+            }
+
+            init(initial = false) {
+                this.x = initial ? Math.random() * bgWidth : -300;
+                this.y = Math.random() * (bgHeight * 0.35); 
+                this.vx = Math.random() * 0.5 + 0.2; 
+                
+                // BRIGHTER COLOR PALETTE
+                const colors = [
+                    'rgba(100, 255, 180, 0.2)', // Bright Mint
+                    'rgba(140, 240, 200, 0.15)', // Pale Green
+                    'rgba(80, 200, 200, 0.25)',  // Cyan Teal
+                    'rgba(200, 255, 220, 0.15)'  // Almost White Green
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Construct "Pixel" shape
+                this.pixels = [];
+                const pixelSize = 8; 
+                const w = 10 + Math.random() * 10; 
+                const h = 4 + Math.random() * 4;   
+                
+                for(let ix=0; ix<w; ix++) {
+                    for(let iy=0; iy<h; iy++) {
+                        if(Math.random() > 0.4) { 
+                            this.pixels.push({
+                                ox: ix * pixelSize,
+                                oy: iy * pixelSize,
+                                s: pixelSize
+                            });
+                        }
+                    }
+                }
+            }
+
+            update() {
+                this.x += this.vx;
+                if (this.x > bgWidth + 100) this.init(false);
+            }
+
+            draw() {
+                bgCtx.fillStyle = this.color;
+                for(let p of this.pixels) {
+                    bgCtx.fillRect(this.x + p.ox, this.y + p.oy, p.s - 1, p.s - 1);
+                }
+            }
+        }
+
+        function initClouds() {
+            cloudParticles.length = 0;
+            for(let i=0; i<40; i++) cloudParticles.push(new DigitalCloud()); 
+        }
+
+        // --- LANDSCAPE RENDERER ---
+        function drawLandscape() {
+            const landscapeHeight = bgHeight * 0.25; 
+            const startY = bgHeight - landscapeHeight;
+            
+            // Horizon
+            bgCtx.shadowBlur = 15;
+            bgCtx.shadowColor = "cyan";
+            bgCtx.fillStyle = 'rgba(0, 255, 255, 0.4)';
+            bgCtx.fillRect(0, startY - 2, bgWidth, 2);
+            bgCtx.shadowBlur = 0;
+
+            // Dunes
+            const drawDuneLayer = (speed, amplitude, frequency, color, yOffset, highlight) => {
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, bgHeight);
+                for (let x = 0; x <= bgWidth; x += 10) {
+                    const noise = Math.sin((x + (Date.now() * speed)) * frequency) * amplitude;
+                    const detail = Math.sin((x + (Date.now() * speed)) * frequency * 3) * (amplitude * 0.2);
+                    const y = startY + yOffset + noise + detail;
+                    bgCtx.lineTo(x, y);
+                }
+                bgCtx.lineTo(bgWidth, bgHeight);
+                bgCtx.lineTo(0, bgHeight);
+                bgCtx.closePath();
+                bgCtx.fillStyle = color;
+                bgCtx.fill();
+
+                if (highlight) {
+                    bgCtx.beginPath();
+                    for (let x = 0; x <= bgWidth; x += 10) {
+                        const noise = Math.sin((x + (Date.now() * speed)) * frequency) * amplitude;
+                        const detail = Math.sin((x + (Date.now() * speed)) * frequency * 3) * (amplitude * 0.2);
+                        const y = startY + yOffset + noise + detail;
+                        if(x===0) bgCtx.moveTo(x,y);
+                        else bgCtx.lineTo(x,y);
+                    }
+                    bgCtx.strokeStyle = 'rgba(150, 255, 255, 0.2)'; 
+                    bgCtx.lineWidth = 1;
+                    bgCtx.stroke();
+                }
+            };
+
+            drawDuneLayer(0.01, 20, 0.002, '#0c1a20', 30, true);  
+            drawDuneLayer(0.02, 30, 0.003, '#081216', 60, true);  
+            drawDuneLayer(0.03, 40, 0.004, '#020508', 90, true);   
+        }
+
+        function animateBg() {
+            const grad = bgCtx.createLinearGradient(0, 0, 0, bgHeight);
+            grad.addColorStop(0, '#010505');   
+            grad.addColorStop(0.5, '#0a2022'); 
+            grad.addColorStop(0.8, '#1a3a30'); 
+            grad.addColorStop(1, '#05262c');   
+            
+            bgCtx.fillStyle = grad;
+            bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+            cloudParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            drawLandscape();
+        }
+
+        // ==========================================
+        // LAYER 2: THE 3D BATTLE (FOREGROUND)
+        // ==========================================
+        const battleCanvas = document.getElementById('canvas-battle');
+        const bCtx = battleCanvas.getContext('2d');
+        let bWidth, bHeight;
+        let battleParticles = [];
+        let mouse = { x: null, y: null, active: false, isDown: false };
+
+        class BattleParticle {
+            constructor(type) {
+                this.type = type;
+                this.reset(true);
+            }
+            reset(initial = false) {
+                this.x = initial 
+                    ? (this.type==='bass' ? Math.random()*bWidth*0.4 : (bWidth*0.6)+Math.random()*bWidth*0.4)
+                    : Math.random() * bWidth;
+                this.y = Math.random() * bHeight;
+                this.z = Math.random(); 
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.baseSize = Math.random() * 3 + 2; 
+                this.angle = Math.random() * Math.PI * 2;
+                this.speedMod = this.type === 'bass' ? 0.02 : 0.015;
+            }
+            update(bLvl, tLvl) {
+                let energy = (this.type === 'bass') ? bLvl : tLvl;
+                
+                if(this.type === 'bass') {
+                    this.angle += this.speedMod;
+                    this.vx += Math.sin(this.angle) * 0.01;
+                    this.vy += Math.cos(this.angle) * 0.01;
+                } else {
+                    this.angle -= this.speedMod;
+                    this.vx += Math.cos(this.angle) * 0.01;
+                    this.vy += Math.sin(this.angle) * 0.01;
+                }
+                
+                this.vx += (Math.random()-0.5) * energy * 2.0;
+                this.vy += (Math.random()-0.5) * energy * 2.0;
+
+                if (mouse.active && mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 400) {
+                        const force = (400 - dist) / 400;
+                        const angle = Math.atan2(dy, dx);
+                        const strength = mouse.isDown ? 2.0 : (0.2 + energy);
+                        const zFactor = 0.5 + this.z; 
+                        this.vx += Math.cos(angle) * force * strength * zFactor;
+                        this.vy += Math.sin(angle) * force * strength * zFactor;
+                    }
+                }
+
+                this.vx *= 0.96; this.vy *= 0.96;
+                this.x += this.vx; this.y += this.vy;
+
+                if (this.x < -50) this.x = bWidth + 50;
+                if (this.x > bWidth + 50) this.x = -50;
+                if (this.y < -50) this.y = bHeight + 50;
+                if (this.y > bHeight + 50) this.y = -50;
+            }
+
+            draw(bLvl, tLvl) {
+                let energy = (this.type === 'bass') ? bLvl : tLvl;
+                
+                const perspective = 0.5 + (this.z * 1.5); 
+                const drawSize = this.baseSize * perspective * (1 + energy);
+                const rgb = (this.type === 'bass') ? bassRGB : trebleRGB;
+
+                const grad = bCtx.createRadialGradient(
+                    this.x - drawSize * 0.3, this.y - drawSize * 0.3, drawSize * 0.1, 
+                    this.x, this.y, drawSize
+                );
+
+                grad.addColorStop(0, `rgba(${Math.min(255, rgb.r+100)}, ${Math.min(255, rgb.g+100)}, ${Math.min(255, rgb.b+100)}, ${0.9 + this.z * 0.1})`);
+                grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.7 + this.z * 0.3})`);
+
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, drawSize, 0, Math.PI*2);
+                bCtx.fillStyle = grad;
+                bCtx.fill();
+            }
+        }
+
+        function initBattle() {
+            battleParticles = [];
+            for(let i=0; i<80; i++) battleParticles.push(new BattleParticle('bass'));
+            for(let i=0; i<80; i++) battleParticles.push(new BattleParticle('treble'));
+        }
+
+        function animateBattle() {
+            bCtx.clearRect(0, 0, bWidth, bHeight);
+            
+            if (mouse.active) {
+                bCtx.beginPath();
+                bCtx.arc(mouse.x, mouse.y, 20, 0, Math.PI*2);
+                bCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                bCtx.stroke();
+            }
+
+            bCtx.beginPath();
+            for (let i = 0; i < battleParticles.length; i++) {
+                const p1 = battleParticles[i];
+                p1.update(bassNorm, trebleNorm);
+
+                for (let j = i + 1; j < battleParticles.length; j++) {
+                    const p2 = battleParticles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx*dx + dy*dy;
+                    
+                    if (distSq < 15000) {
+                        const zAvg = (p1.z + p2.z) / 2;
+                        
+                        if(p1.type === p2.type) {
+                            const dist = Math.sqrt(distSq);
+                            const opacityBase = 1 - (dist/122);
+                            const zWeight = 0.1 + (zAvg * 0.9); 
+                            
+                            if (opacityBase > 0) {
+                                const rgb = p1.type === 'bass' ? bassRGB : trebleRGB;
+                                const pulse = p1.type === 'bass' ? bassNorm : trebleNorm;
+                                
+                                bCtx.lineWidth = 0.2 + (zAvg * 1.5); 
+                                bCtx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacityBase * zWeight * (0.5 + pulse)})`;
+                                
+                                bCtx.moveTo(p1.x, p1.y);
+                                bCtx.lineTo(p2.x, p2.y);
+                            }
+                        }
+                    }
+                }
+            }
+            bCtx.stroke();
+
+            for (let i = 0; i < battleParticles.length; i++) {
+                battleParticles[i].draw(bassNorm, trebleNorm);
+            }
+        }
+
+        function resize() {
+            bgWidth = bgCanvas.width = window.innerWidth;
+            bgHeight = bgCanvas.height = window.innerHeight;
+            bWidth = battleCanvas.width = window.innerWidth;
+            bHeight = battleCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+        initClouds();
+        initBattle();
+
+        function masterAnimate() {
+            if(isPlaying) analyzeAudio();
+            else {
+                bassEnergy *= 0.95; trebleEnergy *= 0.95;
+                bassNorm *= 0.9; trebleNorm *= 0.9;
+            }
+            animateBg();     
+            animateBattle(); 
+            requestAnimationFrame(masterAnimate);
+        }
+        masterAnimate();
+
+        // Playlist & UI
+        const playlistData = [
+            { title: "Lovin U - Coco Bryce", src: "songs/LovinU-CocoBryce.mp3" },
+            { title: "Nespole", src: "songs/Nespole.mp3" },
+            { title: "Andrea Parker - Unconnected.mp3", src: "songs/AndreaParker-Unconnected.mp3" },
+            { title: "Spring Is Coming", src: "songs/SpringIsComing.mp3" },
+            { title: "Eutow - Autechre", src: "songs/Eutow.mp3" },
+            { title: "Kalkbrenner & Stromae", src: "songs/KalkbrennerStromae.mp3" },
+            { title: "Evening Breeze", src: "songs/EveningBreeze.mp3" },
+            { title: "MONDO GROSSO ラビリンス", src: "songs/MondoGrosso.mp3" },
+            { title: "The Sound", src: "songs/TheSound.mp3" },
+            { title: "Freestyle - Drum & Bass", src: "songs/Freestyle.mp3" }
+        ];
+
+        const playlistContainer = document.getElementById('playlist');
+        const mainUiToggle = document.getElementById('mainUiToggle');
+        const uiContent = document.getElementById('ui-content');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        // --- NEW TOGGLE LOGIC ---
+        // Defaults to Open (SVG points up). 
+        // We want it to "minimize" (close).
+        mainUiToggle.addEventListener('click', () => {
+            uiContent.classList.toggle('minimized');
+            toggleIcon.classList.toggle('rotated');
+        });
+
+        const statusText = document.getElementById('statusText');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        playlistData.forEach((track, index) => {
+            const div = document.createElement('div');
+            div.className = 'track-item';
+            div.innerHTML = `<span>${index+1}. ${track.title}</span>`;
+            div.onclick = () => loadTrack(index);
+            playlistContainer.appendChild(div);
+        });
+
+        function loadTrack(index) {
+            const track = playlistData[index];
+            document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            playlistContainer.children[index].classList.add('active');
+            audioPlayer.src = track.src;
+            statusText.textContent = `Selected: ${track.title}`;
+            statusText.style.color = "#a78bfa";
+            playBtn.disabled = false;
+            if(audioContext && audioContext.state === 'running') playBtn.click();
+        }
+
+        playBtn.addEventListener('click', () => {
+            initAudio();
+            if(audioContext.state === 'suspended') audioContext.resume();
+            
+            audioPlayer.play().then(() => {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+                statusText.textContent = "Flowing...";
+                isPlaying = true;
+            }).catch(e => console.error(e));
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            isPlaying = false;
+            statusText.textContent = "Paused";
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const file = this.files[0];
+            if(file) {
+                audioPlayer.src = URL.createObjectURL(file);
+                playBtn.disabled = false;
+                statusText.textContent = `Ready: ${file.name}`;
+                document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            }
+        });
+
+        // ==========================================
+        // INTERACTION HANDLERS (MOUSE + TOUCH)
+        // ==========================================
+        function handleMouse(x, y, active, down) {
+            mouse.x = x; mouse.y = y; mouse.active = active; mouse.isDown = down;
+        }
+
+        // Mouse Events
+        window.addEventListener('mousemove', e => handleMouse(e.clientX, e.clientY, true, mouse.isDown));
+        window.addEventListener('mousedown', e => handleMouse(e.clientX, e.clientY, true, true));
+        window.addEventListener('mouseup', e => triggerExplosion(e.clientX, e.clientY));
+
+        // Touch Events
+        window.addEventListener('touchstart', e => {
+            // Prevent default behavior if needed to stop zooming/scrolling on some devices
+            // e.preventDefault(); 
+            const touch = e.touches[0];
+            handleMouse(touch.clientX, touch.clientY, true, true);
+        }, {passive: false});
+
+        window.addEventListener('touchmove', e => {
+             e.preventDefault(); // Prevents page scrolling while dragging particles
+            const touch = e.touches[0];
+            handleMouse(touch.clientX, touch.clientY, true, mouse.isDown);
+        }, {passive: false});
+
+        window.addEventListener('touchend', e => {
+            // e.changedTouches gives us the position where the finger left the screen
+            if (e.changedTouches.length > 0) {
+                const touch = e.changedTouches[0];
+                handleMouse(touch.clientX, touch.clientY, true, false);
+                triggerExplosion(touch.clientX, touch.clientY);
+            } else {
+                handleMouse(mouse.x, mouse.y, false, false);
+            }
+        });
+
+        function triggerExplosion(x, y) {
+            handleMouse(x, y, true, false);
+            battleParticles.forEach(p => {
+                const dx = p.x - x;
+                const dy = p.y - y;
+                if(Math.sqrt(dx*dx+dy*dy) < 300) {
+                    const angle = Math.atan2(dy, dx);
+                    p.vx += Math.cos(angle) * 15;
+                    p.vy += Math.sin(angle) * 15;
+                }
+            });
+        }
+        
+        const progressBar = document.getElementById('progressBar');
+        const cTime = document.getElementById('currentTime');
+        const dTime = document.getElementById('duration');
+        
+        function formatTime(s) {
+            const m = Math.floor(s/60);
+            const sec = Math.floor(s%60);
+            return `${m}:${sec<10?'0':''}${sec}`;
+        }
+        audioPlayer.addEventListener('timeupdate', () => {
+            if(audioPlayer.duration) {
+                progressBar.value = (audioPlayer.currentTime/audioPlayer.duration)*100;
+                cTime.textContent = formatTime(audioPlayer.currentTime);
+                dTime.textContent = formatTime(audioPlayer.duration);
+            }
+        });
+        progressBar.addEventListener('input', () => {
+            audioPlayer.currentTime = (progressBar.value/100)*audioPlayer.duration;
+        });
+
+    </script>
+</body>
+</html>

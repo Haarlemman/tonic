@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JK's Urban Jungle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            background-color: #1a1a2e; /* Dark Urban Night */
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: flex-start; 
+            align-items: center;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+
+        .game-title {
+            font-size: 24px;
+            color: #00ffcc; /* Neon Cyan */
+            text-shadow: 3px 3px 0px #000033;
+            margin-bottom: 15px;
+            text-align: center;
+            line-height: 1.2;
+            z-index: 5;
+        }
+
+        /* Smaller title on mobile to save space */
+        @media (max-width: 600px) {
+            .game-title {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+        }
+
+        canvas {
+            background-color: #0f0f1a; /* Very dark blue/black */
+            border: 4px solid #4a5568; /* Concrete Gray border */
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 65vh;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            justify-content: space-between;
+            padding: 20px;
+            position: absolute;
+            bottom: 40px; 
+            z-index: 20;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            #mobile-controls {
+                display: flex;
+            }
+            canvas {
+                max-height: 50vh; 
+            }
+            .ui-layer {
+                top: 50px;
+            }
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            gap: 5px;
+        }
+        
+        .action-pad {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-jump {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 255, 204, 0.2);
+            border-color: #00ffcc;
+            font-size: 14px;
+            color: #00ffcc;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .hidden { display: none !important; }
+        
+        h1.overlay-title { text-shadow: 4px 4px 0px #000033; color: #00ffcc; margin-bottom: 20px; font-size: 24px; line-height: 1.5; }
+        h2 { color: #FFFF00; margin-bottom: 20px; font-size: 18px; }
+        p { font-size: 12px; color: #ccc; margin-bottom: 30px; line-height: 1.8; }
+        
+        .start-btn {
+            background: #4a5568;
+            color: #00ffcc;
+            border: none;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            border-bottom: 4px solid #2d3748;
+            transition: transform 0.1s;
+        }
+        .start-btn:active {
+            transform: translateY(4px);
+            border-bottom: none;
+        }
+        
+        .lives-container {
+            color: #ff4444;
+            font-size: 20px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <h1 class="game-title">JK'S URBAN JUNGLE</h1>
+
+    <div class="ui-layer">
+        <span id="score-display" class="text-yellow-400 text-xl shadow-black drop-shadow-md">SCORE: 0</span>
+        <span id="lives-display" class="lives-container">❤❤❤</span>
+    </div>
+
+    <canvas id="gameCanvas" width="600" height="700"></canvas>
+
+    <!-- Overlay Screens -->
+    <div id="overlay">
+        <div id="start-screen" class="text-center px-4">
+            <h1 class="overlay-title">URBAN CLIMB</h1>
+            <p>Help JK climb the construction site to catch Uncle Andy!</p>
+            <p>Avoid Fireballs, Captain Underpants & The Butts!</p>
+            <p>ARROWS to Move & Climb<br>SPACE to Jump</p>
+            <button class="start-btn" onclick="startGame()">START GAME</button>
+        </div>
+        
+        <div id="game-over-screen" class="hidden text-center px-4">
+            <h1 class="text-red-500 overlay-title">GAME OVER</h1>
+            <h2 id="final-score">Score: 0</h2>
+            <button class="start-btn" onclick="resetGame()">TRY AGAIN</button>
+        </div>
+
+        <div id="win-screen" class="hidden text-center px-4">
+            <h1 class="text-green-500 overlay-title">YOU DID IT!</h1>
+            <p>JK reached Uncle Andy!</p>
+            <h2 id="win-score">Score: 0</h2>
+            <button class="start-btn" onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div></div>
+            <div class="btn" id="btn-up">⬆️</div>
+            <div></div>
+            <div class="btn" id="btn-left">⬅️</div>
+            <div class="btn" id="btn-down">⬇️</div>
+            <div class="btn" id="btn-right">➡️</div>
+        </div>
+        <div class="action-pad">
+            <div class="btn btn-jump" id="btn-jump">JUMP</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const winScreen = document.getElementById('win-screen');
+    const scoreDisplay = document.getElementById('score-display');
+    const livesDisplay = document.getElementById('lives-display');
+
+    // Load Images
+    const andySprite = new Image();
+    andySprite.src = "https://davidenker.com/dk/images/andy.png";
+
+    // Audio Context
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playFartSound() {
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sawtooth';
+        
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+        
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // Game Constants
+    const GRAVITY = 0.5;
+    const FRICTION = 0.8;
+    const JUMP_FORCE = -8.5;
+    const SPEED = 4;
+    const CLIMB_SPEED = 3;
+    
+    // Game State
+    let gameRunning = false;
+    let score = 0;
+    let lives = 3;
+    let animationId;
+
+    // Inputs
+    const keys = {
+        ArrowUp: false,
+        ArrowDown: false,
+        ArrowLeft: false,
+        ArrowRight: false,
+        Space: false
+    };
+
+    // --- CLASSES ---
+
+    class Player {
+        constructor() {
+            this.width = 24;
+            this.height = 30;
+            this.resetPosition();
+            this.color = '#00ffcc'; // Neon Cyan Shirt
+            this.grounded = false;
+            this.climbing = false;
+            this.facingRight = true;
+            this.invulnerable = false;
+        }
+
+        resetPosition() {
+            this.x = 50;
+            this.y = canvas.height - 50;
+            this.velX = 0;
+            this.velY = 0;
+            this.climbing = false;
+            this.grounded = false;
+        }
+
+        hit() {
+            if (this.invulnerable) return;
+            
+            lives--;
+            updateUI();
+            
+            if (lives <= 0) {
+                gameOver(false);
+            } else {
+                this.invulnerable = true;
+                this.resetPosition();
+                setTimeout(() => { this.invulnerable = false; }, 1000);
+            }
+        }
+
+        update(platforms, ladders) {
+            // Horizontal Movement
+            if (keys.ArrowRight) {
+                this.velX = SPEED;
+                this.facingRight = true;
+            } else if (keys.ArrowLeft) {
+                this.velX = -SPEED;
+                this.facingRight = false;
+            } else {
+                this.velX *= FRICTION;
+            }
+
+            this.x += this.velX;
+
+            // Boundaries
+            if (this.x < 0) this.x = 0;
+            if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+
+            // Check Ladder Interaction
+            let onLadder = false;
+            let ladderCenterX = 0;
+
+            for (let ladder of ladders) {
+                const ladderCenter = ladder.x + ladder.width/2;
+                const playerCenter = this.x + this.width/2;
+                const dist = Math.abs(ladderCenter - playerCenter);
+
+                if (
+                    dist < 25 && 
+                    this.y + this.height > ladder.y &&
+                    this.y < ladder.y + ladder.height
+                ) {
+                    onLadder = true;
+                    ladderCenterX = ladderCenter - (this.width / 2);
+                }
+            }
+
+            if (onLadder) {
+                if (keys.ArrowUp || keys.ArrowDown) {
+                    this.climbing = true;
+                    this.grounded = false;
+                    this.velX = 0;
+                    this.x += (ladderCenterX - this.x) * 0.3;
+                }
+            } else {
+                this.climbing = false;
+            }
+
+            // Vertical Movement
+            if (this.climbing) {
+                this.velY = 0;
+                if (keys.ArrowUp) this.velY = -CLIMB_SPEED;
+                if (keys.ArrowDown) this.velY = CLIMB_SPEED;
+            } else {
+                this.velY += GRAVITY;
+                
+                // Jumping
+                if (keys.Space && this.grounded) {
+                    this.velY = JUMP_FORCE;
+                    this.grounded = false;
+                    this.climbing = false;
+                }
+            }
+
+            this.y += this.velY;
+
+            // Platform Collisions
+            this.grounded = false;
+            
+            if (!this.climbing) { 
+                for (let plat of platforms) {
+                    if (
+                        this.x < plat.x + plat.width &&
+                        this.x + this.width > plat.x &&
+                        this.y + this.height > plat.y &&
+                        this.y + this.height < plat.y + plat.height + 15 && 
+                        this.velY >= 0
+                    ) {
+                        this.y = plat.y - this.height;
+                        this.velY = 0;
+                        this.grounded = true;
+                    }
+                }
+            }
+
+            // Bottom floor safety
+            if (this.y + this.height > canvas.height) {
+                this.y = canvas.height - this.height;
+                this.velY = 0;
+                this.grounded = true;
+            }
+        }
+
+        draw() {
+            if (this.invulnerable && Math.floor(Date.now() / 100) % 2 === 0) return; 
+
+            // Draw Body (Shirt)
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y + 10, this.width, this.height - 10);
+            
+            // Draw Pants
+            ctx.fillStyle = '#222'; 
+            ctx.fillRect(this.x, this.y + 22, this.width, 8);
+            
+            // Draw Head
+            ctx.fillStyle = '#ffccaa'; 
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + 8, 9, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Blue Cap (Construction/Urban style)
+            ctx.fillStyle = '#3366cc';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + 5, 9, Math.PI, 0); 
+            ctx.fill();
+            // Hat Brim
+            ctx.fillRect(this.facingRight ? this.x + 8 : this.x - 4, this.y + 4, 20, 3);
+
+            // Eyes
+            ctx.fillStyle = 'black';
+            if (this.facingRight) {
+                ctx.fillRect(this.x + 16, this.y + 6, 2, 2);
+            } else {
+                ctx.fillRect(this.x + 6, this.y + 6, 2, 2);
+            }
+        }
+    }
+
+    class Barrel {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.width = 18;
+            this.height = 18;
+            this.speed = 2.5; 
+            this.direction = 1;
+            this.velY = 0;
+            this.rotation = 0;
+            this.active = true;
+        }
+
+        update(platforms) {
+            this.velY += GRAVITY;
+            this.y += this.velY;
+            this.x += this.speed * this.direction;
+            this.rotation += this.speed * this.direction * 0.2;
+
+            for(let p of platforms) {
+                if(
+                    this.x + this.width/2 > p.x && 
+                    this.x + this.width/2 < p.x + p.width &&
+                    this.y + this.height >= p.y &&
+                    this.y + this.height <= p.y + p.height + 15 &&
+                    this.velY >= 0
+                ) {
+                    if (this.velY > 5) {
+                         if (this.x < canvas.width/2) this.direction = 1;
+                         else this.direction = -1;
+                    }
+                    this.y = p.y - this.height;
+                    this.velY = 0;
+                }
+            }
+
+            if (this.x < 0) { this.x = 0; this.direction = 1; }
+            if (this.x > canvas.width - this.width) { this.x = canvas.width - this.width; this.direction = -1; }
+
+            if (this.y > canvas.height) {
+                this.active = false;
+                score += 50; 
+                updateUI();
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            ctx.rotate(this.rotation);
+            
+            // Industrial Barrel
+            ctx.fillStyle = '#718096'; // Grayish blue
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Hazard symbol
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('☢', 0, 1);
+            
+            ctx.restore();
+        }
+    }
+
+    class Fireball {
+        constructor() {
+            this.y = Math.random() * (canvas.height - 200) + 150; 
+            this.width = 30;
+            this.height = 20;
+            this.speed = Math.random() * 3 + 4; 
+            
+            if (Math.random() > 0.5) {
+                this.x = -50;
+                this.direction = 1;
+            } else {
+                this.x = canvas.width + 50;
+                this.direction = -1;
+            }
+            this.active = true;
+        }
+
+        update() {
+            this.x += this.speed * this.direction;
+            if (this.x < -100 || this.x > canvas.width + 100) {
+                this.active = false;
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            if (this.direction === -1) ctx.scale(-1, 1);
+
+            ctx.fillStyle = '#FF4500';
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255, 165, 0, 0.7)';
+            ctx.beginPath();
+            ctx.moveTo(-5, -8);
+            ctx.lineTo(-25, 0);
+            ctx.lineTo(-5, 8);
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    class CaptainUnderpants {
+        constructor() {
+            this.y = 100 + Math.random() * 200; 
+            this.width = 40;
+            this.height = 30;
+            this.speed = 3;
+            
+            if (Math.random() > 0.5) {
+                this.x = -60;
+                this.direction = 1;
+            } else {
+                this.x = canvas.width + 60;
+                this.direction = -1;
+            }
+            this.active = true;
+            this.bobAngle = 0;
+        }
+
+        update() {
+            this.x += this.speed * this.direction;
+            this.bobAngle += 0.1;
+            this.y += Math.sin(this.bobAngle) * 2; 
+
+            if (this.x < -100 || this.x > canvas.width + 100) {
+                this.active = false;
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            if (this.direction === -1) ctx.scale(-1, 1);
+
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.moveTo(-10, -5);
+            ctx.lineTo(-30, 5); 
+            ctx.lineTo(-10, 15);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffccaa'; 
+            ctx.fillRect(-10, -5, 25, 15);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(5, 8, 10, 0, Math.PI, false);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffccaa';
+            ctx.beginPath();
+            ctx.arc(12, -5, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(14, -4, 3, 0, Math.PI);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }
+
+    class ButtCheeks {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.originalY = y;
+            this.width = 40;
+            this.height = 30;
+            this.fartActive = false;
+            this.fartTimer = 0;
+            this.cooldown = 0;
+            this.cloud = { radius: 0, alpha: 0 };
+        }
+
+        update(player) {
+            // Bounce Animation
+            this.y = this.originalY + Math.sin(Date.now() / 200) * 10;
+
+            // Check distance to trigger
+            if (this.cooldown <= 0 && !this.fartActive) {
+                const dx = (this.x + this.width/2) - (player.x + player.width/2);
+                const dy = (this.y + this.height/2) - (player.y + player.height/2);
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 40) {
+                    this.fartActive = true;
+                    this.fartTimer = 50; 
+                    this.cloud.radius = 5;
+                    this.cloud.alpha = 0.9;
+                    playFartSound(); 
+                }
+            }
+
+            if (this.fartActive) {
+                this.fartTimer--;
+                this.cloud.radius += 1.0; 
+                this.cloud.alpha -= 0.015;  
+
+                // Check collision with cloud
+                const dx = (this.x + this.width/2) - (player.x + player.width/2);
+                const dy = (this.y + this.height/2) - (player.y + player.height/2);
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < this.cloud.radius && this.cloud.alpha > 0.2) {
+                    player.hit();
+                }
+
+                if (this.fartTimer <= 0 || this.cloud.alpha <= 0) {
+                    this.fartActive = false;
+                    this.cooldown = 300; // 5 seconds
+                }
+            }
+
+            if (this.cooldown > 0) this.cooldown--;
+        }
+
+        draw() {
+            // Draw Cheeks
+            ctx.fillStyle = '#ffccaa'; // Peach
+            
+            // Left cheek
+            ctx.beginPath();
+            ctx.arc(this.x + 10, this.y + 15, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Right cheek
+            ctx.beginPath();
+            ctx.arc(this.x + 30, this.y + 15, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Crack
+            ctx.strokeStyle = '#d49b85';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.x + 20, this.y + 10);
+            ctx.lineTo(this.x + 20, this.y + 30);
+            ctx.stroke();
+
+            // Draw Fart Cloud
+            if (this.fartActive) {
+                ctx.save();
+                ctx.globalAlpha = this.cloud.alpha;
+                ctx.fillStyle = '#00ffcc'; // Neon toxic color
+                ctx.beginPath();
+                ctx.arc(this.x + 20, this.y + 15, this.cloud.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // POOT text
+                if (this.cloud.radius < 30) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px monospace';
+                    ctx.globalAlpha = 1;
+                    ctx.fillText("POOT!", this.x, this.y - 10);
+                }
+                ctx.restore();
+            }
+        }
+    }
+
+    class Collectible {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type; 
+            this.width = 16;
+            this.height = 16;
+            this.active = true;
+            this.bobOffset = Math.random() * 100;
+        }
+
+        draw() {
+            if (!this.active) return;
+            
+            const bobY = Math.sin((Date.now() / 200) + this.bobOffset) * 3;
+            const drawY = this.y + bobY;
+            const cx = this.x + this.width/2;
+            const cy = drawY + this.height/2;
+
+            if (this.type === 'coin') {
+                ctx.fillStyle = '#FFD700'; 
+                ctx.beginPath();
+                ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#FFA500';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#FFA500';
+                ctx.font = '10px monospace';
+                ctx.fillText('$', cx-3, cy+3);
+            } else {
+                ctx.fillStyle = '#FFFF00';
+                drawStar(cx, cy, 5, 8, 4);
+            }
+        }
+    }
+
+    function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        let step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+        }
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    class UncleAndy {
+        constructor() {
+            this.x = 80;
+            this.y = 80;
+            this.width = 40;
+            this.height = 45;
+            this.throwTimer = 0;
+            this.state = 'idle'; 
+        }
+
+        update() {
+            this.throwTimer++;
+            this.x = 80 + Math.sin(Date.now() / 500) * 30;
+
+            if (this.throwTimer > 150) { 
+                this.state = 'throw';
+                this.throwTimer = 0;
+                spawnBarrel(this.x + 20, this.y + 40);
+            } else if (this.throwTimer > 30) {
+                this.state = 'idle';
+            }
+        }
+
+        draw() {
+            // Draw Andy using the loaded image
+            ctx.drawImage(andySprite, this.x, this.y, this.width, this.height);
+        }
+    }
+
+    // --- GAME DATA ---
+
+    let player;
+    let uncleAndy;
+    let barrels = [];
+    let enemies = []; 
+    let platforms = [];
+    let ladders = [];
+    let collectibles = [];
+    let hazardButts = [];
+    
+    let enemySpawnTimer = 0;
+
+    function initLevel() {
+        // Same layout, but will look different in draw()
+        platforms = [
+            { x: 0, y: canvas.height - 10, width: canvas.width, height: 10 }, 
+            { x: 0, y: 550, width: 450, height: 20 },
+            { x: 150, y: 440, width: 450, height: 20 },
+            { x: 0, y: 330, width: 450, height: 20 },
+            { x: 150, y: 220, width: 450, height: 20 },
+            { x: 0, y: 125, width: 250, height: 20 }
+        ];
+
+        ladders = [
+            { x: 400, y: 550, width: 30, height: 140 }, 
+            { x: 200, y: 440, width: 30, height: 110 }, 
+            { x: 400, y: 330, width: 30, height: 110 },
+            { x: 200, y: 220, width: 30, height: 110 },
+            { x: 200, y: 125, width: 30, height: 95 }   
+        ];
+
+        hazardButts = [];
+        hazardButts.push(new ButtCheeks(50, 520)); 
+        hazardButts.push(new ButtCheeks(50, 300));
+
+        collectibles = [];
+        collectibles.push(new Collectible(300, 530, 'coin'));
+        collectibles.push(new Collectible(100, 310, 'coin'));
+        collectibles.push(new Collectible(400, 200, 'coin'));
+        collectibles.push(new Collectible(50, 420, 'coin'));
+        collectibles.push(new Collectible(430, 420, 'star')); 
+        collectibles.push(new Collectible(20, 200, 'star'));
+
+        player = new Player();
+        uncleAndy = new UncleAndy();
+        barrels = [];
+        enemies = [];
+        score = 0;
+        lives = 3;
+        updateUI();
+    }
+
+    function spawnBarrel(x, y) {
+        barrels.push(new Barrel(x, y));
+    }
+
+    function spawnRandomEnemy() {
+        if (Math.random() < 0.2) {
+            enemies.push(new CaptainUnderpants());
+        } else {
+            enemies.push(new Fireball());
+        }
+    }
+
+    function checkCollision(rect1, rect2) {
+        return (
+            rect1.x < rect2.x + rect2.width &&
+            rect1.x + rect1.width > rect2.x &&
+            rect1.y < rect2.y + rect2.height &&
+            rect1.y + rect1.height > rect2.y
+        );
+    }
+
+    function updateUI() {
+        scoreDisplay.innerText = "SCORE: " + score;
+        let hearts = "";
+        for(let i=0; i<lives; i++) hearts += "❤";
+        livesDisplay.innerText = hearts;
+    }
+
+    // --- MAIN LOOP ---
+
+    function update() {
+        if (!gameRunning) return;
+
+        player.update(platforms, ladders);
+        uncleAndy.update();
+        
+        enemySpawnTimer++;
+        if (enemySpawnTimer > 300) { 
+            spawnRandomEnemy();
+            enemySpawnTimer = 0;
+        }
+
+        if (checkCollision(player, uncleAndy)) {
+            gameOver(true);
+            return;
+        }
+
+        // Update Butts
+        for (let butt of hazardButts) {
+            butt.update(player);
+        }
+
+        for (let c of collectibles) {
+            if (c.active && checkCollision(player, c)) {
+                c.active = false;
+                if (c.type === 'coin') score += 5;
+                else score += 10;
+                updateUI();
+            }
+        }
+
+        for (let i = barrels.length - 1; i >= 0; i--) {
+            let b = barrels[i];
+            b.update(platforms);
+
+            let hitBox = { x: b.x + 4, y: b.y + 4, width: 10, height: 10 };
+            if (b.active && checkCollision(player, hitBox)) {
+                player.hit();
+            }
+
+            if (!b.active) {
+                barrels.splice(i, 1);
+            }
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.update();
+            
+            let hitBox = { x: e.x + 5, y: e.y + 5, width: e.width - 10, height: e.height - 10 };
+            
+            if (e.active && checkCollision(player, hitBox)) {
+                player.hit();
+            }
+
+            if (!e.active) {
+                enemies.splice(i, 1);
+            }
+        }
+    }
+
+    function drawUrbanBackground() {
+        // Draw moon
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.arc(500, 80, 40, 0, Math.PI*2);
+        ctx.fill();
+
+        // Buildings
+        ctx.fillStyle = '#2d3748'; // Silhouette
+        
+        // Building 1 (Left)
+        ctx.fillRect(0, 400, 100, 300);
+        // Building 2 (Mid)
+        ctx.fillRect(150, 350, 120, 350);
+        // Building 3 (Right)
+        ctx.fillRect(450, 200, 150, 500);
+        // Building 4 (Far)
+        ctx.fillStyle = '#1a202c';
+        ctx.fillRect(300, 500, 80, 200);
+
+        // Lit Windows
+        ctx.fillStyle = '#f6e05e';
+        // Simple random looking windows
+        ctx.fillRect(20, 450, 10, 20);
+        ctx.fillRect(60, 500, 10, 20);
+        ctx.fillRect(170, 400, 10, 20);
+        ctx.fillRect(230, 600, 10, 20);
+        ctx.fillRect(470, 300, 15, 20);
+        ctx.fillRect(520, 500, 15, 20);
+    }
+
+    function draw() {
+        ctx.fillStyle = '#0f0f1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawUrbanBackground();
+
+        // Draw Ladders (Metal Style)
+        for (let l of ladders) {
+            ctx.fillStyle = '#718096'; // Metal Gray
+            ctx.fillRect(l.x, l.y, 4, l.height);
+            ctx.fillRect(l.x + l.width - 4, l.y, 4, l.height);
+            // Rungs
+            for (let y = l.y; y < l.y + l.height; y += 15) {
+                ctx.fillRect(l.x, y, l.width, 3);
+            }
+        }
+
+        // Draw Platforms (Concrete/Girder Style)
+        for (let p of platforms) {
+            // Concrete Slab
+            ctx.fillStyle = '#4a5568';
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+            
+            // Rivets/Texture
+            ctx.fillStyle = '#2d3748';
+            for (let i = 0; i < p.width; i+=40) {
+                 ctx.beginPath();
+                 ctx.arc(p.x + i + 10, p.y + 10, 3, 0, Math.PI*2);
+                 ctx.fill();
+            }
+            
+            // Top highlight
+            ctx.fillStyle = '#a0aec0';
+            ctx.fillRect(p.x, p.y, p.width, 2); 
+        }
+
+        // Draw Butts
+        for (let butt of hazardButts) butt.draw();
+
+        for (let c of collectibles) c.draw();
+        uncleAndy.draw();
+        for (let b of barrels) b.draw();
+        for (let e of enemies) e.draw();
+        player.draw();
+    }
+
+    function loop() {
+        if(gameRunning) {
+            update();
+            draw();
+            animationId = requestAnimationFrame(loop);
+        }
+    }
+
+    function startGame() {
+        initAudio(); // Initialize audio context on user gesture
+        startScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        winScreen.classList.add('hidden');
+        overlay.classList.add('hidden');
+        
+        initLevel();
+        gameRunning = true;
+        loop();
+    }
+
+    function resetGame() {
+        overlay.classList.remove('hidden');
+        gameOverScreen.classList.add('hidden');
+        winScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+    }
+
+    function gameOver(win) {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        overlay.classList.remove('hidden');
+        
+        if (win) {
+            score += 1000;
+            document.getElementById('win-score').innerText = "Final Score: " + score;
+            winScreen.classList.remove('hidden');
+        } else {
+            document.getElementById('final-score').innerText = "Final Score: " + score;
+            gameOverScreen.classList.remove('hidden');
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space') keys.Space = true;
+        if(e.code === 'ArrowUp') keys.ArrowUp = true;
+        if(e.code === 'ArrowDown') keys.ArrowDown = true;
+        if(e.code === 'ArrowLeft') keys.ArrowLeft = true;
+        if(e.code === 'ArrowRight') keys.ArrowRight = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if(e.code === 'Space') keys.Space = false;
+        if(e.code === 'ArrowUp') keys.ArrowUp = false;
+        if(e.code === 'ArrowDown') keys.ArrowDown = false;
+        if(e.code === 'ArrowLeft') keys.ArrowLeft = false;
+        if(e.code === 'ArrowRight') keys.ArrowRight = false;
+    });
+
+    const btnUp = document.getElementById('btn-up');
+    const btnDown = document.getElementById('btn-down');
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnJump = document.getElementById('btn-jump');
+
+    const handleTouch = (btn, key) => {
+        const start = () => keys[key] = true;
+        const end = () => keys[key] = false;
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); start(); });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); end(); });
+    };
+
+    handleTouch(btnUp, 'ArrowUp');
+    handleTouch(btnDown, 'ArrowDown');
+    handleTouch(btnLeft, 'ArrowLeft');
+    handleTouch(btnRight, 'ArrowRight');
+    handleTouch(btnJump, 'Space');
+
+    // Initial Draw
+    ctx.fillStyle = '#0f0f1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawUrbanBackground();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom — Fully Controllable Orbits</title>
+<style>
+    body { margin:0; background:#2D052B; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:600px; height:600px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        background:radial-gradient(circle, #000, #333 80%, #666);
+        border-radius:50%;
+        box-shadow:0 0 90px #ccc, 0 0 180px #ffea88, 0 0 300px rgba(0,0,0,0.8);
+        z-index:500;
+    }
+    .electron {
+        position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px;
+        pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow:0 0 55px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow:0 0 55px #55aa99, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow:0 0 55px #ffee66, inset -8px -8px 20px #ccaa00; }
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index:550; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="trailsBack"  width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" width="600" height="600" class="trail-front"></canvas>
+</div>
+
+<script>
+// ========================== TWEAK THESE VALUES ==========================
+const baseSpeed      = 0.04;
+const trailFade      = 0.009;
+const trailThickness = 4;
+// =====================================================================
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 300;
+const centerY = 300;
+const nucleusRadius = 90;
+
+// ==================== FULLY INDEPENDENT CONTROL ====================
+// inclinationDeg:  0°  = perfectly flat horizontal ring
+//                 90° = perfectly vertical line (edge-on)
+// planeRotDeg:     rotates the entire orbital plane around the vertical axis
+//                  (like turning a hula-hoop left/right while keeping tilt)
+const electrons = [
+    // RED — perfect vertical line (like the 12–6 hand on a clock)
+    { el: document.getElementById('e1'), 
+	 color: '#ff3355', 
+	 speedMultiplier: 0.9, 
+	 radius: 225,
+     inclinationDeg: 90,   // must be 90° for a true vertical line
+     planeRotDeg: 5 },     // ← change only this: 0, 15, 30, 45, 90… to rotate the whole vertical line like a clock hand!
+
+    // BLUE — almost flat horizontal ring (the classic equatorial ring)
+    { el: document.getElementById('e2'), color: '#4488ff', speedMultiplier: 0.75, radius: 200,
+      inclinationDeg: 12,   // small tilt = thin ellipse
+      planeRotDeg: 15 },     // ← rotate this one too if you want the whole blue ring turned like a steering wheel
+
+    // YELLOW — nicely tilted ellipse
+    { el: document.getElementById('e3'), color: '#ffdd33', speedMultiplier: 1.2, radius: 160,
+      inclinationDeg: 68,
+      planeRotDeg: 125 }    // ← try 0, 45, 90, 135, 180, 225… watch it spin exactly like a safe dial!
+];
+
+// Convert to radians once
+electrons.forEach(e => {
+    e.inc = e.inclinationDeg * Math.PI / 180;
+    e.rot = e.planeRotDeg    * Math.PI / 180;
+});
+
+let time = 0;
+function animate() {
+    time += baseSpeed;
+
+    ctxBack.fillStyle  = `rgba(0,0,0,${trailFade})`; ctxBack.fillRect(0,0,600,600);
+    ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`; ctxFront.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const a = time * e.speedMultiplier;
+
+        // 1. Circular motion in local X-Y plane (Y = up/down in its own plane)
+        const localX = Math.cos(a) * e.radius;
+        const localY = Math.sin(a) * e.radius;
+        const localZ = 0;
+
+        // 2. Tilt the plane by inclination (0° flat → 90° vertical)
+        const sinI = Math.sin(e.inc);
+        const cosI = Math.cos(e.inc);
+        let X = localX * cosI;
+        let Y = localY;
+        let Z = localX * sinI;    // this creates the vertical stretch when inc=90°
+
+        // 3. Rotate the entire plane around vertical Y-axis (planeRot)
+        const cosR = Math.cos(e.rot);
+        const sinR = Math.sin(e.rot);
+        const finalX =  X * cosR + Z * sinR;
+        const finalZ = -X * sinR + Z * cosR;
+        const finalY =  Y;
+
+        // Perspective
+        const scale = 1 + finalZ * 0.0038;
+        const screenX = centerX + finalX;
+        const screenY = centerY + finalY;
+
+        // Update electron
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        // Occlusion
+        const behind = finalZ < -20 && Math.hypot(finalX, finalY) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        // Trail
+        const ctx = finalZ < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.2;
+        ctx.fillStyle = e.color;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 5, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

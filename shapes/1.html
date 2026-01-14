@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morphing Mathematical Paradox</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000; /* Deep Black */
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* TOP TITLE - STATIC */
+        #header {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #ffffff; /* Stark White */
+            font-size: 32px; 
+            font-weight: bold;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 8px; /* Wide spacing for cinematic look */
+            z-index: 10;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            font-family: "Lucida Console", "Monaco", "Courier New", monospace;
+        }
+
+        /* BOTTOM STATUS - CHANGING */
+        #status {
+            position: absolute;
+            bottom: 40px; /* Back to bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px; 
+            font-weight: bold;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 3px; 
+            z-index: 10;
+            text-shadow: 0 0 10px currentColor; 
+        }
+
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            cursor: pointer;
+            transition: opacity 0.5s;
+        }
+        #start-text {
+            color: #ff0000;
+            font-size: 24px;
+            letter-spacing: 4px;
+            border: 2px solid #ff0000;
+            padding: 20px 40px;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; text-shadow: 0 0 10px #ff0000; }
+            50% { opacity: 0.5; text-shadow: 0 0 0px #ff0000; }
+            100% { opacity: 1; text-shadow: 0 0 10px #ff0000; }
+        }
+    </style>
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <div id="start-text">Initialize Man-Machine</div>
+    </div>
+
+    <!-- Static Title -->
+    <div id="header">PARADOX</div>
+
+    <!-- Changing Description -->
+    <div id="status">WAITING FOR INPUT...</div>
+    
+    <div id="canvas-container"></div>
+
+    <script>
+        // --- AUDIO ENGINE (Web Audio API) ---
+        const AudioEngine = {
+            ctx: null,
+            droneOsc: null,
+            droneGain: null,
+            filter: null,
+
+            init: function() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                
+                const masterGain = this.ctx.createGain();
+                masterGain.gain.value = 0.4;
+                masterGain.connect(this.ctx.destination);
+
+                this.droneOsc = this.ctx.createOscillator();
+                this.droneOsc.type = 'sawtooth';
+                this.droneOsc.frequency.value = 55; // Low A
+                
+                this.filter = this.ctx.createBiquadFilter();
+                this.filter.type = 'lowpass';
+                this.filter.frequency.value = 200;
+                this.filter.Q.value = 1;
+
+                this.droneGain = this.ctx.createGain();
+                this.droneGain.gain.value = 0.5;
+
+                this.droneOsc.connect(this.filter);
+                this.filter.connect(this.droneGain);
+                this.droneGain.connect(masterGain);
+                
+                this.droneOsc.start();
+            },
+
+            playGlitch: function() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                
+                const osc = this.ctx.createOscillator();
+                osc.type = 'square';
+                const gain = this.ctx.createGain();
+                
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            },
+
+            playBlip: function(freq) {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+
+                const osc = this.ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq || 880, now); 
+                
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            },
+
+            updateDrone: function(speed) {
+                if (!this.filter) return;
+                const targetFreq = 100 + (Math.abs(speed) * 3000);
+                this.filter.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.1);
+            }
+        };
+
+        // --- VISUAL ENGINE ---
+        
+        let hasStarted = false;
+
+        document.getElementById('start-overlay').addEventListener('click', function() {
+            const overlay = document.getElementById('start-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 500);
+            
+            AudioEngine.init();
+            hasStarted = true;
+            init();
+        });
+
+        function init() {
+            if(document.querySelector('canvas')) return;
+
+            const container = document.getElementById('canvas-container');
+            const statusLabel = document.getElementById('status');
+            
+            // 1. Scene & Camera
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); 
+            scene.fog = new THREE.FogExp2(0x000000, 0.02); 
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 24; 
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // 2. Geometry Setup 
+            // Reduced density for transparency
+            const tubularSegments = 150; 
+            const radialSegments = 12;
+            const vertexCount = (tubularSegments + 1) * (radialSegments + 1);
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(vertexCount * 3);
+            const indices = [];
+
+            for (let i = 0; i < tubularSegments; i++) {
+                for (let j = 0; j < radialSegments; j++) {
+                    const a = (radialSegments + 1) * (i + 1) + (j + 1);
+                    const b = (radialSegments + 1) * i + (j + 1);
+                    const c = (radialSegments + 1) * i + j;
+                    const d = (radialSegments + 1) * (i + 1) + j;
+
+                    indices.push(a, b, d);
+                    indices.push(b, c, d);
+                }
+            }
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            // 3. Materials
+            const occlusionMat = new THREE.MeshBasicMaterial({ 
+                color: 0x000000, 
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: 2, 
+                polygonOffsetUnits: 1
+            });
+            
+            const wireframeMat = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000, 
+                wireframe: true,
+                transparent: true,
+                opacity: 0.8 // Slightly more transparent lines
+            });
+
+            const meshOcclusion = new THREE.Mesh(geometry, occlusionMat);
+            const meshWireframe = new THREE.Mesh(geometry, wireframeMat);
+            
+            const group = new THREE.Group();
+            group.add(meshOcclusion);
+            group.add(meshWireframe);
+            scene.add(group);
+
+            // 4. Mathematical Definition of Shapes
+            // Types: 'KNOT' (Torus Knot) or 'GEO' (Projected Geometry)
+            const knotConfigs = [
+                { type: 'KNOT', p: 2, q: 3, r: 6, tube: 2.2, name: "TREFOIL" },
+                { type: 'GEO', shape: 'CUBE', r: 5.5, tube: 0.1, name: "CUBE STRUCTURE" },
+                { type: 'KNOT', p: 3, q: 4, r: 6, tube: 1.5, name: "CELTIC WEAVE" },
+                { type: 'GEO', shape: 'OCTA', r: 6, tube: 0.1, name: "OCTA DIAMOND" },
+                { type: 'KNOT', p: 2, q: 9, r: 7, tube: 1.0, name: "GORGON KNOT" },
+                { type: 'KNOT', p: 7, q: 2, r: 6, tube: 1.8, name: "HELIX LOOP" },
+                { type: 'KNOT', p: 1, q: 6, r: 6, tube: 1.5, name: "MÖBIUS TWIST" },
+                { type: 'KNOT', p: 3, q: 7, r: 7, tube: 1.1, name: "CHAOS THEORY" }
+            ];
+
+            // --- GEOMETRY MATH ---
+
+            // A. Torus Knot Point
+            function getKnotPoint(u, v, config, targetVec) {
+                const p = config.p;
+                const q = config.q;
+                const radius = config.r;
+                const tube = config.tube;
+
+                // Knot center curve
+                const cu = Math.cos(u * p);
+                const su = Math.sin(u * p);
+                const quOverP = u * q;
+                const cs = Math.cos(quOverP);
+                
+                const tx = (radius + tube * cs) * cu;
+                const ty = (radius + tube * cs) * su;
+                const tz = tube * Math.sin(quOverP);
+
+                // Tangent/Normal calculations for tube extrusion
+                const nextU = u + 0.01;
+                const ncu = Math.cos(nextU * p);
+                const nsu = Math.sin(nextU * p);
+                const nquOverP = nextU * q;
+                const ncs = Math.cos(nquOverP);
+                const ntx = (radius + tube * ncs) * ncu;
+                const nty = (radius + tube * ncs) * nsu;
+                const ntz = tube * Math.sin(nquOverP);
+
+                const tx_tan = ntx - tx;
+                const ty_tan = nty - ty;
+                const tz_tan = ntz - tz;
+
+                const len = Math.sqrt(tx_tan*tx_tan + ty_tan*ty_tan + tz_tan*tz_tan);
+                const tanX = tx_tan/len; const tanY = ty_tan/len; const tanZ = tz_tan/len;
+
+                let nX = -tanY; let nY = tanX; let nZ = 0; 
+                if (Math.abs(tanZ) > 0.99) { nX = 1; nY = 0; nZ = 0; } 
+                const nLen = Math.sqrt(nX*nX + nY*nY + nZ*nZ);
+                nX /= nLen; nY /= nLen; nZ /= nLen;
+
+                const bX = tanY*nZ - tanZ*nY;
+                const bY = tanZ*nX - tanX*nZ;
+                const bZ = tanX*nY - tanY*nX;
+
+                const cx = Math.cos(v);
+                const cy = Math.sin(v);
+
+                const finalX = tx + (tube * (cx * nX + cy * bX));
+                const finalY = ty + (tube * (cx * nY + cy * bY));
+                const finalZ = tz + (tube * (cx * nZ + cy * bZ));
+
+                targetVec.set(finalX, finalY, finalZ);
+            }
+
+            // B. Geometric Projection
+            function getGeometricPoint(u, v, config, targetVec) {
+                // 1. Generate base "Clay" - A fat Ring Torus / Sphere approximation
+                // To get a full 3D solid wireframe, we need to cover the center volume.
+                // We use p=1, q=0 (Ring) but with huge tube radius.
+                const p = 1; const q = 0; 
+                const radius = config.r; 
+                // CRITICAL FIX: Make tube radius equal to main radius to create a "solid" blob of vertices
+                // This ensures we hit the top and bottom of the Cube/Octahedron
+                const tube = config.r; 
+
+                const cu = Math.cos(u * p);
+                const su = Math.sin(u * p);
+                const tx = radius * cu;
+                const ty = radius * su;
+                const tz = 0;
+
+                const cx = Math.cos(v);
+                const cy = Math.sin(v);
+                const nX = cu * cx;
+                const nY = su * cx;
+                const nZ = cy;
+
+                let x = tx + tube * nX;
+                let y = ty + tube * nY;
+                let z = tz + tube * nZ;
+
+                // 2. PROJECT onto Shape
+                if (config.shape === 'CUBE') {
+                    // Normalize to Cube (Box Projection)
+                    // Push points out until they hit the x, y, or z wall
+                    const maxVal = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
+                    if (maxVal > 0.001) {
+                        const scale = config.r / maxVal;
+                        x *= scale;
+                        y *= scale;
+                        z *= scale;
+                    }
+                } else if (config.shape === 'OCTA') {
+                    // Normalize to Octahedron (Diamond Projection)
+                    // |x| + |y| + |z| = r
+                    const sum = Math.abs(x) + Math.abs(y) + Math.abs(z);
+                    if (sum > 0.001) {
+                        const scale = config.r / sum;
+                        x *= scale;
+                        y *= scale;
+                        z *= scale;
+                    }
+                }
+
+                targetVec.set(x, y, z);
+            }
+
+            // Main Generator Switch
+            function generateShapeData(config, buffer) {
+                const tempVec = new THREE.Vector3();
+                let idx = 0;
+                for (let i = 0; i <= tubularSegments; i++) {
+                    const u = (i / tubularSegments) * Math.PI * 2;
+                    for (let j = 0; j <= radialSegments; j++) {
+                        const v = (j / radialSegments) * Math.PI * 2;
+                        
+                        if (config.type === 'GEO') {
+                            getGeometricPoint(u, v, config, tempVec);
+                        } else {
+                            getKnotPoint(u, v, config, tempVec);
+                        }
+                        
+                        buffer[idx] = tempVec.x;
+                        buffer[idx+1] = tempVec.y;
+                        buffer[idx+2] = tempVec.z;
+                        idx += 3;
+                    }
+                }
+            }
+
+            const startPositions = new Float32Array(vertexCount * 3);
+            const endPositions = new Float32Array(vertexCount * 3);
+
+            // 5. Animation State
+            let currentConfigIndex = 0;
+            let nextConfigIndex = 1;
+            let zoomProgress = 0; // REPLACED morphAlpha with zoomProgress cycle
+            const zoomSpeed = 0.002; // Speed of the infinite zoom loop
+            
+            // Initial Data gen
+            generateShapeData(knotConfigs[currentConfigIndex], startPositions);
+            generateShapeData(knotConfigs[nextConfigIndex], endPositions);
+            statusLabel.innerText = `${knotConfigs[currentConfigIndex].name}`;
+
+            let rotSpeedX = 0;
+            let rotSpeedY = 0;
+            let time = 0;
+            let burstTimer = 0;
+            let wasBursting = false;
+            let burstDirectionX = 1;
+            let burstDirectionY = 1;
+
+            const paletteData = [
+                { color: new THREE.Color(0xff0000), note: 440 }, 
+                { color: new THREE.Color(0xffff00), note: 523.25 }, 
+                { color: new THREE.Color(0x0033ff), note: 659.25 }, 
+                { color: new THREE.Color(0x00ff00), note: 783.99 }, 
+                { color: new THREE.Color(0xffffff), note: 880 }  
+            ];
+            let colorIndex = 0;
+            
+            statusLabel.style.color = '#' + paletteData[0].color.getHexString();
+
+            // Text Scrambler Helper
+            const scrambleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_#-/|";
+            function getScrambledText(targetStr, progress) {
+                let result = "";
+                const len = targetStr.length;
+                // Solve from left to right, accelerating at the end
+                const revealIdx = Math.floor((progress * progress) * len);
+                
+                for (let i = 0; i < len; i++) {
+                    if (i < revealIdx) {
+                        result += targetStr[i];
+                    } else {
+                        // Return random character
+                        result += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                    }
+                }
+                return result;
+            }
+
+            // 6. Main Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.01;
+
+                // --- A. Infinite Zoom & Morph Logic ---
+                zoomProgress += zoomSpeed;
+
+                if (zoomProgress >= 1) {
+                    // --- RESET CYCLE (The Paradox) ---
+                    zoomProgress = 0;
+                    
+                    // 1. Swap Shapes: End becomes Start
+                    startPositions.set(endPositions);
+                    
+                    // 2. Pick new Target
+                    currentConfigIndex = nextConfigIndex;
+                    let nextRand = currentConfigIndex;
+                    while(nextRand === currentConfigIndex) {
+                        nextRand = Math.floor(Math.random() * knotConfigs.length);
+                    }
+                    nextConfigIndex = nextRand;
+                    
+                    generateShapeData(knotConfigs[nextConfigIndex], endPositions);
+
+                    // 3. Trigger Color & Sound (Synced to the "New Sequence")
+                    colorIndex = (colorIndex + 1) % paletteData.length;
+                    const nextData = paletteData[colorIndex];
+                    
+                    wireframeMat.color.set(nextData.color);
+                    statusLabel.style.color = '#' + nextData.color.getHexString();
+                    AudioEngine.playBlip(nextData.note);
+
+                    // 4. Update Status Text instantly to the "Current" (which was the old Next)
+                    statusLabel.innerText = knotConfigs[currentConfigIndex].name;
+                }
+
+                // Easing for Morph: Sync morph with Zoom
+                // As it gets bigger (zoomProgress -> 1), it morphs into the target shape
+                const easedAlpha = zoomProgress < 0.5 ? 4 * zoomProgress * zoomProgress * zoomProgress : 1 - Math.pow(-2 * zoomProgress + 2, 3) / 2;
+
+                // --- B. Scale Calculation (Exponential Growth) ---
+                // Start tiny (0.05), end Huge (> 6 to pass camera at z=24)
+                // Using power of 4 for dramatic "rushing" effect
+                const scaleCurve = Math.pow(zoomProgress, 4); 
+                const currentScale = 0.05 + (scaleCurve * 7.0); 
+                
+                group.scale.set(currentScale, currentScale, currentScale);
+
+                // --- C. Text Scrambling ---
+                // Scramble into the NEXT name as we get closer
+                const newName = knotConfigs[nextConfigIndex].name;
+                if (zoomProgress > 0.6) {
+                    const textProgress = (zoomProgress - 0.6) / 0.4;
+                    statusLabel.innerText = getScrambledText(newName, textProgress);
+                } else {
+                     statusLabel.innerText = knotConfigs[currentConfigIndex].name;
+                }
+
+                // --- D. Vertex Morphing ---
+                const posAttr = geometry.attributes.position;
+                for (let i = 0; i < posAttr.count * 3; i++) {
+                    const start = startPositions[i];
+                    const end = endPositions[i];
+                    posAttr.array[i] = start + (end - start) * easedAlpha;
+                }
+                posAttr.needsUpdate = true;
+
+
+                // --- E. Rotation Physics (Chaos) ---
+                // Random bursts independent of zoom
+                if (burstTimer <= 0 && Math.random() < 0.005) {
+                    burstTimer = 30; // 0.5s duration
+                    wasBursting = true;
+                    burstDirectionX = Math.random() > 0.5 ? 1 : -1;
+                    burstDirectionY = Math.random() > 0.5 ? 1 : -1;
+                    AudioEngine.playGlitch();
+                }
+
+                let targetSpeedX, targetSpeedY;
+
+                if (burstTimer > 0) {
+                    // HYPER SPEED ROTATION
+                    targetSpeedX = 0.8 * burstDirectionX; 
+                    targetSpeedY = 0.8 * burstDirectionY;
+                    burstTimer--;
+                } else {
+                    if (wasBursting) {
+                        wasBursting = false; 
+                    }
+                    // Drift
+                    targetSpeedX = Math.sin(time * 0.5) * 0.005;
+                    targetSpeedY = Math.cos(time * 0.3) * 0.005;
+                }
+
+                const damping = burstTimer > 0 ? 0.2 : 0.05; 
+                rotSpeedX += (targetSpeedX - rotSpeedX) * damping;
+                rotSpeedY += (targetSpeedY - rotSpeedY) * damping;
+
+                group.rotation.x += rotSpeedX;
+                group.rotation.y += rotSpeedY;
+
+                const currentTotalSpeed = Math.abs(rotSpeedX) + Math.abs(rotSpeedY);
+                AudioEngine.updateDrone(currentTotalSpeed);
+
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+    </script>
+</body>
+</html>

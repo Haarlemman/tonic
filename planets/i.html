@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale: 1.0">
+    <title>Elliptical Orbits Solar System</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #181e21;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="solarSystemCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('solarSystemCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let hoveredPlanetName = null;
+        let focusedPlanetName = null;
+
+        canvas.addEventListener('mousemove', function(event) {
+            const mouseX = event.offsetX;
+            const mouseY = event.offsetY;
+            hoveredPlanetName = null;
+
+            for (const planet of planets) {
+                const planetX = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+                const planetY = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+                const distance = Math.sqrt((mouseX - planetX) ** 2 + (mouseY - planetY) ** 2);
+
+                if (distance < planet.radius) {
+                    hoveredPlanetName = planet.name;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('click', function(event) {
+            const mouseX = event.offsetX;
+            const mouseY = event.offsetY;
+
+            for (const planet of planets) {
+                const planetX = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+                const planetY = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+                const distance = Math.sqrt((mouseX - planetX) ** 2 + (mouseY - planetY) ** 2);
+
+                if (distance < planet.radius) {
+                    focusedPlanetName = planet.name;
+                    return;
+                }
+            }
+            focusedPlanetName = null;
+        });
+
+
+        const sun = { x: canvas.width / 2, y: canvas.height / 2, radius: 80, color: 'yellow' };
+
+        const planets = [
+            { name: 'Mercury', radius: 10, semiMajor: 140, semiMinor: 90, speed: 0.02, color: 'gray', rotationSpeed: 0.1, moons: [] },
+            { name: 'Venus', radius: 15, semiMajor: 160, semiMinor: 120, speed: 0.015, color: 'yellow', rotationSpeed: 0.08, moons: [] },
+            { name: 'Earth', radius: 20, semiMajor: 230, semiMinor: 180, speed: 0.012, color: 'blue', rotationSpeed: 0.07, moons: [{ radius: 5, distance: 30, speed: 0.04, angle: 0 }] },
+            { name: 'Mars', radius: 18, semiMajor: 310, semiMinor: 240, speed: 0.01, color: 'red', rotationSpeed: 0.06, moons: [{ radius: 4, distance: 25, speed: 0.03, angle: 0 }, { radius: 3, distance: 35, speed: 0.02, angle: 1 }] },
+            { name: 'Jupiter', radius: 50, semiMajor: 420, semiMinor: 350, speed: 0.007, color: 'orange', rotationSpeed: 0.03, moons: [{ radius: 7, distance: 50, speed: 0.05, angle: 0 }, { radius: 6, distance: 70, speed: 0.03, angle: 2 }] },
+            { name: 'Saturn', radius: 45, semiMajor: 530, semiMinor: 460, speed: 0.005, color: 'goldenrod', rotationSpeed: 0.025, moons: [{ radius: 6, distance: 45, speed: 0.04, angle: 0 }, { radius: 5, distance: 65, speed: 0.02, angle: 1 }] },
+            { name: 'Uranus', radius: 35, semiMajor: 620, semiMinor: 550, speed: 0.004, color: 'lightblue', rotationSpeed: 0.02, moons: [{ radius: 4, distance: 40, speed: 0.03, angle: 0 }] },
+            { name: 'Neptune', radius: 30, semiMajor: 700, semiMinor: 630, speed: 0.003, color: 'darkblue', rotationSpeed: 0.015, moons: [{ radius: 3, distance: 35, speed: 0.02, angle: 0 }] }
+        ];
+
+        function drawPlanet(planet, angleOffset, offsetX, offsetY) {
+    offsetX = offsetX || 0;
+    offsetY = offsetY || 0;
+
+    const planetX = sun.x + offsetX + Math.cos(planet.orbitAngle) * planet.semiMajor;
+    const planetY = sun.y + offsetY + Math.sin(planet.orbitAngle) * planet.semiMinor;
+
+            // Calculate direction from Sun to planet
+            const sunDirectionX = planetX - sun.x - offsetX;
+            const sunDirectionY = planetY - sun.y - offsetY;
+            const sunDistance = Math.sqrt(sunDirectionX**2 + sunDirectionY**2);
+            const lightDirectionX = sunDirectionX / sunDistance;
+            const lightDirectionY = sunDirectionY / sunDistance;
+
+            // Calculate the angle of the sun's direction (using atan2)
+            const sunAngle = Math.atan2(lightDirectionY, lightDirectionX);
+
+            const gradientOffsetFactor = 0.4;
+            const gradientStartX = planetX - lightDirectionX * planet.radius * gradientOffsetFactor;
+            const gradientStartY = planetY - lightDirectionY * planet.radius * gradientOffsetFactor;
+
+
+            // Create Radial Gradient for Day/Night shading
+            const gradient = ctx.createRadialGradient(
+                gradientStartX, gradientStartY, 0,
+                planetX, planetY, planet.radius
+            );
+
+            // **Reverted Gradient to a more balanced configuration**
+            gradient.addColorStop(0, lightenColor(planet.color, 0.5));
+            gradient.addColorStop(0.1, planet.color);           // Reverted to 0.1 -  Smaller bright spot
+            gradient.addColorStop(0.4, getDarkerShade(planet.color, 0.3)); // Shadow start - Keep at 0.4
+            gradient.addColorStop(0.6, getDarkerShade(planet.color, 0.6)); // Full shadow - Keep at 0.6
+            gradient.addColorStop(1, getDarkerShade(planet.color, 0.9));     // Edge shadow - keep as is
+
+
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, planet.radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+           // CLEAR AREA BEFORE DRAWING MERIDIANS
+    ctx.clearRect(planetX - planet.radius - 2, planetY - planet.radius - 2, 2 * planet.radius + 4, 2 * planet.radius + 4);
+
+    drawMeridians(planetX, planetY, planet.radius, angleOffset, sunAngle);
+
+
+            planet.moons.forEach(moon => {
+                moon.angle += moon.speed;
+                const moonX = planetX + Math.cos(moon.angle) * moon.distance;
+                const moonY = planetY + Math.sin(moon.angle) * moon.distance;
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'lightgray';
+                ctx.fill();
+            });
+        }
+
+
+        // Helper function to lighten a color (for highlight)
+        function lightenColor(color, amount) {
+            let r, g, b;
+            if (color.startsWith('#')) {
+                r = parseInt(color.substring(1, 3), 16);
+                g = parseInt(color.substring(3, 5), 16);
+                b = parseInt(color.substring(5, 7), 16);
+            } else if (color === 'red') { r = 255; g = 0; b = 0; }
+            else if (color === 'blue') { r = 0; g = 0; b = 255; }
+            else if (color === 'yellow') { r = 255; g = 255; b = 0; }
+            else if (color === 'gray') { r = 128; g = 128; b = 128; }
+            else if (color === 'orange') { r = 255; g = 165; b = 0; }
+            else if (color === 'goldenrod') { r = 218; g = 165; b = 32; }
+            else if (color === 'lightblue') { r = 173; g = 216; b = 230; }
+            else if (color === 'darkblue') { r = 0; g = 0; b = 139; }
+            else { r = 0; g = 0; b = 0; }
+
+            r = Math.min(255, Math.floor(r + (255 - r) * amount));
+            g = Math.min(255, Math.floor(g + (255 - g) * amount));
+            b = Math.min(255, Math.floor(b + (255 - b) * amount));
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+
+        // Helper function to get a darker shade of a color with transparency (unchanged)
+        function getDarkerShade(color, transparency) {
+            let r, g, b;
+
+            if (color.startsWith('#')) {
+                r = parseInt(color.substring(1, 3), 16);
+                g = parseInt(color.substring(3, 5), 16);
+                b = parseInt(color.substring(5, 7), 16);
+            } else if (color === 'red') { r = 255; g = 0; b = 0; }
+            else if (color === 'blue') { r = 0; g = 0; b = 255; }
+            else if (color === 'yellow') { r = 255; g = 255; b = 0; }
+            else if (color === 'gray') { r = 128; g = 128; b = 128; }
+            else if (color === 'orange') { r = 255; g = 165; b = 0; }
+            else if (color === 'goldenrod') { r = 218; g = 165; b = 32; }
+            else if (color === 'lightblue') { r = 173; g = 216; b = 230; }
+            else if (color === 'darkblue') { r = 0; g = 0; b = 139; }
+            else {
+                r = 0; g = 0; b = 0;
+            }
+
+            r = Math.floor(r * 0.5);
+            g = Math.floor(g * 0.5);
+            b = Math.floor(b * 0.5);
+
+            return `rgba(${r}, ${g}, ${b}, ${transparency})`;
+        }
+
+
+        function drawMeridians(x, y, radius, rotationAngle, sunAngle) {
+            const meridianCount = 12;
+
+            // Calculate angle offset - Simplified approach
+            let angleDiff = Math.abs(rotationAngle - sunAngle);
+            angleDiff = Math.min(angleDiff, Math.PI);
+
+            // Opacity based on angleDiff - Less Aggressive Fade (divisor 2*PI)
+            let opacity = 1.0 - (angleDiff / (2 * Math.PI));
+            opacity = Math.max(0.1, Math.min(0.4, opacity));
+
+            ctx.lineWidth = 1;
+            for (let i = 0; i < meridianCount; i++) {
+                const angle = (Math.PI * 2 / meridianCount) * i + rotationAngle;
+                ctx.strokeStyle = `rgba(220,220,220,${opacity})`;
+                ctx.beginPath();
+                for (let j = 0; j <= 10; j++) {
+                    const v = j / 10 * Math.PI - Math.PI / 2;
+                    const meridianX = x + radius * Math.cos(angle) * Math.cos(v);
+                    const meridianY = y + radius * Math.sin(v);
+                    if (j === 0) ctx.moveTo(meridianX, y + radius * Math.sin(v));
+                    else ctx.lineTo(meridianX, y + radius * Math.sin(v));
+                }
+                ctx.stroke();
+            }
+        }
+
+
+        function drawPlanetLabel() {
+            if (hoveredPlanetName) {
+                const planet = planets.find(p => p.name === hoveredPlanetName);
+                if (planet) {
+                    const planetX = sun.x + Math.cos(planet.orbitAngle) * planet.semiMajor;
+                    const planetY = sun.y + Math.sin(planet.orbitAngle) * planet.semiMinor;
+
+                    ctx.font = '14px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+
+                    ctx.fillText(planet.name, planetX, planetY - planet.radius - 10);
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let focusPlanet = null;
+            if (focusedPlanetName) {
+                focusPlanet = planets.find(p => p.name === focusedPlanetName);
+            }
+
+            let sunX = sun.x;
+            let sunY = sun.y;
+            if (focusPlanet) {
+                sunX = canvas.width / 2 - Math.cos(focusPlanet.orbitAngle) * focusPlanet.semiMajor;
+                sunY = canvas.height / 2 - Math.sin(focusPlanet.orbitAngle) * focusPlanet.semiMinor;
+            }
+
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sun.radius, 0, Math.PI * 2);
+            ctx.fillStyle = sun.color;
+            ctx.fill();
+
+            planets.forEach(planet => {
+        planet.orbitAngle = (planet.orbitAngle || 0) + planet.speed;
+        planet.rotationAngle = (planet.rotationAngle || 0) + planet.rotationSpeed;
+        drawPlanet(planet, planet.rotationAngle, sunX - sun.x, sunY - sun.y);
+    });
+
+            drawPlanetLabel();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

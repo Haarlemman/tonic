@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom – Perfect Uniform #491545</title>
+<style>
+    body{
+        margin:0;
+        background:#491545;
+        height:100vh;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        overflow:hidden;
+    }
+    .atom-container{
+        position:fixed;
+        inset:0;
+        width:100vw;
+        height:100vh;
+    }
+    canvas{
+        position:fixed;
+        inset:0;
+        width:100vw;
+        height:100vh;
+        pointer-events:none;
+        background:transparent;
+    }
+    .nucleus{
+        position:absolute;
+        top:50%;
+        left:50%;
+        width:180px;
+        height:180px;
+        margin:-90px 0 0 -90px;
+        background:radial-gradient(circle,#fffc00,#000201 60%,#1266ae);
+        border-radius:50%;
+        box-shadow:0 0 90px #e00f43,0 0 180px #e00f43,0 0 300px rgba(224,15,67,.6);
+        z-index:500;
+    }
+    .electron{
+        position:absolute;
+        width:40px;
+        height:40px;
+        border-radius:50%;
+        margin:-20px 0 0 -20px;
+        pointer-events:none;
+    }
+    #e1{background:radial-gradient(circle at 30% 30%,#ff0000,#ff2244);box-shadow:0 0 55px #ff4466,inset -8px -8px 20px #900}
+    #e2{background:radial-gradient(circle at 30% 30%,#0000ff,#33889f);box-shadow:0 0 55px #55aa99,inset -8px -8px 20px #0066cc}
+    #e3{background:radial-gradient(circle at 30% 30%,#ffff00,#ffdd22);box-shadow:0 0 55px #ffee66,inset -8px -8px 20px #ccaa00}
+    .trail-front{z-index:550}
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <canvas id="trailsBack"></canvas>
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" class="trail-front"></canvas>
+</div>
+
+<script>
+const baseSpeed = 0.04;
+const trailFade = 0.022;
+const trailThickness = 3.5;
+
+const canvasBack = document.getElementById('trailsBack');
+const ctxBack = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront = canvasFront.getContext('2d');
+
+let centerX, centerY, nucleusRadius = 90;
+
+function resizeCanvas() {
+    canvasBack.width = canvasFront.width = window.innerWidth;
+    canvasBack.height = canvasFront.height = window.innerHeight;
+    centerX = window.innerWidth / 2;
+    centerY = window.innerHeight / 2;
+    
+    ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+    ctxBack.lineCap = ctxFront.lineCap = 'round';
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const electrons = [
+    {el:document.getElementById('e1'),color:'#ff3355',speedMultiplier:1,radius:225,inclinationDeg:90,planeRotDeg:7,rollDeg:0},
+    {el:document.getElementById('e2'),color:'#4488ff',speedMultiplier:0.75,radius:210,inclinationDeg:15,planeRotDeg:95,rollDeg:55},
+    {el:document.getElementById('e3'),color:'#ffdd33',speedMultiplier:3,radius:210,inclinationDeg:15,planeRotDeg:115,rollDeg:-55}
+];
+
+electrons.forEach(e => {
+    const r = d => d * Math.PI / 180;
+    e.i = r(e.inclinationDeg); e.r = r(e.planeRotDeg); e.o = r(e.rollDeg);
+});
+
+let time = 0;
+function animate() {
+    time += baseSpeed;
+
+    const fade = 'rgba(73,21,69,0.022)';
+    ctxBack.fillStyle = fade; 
+    ctxBack.fillRect(0, 0, canvasBack.width, canvasBack.height);
+    ctxFront.fillStyle = fade; 
+    ctxFront.fillRect(0, 0, canvasFront.width, canvasFront.height);
+
+    electrons.forEach(e => {
+        const a = time * e.speedMultiplier;
+        let x = Math.cos(a) * e.radius;
+        let y = Math.sin(a) * e.radius;
+        let z = 0;
+
+        let tx = x * Math.cos(e.i) + z * Math.sin(e.i);
+        z = -x * Math.sin(e.i) + z * Math.cos(e.i);
+        x = tx;
+
+        tx = x * Math.cos(e.r) - z * Math.sin(e.r);
+        z = x * Math.sin(e.r) + z * Math.cos(e.r);
+        x = tx;
+
+        tx = x * Math.cos(e.o) - y * Math.sin(e.o);
+        let ty = x * Math.sin(e.o) + y * Math.cos(e.o);
+        x = tx; y = ty;
+
+        const scale = 1 + z * 0.0038;
+        const sx = centerX + x;
+        const sy = centerY + y;
+
+        e.el.style.left = sx + 'px';
+        e.el.style.top  = sy + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x,y) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(sx,sy);
+        ctx.lineTo(sx+0.1,sy+0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

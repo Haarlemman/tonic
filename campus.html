@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Map | University of Free Will</title>
+<style>
+    /* --- SWISS INDUSTRIAL STYLE SYSTEM [Sources 1, 17, 166] --- */
+    :root {
+        --bg: #f4f4f0;        /* Paper */
+        --ink: #111111;       /* Ink */
+        --red: #ff3300;       /* Body [Source 2] */
+        --yellow: #ffcc00;    /* Mind [Source 1] */
+        --blue: #0033cc;      /* Soul [Source 17] */
+        --concrete: #e6e6e6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--ink);
+        overflow-x: hidden; /* Prevent horizontal scroll */
+    }
+
+    /* --- 1. CSS FOR THE UNIVERSAL NAVIGATOR --- */
+    /* This styles the menu injected by the JS */
+    #university-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 40px;
+        background: white;
+        border-bottom: 4px solid var(--ink);
+        position: sticky; top: 0; z-index: 1000;
+        text-transform: uppercase;
+    }
+
+    .nav-brand { font-weight: 900; letter-spacing: -1px; font-size: 1.2rem; }
+    
+    .nav-links { display: flex; gap: 10px; }
+    
+    .nav-item {
+        text-decoration: none;
+        color: var(--ink);
+        font-size: 0.75rem;
+        font-weight: bold;
+        padding: 8px 12px;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .nav-item:hover { opacity: 0.7; }
+    .nav-item.active { color: white; border-color: inherit; }
+
+
+    /* --- 2. CAMPUS VIEWPORT (The Main Interface) [Source 162] --- */
+    .viewport-container {
+        position: relative;
+        height: 90vh; /* Takes up most of the screen */
+        background: radial-gradient(circle at center, #ddd 0%, #333 100%); /* Placeholder for 3D Canvas */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    /* This simulates your 3D World */
+    .world-simulation {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        opacity: 0.5; /* Faded to let UI pop */
+    }
+    .sim-col { height: 100%; border-right: 1px solid rgba(255,255,255,0.1); }
+
+    /* --- THE HUD (Heads Up Display) --- */
+    .hud-layer {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; /* Allows clicking through to the "world" */
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    /* CENTER TITLE: The Manifesto [Source 130] */
+    .center-title {
+        text-align: center;
+        pointer-events: auto;
+    }
+    
+    h1 {
+        font-size: 4vw; 
+        margin: 0; 
+        line-height: 0.9; 
+        text-transform: uppercase; 
+        letter-spacing: -3px;
+        text-shadow: 0 0 30px rgba(255,255,255,0.8);
+    }
+    
+    .subtitle {
+        font-family: 'Courier New', monospace;
+        background: var(--ink);
+        color: white;
+        display: inline-block;
+        padding: 5px 10px;
+        font-size: 1rem;
+        margin-top: 10px;
+    }
+
+    /* INTERACTIVE GATES (The 3 Buildings) */
+    .gates-container {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        pointer-events: auto;
+        margin-bottom: 50px;
+    }
+
+    .gate-card {
+        background: white;
+        width: 250px;
+        border: 4px solid var(--ink);
+        padding: 20px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-align: left;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .gate-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 10px 10px 0 rgba(0,0,0,0.3);
+    }
+
+    /* Color Coding [Source 1, 2] */
+    .gate-body { border-top: 10px solid var(--red); }
+    .gate-mind { border-top: 10px solid var(--yellow); }
+    .gate-soul { border-top: 10px solid var(--blue); }
+
+    .gate-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+    .gate-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; display: block; }
+    .gate-desc { font-family: 'Courier New'; font-size: 0.7rem; color: #666; margin-top: 5px; display: block; }
+
+    /* CONTROLS FOOTER [Source 162] */
+    .controls-footer {
+        display: flex;
+        justify-content: space-between;
+        font-family: 'Courier New', monospace;
+        font-size: 0.7rem;
+        color: var(--ink);
+        background: white;
+        padding: 10px;
+        border: 1px solid var(--ink);
+        pointer-events: auto;
+        opacity: 0.8;
+    }
+
+    /* Responsive */
+    @media (max-width: 800px) {
+        .gates-container { flex-direction: column; align-items: center; }
+        .controls-footer { display: none; }
+    }
+
+</style>
+</head>
+<body>
+
+    <!-- 1. JAVASCRIPT: THE UNIVERSAL NAVIGATOR -->
+    <!-- Ideally, this is in 'campus-nav.js', but included here for instant function -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // THE CURRICULUM LINKS
+            const curriculum = [
+                { name: "CAMPUS MAP", link: "index.html", color: "var(--ink)" },
+                { name: "BODY",       link: "dept-body.html",  color: "var(--red)" },    // Physics
+                { name: "MIND",       link: "dept-mind.html",  color: "var(--yellow)" }, // Logic
+                { name: "SOUL",       link: "dept-soul.html",  color: "var(--blue)" },   // Faith
+                { name: "MOSAIC",     link: "mosaic.html",     color: "var(--ink)" },    // Grid View
+                { name: "ADMISSIONS", link: "shop/register",   color: "var(--ink)" }     // Shopify
+            ];
+
+            // BUILD NAV
+            const navContainer = document.createElement("nav");
+            navContainer.id = "university-nav";
+            
+            let navHTML = `<div class="nav-brand">UNI. FREE WILL</div><div class="nav-links">`;
+
+            // Simple logic to highlight "CAMPUS MAP" for this specific file
+            const currentPath = "index.html"; 
+
+            curriculum.forEach(item => {
+                let isActive = (item.link === currentPath);
+                let styleStr = isActive 
+                    ? `background-color: ${item.color}; color: white; border-color: ${item.color};` 
+                    : `border-color: transparent;`;
+
+                navHTML += `
+                    <a href="${item.link}" class="nav-item ${isActive ? 'active' : ''}" style="${styleStr}" 
+                       onmouseover="this.style.borderColor='${item.color}'" 
+                       onmouseout="this.style.borderColor='${isActive ? item.color : 'transparent'}'">
+                       ${item.name}
+                    </a>`;
+            });
+
+            navHTML += `</div>`;
+            navContainer.innerHTML = navHTML;
+            document.body.prepend(navContainer);
+        });
+    </script>
+
+
+    <!-- 2. THE MAIN VIEWPORT [Source 162] -->
+    <div class="viewport-container">
+        
+        <!-- The Background Simulation (Visual Flair) -->
+        <div class="world-simulation">
+            <div class="sim-col" style="background: rgba(255,51,0, 0.1);"></div> <!-- Red Hint -->
+            <div class="sim-col" style="background: rgba(255,204,0, 0.1);"></div> <!-- Yellow Hint -->
+            <div class="sim-col" style="background: rgba(0,51,204, 0.1);"></div> <!-- Blue Hint -->
+        </div>
+
+        <!-- The HUD Overlay -->
+        <div class="hud-layer">
+            
+            <!-- HEADER: Manifesto Quote [Source 130] -->
+            <div class="center-title">
+                <h1>University<br>of Free Will</h1>
+                <div class="subtitle">"You only control your attendance."</div>
+            </div>
+
+            <!-- CENTER: The 3 Gates (Departments) -->
+            <div class="gates-container">
+                
+                <!-- RED: BODY [Source 49] -->
+                <div class="gate-card gate-body" onclick="window.location.href='dept-body.html'">
+                    <span class="gate-icon" style="color:var(--red);">●</span>
+                    <span class="gate-title">Dept. of Body</span>
+                    <span class="gate-desc">PHYSICS // ACTION // RESISTANCE</span>
+                    <div style="margin-top:10px; font-weight:bold; font-size:0.8rem;">ENTER →</div>
+                </div>
+
+                <!-- YELLOW: MIND [Source 53] -->
+                <div class="gate-card gate-mind" onclick="window.location.href='dept-mind.html'">
+                    <span class="gate-icon" style="color:var(--yellow);">■</span>
+                    <span class="gate-title">Dept. of Mind</span>
+                    <span class="gate-desc">LOGIC // SEMANTICS // CONTROL</span>
+                    <div style="margin-top:10px; font-weight:bold; font-size:0.8rem;">ENTER →</div>
+                </div>
+
+                <!-- BLUE: SOUL [Source 122] -->
+                <div class="gate-card gate-soul" onclick="window.location.href='dept-soul.html'">
+                    <span class="gate-icon" style="color:var(--blue);">▲</span>
+                    <span class="gate-title">Dept. of Soul</span>
+                    <span class="gate-desc">FAITH // SILENCE // AWE</span>
+                    <div style="margin-top:10px; font-weight:bold; font-size:0.8rem;">ENTER →</div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER: Navigation Instructions [Source 162] -->
+            <div class="controls-footer">
+                <div>[NAVIGATION CONTROLS]</div>
+                <div>L-CLICK + DRAG: <strong>ROTATE</strong></div>
+                <div>R-CLICK + DRAG: <strong>PAN</strong></div>
+                <div>SCROLL: <strong>ZOOM</strong></div>
+                <div>STATUS: <strong>ONLINE</strong></div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

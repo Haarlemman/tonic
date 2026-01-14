@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Distorter & Text Bot V3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        h1, h2, h3, .tech-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #22d3ee;
+            cursor: pointer;
+            margin-top: -8px; 
+            box-shadow: 0 0 10px #22d3ee;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        .visualizer-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
+            border: 1px solid #334155;
+            background: #020617;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .recording-pulse {
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Tabs */
+        .tab-btn {
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #22d3ee;
+            color: #22d3ee;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-2xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-cyan-400 mb-2 tracking-wider">AUDIO <span class="text-white">LAB V3</span></h1>
+            <p class="text-slate-400 text-sm">Create. Distort. Speak.</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex justify-center gap-8 mb-6 border-b border-slate-700 pb-2">
+            <button onclick="switchTab('mic')" id="tab-mic" class="tab-btn active text-lg font-bold pb-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-microphone mr-2"></i>Microphone
+            </button>
+            <button onclick="switchTab('text')" id="tab-text" class="tab-btn text-lg font-bold pb-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-keyboard mr-2"></i>Text to Speech
+            </button>
+        </div>
+
+        <!-- MICROPHONE MODE -->
+        <div id="panel-mic" class="block">
+            <!-- Visualizer -->
+            <div class="visualizer-container rounded-lg overflow-hidden h-32 mb-6 w-full">
+                <canvas id="visualizer" class="w-full h-full"></canvas>
+            </div>
+
+            <!-- Controls Area -->
+            <div class="space-y-6">
+
+                <!-- Transport Controls -->
+                <div class="flex justify-center gap-6">
+                    <button id="recordBtn" class="btn-glow flex flex-col items-center justify-center w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-700 text-red-500 hover:text-red-400 hover:border-red-500 transition-all duration-300">
+                        <i class="fa-solid fa-microphone text-2xl mb-1"></i>
+                        <span class="text-xs font-bold">REC</span>
+                    </button>
+
+                    <button id="stopBtn" disabled class="btn-glow flex flex-col items-center justify-center w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-700 text-slate-500 opacity-50 cursor-not-allowed transition-all duration-300">
+                        <i class="fa-solid fa-square text-2xl mb-1"></i>
+                        <span class="text-xs font-bold">STOP</span>
+                    </button>
+
+                    <button id="playBtn" disabled class="btn-glow flex flex-col items-center justify-center w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-700 text-cyan-500 opacity-50 cursor-not-allowed hover:text-cyan-400 hover:border-cyan-500 transition-all duration-300">
+                        <i class="fa-solid fa-play text-2xl mb-1"></i>
+                        <span class="text-xs font-bold">PLAY</span>
+                    </button>
+                </div>
+
+                <!-- FX Controls -->
+                <div id="fxControls" class="bg-slate-800/50 rounded-xl p-6 border border-slate-700 opacity-50 pointer-events-none transition-opacity duration-300">
+                    <h3 class="text-cyan-400 text-sm font-bold mb-4 tracking-widest border-b border-slate-700 pb-2">MODULATION MATRIX</h3>
+                    
+                    <!-- Speed / Pitch -->
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-300">PITCH / SPEED</label>
+                            <span id="speedVal" class="text-xs font-mono text-cyan-400">1.0x</span>
+                        </div>
+                        <input type="range" id="speedRange" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>Demon</span>
+                            <span>Normal</span>
+                            <span>Chipmunk</span>
+                        </div>
+                    </div>
+
+                    <!-- Distortion -->
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-300">DISTORTION (CRUNCH)</label>
+                            <span id="distVal" class="text-xs font-mono text-purple-400">0%</span>
+                        </div>
+                        <input type="range" id="distRange" min="0" max="100" step="1" value="0" class="w-full">
+                    </div>
+
+                    <!-- Wobble / Tremolo -->
+                    <div class="mb-2">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-300">ROBOT WOBBLE</label>
+                            <span id="wobbleVal" class="text-xs font-mono text-green-400">0%</span>
+                        </div>
+                        <input type="range" id="wobbleRange" min="0" max="100" step="1" value="0" class="w-full">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col gap-3">
+                     <button id="downloadBtn" disabled class="w-full py-4 rounded-lg bg-slate-800 text-slate-500 font-bold border border-slate-700 transition-all duration-300 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
+                        <i class="fa-solid fa-download"></i> Download Processed Audio
+                    </button>
+                    <div id="status" class="text-center text-xs text-slate-500 h-4">Ready to initialize.</div>
+                </div>
+
+            </div>
+        </div>
+        <!-- END MICROPHONE MODE -->
+
+
+        <!-- TEXT MODE -->
+        <div id="panel-text" class="hidden">
+            <div class="space-y-6">
+                
+                <!-- Text Input -->
+                <div class="relative">
+                    <textarea id="textInput" rows="4" class="w-full bg-slate-800 text-white rounded-xl p-4 border border-slate-700 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 resize-none" placeholder="Type something here and click Speak..."></textarea>
+                    <div class="absolute bottom-3 right-3 text-slate-500 text-xs">
+                        <i class="fa-solid fa-keyboard"></i>
+                    </div>
+                </div>
+
+                <!-- Voice Settings -->
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+                    <h3 class="text-cyan-400 text-sm font-bold mb-4 tracking-widest border-b border-slate-700 pb-2">VOICE SYNTHESIS</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-300 mb-2">SELECT VOICE</label>
+                        <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg p-2.5 focus:ring-cyan-500 focus:border-cyan-500">
+                            <option value="">Default System Voice</option>
+                        </select>
+                    </div>
+
+                    <!-- TTS Pitch -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-300">PITCH</label>
+                            <span id="ttsPitchVal" class="text-xs font-mono text-cyan-400">1.0</span>
+                        </div>
+                        <input type="range" id="ttsPitch" min="0.1" max="2" step="0.1" value="1" class="w-full">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>Deep</span>
+                            <span>Normal</span>
+                            <span>High</span>
+                        </div>
+                    </div>
+
+                    <!-- TTS Rate -->
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-300">SPEED</label>
+                            <span id="ttsRateVal" class="text-xs font-mono text-purple-400">1.0</span>
+                        </div>
+                        <input type="range" id="ttsRate" min="0.1" max="2" step="0.1" value="1" class="w-full">
+                    </div>
+                </div>
+
+                <!-- Speak Button -->
+                <div class="flex flex-col gap-2">
+                    <button id="speakBtn" class="w-full py-4 rounded-lg bg-cyan-600 text-white font-bold border border-cyan-500 hover:bg-cyan-500 shadow-lg shadow-cyan-900/50 transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bullhorn"></i> SPEAK TEXT
+                    </button>
+                    <div id="ttsStatus" class="text-center text-xs text-slate-400 h-4">Ready.</div>
+                </div>
+
+            </div>
+        </div>
+        <!-- END TEXT MODE -->
+
+    </div>
+
+    <!-- Hidden audio element for fallback -->
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <script>
+        // --- TABS LOGIC ---
+        function switchTab(tab) {
+            const micPanel = document.getElementById('panel-mic');
+            const textPanel = document.getElementById('panel-text');
+            const micTabBtn = document.getElementById('tab-mic');
+            const textTabBtn = document.getElementById('tab-text');
+
+            if (tab === 'mic') {
+                micPanel.classList.remove('hidden');
+                textPanel.classList.add('hidden');
+                micTabBtn.classList.add('active');
+                textTabBtn.classList.remove('active');
+                resizeCanvas();
+            } else {
+                micPanel.classList.add('hidden');
+                textPanel.classList.remove('hidden');
+                micTabBtn.classList.remove('active');
+                textTabBtn.classList.add('active');
+                // Force load voices when tab is clicked
+                if(voices.length === 0) populateVoiceList();
+            }
+        }
+
+        // --- MICROPHONE LOGIC (Existing) ---
+        let audioCtx;
+        let analyser;
+        let microphoneStream;
+        let mediaRecorder;
+        let chunks = [];
+        let originalAudioBuffer = null;
+        let sourceNode = null;
+        let isPlaying = false;
+        
+        // Canvas
+        const canvas = document.getElementById('visualizer');
+        const canvasCtx = canvas.getContext('2d');
+        let animationId;
+
+        // UI Elements
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const playBtn = document.getElementById('playBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const fxControls = document.getElementById('fxControls');
+        const statusEl = document.getElementById('status');
+        
+        // Sliders
+        const speedRange = document.getElementById('speedRange');
+        const distRange = document.getElementById('distRange');
+        const wobbleRange = document.getElementById('wobbleRange');
+        const speedVal = document.getElementById('speedVal');
+        const distVal = document.getElementById('distVal');
+        const wobbleVal = document.getElementById('wobbleVal');
+
+        async function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function resizeCanvas() {
+            if(canvas.parentElement) {
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        // Initial resize
+        setTimeout(resizeCanvas, 100);
+
+        function startVisualizer(streamOrNode) {
+            if(!audioCtx) return;
+
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            
+            if (streamOrNode instanceof MediaStream) {
+                const source = audioCtx.createMediaStreamSource(streamOrNode);
+                source.connect(analyser);
+            } else if (streamOrNode instanceof AudioNode) {
+                streamOrNode.connect(analyser);
+            }
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                analyser.getByteTimeDomainData(dataArray);
+
+                canvasCtx.fillStyle = '#020617';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = '#22d3ee';
+                canvasCtx.beginPath();
+
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+
+                    x += sliceWidth;
+                }
+
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+            draw();
+        }
+
+        function stopVisualizer() {
+            if(animationId) cancelAnimationFrame(animationId);
+            if(canvasCtx) {
+                canvasCtx.fillStyle = '#020617';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                canvasCtx.beginPath();
+                canvasCtx.strokeStyle = '#334155';
+                canvasCtx.moveTo(0, canvas.height/2);
+                canvasCtx.lineTo(canvas.width, canvas.height/2);
+                canvasCtx.stroke();
+            }
+        }
+
+        recordBtn.addEventListener('click', async () => {
+            await initAudio();
+            try {
+                microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recordBtn.classList.add('recording-pulse', 'border-red-500', 'text-red-500');
+                recordBtn.disabled = true;
+                stopBtn.disabled = false;
+                stopBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                stopBtn.classList.add('text-slate-200', 'hover:text-white', 'hover:border-slate-400');
+                playBtn.disabled = true;
+                playBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                downloadBtn.classList.remove('bg-cyan-600', 'text-white', 'hover:bg-cyan-500');
+                downloadBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
+                fxControls.classList.add('opacity-50', 'pointer-events-none');
+                statusEl.textContent = "Recording...";
+                startVisualizer(microphoneStream);
+                mediaRecorder = new MediaRecorder(microphoneStream);
+                chunks = [];
+                mediaRecorder.ondataavailable = (e) => { chunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+                    const arrayBuffer = await blob.arrayBuffer();
+                    originalAudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    recordBtn.classList.remove('recording-pulse', 'border-red-500', 'text-red-500');
+                    recordBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    stopBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    stopBtn.classList.remove('text-slate-200', 'hover:text-white');
+                    playBtn.disabled = false;
+                    playBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    playBtn.classList.add('text-cyan-400');
+                    fxControls.classList.remove('opacity-50', 'pointer-events-none');
+                    statusEl.textContent = "Recording saved. Adjust FX and Play.";
+                    stopVisualizer();
+                    microphoneStream.getTracks().forEach(track => track.stop());
+                };
+                mediaRecorder.start();
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+                statusEl.textContent = "Error: Could not access microphone.";
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        });
+
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 50;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                let x = i * 2 / n_samples - 1;
+                curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                if (sourceNode) sourceNode.stop();
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="fa-solid fa-play text-2xl mb-1"></i><span class="text-xs font-bold">PLAY</span>';
+                statusEl.textContent = "Playback stopped.";
+                stopVisualizer();
+                return;
+            }
+            if (!originalAudioBuffer) return;
+            isPlaying = true;
+            playBtn.innerHTML = '<i class="fa-solid fa-stop text-2xl mb-1"></i><span class="text-xs font-bold">STOP</span>';
+            statusEl.textContent = "Playing...";
+            sourceNode = audioCtx.createBufferSource();
+            sourceNode.buffer = originalAudioBuffer;
+            sourceNode.playbackRate.value = parseFloat(speedRange.value);
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.8;
+            const distortion = audioCtx.createWaveShaper();
+            const distAmount = parseInt(distRange.value);
+            distortion.curve = (distAmount > 0) ? makeDistortionCurve(distAmount * 4) : null;
+            const wobbleGain = audioCtx.createGain();
+            const wobbleAmount = parseInt(wobbleRange.value);
+            sourceNode.connect(distortion);
+            if (wobbleAmount > 0) {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = wobbleAmount / 2;
+                const depth = audioCtx.createGain();
+                depth.gain.value = 1.0;
+                osc.connect(depth).connect(wobbleGain.gain);
+                osc.start();
+                distortion.connect(wobbleGain);
+                wobbleGain.connect(masterGain);
+            } else {
+                distortion.connect(masterGain);
+            }
+            masterGain.connect(audioCtx.destination);
+            startVisualizer(masterGain);
+            sourceNode.onended = () => {
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="fa-solid fa-play text-2xl mb-1"></i><span class="text-xs font-bold">PLAY</span>';
+                statusEl.textContent = "Playback finished.";
+                stopVisualizer();
+            };
+            sourceNode.start();
+            downloadBtn.disabled = false;
+            downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
+            downloadBtn.classList.add('bg-cyan-600', 'text-white', 'hover:bg-cyan-500');
+        });
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!originalAudioBuffer) return;
+            statusEl.textContent = "Rendering audio file...";
+            downloadBtn.disabled = true;
+            const duration = originalAudioBuffer.duration / parseFloat(speedRange.value);
+            const offlineCtx = new OfflineAudioContext(originalAudioBuffer.numberOfChannels, duration * 44100, 44100);
+            const source = offlineCtx.createBufferSource();
+            source.buffer = originalAudioBuffer;
+            source.playbackRate.value = parseFloat(speedRange.value);
+            const distortion = offlineCtx.createWaveShaper();
+            const distAmount = parseInt(distRange.value);
+            distortion.curve = (distAmount > 0) ? makeDistortionCurve(distAmount * 4) : null;
+            const wobbleGain = offlineCtx.createGain();
+            const wobbleAmount = parseInt(wobbleRange.value);
+            source.connect(distortion);
+            if (wobbleAmount > 0) {
+                const osc = offlineCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = wobbleAmount / 2;
+                const depth = offlineCtx.createGain();
+                depth.gain.value = 1.0;
+                osc.connect(depth).connect(wobbleGain.gain);
+                osc.start();
+                distortion.connect(wobbleGain);
+                wobbleGain.connect(offlineCtx.destination);
+            } else {
+                distortion.connect(offlineCtx.destination);
+            }
+            source.start();
+            const renderedBuffer = await offlineCtx.startRendering();
+            const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
+            const url = URL.createObjectURL(wavBlob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'distorted_voice.wav';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                downloadBtn.disabled = false;
+                statusEl.textContent = "Download started.";
+            }, 100);
+        });
+
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                buffer = new ArrayBuffer(length),
+                view = new DataView(buffer),
+                channels = [], i, sample,
+                offset = 0,
+                pos = 0;
+            setUint32(0x46464952);
+            setUint32(length - 8);
+            setUint32(0x45564157);
+            setUint32(0x20746d66);
+            setUint32(16);
+            setUint16(1);
+            setUint16(numOfChan);
+            setUint32(abuffer.sampleRate);
+            setUint32(abuffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2);
+            setUint16(16);
+            setUint32(0x61746164);
+            setUint32(length - pos - 4);
+            for(i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+            while(pos < len) {
+                for(i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][pos]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0;
+                    view.setInt16(44 + offset, sample, true);
+                    offset += 2;
+                }
+                pos++;
+            }
+            return new Blob([buffer], {type: "audio/wav"});
+            function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+        }
+
+        speedRange.addEventListener('input', (e) => speedVal.textContent = e.target.value + 'x');
+        distRange.addEventListener('input', (e) => distVal.textContent = e.target.value + '%');
+        wobbleRange.addEventListener('input', (e) => wobbleVal.textContent = e.target.value + '%');
+
+        // --- TTS LOGIC V3 ---
+        
+        const synth = window.speechSynthesis;
+        const voiceSelect = document.getElementById('voiceSelect');
+        const textInput = document.getElementById('textInput');
+        const speakBtn = document.getElementById('speakBtn');
+        const ttsPitch = document.getElementById('ttsPitch');
+        const ttsRate = document.getElementById('ttsRate');
+        const ttsPitchVal = document.getElementById('ttsPitchVal');
+        const ttsRateVal = document.getElementById('ttsRateVal');
+        const ttsStatus = document.getElementById('ttsStatus');
+
+        let voices = [];
+        let activeUtterance = null; // Prevent Garbage Collection
+
+        function populateVoiceList() {
+            voices = synth.getVoices();
+            
+            // If empty, try again in 100ms
+            if(voices.length === 0) {
+                setTimeout(populateVoiceList, 100);
+                return;
+            }
+
+            voiceSelect.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.textContent = "Default System Voice";
+            defaultOption.value = "";
+            voiceSelect.appendChild(defaultOption);
+            
+            voices.forEach((voice) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-name', voice.name);
+                voiceSelect.appendChild(option);
+            });
+            
+            ttsStatus.textContent = `Ready. ${voices.length} voices loaded.`;
+        }
+
+        populateVoiceList();
+
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
+
+        // TTS Sliders
+        ttsPitch.addEventListener('input', (e) => ttsPitchVal.textContent = e.target.value);
+        ttsRate.addEventListener('input', (e) => ttsRateVal.textContent = e.target.value);
+
+        speakBtn.addEventListener('click', () => {
+            // Cancel any current speech to start fresh
+            synth.cancel();
+
+            const text = textInput.value;
+            if (text === '') {
+                ttsStatus.textContent = "Error: Text box is empty.";
+                return;
+            }
+
+            // Create utterance
+            activeUtterance = new SpeechSynthesisUtterance(text);
+            
+            // Find selected voice
+            const selectedName = voiceSelect.selectedOptions[0]?.getAttribute('data-name');
+            if(selectedName && voices.length > 0) {
+                const foundVoice = voices.find(v => v.name === selectedName);
+                if(foundVoice) activeUtterance.voice = foundVoice;
+            }
+
+            activeUtterance.pitch = parseFloat(ttsPitch.value);
+            activeUtterance.rate = parseFloat(ttsRate.value);
+
+            // Events
+            activeUtterance.onstart = () => {
+                speakBtn.classList.add('animate-pulse', 'bg-cyan-500');
+                speakBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> SPEAKING...';
+                ttsStatus.textContent = "Speaking...";
+            };
+
+            activeUtterance.onend = () => {
+                speakBtn.classList.remove('animate-pulse', 'bg-cyan-500');
+                speakBtn.innerHTML = '<i class="fa-solid fa-bullhorn"></i> SPEAK TEXT';
+                ttsStatus.textContent = "Finished.";
+                activeUtterance = null; 
+            };
+            
+            activeUtterance.onerror = (e) => {
+                console.error('Speech error:', e);
+                speakBtn.classList.remove('animate-pulse', 'bg-cyan-500');
+                speakBtn.innerHTML = '<i class="fa-solid fa-bullhorn"></i> SPEAK TEXT';
+                ttsStatus.textContent = "Error: Browser Refused to Speak (Check Permissions)";
+                activeUtterance = null;
+            };
+
+            // Speak
+            try {
+                synth.speak(activeUtterance);
+                
+                // Force-resume just in case Chrome suspended it
+                if (synth.paused) synth.resume();
+            } catch(e) {
+                 ttsStatus.textContent = "Critical Error: TTS not supported.";
+            }
+        });
+        
+        // Initial setup
+        stopVisualizer();
+    </script>
+</body>
+</html>

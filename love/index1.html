@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Battle Audio Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020205; /* Pitch black/blue tint */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px; /* Moved to side (Desktop friendly) */
+            left: auto;
+            transform: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Reduced gap */
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px; /* Reduced padding */
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            width: 280px; /* Fixed, smaller width */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        /* Header for Collapse/Expand */
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 600;
+            user-select: none;
+        }
+        .ui-header:hover {
+            color: white;
+        }
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        /* Collapsible Content Wrapper */
+        #ui-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            max-height: 500px; /* Enough to show content */
+            opacity: 1;
+        }
+
+        /* Collapsed State */
+        #ui-layer.collapsed #ui-content {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+        }
+        #ui-layer.collapsed .toggle-icon {
+            transform: rotate(-180deg);
+        }
+        #ui-layer.collapsed {
+            width: 200px; /* Even smaller when collapsed */
+        }
+        
+        /* Playlist Styles */
+        .playlist-container {
+            width: 100%;
+            max-height: 120px; /* Slightly smaller */
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Custom Scrollbar */
+        .playlist-container::-webkit-scrollbar {
+            width: 4px; /* Thinner */
+        }
+        .playlist-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .playlist-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+        .track-item {
+            padding: 8px 12px; /* Smaller padding */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px; /* Smaller font */
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .track-item:last-child {
+            border-bottom: none;
+        }
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .track-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a78bfa; 
+            font-weight: 500;
+        }
+        .track-icon {
+            opacity: 0.5;
+            width: 10px;
+            height: 10px;
+        }
+        .track-item.active .track-icon {
+            opacity: 1;
+            color: #a78bfa;
+        }
+
+        /* Hide default file input */
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px; /* Smaller button */
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+        }
+        .status {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="ui-layer">
+        <!-- Header / Toggle -->
+        <div class="ui-header" id="uiHeader">
+            <span>PLAYLIST</span>
+            <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="ui-content">
+            <!-- Playlist UI -->
+            <div class="playlist-container" id="playlist">
+                <!-- Tracks will be injected here by JS -->
+            </div>
+
+            <div class="controls">
+                <label class="btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    Upload
+                    <input type="file" id="fileInput" accept="audio/*">
+                </label>
+                
+                <button class="btn" id="playBtn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                    </svg>
+                    Play
+                </button>
+                
+                <button class="btn" id="pauseBtn" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                    </svg>
+                    Pause
+                </button>
+            </div>
+            <div class="status" id="statusText">Select a track to begin</div>
+        </div>
+    </div>
+
+    <!-- Audio Element (Hidden) -->
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // --- Setup Canvas ---
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let centerX, centerY;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- UI Collapse Logic ---
+        const uiLayer = document.getElementById('ui-layer');
+        const uiHeader = document.getElementById('uiHeader');
+        
+        uiHeader.addEventListener('click', () => {
+            uiLayer.classList.toggle('collapsed');
+        });
+
+        // --- Audio Context Setup ---
+        const audioPlayer = document.getElementById('audioPlayer');
+        const fileInput = document.getElementById('fileInput');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const statusText = document.getElementById('statusText');
+        const playlistContainer = document.getElementById('playlist');
+
+        let audioContext, analyser, source;
+        let dataArray;
+        let isPlaying = false;
+
+        // --- Playlist Data ---
+        const playlistData = [
+            { title: "Lovin U - Coco Bryce", src: "songs/LovinU-CocoBryce.mp3" },
+            { title: "Nespole", src: "songs/Nespole.mp3" },
+            { title: "Andrea Parker - Unconnected.mp3", src: "songs/AndreaParker-Unconnected.mp3" },
+            { title: "Spring Is Coming", src: "songs/SpringIsComing.mp3" },
+            { title: "Eutow - Autechre", src: "songs/Eutow.mp3" },
+            { title: "Kalkbrenner & Stromae", src: "songs/KalkbrennerStromae.mp3" },
+            { title: "Evening Breeze", src: "songs/EveningBreeze.mp3" },
+            { title: "MONDO GROSSO ラビリンス", src: "songs/MondoGrosso.mp3" },
+            { title: "The Sound", src: "songs/TheSound.mp3" },
+            { title: "Freestyle - Drum & Bass", src: "songs/Freestyle.mp3" }
+        ];
+
+        // --- Render Playlist ---
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            playlistData.forEach((track, index) => {
+                const div = document.createElement('div');
+                div.className = 'track-item';
+                div.innerHTML = `
+                    <svg class="track-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2z"/>
+                        <path fill-rule="evenodd" d="M14 11V2h1v9h-1zM6 3v10H5V3h1z"/>
+                        <path d="M5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4V2.905z"/>
+                    </svg>
+                    <span>${track.title}</span>
+                `;
+                div.addEventListener('click', () => loadTrack(index));
+                playlistContainer.appendChild(div);
+            });
+        }
+
+        function loadTrack(index) {
+            const track = playlistData[index];
+            
+            // Highlight active
+            document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            playlistContainer.children[index].classList.add('active');
+
+            // Load Audio
+            audioPlayer.src = track.src;
+            statusText.textContent = `Selected: ${track.title}`;
+            statusText.style.color = "#a78bfa";
+            
+            // Enable Play
+            playBtn.disabled = false;
+            
+            // Auto play if context is ready
+            if (audioContext) {
+                playBtn.click();
+            }
+        }
+
+        renderPlaylist();
+
+        // Initialize Audio Context (must be triggered by user)
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; 
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        // --- File Handling (Local Override) ---
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const objectUrl = URL.createObjectURL(file);
+                audioPlayer.src = objectUrl;
+                playBtn.disabled = false;
+                statusText.textContent = `Ready: ${file.name}`;
+                statusText.style.color = "#a78bfa"; 
+                
+                // Clear playlist selection
+                document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            initAudio();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // Attempt to play
+            const playPromise = audioPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    playBtn.style.display = 'none';
+                    pauseBtn.style.display = 'flex';
+                    statusText.textContent = "Flowing...";
+                    isPlaying = true;
+                })
+                .catch(error => {
+                    console.log("Playback failed:", error);
+                    statusText.textContent = "Error: Check file path or upload MP3";
+                    statusText.style.color = "#ef4444";
+                });
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            statusText.textContent = "Paused";
+            isPlaying = false;
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            statusText.textContent = "Finished";
+            isPlaying = false;
+        });
+
+        // --- Wandering Targets ---
+        const targets = {
+            blue: { x: 0, y: 0 },
+            red: { x: 0, y: 0 }
+        };
+
+        function updateTargets() {
+            const time = Date.now() * 0.0003; // Even slower movement
+            
+            // Complex lissajous-like figures for centers
+            targets.blue.x = (width * 0.35) + Math.cos(time * 0.7) * (width * 0.20) + Math.sin(time * 0.2) * (width * 0.1);
+            targets.blue.y = (height * 0.5) + Math.sin(time * 0.5) * (height * 0.25) + Math.cos(time * 1.1) * (height * 0.05);
+
+            targets.red.x = (width * 0.65) + Math.cos(time * 0.6 + 2) * (width * 0.20) + Math.sin(time * 0.3) * (width * 0.1);
+            targets.red.y = (height * 0.5) + Math.sin(time * 0.4 + 1) * (height * 0.25) + Math.cos(time * 0.9) * (height * 0.05);
+        }
+
+        // --- Particle System ---
+
+        class Particle {
+            constructor(type, index) {
+                this.type = type; 
+                this.index = index; // Unique index for generating noise
+                this.seed = Math.random() * 1000;
+                this.init(true);
+            }
+
+            init(startRandom = false) {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                
+                if (this.type === 'blue') {
+                    // Deep Blue Cloud
+                    this.baseSize = 40 + Math.random() * 50; 
+                    this.mass = 2.0; 
+                    this.drag = 0.94; // Higher drag = more lazy drift
+                    this.color = `rgba(${10 + Math.random()*20}, ${20 + Math.random()*30}, ${180 + Math.random()*55}, 0.03)`; 
+                } else if (this.type === 'red') {
+                    // Bright Red Cloud
+                    this.baseSize = 30 + Math.random() * 40; 
+                    this.mass = 1.5; 
+                    this.drag = 0.93; 
+                    this.color = `rgba(${200 + Math.random()*55}, ${20 + Math.random()*40}, ${40 + Math.random()*40}, 0.03)`;
+                } else {
+                    // Background Dust
+                    this.baseSize = Math.random() * 2 + 0.5;
+                    this.mass = 1;
+                    this.drag = 0.99;
+                    this.vx = Math.random() * 0.4 + 0.1;
+                    this.color = `rgba(255, 220, 100, ${Math.random() * 0.3 + 0.1})`;
+                }
+                
+                this.size = this.baseSize;
+            }
+
+            update(bassEnergy, trebleEnergy) {
+                if (this.type === 'dust') {
+                    this.x += this.vx;
+                    this.y += Math.sin(this.x * 0.01) * 0.2; 
+                    if (this.x > width) this.x = 0;
+                    return;
+                }
+
+                // --- COMPLEX GAS CLOUD PHYSICS ---
+
+                let targetCenterX, targetCenterY;
+                if (this.type === 'blue') {
+                    targetCenterX = targets.blue.x;
+                    targetCenterY = targets.blue.y;
+                } else {
+                    targetCenterX = targets.red.x;
+                    targetCenterY = targets.red.y;
+                }
+
+                // 1. DETERMINE LOCAL "HOME" WITHIN THE CLOUD
+                // Instead of everyone going to center, everyone has a unique 
+                // offset based on sine waves + time. This creates "arms" or "wisps".
+                const time = Date.now() * 0.001;
+                
+                // Spread factor: How big is the cloud?
+                // Bass expands the blue cloud, Treble expands the red cloud
+                let spread = 150; 
+                if (this.type === 'blue') spread += bassEnergy * 0.8;
+                if (this.type === 'red') spread += trebleEnergy * 0.6;
+
+                // Create organic noise using sine wave superposition
+                const noiseX = Math.sin(this.seed + time * 0.5) + Math.cos(this.index * 0.1 + time * 0.2);
+                const noiseY = Math.cos(this.seed * 0.9 + time * 0.3) + Math.sin(this.index * 0.15 - time * 0.4);
+
+                const homeX = targetCenterX + noiseX * spread * 0.8;
+                const homeY = targetCenterY + noiseY * spread * 0.8;
+                
+                const dx = homeX - this.x;
+                const dy = homeY - this.y;
+
+                let ax = 0;
+                let ay = 0;
+
+                // 2. LOOSE COHESION (Lazy pull towards their specific home point)
+                const cohesionStrength = 0.0008; 
+                ax += dx * cohesionStrength; 
+                ay += dy * cohesionStrength;
+
+                // 3. TURBULENCE / BROWNIAN MOTION (Internal gas movement)
+                const turbulence = 0.05;
+                ax += (Math.random() - 0.5) * turbulence;
+                ay += (Math.random() - 0.5) * turbulence;
+
+                // 4. MUSIC REACTION (Energy Injection)
+                if (this.type === 'blue' && bassEnergy > 30) {
+                    // Swirl/Churn
+                    const heat = (bassEnergy / 255) * 0.2;
+                    ax += (Math.random() - 0.5) * heat;
+                    ay += (Math.random() - 0.5) * heat;
+                } else if (this.type === 'red' && trebleEnergy > 30) {
+                    // Shimmer
+                    const spark = (trebleEnergy / 255) * 0.3;
+                    ax += (Math.random() - 0.5) * spark;
+                    ay += (Math.random() - 0.5) * spark;
+                }
+                
+                // Size reaction
+                if (this.type === 'blue') {
+                    let targetSize = this.baseSize + (bassEnergy * 0.3);
+                    this.size += (targetSize - this.size) * 0.1;
+                } else {
+                    this.size = this.baseSize + (trebleEnergy * 0.15);
+                }
+
+                // Apply Physics
+                this.vx += ax / this.mass;
+                this.vy += ay / this.mass;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= this.drag;
+                this.vy *= this.drag;
+                
+                // Safety wrap
+                if(this.x < -200) this.x = width + 200;
+                if(this.x > width + 200) this.x = -200;
+                if(this.y < -200) this.y = height + 200;
+                if(this.y > height + 200) this.y = -200;
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // --- Initialization ---
+        const particles = [];
+        const PARTICLE_COUNT_BLUE = 350; 
+        const PARTICLE_COUNT_RED = 400;
+        const PARTICLE_COUNT_DUST = 100;
+
+        function initParticles() {
+            particles.length = 0;
+            for (let i = 0; i < PARTICLE_COUNT_BLUE; i++) particles.push(new Particle('blue', i));
+            for (let i = 0; i < PARTICLE_COUNT_RED; i++) particles.push(new Particle('red', i));
+            for (let i = 0; i < PARTICLE_COUNT_DUST; i++) particles.push(new Particle('dust', i));
+        }
+
+        initParticles();
+
+        // --- Animation Loop ---
+        function animate() {
+            updateTargets();
+
+            ctx.fillStyle = '#020205'; 
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.globalCompositeOperation = 'lighter';
+
+            let bassAvg = 0;
+            let trebleAvg = 0;
+
+            if (isPlaying && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                let bassSum = 0;
+                let bassCount = 10; 
+                for (let i = 0; i < bassCount; i++) bassSum += dataArray[i];
+                bassAvg = bassSum / bassCount;
+
+                let trebleSum = 0;
+                let trebleCount = 0;
+                for (let i = 100; i < 200; i++) {
+                     trebleSum += dataArray[i];
+                     trebleCount++;
+                }
+                trebleAvg = trebleSum / trebleCount;
+                
+                bassAvg = bassAvg * 1.3; 
+                trebleAvg = trebleAvg * 1.5;
+            }
+
+            particles.forEach(p => {
+                p.update(bassAvg, trebleAvg);
+                p.draw(ctx);
+            });
+
+            ctx.globalCompositeOperation = 'source-over'; 
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>

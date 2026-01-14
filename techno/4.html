@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>D-4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: #0a0a0a;
+            color: #ccc;
+            overflow: hidden; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- Slider Styling --- */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+            cursor: pointer;
+            height: 24px;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #1f2937;
+            border-radius: 2px;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 8px;
+            background: #9ca3af;
+            margin-top: -5px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            border-radius: 1px;
+            border: 1px solid #000;
+        }
+
+        .accent-orange::-webkit-slider-thumb { background: #f97316; border-color: #7c2d12; }
+        .accent-yellow::-webkit-slider-thumb { background: #eab308; border-color: #713f12; }
+        .accent-purple::-webkit-slider-thumb { background: #a855f7; border-color: #581c87; }
+
+        /* UI Elements */
+        .panel {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(55, 65, 81, 0.5);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Recording Pulse */
+        @keyframes recordPulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .recording {
+            animation: recordPulse 1.5s infinite;
+            background-color: #ef4444 !important;
+            color: white !important;
+            border-color: #ef4444 !important;
+        }
+
+        /* Scanlines */
+        .scanlines {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            position: fixed; inset: 0; pointer-events: none; z-index: 5;
+        }
+
+        /* Scrollbar hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Keys */
+        .synth-key:active, .synth-key.key-active {
+            background-color: #eab308; color: #000; border-bottom-width: 0; transform: translateY(2px);
+        }
+    </style>
+</head>
+<body class="h-[100dvh] w-full flex flex-col items-center bg-neutral-900 overflow-hidden">
+
+    <div class="scanlines"></div>
+
+    <div id="main-interface" class="w-full h-full md:max-w-4xl bg-black/90 md:border-x border-gray-800 shadow-2xl overflow-hidden relative z-10 flex flex-col">
+        
+        <!-- Header -->
+        <div class="p-3 border-b border-gray-800 flex justify-between items-center shrink-0 bg-gray-900/80 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
+                <h1 class="text-xl font-bold tracking-widest text-gray-200 uppercase" style="font-weight: 900;">D-4</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="rec-btn" class="flex items-center gap-1 px-3 py-1 rounded border border-gray-700 text-[10px] text-gray-400 hover:text-white transition-all min-w-[80px] justify-center">
+                    <div class="w-2 h-2 rounded-full bg-current"></div> REC
+                </button>
+                <div class="flex items-center gap-1 bg-black/50 p-1 rounded border border-gray-800">
+                    <button id="bpm-minus" class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-sm font-bold">-</button>
+                    <span id="tempo-display" class="text-sm font-bold w-8 text-center text-orange-400">128</span>
+                    <button id="bpm-plus" class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-sm font-bold">+</button>
+                </div>
+                <button id="play-btn" class="w-10 h-10 rounded-full border border-green-500/50 text-green-500 hover:bg-green-900/20 flex items-center justify-center transition-all bg-gray-900">
+                    <svg id="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="stop-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect x="6" y="6" width="12" height="12"/></svg>
+                </button>
+                <button id="fullscreen-btn" class="text-gray-500 hover:text-white p-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+            </div>
+        </div>
+
+        <!-- Scrollable Rack -->
+        <div class="overflow-y-auto overflow-x-hidden flex-1 p-2 md:p-4 space-y-1 pb-24">
+            
+            <!-- 1. TB-303 -->
+            <div class="panel">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">TB-303 Bass</h2>
+                    <div class="flex gap-2">
+                        <button id="wave-btn" class="px-2 py-0.5 text-[9px] border border-gray-700 rounded text-gray-400 uppercase">Saw</button>
+                        <button id="mutate-btn" class="px-2 py-0.5 text-[9px] border border-orange-900 text-orange-500 rounded uppercase">Random</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-3 px-1">
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Cutoff</label><input id="cutoff-slider" type="range" min="50" max="1500" value="400" class="accent-orange"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Res</label><input id="res-slider" type="range" min="0" max="30" value="15" class="accent-orange"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Env</label><input id="env-slider" type="range" min="0" max="4000" value="2500" class="accent-orange"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Decay</label><input id="decay-slider" type="range" min="0.1" max="0.8" step="0.05" value="0.2" class="accent-orange"></div>
+                </div>
+            </div>
+
+            <!-- 2. Sequencer -->
+            <div class="panel">
+                <div class="w-full overflow-x-auto no-scrollbar">
+                    <div class="min-w-[500px] space-y-1" id="sequencer-grid"></div>
+                </div>
+                <div class="mt-2 flex gap-4 text-[9px]">
+                    <button id="clear-btn" class="text-gray-600 hover:text-red-400 uppercase">Clear</button>
+                    <button id="random-grid-btn" class="text-gray-600 hover:text-blue-400 uppercase">Randomize</button>
+                </div>
+            </div>
+
+            <!-- 3. Model-D Synth -->
+            <div class="panel border-yellow-900/30 bg-yellow-900/5">
+                <div class="flex justify-between items-end mb-2">
+                    <h2 class="text-xs font-bold text-yellow-500 uppercase flex items-center gap-2">Model-D Synth</h2>
+                    <div class="flex gap-1" id="scale-selector"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-3 px-1">
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-yellow-600 uppercase">Filter</label><input id="moog-cutoff" type="range" min="100" max="5000" value="1500" class="accent-yellow"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-yellow-600 uppercase">Detune</label><input id="moog-detune" type="range" min="0" max="50" value="15" class="accent-yellow"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-yellow-600 uppercase">Glide</label><input id="moog-glide" type="range" min="0" max="0.5" step="0.01" value="0.05" class="accent-yellow"></div>
+                </div>
+                <div class="flex gap-1 h-14" id="keyboard-container"></div>
+            </div>
+
+            <!-- 4. Chaos Pad & Visualizer -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="panel flex flex-col h-32 p-0 relative overflow-hidden bg-gray-900 cursor-crosshair touch-none" id="chaos-pad">
+                    <!-- Visualizer Canvas -->
+                    <canvas id="scope-canvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-40"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                        <div class="w-px h-full bg-gray-600"></div><div class="h-px w-full bg-gray-600 absolute"></div>
+                    </div>
+                    <span class="absolute top-1 left-2 text-[9px] text-gray-500 font-bold uppercase pointer-events-none">Chaos Scope</span>
+                </div>
+                <div class="panel flex flex-col justify-between">
+                    <div class="flex justify-between items-center">
+                         <span class="text-[9px] text-purple-400 font-bold uppercase">Drone</span>
+                         <button id="drone-btn" class="w-4 h-4 rounded-full border border-purple-500"></button>
+                    </div>
+                    <div class="flex flex-col gap-2 mt-2">
+                        <div class="flex flex-col gap-0.5"><label class="text-[8px] text-purple-600 uppercase">Pitch</label><input id="drone-pitch" type="range" min="0.5" max="2.0" step="0.01" value="1.0" class="accent-purple h-2"></div>
+                        <div class="flex flex-col gap-0.5"><label class="text-[8px] text-purple-600 uppercase">Vol</label><input id="drone-vol" type="range" min="0" max="1" step="0.01" value="0.4" class="accent-purple h-2"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        const STEPS = 16;
+        const TRACKS = [
+            { name: "BD 808", color: "#ff5555" }, { name: "SD 808", color: "#ffaa55" },
+            { name: "CH 808", color: "#ffff55" }, { name: "BD 909", color: "#55ff55" },
+            { name: "OH 909", color: "#55aaff" }, { name: "ACID", color: "#ff55ff" }
+        ];
+        
+        const SCALES = {
+            "C Min": [65.41, 77.78, 87.31, 98.00, 116.54, 130.81, 155.56, 174.61],
+            "E Min": [82.41, 98.00, 110.00, 123.47, 146.83, 164.81, 196.00, 220.00],
+            "F Maj": [87.31, 98.00, 110.00, 130.81, 146.83, 174.61, 196.00, 220.00],
+            "A Min": [110.00, 130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66]
+        };
+        const NOTES = ["1", "2", "3", "4", "5", "6", "7", "8"];
+        let currentScale = "C Min";
+
+        class AudioEngine {
+            constructor() {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.8;
+                this.comp = this.ctx.createDynamicsCompressor();
+                this.comp.threshold.value = -20;
+                this.masterGain.connect(this.comp);
+                
+                // Analyzer for Scope
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 2048;
+                this.comp.connect(this.analyser);
+                this.comp.connect(this.ctx.destination);
+                
+                // Recorder Destination
+                this.dest = this.ctx.createMediaStreamDestination();
+                this.comp.connect(this.dest);
+
+                this.mediaRecorder = null;
+                this.chunks = [];
+                this.isRecording = false;
+                this.recordingStartTime = 0;
+                this.timerInterval = null;
+
+                this.minimoog = new Minimoog(this.ctx, this.masterGain);
+                this.drone = new Drone(this.ctx, this.masterGain);
+                this.theremin = new Theremin(this.ctx, this.masterGain);
+
+                this.tempo = 128;
+                this.params303 = { cutoff: 400, res: 15, env: 2500, decay: 0.2, wave: 'sawtooth' };
+                this.seq303 = this.gen303();
+            }
+
+            gen303() {
+                const scale = SCALES[currentScale].slice(0,6);
+                return Array.from({length:16}, ()=>({
+                    freq: scale[Math.floor(Math.random()*scale.length)],
+                    accent: Math.random()>0.7, slide: Math.random()>0.7
+                }));
+            }
+
+            async startRecorder(canvasStream) {
+                this.chunks = [];
+                
+                // 1. Resume Audio Context
+                if (this.ctx.state === 'suspended') {
+                    await this.ctx.resume();
+                }
+
+                // 2. Setup Stream
+                let finalStream = this.dest.stream;
+                
+                // Safety: Ensure canvas has a track
+                if (canvasStream && canvasStream.getVideoTracks().length > 0) {
+                    const audioTracks = this.dest.stream.getAudioTracks();
+                    const videoTracks = canvasStream.getVideoTracks();
+                    finalStream = new MediaStream([...audioTracks, ...videoTracks]);
+                } else {
+                    console.warn("Canvas stream empty, recording audio only");
+                }
+
+                // 3. Simple Browser Default - Most reliable
+                try {
+                    this.mediaRecorder = new MediaRecorder(finalStream);
+                } catch (e) {
+                    console.error("MediaRecorder failed:", e);
+                    alert("Your browser does not support recording in this context.");
+                    return;
+                }
+
+                this.mediaRecorder.ondataavailable = e => { 
+                    if(e.data && e.data.size > 0) {
+                        this.chunks.push(e.data); 
+                    }
+                };
+                
+                this.mediaRecorder.onstop = () => {
+                    this.clearInterval();
+                    
+                    const duration = Date.now() - this.recordingStartTime;
+                    if (this.chunks.length === 0) {
+                        alert("Recording failed: No data was captured. Try Chrome or Safari.");
+                        return;
+                    }
+                    
+                    const blob = new Blob(this.chunks, { type: this.mediaRecorder.mimeType || 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Guess extension
+                    let ext = 'webm';
+                    if (blob.type.includes('mp4')) ext = 'mp4';
+                    
+                    a.download = `d4_jam_${Date.now()}.${ext}`;
+                    a.click();
+                };
+                
+                // 4. Start with Timeslice (Critical for Chrome Android)
+                this.mediaRecorder.start(100); 
+                this.isRecording = true;
+                this.recordingStartTime = Date.now();
+                this.startTimer();
+            }
+
+            stopRecorder() {
+                if(this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    this.mediaRecorder.stop();
+                    this.isRecording = false;
+                }
+            }
+            
+            startTimer() {
+                const btn = document.getElementById('rec-btn');
+                this.recordingStartTime = Date.now();
+                this.timerInterval = setInterval(() => {
+                    const diff = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    const m = Math.floor(diff / 60).toString().padStart(2,'0');
+                    const s = (diff % 60).toString().padStart(2,'0');
+                    btn.innerHTML = `<div class="w-2 h-2 rounded-full bg-white animate-pulse"></div> ${m}:${s}`;
+                }, 1000);
+            }
+            
+            clearInterval() {
+                if(this.timerInterval) clearInterval(this.timerInterval);
+                document.getElementById('rec-btn').innerHTML = '<div class="w-2 h-2 rounded-full bg-current"></div> REC VIDEO';
+            }
+
+            // ... Instruments ...
+            playDrum(type, time) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.masterGain);
+                if (type === 0) {
+                    osc.frequency.setValueAtTime(150, time);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, time+0.5);
+                    gain.gain.setValueAtTime(1, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time+0.5);
+                    osc.start(time); osc.stop(time+0.5);
+                } else if (type === 1) {
+                    osc.type='triangle'; osc.frequency.setValueAtTime(250, time);
+                    gain.gain.setValueAtTime(0.6, time); gain.gain.exponentialRampToValueAtTime(0.01, time+0.1);
+                    osc.start(time); osc.stop(time+0.1);
+                    this.playNoise(time, 0.2, 1000);
+                } else if (type === 2) { this.playNoise(time, 0.05, 7000, 0.2);
+                } else if (type === 3) {
+                    osc.frequency.setValueAtTime(150, time);
+                    osc.frequency.exponentialRampToValueAtTime(50, time+0.1);
+                    gain.gain.setValueAtTime(0.8, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time+0.3);
+                    osc.start(time); osc.stop(time+0.3);
+                } else if (type === 4) { this.playNoise(time, 0.4, 7000, 0.25); }
+            }
+            playNoise(time, dur, freq, vol=0.3) {
+                const bSize = this.ctx.sampleRate * dur;
+                const buff = this.ctx.createBuffer(1, bSize, this.ctx.sampleRate);
+                const d = buff.getChannelData(0);
+                for(let i=0;i<bSize;i++) d[i]=Math.random()*2-1;
+                const src = this.ctx.createBufferSource(); src.buffer = buff;
+                const f = this.ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=freq;
+                const g = this.ctx.createGain();
+                src.connect(f); f.connect(g); g.connect(this.masterGain);
+                g.gain.setValueAtTime(vol, time); g.gain.exponentialRampToValueAtTime(0.01, time+dur);
+                src.start(time);
+            }
+            play303(time, step) {
+                const n = this.seq303[step];
+                const osc = this.ctx.createOscillator();
+                const f = this.ctx.createBiquadFilter();
+                const g = this.ctx.createGain();
+                osc.type = this.params303.wave; osc.frequency.value = n.freq;
+                f.type = 'lowpass'; f.Q.value = this.params303.res;
+                const cut = this.params303.cutoff; const mod = this.params303.env * (n.accent?1.5:1);
+                f.frequency.setValueAtTime(cut, time);
+                f.frequency.linearRampToValueAtTime(cut+mod, time+0.005);
+                f.frequency.exponentialRampToValueAtTime(cut, time+this.params303.decay);
+                g.gain.setValueAtTime(0, time);
+                g.gain.linearRampToValueAtTime(0.7*(n.accent?1.2:1), time+0.005);
+                g.gain.exponentialRampToValueAtTime(0.01, time+this.params303.decay);
+                osc.connect(f); f.connect(g); g.connect(this.masterGain);
+                osc.start(time); osc.stop(time+this.params303.decay+0.1);
+            }
+        }
+
+        class Minimoog {
+            constructor(ctx, dest) { this.ctx = ctx; this.dest = dest; this.params = { cutoff: 1500, detune: 15, glide: 0.05 }; this.lastFreq = 0; }
+            trigger(freq) {
+                if(this.ctx.state==='suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const oscs = [0, 1, -1].map(offset => {
+                    const o = this.ctx.createOscillator(); o.type = offset===0 ? 'sawtooth' : 'square';
+                    o.detune.value = offset * this.params.detune;
+                    if(this.lastFreq > 0) { o.frequency.setValueAtTime(this.lastFreq, now); o.frequency.linearRampToValueAtTime(freq, now + this.params.glide); } 
+                    else { o.frequency.value = freq; }
+                    return o;
+                });
+                const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 6;
+                f.frequency.setValueAtTime(this.params.cutoff, now); f.frequency.linearRampToValueAtTime(this.params.cutoff/2, now+0.2); 
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0, now);
+                g.gain.linearRampToValueAtTime(0.3, now+0.02); g.gain.exponentialRampToValueAtTime(0.01, now+1.0);
+                oscs.forEach(o => { o.connect(f); o.start(now); o.stop(now+1.0); });
+                f.connect(g); g.connect(this.dest); this.lastFreq = freq;
+            }
+        }
+
+        class Drone {
+            constructor(ctx, dest) { this.ctx=ctx; this.dest=dest; this.gain=ctx.createGain(); this.gain.gain.value=0; this.gain.connect(dest); this.oscs=[]; this.isOn=false; }
+            toggle() {
+                this.isOn = !this.isOn;
+                if(this.isOn) {
+                    const freqs = [65.41, 98.00, 130.81];
+                    this.oscs = freqs.map((f,i) => { const o=this.ctx.createOscillator(); o.type=i%2==0?'sawtooth':'triangle'; o.frequency.value=f; o.connect(this.gain); o.start(); return o; });
+                    this.gain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime+1);
+                } else {
+                    this.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime+0.5); setTimeout(() => { this.oscs.forEach(o=>o.stop()); this.oscs=[]; }, 500);
+                }
+                return this.isOn;
+            }
+            update(pitch, vol) {
+                if(this.oscs.length) { const bases = [65.41, 98.00, 130.81]; this.oscs.forEach((o,i) => o.frequency.setTargetAtTime(bases[i]*pitch, this.ctx.currentTime, 0.1)); }
+                if(this.isOn) this.gain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
+            }
+        }
+
+        class Theremin {
+            constructor(ctx, dest) { this.ctx=ctx; this.dest=dest; this.osc=null; this.g=null; this.f=null; }
+            update(x,y,active) {
+                if(active) {
+                    if(!this.osc) {
+                        this.osc=this.ctx.createOscillator(); this.osc.type='sine';
+                        this.f=this.ctx.createBiquadFilter(); this.f.Q.value=10;
+                        this.g=this.ctx.createGain(); this.g.gain.value=0;
+                        this.osc.connect(this.f); this.f.connect(this.g); this.g.connect(this.dest);
+                        this.osc.start();
+                    }
+                    this.osc.frequency.setTargetAtTime(100 + x*x*1900, this.ctx.currentTime, 0.05);
+                    this.f.frequency.setTargetAtTime(200 + y*4800, this.ctx.currentTime, 0.05);
+                    this.g.gain.setTargetAtTime(0.5, this.ctx.currentTime, 0.1);
+                } else {
+                    if(this.g) { this.g.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1); setTimeout(()=>{ if(this.osc){this.osc.stop(); this.osc=null;} }, 200); }
+                }
+            }
+        }
+
+        // --- Logic & UI ---
+
+        let engine = null;
+        let isPlaying = false;
+        let currentStep = 0;
+        let nextNoteTime = 0.0;
+        let grid = [
+            [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+            [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+            [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+            [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0],
+            [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0],
+            [1,1,0,1, 1,0,1,0, 1,1,0,1, 1,0,1,0]
+        ];
+
+        function schedule() {
+            while (nextNoteTime < engine.ctx.currentTime + 0.1) {
+                if(grid[0][currentStep]) engine.playDrum(0, nextNoteTime);
+                if(grid[1][currentStep]) engine.playDrum(1, nextNoteTime);
+                if(grid[2][currentStep]) engine.playDrum(2, nextNoteTime);
+                if(grid[3][currentStep]) engine.playDrum(3, nextNoteTime);
+                if(grid[4][currentStep]) engine.playDrum(4, nextNoteTime);
+                if(grid[5][currentStep]) engine.play303(nextNoteTime, currentStep);
+                
+                const s = currentStep;
+                requestAnimationFrame(() => {
+                    document.querySelectorAll('.step-col').forEach((el,i) => {
+                        el.style.backgroundColor = i===s ? '#374151' : 'transparent';
+                    });
+                });
+                const secondsPerBeat = 60.0 / engine.tempo;
+                nextNoteTime += 0.25 * secondsPerBeat;
+                currentStep = (currentStep + 1) % STEPS;
+            }
+            if(isPlaying) requestAnimationFrame(schedule);
+        }
+
+        // Visualizer Loop
+        function drawScope() {
+            if(engine) {
+                const canvas = document.getElementById('scope-canvas');
+                const c = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+                const bufferLength = engine.analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                engine.analyser.getByteTimeDomainData(dataArray);
+                
+                c.clearRect(0,0,w,h);
+                c.lineWidth = 2;
+                c.strokeStyle = '#3b82f6'; // Blue
+                c.beginPath();
+                const sliceWidth = w * 1.0 / bufferLength;
+                let x = 0;
+                for(let i=0; i<bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * h/2;
+                    if(i===0) c.moveTo(x,y); else c.lineTo(x,y);
+                    x += sliceWidth;
+                }
+                c.lineTo(canvas.width, canvas.height/2);
+                c.stroke();
+            }
+            requestAnimationFrame(drawScope);
+        }
+
+        function init() {
+            const c = document.getElementById('sequencer-grid');
+            c.innerHTML = '';
+            const bg = document.createElement('div');
+            bg.className = "absolute inset-0 flex pointer-events-none";
+            for(let i=0;i<16;i++) {
+                const col = document.createElement('div');
+                col.className = "step-col flex-1 border-r border-gray-800/30";
+                bg.appendChild(col);
+            }
+            c.appendChild(bg);
+            c.style.position = 'relative';
+
+            TRACKS.forEach((t, r) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-1 mb-1 h-8 relative z-10';
+                row.innerHTML = `<div class="w-16 text-[9px] font-bold uppercase text-gray-500 flex items-center gap-2">${t.name} <div class="w-1 h-3" style="background:${t.color}"></div></div>`;
+                const steps = document.createElement('div');
+                steps.className = 'flex-1 flex gap-0.5 h-full';
+                grid[r].forEach((on, c) => {
+                    const btn = document.createElement('button');
+                    btn.className = `flex-1 rounded-sm border border-gray-800 transition-colors ${c%4===3?'mr-0.5':''}`;
+                    if(on) { btn.style.background=t.color; btn.style.boxShadow=`0 0 5px ${t.color}`; }
+                    btn.onclick = () => {
+                        grid[r][c] = !grid[r][c];
+                        btn.style.background = grid[r][c] ? t.color : 'transparent';
+                        btn.style.boxShadow = grid[r][c] ? `0 0 5px ${t.color}` : 'none';
+                    };
+                    steps.appendChild(btn);
+                });
+                row.appendChild(steps);
+                c.appendChild(row);
+            });
+            renderKeys();
+            renderScales();
+            
+            // Set canvas size
+            const canv = document.getElementById('scope-canvas');
+            canv.width = canv.offsetWidth;
+            canv.height = canv.offsetHeight;
+        }
+
+        function renderKeys() {
+            const kc = document.getElementById('keyboard-container');
+            kc.innerHTML = '';
+            SCALES[currentScale].forEach((freq, i) => {
+                const btn = document.createElement('button');
+                btn.className = "synth-key flex-1 bg-gray-800 border border-gray-900 rounded-b text-[9px] font-bold text-gray-500 flex items-end justify-center pb-1 transition-transform border-b-4 border-b-black";
+                btn.innerText = NOTES[i];
+                const play = (e) => {
+                    e.preventDefault();
+                    if(!engine) startEngine();
+                    btn.classList.add('key-active');
+                    engine.minimoog.trigger(freq);
+                };
+                const stop = (e) => { e.preventDefault(); btn.classList.remove('key-active'); };
+                ['mousedown','touchstart'].forEach(ev=>btn.addEventListener(ev, play));
+                ['mouseup','mouseleave','touchend'].forEach(ev=>btn.addEventListener(ev, stop));
+                kc.appendChild(btn);
+            });
+        }
+
+        function renderScales() {
+            const sc = document.getElementById('scale-selector');
+            sc.innerHTML = '';
+            Object.keys(SCALES).forEach(s => {
+                const b = document.createElement('button');
+                b.className = `px-1.5 py-0.5 text-[8px] border rounded uppercase ${s===currentScale ? 'border-yellow-500 text-yellow-500' : 'border-gray-700 text-gray-500'}`;
+                b.innerText = s;
+                b.onclick = () => { currentScale = s; renderScales(); renderKeys(); engine.seq303 = engine.gen303(); };
+                sc.appendChild(b);
+            });
+        }
+
+        function startEngine() {
+            if(!engine) {
+                engine = new AudioEngine();
+                const link = (id, obj, param) => document.getElementById(id).addEventListener('input', e=>obj[param]=Number(e.target.value));
+                link('cutoff-slider', engine.params303, 'cutoff');
+                link('res-slider', engine.params303, 'res');
+                link('env-slider', engine.params303, 'env');
+                link('decay-slider', engine.params303, 'decay');
+                const linkMoog = (id, param) => document.getElementById(id).addEventListener('input', e=>engine.minimoog.params[param]=Number(e.target.value));
+                linkMoog('moog-cutoff', 'cutoff'); linkMoog('moog-detune', 'detune'); linkMoog('moog-glide', 'glide');
+                document.getElementById('drone-pitch').addEventListener('input', e=>engine.drone.update(Number(e.target.value), engine.drone.gain.gain.value));
+                document.getElementById('drone-vol').addEventListener('input', e=>engine.drone.update(1, Number(e.target.value)));
+                
+                // Start Visualizer Loop
+                drawScope();
+            }
+            if(engine.ctx.state === 'suspended') engine.ctx.resume();
+        }
+
+        document.getElementById('play-btn').addEventListener('click', () => {
+            startEngine();
+            isPlaying = !isPlaying;
+            document.getElementById('play-icon').classList.toggle('hidden');
+            document.getElementById('stop-icon').classList.toggle('hidden');
+            if(isPlaying) {
+                nextNoteTime = engine.ctx.currentTime + 0.1;
+                schedule();
+            }
+        });
+
+        const recBtn = document.getElementById('rec-btn');
+        recBtn.addEventListener('click', async () => {
+            if(recBtn.classList.contains('recording')) {
+                // STOP
+                engine.stopRecorder();
+                recBtn.classList.remove('recording');
+                engine.clearInterval();
+            } else {
+                // START
+                await startEngine();
+                // Ensure audio running
+                if (engine.ctx.state === 'suspended') await engine.ctx.resume();
+                
+                const canvas = document.getElementById('scope-canvas');
+                // Force a frame update
+                drawScope(); 
+                const stream = canvas.captureStream(30);
+                
+                recBtn.classList.add('recording');
+                recBtn.innerHTML = 'STARTING...';
+                
+                // Slight delay to ensure context
+                setTimeout(() => {
+                    engine.startRecorder(stream);
+                }, 100);
+            }
+        });
+
+        const updateBpm = (d) => {
+            if(engine) engine.tempo = Math.max(60, Math.min(180, engine.tempo + d));
+            document.getElementById('tempo-display').innerText = engine ? engine.tempo : 128;
+        };
+        document.getElementById('bpm-minus').addEventListener('click', () => updateBpm(-1));
+        document.getElementById('bpm-plus').addEventListener('click', () => updateBpm(1));
+
+        document.getElementById('wave-btn').addEventListener('click', (e) => {
+            if(!engine) return;
+            engine.params303.wave = engine.params303.wave==='sawtooth'?'square':'sawtooth';
+            e.target.innerText = engine.params303.wave==='sawtooth'?'Saw':'Sqr';
+        });
+        document.getElementById('mutate-btn').addEventListener('click', () => { if(engine) engine.seq303 = engine.gen303(); });
+        document.getElementById('clear-btn').addEventListener('click', () => { grid = grid.map(r=>r.map(()=>0)); init(); });
+        document.getElementById('random-grid-btn').addEventListener('click', () => { grid = grid.map(r=>r.map(()=>Math.random()>0.8)); init(); });
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            !document.fullscreenElement ? document.documentElement.requestFullscreen() : document.exitFullscreen();
+        });
+        
+        document.getElementById('drone-btn').addEventListener('click', (e) => {
+            startEngine();
+            const on = engine.drone.toggle();
+            e.target.style.background = on ? '#a855f7' : 'transparent';
+        });
+
+        const cp = document.getElementById('chaos-pad');
+        const moveCP = (e) => {
+            if(!engine) startEngine();
+            const r = cp.getBoundingClientRect();
+            const cx = e.touches?e.touches[0].clientX:e.clientX;
+            const cy = e.touches?e.touches[0].clientY:e.clientY;
+            const x = Math.max(0,Math.min(1,(cx-r.left)/r.width));
+            const y = Math.max(0,Math.min(1,1-(cy-r.top)/r.height));
+            engine.theremin.update(x,y,true);
+        };
+        const stopCP = () => { if(engine) engine.theremin.update(0,0,false); };
+        ['mousedown','touchstart'].forEach(e=>cp.addEventListener(e, (ev)=>{ev.preventDefault();moveCP(ev)}));
+        ['mousemove','touchmove'].forEach(e=>cp.addEventListener(e, (ev)=>{if(ev.buttons||ev.touches){ev.preventDefault();moveCP(ev)}}));
+        ['mouseup','touchend','mouseleave'].forEach(e=>cp.addEventListener(e, stopCP));
+
+        init();
+    </script>
+</body>
+</html>

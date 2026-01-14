@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Body-Mind-Soul Triangle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Raleway:wght@300;400;500;700&family=Nunito:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html,body { height:100%; }
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: radial-gradient(ellipse at center, #1e3a5f 0%, #0a1828 50%, #000000 100%);
+            color: white;
+            min-height: 100vh;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            overflow:auto;
+            padding:15px;
+            touch-action: none; /* we'll manage gestures */
+        }
+
+        /* Layout container */
+        .zoom-wrap {
+            width:100%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 960px;
+            height: auto;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding: 24px;
+            will-change: transform;
+            touch-action: none; /* important for pointer gestures */
+        }
+
+        /* Triangle / visual stage that will be transformed */
+        .triangle-system {
+            position: relative;
+            width: 960px;
+            height: 840px;
+            margin: 50px auto;
+            transform-origin: 50% 50%;
+            transition: transform 260ms cubic-bezier(.2,.8,.2,1);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Central eye */
+        .central-eye {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 144px;
+            height: 144px;
+            background: radial-gradient(circle, #00ffff 20%, #004466 40%, #000000 60%, #004466 80%);
+            border-radius: 50%;
+            box-shadow: 0 0 72px #00ffff, inset 0 0 36px #000000;
+            z-index: 10;
+            animation: eyePulse 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .central-eye:hover { transform: translate(-50%, -50%) scale(0.75); }
+        .central-eye::after {
+            content: '∞';
+            position: absolute;
+            top:50%; left:50%; transform: translate(-50%,-50%);
+            color:white; font-size:1.5em; font-weight:bold; z-index:1;
+        }
+
+        /* Vertices */
+        .vertex {
+            position:absolute;
+            width:168px; height:168px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            text-align:center; cursor:pointer; transition: transform .18s ease;
+            z-index:5; -webkit-tap-highlight-color: transparent;
+        }
+        .vertex:hover { transform: scale(1.06); }
+        .soul { top:12px; left:50%; transform: translateX(-50%); background: radial-gradient(circle, #00ffff 30%, #0066aa 70%); box-shadow: 0 0 60px #309a9a, 0 0 120px #bcffff; animation: soulGlow 2s ease-in-out infinite alternate; }
+        .body { bottom:12px; left:0px; background: radial-gradient(circle, #ff3366 30%, #aa1144 70%); box-shadow: 0 0 60px #ff3366, 0 0 120px #ff3366; animation: bodyGlow 2.5s ease-in-out infinite alternate; }
+        .mind { bottom:12px; right:0px; background: radial-gradient(circle, #ffff00 30%, #cccc00 70%); box-shadow: 0 0 60px #ffff00, 0 0 120px #ffff00; animation: mindGlow 3s ease-in-out infinite alternate; }
+
+        .vertex-symbol { font-size:2.4em; font-weight:bold; color: rgba(0,0,0,0.8); animation: symbolPulse 2s ease-in-out infinite; }
+
+        /* connections */
+        .connections { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+        .connection-line { stroke-width: 9.6px; filter: blur(1.2px); opacity:.8; animation: lineFlow 3s linear infinite; }
+        .line-art-science { stroke: #ff9900; stroke-width: 7.2px; stroke-dasharray: 9.6, 14.4; animation: dashAnimationCorrect 3s linear infinite; }
+
+        /* Labels */
+        .label { position:absolute; text-align:center; z-index:15; pointer-events:none; } /* pointer events left to spheres */
+        .main-title { font-family: 'Orbitron', monospace; font-weight:500; font-size:3em; text-shadow:0 0 24px currentColor; animation:textGlow 2s ease-in-out infinite alternate; letter-spacing:3px; margin-bottom:6px; }
+        .graceful-text { font-family:'Nunito',sans-serif; font-weight:800; font-size:3.5em; margin:5px 0; }
+        .descriptive-text { font-family:'Raleway',sans-serif; font-weight:400; font-size:1em; margin:3px 0; text-transform:uppercase; letter-spacing:1px; }
+        .purpose-text { font-family:'Raleway',sans-serif; font-weight:300; font-size:1em; color:#cccccc; margin-top:10px; text-transform:uppercase; letter-spacing:2px; }
+        .sub-text { font-family:'Nunito',sans-serif; font-size:2em; color:#eeeeff; font-style:italic; }
+
+        .label-soul { top:12px; left:66%; transform:translateX(0); text-align:center; pointer-events:none; }
+        .label-soul .main-title { color:#00ffff; }
+        .label-body { bottom:-150px; left:-120px; transform:translateX(-50%); text-align:center; }
+        .label-body .main-title { color:#ff3366; }
+        .label-mind { bottom:-150px; right:-150px; transform:translateX(50%); text-align:center; }
+        .label-mind .main-title { color:#ffff00; }
+
+        /* Info panels */
+        .info-panel {
+            position: fixed; background: rgba(0,0,0,.75); border:2px solid; border-radius:18px;
+            padding:30px; width:380px; height:585px; overflow:hidden; display:none; z-index:100; backdrop-filter: blur(24px);
+            box-shadow: 0 0 36px rgba(0,0,0,.75); top:50%; left:50%; transform: translate(-50%,-50%);
+        }
+        .info-panel h3 { margin-top:0; font-family:'Orbitron',monospace; font-size:3em; margin-bottom:0px; text-transform:uppercase; letter-spacing:1px; }
+        .info-panel h2 { margin-top:0; font-family:'Roboto Mono',monospace; font-size:1.25em; margin-bottom:30px; letter-spacing:1px; text-transform:uppercase; }
+        .info-section { margin-bottom:15px; line-height:1.5; font-size:1em; }
+        .info-section strong { display:block; margin-bottom:7px; font-size:1em; text-transform:uppercase; letter-spacing:1px; }
+        .close-btn { position:absolute; top:14px; right:14px; font-size:1.5em; cursor:pointer; color:#fff; }
+        .close-btn:hover { color:#ff0000; }
+
+        /* animations (kept from original) */
+        @keyframes eyePulse { 0%,100% { box-shadow:0 0 72px #00ffff, inset 0 0 36px #000000; } 50% { box-shadow:0 0 96px #00ffff, inset 0 0 48px #000000; } }
+        @keyframes symbolPulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.1);} }
+        @keyframes soulGlow { from{ box-shadow:0 0 60px #00ffff,0 0 120px #00ffff;} to{ box-shadow:0 0 96px #00ffff,0 0 180px #00ffff;} }
+        @keyframes bodyGlow { from{ box-shadow:0 0 60px #ff3366,0 0 120px #ff3366;} to{ box-shadow:0 0 96px #ff3366,0 0 180px #ff3366;} }
+        @keyframes mindGlow { from{ box-shadow:0 0 60px #ffff00,0 0 120px #ffff00;} to{ box-shadow:0 0 96px #ffff00,0 0 180px #ffff00;} }
+        @keyframes textGlow { from{ text-shadow: 0 0 24px currentColor;} to{ text-shadow: 0 0 48px currentColor, 0 0 72px currentColor;} }
+        @keyframes lineFlow { 0%{ stroke-dashoffset:0; } 100%{ stroke-dashoffset:48px; } }
+        @keyframes dashAnimationCorrect { 0%{ stroke-dashoffset:0; } 100%{ stroke-dashoffset:24px; } }
+
+        /* ---------- MOBILE POLISH ---------- */
+        @media (max-width: 480px) {
+            body { padding:8px; }
+            .container { max-width: 420px; padding: 8px; }
+            .triangle-system { width: 360px; height: 315px; margin: 8px auto; transition: transform 180ms ease; }
+            .vertex { width: 84px; height:84px; }
+            .central-eye { width:72px; height:72px; }
+
+            /* Make labels sit BELOW the spheres on small screens */
+            .label-body, .label-mind {
+                bottom: -84px;
+                width: 120px;
+                pointer-events: none;
+            }
+            /* place them horizontally under body/mind */
+            .label-body { left: 14%; transform: translateX(-50%); text-align:center; }
+            .label-mind { right: 14%; transform: translateX(50%); text-align:center; }
+
+            /* soul label centered above */
+            .label-soul { top: -52px; left: 50%; transform: translateX(-50%); width:150px; text-align:center; }
+
+            /* scale down text */
+            .main-title { font-size: 1.6em; margin-bottom:2px; }
+            .graceful-text { font-size: 1.2em; margin:0; }
+            .descriptive-text { font-size: 0.75em; margin:1px 0; }
+            .purpose-text { font-size: 0.7em; margin:2px 0; }
+            .sub-text { font-size: 0.9em; }
+
+            /* make info panel fit and scroll */
+            .info-panel { width: 90%; height: 78%; padding: 16px; overflow-y:auto; }
+            .info-panel h3 { font-size: 1.8em; }
+            .info-panel h2 { font-size: 1em; margin-bottom:12px; }
+            .info-section { font-size: 0.9em; }
+        }
+
+        /* medium screens - allow natural shrink */
+        @media (max-width: 768px) and (min-width: 481px) {
+            .triangle-system { width: 720px; height:630px; }
+            .vertex { width:126px; height:126px; }
+            .central-eye { width:108px; height:108px; }
+        }
+
+        /* small accessibility tweak for focus */
+        .vertex:focus-visible { outline: 3px solid rgba(255,255,255,0.15); border-radius:50%; }
+
+    </style>
+</head>
+<body>
+    <div class="zoom-wrap">
+        <div class="container" id="zoomContainer">
+            <div class="triangle-system" id="stage" aria-label="Body Mind Soul triangle" role="img">
+                <!-- central eye -->
+                <div class="central-eye" id="centralEye" onclick="toggleInfo('infinity-info')" tabindex="0" aria-label="Infinity info"></div>
+
+                <!-- SVG connections -->
+                <svg class="connections" viewBox="0 0 960 840" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="gradientSoulBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00ffff"/>
+                            <stop offset="50%" style="stop-color:#aa00aa"/>
+                            <stop offset="100%" style="stop-color:#ff3366"/>
+                        </linearGradient>
+                        <linearGradient id="gradientBodyMind" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#ff3366"/>
+                            <stop offset="50%" style="stop-color:#ff9900"/>
+                            <stop offset="100%" style="stop-color:#ffff00"/>
+                        </linearGradient>
+                        <linearGradient id="gradientMindSoul" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#ffff00"/>
+                            <stop offset="50%" style="stop-color:#00aa00"/>
+                            <stop offset="100%" style="stop-color:#00ffff"/>
+                        </linearGradient>
+                    </defs>
+
+                    <line class="connection-line" x1="480" y1="96" x2="84" y2="744" stroke="url(#gradientSoulBody)"
+                          stroke-dasharray="12,6" />
+                    <line class="connection-line" x1="84" y1="744" x2="876" y2="744" stroke="url(#gradientBodyMind)"
+                          stroke-dasharray="12,6" />
+                    <line class="connection-line" x1="876" y1="744" x2="480" y2="96" stroke="url(#gradientMindSoul)"
+                          stroke-dasharray="12,6" />
+                    <line class="connection-line line-art-science" x1="84" y1="744" x2="876" y2="744" />
+                </svg>
+
+                <!-- vertices -->
+                <div class="vertex soul" id="soulVertex" onclick="toggleInfo('soul-info')" tabindex="0" aria-label="Soul info">
+                    <div class="vertex-symbol">●</div>
+                </div>
+
+                <div class="vertex body" id="bodyVertex" onclick="toggleInfo('body-info')" tabindex="0" aria-label="Body info">
+                    <div class="vertex-symbol" style="color:#000;">■</div>
+                </div>
+
+                <div class="vertex mind" id="mindVertex" onclick="toggleInfo('mind-info')" tabindex="0" aria-label="Mind info">
+                    <div class="vertex-symbol">▲</div>
+                </div>
+
+                <!-- labels -->
+                <div class="label label-soul">
+                    <div class="main-title">SOUL</div>
+                    <div class="descriptive-text">BEING</div>
+                    <div class="purpose-text">MEANING</div>
+                    <div class="graceful-text">Spirit</div>
+                    <div class="sub-text">wisdom</div>
+                </div>
+
+                <div class="label label-body">
+                    <div class="main-title">BODY</div>
+                    <div class="descriptive-text">FEELING</div>
+                    <div class="purpose-text">HAPPINESS</div>
+                    <div class="graceful-text">Art</div>
+                    <div class="sub-text">beauty</div>
+                </div>
+
+                <div class="label label-mind">
+                    <div class="main-title">MIND</div>
+                    <div class="descriptive-text">KNOWING</div>
+                    <div class="purpose-text">ORDER</div>
+                    <div class="graceful-text">Science</div>
+                    <div class="sub-text">knowledge</div>
+                </div>
+
+                <!-- info panels (same content) -->
+                <div id="soul-info" class="info-panel" role="dialog" aria-hidden="true">
+                    <div class="close-btn" onclick="closePanel()">[x]</div>
+                    <h3 style="color:#00ffff;">● SOUL</h3>
+                    <h2 style="color:#0030F9;">THE REALM OF BEING</h2>
+                    <div class="info-section"><strong style="color:#00ffff;">Core:</strong> Spirit, Religion, Mystery</div>
+                    <div class="info-section"><strong style="color:#00ffff;">Fields:</strong> Being in the moment</div>
+                    <div class="info-section"><strong style="color:#00ffff;">Experience:</strong> Wisdom, Faith, Being</div>
+                    <div class="info-section"><strong style="color:#00ffff;">Approach:</strong> Universal, Spiritual</div>
+                    <div class="info-section"><strong style="color:#00ffff;">Goal:</strong> Infinity, Unity, Meaning</div>
+                    <div class="info-section"><strong style="color:#00ffff;">Origin:</strong> Creation</div>
+                </div>
+
+                <div id="body-info" class="info-panel" role="dialog" aria-hidden="true">
+                    <div class="close-btn" onclick="closePanel()">[x]</div>
+                    <h3 style="color:#ff3366;">■ BODY</h3>
+                    <h2 style="color:#cc0000;">THE REALM OF EXPERIENCE</h2>
+                    <div class="info-section"><strong style="color:#ff3366;">Core:</strong> Heart, Art, Sensuality</div>
+                    <div class="info-section"><strong style="color:#ff3366;">Fields:</strong> Literature, Painting, Music</div>
+                    <div class="info-section"><strong style="color:#ff3366;">Experience:</strong> Beauty, Senses, Feelings</div>
+                    <div class="info-section"><strong style="color:#ff3366;">Approach:</strong> Subjective, Sensual</div>
+                    <div class="info-section"><strong style="color:#ff3366;">Goal:</strong> Idealism, Bliss, Happiness</div>
+                    <div class="info-section"><strong style="color:#ff3366;">Origin:</strong> Birth</div>
+                </div>
+
+                <div id="mind-info" class="info-panel" role="dialog" aria-hidden="true">
+                    <div class="close-btn" onclick="closePanel()">[x]</div>
+                    <h3 style="color:#ffff00;">▲ MIND</h3>
+                    <h2 style="color:#666600;">THE REALM OF REASON</h2>
+                    <div class="info-section"><strong style="color:#ffff00;">Core:</strong> Brain, Science, Logic</div>
+                    <div class="info-section"><strong style="color:#ffff00;">Fields:</strong> Physics, Mathematics, Astronomy</div>
+                    <div class="info-section"><strong style="color:#ffff00;">Experience:</strong> Reason, Knowledge, Facts</div>
+                    <div class="info-section"><strong style="color:#ffff00;">Approach:</strong> Objective, Empirical</div>
+                    <div class="info-section"><strong style="color:#ffff00;">Goal:</strong> Idealism, Truth, Order</div>
+                    <div class="info-section"><strong style="color:#ffff00;">Origin:</strong> Big Bang</div>
+                </div>
+
+                <div id="infinity-info" class="info-panel" role="dialog" aria-hidden="true">
+                    <div class="close-btn" onclick="closePanel()">[x]</div>
+                    <h3 style="color:#fff;">∞ INFINITY</h3>
+                    <h2 style="color:#aaa;">THE REALM OF THE UNKNOWN</h2>
+                    <div class="info-section"><strong style="color:#888;">Core:</strong> Mystery, Void, Infinite</div>
+                    <div class="info-section"><strong style="color:#888;">Fields:</strong> Dark Matter, Black Holes, Quantum</div>
+                    <div class="info-section"><strong style="color:#888;">Experience:</strong> Awe, Wonder, Unknowing</div>
+                    <div class="info-section"><strong style="color:#888;">Approach:</strong> Transcendent, Limitless</div>
+                    <div class="info-section"><strong style="color:#888;">Goal:</strong> Truth Beyond Understanding, Unity</div>
+                    <div class="info-section"><strong style="color:#888;">Origin:</strong> Before Time, Beyond Space</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        // Gesture & interaction manager for the triangle
+        const stage = document.getElementById('stage');
+        const container = document.getElementById('zoomContainer');
+
+        // state
+        let scale = 1;
+        let rotation = 0; // degrees
+        const MIN_SCALE = 0.7;
+        const MAX_SCALE = 2.5;
+
+        // pointer tracking for multi-touch
+        const pointers = new Map();
+        let lastPan = { x: 0, y: 0 };
+        let origin = { x: 0, y: 0 };
+
+        // For double-tap detection
+        let lastTap = 0;
+        const DOUBLE_TAP_TIMEOUT = 300;
+
+        // apply transform
+        function updateTransform(animated = false) {
+            if (animated) stage.style.transition = 'transform 240ms cubic-bezier(.2,.8,.2,1)';
+            else stage.style.transition = 'none';
+            stage.style.transform = `translate3d(0,0,0) rotate(${rotation}deg) scale(${scale})`;
+            // clear transition after a short time
+            if (animated) setTimeout(() => stage.style.transition = '', 260);
+        }
+
+        // clamp helpers
+        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+        // pointer handlers
+        function onPointerDown(e) {
+            container.setPointerCapture(e.pointerId);
+            pointers.set(e.pointerId, e);
+            if (pointers.size === 1) {
+                // start a "pan"/rotate operation
+                lastPan = { x: e.clientX, y: e.clientY };
+                origin = { x: e.clientX, y: e.clientY };
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!pointers.has(e.pointerId)) return;
+            pointers.set(e.pointerId, e);
+
+            if (pointers.size === 1) {
+                // single pointer -> rotate based on horizontal movement + small vertical -> intuitive rotation
+                const p = [...pointers.values()][0];
+                const dx = p.clientX - lastPan.x;
+                // rotate sensitivity scaled by current scale
+                rotation = rotation + dx * 0.15;
+                rotation = (rotation + 3600) % 360; // keep sane
+                lastPan = { x: p.clientX, y: p.clientY };
+                updateTransform();
+            } else if (pointers.size === 2) {
+                // pinch (scale) and optional rotate between two pointers
+                const pts = [...pointers.values()];
+                const p1 = pts[0], p2 = pts[1];
+                const currDist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+                const currAngle = Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX) * 180 / Math.PI;
+
+                // we need stored baseline for pinch; store on pointerdown when size becomes 2
+                if (!container._pinchBase) {
+                    container._pinchBase = {
+                        dist: currDist,
+                        angle: currAngle,
+                        scaleStart: scale,
+                        rotStart: rotation
+                    };
+                }
+                const base = container._pinchBase;
+                const scaleFactor = currDist / base.dist;
+                scale = clamp(base.scaleStart * scaleFactor, MIN_SCALE, MAX_SCALE);
+
+                // optional two-finger rotate (relative)
+                const angleDiff = currAngle - base.angle;
+                rotation = (base.rotStart + angleDiff) % 360;
+
+                updateTransform();
+            }
+        }
+
+        function onPointerUp(e) {
+            // release pointer
+            try { container.releasePointerCapture(e.pointerId); } catch (err) {}
+            pointers.delete(e.pointerId);
+
+            // reset pinch base when less than two pointers
+            if (pointers.size < 2) container._pinchBase = null;
+
+            // If it was a quick tap (not a drag) detect double tap
+            const now = Date.now();
+            const dt = now - lastTap;
+            // compute movement length threshold to detect tap vs drag
+            const moved = Math.hypot((e.clientX - origin.x), (e.clientY - origin.y));
+            if (moved < 8) {
+                if (dt < DOUBLE_TAP_TIMEOUT) {
+                    // double tap -> toggle zoom (quick)
+                    if (scale > 1.05) {
+                        scale = 1;
+                    } else {
+                        scale = clamp(1.6, MIN_SCALE, MAX_SCALE);
+                    }
+                    updateTransform(true);
+                    lastTap = 0;
+                } else {
+                    lastTap = now;
+                    // single tap does nothing here (we rely on element onclicks)
+                }
+            }
+        }
+
+        // wheel zoom (desktop)
+        function onWheel(e) {
+            // ctrl+wheel or normal wheel for zoom
+            e.preventDefault();
+            const delta = -e.deltaY * 0.0018;
+            scale = clamp(scale * (1 + delta), MIN_SCALE, MAX_SCALE);
+            updateTransform();
+        }
+
+        // reset function (optional)
+        function resetView(animated = true) {
+            scale = 1; rotation = 0;
+            updateTransform(animated);
+        }
+
+        // attach pointer listeners to container so gestures work anywhere inside
+        container.addEventListener('pointerdown', onPointerDown, { passive: false });
+        container.addEventListener('pointermove', onPointerMove, { passive: false });
+        container.addEventListener('pointerup', onPointerUp);
+        container.addEventListener('pointercancel', onPointerUp);
+        container.addEventListener('wheel', onWheel, { passive: false });
+
+        // Keyboard accessibility: arrow left/right rotates, +/- zoom, r resets
+        window.addEventListener('keydown', (ev) => {
+            if (ev.key === 'ArrowLeft') { rotation = (rotation - 8) % 360; updateTransform(true); }
+            if (ev.key === 'ArrowRight') { rotation = (rotation + 8) % 360; updateTransform(true); }
+            if (ev.key === '+' || ev.key === '=') { scale = clamp(scale * 1.12, MIN_SCALE, MAX_SCALE); updateTransform(true); }
+            if (ev.key === '-' || ev.key === '_') { scale = clamp(scale / 1.12, MIN_SCALE, MAX_SCALE); updateTransform(true); }
+            if (ev.key.toLowerCase() === 'r') resetView(true);
+        });
+
+        // Tapping central eye already wired by onclick inline; but ensure space/enter works
+        const centralEye = document.getElementById('centralEye');
+        centralEye.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { toggleInfo('infinity-info'); } });
+
+        // show/hide info panels (keeps same API as your HTML)
+        function closePanel() {
+            document.querySelectorAll('.info-panel').forEach(p => { p.style.display = 'none'; p.setAttribute('aria-hidden','true'); });
+        }
+        window.closePanel = closePanel;
+
+        function toggleInfo(id) {
+            // hide others then show this
+            const el = document.getElementById(id);
+            if (!el) return;
+            const isOpen = el.style.display === 'block';
+            closePanel();
+            if (!isOpen) {
+                el.style.display = 'block';
+                el.setAttribute('aria-hidden','false');
+                // small animation
+                el.style.opacity = 0; el.style.transform = 'translateY(8px)';
+                requestAnimationFrame(() => { el.style.transition = 'opacity 220ms ease, transform 220ms ease'; el.style.opacity = 1; el.style.transform = 'translateY(0)'; });
+                setTimeout(()=> el.style.transition = '', 260);
+            }
+        }
+        window.toggleInfo = toggleInfo;
+
+        // Make info close on escape
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+
+        // Simple inertia on pointer up (optional, minimal): no heavy physics to keep UX snappy.
+        // We keep transform limited, and let CSS transitions handle smoothing.
+
+        // Place the vertex elements at their positions dynamically for smaller screens to better line up
+        function positionVertices() {
+            // original coordinates from SVG lines: soul at (480,96), body at (84,744), mind at (876,744)
+            // but .triangle-system is in px; use its computed size to compute proportional positions
+            const rect = stage.getBoundingClientRect();
+            const scaleX = rect.width / 960;
+            const scaleY = rect.height / 840;
+
+            const soul = document.getElementById('soulVertex');
+            const body = document.getElementById('bodyVertex');
+            const mind = document.getElementById('mindVertex');
+
+            function place(el, x, y) {
+                const w = el.offsetWidth, h = el.offsetHeight;
+                el.style.left = (x * scaleX - w/2) + 'px';
+                el.style.top = (y * scaleY - h/2) + 'px';
+            }
+            place(soul, 480, 96);
+            place(body, 84, 744);
+            place(mind, 876, 744);
+        }
+
+        // reposition vertices on resize or orientation change
+        window.addEventListener('resize', () => {
+            positionVertices();
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(positionVertices, 140);
+        });
+
+        // initial call
+        positionVertices();
+        updateTransform(false);
+
+        // small UX: if user double-taps a vertex the panel opens (native onclicks already there)
+        // but we ensure touch doesn't zoom page
+        document.addEventListener('touchmove', (e) => {
+            // Prevent accidental page scroll when interacting in the triangle area
+            if (e.target.closest('.triangle-system')) e.preventDefault();
+        }, { passive: false });
+    })();
+    </script>
+</body>
+</html>

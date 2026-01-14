@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Substantia Nigra & Treatment Mechanisms</title>
+    <style>
+        /* Background made slightly brighter (from #050510 to #111625) */
+        body { margin: 0; overflow: hidden; background-color: #111625; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #e0e0e0;
+            pointer-events: none; 
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .panel {
+            position: relative;
+            background: rgba(16, 22, 37, 0.85); /* Matches new bg, slightly transparent */
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            border-left: 3px solid #00ffff;
+            pointer-events: auto; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        /* Minimize Button Styles */
+        .toggle-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid #334455;
+            color: #00ffff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding-bottom: 4px; /* visual adjustment */
+        }
+        .toggle-btn:hover { background: rgba(0, 255, 255, 0.1); }
+
+        /* Minimized State */
+        .panel.minimized .content-wrapper {
+            display: none;
+        }
+        .panel.minimized {
+            padding-bottom: 20px;
+            width: auto;
+            max-width: 250px;
+        }
+        .panel.minimized h1 {
+            margin-bottom: 0;
+            font-size: 1rem;
+        }
+
+        h1 { margin: 0 0 10px 0; font-size: 1.3rem; letter-spacing: 1px; color: #fff; padding-right: 30px; }
+        h2 { margin: 15px 0 5px 0; font-size: 0.9rem; text-transform: uppercase; color: #8899aa; letter-spacing: 1px; }
+        p { font-size: 0.9rem; line-height: 1.5; color: #b0c0d0; margin-bottom: 8px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: #fff;
+            min-width: 80px; /* For mobile tapping */
+        }
+
+        button:hover { transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+
+        .btn-baseline { background: #334455; color: #aaddff; }
+        .btn-ldopa { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); color: #004400; }
+        .btn-prami { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #330044; }
+
+        .status-text {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            border: 1px solid #334455;
+            color: #fff;
+        }
+
+        .label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            border: 1px solid #445566;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #667788; /* Slightly lighter for visibility on new bg */
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            #ui-layer {
+                width: 90%;
+                left: 5%;
+                top: 10px;
+            }
+            .panel h1 { font-size: 1.1rem; }
+            .btn-group { gap: 5px; }
+            button { padding: 12px 8px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="panel" id="control-panel">
+            <h1>Mechanism of Action</h1>
+            <button class="toggle-btn" onclick="togglePanel()" id="toggle-btn">−</button>
+            
+            <div class="content-wrapper">
+                <p><strong>Baseline (Parkinson's):</strong> Low dopamine flow. Striatum inactive.</p>
+                
+                <div class="btn-group">
+                    <button class="btn-baseline" onclick="setMode('baseline')">Reset</button>
+                </div>
+                
+                <h2>Treatments</h2>
+                <div class="btn-group">
+                    <button class="btn-ldopa" onclick="setMode('levodopa')">Levodopa</button>
+                    <button class="btn-prami" onclick="setMode('pramipexole')">Pramipexole</button>
+                </div>
+
+                <div id="status-display" class="status-text">
+                    Select a treatment to visualize its effect.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls-hint">Touch/Drag to Rotate • Pinch to Zoom</div>
+    <div id="canvas-container"></div>
+
+    <!-- Labels -->
+    <div id="lbl-sn" class="label" style="border-color: #444;">Substantia Nigra (Factory)</div>
+    <div id="lbl-striatum" class="label" style="border-color: #8844ff;">Striatum (Receiver)</div>
+    <div id="lbl-stem" class="label" style="color:#8899aa;">Brainstem</div>
+
+    <!-- Three.js Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+    <script>
+        // --- UI Logic ---
+        function togglePanel() {
+            const panel = document.getElementById('control-panel');
+            const btn = document.getElementById('toggle-btn');
+            
+            panel.classList.toggle('minimized');
+            
+            if (panel.classList.contains('minimized')) {
+                btn.textContent = '+';
+            } else {
+                btn.textContent = '−';
+            }
+        }
+
+        // --- Setup ---
+        const container = document.getElementById('canvas-container');
+        const statusDisplay = document.getElementById('status-display');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x111625, 0.025); // Updated fog to match new BG
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(4, 2, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.8); // Slightly brighter ambient
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(5, 5, 5);
+        scene.add(mainLight);
+
+        const blueRimLight = new THREE.DirectionalLight(0x4488ff, 1.5);
+        blueRimLight.position.set(-5, 0, -5);
+        scene.add(blueRimLight);
+
+        const brainGroup = new THREE.Group();
+        scene.add(brainGroup);
+
+        // --- Materials ---
+        const matGlass = new THREE.MeshPhysicalMaterial({
+            color: 0xccddff,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.85,
+            opacity: 0.1,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const matStem = new THREE.MeshPhongMaterial({ color: 0x778899 });
+        const matSN = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9, emissive: 0x000000 });
+        
+        const matStriatum = new THREE.MeshPhongMaterial({ 
+            color: 0x6655aa, 
+            transparent: true, 
+            opacity: 0.6, 
+            shininess: 60,
+            emissive: 0x000000,
+            emissiveIntensity: 0
+        });
+        
+        // --- Geometry ---
+
+        // 1. Shell
+        const hemiGeo = new THREE.SphereGeometry(1.4, 48, 48);
+        hemiGeo.scale(0.85, 1, 1.2);
+        const leftHemi = new THREE.Mesh(hemiGeo, matGlass);
+        leftHemi.position.x = -0.75;
+        const rightHemi = new THREE.Mesh(hemiGeo, matGlass);
+        rightHemi.position.x = 0.75;
+        const cerebGeo = new THREE.SphereGeometry(0.7, 32, 32);
+        cerebGeo.scale(1.2, 0.7, 0.8);
+        const cerebellum = new THREE.Mesh(cerebGeo, matGlass);
+        cerebellum.position.set(0, -0.8, -0.8);
+        cerebellum.rotation.x = 0.2;
+        brainGroup.add(leftHemi, rightHemi, cerebellum);
+
+        // 2. Stem
+        const stemCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, -2.5, -0.3),
+            new THREE.Vector3(0, -1.0, 0.1),
+            new THREE.Vector3(0, 0, 0)
+        ]);
+        const stemGeo = new THREE.TubeGeometry(stemCurve, 20, 0.35, 16, false);
+        const stem = new THREE.Mesh(stemGeo, matStem);
+        brainGroup.add(stem);
+
+        // 3. SN
+        function createSN(xPos) {
+            const geo = new THREE.SphereGeometry(0.12, 32, 32);
+            geo.scale(2.5, 0.5, 1.2);
+            const mesh = new THREE.Mesh(geo, matSN);
+            mesh.position.set(xPos, 0.1, 0.1); 
+            mesh.rotation.y = xPos > 0 ? -0.4 : 0.4;
+            mesh.rotation.x = 0.2;
+            return mesh;
+        }
+        const snLeft = createSN(-0.35);
+        const snRight = createSN(0.35);
+        brainGroup.add(snLeft, snRight);
+
+        // 4. Striatum
+        let striatumLeft, striatumRight;
+        function createStriatum(xPos) {
+            const pathPoints = [];
+            for (let i = 0; i <= 10; i++) {
+                const t = i / 10;
+                const angle = t * Math.PI * 1.2; 
+                const radius = 0.8;
+                const px = xPos * (0.2 + (radius * 0.4));
+                const py = Math.sin(angle) * radius + 0.3;
+                const pz = Math.cos(angle) * radius - 0.2;
+                pathPoints.push(new THREE.Vector3(px, py, pz));
+            }
+            const path = new THREE.CatmullRomCurve3(pathPoints);
+            const tube = new THREE.TubeGeometry(path, 20, 0.15, 8, false);
+            
+            const startSphere = new THREE.Mesh(new THREE.SphereGeometry(0.15), matStriatum);
+            startSphere.position.copy(pathPoints[0]);
+            const endSphere = new THREE.Mesh(new THREE.SphereGeometry(0.15), matStriatum);
+            endSphere.position.copy(pathPoints[10]);
+
+            const mesh = new THREE.Mesh(tube, matStriatum);
+            const group = new THREE.Group();
+            group.add(mesh, startSphere, endSphere);
+            return { mesh: group, path: path };
+        }
+        striatumLeft = createStriatum(-1.2); 
+        striatumRight = createStriatum(1.2);
+        brainGroup.add(striatumLeft.mesh, striatumRight.mesh);
+
+        // --- 5. Particles (Dopamine) ---
+        
+        const MAX_PARTICLES = 300;
+        const particleGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array(MAX_PARTICLES * 3);
+        const phases = new Float32Array(MAX_PARTICLES);
+        
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particleGeo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+        
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffff00,
+            size: 0.08,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true
+        });
+
+        const particles = new THREE.Points(particleGeo, particleMat);
+        brainGroup.add(particles);
+
+        for(let i=0; i<MAX_PARTICLES; i++) {
+            phases[i] = Math.random(); 
+        }
+
+        // --- Logic Control ---
+
+        let currentMode = 'baseline'; 
+        let activeParticleCount = 30; 
+        let particleSpeed = 0.5;
+
+        // Tweens for smooth transitions
+        function animateStriatumGlow(targetHex, targetIntensity) {
+            new TWEEN.Tween(matStriatum.emissive)
+                .to({ r: new THREE.Color(targetHex).r, g: new THREE.Color(targetHex).g, b: new THREE.Color(targetHex).b }, 1000)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start();
+            
+            new TWEEN.Tween(matStriatum)
+                .to({ emissiveIntensity: targetIntensity }, 1000)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start();
+        }
+
+        window.setMode = function(mode) {
+            currentMode = mode;
+            
+            if (mode === 'baseline') {
+                statusDisplay.innerHTML = "<strong>Baseline:</strong> Low dopamine flow. Striatum inactive.";
+                activeParticleCount = 30; 
+                particleSpeed = 0.5;
+                animateStriatumGlow(0x000000, 0); 
+            } 
+            else if (mode === 'levodopa') {
+                statusDisplay.innerHTML = "<strong>Levodopa:</strong> Refuels the factory. Flow increases dramatically.";
+                activeParticleCount = 280; 
+                particleSpeed = 1.0;
+                animateStriatumGlow(0x442266, 0.2); 
+            } 
+            else if (mode === 'pramipexole') {
+                statusDisplay.innerHTML = "<strong>Pramipexole:</strong> Mimics dopamine. Low flow, but Striatum activates directly.";
+                activeParticleCount = 30; 
+                particleSpeed = 0.5;
+                animateStriatumGlow(0xaa44ff, 1.5); 
+            }
+        };
+
+        setMode('baseline');
+
+
+        function updateParticles() {
+            const posAttr = particles.geometry.attributes.position;
+            const time = Date.now() * 0.001;
+
+            for(let i=0; i<MAX_PARTICLES; i++) {
+                
+                if (i >= activeParticleCount) {
+                    posAttr.setXYZ(i, 0, -2, 0); 
+                    continue;
+                }
+
+                const isRight = i % 2 === 0;
+                const snOrigin = isRight ? snRight.position : snLeft.position;
+                const striatumPath = isRight ? striatumRight.path : striatumLeft.path;
+                
+                let t = (time * particleSpeed + phases[i]) % 1;
+                
+                const destPointT = (phases[i] * 13.5) % 1; 
+                const destPoint = striatumPath.getPoint(destPointT);
+                
+                const currentPos = new THREE.Vector3().lerpVectors(snOrigin, destPoint, t);
+                currentPos.y += Math.sin(t * Math.PI) * 0.2; 
+
+                posAttr.setXYZ(i, currentPos.x, currentPos.y, currentPos.z);
+            }
+            posAttr.needsUpdate = true;
+        }
+
+
+        // --- Labels ---
+        const labelData = [
+            { id: 'lbl-sn', obj: snRight, offset: new THREE.Vector3(0.4, 0, 0) },
+            { id: 'lbl-striatum', obj: striatumRight.mesh, offset: new THREE.Vector3(0.5, 0.5, 0) },
+            { id: 'lbl-stem', obj: stem, offset: new THREE.Vector3(0, -1, 0) }
+        ];
+
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+            labelData.forEach(item => {
+                const el = document.getElementById(item.id);
+                item.obj.getWorldPosition(tempV);
+                tempV.add(item.offset);
+                tempV.project(camera);
+
+                const x = (tempV.x * .5 + .5) * container.clientWidth;
+                const y = (tempV.y * -.5 + .5) * container.clientHeight;
+
+                if (tempV.z > 1 || Math.abs(tempV.x) > 1 || Math.abs(tempV.y) > 1) {
+                    el.style.opacity = 0;
+                } else {
+                    el.style.opacity = 1;
+                    el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                }
+            });
+        }
+
+        // --- Loop ---
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+            updateParticles();
+            updateLabels();
+            
+            if(!controls.enableDamping) {
+                 brainGroup.rotation.y = Math.sin(Date.now()*0.0005) * 0.1;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>
+
+

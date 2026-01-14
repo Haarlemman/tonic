@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tri-Tier Map · Exile → Return → Repair</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            deep: '#050a14',
+            void: '#0b1022',
+            gold: '#cba137',
+            'gold-light': '#fceeb5',
+            ink: '#e2e8f0',
+            muted: '#64748b'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cormorant Garamond', 'serif'],
+            display: ['Cinzel', 'serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-out forwards',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --glow: drop-shadow(0 0 8px rgba(203, 161, 55, 0.4));
+    }
+    body {
+      background-color: #050a14;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(203, 161, 55, 0.08) 0%, transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(45, 55, 100, 0.15) 0%, transparent 50%);
+      color: var(--ink);
+    }
+    .glass-panel {
+      background: rgba(13, 18, 35, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    }
+    .station-marker {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .station-marker:hover {
+      transform: scale(1.3);
+      filter: var(--glow);
+    }
+    .station-marker.active {
+      fill: #fff;
+      stroke: #fff;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+    }
+    
+    /* Layer Tabs Styling */
+    .layer-tab {
+      position: relative;
+      overflow: hidden;
+    }
+    .layer-tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #cba137;
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    .layer-tab.active::after {
+      transform: scaleX(1);
+    }
+    .layer-tab.active {
+      color: #cba137;
+      background: rgba(203, 161, 55, 0.1);
+    }
+
+    /* Scrollbar */
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-gold selection:text-deep lg:h-screen lg:overflow-hidden">
+
+  <!-- Header -->
+  <header class="flex-none p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/5 z-10 relative bg-deep/80 backdrop-blur-sm sticky top-0 lg:relative">
+    <div class="mb-4 md:mb-0">
+      <div class="text-gold text-xs font-bold tracking-[0.2em] uppercase mb-1">Holographic Map</div>
+      <h1 class="text-2xl md:text-4xl font-display text-white tracking-wide">Exile · Return · Repair</h1>
+    </div>
+    
+    <!-- Layer Toggles -->
+    <div class="flex bg-void/80 p-1 rounded-lg border border-white/10 w-full md:w-auto">
+      <button onclick="setLayer('personal')" id="tab-personal" class="layer-tab flex-1 md:flex-none px-4 py-2 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all text-muted hover:text-white">Personal</button>
+      <div class="w-px bg-white/10 my-1"></div>
+      <button onclick="setLayer('collective')" id="tab-collective" class="layer-tab flex-1 md:flex-none px-4 py-2 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all text-muted hover:text-white">Collective</button>
+      <div class="w-px bg-white/10 my-1"></div>
+      <button onclick="setLayer('cosmic')" id="tab-cosmic" class="layer-tab flex-1 md:flex-none px-4 py-2 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all text-muted hover:text-white">Cosmic</button>
+    </div>
+  </header>
+
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 relative">
+
+    <!-- LEFT: MAP VISUALIZATION -->
+    <section class="lg:col-span-7 relative flex items-center justify-center p-6 lg:p-12 min-h-[50vh] lg:h-full lg:overflow-hidden bg-radial-gradient">
+      <!-- Background subtle grid -->
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+      <div class="relative w-full max-w-lg lg:max-w-xl aspect-[4/5] lg:aspect-square">
+        <svg viewBox="0 0 600 660" class="w-full h-full drop-shadow-2xl">
+          <defs>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fceeb5" />
+              <stop offset="100%" stop-color="#cba137" />
+            </linearGradient>
+            <!-- Tri-Tier Background Symbol -->
+            <path id="triangle" d="M300,100 L500,450 L100,450 Z" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+          </defs>
+
+          <!-- Background Layer Hints -->
+          <g opacity="0.1">
+             <!-- Downward triangle representing 'Descent/Exile' -->
+             <path d="M100,150 L500,150 L300,500 Z" fill="none" stroke="#fff" stroke-width="0.5" />
+             <!-- Upward triangle representing 'Ascent/Return' -->
+             <path d="M300,50 L550,550 L50,550 Z" fill="none" stroke="#cba137" stroke-width="0.5" />
+          </g>
+
+          <!-- The Path -->
+          <path d="M 300,120 C 450,120 500,250 500,350 C 500,500 400,600 300,600 C 200,600 100,500 100,350 C 100,250 150,120 300,120" 
+                fill="none" stroke="url(#gold-grad)" stroke-width="1" stroke-dasharray="4 4" opacity="0.4" />
+
+          <!-- Station 1: Exile (Top) -->
+          <g class="station-group" onclick="selectStation(1)">
+            <circle cx="300" cy="120" r="30" fill="transparent" />
+            <circle cx="300" cy="120" r="8" fill="#0b1022" stroke="#cba137" stroke-width="2" class="station-marker" id="marker-1"/>
+            <text x="300" y="90" text-anchor="middle" class="font-sans text-[10px] uppercase tracking-widest fill-muted transition-colors duration-300" id="label-1">Exile</text>
+          </g>
+
+          <!-- Station 2: Wilderness (Left Mid) -->
+          <g class="station-group" onclick="selectStation(2)">
+            <circle cx="100" cy="350" r="30" fill="transparent" />
+            <circle cx="100" cy="350" r="8" fill="#0b1022" stroke="#cba137" stroke-width="2" class="station-marker" id="marker-2"/>
+            <text x="70" y="355" text-anchor="end" class="font-sans text-[10px] uppercase tracking-widest fill-muted transition-colors duration-300" id="label-2">Wilderness</text>
+          </g>
+
+          <!-- Station 3: Brokenness (Bottom Center) -->
+          <g class="station-group" onclick="selectStation(3)">
+            <circle cx="300" cy="600" r="30" fill="transparent" />
+            <!-- Broken Icon -->
+            <path d="M292,592 L308,608 M308,592 L292,608" stroke="#cba137" stroke-width="1.5" opacity="0.8"/>
+            <circle cx="300" cy="600" r="10" fill="transparent" stroke="#cba137" stroke-width="2" class="station-marker" id="marker-3"/>
+            <text x="300" y="635" text-anchor="middle" class="font-sans text-[10px] uppercase tracking-widest fill-muted transition-colors duration-300" id="label-3">Brokenness</text>
+          </g>
+
+          <!-- Station 4: Return (Right Mid) -->
+          <g class="station-group" onclick="selectStation(4)">
+            <circle cx="500" cy="350" r="30" fill="transparent" />
+            <circle cx="500" cy="350" r="8" fill="#0b1022" stroke="#cba137" stroke-width="2" class="station-marker" id="marker-4"/>
+            <text x="530" y="355" text-anchor="start" class="font-sans text-[10px] uppercase tracking-widest fill-muted transition-colors duration-300" id="label-4">Return</text>
+          </g>
+
+          <!-- Station 5: Repair (Center) -->
+          <g class="station-group" onclick="selectStation(5)">
+            <circle cx="300" cy="360" r="40" fill="transparent" />
+            <circle cx="300" cy="360" r="40" fill="url(#gold-grad)" opacity="0.05" class="animate-pulse" />
+            <circle cx="300" cy="360" r="5" fill="#cba137" class="station-marker" id="marker-5"/>
+            <text x="300" y="415" text-anchor="middle" class="font-sans text-[10px] uppercase tracking-widest fill-muted transition-colors duration-300" id="label-5">Repair</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- RIGHT: INTERACTIVE CONTENT -->
+    <section class="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-white/10 glass-panel flex flex-col p-8 lg:p-12 relative custom-scroll lg:overflow-y-auto lg:h-full">
+      
+      <!-- Content Area -->
+      <div class="flex-1 flex flex-col justify-center min-h-[400px]">
+        
+        <!-- Header for current node -->
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-2 opacity-60">
+            <span class="text-xs font-bold uppercase tracking-widest text-gold" id="node-layer">Personal Layer</span>
+            <span class="h-px w-8 bg-white/20"></span>
+            <span class="text-xs font-serif italic text-white" id="node-roman">I</span>
+          </div>
+          <h2 class="text-3xl md:text-4xl font-display text-white leading-tight animate-fade-in" id="node-title">
+            The Departure
+          </h2>
+        </div>
+
+        <!-- Main text body -->
+        <div class="relative pl-6 border-l border-gold/20 space-y-6">
+          <p class="font-serif text-xl md:text-2xl leading-relaxed text-ink/90 italic animate-fade-in" id="node-desc">
+            "Born into distance."
+          </p>
+          
+          <div class="bg-white/5 rounded p-4 animate-fade-in" style="animation-delay: 100ms">
+            <h3 class="text-xs font-bold text-muted uppercase tracking-wider mb-2" id="context-label">Context</h3>
+            <p class="text-sm md:text-base text-ink/80 leading-relaxed" id="node-context">
+              The primal wound — loss of origin; the name becomes sacred by absence.
+            </p>
+          </div>
+          
+          <!-- Cross-reference / Connection hint -->
+          <div class="flex gap-2 items-center pt-2 opacity-50 text-xs">
+             <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+             <span class="uppercase tracking-widest" id="node-connection">Related: Tzimtzum</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Navigation -->
+      <div class="flex justify-between items-center mt-12 pt-6 border-t border-white/5">
+        <button onclick="prevStation()" class="text-muted hover:text-white transition-colors flex items-center gap-2 group p-2">
+          <span class="text-lg group-hover:-translate-x-1 transition-transform">←</span> 
+          <span class="text-xs uppercase tracking-wider font-bold">Prev Node</span>
+        </button>
+        
+        <div class="flex gap-1" id="nav-dots"></div>
+        
+        <button onclick="nextStation()" class="text-muted hover:text-white transition-colors flex items-center gap-2 group p-2">
+          <span class="text-xs uppercase tracking-wider font-bold">Next Node</span> 
+          <span class="text-lg group-hover:translate-x-1 transition-transform">→</span>
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // The Tri-Tier Data Matrix
+    const dataMatrix = {
+      1: { // Exile
+        id: 1,
+        roman: "I",
+        personal: {
+          title: "The Departure",
+          desc: "\"Born into distance.\" Relinquishment and adoption.",
+          context: "The primal wound—loss of origin. The realization that identity is not a given coordinate, but a question asked of the void.",
+          connection: "See Cosmic: Tzimtzum (Withdrawal)"
+        },
+        collective: {
+          title: "Galut (Exile)",
+          desc: "Babylon. The destruction of the center.",
+          context: "A people defined not by where they are, but by where they are not. Memory becomes a portable homeland.",
+          connection: "See Personal: Adoption"
+        },
+        cosmic: {
+          title: "Tzimtzum",
+          desc: "The Divine Contraction.",
+          context: "In Lurianic Kabbalah, God must withdraw to create empty space for the world to exist. Creation begins with an act of self-limitation.",
+          connection: "See Collective: Galut"
+        }
+      },
+      2: { // Wilderness
+        id: 2,
+        roman: "II",
+        personal: {
+          title: "The Diagnosis",
+          desc: "2021. The wilderness of the body.",
+          context: "Navigating the medical system without a map. Learning to live with a future that has suddenly changed shape. 'Identity as a verb.'",
+          connection: "See Collective: Bamidbar"
+        },
+        collective: {
+          title: "Bamidbar",
+          desc: "In the Desert. 40 Years.",
+          context: "A time of formation. Wisdom is not found in the palace, but in the place of no landmarks. Relying on daily manna.",
+          connection: "See Cosmic: Tohu"
+        },
+        cosmic: {
+          title: "Differentiation",
+          desc: "Expansion from the Singularity.",
+          context: "The universe learns itself through multiplicity. The chaos (Tohu) that precedes structure (Bohu).",
+          connection: "See Personal: Uncertainty"
+        }
+      },
+      3: { // Brokenness
+        id: 3,
+        roman: "III",
+        personal: {
+          title: "The Tremor",
+          desc: "Parkinson's. The shattering of the self-image.",
+          context: "The hand trembles; the truth steadies. Realizing that brokenness is not a failure, but a new state of being.",
+          connection: "See Cosmic: Entropy"
+        },
+        collective: {
+          title: "Shevirat HaKelim",
+          desc: "The Breaking of the Vessels.",
+          context: "The light was too strong for the vessels, and they shattered. The shards of holiness are scattered in the physical world.",
+          connection: "See Personal: The Diagnosis"
+        },
+        cosmic: {
+          title: "Entropy",
+          desc: "The Arrow of Time.",
+          context: "Disorder increases. Systems break down. But this breakdown is the prerequisite for new forms of life to emerge.",
+          connection: "See Collective: Destruction of Temple"
+        }
+      },
+      4: { // Return
+        id: 4,
+        roman: "IV",
+        personal: {
+          title: "The Family",
+          desc: "Ailish & Yaron. Finding the anchor.",
+          context: "Home is not a place you find; it is a place you build. The smart, funny reality of a 7-year-old is the ultimate ground.",
+          connection: "See Cosmic: Gravity"
+        },
+        collective: {
+          title: "Aliyah",
+          desc: "The Return to Zion.",
+          context: "Complex, contested, and real. The story attempts to re-seat itself in geography after centuries of floating in text.",
+          connection: "See Personal: Building Home"
+        },
+        cosmic: {
+          title: "Cohesion",
+          desc: "Gravity and Starlight.",
+          context: "The force that pulls scattered matter together to ignite stars. The universe's answer to entropy is attraction.",
+          connection: "See Collective: Ingathering"
+        }
+      },
+      5: { // Repair
+        id: 5,
+        roman: "V",
+        personal: {
+          title: "Tonic for the Bones",
+          desc: "Writing. Design. Control within the framework.",
+          context: "Metabolizing pain into meaning. You become the scribe of your own body. 'Repair is never over; only luminous.'",
+          connection: "See Collective: Tikkun Olam"
+        },
+        collective: {
+          title: "Tikkun Olam",
+          desc: "Repairing the World.",
+          context: "The human partner in creation. We gather the sparks (Netzotzot) from the broken vessels and lift them up.",
+          connection: "See Cosmic: Consciousness"
+        },
+        cosmic: {
+          title: "Consciousness",
+          desc: "The Universe Observing Itself.",
+          context: "Through your mind, the cosmos becomes aware of itself. Art and philosophy are the mechanisms of universal self-repair.",
+          connection: "See Personal: Art"
+        }
+      }
+    };
+
+    let currentStation = 1;
+    let currentLayer = 'personal'; // personal, collective, cosmic
+
+    function init() {
+      setLayer('personal');
+      selectStation(1);
+    }
+
+    function setLayer(layer) {
+      currentLayer = layer;
+      
+      // Update UI Tabs
+      document.querySelectorAll('.layer-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${layer}`).classList.add('active');
+
+      // Refresh content
+      updateView();
+    }
+
+    function selectStation(id) {
+      currentStation = id;
+      updateView();
+      
+      // Mobile smooth scroll
+      if (window.innerWidth < 1024) {
+        document.querySelector('#node-title').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function nextStation() {
+      if (currentStation < 5) currentStation++;
+      else currentStation = 1;
+      selectStation(currentStation);
+    }
+
+    function prevStation() {
+      if (currentStation > 1) currentStation--;
+      else currentStation = 5;
+      selectStation(currentStation);
+    }
+
+    function updateView() {
+      const data = dataMatrix[currentStation][currentLayer];
+      const roman = dataMatrix[currentStation].roman;
+
+      // Map Highlights
+      document.querySelectorAll('.station-marker').forEach(el => {
+        el.classList.remove('active');
+        el.setAttribute('fill', '#0b1022');
+      });
+      const activeMarker = document.getElementById(`marker-${currentStation}`);
+      if(activeMarker) {
+        activeMarker.classList.add('active');
+        activeMarker.setAttribute('fill', '#fff');
+      }
+
+      // Map Labels
+      document.querySelectorAll('.station-group text').forEach(el => {
+        el.classList.remove('fill-white', 'font-bold');
+        el.classList.add('fill-muted');
+      });
+      const activeLabel = document.getElementById(`label-${currentStation}`);
+      if(activeLabel) {
+        activeLabel.classList.add('fill-white', 'font-bold');
+        activeLabel.classList.remove('fill-muted');
+      }
+
+      // Text Content Injection
+      // We use a small timeout class toggle to trigger the CSS animation
+      const animElements = [
+        document.getElementById('node-title'),
+        document.getElementById('node-desc'),
+        document.getElementById('node-context'),
+        document.querySelector('.bg-white\\/5') // The context box
+      ];
+
+      animElements.forEach(el => {
+        el.classList.remove('animate-fade-in');
+        void el.offsetWidth; // trigger reflow
+        el.classList.add('animate-fade-in');
+      });
+
+      document.getElementById('node-layer').innerText = `${currentLayer} Layer`;
+      document.getElementById('node-roman').innerText = roman;
+      document.getElementById('node-title').innerText = data.title;
+      document.getElementById('node-desc').innerText = data.desc;
+      document.getElementById('node-context').innerText = data.context;
+      document.getElementById('node-connection').innerText = data.connection;
+
+      // Update dots
+      renderDots();
+    }
+
+    function renderDots() {
+      const container = document.getElementById('nav-dots');
+      container.innerHTML = '';
+      [1,2,3,4,5].forEach(id => {
+        const dot = document.createElement('button');
+        const isActive = id === currentStation;
+        dot.className = `h-1 rounded-full transition-all duration-300 ${isActive ? 'w-8 bg-gold' : 'w-2 bg-white/20 hover:bg-white/40'}`;
+        dot.onclick = () => selectStation(id);
+        container.appendChild(dot);
+      });
+    }
+
+    // Run
+    init();
+
+  </script>
+</body>
+</html>
+

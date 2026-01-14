@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>♥ Body ▲ Mind ○ Soul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crushed&display=swap" rel="stylesheet">
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:768px; height:768px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        z-index:500;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        filter: drop-shadow(0 0 0.75rem rgb(214, 21, 68));
+    }
+    .nucleus img { width:100%; height:100%; object-fit:contain; }
+    .electron { position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px; pointer-events:none; }
+    
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index:550; } /* In front of Face */
+    /* .trail-back is default z-index (behind Face) */
+
+    #e1 { background:radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow:0 0 55px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow:0 0 55px #55aa99, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow:0 0 55px #ffee66, inset -8px -8px 20px #ccaa00; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+
+    <canvas id="trailsBack"  width="768" height="768"></canvas>
+    <div class="nucleus">
+        <img src="images/dophet.png" alt="Face">
+    </div>
+    <canvas id="trailsFront" width="768" height="768" class="trail-front"></canvas>
+</div>
+
+<script>
+const baseSpeed      = 0.05;
+const trailThickness = 4;
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 384;
+const centerY = 384;
+const nucleusRadius = 90;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff3355',
+      baseSpeed:1, speedAmp:0.15, speedFreq:0.0008,
+      baseRadius:180, radiusAmp:60, radiusFreq:0.09,
+      baseIncl:90, inclAmp:32, inclFreq:0.07,
+      basePlane:7, planeAmp:20, planeFreq:0.006,
+      baseRoll:0, rollAmp:25, rollFreq:0.0011 },
+
+    { el: document.getElementById('e2'), color: '#4488ff',
+      baseSpeed:0.4, speedAmp:0.08, speedFreq:0.0013,
+      baseRadius:240, radiusAmp:80, radiusFreq:0.05,
+      baseIncl:15, inclAmp:8, inclFreq:0.01,
+      basePlane:95, planeAmp:30, planeFreq:0.008,
+      baseRoll:90, rollAmp:35, rollFreq:0.001 },
+
+    { el: document.getElementById('e3'), color: '#ffdd33',
+      baseSpeed:3, speedAmp:0.4, speedFreq:0.0011,
+      baseRadius:210, radiusAmp:15, radiusFreq:0.0014,
+      baseIncl:15, inclAmp:10, inclFreq:0.0009,
+      basePlane:110, planeAmp:25, planeFreq:0.0012,
+      baseRoll:-60, rollAmp:20, rollFreq:0.06 }
+];
+
+let time = 0;
+let frameCount = 0; // Counter to slow down the fading
+
+function animate() {
+    time += baseSpeed;
+    frameCount++;
+    
+    if (frameCount % 10 === 0) {
+        ctxBack.globalCompositeOperation = 'destination-out';
+        ctxFront.globalCompositeOperation = 'destination-out';
+
+        // 0.05 means we remove 5% of the trail opacity every 4th frame.
+        // This creates a nice long ~20 second tail.
+        ctxBack.fillStyle = 'rgba(0, 0, 0, 0.05)'; 
+        ctxFront.fillStyle = 'rgba(0, 0, 0, 0.05)';
+
+        ctxBack.fillRect(0, 0, 768, 768);
+        ctxFront.fillRect(0, 0, 768, 768);
+
+        ctxBack.globalCompositeOperation = 'source-over';
+        ctxFront.globalCompositeOperation = 'source-over';
+    }
+
+    electrons.forEach(e => {
+        const speed = e.baseSpeed + e.speedAmp * Math.sin(time * e.speedFreq);
+        const radius = e.baseRadius + e.radiusAmp * Math.sin(time * e.radiusFreq);
+        const inclinationDeg = e.baseIncl + e.inclAmp * Math.sin(time * e.inclFreq);
+        const planeRotDeg = e.basePlane + e.planeAmp * Math.sin(time * e.planeFreq);
+        const rollDeg = e.baseRoll + e.rollAmp * Math.sin(time * e.rollFreq);
+
+        const rad = deg => deg * Math.PI / 180;
+        const i = rad(inclinationDeg);
+        const r = rad(planeRotDeg);
+        const o = rad(rollDeg);
+        const a = time * speed;
+
+        let x = Math.cos(a) * radius;
+        let y = Math.sin(a) * radius;
+        let z = 0;
+
+        let tx = x * Math.cos(i) + z * Math.sin(i);
+        z = -x * Math.sin(i) + z * Math.cos(i);
+        x = tx;
+
+        tx = x * Math.cos(r) - z * Math.sin(r);
+        z = x * Math.sin(r) + z * Math.cos(r);
+        x = tx;
+
+        tx = x * Math.cos(o) - y * Math.sin(o);
+        const ty = x * Math.sin(o) + y * Math.cos(o);
+        x = tx; y = ty;
+
+        const scale = 1 + z * 0.0038;
+        const screenX = centerX + x;
+        const screenY = centerY + y;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x, y) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>

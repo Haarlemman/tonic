@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tonic for the Bones: Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Averia+Libre:wght@300;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            /* Default start color (Dusk) */
+            background-color: #1a1a2e; 
+            font-family: 'Averia Libre', cursive;
+            user-select: none;
+            transition: background-color 1s linear;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+
+        /* --- IMMERSIVE OVERLAY --- */
+        #lyrics-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .lyric-wrapper {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            opacity: 0;
+            will-change: transform, opacity;
+            animation: floatUp 14s ease-out forwards;
+        }
+
+        .lyric-content {
+            font-size: 3rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            /* Soft blur for dreamlike quality */
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+            mix-blend-mode: overlay;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(10vh) scale(0.9); filter: blur(10px); }
+            15% { opacity: 1; transform: translateY(0vh) scale(1); filter: blur(0px); }
+            85% { opacity: 1; transform: translateY(-5vh) scale(1.1); filter: blur(0px); }
+            100% { opacity: 0; transform: translateY(-15vh) scale(1.2); filter: blur(20px); }
+        }
+
+        /* --- MINIMALIST START SCREEN --- */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        #start-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 40px;
+            font-family: 'Averia Libre', cursive;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        #start-btn:hover {
+            background: rgba(255,255,255,0.1);
+            letter-spacing: 4px;
+            border-color: white;
+        }
+
+        .faded-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Mobile tweaks */
+        @media (max-width: 768px) {
+            .lyric-content { font-size: 1.8rem; padding: 0 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="sky-canvas"></canvas>
+    <div id="lyrics-container"></div>
+
+    <div id="start-screen">
+        <h1 style="color:white; opacity:0.8; margin-bottom: 2rem; font-weight: 300;">Tonic for the Bones</h1>
+        <button id="start-btn">Begin Experience</button>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION (EDIT THIS SECTION)
+        // ==========================================
+        
+        // Put your single track file path here
+        const audioSrc = "/music/cloudduet.mp3"; 
+
+        // Put your poem lyrics here with timestamps
+        const lyricsRaw = `
+[00:05.00] Life is complicated
+[00:10.00] Full of surprises
+[00:15.00] Twists and turns
+[00:22.00] But within a framework
+[00:28.00] There is still control
+[00:35.00] The more you learn
+[00:40.00] The more you realize...
+[00:45.00] You know nothing.
+`;
+
+        // ==========================================
+        // 2. ENGINE SETUP
+        // ==========================================
+        
+        const canvas = document.getElementById('sky-canvas');
+        const ctx = canvas.getContext('2d');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+
+        let width, height;
+        let audioContext, analyser, source, dataArray;
+        let isPlaying = false;
+
+        // Interaction Targets (Touch/Mouse)
+        let touchX = 0, touchY = 0;
+        let isTouching = false;
+
+        // Resize
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Audio Init
+        audioPlayer.src = audioSrc;
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256; // Smaller FFT for smoother, broader cloud movement
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+            audioContext.resume();
+        }
+
+        // Start Button Logic
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            audioPlayer.play();
+            startScreen.classList.add('faded-out');
+            isPlaying = true;
+            animate();
+        });
+
+        // Touch/Mouse Tracking
+        window.addEventListener('mousemove', e => {
+            touchX = e.clientX;
+            touchY = e.clientY;
+            isTouching = true;
+        });
+        window.addEventListener('touchstart', e => {
+            touchX = e.touches[0].clientX;
+            touchY = e.touches[0].clientY;
+            isTouching = true;
+        });
+        window.addEventListener('touchend', () => { isTouching = false; });
+
+
+        // ==========================================
+        // 3. SKY & STARS SYSTEM
+        // ==========================================
+
+        // Color Stops for Dusk -> Night -> Dawn
+        const skyColors = {
+            dusk:   { r: 40, g: 30, b: 70 },   // Deep Indigo
+            night:  { r: 2,  g: 2,  b: 10 },   // Pitch Black
+            dawn:   { r: 255, g: 140, b: 100 } // Warm Peach/Gold
+        };
+
+        function getSkyColor(progress) {
+            // progress is 0.0 to 1.0
+            let start, end, p;
+
+            if (progress < 0.5) {
+                // First half: Dusk to Night
+                start = skyColors.dusk;
+                end = skyColors.night;
+                p = progress * 2; // scale 0-0.5 to 0-1
+            } else {
+                // Second half: Night to Dawn
+                start = skyColors.night;
+                end = skyColors.dawn;
+                p = (progress - 0.5) * 2; // scale 0.5-1.0 to 0-1
+            }
+
+            const r = Math.round(start.r + (end.r - start.r) * p);
+            const g = Math.round(start.g + (end.g - start.g) * p);
+            const b = Math.round(start.b + (end.b - start.b) * p);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        class ShootingStar {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * (height * 0.5); // Top half only
+                this.length = 0;
+                this.speed = Math.random() * 10 + 5;
+                this.angle = Math.PI / 4 + (Math.random() * 0.2); // Diagonal down-right
+                this.opacity = 0;
+                this.active = false;
+                this.wait = Math.random() * 500; // Random wait
+            }
+
+            update() {
+                if (this.wait > 0) {
+                    this.wait--;
+                    if (this.wait <= 0 && Math.random() > 0.95) { // Slight randomness to trigger
+                        this.active = true;
+                        this.opacity = 1;
+                        this.length = 0;
+                    }
+                } else if (this.active) {
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed;
+                    this.length += this.speed;
+                    this.opacity -= 0.02;
+
+                    if (this.opacity <= 0 || this.x > width || this.y > height) {
+                        this.active = false;
+                        this.reset();
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (!this.active) return;
+                const tailX = this.x - Math.cos(this.angle) * (this.length * 2);
+                const tailY = this.y - Math.sin(this.angle) * (this.length * 2);
+
+                const grad = ctx.createLinearGradient(this.x, this.y, tailX, tailY);
+                grad.addColorStop(0, `rgba(255,255,255,${this.opacity})`);
+                grad.addColorStop(1, `rgba(255,255,255,0)`);
+
+                ctx.beginPath();
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(tailX, tailY);
+                ctx.stroke();
+            }
+        }
+
+        const shootingStars = Array.from({ length: 3 }, () => new ShootingStar());
+
+
+        // ==========================================
+        // 4. CLOUD PARTICLE SYSTEM
+        // ==========================================
+        
+        class CloudParticle {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 60 + 20;
+                // Random drift
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+                // Color variation
+                this.alpha = Math.random() * 0.05 + 0.01;
+            }
+            
+            update(energy, progress) {
+                // 1. Audio Reactivity: Pulse size
+                let pulse = (energy / 255) * 10;
+                
+                // 2. Touch Interaction: Attract to finger
+                if (isTouching) {
+                    const dx = touchX - this.x;
+                    const dy = touchY - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 300) {
+                        this.vx += dx * 0.0001;
+                        this.vy += dy * 0.0001;
+                    }
+                }
+
+                // 3. Movement
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Friction
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                // Wrap around screen
+                if (this.x < -100) this.x = width + 100;
+                if (this.x > width + 100) this.x = -100;
+                if (this.y < -100) this.y = height + 100;
+                if (this.y > height + 100) this.y = -100;
+
+                // Color Morph based on time (Progress)
+                // Night = Blue/Purple clouds. Dawn = Pink/Orange clouds.
+                let r, g, b;
+                if (progress < 0.6) {
+                   r = 100; g = 100; b = 255; // Cold
+                } else {
+                   r = 255; g = 180; b = 150; // Warm
+                }
+                
+                this.color = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+                this.currentSize = this.size + pulse;
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.arc(this.x, this.y, this.currentSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const clouds = Array.from({ length: 150 }, () => new CloudParticle());
+
+
+        // ==========================================
+        // 5. LYRIC PARSER & SYNC
+        // ==========================================
+        
+        function parseLRC(lrc) {
+            const lines = lrc.split('\n');
+            const result = [];
+            lines.forEach(line => {
+                const match = line.match(/\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/);
+                if (match) {
+                    const min = parseInt(match[1]);
+                    const sec = parseInt(match[2]);
+                    const time = min * 60 + sec;
+                    result.push({ time, text: match[4].trim() });
+                }
+            });
+            return result;
+        }
+
+        const lyrics = parseLRC(lyricsRaw);
+        let currentLineIndex = -1;
+
+        function checkLyrics(currentTime) {
+            // Find the current line
+            let activeIndex = -1;
+            for (let i = 0; i < lyrics.length; i++) {
+                if (currentTime >= lyrics[i].time) {
+                    activeIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (activeIndex !== currentLineIndex && activeIndex !== -1) {
+                currentLineIndex = activeIndex;
+                showLyric(lyrics[activeIndex].text);
+            }
+        }
+
+        function showLyric(text) {
+            // Remove old
+            const old = document.querySelector('.lyric-wrapper');
+            if(old) old.remove();
+
+            if(!text) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'lyric-wrapper';
+            wrapper.innerHTML = `<div class="lyric-content">${text}</div>`;
+            lyricsContainer.appendChild(wrapper);
+        }
+
+        // ==========================================
+        // 6. MAIN LOOP
+        // ==========================================
+
+        function animate() {
+            if (!isPlaying) return;
+
+            // Audio Data
+            analyser.getByteFrequencyData(dataArray);
+            let energy = 0;
+            for(let i=0; i<50; i++) energy += dataArray[i];
+            energy = energy / 50;
+
+            // Time & Progress
+            const currentTime = audioPlayer.currentTime;
+            const duration = audioPlayer.duration || 1;
+            const progress = Math.min(currentTime / duration, 1);
+
+            // 1. Paint Background (Dusk -> Dawn)
+            const bgColor = getSkyColor(progress);
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, width, height);
+
+            // 2. Stars (Behind clouds)
+            // Draw static stars fading in as night falls
+            if (progress > 0.1 && progress < 0.8) {
+                ctx.fillStyle = `rgba(255,255,255,${Math.sin(Date.now()*0.001)*0.3 + 0.2})`;
+                // Simple random stars could be added here if desired
+            }
+
+            // 3. Shooting Stars
+            shootingStars.forEach(star => {
+                star.update();
+                star.draw(ctx);
+            });
+
+            // 4. Clouds
+            ctx.globalCompositeOperation = 'screen'; // Blending mode for "glow"
+            clouds.forEach(cloud => {
+                cloud.update(energy, progress);
+                cloud.draw(ctx);
+            });
+            ctx.globalCompositeOperation = 'source-over';
+
+            // 5. Lyrics
+            checkLyrics(currentTime);
+
+            // End Check
+            if (progress >= 0.99) {
+                // Optional: Fade out page or show restart button
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+    </script>
+</body>
+</html>

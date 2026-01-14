@@ -1,0 +1,16 @@
+<?php
+// Simple PHP header include. Use: <?php include __DIR__ . '/includes/header.php'; ?>
+?>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="/TONIC ONLINE/index.html">TONIC</a>
+    <input id="menu-toggle" class="menu-toggle" type="checkbox" aria-label="Toggle menu">
+    <nav id="main-nav" class="main-nav" aria-label="Main navigation">
+      <a href="index.html">Home</a>
+      <a href="intro.html">Intro</a>
+      <a href="folio.html">Folio</a>
+      <a href="about.html">About</a>
+    </nav>
+    <label for="menu-toggle" class="menu-icon" aria-hidden="true">☰</label>
+  </div>
+</header>

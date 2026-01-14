@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blazing Sun – Final Final</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:600px; height:600px; }
+
+    /* Extremely bright white-yellow sun with huge halo */
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:160px; height:160px; margin:-80px 0 0 -80px;
+        background:radial-gradient(circle, #ffffff, #ffffcc 35%, #ffea77 70%);
+        border-radius:50%;
+        box-shadow:
+            0 0 80px #ffffff,
+            0 0 160px #ffff99,
+            0 0 260px #ffea77,
+            0 0 400px rgba(255,255,180,0.8),
+            0 0 500px rgba(255,255,200,0.6);
+        z-index:100;
+    }
+
+    .electron {
+        position:absolute; width:42px; height:42px; border-radius:50%; margin:-21px 0 0 -21px;
+        z-index: 400;               /* always on top of everything */
+        filter: drop-shadow(0 0 20px currentColor);
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #ffffff, #ff2244); box-shadow:0 0 50px #ff4466; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #ffffff, #3388ff); box-shadow:0 0 50px #55aaff; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffffff, #ffdd22); box-shadow:0 0 50px #ffee66; }
+
+    canvas { position:absolute; inset:0; pointer-events:none; z-index:350; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="trails" width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('trails');
+const ctx = canvas.getContext('2d');
+const radius = 240;
+const centerX = 300;
+const centerY = 300;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff4466', offset:   0, tilt:   0,           flatten: 0.88 },
+    { el: document.getElementById('e2'), color: '#55aaff', offset: 120, tilt: 120*Math.PI/180, flatten: 0.42 },
+    { el: document.getElementById('e3'), color: '#ffee66', offset: 240, tilt: 240*Math.PI/180, flatten: 0.42 }
+];
+
+let time = 0;
+
+function animate() {
+    time += 0.018;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.07)';
+    ctx.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const angle = time + e.offset * Math.PI / 180;
+
+        let x = Math.cos(angle) * radius;
+        let y = Math.sin(angle) * radius * (1 - e.flatten);
+        let z = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+
+        const cosT = Math.cos(e.tilt);
+        const sinT = Math.sin(e.tilt);
+        const rotX =  x * cosT + z * sinT;
+        const rotZ = -x * sinT + z * cosT;
+
+        const scale = 1 + rotZ * 0.0016;
+
+        // Planets – always super bright and visible
+        e.el.style.left = (centerX + rotX) + 'px';
+        e.el.style.top  = (centerY + y)   + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        // Neon trails – always perfectly visible
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.arc(centerX + rotX, centerY + y, 6, 0, Math.PI*2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+
+        ctx.globalAlpha = 0.28;
+        ctx.beginPath();
+        ctx.arc(centerX + rotX, centerY + y, 18, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

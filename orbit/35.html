@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom – Red Flat Orbit + Two Inclined</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:600px; height:600px; }
+
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:160px; height:160px; margin:-80px 0 0 -80px;
+        background:radial-gradient(circle, #ffcc00, #fff 70%, #ffea88);
+        border-radius:50%;
+        box-shadow:0 0 80px #ffffcc, 0 0 160px #ffea88, 0 0 300px rgba(255,255,200,0.8);
+        z-index:500;
+    }
+
+    .electron {
+        position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px;
+        pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #fff, #ff2244); box-shadow:0 0 50px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #fff, #3388ff); box-shadow:0 0 50px #55aaff, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #fff, #ffdd22); box-shadow:0 0 50px #ffee66, inset -8px -8px 20px #ccaa00; }
+
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index:550; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div> <!-- red – flat orbit -->
+    <div class="electron" id="e2"></div> <!-- blue -->
+    <div class="electron" id="e3"></div> <!-- yellow -->
+    
+    <canvas id="trailsBack"  width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" width="600" height="600" class="trail-front"></canvas>
+</div>
+
+<script>
+// ██████████████████  TWEAK THESE ██████████████████
+const speed            = 0.018;
+const orbitRadius      = 240;
+const redFlatten       = 0.88;   // 0.88 = very flat ellipse for red (higher = flatter)
+const normalInclination = 62 * Math.PI/180;
+const trailFade        = 0.032;
+const trailThickness   = 2.0;
+// █████████████████████████████████████████████████
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 300;
+const centerY = 300;
+const nucleusRadius = 80;
+
+const electrons = [
+    // RED — flat elliptical orbit in the plane of the screen
+    { el: document.getElementById('e1'), color: '#ff4466', isRedFlat: true,  offset: 0 },
+    
+    // BLUE & YELLOW — normal inclined orbits 120° apart
+    { el: document.getElementById('e2'), color: '#55aaff', planeRotation: 120 * Math.PI/180 },
+    { el: document.getElementById('e3'), color: '#ffee66', planeRotation: 240 * Math.PI/180 }
+];
+
+let time = 0;
+
+function animate() {
+    time += speed;
+
+    // fade trails
+    ctxBack.fillStyle = `rgba(0,0,0,${trailFade})`;
+    ctxBack.fillRect(0,0,600,600);
+    ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`;
+    ctxFront.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        let finalX, finalY, finalZ, scale;
+
+        if (e.isRedFlat) {
+            // RED: very flat ellipse directly facing us
+            const angle = time + e.offset;
+            finalX = Math.cos(angle) * orbitRadius;
+            finalY = Math.sin(angle) * orbitRadius * (1 - redFlatten);
+            finalZ = 0;                                   // stays in the middle depth-wise
+            scale  = 1 + finalZ * 0.0032;
+        } else {
+            // BLUE & YELLOW: inclined circular orbits rotated 120° apart
+            const angle = time;
+            let x = Math.cos(angle) * orbitRadius;
+            let y = Math.sin(angle) * orbitRadius;
+
+            // tilt forward
+            const X1 = x;
+            const Y1 = y * Math.cos(normalInclination);
+            const Z1 = y * Math.sin(normalInclination);
+
+            // rotate plane around Y axis
+            const cosR = Math.cos(e.planeRotation);
+            const sinR = Math.sin(e.planeRotation);
+            finalX = X1 * cosR - Z1 * sinR;
+            finalY = Y1;
+            finalZ = X1 * sinR + Z1 * cosR;
+            scale  = 1 + finalZ * 0.0032;
+        }
+
+        const screenX = centerX + finalX;
+        const screenY = centerY + finalY;
+
+        // Update electron
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        // Proper hiding behind nucleus
+        const dist2D = Math.sqrt(finalX*finalX + finalY*finalY);
+        const behindNucleus = finalZ < 15 && dist2D < nucleusRadius + 18;  // small threshold for red
+        e.el.style.zIndex = behindNucleus ? 400 : 600;
+
+        // Trail on correct layer
+        const ctx = finalZ < 15 ? ctxBack : ctxFront;
+
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.01, screenY + 0.01);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.09;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 4, 0, Math.PI*2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

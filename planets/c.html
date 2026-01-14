@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar System</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #181e21;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('solarSystemCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const sun = { x: canvas.width / 2, y: canvas.height / 2, radius: 40 };
+    
+    const planets = [
+      { name: 'Mercury', distance: 100, speed: 0.02, radius: 4, color: 'gray', angle: -Math.PI/2 },
+      { name: 'Venus', distance: 150, speed: 0.015, radius: 8, color: 'orange', angle: -Math.PI/2 },
+      { name: 'Earth', distance: 200, speed: 0.01, radius: 8, color: 'green', angle: -Math.PI/2 },
+      { name: 'Mars', distance: 250, speed: 0.008, radius: 7, color: 'red', angle: -Math.PI/2 },
+      { name: 'Jupiter', distance: 300, speed: 0.005, radius: 25, color: '#9b8762', angle: -Math.PI/2 },
+      { name: 'Saturn', distance: 350, speed: 0.003, radius: 18, color: '#c8a572', angle: -Math.PI/2 },
+      { name: 'Uranus', distance: 400, speed: 0.008, radius: 20, color: '#9ab2be', angle: -Math.PI/2 },
+      { name: 'Neptune', distance: 450, speed: 0.009, radius: 18, color: 'blue', angle: -Math.PI/2 }
+    ];
+
+    const rotationSpeed = {
+      'Mercury': 0.0083, 'Venus': -0.0037, 'Earth': 0.0365,
+      'Mars': 0.0352, 'Jupiter': 0.095, 'Saturn': 0.093,
+      'Uranus': -0.059, 'Neptune': 0.062
+    };
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas each frame
+
+      // Draw Sun
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+
+      planets.forEach(planet => {
+        planet.angle += planet.speed; // Update planet angle based on its speed
+        const x = sun.x + Math.cos(planet.angle) * planet.distance;
+        const y = sun.y + Math.sin(planet.angle) * planet.distance;
+
+        // Draw planet
+        ctx.beginPath();
+        ctx.arc(x, y, planet.radius, 0, Math.PI * 2);
+        ctx.fillStyle = planet.color;
+        ctx.fill();
+
+        // Update planet's rotation angle for meridians
+        planet.rotationAngle = (planet.rotationAngle || 0) + rotationSpeed[planet.name];
+
+        // Draw meridians (should rotate horizontally around the planet's horizontal axis)
+        const meridianCount = 6;  // Number of meridians
+        const meridianRotationSpeed = 0.02; // Horizontal rotation speed of the planet
+
+        for (let i = 0; i < meridianCount; i++) {
+          const angleOffset = (Math.PI * 2 / meridianCount) * i + planet.rotationAngle;
+
+          // Calculate the positions of the meridians at the equator
+          const xStart = x + Math.cos(angleOffset) * planet.radius;
+          const yStart = y + Math.sin(angleOffset) * planet.radius;
+          const xEnd = x + Math.cos(angleOffset + Math.PI) * planet.radius;
+          const yEnd = y + Math.sin(angleOffset + Math.PI) * planet.radius;
+
+          // Draw the meridians as they rotate horizontally
+          ctx.beginPath();
+          ctx.moveTo(xStart, yStart);
+          ctx.lineTo(xEnd, yEnd);
+          ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+
+      requestAnimationFrame(animate); // Continuously call animate function
+    }
+
+    animate(); // Start the animation loop
+  </script>
+</body>
+</html>

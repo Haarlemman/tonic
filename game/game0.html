@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Play 'Solar Sprint', an exciting game that offers thrilling challenges and fun gameplay. Play now and enjoy hours of entertainment!">
+	<meta name="keywords" content="game, play, online game, action game, adventure game">
+	<meta property="og:title" content="Solar Sprint">
+	<meta property="og:description" content="Play 'Solar Sprint' for endless fun | A Prime Paradox Production">		
+	<meta property="og:image" content="https://www.davidenker.com/game/images/solar.jpg" />
+	<meta property="og:url" content="https://www.davidenker.com/game/" />
+	<meta property="og:type" content="website" />
+	<meta name="twitter:title" content="Solar Sprint">
+	<meta name="twitter:description" content="Play 'Solar Sprint' now for the ultimate gaming experience!">
+	<meta name="twitter:image" content="https://www.davidenker.com/game/images/solar.jpg">
+	<meta name="twitter:card" content="https://www.davidenker.com/game/images/primeparadox.jpg">
+	
+<link rel="icon" type="image/svg+xml" href="images/fav.svg">
+<link rel="icon" type="image/png" href="images/apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="images/fav.ico">
+	
+	
+    <title>SOLAR SPRINT</title>
+	
+<style>
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #00182e;
+    background-image: url('images/dots.gif');
+    background-repeat: repeat;
+}
+
+canvas {
+    display: block;
+    background: url('images/ruimte.jpg') center center / cover no-repeat;
+
+}
+
+#zon {
+    position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 0;
+    opacity: 0.5;
+}
+
+#controls img {
+    width: 60px;
+    height: 60px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+#controls .row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+button {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    text-align: center;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+    outline: none;
+    
+}
+
+button:focus {
+    outline: none;
+}
+
+
+#controls button {
+    position: relative;
+    z-index: 10;  /* Make sure buttons are above other elements */
+}
+
+
+
+#playAgainButton {
+    display: block; /* Ensure it's visible when needed */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 10; /* Ensure it's on top of other content */
+    transition: transform 0.2s ease-in-out; /* Smooth transition for scaling */
+}
+
+
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+@keyframes wobble {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(10deg); }
+    50% { transform: rotate(-10deg); }
+    75% { transform: rotate(5deg); }
+}
+
+.player-wobble {
+    animation: wobble 0.5s infinite;
+}
+
+
+
+#playAgainLink {
+    position: absolute;
+    display: none; /* Initially hidden */
+    z-index: 10;
+    width: 200px; /* Adjust the width based on your button size */
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 20px; /* Adjust spacing from the dancing player */
+    transition: transform 0.2s ease-in-out; /* Smooth transition for scaling */
+
+}
+
+/* For the link version */
+#playAgainLink img {
+    width: 120px;
+    height: auto;
+    transition: transform 0.3s ease; /* Smooth transition */
+}
+
+#playAgainLink:hover img {
+    transform: scale(1.3); /* Enlarge image on hover */
+}
+
+#playAgainLink:active img {
+    transform: scale(0.8); /* Shrink image on click */
+}
+
+
+</style>
+
+
+</head>
+	
+
+<body>
+	
+    <img id="zon" src="images/sol.gif" alt="Zon Image" style="width: 600px;">
+	
+    <canvas id="gameCanvas"></canvas>
+	
+	
+    <div id="controls">
+        <div class="row">
+            <button id="upButton"><img src="images/direction-up.png" alt="up"></button>
+        </div>
+        <div class="row">
+			<button id="leftButton"><img src="images/direction-left.png" alt="left"></button>
+            <button id="downButton"><img src="images/direction-down.png" alt="down"></button>
+            <button id="rightButton"><img src="images/direction-right.png" alt="right"></button>
+    </div>
+	</div>
+
+	
+
+    <a id="playAgainLink" href="game.html">
+        <img src="images/but-playagain.png" alt="Play Again">
+    </a>
+    
+
+
+
+    
+ <script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const upButton = document.getElementById("upButton");
+const downButton = document.getElementById("downButton");
+const leftButton = document.getElementById("leftButton");
+const rightButton = document.getElementById("rightButton");
+const spriteSheet = new Image();
+let tileSize, rows, cols, player, cars = [], animationFrameId;
+const images = {};
+let collisionState = false;
+let collisionTimer = null;
+let currentLevel = 1;
+let gameWon = false;
+let spriteFrame = 0;
+let lastFrameTime = 0;
+let score = 0;
+let highScore = parseInt(localStorage.getItem('solarSprintHighScore')) || 0;
+let lastY = 0; // Track last position for distance points
+let highScores = JSON.parse(localStorage.getItem('solarSprintHighScores')) || [];
+const MAX_HIGH_SCORES = 5; // Keep top 5 scores
+const FRAME_WIDTH = 160;
+const FRAME_HEIGHT = 160;
+const TOTAL_FRAMES = 57;
+const FRAME_DURATION = 50;
+
+spriteSheet.onload = () => console.log("Sprite sheet loaded");
+spriteSheet.onerror = (err) => console.error("Sprite sheet error", err);
+
+
+async function loadImages(imageSources) {
+    const promises = Object.entries(imageSources).map(([key, src]) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => { images[key] = img; resolve(); };
+            img.onerror = (error) => reject(`Failed to load ${src}: ${error}`);
+            img.src = src;
+        });
+    });
+    try {
+      await Promise.all(promises);
+      console.log("Images loaded")
+    } catch (error) {
+      console.error("Failed to load images:", error)
+    }
+}
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const sounds = {};
+const soundFiles = {
+    collision: 'sound/glitshowman.mp3',
+    hooray: 'sound/hoorayscratch.mp3',
+    level1: 'sound/level1.mp3',
+    level2: 'sound/cool.wav',
+    level3: 'sound/drum2.wav',
+    level4: 'sound/drum3.wav',
+    victory: 'sound/techno3.wav'
+};
+
+async function loadSounds() {
+  try {
+    const soundPromises = Object.entries(soundFiles).map(async ([name, url]) => {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      sounds[name] = await audioContext.decodeAudioData(arrayBuffer);
+    });
+    await Promise.all(soundPromises);
+    console.log("Sounds loaded");
+  } catch (error) {
+    console.error("Failed to load sounds:", error);
+  }
+}
+
+let audioInitialized = false;
+let currentMusicSource = null;
+
+function initializeAudio() {
+    if (!audioInitialized) {
+        audioContext.resume().then(() => {
+            audioInitialized = true;
+            playLevelMusic(currentLevel);
+        }).catch(err => console.error("Audio resume error:", err));
+    }
+}
+
+
+window.addEventListener('click', initializeAudio);
+window.addEventListener('keydown', initializeAudio);
+window.addEventListener('touchstart', initializeAudio);
+
+
+// Add this function to draw the score
+function drawScore() {
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'right';
+    
+    // Current Score
+    ctx.fillText(`Score: ${score}`, canvas.width - 20, 30);
+    
+    // High Scores Table
+    if (highScores.length > 0) {
+        ctx.font = '16px Arial';
+        ctx.fillText('High Scores:', canvas.width - 20, 60);
+        
+        highScores.forEach((entry, index) => {
+            const color = score > entry.score ? 'yellow' : 'white';
+            ctx.fillStyle = color;
+            ctx.fillText(
+                `${index + 1}. ${entry.name}: ${entry.score}`, 
+                canvas.width - 20, 
+                90 + (index * 25)
+            );
+        });
+    }
+}
+
+function updateHighScore() {
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('solarSprintHighScore', highScore);
+        
+        // Show a "New High Score!" message
+        ctx.fillStyle = 'yellow';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏆 New High Score! 🏆', canvas.width / 2, 100);
+    }
+}
+
+function resetHighScore() {
+    highScore = 0;
+    localStorage.setItem('solarSprintHighScore', 0);
+}
+
+function playSound(soundName) {
+    if (!audioInitialized || !sounds[soundName]) return;
+    const source = audioContext.createBufferSource();
+    source.buffer = sounds[soundName];
+    source.connect(audioContext.destination);
+    source.start(0);
+}
+
+function playLevelMusic(level) {
+    if (!audioInitialized) return;
+    if (currentMusicSource) currentMusicSource.stop();
+
+    let musicSound;
+    switch (level) {
+        case 1: musicSound = 'level1'; break;
+        case 2: musicSound = 'level2'; break;
+        case 3: musicSound = 'level3'; break;
+        case 4: musicSound = 'level4'; break;
+        case 5: musicSound = 'victory'; break;
+        default: return;
+    }
+
+    if (sounds[musicSound]) {
+        currentMusicSource = audioContext.createBufferSource();
+        currentMusicSource.buffer = sounds[musicSound];
+        currentMusicSource.loop = true;
+        currentMusicSource.connect(audioContext.destination);
+        currentMusicSource.start(0);
+    }
+}
+
+function drawBackground() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+function drawStreetLines() {
+    if (images.stripe) {
+        const stripeWidth = tileSize / 3;
+        const stripeHeight = tileSize / 40;
+        const gap = stripeWidth * 1;
+
+        for (let i = 1; i < rows - 1; i++) {
+            for (let x = 0; x < canvas.width; x += stripeWidth + gap) {
+                ctx.drawImage(images.stripe, x, i * tileSize + (tileSize / 2) - (stripeHeight / 2), stripeWidth, stripeHeight);
+            }
+        }
+    }
+}
+
+function drawPlayer() {
+    if (currentLevel === 5) {
+        if (images.dancing) {
+            const currentTime = performance.now();
+            if (currentTime - lastFrameTime > FRAME_DURATION) {
+                spriteFrame = (spriteFrame + 1) % TOTAL_FRAMES;
+                lastFrameTime = currentTime;
+            }
+
+            const sourceX = spriteFrame * FRAME_WIDTH;
+            const sourceY = 0;
+            const scaleFactor = Math.min(tileSize * 3 / FRAME_WIDTH, tileSize * 3 / FRAME_HEIGHT);
+            const scaledWidth = FRAME_WIDTH * scaleFactor;
+            const scaledHeight = FRAME_HEIGHT * scaleFactor;
+            const centerX = (canvas.width - scaledWidth) / 2;
+            const centerY = (canvas.height - scaledHeight) / 2;
+
+            ctx.drawImage(images.dancing, sourceX, sourceY, FRAME_WIDTH, FRAME_HEIGHT, centerX, centerY, scaledWidth, scaledHeight);
+            const playAgainButton = document.getElementById('playAgainLink');
+            if (playAgainButton){
+                playAgainButton.style.display = 'block';
+                playAgainButton.style.top = (centerY + scaledHeight + 20) + 'px';
+            }
+        }
+    } else {
+        const playerImage = collisionState ? images.faceboom : images.face;
+        if (playerImage) {
+            const playerWidth = playerImage.width;
+            const playerHeight = playerImage.height;
+            const scaleFactor = Math.min(tileSize * 3 / playerWidth, tileSize * 3 / playerHeight);
+            const scaledWidth = playerWidth * scaleFactor;
+            const scaledHeight = playerHeight * scaleFactor;
+            ctx.drawImage(playerImage, player.x, player.y, scaledWidth, scaledHeight);
+        }
+    }
+}
+
+function drawLevel() {
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'left';
+    if (currentLevel === 5) {
+        ctx.fillStyle = 'yellow';
+        ctx.font = '30px Arial';
+        ctx.fillText('THE END!', 20, 30);
+    } else {
+        ctx.fillText(`Level ${currentLevel}`, 20, 30);
+    }
+}
+
+function submitHighScore() {
+    if (score > 0) {
+        const playerName = prompt("Congratulations! Enter your name for the high score:", "Player");
+        if (playerName) {
+            const newScore = {
+                name: playerName.substring(0, 10), // Limit name length
+                score: score,
+                date: new Date().toLocaleDateString()
+            };
+            
+            highScores.push(newScore);
+            // Sort by score (highest first) and keep only top 5
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, MAX_HIGH_SCORES);
+            
+            localStorage.setItem('solarSprintHighScores', JSON.stringify(highScores));
+        }
+    }
+}
+
+
+function drawCars() {
+    cars.forEach((car) => {
+        if (car.image) {
+            const carWidth = car.image.width;
+            const carHeight = car.image.height;
+            const scaleFactor = Math.min(tileSize * 2 / carWidth, tileSize * 2 / carHeight);
+            const scaledWidth = carWidth * scaleFactor;
+            const scaledHeight = carHeight * scaleFactor;
+            ctx.drawImage(car.image, car.x, car.y, scaledWidth, scaledHeight);
+        }
+    });
+}
+
+function moveCars() {
+    cars.forEach(car => {
+        car.x += car.speed;
+        if (car.speed > 0 && car.x > canvas.width) {
+            car.x = -car.width;
+        } else if (car.speed < 0 && car.x < -car.width) {
+            car.x = canvas.width;
+        }
+    });
+}
+
+function checkCollision() {
+    return cars.some(car =>
+        player.x < car.x + car.width &&
+        player.x + player.width > car.x &&
+        player.y < car.y + car.height &&
+        player.y + player.height > car.y
+    );
+}
+
+function movePlayer(direction) {
+    if (collisionState) return;
+
+    if (direction === 'up') player.y -= tileSize;
+    if (direction === 'down') player.y += tileSize;
+    if (direction === 'left') player.x -= tileSize;
+    if (direction === 'right') player.x += tileSize;
+
+    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+}
+
+function handleCollision() {
+    collisionState = true;
+    playSound('collision');
+    score = Math.max(0, score - 200); // Penalty for collision, but don't go below 0
+    if (collisionTimer) clearTimeout(collisionTimer);
+    collisionTimer = setTimeout(() => {
+        collisionState = false;
+        resetPlayer();
+    }, 1000);
+}
+
+function switchToLevel(level) {
+    if (level === 1) {
+        score = 0; // Reset score only when starting a new game
+    }
+    currentLevel = level;
+    playSound('hooray');
+    playLevelMusic(level);
+    resetPlayer();
+    createCars();
+}
+
+
+function resetPlayer() {
+    player = {
+        x: canvas.width / 2 - tileSize,
+        y: canvas.height - tileSize * 2,
+        width: tileSize * 2,  // Set width based on tileSize
+        height: tileSize     // Set height based on tileSize
+    };
+    lastY = player.y; // Reset lastY position
+
+}
+
+
+function createCars() {
+    cars = [];
+    const maxRows = 4; // Reduced from 5 to 4 rows to make it more manageable
+    for (let i = 1; i <= maxRows; i++) {
+        let selectedImage;
+        if (i === 2) selectedImage = images.monster3;
+        else if (i === 1) selectedImage = images.blob;
+        else if (i === 3) selectedImage = images.monster1;
+        else selectedImage = images.augurk;
+
+        // Reduce base speed range
+        const baseSpeed = i === 2 ? -(Math.random() * 1.5 + 0.8) : Math.random() * 1.5 + 0.8;
+        
+        // Add some gaps between cars by randomizing starting positions
+        cars.push({
+            x: i === 2 ? canvas.width : Math.random() * canvas.width,
+            y: i * tileSize * 1.2, // Add 20% more space between rows
+            width: tileSize * 2,
+            height: tileSize,
+            speed: getSpeedForLevel(baseSpeed),
+            image: selectedImage
+        });
+    }
+}
+
+function getSpeedForLevel(baseSpeed) {
+    // Reduce the speed multiplier for higher levels
+    const speedMultiplier = currentLevel === 1 ? 1 : 
+                           currentLevel === 2 ? 1.2 : 
+                           currentLevel === 3 ? 1.4 : 1.6;
+    return baseSpeed * speedMultiplier;
+}
+
+
+function checkWin() {
+    // Add logic to check if the player has won the level
+    return player.y < 50; // Example: win if player is near the top of the canvas
+}
+
+
+
+
+function gameLoop() {
+    drawBackground();
+    drawStreetLines();
+    drawCars();
+    drawPlayer();
+    drawLevel();
+    drawScore();
+    moveCars();
+    updateScore();
+    updateHighScore();
+
+    if (checkWin()) {
+        if (currentLevel < 5) {
+            score += currentLevel * 1000;
+            switchToLevel(currentLevel + 1);
+        } else if (currentLevel === 5 && !gameWon) {
+            score += 5000;
+            gameWon = true;
+            playLevelMusic(5);
+            submitHighScore(); // Prompt for name when game is won
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('solarSprintHighScore', highScore);
+            }
+        }
+    }
+
+    if (checkCollision() && !collisionState) {
+        handleCollision();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+
+function updateScore() {
+    if (!collisionState) {
+        // Award points for moving upward
+        if (player.y < lastY) {
+            score += Math.floor((lastY - player.y) / tileSize) * 50;
+        }
+        lastY = player.y;
+    }
+}
+
+
+function resetHighScores() {
+    highScores = [];
+    localStorage.setItem('solarSprintHighScores', JSON.stringify(highScores));
+}
+
+// Function to view high scores anytime
+function showHighScores() {
+    let scoreText = "High Scores:\n\n";
+    if (highScores.length === 0) {
+        scoreText += "No high scores yet!";
+    } else {
+        highScores.forEach((entry, index) => {
+            scoreText += `${index + 1}. ${entry.name}: ${entry.score} (${entry.date})\n`;
+        });
+    }
+    alert(scoreText);
+}
+
+
+// Optional: Add a button to view high scores
+const highScoresButton = document.createElement('button');
+highScoresButton.innerHTML = '🏆';
+highScoresButton.style.position = 'absolute';
+highScoresButton.style.top = '10px';
+highScoresButton.style.right = '10px';
+highScoresButton.style.fontSize = '24px';
+highScoresButton.style.padding = '5px 10px';
+highScoresButton.style.background = 'rgba(255, 255, 255, 0.2)';
+highScoresButton.style.border = '2px solid white';
+highScoresButton.style.borderRadius = '5px';
+highScoresButton.style.color = 'white';
+highScoresButton.style.cursor = 'pointer';
+highScoresButton.onclick = showHighScores;
+document.body.appendChild(highScoresButton);
+
+
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight * 0.8;
+    tileSize = Math.min(canvas.width, canvas.height) / 10;
+    rows = Math.floor(canvas.height / tileSize);
+    cols = Math.floor(canvas.width / tileSize);
+    resetPlayer();
+    createCars();
+}
+
+async function loadSounds() {
+  try {
+    const soundPromises = Object.entries(soundFiles).map(async ([name, url]) => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to load ${url}: ${response.statusText}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      sounds[name] = await audioContext.decodeAudioData(arrayBuffer);
+    });
+    await Promise.all(soundPromises);
+    console.log("Sounds loaded");
+  } catch (error) {
+    console.error("Failed to load sounds:", error);
+  }
+}
+
+
+
+window.addEventListener('load', async () => {
+    resizeCanvas();
+    await loadImages({
+        dancing: 'images/dancingspritesheet.png',
+        face: 'images/face.png', // Replace with your actual image paths
+        faceboom: 'images/faceboom.png',
+        stripe: 'images/stripe.png', // Example image for street lines
+        monster3: 'images/monster3.png', // Add your images here
+        blob: 'images/blob.png',
+        monster1: 'images/monster1.png',
+        augurk: 'images/augurk.png',
+        monster2: 'images/monster2.png'
+    });
+    await loadSounds();
+    gameLoop();  // Start the game loop after loading all assets
+});
+
+
+
+
+upButton.addEventListener('click', () => movePlayer('up'));
+downButton.addEventListener('click', () => movePlayer('down'));
+leftButton.addEventListener('click', () => movePlayer('left'));
+rightButton.addEventListener('click', () => movePlayer('right'));
+
+
+
+document.addEventListener('keydown', (e) => {
+    switch (e.key) {
+        case "ArrowUp": movePlayer('up'); break;
+        case "ArrowDown": movePlayer('down'); break;
+        case "ArrowLeft": movePlayer('left'); break;
+        case "ArrowRight": movePlayer('right'); break;
+    }
+});
+
+window.addEventListener('resize', resizeCanvas);
+
+window.onload = async () => {
+    await loadImages({
+        dancing: 'images/dancingspritesheet.png',
+        face: 'images/face.png', // Replace with your actual image paths
+        faceboom: 'images/faceboom.png',
+        stripe: 'images/stripe.png', // Example image for street lines
+        monster3: 'images/monster3.png', // Add your images here
+        blob: 'images/blob.png',
+        monster1: 'images/monster1.png',
+        augurk: 'images/augurk.png',
+        monster2: 'images/monster2.png'
+    });
+    await loadSounds();
+    resizeCanvas();
+    gameLoop(); // Start the game loop after everything is loaded
+};
+
+
+</script>
+
+ 
+    <footer>
+        <p>&copy; 2025 Prime Paradox Productions</p>
+    </footer>
+    
+
+ 
+		
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Machina // Vertical Presentation v2</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #F1F0EA; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // Icons
+        const Maximize = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        );
+        const Minimize = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+        );
+
+        const AI_Presentation = () => {
+            const [activeEra, setActiveEra] = useState(0);
+            const [progress, setProgress] = useState(0);
+            const [isFullscreen, setIsFullscreen] = useState(false);
+            const canvasRef = useRef(null);
+            const requestRef = useRef(null);
+            const containerRef = useRef(null);
+
+            const SLIDE_DURATION = 10000; 
+            
+            const eras = [
+                {
+                    year: "1950",
+                    title: "THE LOGIC GATE",
+                    short: "BINARY LOGIC",
+                    desc: "In the beginning, there was the switch. Rules are absolute. The machine does exactly what it is told.",
+                    color: "#E63946", 
+                    mode: "binary" 
+                },
+                {
+                    year: "1980",
+                    title: "EXPERT SYSTEMS",
+                    short: "DECISION TREES",
+                    desc: "If-This-Then-That. We built rigid maps of knowledge. Powerful, but brittle.",
+                    color: "#457B9D",
+                    mode: "tree"
+                },
+                {
+                    year: "2010",
+                    title: "DEEP LEARNING",
+                    short: "NEURAL NETWORKS",
+                    desc: "The machine opens its eyes. Layers of math mimic the brain to find patterns in the noise.",
+                    color: "#1D3557",
+                    mode: "network"
+                },
+                {
+                    year: "2024",
+                    title: "GENERATIVE FLUX",
+                    short: "LLMs & DIFFUSION",
+                    desc: "The machine dreams. It predicts the next token, the next pixel. It improvises.",
+                    color: "#E9C46A",
+                    mode: "fluid"
+                },
+                {
+                    year: "2045",
+                    title: "THE SINGULARITY",
+                    short: "HYBRID MINDS",
+                    desc: "Symbiosis. The boundary dissolves. Is it a tool, or is it us?",
+                    color: "#7209B7",
+                    mode: "quantum"
+                }
+            ];
+
+            // --- Fullscreen Logic ---
+            const toggleFullscreen = () => {
+                if (!document.fullscreenElement) {
+                    containerRef.current.requestFullscreen().catch(err => {
+                        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                    setIsFullscreen(true);
+                } else {
+                    document.exitFullscreen();
+                    setIsFullscreen(false);
+                }
+            };
+
+            // --- Time Management ---
+            useEffect(() => {
+                const startTime = Date.now();
+                const timer = setInterval(() => {
+                    const now = Date.now();
+                    const diff = now - startTime;
+                    const totalTime = diff % (SLIDE_DURATION * eras.length);
+                    const currentEraIndex = Math.floor(totalTime / SLIDE_DURATION);
+                    const eraProgress = (totalTime % SLIDE_DURATION) / SLIDE_DURATION;
+                    setActiveEra(currentEraIndex);
+                    setProgress(eraProgress);
+                }, 50); 
+                return () => clearInterval(timer);
+            }, []);
+
+            // --- Animation Engine ---
+            const particles = useMemo(() => Array.from({ length: 80 }, () => ({
+                x: Math.random() * 100, y: Math.random() * 100,
+                vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
+                size: Math.random() * 8 + 2,
+                state: Math.random() > 0.5 ? 1 : 0,
+                angle: Math.random() * Math.PI * 2, radius: Math.random() * 30 + 10
+            })), []);
+
+            const animate = (time) => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width;
+                const height = canvas.height;
+                const autoChaos = (Math.sin(progress * Math.PI) * 0.8) + 0.1; 
+
+                ctx.fillStyle = 'rgba(241, 240, 234, 0.2)'; 
+                ctx.fillRect(0, 0, width, height);
+
+                const mode = eras[activeEra].mode;
+                const mainColor = eras[activeEra].color;
+
+                particles.forEach((p, i) => {
+                    if (mode === 'binary') {
+                        const jitter = autoChaos * 5; 
+                        p.x += (Math.random() - 0.5) * jitter; p.y += (Math.random() - 0.5) * jitter;
+                        const gridSize = 80; 
+                        const drawX = Math.round((p.x / 100) * width / gridSize) * gridSize;
+                        const drawY = Math.round((p.y / 100) * height / gridSize) * gridSize;
+                        ctx.fillStyle = p.state ? mainColor : '#2C3E50';
+                        ctx.fillRect(drawX, drawY, 40, 40);
+                        if (Math.random() < (0.01 + autoChaos * 0.1)) p.state = !p.state;
+                    } 
+                    else if (mode === 'tree') {
+                        p.y += 0.5 + (autoChaos * 3);
+                        if (p.y > 100) p.y = 0;
+                        p.x += Math.sin(time * 0.001 + i) * (0.1 + autoChaos);
+                        const drawX = (p.x / 100) * width; const drawY = (p.y / 100) * height;
+                        ctx.strokeStyle = mainColor; ctx.lineWidth = 4;
+                        ctx.beginPath(); ctx.moveTo(drawX, drawY);
+                        ctx.lineTo(drawX - 25, drawY - 35); ctx.moveTo(drawX, drawY);
+                        ctx.lineTo(drawX + 25, drawY - 35); ctx.stroke();
+                    }
+                    else if (mode === 'network') {
+                        p.x += p.vx * (1 + autoChaos * 4); p.y += p.vy * (1 + autoChaos * 4);
+                        if (p.x <= 0 || p.x >= 100) p.vx *= -1; if (p.y <= 0 || p.y >= 100) p.vy *= -1;
+                        const drawX = (p.x / 100) * width; const drawY = (p.y / 100) * height;
+                        const connectDist = 20 + (autoChaos * 40); 
+                        particles.forEach((p2, j) => {
+                            if (i === j) return;
+                            const dx = p.x - p2.x; const dy = p.y - p2.y;
+                            if (Math.sqrt(dx*dx + dy*dy) < connectDist) {
+                                ctx.strokeStyle = `rgba(29, 53, 87, ${1 - Math.sqrt(dx*dx+dy*dy)/connectDist})`;
+                                ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(drawX, drawY);
+                                ctx.lineTo((p2.x / 100) * width, (p2.y / 100) * height); ctx.stroke();
+                            }
+                        });
+                        ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2); ctx.fill();
+                    }
+                    else if (mode === 'fluid') {
+                        const noise = Math.sin(p.x * 0.1 + time * 0.002) * Math.cos(p.y * 0.1 + time * 0.002);
+                        p.vx += Math.cos(noise * Math.PI * 2) * (0.01 + autoChaos * 0.05);
+                        p.vy += Math.sin(noise * Math.PI * 2) * (0.01 + autoChaos * 0.05);
+                        p.vx *= 0.95; p.vy *= 0.95; p.x += p.vx * 10; p.y += p.vy * 10;
+                        if (p.x > 100) p.x = 0; if (p.x < 0) p.x = 100; if (p.y > 100) p.y = 0; if (p.y < 0) p.y = 100;
+                        const drawX = (p.x / 100) * width; const drawY = (p.y / 100) * height;
+                        ctx.fillStyle = mainColor; ctx.font = `bold ${p.size * (3 + autoChaos * 2)}px monospace`;
+                        ctx.fillText(String.fromCharCode(65 + Math.floor(Math.random() * 26)), drawX, drawY);
+                    }
+                    else if (mode === 'quantum') {
+                        const cx = width / 2; const cy = height / 2;
+                        p.angle += 0.01 + (autoChaos * 0.05);
+                        const breathing = Math.sin(time * 0.002) * 100;
+                        const r = (p.radius * (5 + autoChaos * 5)) + breathing;
+                        let drawX, drawY;
+                        if (autoChaos > 0.8 && Math.random() < 0.1) {
+                             drawX = Math.random() * width; drawY = Math.random() * height;
+                        } else {
+                             drawX = cx + Math.cos(p.angle + i) * r; drawY = cy + Math.sin(p.angle + i) * r;
+                        }
+                        ctx.strokeStyle = `rgba(114, 9, 183, ${0.2})`; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(drawX, drawY); ctx.stroke();
+                        ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(drawX, drawY, p.size * 1.5, 0, Math.PI*2); ctx.fill();
+                    }
+                });
+                requestRef.current = requestAnimationFrame(animate);
+            };
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+                requestRef.current = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [activeEra, progress]);
+
+            return (
+                <div ref={containerRef} className="h-screen w-screen bg-[#F1F0EA] text-[#2C3E50] overflow-hidden flex flex-col relative group">
+                    
+                    {/* VISUAL LAYER */}
+                    <canvas ref={canvasRef} className="absolute inset-0 z-0 w-full h-full" />
+                    
+                    {/* Grid Texture */}
+                    <div className="absolute inset-0 pointer-events-none z-10 opacity-10" 
+                        style={{
+                        backgroundImage: 'linear-gradient(#2C3E50 1px, transparent 1px), linear-gradient(90deg, #2C3E50 1px, transparent 1px)',
+                        backgroundSize: '50px 50px'
+                        }}>
+                    </div>
+
+                    {/* TOP BAR */}
+                    <div className="relative z-20 p-8 pt-12 flex justify-between items-start">
+                        {/* Title Block with 50% White Background */}
+                        <div className="bg-[#F1F0EA]/50 backdrop-blur-md p-6 rounded-xl border border-white/20 shadow-sm max-w-lg">
+                            <div className="flex items-center space-x-2 mb-2">
+                                <div className="w-4 h-4 bg-[#E63946]"></div>
+                                <span className="font-mono text-sm tracking-widest text-[#2C3E50]/80">MIND MACHINA</span>
+                            </div>
+                            <h1 className="text-6xl font-black uppercase leading-[0.85] tracking-tighter">
+                                THE<br/>EVOLUTION<br/>OF <span style={{color: eras[activeEra].color}}>AI</span>
+                            </h1>
+                        </div>
+                        
+                        {/* Controls */}
+                        <div className="flex flex-col items-end space-y-4">
+                            <button onClick={toggleFullscreen} className="bg-[#F1F0EA]/50 backdrop-blur-md p-3 rounded-full hover:bg-white transition-colors">
+                                {isFullscreen ? <Minimize size={24}/> : <Maximize size={24}/>}
+                            </button>
+                            <div className="text-6xl font-black opacity-20 bg-[#F1F0EA]/20 p-2 rounded-lg">{eras[activeEra].year}</div>
+                        </div>
+                    </div>
+
+                    {/* PROGRESS BARS - Now positioned just below header */}
+                    <div className="relative z-30 w-full px-8 flex gap-2">
+                        {eras.map((era, i) => (
+                            <div key={i} className="h-2 flex-1 bg-[#2C3E50]/10 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full transition-all duration-100 ease-linear"
+                                    style={{
+                                        backgroundColor: i < activeEra ? '#2C3E50' : (i === activeEra ? era.color : 'transparent'),
+                                        width: i < activeEra ? '100%' : (i === activeEra ? `${progress * 100}%` : '0%')
+                                    }}
+                                ></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* BOTTOM CARD - Lifted Up */}
+                    <div className="mt-auto relative z-20 p-8 pb-32"> {/* Increased padding-bottom to lift content */}
+                        <div className="bg-[#F1F0EA]/95 backdrop-blur-sm border-l-8 p-8 shadow-2xl transition-colors duration-500 rounded-r-xl"
+                             style={{borderColor: eras[activeEra].color}}>
+                            
+                            <div className="flex justify-between items-end mb-4 border-b-2 border-[#2C3E50]/10 pb-4">
+                                <h2 className="text-4xl font-black uppercase tracking-tight">{eras[activeEra].title}</h2>
+                                <span className="font-mono text-sm font-bold bg-[#2C3E50] text-white px-2 py-1">FIG {activeEra + 1}.0</span>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <span className="font-mono text-xs text-[#E63946] uppercase tracking-widest">Core Logic</span>
+                                    <p className="text-2xl font-bold uppercase">{eras[activeEra].short}</p>
+                                </div>
+                                <p className="text-xl font-medium leading-relaxed opacity-90">
+                                    {eras[activeEra].desc}
+                                </p>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-[#2C3E50]/10 flex items-center justify-between font-mono text-xs">
+                                <span>SYSTEM ENTROPY</span>
+                                <div className="w-32 h-2 bg-[#2C3E50]/10 rounded-full overflow-hidden">
+                                     <div className="h-full bg-[#2C3E50]" style={{
+                                         width: `${((Math.sin(progress * Math.PI) * 0.8) + 0.1) * 100}%`,
+                                         transition: 'width 100ms linear'
+                                     }}></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AI_Presentation />);
+    </script>
+</body>
+</html>
+```

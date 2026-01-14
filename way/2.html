@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Mind Soul Lens</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(270deg, #f87171, #fb923c, #facc15, #4ade80, #3b82f6, #818cf8, #a78bfa);
+            background-size: 1400% 1400%;
+            animation: rainbow-slide 20s ease infinite;
+        }
+
+        @keyframes rainbow-slide {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            color: white;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Disc Visualization */
+        .disc-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .disc-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, #6b5d3f 0%, #53523a 100%);
+            border-radius: 50%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .disc {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70%;
+            height: 70%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transition: transform 0.8s ease-in-out;
+            transform-origin: center;
+        }
+
+        .disc svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+        }
+
+        .disc-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .disc-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .disc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        }
+
+        .btn-body { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-mind { background: linear-gradient(135deg, #ffc107, #ff9800); }
+        .btn-soul { background: linear-gradient(135deg, #007bff, #0056b3); }
+        .btn-truth { background: linear-gradient(135deg, #fff, #e9ecef); color: #333; }
+
+        /* Input Section */
+        .input-section {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 16px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .analyze-btn {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        }
+
+        .examples {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .example-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.8);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        /* Analysis Results */
+        .analysis-results {
+            display: none;
+            animation: fadeIn 0.6s;
+        }
+
+        .analysis-results.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .analysis-title {
+            text-align: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .domain-card {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .domain-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .icon-body { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .icon-mind { background: linear-gradient(135deg, #ffc107, #ff9800); }
+        .icon-soul { background: linear-gradient(135deg, #007bff, #0056b3); }
+
+        .card-title {
+            flex: 1;
+        }
+
+        .card-title h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-title p {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .card-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-content {
+            color: #555;
+            line-height: 1.6;
+            font-style: italic;
+            padding-left: 1rem;
+            border-left: 3px solid #e0e0e0;
+        }
+
+        .approaches-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .approaches-list li {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        .approaches-list li::before {
+            content: "✓";
+            color: #667eea;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .disc-container { width: 250px; height: 250px; }
+            .input-row { flex-direction: column; }
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Truth Words Animation */
+        .truth-words {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ec3926;
+            pointer-events: none;
+            display: none;
+        }
+
+        .truth-words.active {
+            display: block;
+        }
+
+        .truth-words span {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: wordFloat 12s linear infinite;
+            white-space: nowrap;
+        }
+
+        .truth-words span:nth-child(1) { animation-delay: 0s; }
+        .truth-words span:nth-child(2) { animation-delay: 0.8s; }
+        .truth-words span:nth-child(3) { animation-delay: 1.6s; }
+        .truth-words span:nth-child(4) { animation-delay: 2.4s; }
+        .truth-words span:nth-child(5) { animation-delay: 3.2s; }
+        .truth-words span:nth-child(6) { animation-delay: 4.0s; }
+
+        @keyframes wordFloat {
+            0% { opacity: 0; transform: translate(-50%, 50px) scale(0.5); color: #ec3926; }
+            10% { opacity: 1; transform: translate(-50%, 0) scale(1); color: #f81800; }
+            50% { opacity: 0.7; transform: translate(-50%, -100px) scale(2); color: #e0da58; }
+            100% { opacity: 0; transform: translate(-50%, -200px) scale(3); color: #006cff; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>The Body Mind Soul Lens</h1>
+            <p class="tagline"><em>"The whole is greater than the sum of its parts"</em><br>
+            Explore life situations through three interconnected perspectives</p>
+        </div>
+
+        <!-- Disc Visualization -->
+        <div class="disc-section">
+            <div class="disc-container">
+                <div class="disc" id="disc">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="100" cy="100" r="90" fill="#ffd700" stroke="#ff8c00" stroke-width="3"/>
+                        <circle cx="100" cy="100" r="70" fill="none" stroke="#ff6b00" stroke-width="2"/>
+                        <circle cx="100" cy="100" r="50" fill="none" stroke="#ff4500" stroke-width="2"/>
+                        <path d="M 100 10 Q 130 100 100 190 Q 70 100 100 10" fill="none" stroke="#8b4513" stroke-width="2"/>
+                        <path d="M 10 100 Q 100 70 190 100 Q 100 130 10 100" fill="none" stroke="#8b4513" stroke-width="2"/>
+                        <circle cx="100" cy="100" r="15" fill="#8b0000"/>
+                    </svg>
+                </div>
+                <div class="truth-words" id="truthWords">
+                    <span>Dao</span><span>Zen</span><span>Love</span>
+                    <span>Atman</span><span>Nirvana</span><span>Infinity</span>
+                </div>
+            </div>
+
+            <div class="disc-buttons">
+                <button class="disc-btn btn-body" onclick="rotateToState('body')">BODY</button>
+                <button class="disc-btn btn-mind" onclick="rotateToState('mind')">MIND</button>
+                <button class="disc-btn btn-soul" onclick="rotateToState('soul')">SOUL</button>
+                <button class="disc-btn btn-truth" onclick="toggleTruthWords()">TRUTH</button>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="input-row">
+                <input type="text" id="situationInput" placeholder="Enter any life situation or challenge...">
+                <button class="analyze-btn" onclick="analyzeSituation()">Analyze</button>
+            </div>
+            <div class="examples">
+                <button class="example-btn" onclick="loadExample('Burnout')">Burnout</button>
+                <button class="example-btn" onclick="loadExample('Career Transition')">Career Change</button>
+                <button class="example-btn" onclick="loadExample('Anxiety')">Anxiety</button>
+                <button class="example-btn" onclick="loadExample('Grief')">Grief</button>
+                <button class="example-btn" onclick="loadExample('Relationship Conflict')">Relationship</button>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="analysis-results" id="analysisResults">
+            <h2 class="analysis-title" id="analysisTitle"></h2>
+            
+            <div class="cards-grid">
+                <!-- Body Card -->
+                <div class="domain-card">
+                    <div class="card-header">
+                        <div class="card-icon icon-body">❤️</div>
+                        <div class="card-title">
+                            <h3>Body</h3>
+                            <p id="bodyFocus"></p>
+                        </div>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Experience</div>
+                        <div class="section-content" id="bodyExperience"></div>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Approaches</div>
+                        <ul class="approaches-list" id="bodyApproaches"></ul>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Goal</div>
+                        <div class="section-content" id="bodyGoal"></div>
+                    </div>
+                </div>
+
+                <!-- Mind Card -->
+                <div class="domain-card">
+                    <div class="card-header">
+                        <div class="card-icon icon-mind">💡</div>
+                        <div class="card-title">
+                            <h3>Mind</h3>
+                            <p id="mindFocus"></p>
+                        </div>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Experience</div>
+                        <div class="section-content" id="mindExperience"></div>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Approaches</div>
+                        <ul class="approaches-list" id="mindApproaches"></ul>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Goal</div>
+                        <div class="section-content" id="mindGoal"></div>
+                    </div>
+                </div>
+
+                <!-- Soul Card -->
+                <div class="domain-card">
+                    <div class="card-header">
+                        <div class="card-icon icon-soul">✨</div>
+                        <div class="card-title">
+                            <h3>Soul</h3>
+                            <p id="soulFocus"></p>
+                        </div>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Experience</div>
+                        <div class="section-content" id="soulExperience"></div>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Approaches</div>
+                        <ul class="approaches-list" id="soulApproaches"></ul>
+                    </div>
+                    <div class="card-section">
+                        <div class="section-label">Goal</div>
+                        <div class="section-content" id="soulGoal"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Analysis data
+        const analysisData = {
+            "Burnout": {
+                body: {
+                    focus: "Physical Exhaustion & Recovery",
+                    experience: "Chronic fatigue, headaches, muscle tension, feeling physically drained.",
+                    approaches: ["Prioritize Sleep & Rest", "Gentle Movement", "Nutrition for Energy", "Digital Detox"],
+                    goal: "Restore physical energy and prevent further depletion."
+                },
+                mind: {
+                    focus: "Boundary Setting & Workload",
+                    experience: "Mental fog, difficulty concentrating, cynicism, feeling overwhelmed.",
+                    approaches: ["Learn to Say No", "Break Tasks into Steps", "Delegate or Ask for Help", "Practice Mindfulness"],
+                    goal: "Regain control over mental load and develop sustainable habits."
+                },
+                soul: {
+                    focus: "Purpose & Values Alignment",
+                    experience: "Disconnected from purpose, questioning life choices, spiritual emptiness.",
+                    approaches: ["Reconnect with Your 'Why'", "Evaluate What Matters", "Explore Meaning Beyond Achievement", "Consider Life Changes"],
+                    goal: "Rediscover passion and align life with deeper values."
+                }
+            },
+            "Career Transition": {
+                body: {
+                    focus: "Energy & Presentation",
+                    experience: "Stress-related fatigue, tension, physical feeling of being 'stuck'.",
+                    approaches: ["Maintain Healthy Routine", "Practice Confident Body Language", "Dress for Success", "Ensure Rest & Stamina"],
+                    goal: "Project confidence and energy during the transition."
+                },
+                mind: {
+                    focus: "Strategy & Skill Development",
+                    experience: "Anxiety, self-doubt, excitement, intellectual challenge.",
+                    approaches: ["Update Resume & Profile", "Network & Interview", "Acquire New Skills", "Set Clear Goals"],
+                    goal: "Navigate the job market strategically."
+                },
+                soul: {
+                    focus: "Alignment & Purpose",
+                    experience: "Search for meaning in work, desire for fulfillment.",
+                    approaches: ["Clarify Values & Passions", "Journal & Reflect", "Seek Mentorship", "Trust Your Intuition"],
+                    goal: "Find a career aligned with your true self."
+                }
+            },
+            "Anxiety": {
+                body: {
+                    focus: "Nervous System Regulation",
+                    experience: "Racing heart, shallow breathing, muscle tension, feeling on edge.",
+                    approaches: ["Deep Breathing Exercises", "Progressive Muscle Relaxation", "Regular Exercise", "Limit Caffeine"],
+                    goal: "Calm the nervous system and reduce symptoms."
+                },
+                mind: {
+                    focus: "Thought Pattern Management",
+                    experience: "Racing thoughts, worst-case scenarios, inability to focus.",
+                    approaches: ["Challenge Catastrophic Thinking", "Grounding Techniques", "Write Down Worries", "Learn Coping Skills"],
+                    goal: "Break cycles of anxious thinking."
+                },
+                soul: {
+                    focus: "Trust & Spiritual Security",
+                    experience: "Existential worry, feeling unsafe, seeking grounding.",
+                    approaches: ["Practice Surrender", "Connect with Faith", "Present-Moment Awareness", "Explore Security Beyond Control"],
+                    goal: "Develop deeper trust in life's process."
+                }
+            },
+            "Grief": {
+                body: {
+                    focus: "Processing Physical Loss",
+                    experience: "Heaviness in chest, loss of appetite, fatigue, physical aching.",
+                    approaches: ["Allow Yourself to Feel", "Maintain Self-Care", "Gentle Movement", "Nourishing Foods"],
+                    goal: "Honor grief response while maintaining health."
+                },
+                mind: {
+                    focus: "Memory & Meaning-Making",
+                    experience: "Confusion, disbelief, intrusive thoughts, difficulty concentrating.",
+                    approaches: ["Journal Memories", "Create Rituals", "Seek Counseling", "Read About Grief"],
+                    goal: "Process loss while preserving memories."
+                },
+                soul: {
+                    focus: "Spiritual Processing",
+                    experience: "Questioning meaning, feeling spiritually lost, seeking connection.",
+                    approaches: ["Explore Beliefs About Life", "Connect with Nature", "Honor Their Legacy", "Practice Gratitude"],
+                    goal: "Find meaning and maintain spiritual connection."
+                }
+            },
+            "Relationship Conflict": {
+                body: {
+                    focus: "Physiological Stress Response",
+                    experience: "Elevated heart rate, muscle tension, stomach knots.",
+                    approaches: ["Deep Breathing", "Create Physical Space", "Prioritize Sleep", "Physical Activity"],
+                    goal: "Regulate stress response for clearer communication."
+                },
+                mind: {
+                    focus: "Communication & Perspective",
+                    experience: "Rumination, blame, defensiveness, mental effort.",
+                    approaches: ["Use 'I' Statements", "Active Listening", "Identify Distortions", "Seek Counseling"],
+                    goal: "Resolve issues and improve communication."
+                },
+                soul: {
+                    focus: "Connection & Values",
+                    experience: "Hurt feelings, disconnection, longing for harmony.",
+                    approaches: ["Revisit Shared Goals", "Practice Forgiveness", "Quality Time", "Explore Deeper Lessons"],
+                    goal: "Heal bond and grow from conflict."
+                }
+            }
+        };
+
+        // Disc rotation states
+        const rotations = { body: 240, mind: 120, soul: 0 };
+        let currentRotation = 0;
+
+        function rotateToState(state) {
+            currentRotation = rotations[state];
+            document.getElementById('disc').style.transform = `rotate(${currentRotation}deg)`;
+        }
+
+        function toggleTruthWords() {
+            const words = document.getElementById('truthWords');
+            words.classList.toggle('active');
+        }
+
+        function loadExample(situation) {
+            document.getElementById('situationInput').value = situation;
+            analyzeSituation();
+        }
+
+        function analyzeSituation() {
+            const input = document.getElementById('situationInput').value.trim();
+            if (!input) return;
+
+            const data = analysisData[input] || generateGeneric(input);
+            
+            document.getElementById('analysisTitle').textContent = input;
+            
+            ['body', 'mind', 'soul'].forEach(domain => {
+                document.getElementById(`${domain}Focus`).textContent = data[domain].focus;
+                document.getElementById(`${domain}Experience`).textContent = data[domain].experience;
+                document.getElementById(`${domain}Goal`).textContent = data[domain].goal;
+                
+                const list = document.getElementById(`${domain}Approaches`);
+                list.innerHTML = '';
+                data[domain].approaches.forEach(approach => {
+                    const li = document.createElement('li');
+                    li.textContent = approach;
+                    list.appendChild(li);
+                });
+            });
+
+            document.getElementById('analysisResults').classList.add('active');
+            document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generateGeneric(input) {
+            return {
+                body: {
+                    focus: "Physical Well-being",
+                    experience: "Physical symptoms and energy related to this situation.",
+                    approaches: ["Mindful Movement", "Balanced Nutrition", "Adequate Rest", "Stress Management"],
+                    goal: "Improve physical health and vitality."
+                },
+                mind: {
+                    focus: "Mental Strategy",
+                    experience: "Mental processing, problem-solving, and emotional regulation.",
+                    approaches: ["Journaling", "Learning & Research", "Strategic Planning", "Cognitive Reframing"],
+                    goal: "Develop clear thinking and strategies."
+                },
+                soul: {
+                    focus: "Purpose & Meaning",
+                    experience: "Seeking deeper meaning and connection.",
+                    approaches: ["Meditation", "Connect with Values", "Spiritual Practice", "Self-Reflection"],
+                    goal: "Find alignment with deeper purpose."
+                }
+            };
+        }
+    </script>
+</body>
+</html>

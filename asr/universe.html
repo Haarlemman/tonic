@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe Universe</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;600&display=swap');
+
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #FFF;
+            font-family: 'Jost', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        canvas { display: block; }
+
+        /* Minimal UI */
+        #info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+            /* Gradient for legibility */
+            background: linear-gradient(to top, #000 0%, transparent 100%);
+            padding-bottom: 30px;
+        }
+
+        #chapter-num {
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            color: #888;
+            margin-bottom: 10px;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        .slider-wrapper {
+            width: 70%;
+            max-width: 800px;
+            pointer-events: auto;
+            opacity: 0.4;
+            transition: opacity 0.3s;
+        }
+        .slider-wrapper:hover { opacity: 1; }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: #FFF;
+            height: 1px;
+            background: rgba(255,255,255,0.2);
+            appearance: none;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px; height: 12px;
+            background: #FFF;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #FFF;
+        }
+
+        #hint {
+            position: absolute;
+            bottom: 60px;
+            font-size: 0.6rem;
+            color: #666;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulse 3s infinite;
+        }
+        @keyframes pulse { 0%, 100% {opacity:0.3} 50% {opacity:0.8} }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <canvas id="wireCanvas"></canvas>
+    </div>
+
+    <div id="info-panel">
+        <!-- Big title removed, keeping subtle chapter number -->
+        <div id="chapter-num">00</div>
+        <div id="hint">Auto-Pilot Active</div>
+        <div class="slider-wrapper">
+            <input type="range" id="depthSlider" min="0" max="14000" value="0" step="1">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wireCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const slider = document.getElementById('depthSlider');
+        const numEl = document.getElementById('chapter-num');
+        const hintEl = document.getElementById('hint');
+
+        let width, height, cx, cy;
+        let scrollPos = 0;
+        let targetScroll = 0;
+        let time = 0;
+
+        // Auto-play
+        let lastInteraction = Date.now();
+        const IDLE_DELAY = 3000;
+        let isAutoPlaying = false;
+
+        // --- 3D ENGINE CONFIG ---
+        const FL = 500; // Focal Length
+        const WORLD_END = 14000; 
+        
+        let objects = [];
+        let stars = [];
+
+        function initWorld() {
+            objects = [];
+            stars = [];
+
+            // 1. STARFIELD (The Tunnel)
+            for(let i=0; i<300; i++) {
+                stars.push({
+                    x: (Math.random()-0.5) * 5000,
+                    y: (Math.random()-0.5) * 5000,
+                    z: Math.random() * 2000,
+                    zOffset: Math.random() * WORLD_END 
+                });
+            }
+
+            // --- STAGE OBJECTS ---
+
+            // 0. VOID (Singularity)
+            // Just a single point at the start
+            objects.push({ type: 'singularity', z: 600, x: 0, y: 0 });
+
+            // 1. IGNITION (Big Bang Lines)
+            for(let i=0; i<60; i++) {
+                objects.push({
+                    type: 'bang', z: 1200, 
+                    x: 0, y: 0, 
+                    angle: Math.random() * Math.PI * 2,
+                    speed: 2 + Math.random()*8, // Expansion speed
+                    len: 50 + Math.random()*200
+                });
+            }
+
+            // 2. QUANTUM (Z: 2200)
+            for(let i=0; i<80; i++) {
+                objects.push({
+                    type: 'quantum', z: 2400 + (Math.random()-0.5)*500,
+                    x: (Math.random()-0.5)*400, y: (Math.random()-0.5)*400,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+
+            // 3. ATOMIC (Z: 3400)
+            objects.push({ type: 'atom', z: 3400, x: 0, y: 0, r: 180 });
+
+            // 4. BIOLOGIC (Z: 4400)
+            for(let i=0; i<50; i++) {
+                objects.push({
+                    type: 'dna', z: 4400 + (i * 15), 
+                    x: 0, y: 0, index: i, width: 120
+                });
+            }
+
+            // 5. NEURAL (Z: 5400)
+            for(let i=0; i<15; i++) {
+                objects.push({
+                    type: 'node', z: 5400 + (Math.random()-0.5)*600,
+                    x: (Math.random()-0.5)*600, y: (Math.random()-0.5)*600,
+                    size: 2 + Math.random()*4
+                });
+            }
+
+            // 6. SEQUENCE (Z: 6400)
+            for(let i=0; i<60; i++) {
+                let ang = i * 0.5;
+                let r = 10 * Math.sqrt(i);
+                objects.push({
+                    type: 'point', z: 6400,
+                    x: Math.cos(ang)*r*10, y: Math.sin(ang)*r*10
+                });
+            }
+
+            // 7. GEOMETRY (Z: 7400)
+            objects.push({ type: 'geo', z: 7400, x: 0, y: 0, r: 250 });
+
+            // 8. PARADOX (Z: 8400)
+            objects.push({ type: 'tesseract', z: 8400, x: 0, y: 0, s: 300 });
+
+            // 9. STELLAR (Z: 9400)
+            objects.push({ type: 'solar', z: 9400, x: 0, y: 0, r: 400 });
+
+            // 10. GALACTIC (Z: 10800)
+            for(let i=0; i<25; i++) {
+                objects.push({
+                    type: 'web', z: 10800 + (Math.random()-0.5)*1000,
+                    x: (Math.random()-0.5)*1000, y: (Math.random()-0.5)*1000,
+                    size: 10 + Math.random()*20
+                });
+            }
+
+            // 11. EVENT HORIZON (Z: 12500)
+            objects.push({ type: 'horizon', z: 12500, x: 0, y: 0, r: 150 });
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            cx = width / 2;
+            cy = height / 2;
+        }
+
+        // --- INPUT ---
+        function interact() {
+            lastInteraction = Date.now();
+            isAutoPlaying = false;
+            hintEl.innerText = "Interactive Mode";
+            hintEl.style.opacity = 0.5;
+            hintEl.style.animation = "none";
+        }
+
+        slider.addEventListener('input', (e) => {
+            targetScroll = parseFloat(e.target.value);
+            interact();
+        });
+
+        window.addEventListener('wheel', (e) => {
+            targetScroll += e.deltaY;
+            targetScroll = Math.max(0, Math.min(WORLD_END + 1000, targetScroll));
+            slider.value = targetScroll;
+            interact();
+        });
+
+        function lerp(start, end, amt) {
+            return (1 - amt) * start + amt * end;
+        }
+
+        // --- DRAW LOOP ---
+        function draw() {
+            if (Date.now() - lastInteraction > IDLE_DELAY) {
+                if(!isAutoPlaying) {
+                    isAutoPlaying = true;
+                    hintEl.innerText = "Auto-Pilot Active";
+                    hintEl.style.animation = "pulse 3s infinite";
+                }
+                targetScroll += 15;
+                if (targetScroll >= WORLD_END + 500) {
+                    targetScroll = 0; 
+                    scrollPos = 0; 
+                }
+                slider.value = targetScroll;
+            }
+
+            scrollPos = lerp(scrollPos, targetScroll, 0.1);
+            time += 0.02;
+
+            // Clear
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+
+            updateTitle(scrollPos);
+
+            // --- RENDER STARS (Deferred) ---
+            // Only draw stars if we are past the initial Void/Bang phase
+            if (scrollPos > 1200) {
+                drawStars(Math.min(1, (scrollPos - 1200) / 2000)); // Slow fade in stars
+            }
+
+            // --- RENDER OBJECTS ---
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 1.5; 
+
+            objects.forEach(obj => {
+                let relZ = obj.z - scrollPos;
+                
+                // STRICT CULLING AT START
+                if (scrollPos < 800) {
+                    if (obj.type !== 'singularity' && obj.type !== 'bang') return;
+                }
+
+                // Standard Culling
+                if (relZ < 10 || relZ > 3500) return; 
+
+                let scale = FL / relZ;
+                let x2d = cx + obj.x * scale;
+                let y2d = cy + obj.y * scale;
+                
+                // Distance fog
+                let alpha = Math.min(1, (3500 - relZ) / 1000); 
+                
+                // Horizon Suck Logic
+                if (scrollPos > 11800 && obj.type !== 'horizon') {
+                    let suck = (scrollPos - 11800) / 700;
+                    x2d = lerp(x2d, cx, suck);
+                    y2d = lerp(y2d, cy, suck);
+                    let ang = Math.atan2(y2d-cy, x2d-cx) + suck; 
+                    let dist = Math.sqrt((x2d-cx)**2 + (y2d-cy)**2);
+                    x2d = cx + Math.cos(ang)*dist;
+                    y2d = cy + Math.sin(ang)*dist;
+                }
+
+                ctx.globalAlpha = alpha;
+
+                // --- DRAW TYPES ---
+
+                if (obj.type === 'singularity') {
+                    // The Single Dot at start
+                    let pulse = 2 * scale;
+                    if (scrollPos > 100) pulse += Math.sin(time*20) * 2;
+                    ctx.fillStyle = '#FFF';
+                    ctx.beginPath(); ctx.arc(x2d, y2d, pulse, 0, Math.PI*2); ctx.fill();
+                }
+
+                else if (obj.type === 'bang') {
+                    // Explosion Expansion
+                    let progress = (scrollPos - 600) / 800; // 0 to 1
+                    if (progress < 0) progress = 0;
+                    
+                    let burst = Math.pow(progress, 2) * 2000;
+                    
+                    if (burst > 0) {
+                        let ex = x2d + Math.cos(obj.angle) * burst * scale;
+                        let ey = y2d + Math.sin(obj.angle) * burst * scale;
+                        
+                        let tailLen = obj.len * scale;
+                        let tx = x2d + Math.cos(obj.angle) * (burst - obj.len) * scale;
+                        let ty = y2d + Math.sin(obj.angle) * (burst - obj.len) * scale;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(tx, ty);
+                        ctx.lineTo(ex, ey);
+                        ctx.stroke();
+                    }
+                } 
+                
+                else if (obj.type === 'quantum') {
+                    // Just vibrating dots
+                    let jx = x2d + (Math.sin(time*5 + obj.phase)*10*scale);
+                    let jy = y2d + (Math.cos(time*5 + obj.phase)*10*scale);
+                    ctx.fillStyle = '#FFF';
+                    ctx.beginPath(); ctx.arc(jx, jy, 1.5*scale, 0, Math.PI*2); ctx.fill();
+                }
+
+                else if (obj.type === 'atom') {
+                    let r = obj.r * scale;
+                    // Separate paths to avoid connecting lines
+                    for(let i=0; i<3; i++) {
+                        ctx.beginPath(); // Reset path for each ellipse
+                        let rot = (Math.PI/3)*i + time;
+                        ctx.ellipse(x2d, y2d, r, r*0.3, rot, 0, Math.PI*2);
+                        ctx.stroke();
+                    }
+                    ctx.beginPath(); ctx.arc(x2d, y2d, 5*scale, 0, Math.PI*2); ctx.stroke();
+                }
+
+                else if (obj.type === 'dna') {
+                    let w = obj.width * scale;
+                    let phase = obj.index * 0.3 + time * 2;
+                    let offsetX = Math.sin(phase) * w;
+                    ctx.fillStyle = '#FFF';
+                    ctx.fillRect(x2d + offsetX, y2d, 2*scale, 2*scale); 
+                    ctx.fillRect(x2d - offsetX, y2d, 2*scale, 2*scale); 
+                    if (obj.index % 2 === 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(x2d + offsetX, y2d);
+                        ctx.lineTo(x2d - offsetX, y2d);
+                        ctx.stroke();
+                    }
+                }
+
+                else if (obj.type === 'node') {
+                    for(let k=0; k<3; k++) {
+                        let a = (Math.PI*2/3)*k + time*0.2;
+                        let len = 30 * scale;
+                        ctx.beginPath();
+                        ctx.moveTo(x2d, y2d);
+                        ctx.lineTo(x2d + Math.cos(a)*len, y2d + Math.sin(a)*len);
+                        ctx.stroke();
+                    }
+                    ctx.beginPath(); ctx.arc(x2d, y2d, 4*scale, 0, Math.PI*2); ctx.fill();
+                }
+
+                else if (obj.type === 'point') {
+                    ctx.fillStyle = '#FFF';
+                    ctx.beginPath(); ctx.arc(x2d, y2d, 2*scale, 0, Math.PI*2); ctx.fill();
+                }
+
+                else if (obj.type === 'geo') {
+                    let r = obj.r * scale;
+                    ctx.save();
+                    ctx.translate(x2d, y2d); ctx.rotate(time * 0.5);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -r); ctx.lineTo(r*0.866, r*0.5); ctx.lineTo(-r*0.866, r*0.5);
+                    ctx.closePath(); ctx.stroke();
+                    ctx.rotate(time * 0.2);
+                    ctx.strokeRect(-r*0.7, -r*0.7, r*1.4, r*1.4);
+                    ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, Math.PI*2); ctx.stroke();
+                    ctx.restore();
+                }
+
+                else if (obj.type === 'tesseract') {
+                    let s = obj.s * scale;
+                    ctx.save();
+                    ctx.translate(x2d, y2d);
+                    ctx.rotate(time);
+                    ctx.strokeRect(-s/2, -s/2, s, s);
+                    ctx.rotate(time);
+                    let is = s * 0.5;
+                    ctx.strokeRect(-is/2, -is/2, is, is); 
+                    ctx.beginPath();
+                    ctx.moveTo(-s/2, -s/2); ctx.lineTo(-is/2, -is/2);
+                    ctx.moveTo(s/2, -s/2); ctx.lineTo(is/2, -is/2);
+                    ctx.moveTo(s/2, s/2); ctx.lineTo(is/2, is/2);
+                    ctx.moveTo(-s/2, s/2); ctx.lineTo(-is/2, is/2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                else if (obj.type === 'solar') {
+                    let r = obj.r * scale;
+                    ctx.beginPath(); ctx.arc(x2d, y2d, 10*scale, 0, Math.PI*2); ctx.stroke();
+                    for(let i=1; i<5; i++) {
+                        let or = (r/5)*i;
+                        ctx.beginPath(); ctx.ellipse(x2d, y2d, or, or*0.4, time*0.1, 0, Math.PI*2); ctx.stroke();
+                    }
+                }
+
+                else if (obj.type === 'web') {
+                    let r = obj.size * scale;
+                    ctx.beginPath(); ctx.arc(x2d, y2d, r, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(x2d, y2d); ctx.lineTo(cx, cy); 
+                    ctx.globalAlpha = alpha * 0.2; ctx.stroke();
+                }
+
+                else if (obj.type === 'horizon') {
+                    let r = obj.r * scale;
+                    // Black Core
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath(); ctx.arc(x2d, y2d, r, 0, Math.PI*2); ctx.fill();
+                    // White Rim
+                    ctx.strokeStyle = '#FFF';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(x2d, y2d, r, 0, Math.PI*2); ctx.stroke();
+                    
+                    // FLATTENED Accretion Disk
+                    ctx.save();
+                    ctx.translate(x2d, y2d);
+                    ctx.scale(1, 0.1); // Razor thin start
+                    // Wobble Effect for danger
+                    ctx.rotate(time * 0.2 + Math.sin(time)*0.1);
+                    ctx.beginPath(); ctx.arc(0, 0, r * 2.0, 0, Math.PI*2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(0, 0, r * 2.8, 0, Math.PI*2); ctx.stroke();
+                    ctx.restore();
+                }
+
+            });
+
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(draw);
+        }
+
+        function drawStars(opacity) {
+            ctx.fillStyle = '#FFF';
+            stars.forEach(s => {
+                let relativeZ = (s.z + s.zOffset - scrollPos);
+                while (relativeZ < 0) relativeZ += WORLD_END;
+                while (relativeZ > 2000) relativeZ -= 2000; 
+
+                if (relativeZ < 10) return;
+
+                let scale = FL / relativeZ;
+                let x2d = cx + s.x * scale;
+                let y2d = cy + s.y * scale;
+                let size = (scale > 3) ? 3 : scale;
+
+                // Spaghettification
+                if (scrollPos > 11500) {
+                    let suck = (scrollPos - 11500) / 1000; 
+                    let dx = x2d - cx;
+                    let dy = y2d - cy;
+                    x2d = cx + dx * (1 - suck*0.5);
+                    y2d = cy + dy * (1 - suck*0.5);
+                    ctx.globalAlpha = 0.5 * opacity;
+                    ctx.fillRect(x2d, y2d, size * (1+suck*5), size); 
+                } else {
+                    ctx.globalAlpha = Math.min(1, relativeZ / 1500) * opacity;
+                    ctx.fillRect(x2d, y2d, size, size);
+                }
+            });
+        }
+
+        function updateTitle(z) {
+            // Simplified chapter Logic
+            let n = "00";
+            if (z > 800) n = "01";
+            if (z > 1800) n = "02";
+            if (z > 2800) n = "03";
+            if (z > 3800) n = "04";
+            if (z > 4800) n = "05";
+            if (z > 5800) n = "06";
+            if (z > 6800) n = "07";
+            if (z > 7800) n = "08";
+            if (z > 8800) n = "09";
+            if (z > 9800) n = "10";
+            if (z > 11000) n = "Ω";
+            
+            if (numEl.innerText !== n) {
+                numEl.style.opacity = 0;
+                setTimeout(() => {
+                    numEl.innerText = n;
+                    numEl.style.opacity = 1;
+                }, 200);
+            }
+        }
+
+        initWorld();
+        resize();
+        window.addEventListener('resize', resize);
+        requestAnimationFrame(draw);
+
+    </script>
+</body>
+</html>

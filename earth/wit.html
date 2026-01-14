@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f5; /* Zinc 100 */
+            color: #18181b; /* Zinc 900 */
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .bg-grid {
+            background-image: linear-gradient(to right, #e4e4e7 1px, transparent 1px),
+                              linear-gradient(to bottom, #e4e4e7 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* --- Custom Visualizations CSS --- */
+
+        /* Atom (Rutherford/Sketch Model) */
+        .atom-orbit {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+        }
+        .electron-dot {
+            fill: currentColor;
+            /* Animation handled by SMIL in SVG now to ensure path adherence */
+        }
+        /* We use transforms to rotate the orbits */
+        .orbit-1 { transform: rotate(0deg); transform-origin: 50px 50px; }
+        .orbit-2 { transform: rotate(60deg); transform-origin: 50px 50px; }
+        .orbit-3 { transform: rotate(120deg); transform-origin: 50px 50px; }
+        
+        /* Solar/Lunar Orbits */
+        .orbit-system { animation: spin-orbit 12s linear infinite; transform-origin: center; }
+        .orbit-moon { animation: spin-orbit 5s linear infinite; transform-origin: center; }
+        @keyframes spin-orbit { 100% { transform: rotate(360deg); } }
+
+        /* Globe Rotation (Continents moving) */
+        .continents {
+            animation: move-map 10s linear infinite;
+        }
+        @keyframes move-map {
+            from { transform: translateX(0); }
+            to { transform: translateX(-100px); }
+        }
+
+        /* Heartbeat - Anatomical */
+        .heart-beat { animation: pounding 1.2s ease-in-out infinite; transform-origin: center; }
+        @keyframes pounding {
+            0%, 100% { transform: scale(1); }
+            10% { transform: scale(1.05); }
+            20% { transform: scale(1); }
+            30% { transform: scale(1.05); }
+            40% { transform: scale(1); }
+        }
+        
+        /* Map Hover */
+        .map-shape { transition: fill 0.3s ease; }
+        .card:hover .map-shape { fill: #fed7aa; /* orange-200 */ stroke: #f97316; }
+        
+        /* Line drawing style */
+        .sketch-line {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-grid p-6 md:p-12 flex flex-col items-center">
+
+    <!-- Header -->
+    <header class="w-full max-w-6xl mb-12 flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-black pb-6">
+        <div>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tighter uppercase mb-2">Planetary<br>Monitor</h1>
+            <p class="text-zinc-500 font-light">Live statistical tracking of Earth systems.</p>
+        </div>
+        <div class="mt-6 md:mt-0 text-right">
+            <div class="text-sm font-bold uppercase tracking-widest mb-1">Status</div>
+            <div class="flex items-center justify-end gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span class="mono text-emerald-700 font-bold">OPERATIONAL</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Time: Atom (Inspired by sketch) -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Temporal</h2>
+                <div class="w-12 h-12 text-zinc-500">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                        <!-- Nucleus -->
+                        <circle cx="50" cy="50" r="8" fill="currentColor" stroke="none"/>
+                        
+                        <!-- Orbit 1 -->
+                        <g class="orbit-1">
+                            <ellipse cx="50" cy="50" rx="40" ry="12" class="atom-orbit"/>
+                            <circle r="3" class="electron-dot">
+                                <animateMotion dur="3s" repeatCount="indefinite" path="M10,50 a40,12 0 1,0 80,0 a40,12 0 1,0 -80,0" />
+                            </circle>
+                        </g>
+
+                        <!-- Orbit 2 -->
+                        <g class="orbit-2">
+                            <ellipse cx="50" cy="50" rx="40" ry="12" class="atom-orbit"/>
+                            <circle r="3" class="electron-dot">
+                                <animateMotion dur="3s" begin="-1s" repeatCount="indefinite" path="M10,50 a40,12 0 1,0 80,0 a40,12 0 1,0 -80,0" />
+                            </circle>
+                        </g>
+
+                        <!-- Orbit 3 -->
+                        <g class="orbit-3">
+                            <ellipse cx="50" cy="50" rx="40" ry="12" class="atom-orbit"/>
+                             <circle r="3" class="electron-dot">
+                                <animateMotion dur="3s" begin="-2s" repeatCount="indefinite" path="M10,50 a40,12 0 1,0 80,0 a40,12 0 1,0 -80,0" />
+                            </circle>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div id="time" class="mono text-4xl font-bold tracking-tight mb-1">00:00:00</div>
+                <div id="date" class="text-zinc-500 text-sm font-medium">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Population: Rotating Globe (Continents) -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Global Population</h2>
+                <!-- Rotating Globe with Map -->
+                <div class="w-12 h-12 text-zinc-400 overflow-hidden relative rounded-full border border-zinc-300">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5">
+                         <!-- Static Grid/Water -->
+                         <circle cx="50" cy="50" r="49" fill="#f4f4f5" stroke="none"/>
+                         
+                         <!-- Moving Continents Group -->
+                         <g class="continents">
+                             <!-- Simplified Americas shape -->
+                             <path fill="#d4d4d8" stroke="none" d="M20,10 C10,20 0,30 10,50 C15,60 25,80 30,90 L40,80 C30,60 35,40 50,30 C45,20 30,5 20,10 Z" />
+                             <!-- Simplified Eurasia/Africa shape -->
+                             <path fill="#d4d4d8" stroke="none" d="M120,10 C110,20 100,30 110,50 C115,60 125,80 130,90 L140,80 C130,60 135,40 150,30 C145,20 130,5 120,10 Z" />
+                             <!-- Duplicate for loop -->
+                             <path fill="#d4d4d8" stroke="none" d="M70,10 C60,20 50,30 60,50 C65,60 75,80 80,90 L90,80 C80,60 85,40 100,30 C95,20 80,5 70,10 Z" />
+                         </g>
+                         
+                         <!-- Sphere shine/shadow overlay -->
+                         <circle cx="50" cy="50" r="49" stroke="currentColor" fill="url(#grad1)" style="mix-blend-mode: multiply;"/>
+                         <defs>
+                             <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+                                 <stop offset="0%" style="stop-color:white;stop-opacity:0" />
+                                 <stop offset="100%" style="stop-color:black;stop-opacity:0.1" />
+                             </radialGradient>
+                         </defs>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div id="population" class="mono text-3xl md:text-4xl font-bold tracking-tight text-blue-600">Calculating...</div>
+                <div class="text-zinc-400 text-xs mt-2">Est. Humans on Earth</div>
+            </div>
+        </div>
+
+         <!-- Vital Stats: Anatomical Heart -->
+         <div class="card bg-zinc-900 text-white p-6 border border-zinc-900 rounded-lg shadow-sm flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Daily Flux</h2>
+                <!-- Anatomical Heart Line Drawing -->
+                <div class="w-12 h-12 text-rose-500">
+                    <svg viewBox="0 0 100 100" class="heart-beat sketch-line">
+                        <!-- Main body -->
+                        <path d="M50,85 C40,80 20,60 20,40 C20,25 35,20 45,30 C45,30 50,35 55,30 C65,20 80,25 80,40 C80,60 60,80 50,85 Z" fill="none" />
+                        <!-- Arteries/Veins details to look anatomical -->
+                        <path d="M35,22 L35,10 M45,30 L45,15 M65,22 L70,10" stroke-width="1.5" />
+                        <path d="M50,85 C55,75 60,60 60,40" stroke-width="1" opacity="0.6"/>
+                        <path d="M30,40 C35,45 40,45 45,40" stroke-width="1" opacity="0.6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <div class="text-zinc-500 text-xs mb-1">Births Today</div>
+                    <div id="births-today" class="mono text-xl font-bold text-emerald-400">...</div>
+                    <div class="text-[10px] text-zinc-600">+4.5/sec</div>
+                </div>
+                <div>
+                    <div class="text-zinc-500 text-xs mb-1">Deaths Today</div>
+                    <div id="deaths-today" class="mono text-xl font-bold text-rose-400">...</div>
+                    <div class="text-[10px] text-zinc-600">+1.8/sec</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Astronomical: Solar Orbit -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-40">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Solar Proximity</h2>
+                <!-- Sun & Earth Orbit -->
+                <div class="w-12 h-12">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="12" fill="#fbbf24" /> <!-- Sun -->
+                        <circle cx="50" cy="50" r="35" fill="none" stroke="#e4e4e7" stroke-dasharray="4 4" /> <!-- Orbit Path -->
+                        <g class="orbit-system">
+                            <circle cx="50" cy="15" r="6" fill="#3b82f6" /> <!-- Earth -->
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div id="sun-distance" class="mono text-2xl font-bold tracking-tight">Calculating...</div>
+                <div class="w-full bg-zinc-100 h-1 mt-3 rounded-full overflow-hidden">
+                    <div class="bg-amber-400 h-full w-2/3 animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Astronomical: Lunar Orbit -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-40">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Lunar Proximity</h2>
+                <!-- Earth & Moon Orbit -->
+                <div class="w-12 h-12">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="10" fill="#3b82f6" /> <!-- Earth -->
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="#e4e4e7" stroke-dasharray="2 2" /> <!-- Orbit Path -->
+                        <g class="orbit-moon">
+                            <circle cx="50" cy="20" r="4" fill="#a1a1aa" /> <!-- Moon -->
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div id="moon-distance" class="mono text-2xl font-bold tracking-tight">Calculating...</div>
+                <div class="w-full bg-zinc-100 h-1 mt-3 rounded-full overflow-hidden">
+                    <div class="bg-zinc-400 h-full w-1/3 animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earth Physical: Equatorial (3D View) -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-40">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Equatorial Scale</h2>
+                <!-- 3D-ish Globe -->
+                <div class="w-12 h-12 text-zinc-300">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <!-- Sphere -->
+                        <circle cx="50" cy="50" r="40" stroke="currentColor" fill="#f4f4f5"/>
+                        <!-- Tilted Axis Line -->
+                        <line x1="50" y1="10" x2="50" y2="90" stroke="currentColor" stroke-dasharray="2 2" transform="rotate(23.5 50 50)"/>
+                        <!-- Equator (Ellipse) -->
+                        <ellipse cx="50" cy="50" rx="40" ry="12" stroke="#ef4444" stroke-width="2.5" transform="rotate(-10 50 50)"/>
+                        <!-- Back of equator (dotted for depth) -->
+                        <path d="M12,45 A40,12 -10 0,0 88,58" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" fill="none" opacity="0.5"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div id="earth-circumference" class="mono text-2xl font-bold tracking-tight">40,075 km</div>
+                <div class="text-zinc-400 text-xs mt-2">Static Constant</div>
+            </div>
+        </div>
+
+        <!-- Local Data: Netherlands (Detailed Outline) -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-40">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Netherlands</h2>
+                <!-- Accurate NL Map -->
+                
+				 <img src="images/nl.svg" width="48" height="54" alt="nl">
+            </div>
+            <div>
+                <div id="netherlands-population" class="mono text-2xl font-bold tracking-tight">Calculating...</div>
+                <div class="text-zinc-400 text-xs mt-1">Total Residents</div>
+            </div>
+        </div>
+
+        <!-- Local Data: Haarlem (Skyline Sketch) -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-40">
+             <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Haarlem</h2>
+                <!-- Continuous Line Skyline -->
+                <div class="w-12 h-12 text-red-500">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+                        <!-- Skyline path: starts left, goes up to roof, tower, back down -->
+                        <path d="M5,70 L15,70 L15,55 L30,50 L35,55 L35,45 L45,20 L55,45 L55,55 L70,50 L85,55 L85,70 L95,70" />
+                        <!-- Cross detail on tower -->
+                        <line x1="45" y1="20" x2="45" y2="12" stroke-width="1"/>
+                        <line x1="42" y1="15" x2="48" y2="15" stroke-width="1"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div id="haarlem-population" class="mono text-2xl font-bold tracking-tight">Calculating...</div>
+                <div class="text-zinc-400 text-xs mt-1">Total Residents</div>
+            </div>
+        </div>
+
+        <!-- Digital Stats -->
+        <div class="card bg-white p-6 border border-zinc-200 rounded-lg shadow-sm flex flex-col justify-between h-40">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Digital Pulse</h2>
+                <!-- Digital Waveform -->
+                <div class="w-12 h-12 text-blue-500">
+                   <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
+                       <path d="M10 50 L20 50 L30 20 L40 80 L50 50 L60 50 L70 30 L80 70 L90 50 L100 50" class="heart-beat">
+                           <animate attributeName="stroke-opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite" />
+                       </path>
+                   </svg>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-baseline gap-2">
+                    <span id="internet-users" class="mono text-xl font-bold tracking-tight">...</span>
+                    <span class="text-xs text-zinc-400">Users</span>
+                </div>
+                <div class="flex items-baseline gap-2 mt-1">
+                    <span id="data-transfer" class="mono text-xl font-bold tracking-tight text-blue-600">...</span>
+                    <span class="text-xs text-zinc-400">PB/sec</span>
+                </div>
+            </div>
+        </div>
+
+
+    </main>
+
+    <footer class="mt-12 mb-6 text-zinc-400 text-xs text-center max-w-xl leading-relaxed">
+        <p>Data represents algorithmic approximations based on growth rates and celestial mechanics. <br>Design focus: Clarity & Precision.</p>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons with a safety check
+        const initIcons = () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            } else {
+                console.warn('Lucide library not loaded yet, retrying...');
+                setTimeout(initIcons, 100);
+            }
+        };
+        
+        // Wait for window load to ensure external scripts are ready
+        window.addEventListener('load', initIcons);
+
+        // Update time function
+        const updateTime = () => {
+            const timeElement = document.getElementById('time');
+            const dateElement = document.getElementById('date');
+            
+            if (timeElement && dateElement) {
+                const now = new Date();
+                timeElement.textContent = now.toLocaleTimeString('en-US', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                dateElement.textContent = now.toLocaleDateString('en-US', dateOptions);
+            }
+        };
+
+        // Format number with spaces
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat('en-US').format(num).replace(/,/g, ' ');
+        };
+
+        // Astronomical calculations
+        const updateAstronomicalData = () => {
+            const sunDistanceElement = document.getElementById('sun-distance');
+            const moonDistanceElement = document.getElementById('moon-distance');
+            
+            if (sunDistanceElement && moonDistanceElement) {
+                const now = new Date();
+                const startOfYear = new Date(now.getFullYear(), 0, 0);
+                const diff = now - startOfYear;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const dayOfYear = Math.floor(diff / oneDay);
+                
+                // Earth-Sun distance (Approximate sine wave based on perihelion/aphelion)
+                const sunBase = 149600000;
+                const sunVariation = Math.cos((dayOfYear - 3) / 365 * 2 * Math.PI) * -2500000; // Perihelion approx Jan 3
+                const sunDistance = Math.floor(sunBase + sunVariation);
+                sunDistanceElement.textContent = formatNumber(sunDistance) + ' km';
+                
+                // Earth-Moon distance (Simplified cycle)
+                // Moon cycle is approx 27.3 days
+                const moonTime = now.getTime() / (1000 * 60 * 60 * 24); // days since epoch
+                const moonCycle = (moonTime % 27.3) / 27.3;
+                const moonVariation = Math.cos(moonCycle * 2 * Math.PI) * 21000;
+                const moonDistance = Math.floor(384400 + moonVariation);
+                moonDistanceElement.textContent = formatNumber(moonDistance) + ' km';
+            }
+        };
+
+        // Population calculations
+        const updatePopulationData = () => {
+            // Base data (Approximations adjusted for 2024/2025 baseline)
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            // Seconds since beginning of day
+            const secondsToday = (now - startOfDay) / 1000;
+            
+            // Global Pop
+            // ~8.1 Billion baseline mid-2024, growing ~2.5/sec
+            const basePop2024 = 8100000000; 
+            const msSince2024 = now - new Date('2024-01-01');
+            const totalPop = Math.floor(basePop2024 + (msSince2024 / 1000 * 2.4));
+            
+            const popEl = document.getElementById('population');
+            if(popEl) popEl.textContent = formatNumber(totalPop);
+
+            // Netherlands
+            // ~17.9M, slow growth
+            const baseNL = 17900000;
+            const growthNL = msSince2024 / 1000 * 0.05; // very rough approx
+            const nlPop = Math.floor(baseNL + growthNL);
+            const nlEl = document.getElementById('netherlands-population');
+            if(nlEl) nlEl.textContent = formatNumber(nlPop);
+
+            // Haarlem
+            // ~165,000
+            const baseHaarlem = 165000;
+            const growthHaarlem = msSince2024 / 1000 * 0.002;
+            const hlmPop = Math.floor(baseHaarlem + growthHaarlem);
+            const hlmEl = document.getElementById('haarlem-population');
+            if(hlmEl) hlmEl.textContent = formatNumber(hlmPop);
+
+            // Internet Users
+            // ~5.4 Billion, fast growth
+            const baseNet = 5400000000;
+            const netGrowth = msSince2024 / 1000 * 3.5;
+            const netUsers = Math.floor(baseNet + netGrowth);
+            const netEl = document.getElementById('internet-users');
+            if(netEl) netEl.textContent = formatNumber(netUsers);
+
+            // Births/Deaths Today
+            // Births: ~385,000/day -> ~4.5/sec
+            // Deaths: ~170,000/day -> ~2.0/sec
+            const births = Math.floor(secondsToday * 4.5);
+            const deaths = Math.floor(secondsToday * 1.95);
+            
+            const birthsEl = document.getElementById('births-today');
+            if(birthsEl) birthsEl.textContent = formatNumber(births);
+            
+            const deathsEl = document.getElementById('deaths-today');
+            if(deathsEl) deathsEl.textContent = formatNumber(deaths);
+
+            // Data Transfer (Simulated volatility)
+            const dataTransferEl = document.getElementById('data-transfer');
+            if (dataTransferEl) {
+                // Fluctuate around 150 PB/sec
+                const base = 150;
+                const noise = (Math.sin(now.getTime() / 500) * 10) + (Math.random() * 5);
+                dataTransferEl.textContent = (base + noise).toFixed(1);
+            }
+        };
+
+        // Init and Intervals
+        try {
+            updateTime();
+            updateAstronomicalData();
+            updatePopulationData();
+            
+            setInterval(updateTime, 1000);
+            setInterval(updateAstronomicalData, 60000); // Every minute is enough for celestial
+            setInterval(updatePopulationData, 100); // Fast updates for pop/data
+            
+        } catch (error) {
+            console.error("Dashboard initialization error:", error);
+        }
+    </script>
+</body>
+</html>

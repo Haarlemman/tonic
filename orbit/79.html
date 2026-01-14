@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>♥ Body ▲ Mind ◯ Soul</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Overpass', sans-serif;
+        }
+
+        #starry-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(ellipse at bottom, #000 50%, #410b4b 100%);
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: #a200ff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px white;
+            animation: twinkle linear infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .atom-container {
+            position: relative;
+            width: min(768px, 95vw, 95vh);
+            height: min(768px, 95vw, 95vh);
+        }
+
+        canvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .trail-back {
+            z-index: 100;
+        }
+
+        .nucleus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150px;
+            height: 150px;
+            margin: -75px 0 0 -75px;
+            z-index: 200;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff, #ffffee 40%, #ffff88 70%, rgba(255, 255, 255, 0.3));
+            box-shadow: 
+                0 0 20px #fff,
+                0 0 40px #ffff88,
+                0 0 60px #ffff44,
+                inset 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+
+        .trail-front {
+            z-index: 300;
+        }
+
+        .electron {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: -20px 0 0 -20px;
+            pointer-events: none;
+        }
+
+        #e1 {
+            background: radial-gradient(circle at 30% 30%, #ff0000, #ff2244);
+            box-shadow: 0 0 55px #ff4466, inset -8px -8px 20px #900;
+        }
+
+        #e2 {
+            background: radial-gradient(circle at 30% 30%, #0000ff, #33889f);
+            box-shadow: 0 0 55px #55aa99, inset -8px -8px 20px #0066cc;
+        }
+
+        #e3 {
+            background: radial-gradient(circle at 30% 30%, #ffff00, #ffdd22);
+            box-shadow: 0 0 55px #ffee66, inset -8px -8px 20px #ccaa00;
+        }
+
+        .legend-container {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.85);
+            border: 1px solid #ccddee;
+            border-radius: 12px;
+            color: white;
+            font-weight: 300;
+            font-size: 15px;
+            z-index: 1000;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-swatch {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .legend-item:nth-child(1) .legend-swatch {
+            background-color: #ff3300;
+            box-shadow: 0 0 6px #ff3300, 0 0 10px #ff3300;
+        }
+
+        .legend-item:nth-child(2) .legend-swatch {
+            background-color: #ffdd00;
+            box-shadow: 0 0 6px #ffdd00, 0 0 10px #ffdd00;
+        }
+
+        .legend-item:nth-child(3) .legend-swatch {
+            background-color: #0088ff;
+            box-shadow: 0 0 6px #0088ff, 0 0 10px #0088ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="starry-bg"></div>
+
+    <div class="legend-container">
+        <div class="legend-item">
+            <span class="legend-swatch"></span>
+            Body
+        </div>
+        <div class="legend-item">
+            <span class="legend-swatch"></span>
+            Mind
+        </div>
+        <div class="legend-item">
+            <span class="legend-swatch"></span>
+            Soul
+        </div>
+    </div>
+
+    <div class="atom-container">
+        <canvas id="trailsBack" class="trail-back"></canvas>
+        <div class="nucleus"></div>
+        <canvas id="trailsFront" class="trail-front"></canvas>
+        <div class="electron" id="e1"></div>
+        <div class="electron" id="e2"></div>
+        <div class="electron" id="e3"></div>
+    </div>
+
+    <script>
+        // Generate stars
+        const starryBg = document.getElementById('starry-bg');
+        const starCount = 300;
+
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDuration = Math.random() * 4 + 3 + 's';
+            star.style.animationDelay = Math.random() * 5 + 's';
+            starryBg.appendChild(star);
+        }
+
+        // Atom simulation
+        const atomContainer = document.querySelector('.atom-container');
+        const canvasBack = document.getElementById('trailsBack');
+        const ctxBack = canvasBack.getContext('2d');
+        const canvasFront = document.getElementById('trailsFront');
+        const ctxFront = canvasFront.getContext('2d');
+
+        const size = atomContainer.offsetWidth;
+        canvasBack.width = canvasFront.width = size;
+        canvasBack.height = canvasFront.height = size;
+
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const nucleusRadius = 75 * (size / 768);
+
+        ctxBack.lineWidth = ctxFront.lineWidth = 4;
+        ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+        const electrons = [
+            {
+                el: document.getElementById('e1'),
+                color: '#ff3355',
+                baseSpeed: 1,
+                speedAmp: 0.15,
+                speedFreq: 0.0008,
+                baseRadius: 300 * (size / 768),
+                radiusAmp: 60 * (size / 768),
+                radiusFreq: 0.09,
+                baseIncl: 90,
+                inclAmp: 12,
+                inclFreq: 0.0007,
+                basePlane: 7,
+                planeAmp: 20,
+                planeFreq: 0.0006,
+                baseRoll: 0,
+                rollAmp: 25,
+                rollFreq: 0.01
+            },
+            {
+                el: document.getElementById('e2'),
+                color: '#4488ff',
+                baseSpeed: 0.4,
+                speedAmp: 0.08,
+                speedFreq: 0.0013,
+                baseRadius: 240 * (size / 768),
+                radiusAmp: 80 * (size / 768),
+                radiusFreq: 0.005,
+                baseIncl: 15,
+                inclAmp: 8,
+                inclFreq: 0.01,
+                basePlane: 95,
+                planeAmp: 30,
+                planeFreq: 0.0008,
+                baseRoll: 90,
+                rollAmp: 35,
+                rollFreq: 0.0007
+            },
+            {
+                el: document.getElementById('e3'),
+                color: '#ffdd33',
+                baseSpeed: 3,
+                speedAmp: 0.4,
+                speedFreq: 0.0011,
+                baseRadius: 210 * (size / 768),
+                radiusAmp: 15 * (size / 768),
+                radiusFreq: 0.0014,
+                baseIncl: 15,
+                inclAmp: 10,
+                inclFreq: 0.0009,
+                basePlane: 110,
+                planeAmp: 25,
+                planeFreq: 0.0012,
+                baseRoll: -60,
+                rollAmp: 20,
+                rollFreq: 0.06
+            }
+        ];
+
+        let time = 0;
+        let frameCount = 0;
+
+        function animate() {
+            time += 0.05;
+            frameCount++;
+
+            // Fade trails every 4 frames
+            if (frameCount % 4 === 0) {
+                ctxBack.globalCompositeOperation = 'destination-out';
+                ctxFront.globalCompositeOperation = 'destination-out';
+                ctxBack.fillStyle = ctxFront.fillStyle = 'rgba(0, 0, 0, 0.02)';
+                ctxBack.fillRect(0, 0, size, size);
+                ctxFront.fillRect(0, 0, size, size);
+                ctxBack.globalCompositeOperation = 'source-over';
+                ctxFront.globalCompositeOperation = 'source-over';
+            }
+
+            electrons.forEach(e => {
+                const speed = e.baseSpeed + e.speedAmp * Math.sin(time * e.speedFreq);
+                const radius = e.baseRadius + e.radiusAmp * Math.sin(time * e.radiusFreq);
+                const inclinationDeg = e.baseIncl + e.inclAmp * Math.sin(time * e.inclFreq);
+                const planeRotDeg = e.basePlane + e.planeAmp * Math.sin(time * e.planeFreq);
+                const rollDeg = e.baseRoll + e.rollAmp * Math.sin(time * e.rollFreq);
+
+                const rad = deg => deg * Math.PI / 180;
+                const i = rad(inclinationDeg);
+                const r = rad(planeRotDeg);
+                const o = rad(rollDeg);
+                const a = time * speed;
+
+                let x = Math.cos(a) * radius;
+                let y = Math.sin(a) * radius;
+                let z = 0;
+
+                // Apply 3D rotations
+                let tx = x * Math.cos(i) + z * Math.sin(i);
+                z = -x * Math.sin(i) + z * Math.cos(i);
+                x = tx;
+
+                tx = x * Math.cos(r) - z * Math.sin(r);
+                z = x * Math.sin(r) + z * Math.cos(r);
+                x = tx;
+
+                tx = x * Math.cos(o) - y * Math.sin(o);
+                const ty = x * Math.sin(o) + y * Math.cos(o);
+                x = tx;
+                y = ty;
+
+                const scale = 1 + z * 0.0038;
+                const screenX = centerX + x;
+                const screenY = centerY + y;
+
+                // Set electron z-index based on z-depth
+                e.el.style.zIndex = z < 0 ? '100' : '400';
+                
+                e.el.style.left = screenX + 'px';
+                e.el.style.top = screenY + 'px';
+                e.el.style.transform = `scale(${scale})`;
+                
+                // Choose the correct canvas (back or front)
+                const ctx = z < 0 ? ctxBack : ctxFront;
+                
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = e.color;
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY);
+                ctx.lineTo(screenX + 0.1, screenY + 0.1);
+                ctx.stroke();
+            });
+
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>

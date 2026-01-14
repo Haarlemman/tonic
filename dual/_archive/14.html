@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TWIN CITY | The Circular Paradox</title>
+  <style>
+    :root{
+      --day-grad: linear-gradient(to top, #000c24 0%, #001a4d 25%, #4dabff 100%);
+      --night-grad: linear-gradient(to bottom, #000000 0%, #050010 20%, #1e0f3c 100%);
+    }
+    html, body{
+      margin:0; padding:0; width:100%; height:100%;
+      overflow:hidden;
+      background: var(--day-grad);
+      transition: background 1.5s ease-in-out;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    #canvas-container{ position:fixed; inset:0; }
+    canvas{ display:block; }
+    #hud{
+      position:fixed; top:24px; left:24px;
+      color:#fff; z-index:10; pointer-events:none; user-select:none;
+      text-shadow: 0 4px 15px rgba(0,0,0,.6);
+    }
+    h1{
+      font-size: 1.1rem; font-weight: 900; letter-spacing: 12px;
+      text-transform: uppercase; margin:0;
+      border-left: 6px solid #f1c40f; padding-left:16px;
+    }
+    .subtitle{
+      font-size: 9px; letter-spacing: 5px; margin-top: 8px;
+      padding-left: 22px; font-weight: 700; text-transform: uppercase;
+      color: rgba(255,255,255,.92);
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <h1>Twin City</h1>
+    <div class="subtitle" id="side-indicator">Circular • Paradox • Rhythm</div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let ambientLight, sun, nightLight;
+    let upperGroup, lowerGroup;
+    let upperCars = [];
+    let nightDashes = [];      // moving “cars”
+    let rimDashes = null;      // static rim marks
+    let stars = null;
+    let lastSide = null;
+
+    const NEON = [0x00f2ff, 0xff00ff, 0x00ff00, 0xffee00];
+    const DAY_PALETTE  = [0x444444, 0x333333, 0x222222, 0x555566, 0x4a3a3a, 0x606060];
+
+    window.addEventListener("load", init);
+
+    function init(){
+      scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x000c24, 200, 4500);
+
+      camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+      camera.position.set(350, 350, 350);
+
+      renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x000000, 0);
+      document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+      scene.add(ambientLight);
+
+      sun = new THREE.DirectionalLight(0xffffff, 1.8);
+      sun.position.set(200, 600, 200);
+      scene.add(sun);
+
+      nightLight = new THREE.PointLight(0x7733ff, 4.0, 3500);
+      nightLight.position.set(0, -700, 0);
+      scene.add(nightLight);
+
+      upperGroup = new THREE.Group();
+      lowerGroup = new THREE.Group();
+      scene.add(upperGroup);
+      scene.add(lowerGroup);
+
+      buildWorld();
+
+      window.addEventListener("resize", onResize);
+      animate();
+    }
+
+    // -------- visuals helpers --------
+    function makeDashTexture(){
+      // Creates a horizontal glow dash: transparent → bright core → transparent
+      const c = document.createElement("canvas");
+      c.width = 256; c.height = 64;
+      const g = c.getContext("2d");
+
+      const grd = g.createLinearGradient(0, 0, c.width, 0);
+      grd.addColorStop(0.00, "rgba(255,255,255,0.00)");
+      grd.addColorStop(0.18, "rgba(255,255,255,0.30)");
+      grd.addColorStop(0.50, "rgba(255,255,255,1.00)");
+      grd.addColorStop(0.82, "rgba(255,255,255,0.30)");
+      grd.addColorStop(1.00, "rgba(255,255,255,0.00)");
+
+      g.fillStyle = grd;
+      g.fillRect(0, 0, c.width, c.height);
+
+      // soft vertical falloff (fake bloom)
+      const v = g.createLinearGradient(0, 0, 0, c.height);
+      v.addColorStop(0.00, "rgba(255,255,255,0.00)");
+      v.addColorStop(0.35, "rgba(255,255,255,0.75)");
+      v.addColorStop(0.50, "rgba(255,255,255,1.00)");
+      v.addColorStop(0.65, "rgba(255,255,255,0.75)");
+      v.addColorStop(1.00, "rgba(255,255,255,0.00)");
+
+      g.globalCompositeOperation = "multiply";
+      g.fillStyle = v;
+      g.fillRect(0, 0, c.width, c.height);
+      g.globalCompositeOperation = "source-over";
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    function makeStarsPoints(count, radiusMin, radiusMax){
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++){
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2*v - 1);
+        const r = radiusMin + Math.random() * (radiusMax - radiusMin);
+
+        positions[i*3+0] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i*3+1] = r * Math.cos(phi);
+        positions[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+      const mat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 2.6,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        depthTest: false,
+        fog: false
+      });
+
+      return new THREE.Points(geo, mat);
+    }
+
+    // -------- build --------
+    function buildWorld(){
+      const rings = 8;
+      const ringSpacing = 12;
+      const cityEdgeRadius = (rings + 1) * ringSpacing;
+      const roadRadius = cityEdgeRadius + 26;
+
+      // Floor divider
+      const dividerRadius = roadRadius + 80;
+      const baseFloor = new THREE.Mesh(
+        new THREE.CircleGeometry(dividerRadius, 64),
+        new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide })
+      );
+      baseFloor.rotation.x = Math.PI / 2;
+      scene.add(baseFloor);
+
+      // Day white avenue ring
+      const whiteRing = new THREE.Mesh(
+        new THREE.RingGeometry(cityEdgeRadius + 2, roadRadius - 6, 64),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0, metalness: 0 })
+      );
+      whiteRing.rotation.x = -Math.PI / 2;
+      whiteRing.position.y = 0.2;
+      upperGroup.add(whiteRing);
+
+      // Inner black ring
+      const innerRing = new THREE.Mesh(
+        new THREE.TorusGeometry(14, 1.2, 16, 64),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+      );
+      innerRing.rotation.x = Math.PI / 2;
+      innerRing.position.y = 0.3;
+      upperGroup.add(innerRing);
+
+      // Roads
+      const roadGeom = new THREE.TorusGeometry(roadRadius, 5.0, 16, 128);
+      const roadMat = new THREE.MeshStandardMaterial({
+        color: 0x080808,
+        roughness: 0.6,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
+      });
+
+      const uRoad = new THREE.Mesh(roadGeom, roadMat);
+      uRoad.rotation.x = Math.PI / 2;
+      uRoad.position.y = 0.5;
+      upperGroup.add(uRoad);
+
+      const lRoad = new THREE.Mesh(roadGeom, roadMat);
+      lRoad.rotation.x = Math.PI / 2;
+      lRoad.position.y = -0.5;
+      lowerGroup.add(lRoad);
+
+      // Buildings (kept from your style)
+      for (let r = 2; r <= rings + 1; r++){
+        const radius = r * ringSpacing;
+        const heightFactor = (rings + 2 - r) / rings;
+        const count = Math.floor(radius * 0.85);
+
+        for (let i = 0; i < count; i++){
+          const angle = (i / count) * Math.PI * 2;
+          const px = Math.cos(angle) * radius;
+          const pz = Math.sin(angle) * radius;
+
+          // Day buildings
+          const hT = 10 + (heightFactor * 55) + (Math.random() * 15);
+          const w = 3.5 + Math.random() * 5;
+          const d = 3.5 + Math.random() * 5;
+          const color = DAY_PALETTE[Math.floor(Math.random() * DAY_PALETTE.length)];
+
+          const dayHouse = new THREE.Group();
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(w, hT, d),
+            new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
+          );
+          box.position.y = hT/2;
+          dayHouse.add(box);
+
+          dayHouse.position.set(px, 0.1, pz);
+          dayHouse.rotation.y = -angle;
+          upperGroup.add(dayHouse);
+
+          // Night buildings
+          const hB = 14 + (heightFactor * 75) + (Math.random() * 20);
+          const nHouse = new THREE.Group();
+          const bBox = new THREE.Mesh(
+            new THREE.BoxGeometry(5.0, hB, 5.0),
+            new THREE.MeshStandardMaterial({ color: 0x020208 })
+          );
+          bBox.position.y = -hB/2;
+          nHouse.add(bBox);
+
+          const neonCol = NEON[Math.floor(Math.random() * NEON.length)];
+          const win = new THREE.Mesh(
+            new THREE.BoxGeometry(5.1, 1.2, 5.1),
+            new THREE.MeshStandardMaterial({ color: neonCol, emissive: neonCol, emissiveIntensity: 10 })
+          );
+          win.position.y = -Math.random() * hB;
+          nHouse.add(win);
+
+          nHouse.position.set(px, -0.1, pz);
+          nHouse.rotation.y = -angle;
+          lowerGroup.add(nHouse);
+        }
+      }
+
+      // Central beam (simple)
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(3, 3, 2000, 24),
+        new THREE.MeshBasicMaterial({ color: 0x9900ff })
+      );
+      beam.position.y = -1000;
+      scene.add(beam);
+
+      // Day cars (solid boxes)
+      const mCols = [0x9e0000, 0xf1c40f, 0x2980b9, 0xffffff];
+      for (let i = 0; i < 180; i++){
+        const car = new THREE.Mesh(
+          new THREE.BoxGeometry(5.5, 1.8, 9),
+          new THREE.MeshBasicMaterial({ color: mCols[i % 4] })
+        );
+        const inner = Math.random() > 0.5;
+        car.userData = {
+          angle: Math.random() * Math.PI * 2,
+          speed: (0.003 + Math.random()*0.005) * (inner ? 1 : -1),
+          radius: roadRadius + (inner ? -12 : 12),
+          y: 10.0
+        };
+        upperGroup.add(car);
+        upperCars.push(car);
+      }
+
+      // Night: STARS (visible)
+      stars = makeStarsPoints(1800, 2600, 5200);
+      stars.renderOrder = 1;
+      lowerGroup.add(stars);
+
+      // Night: RIM DASHES (outer HUD ring look)
+      rimDashes = makeRimDashes(roadRadius + 42, -22.0);
+      rimDashes.renderOrder = 20;
+      lowerGroup.add(rimDashes);
+
+      // Night: MOVING “TRON CARS” (dash sprites)
+      makeMovingDashes(roadRadius + 14, -14.0, 90);
+      makeMovingDashes(roadRadius - 14, -14.0, 70);
+    }
+
+    function makeRimDashes(radius, y){
+      const dashTex = makeDashTexture();
+
+      const group = new THREE.Group();
+      group.rotation.x = Math.PI / 2;
+      group.position.y = y;
+
+      const count = 160;
+      for (let i=0; i<count; i++){
+        const angle = (i / count) * Math.PI * 2;
+        const col = NEON[(i + (Math.random()*10|0)) % NEON.length];
+
+        const mat = new THREE.SpriteMaterial({
+          map: dashTex,
+          color: col,
+          transparent: true,
+          opacity: 0.55,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: false
+        });
+
+        const s = new THREE.Sprite(mat);
+
+        // Place on circle in XZ (because group is rotated to lie flat)
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        s.position.set(x, 0, z);
+
+        // Tangential orientation: rotate sprite by angle + 90°
+        s.material.rotation = angle + Math.PI/2;
+
+        // Thin dash dimensions (tweak to taste)
+        s.scale.set(26 + Math.random()*18, 3.2, 1);
+
+        group.add(s);
+      }
+      return group;
+    }
+
+    function makeMovingDashes(radius, y, count){
+      const dashTex = makeDashTexture();
+
+      for (let i=0; i<count; i++){
+        const col = NEON[i % NEON.length];
+
+        const mat = new THREE.SpriteMaterial({
+          map: dashTex,
+          color: col,
+          transparent: true,
+          opacity: 0.9,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: false
+        });
+
+        const s = new THREE.Sprite(mat);
+        s.renderOrder = 60;
+
+        // dash size: long + thin (this is the whole point)
+        const len = 42 + Math.random()*70;
+        const thick = 3.2 + Math.random()*2.2;
+        s.scale.set(len, thick, 1);
+
+        s.userData = {
+          radius,
+          y,
+          angle: Math.random() * Math.PI * 2,
+          speed: (0.02 + Math.random()*0.05) * (Math.random() > 0.5 ? 1 : -1),
+          jitter: Math.random() * Math.PI * 2
+        };
+
+        // Put in lowerGroup; we’ll position each frame
+        lowerGroup.add(s);
+        nightDashes.push(s);
+      }
+    }
+
+    // -------- day/night switching --------
+    function updateEnvironment(){
+      const isDay = camera.position.y > 0;
+      if (isDay === lastSide) return;
+      lastSide = isDay;
+
+      if (isDay){
+        document.body.style.background = "var(--day-grad)";
+        scene.fog.color.set(0x000c24);
+        ambientLight.intensity = 1.4;
+        sun.intensity = 2.0;
+        nightLight.intensity = 0;
+
+        upperGroup.visible = true;
+        lowerGroup.visible = false;
+      } else {
+        document.body.style.background = "var(--night-grad)";
+        scene.fog.color.set(0x000000);
+        ambientLight.intensity = 0.15;
+        sun.intensity = 0;
+        nightLight.intensity = 5.0;
+
+        upperGroup.visible = false;
+        lowerGroup.visible = true;
+      }
+
+      document.getElementById("side-indicator").innerText =
+        isDay ? "UPPER WORLD • SKYWARD LIGHT" : "NETHER WORLD • TRON PULSE";
+    }
+
+    function onResize(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // -------- animate --------
+    function animate(){
+      requestAnimationFrame(animate);
+      controls.update();
+      updateEnvironment();
+
+      // day cars
+      if (upperGroup.visible){
+        for (const c of upperCars){
+          c.userData.angle += c.userData.speed;
+          c.position.set(
+            Math.cos(c.userData.angle) * c.userData.radius,
+            c.userData.y,
+            Math.sin(c.userData.angle) * c.userData.radius
+          );
+          c.rotation.y = -c.userData.angle + (c.userData.speed > 0 ? 0 : Math.PI);
+        }
+      }
+
+      // night dashes (the “Tron cars”)
+      if (lowerGroup.visible){
+        const t = performance.now() * 0.001;
+
+        for (const s of nightDashes){
+          s.userData.angle += s.userData.speed;
+
+          const a = s.userData.angle;
+          const r = s.userData.radius;
+
+          // Small breathing shift to avoid perfect uniformity (NOT flicker)
+          const rr = r + Math.sin(t * 0.7 + s.userData.jitter) * 0.35;
+
+          const x = Math.cos(a) * rr;
+          const z = Math.sin(a) * rr;
+
+          s.position.set(x, s.userData.y, z);
+
+          // Tangential orientation: sprite rotation follows angle
+          s.material.rotation = a + Math.PI/2;
+
+          // Very subtle “motion intensity” without glitching
+          s.material.opacity = 0.85;
+        }
+
+        // Stars are real now, so just a soft twinkle
+        if (stars){
+          stars.material.opacity = 0.75 + 0.15 * Math.sin(t * 0.5);
+        }
+
+        // Rim can rotate imperceptibly (optional)
+        if (rimDashes){
+          rimDashes.rotation.z = t * 0.03;
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom – Perfect 120° Symmetry</title>
+<style>
+    body {
+        margin: 0;
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .atom-container {
+        position: relative;
+        width: 600px;
+        height: 600px;
+        transform-style: preserve-3d;
+        perspective: 1200px;
+    }
+    .nucleus {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 160px;
+        height: 160px;
+        margin: -80px 0 0 -80px;
+        background: radial-gradient(circle, #fff, #ffeb3b);
+        border-radius: 50%;
+        box-shadow: 0 0 80px #ffeb3b, 0 0 120px #ff9800;
+        z-index: 100;
+    }
+    .electron {
+        position: absolute;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        margin: -18px 0 0 -18px;
+        transition: transform 0.05s linear; /* smooth size scaling */
+    }
+    .electron-red    { background: radial-gradient(circle at 30% 30%, #fff, #f44336); box-shadow: 0 0 30px #f44336; }
+    .electron-blue   { background: radial-gradient(circle at 30% 30%, #fff, #4488ff); box-shadow: 0 0 30px #4488ff; }
+    .electron-yellow { background: radial-gradient(circle at 30% 30%, #fff, #ffeb3b); box-shadow: 0 0 30px #ffeb3b; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron electron-red"    id="e1"></div>
+    <div class="electron electron-blue"   id="e2"></div>
+    <div class="electron electron-yellow" id="e3"></div>
+    <div class="nucleus"></div>
+</div>
+
+<script>
+const radius = 240;
+const centerX = 300;
+const centerY = 300;
+
+// Three orbital planes rotated exactly 120° around the vertical Y axis
+const electrons = [
+    { el: document.getElementById('e1'), offset: 0,   tilt: 0                      },
+    { el: document.getElementById('e2'), offset: 120, tilt: 120 * Math.PI / 180 },
+    { el: document.getElementById('e3'), offset: 240, tilt: 240 * Math.PI / 180 }
+];
+
+let time = 0;
+
+function animate() {
+    time += 0.018;
+
+    electrons.forEach(e => {
+        // Main orbital angle + 120° phase offset for perfect symmetry
+        const angle = time + e.offset * Math.PI / 180;
+
+        // Position in the tilted plane
+        let x = Math.cos(angle) * radius;
+        let y = Math.sin(angle) * radius * 0.7;        // elliptical flattening on Y
+        let z = Math.sin(angle) * radius * Math.sin(Math.PI / 3); // ≈0.866
+
+        // Rotate the whole plane around Y axis by its tilt angle
+        const cosT = Math.cos(e.tilt);
+        const sinT = Math.sin(e.tilt);
+        const rotX =  x * cosT + z * sinT;
+        const rotZ = -x * sinT + z * cosT;
+
+        // Apply perspective scaling (closer = bigger and brighter)
+        const scale = 1 + rotZ * 0.0018;   // tweak this factor for depth strength
+        const brightness = 1 + rotZ * 0.001;
+
+        e.el.style.left   = (centerX + rotX) + 'px';
+        e.el.style.top    = (centerY + y)   + 'px';
+        e.el.style.transform = `translateZ(${rotZ}px) scale(${scale})`;
+        e.el.style.filter = `brightness(${brightness})`;
+
+        // Z-index: in front of nucleus when rotZ > 0
+        e.el.style.zIndex = rotZ > 0 ? 200 : 10;
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>

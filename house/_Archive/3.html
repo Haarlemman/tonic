@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Memory House 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- TWEEN.js for smooth animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            overflow: hidden;
+            touch-action: none; /* Prevents default touch scrolling/zooming */
+        }
+
+        .serif {
+            font-family: 'Crimson Pro', serif;
+        }
+
+        /* Loading Screen */
+        #loading {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        /* Tooltip/Label styling */
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            transform: translate(-50%, -100%);
+            margin-top: -25px; /* Moved up slightly to avoid cursor overlap */
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        /* Instructions overlay */
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #4a5568;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            pointer-events: none;
+            text-align: center;
+            transition: opacity 0.3s;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        /* Transition Curtain */
+        #curtain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f4f8;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+        #curtain.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Back Button */
+        #back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 50;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+            transition: transform 0.2s;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+        #back-btn:hover {
+            transform: scale(1.05);
+            background: #f8fafc;
+        }
+
+        /* Room Info Panel (In-Room) */
+        #room-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 45;
+            display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading">
+        <div class="text-center">
+            <h2 class="serif text-2xl mb-2">Building Interiors...</h2>
+            <div class="w-16 h-1 bg-gray-300 mx-auto overflow-hidden rounded">
+                <div class="w-full h-full bg-slate-600 animate-pulse"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Elements -->
+    <header id="main-header" class="absolute top-6 left-0 w-full text-center pointer-events-none z-20 transition-opacity duration-500">
+        <h1 class="serif text-3xl md:text-4xl text-gray-800 tracking-wide drop-shadow-sm">The House of Thought</h1>
+        <p class="text-gray-600 text-sm mt-2 font-medium">Interactive 3D Environment</p>
+    </header>
+
+    <div id="tooltip">Room Name</div>
+
+    <div id="instructions">
+        Click a room to enter it • Drag to rotate
+    </div>
+
+    <button id="back-btn" onclick="exitRoom()">
+        ← Exit Room
+    </button>
+
+    <div id="room-info">
+        <!-- Content injected via JS -->
+    </div>
+
+    <!-- Transition Curtain -->
+    <div id="curtain"></div>
+
+    <!-- Hidden Video Element for the Bedroom -->
+    <video id="phone-video" loop crossOrigin="anonymous" playsinline style="display:none;">
+        <source src="video/spirit.mp4" type="video/mp4">
+    </video>
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container" class="w-full h-screen block outline-none cursor-move"></div>
+
+    <script>
+        // --- DATA ---
+        const roomContent = {
+            living: {
+                title: "Living Room: Photos & Music",
+                hex: 0xf59e0b, 
+                description: "The walls are lined with graphic novels and art. Jazz plays softly. Use the TV to view memories.",
+                tvImages: [
+                    // --- HOW TO ADD PHOTOS: ---
+                    // 1. Upload your image to a hosting site (or use a local path if running locally).
+                    // 2. Add 'image: "url"' to these objects.
+                    // Example: { text: "My Photo", image: "https://example.com/photo.jpg", color: "#000" },
+					
+					{ text: "Bavo", image: "images/bavo1.jpg", color: "#000" },
+                    { text: "Hitchin, UK", image: "images/hitchin1.jpg", color: "#999" },
+					{ text: "Lisbon", image: "images/lisbon01.jpg", color: "#cc0000" },
+                    { text: "Family: Ailish & Yaron", color: "#fca5a5" },
+                    { text: "Tonic for the Bones (Draft)", color: "#93c5fd" },
+                    { text: "Design Studio Work", color: "#86efac" },
+                    { text: "Tel Aviv Sunset", color: "#fdba74" }
+                ]
+            },
+            attic: {
+                title: "The Attic: Memory",
+                hex: 0x94a3b8,
+                description: "Dust & Echoes. Old sketches, half-written manuscripts. The fragments of the past."
+            },
+            bathroom: {
+                title: "The Bathroom: Parkinson",
+                hex: 0x06b6d4,
+                description: "The mirror reflects the physical reality. A space of vulnerability and resilience."
+            },
+            bedroom: {
+                title: "The Bedroom: Stories",
+                hex: 0xf43f5e,
+                description: "Where dreaming happens. Tales for Yaron, stories about Ailish. Watch the story unfold on the phone.",
+                videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            },
+            toilet: {
+                title: "Toilet: Ideas",
+                hex: 0x14b8a6,
+                description: "The Think Tank. Politics, religion, and rough drafts of philosophy."
+            },
+            studio: {
+                title: "Studio: Science",
+                hex: 0x6366f1,
+                description: "Psychology & Reason. Dissecting the 'why' of human behavior."
+            },
+            basement: {
+                title: "Basement: Vault",
+                hex: 0x334155,
+                description: "Deep Storage. Secrets, fears, and absolute truths."
+            }
+        };
+
+        // --- 3D SETUP ---
+        let camera, scene, renderer, controls;
+        let raycaster, mouse;
+        let textureLoader; // Added texture loader
+        
+        // Groups
+        let worldGroup; // Holds the exterior house
+        let interiorGroup; // Holds the current room interior
+        
+        // Interaction State
+        let state = 'HOUSE'; // 'HOUSE' or 'ROOM'
+        let hoveredObject = null;
+        const interiorClickables = []; // Specific for inside room (like TV)
+
+        // TV State
+        let tvMesh = null;
+        let currentSlideIndex = 0;
+        
+        // Phone/Video State
+        let videoElement = null;
+        let videoTexture = null;
+
+        // Unified Input State
+        let pointerDownX = 0;
+        let pointerDownY = 0;
+        let isPossibleClick = false;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f4f8);
+            scene.fog = new THREE.Fog(0xf0f4f8, 10, 60);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(12, 12, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.setPixelRatio(window.devicePixelRatio); // Sharpness
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Helpers
+            textureLoader = new THREE.TextureLoader();
+
+            // Light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05;
+
+            // Groups
+            worldGroup = new THREE.Group();
+            scene.add(worldGroup);
+            
+            interiorGroup = new THREE.Group();
+            scene.add(interiorGroup);
+            interiorGroup.visible = false;
+
+            // Build Exterior
+            buildHouse();
+            buildEnvironment();
+
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Events
+            window.addEventListener('resize', onWindowResize);
+            
+            // Unified Pointer Events (Mouse + Touch)
+            const canvas = renderer.domElement;
+            canvas.addEventListener('pointerdown', onPointerDown);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerup', onPointerUp);
+
+            // Video Setup
+            videoElement = document.getElementById('phone-video');
+
+            // Remove loading
+            setTimeout(() => {
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+            }, 500);
+
+            animate();
+        }
+
+        // --- EXTERIOR BUILDER ---
+        function createRoomBlock(name, x, y, z, w, h, d, color) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { name: name, type: 'room' };
+            
+            const edges = new THREE.EdgesGeometry(geo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.1 }));
+            mesh.add(line);
+
+            // Simple Window
+            if (w >= 1.5) {
+                const winGeo = new THREE.PlaneGeometry(0.8, 0.8);
+                const winMat = new THREE.MeshBasicMaterial({ color: 0x2d3748 });
+                const win = new THREE.Mesh(winGeo, winMat);
+                win.position.set(0, 0, d/2 + 0.01);
+                mesh.add(win);
+            }
+
+            worldGroup.add(mesh);
+        }
+
+        function buildHouse() {
+            // Basement
+            createRoomBlock('basement', 0, 0.4, 0, 4.2, 0.8, 4.2, roomContent.basement.hex);
+            // Ground
+            createRoomBlock('living', -1.1, 1.8, 1, 2, 2, 2, roomContent.living.hex);
+            createRoomBlock('studio', 1.1, 1.8, 1, 2, 2, 2, roomContent.studio.hex);
+            createRoomBlock('toilet', 0, 1.5, -1.2, 1.5, 1.4, 1.5, roomContent.toilet.hex);
+            // First
+            createRoomBlock('bedroom', -1.1, 3.8, 1, 2, 2, 2, roomContent.bedroom.hex);
+            createRoomBlock('bathroom', 1.1, 3.8, 1, 2, 2, 2, roomContent.bathroom.hex);
+            
+            // Roof
+            const roofShape = new THREE.Shape();
+            roofShape.moveTo(-2.5, 0); roofShape.lineTo(2.5, 0); roofShape.lineTo(0, 2.5); roofShape.lineTo(-2.5, 0);
+            const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 2.2, bevelEnabled: false });
+            roofGeo.center();
+            const roofMat = new THREE.MeshStandardMaterial({ color: roomContent.attic.hex });
+            const roof = new THREE.Mesh(roofGeo, roofMat);
+            roof.position.set(0, 5.8, 1);
+            roof.userData = { name: 'attic', type: 'room' };
+            worldGroup.add(roof);
+        }
+
+        function buildEnvironment() {
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
+            plane.rotation.x = -Math.PI / 2;
+            worldGroup.add(plane);
+            // Trees... (Simplified for brevity)
+            const addTree = (x, z) => {
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1), new THREE.MeshStandardMaterial({ color: 0x5D4037 }));
+                trunk.position.set(x, 0.5, z);
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({ color: 0x4a7c59 }));
+                leaves.position.y = 1.5;
+                trunk.add(leaves);
+                worldGroup.add(trunk);
+            };
+            addTree(-5, -4); addTree(6, 2);
+        }
+
+        // --- INTERIOR BUILDER ---
+        
+        function buildInterior(roomKey) {
+            // Clear previous interior
+            while(interiorGroup.children.length > 0){ 
+                interiorGroup.remove(interiorGroup.children[0]); 
+            }
+            interiorClickables.length = 0; // Clear clickables
+
+            const data = roomContent[roomKey];
+            
+            // Room Shell (Open Box)
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+            const wallMat = new THREE.MeshStandardMaterial({ color: data.hex, side: THREE.DoubleSide });
+
+            // Floor
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
+            floor.rotation.x = -Math.PI/2;
+            interiorGroup.add(floor);
+
+            // Back Wall
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), wallMat);
+            backWall.position.set(0, 4, -5);
+            interiorGroup.add(backWall);
+
+
+            // Left Wall
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), wallMat);
+            leftWall.rotation.y = Math.PI/2;
+            leftWall.position.set(-5, 4, 0);
+            interiorGroup.add(leftWall);
+
+            // Lighting for interior
+            const bulb = new THREE.PointLight(0xffffff, 0.8, 20);
+            bulb.position.set(0, 6, 0);
+            interiorGroup.add(bulb);
+
+            // Specifics
+            if (roomKey === 'living') {
+                createLivingRoomInterior();
+            } else if (roomKey === 'bedroom') {
+                createBedroomInterior();
+            } else {
+                createGenericInterior(data.title);
+            }
+        }
+
+        function createGenericInterior(text) {
+            // Simple text label on wall
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(255,255,255,0.0)';
+            ctx.fillRect(0,0,512,256);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor="rgba(0,0,0,0.5)";
+            ctx.shadowBlur=4;
+            ctx.fillText(text, 256, 128);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+            plane.position.set(0, 4, -4.9);
+            interiorGroup.add(plane);
+        }
+
+        function createLivingRoomInterior() {
+            // 1. TV Stand
+            const standGeo = new THREE.BoxGeometry(4, 1.5, 1);
+            const standMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a });
+            const stand = new THREE.Mesh(standGeo, standMat);
+            stand.position.set(0, 0.75, -4);
+            interiorGroup.add(stand);
+
+            // 2. TV Screen Box
+            const tvFrameGeo = new THREE.BoxGeometry(3.5, 2, 0.2);
+            const tvFrame = new THREE.Mesh(tvFrameGeo, new THREE.MeshStandardMaterial({ color: 0x111111 }));
+            tvFrame.position.set(0, 2.6, -4);
+            interiorGroup.add(tvFrame);
+
+            // 3. The Screen (Clickable)
+            const screenGeo = new THREE.PlaneGeometry(3.3, 1.8);
+            // Initial texture
+            const tex = createSlideTexture(0);
+            const screenMat = new THREE.MeshBasicMaterial({ map: tex });
+            tvMesh = new THREE.Mesh(screenGeo, screenMat);
+            tvMesh.position.set(0, 2.6, -3.89);
+            tvMesh.userData = { type: 'tv', action: 'nextSlide' };
+            
+            interiorGroup.add(tvMesh);
+            interiorClickables.push(tvMesh);
+
+            // 4. Rug
+            const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 32), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+            rug.rotation.x = -Math.PI/2;
+            rug.position.y = 0.02;
+            interiorGroup.add(rug);
+        }
+
+        function createBedroomInterior() {
+            // 1. Desk/Stand for the Phone
+            const deskGeo = new THREE.BoxGeometry(5, 1.2, 2);
+            const deskMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
+            const desk = new THREE.Mesh(deskGeo, deskMat);
+            desk.position.set(0, 0.6, -3);
+            interiorGroup.add(desk);
+
+            // 2. The Smartphone (Body) - PORTRAIT MODE
+            // Width: 1.8, Height: 3.2 (Taller than wide)
+            const phoneGeo = new THREE.BoxGeometry(1.8, 3.2, 0.1); 
+            const phoneMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
+            const phone = new THREE.Mesh(phoneGeo, phoneMat);
+            
+            // Raised position (2.3) to accommodate height
+            phone.position.set(0, 2.3, -3);
+            // Tilt it slightly back
+            phone.rotation.x = -0.1;
+            interiorGroup.add(phone);
+
+            // 3. The Video Screen
+            // Create Video Texture
+            videoTexture = new THREE.VideoTexture(videoElement);
+            
+            // Screen Geometry matches Portrait aspect ratio
+            const screenGeo = new THREE.PlaneGeometry(1.6, 2.8);
+            const screenMat = new THREE.MeshBasicMaterial({ map: videoTexture });
+            const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+            
+            // Position slightly in front of phone body
+            screenMesh.position.set(0, 0, 0.06);
+            phone.add(screenMesh); // Add to phone so it rotates with it
+
+            // Make it clickable
+            screenMesh.userData = { type: 'phone', action: 'toggleVideo' };
+            interiorClickables.push(screenMesh);
+
+            // Add text hint
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor="black"; ctx.shadowBlur=4;
+            ctx.fillText("Click screen to play/pause video", 256, 64);
+            const hintTex = new THREE.CanvasTexture(canvas);
+            const hintPlane = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), new THREE.MeshBasicMaterial({ map: hintTex, transparent: true }));
+            // Moved text up higher (4.5) to clear the taller phone
+            hintPlane.position.set(0, 4.5, -3);
+            interiorGroup.add(hintPlane);
+        }
+
+        function createSlideTexture(index) {
+            const slide = roomContent.living.tvImages[index];
+            
+            // Check if there is an image URL provided
+            if (slide.image) {
+                // If this is a real implementation, we would load the texture.
+                // For this single-file setup, we return a placeholder while it loads
+                // or just load it directly.
+                const tex = textureLoader.load(slide.image);
+                return tex;
+            }
+
+            // Fallback to Canvas Text Generation
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = slide.color;
+            ctx.fillRect(0,0,512,256);
+            
+            // Text
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(slide.text, 256, 110);
+            
+            ctx.font = '20px Arial';
+            ctx.fillText("(Click TV for next photo)", 256, 160);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            return tex;
+        }
+
+        function nextTVSlide() {
+            currentSlideIndex = (currentSlideIndex + 1) % roomContent.living.tvImages.length;
+            if(tvMesh) {
+                tvMesh.material.map = createSlideTexture(currentSlideIndex);
+                tvMesh.material.needsUpdate = true;
+            }
+        }
+
+        function toggleVideo() {
+            if (videoElement.paused) {
+                videoElement.play();
+            } else {
+                videoElement.pause();
+            }
+        }
+
+        // --- TRANSITIONS ---
+
+        function enterRoom(roomName) {
+            state = 'TRANSITION';
+            const curtain = document.getElementById('curtain');
+            curtain.classList.add('active'); // Fade to white
+            
+            setTimeout(() => {
+                // Inside the curtain darkness:
+                // 1. Hide World
+                worldGroup.visible = false;
+                
+                // 2. Build and Show Interior
+                buildInterior(roomName);
+                interiorGroup.visible = true;
+                
+                // 3. Reset Camera for Interior
+                camera.position.set(0, 5, 8);
+                camera.lookAt(0, 3, 0);
+                controls.target.set(0, 3, 0);
+                controls.update();
+
+                // 4. Update UI Text
+                const infoPanel = document.getElementById('room-info');
+                infoPanel.style.display = 'block';
+                const data = roomContent[roomName];
+                infoPanel.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-2 text-gray-800">${data.title}</h2>
+                    <p class="text-gray-600 leading-relaxed">${data.description}</p>
+                `;
+
+                document.getElementById('main-header').style.opacity = 0;
+                document.getElementById('back-btn').style.display = 'block';
+                document.getElementById('tooltip').style.opacity = 0;
+                document.getElementById('instructions').textContent = "Click highlighted items inside.";
+
+                // 5. Reveal
+                curtain.classList.remove('active');
+                state = 'ROOM';
+            }, 800);
+        }
+
+        function exitRoom() {
+            state = 'TRANSITION';
+            const curtain = document.getElementById('curtain');
+            curtain.classList.add('active');
+
+            // Pause video if exiting bedroom
+            if (videoElement && !videoElement.paused) {
+                videoElement.pause();
+            }
+
+            setTimeout(() => {
+                // Swap visibility
+                interiorGroup.visible = false;
+                worldGroup.visible = true;
+                
+                // Reset Camera
+                camera.position.set(12, 12, 12);
+                camera.lookAt(0, 0, 0);
+                controls.target.set(0, 0, 0);
+                controls.update();
+
+                // UI Reset
+                document.getElementById('room-info').style.display = 'none';
+                document.getElementById('back-btn').style.display = 'none';
+                document.getElementById('main-header').style.opacity = 1;
+                document.getElementById('instructions').textContent = "Click a room to enter it • Drag to rotate";
+
+                curtain.classList.remove('active');
+                state = 'HOUSE';
+            }, 800);
+        }
+
+        // --- ROBUST INPUT HANDLING ---
+
+        function updateMousePosition(event) {
+            // Important: Use getBoundingClientRect to calibrate coordinates to the canvas
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+
+        function onPointerDown(event) {
+            isPossibleClick = true;
+            pointerDownX = event.clientX;
+            pointerDownY = event.clientY;
+        }
+
+        function onPointerMove(event) {
+            // If dragging significantly, cancel the click intent
+            const dist = Math.hypot(event.clientX - pointerDownX, event.clientY - pointerDownY);
+            if (dist > 10) { // Tolerance of 10 pixels
+                isPossibleClick = false;
+            }
+
+            // Always update mouse for hover effects
+            updateMousePosition(event);
+            
+            if (state === 'HOUSE') checkIntersectionExternal();
+            else if (state === 'ROOM') checkIntersectionInternal();
+            
+            // Tooltip follow
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.left = event.clientX + 'px';
+            tooltip.style.top = event.clientY + 'px';
+        }
+
+        function onPointerUp(event) {
+            if (isPossibleClick) {
+                // Perform the click logic
+                performClick(event);
+            }
+            isPossibleClick = false;
+        }
+
+        function performClick(event) {
+            // Update mouse one last time to be sure
+            updateMousePosition(event);
+            raycaster.setFromCamera(mouse, camera);
+
+
+            if (state === 'HOUSE') {
+                // Raycast against the entire worldGroup to catch all children (windows, walls)
+                const intersects = raycaster.intersectObjects(worldGroup.children, true);
+                
+                if (intersects.length > 0) {
+                    // Traverse up from the hit object to find the Room definition
+                    let target = intersects[0].object;
+                    
+                    // Walk up parents until we find an object with 'userData.name'
+                    while (target && (!target.userData || !target.userData.name)) {
+                        target = target.parent;
+                    }
+
+                    if (target && target.userData && target.userData.name) {
+                        enterRoom(target.userData.name);
+                    }
+                }
+            } 
+            else if (state === 'ROOM') {
+                const intersects = raycaster.intersectObjects(interiorClickables, true);
+                if (intersects.length > 0) {
+                    let target = intersects[0].object;
+                    // Check if TV
+                    if (target.userData.type === 'tv') {
+                        nextTVSlide();
+                    } else if (target.userData.type === 'phone') {
+                        toggleVideo();
+                    }
+                }
+            }
+        }
+
+        function checkIntersectionExternal() {
+            raycaster.setFromCamera(mouse, camera);
+            // Check against worldGroup to ensure we hit anything relevant
+            const intersects = raycaster.intersectObjects(worldGroup.children, true);
+            
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while (target && (!target.userData || !target.userData.name)) {
+                    target = target.parent;
+                }
+
+                if (target && target.userData && target.userData.name) {
+                    if (hoveredObject !== target) {
+                        // Reset old
+                        if (hoveredObject) hoveredObject.material.emissive.setHex(0x000000);
+                        
+                        // Set new
+                        hoveredObject = target;
+                        if(hoveredObject.material) {
+                            hoveredObject.material.emissive.setHex(0x333333);
+                        }
+                        
+                        document.body.style.cursor = 'pointer';
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.textContent = "Enter " + roomContent[hoveredObject.userData.name].title;
+                        tooltip.style.opacity = 1;
+                    }
+                    return; // Done
+                }
+            }
+
+            // Nothing hit or valid found
+            if (hoveredObject) {
+                if(hoveredObject.material) hoveredObject.material.emissive.setHex(0x000000);
+                hoveredObject = null;
+                document.body.style.cursor = 'default';
+                document.getElementById('tooltip').style.opacity = 0;
+            }
+        }
+
+        function checkIntersectionInternal() {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(interiorClickables);
+            
+            if (intersects.length > 0) {
+                document.body.style.cursor = 'pointer';
+            } else {
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

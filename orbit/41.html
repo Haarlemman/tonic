@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom — True 3-Axis Full Control (No Limits)</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:700px; height:700px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        background:radial-gradient(circle, #ffffbb, #ffaa33);
+        border-radius:50%;
+        box-shadow:0 0 140px #ffff88;
+        z-index:500;
+    }
+    .electron {
+        position:absolute; width:50px; height:50px; border-radius:50%; margin:-25px 0 0 -25px;
+        pointer-events:none;
+        /* ← FULLY OPAQUE + strong glow */
+        filter: drop-shadow(0 0 30px currentColor);
+        opacity: 1 !important;
+    }
+    canvas { position:absolute; inset:0; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1" style="background:#ff2255;"></div> <!-- RED -->
+    <div class="electron" id="e2" style="background:#4488ff;"></div> <!-- BLUE -->
+    <div class="electron" id="e3" style="background:#ffdd00;"></div> <!-- YELLOW -->
+    <canvas id="back"  width="700" height="700"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="front" width="700" height="700"></canvas>
+</div>
+
+<script>
+const ctxB = document.getElementById('back').getContext('2d');
+const ctxF = document.getElementById('front').getContext('2d');
+ctxB.lineWidth = ctxF.lineWidth = 7;
+ctxB.lineCap = ctxF.lineCap = 'round';
+
+const centerX = 350, centerY = 350;
+
+// ==================== TRUE 3-AXIS CONTROL ====================
+// Now every orbit has three independent rotation angles (in degrees):
+//   rollDeg  – rotation around the line of sight (like spinning a coin toward you)
+//   pitchDeg – tilt up/down
+//   yawDeg   – turn left/right (classic clock dial)
+const electrons = [
+    // RED — perfect horizontal ring (your reference image)
+    { el: document.getElementById('e1'), color: '#ff3366', speed: 0.8,  radius: 240,
+      rollDeg: 0, pitchDeg: 0, yawDeg: 0 },
+
+    // YELLOW — tilted ~60° (top-left to bottom-right)
+    { el: document.getElementById('e3'), color: '#ffdd33', speed: 1.15, radius: 230,
+      rollDeg: 0, pitchDeg: 58, yawDeg: -25 },
+
+    // BLUE — tilted ~60° crossing the yellow one
+    { el: document.getElementById('e2'), color: '#4488ff', speed: 0.95, radius: 235,
+      rollDeg: 0, pitchDeg: 58, yawDeg: 65 }
+];
+
+// Pre-compute sine/cosine of the three angles
+electrons.forEach(e => {
+    const toRad = x => x * Math.PI / 180;
+    e.cr = Math.cos(toRad(e.rollDeg)); e.sr = Math.sin(toRad(e.rollDeg));
+    e.cp = Math.cos(toRad(e.pitchDeg)); e.sp = Math.sin(toRad(e.pitchDeg));
+    e.cy = Math.cos(toRad(e.yawDeg));   e.sy = Math.sin(toRad(e.yawDeg));
+});
+
+let t = 0;
+function animate() {
+    t += 0.025;
+
+    ctxB.fillStyle = 'rgba(0,0,0,0.01)'; ctxB.fillRect(0,0,700,700);
+    ctxF.fillStyle = 'rgba(0,0,0,0.01)'; ctxF.fillRect(0,0,700,700);
+
+    electrons.forEach(e => {
+        const angle = t * e.speed;
+
+        // Start in local orbital plane (circle in X-Y)
+        let x = Math.cos(angle) * e.radius;
+        let y = Math.sin(angle) * e.radius;
+        let z = 0;
+
+        // Apply the three independent rotations (order: yaw → pitch → roll)
+        const {cr,sr,cp,sp,cy,sy} = e;
+
+        // Yaw (around Y)
+        let tx = x * cy - z * sy;
+        let tz = x * sy + z * cy;
+        x = tx; z = tz;
+
+        // Pitch (around X)
+        tx = x;
+        let ty = y * cp - z * sp;
+        tz = y * sp + z * cp;
+        y = ty; z = tz;
+
+        // Roll (around Z)
+        tx = x * cr - y * sr;
+        ty = x * sr + y * cr;
+        x = tx; y = ty;
+
+        // Perspective (simple but very effective)
+        const perspective = 1 + z * 0.0035;
+        const sx = centerX + x;
+        const sy = centerY + y;
+
+        e.el.style.left = sx + 'px';
+        e.el.style.top  = sy + 'px';
+        e.el.style.transform = `scale(${perspective})`;
+
+        // Trail on correct layer
+        const ctx = z < 0 ? ctxB : ctxF;
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + 0.1, sy + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

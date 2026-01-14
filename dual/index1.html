@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWIN CITY</title>
+    <style>
+        :root {
+            --day-grad: linear-gradient(to bottom, 
+                rgba(0,17,34,0) 0%, 
+                rgba(77,171,255,0.95) 25%, 
+                rgba(255,204,0,0.98) 47%, 
+                rgba(0,17,34,0.9) 62%, 
+                rgba(0,0,0,0.7) 85%,
+                rgba(0,0,0,0) 100%);
+        }
+
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background: #112233;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #day-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; background: var(--day-grad);
+            background-size: 200% 200%; background-position: 50% 50%;
+            transition: opacity 1.2s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #day-bg.hidden { opacity: 0; }
+
+        #stars {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; opacity: 0;
+            transition: opacity 1.2s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #stars.visible { opacity: 1; }
+
+        .star { position: absolute; transition: transform 0.3s ease-out; border-radius: 50%; }
+
+        #light-bloom {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100; opacity: 0;
+            background: radial-gradient(circle at center, rgba(200,150,30,0.4) 0%, rgba(150,100,10,0.3) 40%, transparent 70%);
+            mix-blend-mode: screen; transition: opacity 0.5s ease;
+        }
+
+        @keyframes blink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        #canvas-container { 
+            width: 100%; height: 100%; display: block; background: transparent;
+            position: absolute; top: 0; left: 0; z-index: 2;
+        }
+
+        #hud { position: absolute; top: 30px; left: 30px; color: #fff; pointer-events: none; z-index: 10; }
+
+        h1 { 
+            font-size: 1.2rem; font-weight: 900; letter-spacing: 14px; 
+            text-transform: uppercase; margin: 0; border-left: 6px solid #f1c40f;
+            padding-left: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 9px; letter-spacing: 6px; color: rgba(255,255,255,0.9);
+            margin-top: 8px; padding-left: 26px; font-weight: 700; text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="day-bg"></div>
+    <div id="stars"></div>
+    <div id="light-bloom"></div>
+    
+    <div id="hud">
+        <h1>Twin City</h1>
+        <div class="subtitle" id="side-indicator">ART • SCIENCE • SPIRIT</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let ambientLight, sunLight, nightLight;
+        let upperGroup, lowerGroup, beamGroup;
+        let upperTrails = [], lowerTrails = [];
+        let lastSide = null;
+        let mouseX = 0, mouseY = 0;
+
+        const NEON_PALETTE = [0x00ffff, 0xff00ff, 0x00ff00, 0xffff00];
+
+        window.onload = init;
+
+        function init() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                const size = (1 + Math.random() * 2) + 'px';
+                star.style.width = size;
+                star.style.height = size;
+                star.style.backgroundColor = Math.random() < 0.5 ? '#9933ff' : '#00ffff';
+                star.style.animation = 'blink ' + (1 + Math.random() * 2) + 's infinite ease-in-out';
+                starsContainer.appendChild(star);
+            }
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x4dabff, 100, 3500);
+
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(400, 400, 400);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x000000, 0); 
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // UPDATED: Full OrbitControls (Left-click Rotate, Right-click Pan, Scroll Zoom)
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true; 
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+            scene.add(ambientLight);
+            
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+            sunLight.position.set(100, 500, 100);
+            scene.add(sunLight);
+
+            nightLight = new THREE.PointLight(0x6633ff, 4.5, 2500);
+            nightLight.position.set(0, -300, 0);
+            scene.add(nightLight);
+
+            upperGroup = new THREE.Group();
+            lowerGroup = new THREE.Group();
+            scene.add(upperGroup, lowerGroup);
+
+            buildWorld();
+
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function createFadingBeamPart(color, isUp, widthTop, widthBottom) {
+            const height = 1000;
+            const geometry = new THREE.CylinderGeometry(widthTop, widthBottom, height, 32, 10, true);
+            const count = geometry.attributes.position.count;
+            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+            const colors = geometry.attributes.color;
+            const targetCol = new THREE.Color(color);
+
+            for (let i = 0; i < count; i++) {
+                const y = geometry.attributes.position.getY(i);
+                // Calculate fade factor: 1 near disk (y=0 in global), 0 at far tip
+                const factor = isUp ? (1 - (y + height/2) / height) : ((y + height/2) / height);
+                colors.setXYZ(i, targetCol.r * factor, targetCol.g * factor, targetCol.b * factor);
+            }
+
+            const material = new THREE.MeshBasicMaterial({ 
+                vertexColors: true, 
+                transparent: true, 
+                blending: THREE.AdditiveBlending, 
+                side: THREE.DoubleSide,
+                opacity: 0.8
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.y = isUp ? height/2 : -height/2;
+            return mesh;
+        }
+
+        function buildWorld() {
+            const rings = 6, ringSpacing = 12;
+            const cityEdgeRadius = (rings + 1) * ringSpacing;
+            const roadRadius = cityEdgeRadius + 22;
+
+            const baseFloor = new THREE.Mesh(
+                new THREE.CircleGeometry(roadRadius + 40, 64),
+                new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide })
+            );
+            baseFloor.rotation.x = Math.PI / 2;
+            scene.add(baseFloor);
+
+            // 1. UPDATED BEAM SYSTEM (Transparent Fades)
+            beamGroup = new THREE.Group();
+            // Upper Beam Layers
+            beamGroup.add(createFadingBeamPart(0xffcc00, true, 1.5, 1.5)); // Core
+            beamGroup.add(createFadingBeamPart(0xffdd44, true, 50, 8));   // Inner Glow
+            beamGroup.add(createFadingBeamPart(0xffcc33, true, 80, 15));  // Mid Glow
+            // Lower Beam Layers
+            beamGroup.add(createFadingBeamPart(0x9900ff, false, 2, 2));   // Core
+            beamGroup.add(createFadingBeamPart(0x6600ff, false, 18, 4));  // Glow
+            scene.add(beamGroup);
+
+            // 2. INTEGRATED 3D SUN (Replaces the ghosting CSS sun)
+            const sunGroup = new THREE.Group();
+            const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(35, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffff00, blending: THREE.AdditiveBlending }));
+            const sunGlow = new THREE.Mesh(new THREE.SphereGeometry(55, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc00, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending }));
+            sunGroup.add(sunMesh, sunGlow);
+            sunGroup.position.set(200, 800, 200);
+            upperGroup.add(sunGroup);
+
+            // 3. RESTORED ORIGINAL BUILDING LOGIC
+            const dayBuildingColors = [0x1a3a52, 0x2c4a5e, 0x1e384a, 0x263d50, 0x4a3a2a, 0x3e2e1e];
+            for (let r = 2; r <= rings + 1; r++) {
+                const radius = r * ringSpacing;
+                const count = Math.floor(radius * 0.9);
+                const heightMultiplier = (rings + 2 - r) / rings;
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2;
+                    const px = Math.cos(angle) * radius, pz = Math.sin(angle) * radius;
+
+                    // Upper Houses
+                    const hT = (8 + Math.random() * 15) * (0.5 + heightMultiplier * 2);
+                    const uHouse = new THREE.Group();
+                    const box = new THREE.Mesh(new THREE.BoxGeometry(4, hT, 4), new THREE.MeshStandardMaterial({ color: dayBuildingColors[i%6] }));
+                    box.position.y = hT / 2; uHouse.add(box);
+                    uHouse.position.set(px, 0.05, pz); uHouse.rotation.y = -angle;
+                    upperGroup.add(uHouse);
+
+                    // Lower Houses
+                    const hB = (10 + Math.random() * 45) * heightMultiplier * 2.5;
+                    const nHouse = new THREE.Group();
+                    const bBox = new THREE.Mesh(new THREE.BoxGeometry(4.5, hB, 4.5), new THREE.MeshStandardMaterial({ color: 0x010105 }));
+                    bBox.position.y = -hB / 2; nHouse.add(bBox);
+                    const neon = NEON_PALETTE[i % 4];
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.7, 4.6), new THREE.MeshBasicMaterial({ color: neon }));
+                    win.position.y = -Math.random() * hB; nHouse.add(win);
+                    nHouse.position.set(px, -0.05, pz); nHouse.rotation.y = -angle;
+                    lowerGroup.add(nHouse);
+                }
+            }
+
+            // 4. RESTORED NEON TRAILS & VEHICLES
+            for (let i = 0; i < 40; i++) {
+                const car = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 7), new THREE.MeshBasicMaterial({ color: 0xdc143c }));
+                car.userData = { angle: (i/40)*Math.PI*2, speed: 0.005+Math.random()*0.01, radius: roadRadius, y: 3.5 };
+                upperGroup.add(car); upperTrails.push(car);
+            }
+            for (let i = 0; i < 12; i++) {
+                const trailGroup = new THREE.Group();
+                const col = NEON_PALETTE[i % 4];
+                for (let seg = 0; seg < 20; seg++) {
+                    const t = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 1.2), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1-(seg/20) }));
+                    t.position.z = -seg * 2; trailGroup.add(t);
+                }
+                trailGroup.userData = { angle: (i/12)*Math.PI*2, speed: 0.03, radius: roadRadius + 12, y: -3.5 };
+                lowerGroup.add(trailGroup); lowerTrails.push(trailGroup);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            
+            const isDay = camera.position.y > 0;
+            if (isDay !== lastSide) {
+                lastSide = isDay;
+                document.getElementById('day-bg').classList.toggle('hidden', !isDay);
+                document.getElementById('stars').classList.toggle('visible', !isDay);
+                upperGroup.visible = isDay; lowerGroup.visible = !isDay;
+                document.getElementById('side-indicator').innerText = isDay ? "UPPER WORLD • VIRTUE" : "NETHER WORLD • VICE";
+            }
+
+            const move = (trails) => {
+                trails.forEach(t => {
+                    t.userData.angle += t.userData.speed;
+                    t.position.set(Math.cos(t.userData.angle)*t.userData.radius, t.userData.y, Math.sin(t.userData.angle)*t.userData.radius);
+                    t.rotation.y = -t.userData.angle + Math.PI/2;
+                });
+            };
+            move(isDay ? upperTrails : lowerTrails);
+
+            renderer.render(scene, camera);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

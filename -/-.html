@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Negative Space | A Narrative in Margins</title>
+    
+    <!-- SEO & Meta -->
+    <meta name="description" content="A short story about alignment, gravity, and the beauty of a broken world.">
+    <meta name="author" content="Elias">
+
+    <!-- Fonts for BOTH the Intro and the Story -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Intro Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@200;800&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <!-- Story Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Space+Mono&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* --- GLOBAL & UTILITIES --- */
+        :root {
+            /* Story Variables */
+            --bg-color: #fdfdfd;
+            --text-color: #1a1a1a;
+            --accent-color: #666;
+            --system-font: 'Space Mono', monospace;
+            --human-font: 'Crimson Pro', serif;
+            
+            /* Intro Variables */
+            --intro-bg: #0a0a0a;
+            --intro-text: #e0e0e0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--intro-bg); /* Start dark */
+            color: var(--text-color);
+            font-family: var(--human-font);
+            /* Initially hide scrollbars for the intro */
+            overflow: hidden; 
+            transition: background-color 2s ease;
+        }
+
+        /* --- INTRO LAYER STYLES (The Poster) --- */
+        #intro-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--intro-bg);
+            z-index: 9999; /* On top of everything */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease-in-out, visibility 1.5s;
+        }
+
+        /* Hidden state for the intro */
+        #intro-layer.hidden-layer {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Intro Background Image */
+        .intro-bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('posterimg.jpg'); 
+            background-size: cover;
+            background-position: center bottom;
+            opacity: 0.3;
+            filter: grayscale(100%) contrast(120%);
+            z-index: 0;
+        }
+
+        .intro-vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 20%, #000000 90%);
+            z-index: 1;
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .intro-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 80vh;
+            justify-content: center;
+            color: var(--intro-text);
+        }
+
+        .intro-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: clamp(3rem, 8vw, 6rem);
+            letter-spacing: -2px;
+            line-height: 0.9;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            mix-blend-mode: hard-light; 
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .intro-subtitle {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .intro-tagline {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+            line-height: 1.4;
+            max-width: 600px;
+            color: #d1d1d1;
+            margin-top: 40px;
+            min-height: 3em;
+        }
+
+        /* The Enter Button */
+        #enter-btn {
+            margin-top: 60px;
+            padding: 15px 40px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 3px;
+            cursor: pointer;
+            opacity: 0; /* Hidden initially */
+            transition: all 0.5s ease;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        #enter-btn:hover {
+            border-color: white;
+            background: rgba(255,255,255,0.1);
+            letter-spacing: 5px;
+        }
+
+        .dud { color: #555; opacity: 0.7; }
+
+        /* --- STORY STYLES (From your provided code) --- */
+        #story-wrapper {
+            display: none; /* Hidden until Enter is clicked */
+            opacity: 0;
+            transition: opacity 2s ease;
+            background-color: var(--bg-color);
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Enable scrolling on body when story is active */
+        body.story-active {
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: var(--bg-color);
+        }
+
+        .negative-space-container {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 15vh 8vw;
+        }
+
+        h1.story-heading {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            font-size: clamp(3.5rem, 12vw, 7rem);
+            line-height: 0.85;
+            margin-bottom: 6rem;
+            color: #1a1a1a;
+        }
+
+        .section {
+            margin-bottom: 20vh;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tremor {
+            display: inline-block;
+            animation: tremor-animation 0.3s infinite ease-in-out;
+            color: #b91c1c; 
+        }
+
+        @keyframes tremor-animation {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(0.4px, -0.4px); }
+            50% { transform: translate(-0.4px, 0.4px); }
+            75% { transform: translate(0.4px, 0.4px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .shadow-stage {
+            position: relative;
+            height: 400px;
+            margin: 5rem 0;
+            background: #f9f9f9;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+
+        .shadow-needle {
+            position: absolute;
+            height: 1px;
+            background: rgba(0,0,0,0.05);
+            transform-origin: left center;
+            width: 200%;
+            left: 50%;
+            top: 50%;
+            transition: transform 3s cubic-bezier(0.65, 0, 0.35, 1), background 2s ease;
+        }
+
+        .system-mode {
+            font-family: var(--system-font);
+            font-size: 0.9rem;
+            color: #444;
+            background: #f0f0f0;
+            padding: 2.5rem;
+            border-left: 1px solid #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .system-mode::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.2), transparent);
+            animation: scanline 4s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(400px); }
+        }
+
+        .drifting-text p {
+            transition: letter-spacing 4s ease, word-spacing 4s ease, opacity 4s ease;
+        }
+
+        .bleed-out {
+            font-style: italic;
+            color: #aaa;
+            margin-top: 10rem;
+            display: block;
+            width: 200%;
+            position: relative;
+            transition: transform 10s linear;
+        }
+
+        .curtain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 5s ease;
+        }
+
+        .drop-cap {
+            float: left;
+            font-size: 4.5rem;
+            line-height: 1;
+            padding-right: 0.5rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        blockquote {
+            font-style: italic;
+            border-left: 2px solid #ddd;
+            padding-left: 2rem;
+            margin: 3rem 0;
+            font-size: 1.25rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== INTRO LAYER ==================== -->
+    <div id="intro-layer">
+        <div class="intro-bg-image"></div>
+        <div class="intro-vignette"></div>
+        <canvas id="particle-canvas"></canvas>
+
+        <div class="intro-content">
+            <div class="intro-title" id="intro-title"></div>
+            <div class="intro-subtitle" id="intro-sub"></div>
+            <div class="intro-tagline" id="intro-tagline"></div>
+            
+            <button id="enter-btn" onclick="enterStory()">[ ENTER ]</button>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN STORY LAYER ==================== -->
+    <div id="story-wrapper">
+        <div class="curtain" id="curtain"></div>
+
+        <div class="negative-space-container">
+            <header class="section">
+                <p class="text-xs uppercase tracking-[0.3em] text-gray-400 mb-6 font-sans">A Narrative in Margins</p>
+                <h1 class="story-heading">The<br>Negative<br>Space</h1>
+                <p class="mt-12 text-gray-500 italic">For the bones that crave a tonic.</p>
+            </header>
+    
+            <!-- Section 1: The Studio -->
+            <div class="section">
+                <p class="text-2xl mb-8 leading-relaxed">
+                    <span class="drop-cap">E</span>lias lived in the margins. As a graphic designer, he understood that the beauty of a page wasn’t in the ink, but in the white space that allowed the ink to breathe. He spent his years correcting the "kerning" of the world, chasing a perfect alignment he could never quite name.
+                </p>
+                <p class="mb-8">
+                    It started in the studio, a room that usually smelled of ozone, expensive toner, and the bitter, comforting dregs of lukewarm espresso. Elias was adjusting the layout for a heritage watchmaker. He moved a single line of copy—a serif font, elegant and aloof—just a fraction to the left. 
+                </p>
+                <p class="mb-8">
+                    The sound that followed wasn't the plastic click of a mouse. It was a low, resonant hum, like a cello string being plucked in a cathedral. 
+                </p>
+                <p class="mb-8">
+                    Mark, the junior designer, dropped his stylus. He didn't pick it up. He sat staring at Elias’s screen, his eyes wide, his breathing hitching in a way that sounded like a sob caught in a throat. "I just realized," Mark whispered, "that I’ve been holding my breath for twenty-four years." 
+                </p>
+                <p class="mb-8">
+                    Mark walked out of the studio without his coat. He didn't come back.
+                </p>
+                <p class="mb-8">
+                    Elias looked at his left hand. Since his diagnosis in 2021, there had always been a ghost in his nerves—a faint, fluttering <span class="tremor">tremor</span> that felt like a trapped bird. But as he stared at the watch layout, his hand was unnervingly, surgically still. The bird was gone. The world had become a vacuum, and Elias was the pump.
+                </p>
+            </div>
+    
+            <!-- Section 2: The Uncanny Mundane -->
+            <div class="section">
+                <p class="mb-8">
+                    The anomalies followed him home like silent, stray dogs. In the grocery store, the fluorescent lights didn't hum; they harmonized. He walked past a display of oranges, and the fruit seemed to rotate in slow, synchronized orbits, their pitted skins glowing with a sudden, vibrant luminosity. 
+                </p>
+                <p class="mb-8">
+                    The checkout girl looked at him and suddenly began to recount a dream about her grandmother, her voice a melodic trance, while the customers behind him stood in a respectful, terrifying circle, as if they were attending a liturgy they hadn't signed up for.
+                </p>
+                <p class="mb-8">
+                    At home, the "perfection" became a suffocating shroud. Sarah was in the kitchen, and the smell of roasted garlic and rosemary was too intense, too high-definition, like a photograph of a meal rather than the meal itself.
+                </p>
+                
+                <div class="shadow-stage" id="shadow-stage">
+                    <!-- Shadows generated by JS -->
+                </div>
+    
+                <p class="mb-8">
+                    Leo was on the living room floor with his LEGO sets. Tonight, he was building a cube. A perfect, grey, seamless cube. 
+                    "The bricks want to be like this, Dad," Leo said, his hands moving with a terrifying economy. "They told me the messy parts are over."
+                </p>
+                <p class="mb-8 font-semibold">
+                    Elias looked at the floor. The shadows weren't stretching; they were <span class="tracking-tighter">aligning</span>. Every shadow in the room—the table, the lamp, Sarah’s silhouette—was pointing directly at Elias’s feet, like compass needles finding North.
+                </p>
+            </div>
+    
+            <!-- Section 3: The Messenger -->
+            <div class="section">
+                <p class="mb-8">
+                    The exit didn't happen all at once. It was a slow, agonizing "thinning." The man in the salt-stained coat appeared in the garden when the moon was a sharp, cold sliver. He smelled of old paper and wet earth—a smell that felt "real" in a way the house no longer did.
+                </p>
+                <blockquote>
+                    "You’re a tonic for the bones of the world, Elias. But too much medicine is a poison. You’re fixing the friction. You’re smoothing out the struggle that makes people human. If there is no 'wrong,' there is no choice. And if there is no choice, there is no soul."
+                </blockquote>
+                <p class="mb-8">
+                    Elias felt a cold sweat on his neck. "I don't want to be the Architect. I just want my tremor back. I want to be a mess."
+                </p>
+                <p class="mb-8 italic">
+                    "Then you have to unmake the design," the man said. "But you can't just leave. You have to stay in the margins. You have to become the space between the letters."
+                </p>
+            </div>
+    
+            <!-- Section 4: The Unmaking -->
+            <div class="section system-mode">
+                <p class="mb-4">[SYS_LOG: RECONSTRUCTING_BASAL_GANGLIA]</p>
+                <p class="mb-8">
+                    The sacrifice began that night. It wasn't a flash of light; it was a grueling, sensory dismantling. Elias sat on the edge of the bed, watching Sarah sleep. He reached out to touch her shoulder, but his hand didn't feel the warmth of her skin. Instead, he felt the <span class="italic">concept</span> of her—the vectors of her life, the history of her smiles. He was losing the ability to touch the physical. 
+                </p>
+                <p class="mb-8">
+                    He walked into Leo’s room. He sat on the floor by the perfect grey cube. 
+                    <span class="block mt-4 italic font-bold">"I am the correction. And the only way to save the world is to be the mistake."</span>
+                </p>
+                <p class="mb-8">
+                    He closed his eyes and began to pull. He visualized the grid of the city—the streetlights, the utility bills, the grocery store oranges—and he snapped the lines. 
+                </p>
+            </div>
+    
+            <!-- Section 5: The Tremor -->
+            <div class="section drifting-text" id="unmaking-trigger">
+                <p class="text-3xl text-center my-20 tracking-widest font-bold">
+                    The <span class="tremor">tremor</span> was back.
+                </p>
+                <p class="mb-8">
+                    It was violent. It was painful. It was the most human thing he had ever felt. But with the return of the tremor came the departure of his weight. He felt himself becoming "negative space." He wasn't dying; he was being omitted. 
+                </p>
+                <p class="mb-8">
+                    He walked to the hallway mirror, and for a second, he saw himself: a man who looked like a rough sketch, his edges blurred, his center a smudge of charcoal. 
+                </p>
+                <p class="mb-8">
+                    "I have to go into the layout, Sarah," he whispered as she appeared in the doorway, her eyes struggling to find him. "I have to be the part they trim away so the book can be bound."
+                </p>
+            </div>
+    
+            <!-- Section 6: The Beach -->
+            <div class="section mb-96" id="final-beach">
+                <p class="text-gray-400 mb-12">A year later, the world was delightfully, painfully broken again.</p>
+                <p class="mb-8">
+                    The utility meter at the house moved with a frantic, expensive rhythm. The oranges at the grocery store were bruised and irregular. Mark had come back to the studio, but he was a terrible designer now—he made mistakes, he missed deadlines, and he laughed more than he ever had.
+                </p>
+                <p class="mb-8">
+                    Sarah and Leo sat on the beach. The air smelled of rotting kelp and salt. Sarah felt a sharp twinge in her lower back, a reminder of a long day’s work. She leaned back and closed her eyes, savoring the ache. 
+                </p>
+                <p class="mb-8">
+                    Leo was building a castle. It was a disaster. One tower was leaning precariously, and the moat was leaking. "He's still there, isn't he?" Leo asked, looking at a smudge in the clouds.
+                </p>
+                <p class="text-5xl mt-20 font-bold leading-tight">
+                    "He's the reason we can be wrong, Leo."
+                </p>
+                <p class="bleed-out" id="bleed-text">
+                    He was the silence between the letters. He was the bleed that allowed the book to be bound. He was the gap in the bottom left...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LOGIC ==================== -->
+    <script>
+        // --- 1. INTRO SCRAMBLE LOGIC ---
+        class TextScramble {
+            constructor(el) {
+                this.el = el;
+                this.chars = '!<>-_\\/[]{}—=+*^?#________';
+                this.update = this.update.bind(this);
+            }
+
+            setText(newText) {
+                const oldText = this.el.innerText;
+                const length = Math.max(oldText.length, newText.length);
+                const promise = new Promise((resolve) => this.resolve = resolve);
+                
+                this.queue = [];
+                for (let i = 0; i < length; i++) {
+                    const from = oldText[i] || '';
+                    const to = newText[i] || '';
+                    const start = Math.floor(Math.random() * 40);
+                    const end = start + Math.floor(Math.random() * 40);
+                    this.queue.push({ from, to, start, end });
+                }
+                
+                cancelAnimationFrame(this.frameRequest);
+                this.frame = 0;
+                this.update();
+                return promise;
+            }
+
+            update() {
+                let output = '';
+                let complete = 0;
+                for (let i = 0, n = this.queue.length; i < n; i++) {
+                    let { from, to, start, end, char } = this.queue[i];
+                    if (this.frame >= end) {
+                        complete++;
+                        output += to;
+                    } else if (this.frame >= start) {
+                        if (!char || Math.random() < 0.28) {
+                            char = this.randomChar();
+                            this.queue[i].char = char;
+                        }
+                        output += `<span class="dud">${char}</span>`;
+                    } else {
+                        output += from;
+                    }
+                }
+                this.el.innerHTML = output;
+                if (complete === this.queue.length) {
+                    this.resolve();
+                } else {
+                    this.frameRequest = requestAnimationFrame(this.update);
+                    this.frame++;
+                }
+            }
+            randomChar() { return this.chars[Math.floor(Math.random() * this.chars.length)]; }
+        }
+
+        const fxTitle = new TextScramble(document.querySelector('#intro-title'));
+        const fxSub = new TextScramble(document.querySelector('#intro-sub'));
+        const fxTag = new TextScramble(document.querySelector('#intro-tagline'));
+
+        // Start Intro Animation
+        setTimeout(() => {
+            fxTitle.setText('The NEGATIVE SPACE').then(() => {
+                setTimeout(() => {
+                    fxSub.setText('A SHORT STORY BY DAVID ENKER');
+                }, 800);
+                setTimeout(() => {
+                    fxTag.setText('"What if the only thing holding the world together...\n was your right to be wrong?"').then(() => {
+                        // Show Enter Button
+                        const btn = document.getElementById('enter-btn');
+                        btn.style.opacity = '1';
+                    });
+                }, 2500);
+            });
+        }, 500);
+
+
+        // --- 2. INTRO PARTICLES ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() * 0.5) + 0.2;
+                this.size = Math.random() * 20 + 10;
+                this.char = String.fromCharCode(0x30A0 + Math.random() * 96);
+                this.alpha = Math.random() * 0.3;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.y > height) this.y = -20;
+                if (this.x > width) this.x = 0;
+                if (this.x < 0) this.x = width;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.5})`;
+                ctx.font = `${this.size}px monospace`;
+                ctx.fillText(this.char, this.x, this.y);
+            }
+        }
+        for(let i=0; i<30; i++) particles.push(new Particle());
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+
+        // --- 3. TRANSITION LOGIC ---
+        function enterStory() {
+            const intro = document.getElementById('intro-layer');
+            const story = document.getElementById('story-wrapper');
+            
+            // Fade out intro
+            intro.classList.add('hidden-layer');
+            
+            // Wait slightly, then show story
+            setTimeout(() => {
+                document.body.classList.add('story-active');
+                story.style.display = 'block';
+                // Small reflow hack
+                void story.offsetWidth;
+                story.style.opacity = '1';
+                
+                // Trigger the story observers immediately for the first section
+                triggerStoryObservers();
+            }, 800);
+        }
+
+
+        // --- 4. STORY LOGIC (From your snippet) ---
+        // Shadow Stage Generator
+        const stage = document.getElementById('shadow-stage');
+        for (let i = 0; i < 30; i++) {
+            const needle = document.createElement('div');
+            needle.className = 'shadow-needle';
+            needle.style.transform = `rotate(${Math.random() * 360}deg)`;
+            stage.appendChild(needle);
+        }
+
+        // Intersection Observers for Scroll Animations
+        function triggerStoryObservers() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        
+                        // Shadow alignment logic
+                        if (entry.target.id === 'shadow-stage' || entry.target.contains(stage)) {
+                            setTimeout(() => {
+                                document.querySelectorAll('.shadow-needle').forEach(n => {
+                                    n.style.transform = `rotate(90deg) scaleY(4)`;
+                                    n.style.background = 'rgba(0,0,0,0.4)';
+                                });
+                            }, 500);
+                        }
+
+                        // Drift logic
+                        if (entry.target.id === 'unmaking-trigger') {
+                            const pTags = entry.target.querySelectorAll('p');
+                            pTags.forEach((p, i) => {
+                                setTimeout(() => {
+                                    p.style.letterSpacing = '0.15em';
+                                    p.style.wordSpacing = '0.5em';
+                                    if (i > 1) p.style.opacity = '0.4';
+                                }, i * 1000);
+                            });
+                        }
+                    }
+                });
+            }, { threshold: 0.15 });
+
+            document.querySelectorAll('.section').forEach(s => observer.observe(s));
+        }
+
+        // Scroll events for the Fade/Bleed
+        window.addEventListener('scroll', () => {
+            // Only run if story is active
+            if (!document.body.classList.contains('story-active')) return;
+
+            const scrollPos = window.scrollY;
+            const height = document.body.offsetHeight - window.innerHeight;
+            const progress = scrollPos / height;
+
+            if (progress > 0.85) {
+                const bleed = document.getElementById('bleed-text');
+                if(bleed) {
+                    const xShift = (progress - 0.85) * 1000;
+                    bleed.style.transform = `translateX(${xShift}px)`;
+                }
+            }
+
+            if (progress > 0.98) {
+                const curtain = document.getElementById('curtain');
+                if(curtain) curtain.style.opacity = (progress - 0.98) * 50;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+const GAME_STATES = {
+    START_SCREEN: 'start',
+    PLAYING: 'playing',
+    GAME_OVER: 'gameover'
+};
+
+const FRAME_WIDTH = 160;
+const FRAME_HEIGHT = 160;
+const TOTAL_FRAMES = 57;
+const FRAME_DURATION = 50;
+
+export { GAME_STATES, FRAME_WIDTH, FRAME_HEIGHT, TOTAL_FRAMES, FRAME_DURATION };

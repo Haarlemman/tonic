@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWIN CITY | AUTOMATED</title>
+    <style>
+        :root {
+            --day-grad: linear-gradient(to bottom,
+         	 rgba(250, 200, 255, 0.5) 15%,
+             rgba(60, 100, 150, 0.95) 33%,
+             rgba(19, 32, 96, 0.9) 75%,
+             rgba(0, 10, 20, 0) 100%);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #101223;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Audio unlocking overlay */
+        #audio-gate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #101223;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            transition: opacity 0.8s ease;
+        }
+
+        #audio-gate h2 {
+            font-size: 1rem;
+            letter-spacing: 10px;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        #start-btn {
+            background: none;
+            border: 1px solid #f1c40f;
+            color: #f1c40f;
+            padding: 12px 35px;
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        #start-btn:hover {
+            background: #f1c40f;
+            color: #000;
+        }
+
+        #day-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: var(--day-grad);
+            background-size: 200% 200%;
+            background-position: 50% 50%;
+            transition: opacity 0.6s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #day-bg.hidden {
+            opacity: 0;
+        }
+
+        #stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #stars.visible {
+            opacity: 1;
+        }
+
+        .star {
+            position: absolute;
+            transition: transform 0.3s ease-out;
+            border-radius: 50%;
+        }
+
+        #light-bloom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            background: radial-gradient(circle at center, rgba(200, 150, 30, 0.4) 0%, rgba(150, 100, 10, 0.3) 40%, transparent 70%);
+            mix-blend-mode: screen;
+            transition: opacity 0.5s ease;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        #hud {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+            transition: color 0.6s ease-in-out;
+        }
+
+        #hud.day-mode {
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #hud.night-mode {
+            color: #e0b0ff;
+            text-shadow: 0 0 5px #bf00ff, 0 0 10px #bf00ff, 0 0 20px #bf00ff;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: 14px;
+            text-transform: uppercase;
+            margin: 0;
+            border-left: 6px solid #f1c40f;
+            padding-left: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: border-left-color 0.6s ease-in-out;
+        }
+
+        #hud.day-mode h1 {
+            border-left-color: #f1c40f;
+            color: #FDE3E3;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #hud.night-mode h1 {
+            border-left-color: #00ffff;
+            text-shadow: 0 0 5px #bf00ff, 0 0 10px #bf00ff, 0 0 20px #bf00ff;
+        }
+
+        .subtitle {
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: inherit;
+            margin-top: 8px;
+            padding-left: 26px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="audio-gate">
+        <h2>TWIN CITY</h2>
+        <button id="start-btn">Initialize Experience</button>
+    </div>
+
+    <div id="day-bg"></div>
+    <div id="stars"></div>
+    <div id="light-bloom"></div>
+
+    <div id="hud">
+        <h1>Twin City</h1>
+        <div class="subtitle" id="side-indicator">ART • SCIENCE • SPIRIT</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        const ANIMATION_DATA = [{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,693,0],"t":[0,0,0]},{"p":[0,695,0],"t":[0,0,0]},{"p":[0,696,0],"t":[0,0,0]},{"p":[0,698,0],"t":[0,0,0]},{"p":[0,702,0],"t":[0,0,0]},{"p":[0,705,0],"t":[0,0,0]},{"p":[0,709,0],"t":[0,0,0]},{"p":[0,712,0],"t":[0,0,0]},{"p":[0,716,0],"t":[0,0,0]},{"p":[0,721,0],"t":[0,0,0]},{"p":[0,727,0],"t":[0,0,0]},{"p":[0,732,0],"t":[0,0,0]},{"p":[0,738,0],"t":[0,0,0]},{"p":[0,743,0],"t":[0,0,0]},{"p":[0,749,0],"t":[0,0,0]},{"p":[0,754,0],"t":[0,0,0]},{"p":[0,760,0],"t":[0,0,0]},{"p":[0,765,0],"t":[0,0,0]},{"p":[0,771,0],"t":[0,0,0]},{"p":[0,776,0],"t":[0,0,0]},{"p":[0,782,0],"t":[0,0,0]},{"p":[0,787,0],"t":[0,0,0]},{"p":[0,791,0],"t":[0,0,0]},{"p":[0,795,0],"t":[0,0,0]},{"p":[0,798,0],"t":[0,0,0]},{"p":[0,800,0],"t":[0,0,0]},{"p":[0,802,0],"t":[0,0,0]},{"p":[0,804,0],"t":[0,0,0]},{"p":[0,806,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,808,0],"t":[0,0,0]},{"p":[0,810,0],"t":[0,0,0]},{"p":[0,812,0],"t":[0,0,0]},{"p":[0,814,0],"t":[0,0,0]},{"p":[0,816,0],"t":[0,0,0]},{"p":[0,818,0],"t":[0,0,0]},{"p":[0,820,0],"t":[0,0,0]},{"p":[0,822,0],"t":[0,0,0]},{"p":[0,824,0],"t":[0,0,0]},{"p":[0,826,0],"t":[0,0,0]},{"p":[0,828,0],"t":[0,0,0]},{"p":[0,830,0],"t":[0,0,0]},{"p":[0,832,0],"t":[0,0,0]},{"p":[0,834,0],"t":[0,0,0]},{"p":[0,836,0],"t":[0,0,0]},{"p":[0,838,0],"t":[0,0,0]},{"p":[0,840,0],"t":[0,0,0]},{"p":[0,843,0],"t":[0,0,0]},{"p":[0,845,0],"t":[0,0,0]},{"p":[0,847,0],"t":[0,0,0]},{"p":[0,849,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,851,0],"t":[0,0,0]},{"p":[0,853,0],"t":[0,0,0]},{"p":[0,855,0],"t":[0,0,0]},{"p":[0,857,0],"t":[0,0,0]},{"p":[0,859,0],"t":[0,0,0]},{"p":[0,861,0],"t":[0,0,0]},{"p":[0,863,0],"t":[0,0,0]},{"p":[0,866,0],"t":[0,0,0]},{"p":[0,868,0],"t":[0,0,0]},{"p":[0,870,0],"t":[0,0,0]},{"p":[0,872,0],"t":[0,0,0]},{"p":[0,874,0],"t":[0,0,0]},{"p":[0,876,0],"t":[0,0,0]},{"p":[0,878,0],"t":[0,0,0]},{"p":[0,880,0],"t":[0,0,0]},{"p":[0,883,0],"t":[0,0,0]},{"p":[0,885,0],"t":[0,0,0]},{"p":[0,887,0],"t":[0,0,0]},{"p":[0,889,0],"t":[0,0,0]},{"p":[0,891,0],"t":[0,0,0]},{"p":[0,893,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,895,0],"t":[0,0,0]},{"p":[0,898,0],"t":[0,0,0]},{"p":[0,900,0],"t":[0,0,0]},{"p":[0,902,0],"t":[0,0,0]},{"p":[0,904,0],"t":[0,0,0]},{"p":[0,907,0],"t":[0,0,0]},{"p":[0,909,0],"t":[0,0,0]},{"p":[0,911,0],"t":[0,0,0]},{"p":[0,913,0],"t":[0,0,0]},{"p":[0,916,0],"t":[0,0,0]},{"p":[0,918,0],"t":[0,0,0]},{"p":[0,920,0],"t":[0,0,0]},{"p":[0,922,0],"t":[0,0,0]},{"p":[0,925,0],"t":[0,0,0]},{"p":[0,927,0],"t":[0,0,0]},{"p":[0,929,0],"t":[0,0,0]},{"p":[0,931,0],"t":[0,0,0]},{"p":[0,934,0],"t":[0,0,0]},{"p":[0,936,0],"t":[0,0,0]},{"p":[0,938,0],"t":[0,0,0]},{"p":[0,940,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[0,942,0],"t":[0,0,0]},{"p":[1,942,0],"t":[0,0,0]},{"p":[1,942,0],"t":[0,0,0]},{"p":[2,942,-1],"t":[0,0,0]},{"p":[3,942,-1],"t":[0,0,0]},{"p":[3,942,-1],"t":[0,0,0]},{"p":[5,942,-2],"t":[0,0,0]},{"p":[6,942,-2],"t":[0,0,0]},{"p":[8,942,-3],"t":[0,0,0]},{"p":[9,942,-4],"t":[0,0,0]},{"p":[11,942,-4],"t":[0,0,0]},{"p":[14,942,-5],"t":[0,0,0]},{"p":[16,942,-6],"t":[0,0,0]},{"p":[19,942,-8],"t":[0,0,0]},{"p":[22,942,-9],"t":[0,0,0]},{"p":[25,942,-10],"t":[0,0,0]},{"p":[28,942,-11],"t":[0,0,0]},{"p":[32,942,-13],"t":[0,0,0]},{"p":[35,941,-15],"t":[0,0,0]},{"p":[39,941,-16],"t":[0,0,0]},{"p":[43,941,-18],"t":[0,0,0]},{"p":[48,941,-20],"t":[0,0,0]},{"p":[52,940,-22],"t":[0,0,0]},{"p":[56,940,-24],"t":[0,0,0]},{"p":[60,940,-26],"t":[0,0,0]},{"p":[64,939,-28],"t":[0,0,0]},{"p":[68,939,-29],"t":[0,0,0]},{"p":[72,939,-31],"t":[0,0,0]},{"p":[76,938,-33],"t":[0,0,0]},{"p":[80,938,-35],"t":[0,0,0]},{"p":[84,938,-37],"t":[0,0,0]},{"p":[88,937,-39],"t":[0,0,0]},{"p":[92,937,-41],"t":[0,0,0]},{"p":[96,936,-44],"t":[0,0,0]},{"p":[101,935,-46],"t":[0,0,0]},{"p":[106,935,-49],"t":[0,0,0]},{"p":[111,934,-51],"t":[0,0,0]},{"p":[116,933,-54],"t":[0,0,0]},{"p":[121,932,-57],"t":[0,0,0]},{"p":[127,931,-60],"t":[0,0,0]},{"p":[132,930,-63],"t":[0,0,0]},{"p":[138,929,-67],"t":[0,0,0]},{"p":[144,927,-70],"t":[0,0,0]},{"p":[151,926,-74],"t":[0,0,0]},{"p":[158,924,-78],"t":[0,0,0]},{"p":[151,139,-426],"t":[0,0,0]},{"p":[340,133,-428],"t":[0,0,0]},{"p":[340,126,-430],"t":[0,0,0]},{"p":[340,120,-432],"t":[0,0,0]},{"p":[340,114,-434],"t":[0,0,0]},{"p":[339,108,-436],"t":[0,0,0]},{"p":[339,101,-438],"t":[0,0,0]},{"p":[339,95,-439],"t":[0,0,0]},{"p":[338,89,-441],"t":[0,0,0]},{"p":[338,84,-443],"t":[0,0,0]},{"p":[338,78,-444],"t":[0,0,0]},{"p":[337,72,-446],"t":[0,0,0]},{"p":[337,67,-447],"t":[0,0,0]},{"p":[336,62,-448],"t":[0,0,0]},{"p":[336,57,-449],"t":[0,0,0]},{"p":[335,52,-450],"t":[0,0,0]},{"p":[334,47,-451],"t":[0,0,0]},{"p":[334,43,-452],"t":[0,0,0]},{"p":[333,38,-453],"t":[0,0,0]},{"p":[332,33,-454],"t":[0,0,0]},{"p":[331,27,-455],"t":[0,0,0]},{"p":[330,22,-456],"t":[0,0,0]},{"p":[329,16,-457],"t":[0,0,0]},{"p":[328,11,-458],"t":[0,0,0]},{"p":[327,5,-459],"t":[0,0,0]},{"p":[326,0,-459],"t":[0,0,0]},{"p":[324,-6,-460],"t":[0,0,0]},{"p":[323,-13,-461],"t":[0,0,0]},{"p":[322,-19,-462],"t":[0,0,0]},{"p":[320,-25,-462],"t":[0,0,0]},{"p":[319,-32,-463],"t":[0,0,0]},{"p":[317,-38,-463],"t":[0,0,0]},{"p":[316,-44,-464],"t":[0,0,0]},{"p":[315,-50,-464],"t":[0,0,0]},{"p":[313,-57,-464],"t":[0,0,0]},{"p":[312,-63,-465],"t":[0,0,0]},{"p":[310,-69,-465],"t":[0,0,0]},{"p":[309,-74,-465],"t":[0,0,0]},{"p":[307,-80,-465],"t":[0,0,0]},{"p":[306,-86,-465],"t":[0,0,0]},{"p":[305,-91,-465],"t":[0,0,0]},{"p":[303,-96,-465],"t":[0,0,0]},{"p":[302,-102,-465],"t":[0,0,0]},{"p":[300,-107,-465],"t":[0,0,0]},{"p":[299,-112,-465],"t":[0,0,0]},{"p":[297,-117,-464],"t":[0,0,0]},{"p":[296,-122,-464],"t":[0,0,0]},{"p":[294,-127,-464],"t":[0,0,0]},{"p":[292,-132,-463],"t":[0,0,0]},{"p":[291,-136,-463],"t":[0,0,0]},{"p":[289,-141,-463],"t":[0,0,0]},{"p":[287,-146,-462],"t":[0,0,0]},{"p":[285,-151,-462],"t":[0,0,0]},{"p":[283,-156,-461],"t":[0,0,0]},{"p":[281,-161,-461],"t":[0,0,0]},{"p":[279,-166,-460],"t":[0,0,0]},{"p":[277,-171,-459],"t":[0,0,0]},{"p":[275,-176,-459],"t":[0,0,0]},{"p":[273,-181,-458],"t":[0,0,0]},{"p":[271,-186,-457],"t":[0,0,0]},{"p":[269,-191,-457],"t":[0,0,0]},{"p":[267,-196,-456],"t":[0,0,0]},{"p":[265,-200,-455],"t":[0,0,0]},{"p":[262,-205,-454],"t":[0,0,0]},{"p":[260,-210,-453],"t":[0,0,0]},{"p":[258,-215,-453],"t":[0,0,0]},{"p":[256,-219,-452],"t":[0,0,0]},{"p":[253,-224,-451],"t":[0,0,0]},{"p":[251,-229,-450],"t":[0,0,0]},{"p":[249,-233,-449],"t":[0,0,0]},{"p":[247,-238,-447],"t":[0,0,0]},{"p":[245,-242,-446],"t":[0,0,0]},{"p":[243,-246,-445],"t":[0,0,0]},{"p":[241,-250,-444],"t":[0,0,0]},{"p":[239,-253,-443],"t":[0,0,0]},{"p":[237,-257,-442],"t":[0,0,0]},{"p":[235,-260,-441],"t":[0,0,0]},{"p":[233,-263,-440],"t":[0,0,0]},{"p":[232,-267,-439],"t":[0,0,0]},{"p":[230,-270,-438],"t":[0,0,0]},{"p":[228,-273,-437],"t":[0,0,0]},{"p":[226,-276,-436],"t":[0,0,0]},{"p":[225,-279,-436],"t":[0,0,0]},{"p":[223,-282,-435],"t":[0,0,0]},{"p":[222,-284,-434],"t":[0,0,0]},{"p":[220,-287,-433],"t":[0,0,0]},{"p":[219,-289,-432],"t":[0,0,0]},{"p":[218,-291,-431],"t":[0,0,0]},{"p":[217,-293,-431],"t":[0,0,0]},{"p":[216,-294,-430],"t":[0,0,0]},{"p":[215,-296,-430],"t":[0,0,0]},{"p":[214,-298,-429],"t":[0,0,0]},{"p":[213,-299,-428],"t":[0,0,0]},{"p":[212,-301,-428],"t":[0,0,0]},{"p":[211,-302,-427],"t":[0,0,0]},{"p":[210,-303,-427],"t":[0,0,0]},{"p":[209,-305,-426],"t":[0,0,0]},{"p":[208,-306,-426],"t":[0,0,0]},{"p":[208,-307,-426],"t":[0,0,0]},{"p":[207,-308,-425],"t":[0,0,0]},{"p":[206,-309,-425],"t":[0,0,0]},{"p":[205,-310,-424],"t":[0,0,0]},{"p":[204,-311,-424],"t":[0,0,0]},{"p":[204,-312,-424],"t":[0,0,0]},{"p":[203,-313,-423],"t":[0,0,0]},{"p":[202,-314,-423],"t":[0,0,0]},{"p":[202,-315,-423],"t":[0,0,0]},{"p":[201,-316,-422],"t":[0,0,0]},{"p":[200,-317,-422],"t":[0,0,0]},{"p":[200,-317,-422],"t":[0,0,0]},{"p":[199,-318,-421],"t":[0,0,0]},{"p":[199,-319,-421],"t":[0,0,0]},{"p":[198,-319,-421],"t":[0,0,0]},{"p":[198,-320,-421],"t":[0,0,0]},{"p":[197,-321,-420],"t":[0,0,0]},{"p":[197,-321,-420],"t":[0,0,0]},{"p":[196,-322,-420],"t":[0,0,0]},{"p":[196,-322,-420],"t":[0,0,0]},{"p":[196,-323,-420],"t":[0,0,0]},{"p":[195,-323,-419],"t":[0,0,0]},{"p":[195,-324,-419],"t":[0,0,0]},{"p":[195,-324,-419],"t":[0,0,0]},{"p":[194,-324,-419],"t":[0,0,0]},{"p":[194,-325,-419],"t":[0,0,0]},{"p":[194,-325,-419],"t":[0,0,0]},{"p":[193,-325,-419],"t":[0,0,0]},{"p":[193,-326,-418],"t":[0,0,0]},{"p":[193,-326,-418],"t":[0,0,0]},{"p":[193,-326,-418],"t":[0,0,0]},{"p":[192,-326,-418],"t":[0,0,0]},{"p":[192,-327,-418],"t":[0,0,0]},{"p":[192,-327,-418],"t":[0,0,0]},{"p":[192,-327,-418],"t":[0,0,0]},{"p":[192,-327,-418],"t":[0,0,0]},{"p":[192,-328,-418],"t":[0,0,0]},{"p":[191,-328,-418],"t":[0,0,0]},{"p":[191,-328,-418],"t":[0,0,0]},{"p":[191,-328,-417],"t":[0,0,0]},{"p":[191,-328,-417],"t":[0,0,0]},{"p":[191,-328,-417],"t":[0,0,0]},{"p":[191,-329,-417],"t":[0,0,0]},{"p":[191,-329,-417],"t":[0,0,0]},{"p":[190,-329,-417],"t":[0,0,0]},{"p":[190,-329,-417],"t":[0,0,0]},{"p":[190,-329,-417],"t":[0,0,0]},{"p":[190,-329,-417],"t":[0,0,0]},{"p":[190,-329,-417],"t":[0,0,0]},{"p":[190,-329,-417],"t":[0,0,0]},{"p":[190,-330,-417],"t":[0,0,0]},{"p":[190,-330,-417],"t":[0,0,0]},{"p":[190,-330,-417],"t":[0,0,0]},{"p":[190,-330,-417],"t":[0,0,0]},{"p":[190,-330,-417],"t":[0,0,0]},{"p":[190,-330,-417],"t":[0,0,0]},{"p":[189,-330,-417],"t":[0,0,0]},{"p":[189,-330,-417],"t":[0,0,0]},{"p":[189,-330,-417],"t":[0,0,0]},{"p":[189,-330,-417],"t":[0,0,0]},{"p":[189,-330,-417],"t":[0,0,0]},{"p":[189,-330,-416],"t":[0,0,0]},{"p":[189,-330,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[189,-331,-416],"t":[0,0,0]},{"p":[188,-331,-416],"t":[0,0,0]},{"p":[188,-331,-416],"t":[0,0,0]},{"p":[188,-331,-416],"t":[0,0,0]},{"p":[188,-331,-416],"t":[0,0,0]},{"p":[189,-332,-417],"t":[0,0,0]},{"p":[189,-333,-418],"t":[0,0,0]},{"p":[190,-334,-419],"t":[0,0,0]},{"p":[190,-335,-420],"t":[0,0,0]},{"p":[191,-336,-421],"t":[0,0,0]},{"p":[191,-336,-422],"t":[0,0,0]},{"p":[192,-337,-423],"t":[0,0,0]},{"p":[192,-338,-424],"t":[0,0,0]},{"p":[193,-339,-425],"t":[0,0,0]},{"p":[193,-340,-426],"t":[0,0,0]},{"p":[194,-341,-428],"t":[0,0,0]},{"p":[194,-341,-429],"t":[0,0,0]},{"p":[195,-342,-430],"t":[0,0,0]},{"p":[195,-343,-431],"t":[0,0,0]},{"p":[195,-344,-432],"t":[0,0,0]},{"p":[196,-345,-433],"t":[0,0,0]},{"p":[196,-346,-434],"t":[0,0,0]},{"p":[197,-346,-435],"t":[0,0,0]},{"p":[197,-347,-436],"t":[0,0,0]},{"p":[198,-348,-437],"t":[0,0,0]},{"p":[198,-349,-438],"t":[0,0,0]},{"p":[198,-349,-438],"t":[0,0,0]},{"p":[198,-349,-438],"t":[0,0,0]},{"p":[199,-350,-439],"t":[0,0,0]},{"p":[199,-351,-440],"t":[0,0,0]},{"p":[200,-352,-441],"t":[0,0,0]},{"p":[200,-352,-442],"t":[0,0,0]},{"p":[201,-353,-443],"t":[0,0,0]},{"p":[201,-354,-445],"t":[0,0,0]},{"p":[202,-355,-446],"t":[0,0,0]},{"p":[202,-356,-447],"t":[0,0,0]},{"p":[203,-357,-448],"t":[0,0,0]},{"p":[203,-358,-449],"t":[0,0,0]},{"p":[204,-359,-450],"t":[0,0,0]},{"p":[204,-359,-451],"t":[0,0,0]},{"p":[205,-360,-452],"t":[0,0,0]},{"p":[205,-361,-453],"t":[0,0,0]},{"p":[206,-362,-454],"t":[0,0,0]},{"p":[206,-363,-455],"t":[0,0,0]},{"p":[207,-364,-457],"t":[0,0,0]},{"p":[207,-365,-458],"t":[0,0,0]},{"p":[208,-366,-459],"t":[0,0,0]},{"p":[208,-366,-460],"t":[0,0,0]},{"p":[209,-367,-461],"t":[0,0,0]},{"p":[209,-368,-462],"t":[0,0,0]},{"p":[210,-369,-463],"t":[0,0,0]},{"p":[210,-370,-464],"t":[0,0,0]},{"p":[211,-371,-466],"t":[0,0,0]},{"p":[211,-372,-467],"t":[0,0,0]},{"p":[212,-373,-468],"t":[0,0,0]},{"p":[212,-374,-469],"t":[0,0,0]},{"p":[213,-375,-470],"t":[0,0,0]},{"p":[213,-376,-471],"t":[0,0,0]},{"p":[214,-376,-473],"t":[0,0,0]},{"p":[214,-377,-474],"t":[0,0,0]},{"p":[215,-378,-475],"t":[0,0,0]},{"p":[216,-379,-476],"t":[0,0,0]},{"p":[216,-380,-477],"t":[0,0,0]},{"p":[217,-381,-478],"t":[0,0,0]},{"p":[217,-382,-479],"t":[0,0,0]},{"p":[218,-383,-481],"t":[0,0,0]},{"p":[218,-384,-482],"t":[0,0,0]},{"p":[219,-385,-483],"t":[0,0,0]},{"p":[219,-386,-484],"t":[0,0,0]},{"p":[220,-387,-485],"t":[0,0,0]},{"p":[220,-387,-485],"t":[0,0,0]}];
+
+        let scene, camera, renderer;
+        let ambientLight, sunLight, nightLight;
+        let upperGroup, lowerGroup, beamGroup;
+        let upperTrails = [], lowerTrails = [];
+        let lastSide = null;
+        let playbackIndex = 0;
+
+        // --- SONIC ENGINE ---
+        let audioCtx, dayOsc, nightOsc, dayGain, nightGain, reverb;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Simple space reverb
+            const length = 2 * audioCtx.sampleRate;
+            const impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+            for (let i = 0; i < 2; i++) {
+                const chan = impulse.getChannelData(i);
+                for (let j = 0; j < length; j++) {
+                    chan[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, 2);
+                }
+            }
+            reverb = audioCtx.createConvolver();
+            reverb.buffer = impulse;
+
+            // Day: High Pure Sine
+            dayGain = audioCtx.createGain();
+            dayGain.gain.value = 0;
+            dayOsc = audioCtx.createOscillator();
+            dayOsc.type = 'sine';
+            dayOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            dayOsc.connect(dayGain).connect(reverb).connect(audioCtx.destination);
+            dayOsc.start();
+
+            // Night: Deep Gritty Sawtooth
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 250;
+            nightGain = audioCtx.createGain();
+            nightGain.gain.value = 0;
+            nightOsc = audioCtx.createOscillator();
+            nightOsc.type = 'sawtooth';
+            nightOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
+            nightOsc.connect(filter).connect(nightGain).connect(reverb).connect(audioCtx.destination);
+            nightOsc.start();
+        }
+
+        const NEON_PALETTE = [0x00ffff, 0xff00ff, 0x00ff00, 0xffff00];
+
+        // Start everything on button click
+        document.getElementById('start-btn').onclick = function() {
+            initAudio();
+            document.getElementById('audio-gate').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('audio-gate').style.display = 'none';
+            }, 800);
+            init();
+        };
+
+        function init() {
+            const starsContainer = document.getElementById('stars');
+            if (starsContainer) {
+                for (let i = 0; i < 200; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    const size = (1 + Math.random() * 2) + 'px';
+                    star.style.width = size;
+                    star.style.height = size;
+                    star.style.backgroundColor = Math.random() < 0.5 ? '#9933ff' : '#00ffff';
+                    star.style.animation = 'blink ' + (1 + Math.random() * 2) + 's infinite ease-in-out';
+                    starsContainer.appendChild(star);
+                }
+            }
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x4dabff, 100, 3500);
+
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(400, 400, 400);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x000000, 0);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            ambientLight = new THREE.AmbientLight(0xffeeaa, 1.3);
+            scene.add(ambientLight);
+
+            sunLight = new THREE.DirectionalLight(0xffeedd, 1.6);
+            sunLight.position.set(100, 500, 100);
+            scene.add(sunLight);
+
+            nightLight = new THREE.PointLight(0x6633ff, 4.5, 2500);
+            nightLight.position.set(0, -300, 0);
+            scene.add(nightLight);
+
+            upperGroup = new THREE.Group();
+            lowerGroup = new THREE.Group();
+            scene.add(upperGroup);
+            scene.add(lowerGroup);
+
+            buildWorld();
+
+            prepareGhostMaterials(upperGroup);
+            prepareGhostMaterials(lowerGroup);
+
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        const GHOST_COLOR = new THREE.Color(0x336699);
+        const GHOST_OPACITY = 0.15;
+
+        function prepareGhostMaterials(group) {
+            group.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material = child.material.clone();
+                    child.material.transparent = true;
+                    child.userData.origColor = child.material.color.clone();
+                    child.userData.origOpacity = child.material.opacity !== undefined ? child.material.opacity : 1.0;
+                    child.userData.origEmissive = child.material.emissive ? child.material.emissive.clone() : new THREE.Color(0x000000);
+                }
+            });
+        }
+
+        function applyGhostState(group, realness) {
+            group.traverse((child) => {
+                if (child.isMesh && child.material && child.userData.origColor) {
+                    const mat = child.material;
+                    const ud = child.userData;
+                    mat.color.lerpColors(GHOST_COLOR, ud.origColor, realness);
+                    const targetOpacity = THREE.MathUtils.lerp(GHOST_OPACITY, ud.origOpacity, realness);
+                    mat.opacity = targetOpacity;
+                    if (mat.emissive && ud.origEmissive) {
+                        mat.emissive.lerpColors(new THREE.Color(0x000000), ud.origEmissive, realness);
+                    }
+                    mat.depthWrite = realness > 0.5;
+                }
+            });
+        }
+
+        function createBeamGradient() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 64;
+            const context = canvas.getContext('2d');
+            const gradient = context.createLinearGradient(0, 0, 0, 64);
+            gradient.addColorStop(0.0, 'rgba(255, 255, 255, 0.0)');
+            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.0)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+            gradient.addColorStop(1.0, 'rgba(255, 255, 255, 1.0)');
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, 32, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function buildWorld() {
+            const rings = 6;
+            const ringSpacing = 12;
+            const cityEdgeRadius = (rings + 1) * ringSpacing;
+            const roadRadius = cityEdgeRadius + 22;
+            const dividerRadius = roadRadius + 40;
+
+            const baseFloor = new THREE.Mesh(
+                new THREE.CircleGeometry(dividerRadius, 64),
+                new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide })
+            );
+            baseFloor.rotation.x = Math.PI / 2;
+            scene.add(baseFloor);
+
+            const whiteRing = new THREE.Mesh(
+                new THREE.RingGeometry(cityEdgeRadius + 2, roadRadius - 6, 64),
+                new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0, metalness: 0 })
+            );
+            whiteRing.rotation.x = -Math.PI / 2;
+            whiteRing.position.y = 0.12;
+            upperGroup.add(whiteRing);
+
+            const roadGeom = new THREE.TorusGeometry(roadRadius, 4.5, 16, 128);
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+
+            const uRoad = new THREE.Mesh(roadGeom, roadMat);
+            uRoad.rotation.x = Math.PI / 2;
+            uRoad.position.y = 0.35;
+            upperGroup.add(uRoad);
+
+            const lRoad = new THREE.Mesh(roadGeom, roadMat);
+            lRoad.rotation.x = Math.PI / 2;
+            lRoad.position.y = -0.35;
+            lowerGroup.add(lRoad);
+
+            const dayBuildingColors = [0x1a3a52, 0x2c4a5e, 0x1e384a, 0x263d50, 0x4a3a2a, 0x3e2e1e, 0x4d3d2d, 0x5a4a3a];
+
+            for (let r = 2; r <= rings + 1; r++) {
+                const radius = r * ringSpacing;
+                const count = Math.floor(radius * 0.9);
+                const heightMultiplier = (rings + 2 - r) / rings;
+
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2;
+                    const px = Math.cos(angle) * radius;
+                    const pz = Math.sin(angle) * radius;
+
+                    // Upper World Buildings
+                    const hT = (8 + Math.random() * 15) * (0.5 + heightMultiplier * 2);
+                    const dayHouse = new THREE.Group();
+                    const box = new THREE.Mesh(new THREE.BoxGeometry(4, hT, 4), new THREE.MeshStandardMaterial({ color: dayBuildingColors[Math.floor(Math.random() * dayBuildingColors.length)], roughness: 0.9 }));
+                    box.position.y = hT / 2;
+                    dayHouse.add(box);
+                    dayHouse.position.set(px, 0.05, pz);
+                    dayHouse.rotation.y = -angle;
+                    upperGroup.add(dayHouse);
+
+                    // Lower World Buildings
+                    const hB = (10 + Math.random() * 45) * ((rings + 2 - r) / rings * 2.5);
+                    const nHouse = new THREE.Group();
+                    const bBox = new THREE.Mesh(new THREE.BoxGeometry(4.5, hB, 4.5), new THREE.MeshStandardMaterial({ color: 0x010105 }));
+                    bBox.position.y = -hB / 2;
+                    nHouse.add(bBox);
+                    const neonCol = NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)];
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.7, 4.6), new THREE.MeshStandardMaterial({ color: neonCol, emissive: neonCol, emissiveIntensity: 12 }));
+                    win.position.y = -Math.random() * hB;
+                    nHouse.add(win);
+                    nHouse.position.set(px, -0.05, pz);
+                    nHouse.rotation.y = -angle;
+                    lowerGroup.add(nHouse);
+                }
+            }
+
+            // Central Paradox Beam
+            beamGroup = new THREE.Group();
+            const beamGradient = createBeamGradient();
+
+            const upCore = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff0aa, transparent: true, opacity: 0.95, alphaMap: beamGradient, depthWrite: false, side: THREE.DoubleSide }));
+            upCore.position.y = 500; upCore.userData.side = 'upper'; upCore.userData.origOpacity = 0.95; beamGroup.add(upCore);
+
+            const upNeonShell = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0xffcc00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, alphaMap: beamGradient, depthWrite: false }));
+            upNeonShell.position.y = 500; upNeonShell.userData.side = 'upper'; upNeonShell.userData.origOpacity = 0.8; beamGroup.add(upNeonShell);
+
+            const upGlow = new THREE.Mesh(new THREE.CylinderGeometry(22, 6, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0xffbb00, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, alphaMap: beamGradient, depthWrite: false }));
+            upGlow.position.y = 500; upGlow.userData.side = 'upper'; upGlow.userData.origOpacity = 0.45; beamGroup.add(upGlow);
+
+            const downCorePurple = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0x9900ff, transparent: true, opacity: 0.95 }));
+            downCorePurple.position.y = -500; downCorePurple.userData.side = 'lower'; downCorePurple.userData.origOpacity = 0.95; beamGroup.add(downCorePurple);
+
+            const downGlow = new THREE.Mesh(new THREE.CylinderGeometry(18, 10, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0x7700ff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+            downGlow.position.y = -500; downGlow.userData.side = 'lower'; downGlow.userData.origOpacity = 0.6; beamGroup.add(downGlow);
+
+            const downOuterGlow = new THREE.Mesh(new THREE.CylinderGeometry(60, 30, 1000, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0x3300aa, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+            downOuterGlow.position.y = -500; downOuterGlow.userData.side = 'lower'; downOuterGlow.userData.origOpacity = 0.2; beamGroup.add(downOuterGlow);
+
+            scene.add(beamGroup);
+
+            // Vehicles
+            const mCols = [0xdc143c, 0xffd700, 0x0047ab];
+            for (let lane = 0; lane < 2; lane++) {
+                const laneRadius = roadRadius + (lane === 0 ? -10 : 10);
+                for (let i = 0; i < 40; i++) {
+                    const car = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 7), new THREE.MeshBasicMaterial({ color: mCols[i % mCols.length] }));
+                    const speed = 0.015 + Math.random() * 0.02; 
+                    car.userData = { angle: (i / 40) * Math.PI * 2, speed: speed, radius: laneRadius, y: 3.5 };
+                    upperGroup.add(car);
+                    upperTrails.push(car);
+                }
+            }
+
+            for (let lane = 0; lane < 2; lane++) {
+                const inner = lane === 0;
+                const laneRadius = roadRadius + (inner ? -12 : 12);
+                for (let i = 0; i < 12; i++) {
+                    const trailGroup = new THREE.Group();
+                    const col = NEON_PALETTE[i % NEON_PALETTE.length];
+                    const trailSegments = 35;
+                    for (let seg = 0; seg < trailSegments; seg++) {
+                        const progress = seg / trailSegments;
+                        const angle = -progress * 0.35 * (inner ? 1 : -1);
+                        const trail = new THREE.Mesh(new THREE.BoxGeometry(2.0 - progress, 0.5, 1.2), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1 - progress * 0.9, blending: THREE.AdditiveBlending }));
+                        trail.position.set(Math.cos(angle) * laneRadius, 0, Math.sin(angle) * laneRadius);
+                        trail.rotation.y = -angle + Math.PI / 2;
+                        trailGroup.add(trail);
+                    }
+                    const speed = (0.08 + Math.random() * 0.04) * (inner ? 1 : -1);
+                    trailGroup.userData = { angle: (i / 12) * Math.PI * 2, speed: speed, radius: laneRadius, y: -3.5 };
+                    lowerGroup.add(trailGroup);
+                    lowerTrails.push(trailGroup);
+                }
+            }
+        }
+
+        function updateEnvironment() {
+            const y = camera.position.y;
+            const isDay = y > 0;
+            const bloomEl = document.getElementById('light-bloom');
+
+            // Sound Control
+            if (audioCtx) {
+                const balance = THREE.MathUtils.clamp((y + 350) / 700, 0, 1);
+                dayGain.gain.setTargetAtTime(balance * 0.2, audioCtx.currentTime, 0.1);
+                nightGain.gain.setTargetAtTime((1 - balance) * 0.25, audioCtx.currentTime, 0.1);
+            }
+
+            const camDir = new THREE.Vector3();
+            camera.getWorldDirection(camDir);
+            const dot = Math.abs(camDir.dot(new THREE.Vector3(0, 1, 0)));
+            if (new THREE.Vector3(camera.position.x, 0, camera.position.z).length() < 160) {
+                const intensity = Math.pow(dot, 5) * 2.2;
+                bloomEl.style.opacity = Math.min(intensity, 0.9);
+                bloomEl.style.background = `radial-gradient(circle at center, ${isDay ? "rgba(255,200,50,0.5)" : "rgba(140,50,255,0.4)"} 0%, transparent 80%)`;
+            } else {
+                bloomEl.style.opacity = 0;
+            }
+
+            const transitionRange = 150;
+            const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+            const upperRealness = clamp((y + transitionRange) / (transitionRange * 1.5), 0, 1);
+            const lowerRealness = clamp((-y + transitionRange) / (transitionRange * 1.5), 0, 1);
+            
+            applyGhostState(upperGroup, upperRealness);
+            applyGhostState(lowerGroup, lowerRealness);
+
+            beamGroup.children.forEach(child => {
+                const isUpperBeam = child.userData.side === 'upper';
+                const realness = isUpperBeam ? upperRealness : lowerRealness;
+                child.material.opacity = THREE.MathUtils.lerp(isUpperBeam ? 0.1 : 0.25, child.userData.origOpacity, realness);
+                const blurScaleFactor = isUpperBeam ? 1.4 : 1.15;
+                const ghostScale = THREE.MathUtils.lerp(blurScaleFactor, 1.0, realness);
+                child.scale.set(ghostScale, 1, ghostScale);
+            });
+
+            if (isDay === lastSide) return;
+            lastSide = isDay;
+
+            const starsContainer = document.getElementById('stars');
+            const dayBg = document.getElementById('day-bg');
+            if (isDay) {
+                dayBg.classList.remove('hidden');
+                starsContainer.classList.remove('visible');
+                document.getElementById('hud').className = 'day-mode';
+                scene.fog.color.set(0x4dabff);
+                ambientLight.intensity = 1.4;
+                sunLight.intensity = 2.0;
+                nightLight.intensity = 0;
+            } else {
+                dayBg.classList.add('hidden');
+                starsContainer.classList.add('visible');
+                document.getElementById('hud').className = 'night-mode';
+                scene.fog.color.set(0x050210);
+                ambientLight.intensity = 0.2;
+                sunLight.intensity = 0;
+                nightLight.intensity = 6.0;
+            }
+            document.getElementById('side-indicator').innerText = isDay ? "UPPER WORLD" : "NETHER WORLD";
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (ANIMATION_DATA.length > 0) {
+                const d = ANIMATION_DATA[playbackIndex];
+                const pos = d.p ? new THREE.Vector3(d.p[0], d.p[1], d.p[2]) : d.pos;
+                const tar = d.t ? new THREE.Vector3(d.t[0], d.t[1], d.t[2]) : d.tar;
+                camera.position.copy(pos);
+                camera.lookAt(tar);
+                playbackIndex = (playbackIndex + 1) % ANIMATION_DATA.length;
+            }
+
+            updateEnvironment();
+
+            const camVec = camera.position.clone().normalize();
+            const mX = Math.atan2(camVec.x, camVec.z) / Math.PI;
+            const mY = (Math.acos(camVec.y) / Math.PI) * 2 - 1;
+            const dayBg = document.getElementById('day-bg');
+            if (dayBg && !dayBg.classList.contains('hidden')) {
+                dayBg.style.backgroundPosition = `${50 + mX * 20}% ${50 + mY * 20}%`;
+                dayBg.style.transform = `scale(1.15) rotateZ(${mX * 8}deg) rotateX(${mY * 4}deg)`;
+            }
+
+            beamGroup.children.forEach((child, i) => {
+                if (child.material.transparent) {
+                    child.rotation.y += 0.005 * (i % 2 === 0 ? 1 : -1);
+                    const shimmer = 1 + Math.sin(Date.now() * 0.002 + i) * 0.08;
+                    const baseScale = child.scale.x; 
+                    child.scale.set(baseScale * shimmer, 1, baseScale * shimmer);
+                }
+            });
+
+            const move = (trails) => {
+                trails.forEach(t => {
+                    t.userData.angle += t.userData.speed;
+                    t.position.y = t.userData.y;
+                    t.rotation.y = -t.userData.angle;
+                    if (t.children.length <= 1) {
+                        t.position.x = Math.cos(t.userData.angle) * t.userData.radius;
+                        t.position.z = Math.sin(t.userData.angle) * t.userData.radius;
+                        t.rotation.y = -t.userData.angle + (t.userData.speed > 0 ? 0 : Math.PI);
+                    }
+                });
+            };
+            move(upperTrails);
+            move(lowerTrails);
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>

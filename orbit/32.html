@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom — Perfect + Easy Tweaks</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:600px; height:600px; }
+
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:160px; height:160px; margin:-80px 0 0 -80px;
+        background:radial-gradient(circle, #ffcc00, #fff 80%, #ffea88);
+        border-radius:50%;
+        box-shadow:0 0 70px #ffffff, 0 0 140px #ffffcc, 0 0 240px #ffea88, 0 0 380px rgba(255,255,200,1.8);
+        z-index:500;
+    }
+
+    .electron {
+        position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px;
+        z-index:600; pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #ffffff, #ff2244); box-shadow:0 0 45px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #ffffff, #3388ff); box-shadow:0 0 45px #55aaff, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffffff, #ffdd22); box-shadow:0 0 45px #ffee66, inset -8px -8px 20px #ccaa00; }
+
+    canvas { position:absolute; inset:0; pointer-events:none; z-index:400; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="trails" width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+</div>
+
+<script>
+// ██████████████████  EASY TWEAK SETTINGS — CHANGE ONLY THESE  ██████████████████
+let speed = 0.018;           // 0.008 = slow, 0.018 = normal, 0.04 = fast
+let startOffset = 180;         // 0–360 → rotates the whole system at start
+const trailFade = 0.03;      // smaller = longer trails (0.03 = very long)
+const trailThickness = 0.5;  // 1.0 = thin, 3.0 = thick
+// ███████████████████████████████████████████████████████████████████████████████
+
+const canvas = document.getElementById('trails');
+const ctx = canvas.getContext('2d');
+ctx.lineWidth = trailThickness;
+ctx.lineCap = 'round';
+
+const radius = 240;
+const centerX = 300;
+const centerY = 300;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff4466', offset:   0 + startOffset, tilt: 0,               flatten: 0.88 },
+    { el: document.getElementById('e2'), color: '#55aaff', offset: 120 + startOffset, tilt: 45*Math.PI/180, flatten: 0.88 },
+    { el: document.getElementById('e3'), color: '#ffee66', offset: 240 + startOffset, tilt: 240*Math.PI/180, flatten: 0.65 }
+];
+
+let time = 0;
+
+function animate() {
+    time += speed;
+
+    ctx.fillStyle = `rgba(0,0,0,${trailFade})`;
+    ctx.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const angle = time + e.offset * Math.PI / 180;
+
+        let x = Math.cos(angle) * radius;
+        let y = Math.sin(angle) * radius * (1 - e.flatten);
+        let z = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+
+        const cosT = Math.cos(e.tilt);
+        const sinT = Math.sin(e.tilt);
+        const rotX = x * cosT + z * sinT;
+        const rotZ = -x * sinT + z * cosT;
+
+        const scale = 1 + rotZ * 0.0015;
+
+        e.el.style.left   = (centerX + rotX) + 'px';
+        e.el.style.top    = (centerY + y)   + 'px';
+        e.el.style.transform = `scale(${scale})`;
+        e.el.style.zIndex = rotZ < 0 ? 400 : 600;
+
+        // thin glowing trail
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX + rotX, centerY + y);
+        ctx.lineTo(centerX + rotX + 0.01, centerY + y + 0.01);
+        ctx.stroke();
+
+        // tiny glow dot (doesn't cover the ball)
+        ctx.globalAlpha = 0.05;
+        ctx.beginPath();
+        ctx.arc(centerX + rotX, centerY + y, 3, 0, Math.PI*2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

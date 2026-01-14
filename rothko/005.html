@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rothko Generator</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+  #canvas {
+    width:100vw; height:100vh;
+    display:flex; flex-direction:column; justify-content:center; align-items:stretch;
+    padding:5vh 5vw;
+    gap:5vh; /* ensures space between blocks */
+    transition:background-color 2s ease;
+  }
+
+  .color-block {
+    width:100%;
+    position:relative;
+    filter:blur(5px);
+    transition:background-color 1.5s ease, height 1.5s ease, transform 1.5s ease;
+  }
+  .color-block::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,0.1) 0%,rgba(0,0,0,0.05) 100%);
+    pointer-events:none;
+  }
+
+  .fullscreen-btn, .exit-fullscreen-btn {
+    position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,0.25); backdrop-filter:blur(10px);
+    border:2px solid rgba(255,255,255,0.7); color:white;
+    padding:14px 28px; font-size:14px; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+    cursor:pointer; border-radius:6px;
+    z-index:1000; mix-blend-mode:difference;
+  }
+  .fullscreen-btn:hover {
+    background:rgba(255,255,255,0.4); border-color:rgba(255,255,255,0.9);
+    transform:translateX(-50%) scale(1.05);
+  }
+
+  .exit-fullscreen-btn {
+    opacity:0.1; transition:opacity 2s ease;
+    pointer-events:none; display:none;
+  }
+  .exit-fullscreen-btn.visible { display:block; pointer-events:auto; }
+  .exit-fullscreen-btn:hover { opacity:1; }
+
+  body:fullscreen .fullscreen-btn { display:none; }
+
+  .refresh-hint {
+    position:fixed; bottom:20px; right:20px;
+    color:rgba(255,255,255,0.4); font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    pointer-events:none; mix-blend-mode:difference; z-index:1000;
+  }
+</style>
+</head>
+<body>
+<div id="canvas"></div>
+<button class="fullscreen-btn">View Fullscreen</button>
+<button class="exit-fullscreen-btn">Exit Fullscreen</button>
+<div class="refresh-hint">Press R or Click to refresh</div>
+
+<!-- Background music -->
+<audio id="bg-music" autoplay loop>
+  <source src="green.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+<script>
+const palettes = [
+  ['#8B0000','#FF4500','#FFD700'],
+  ['#4B0082','#8B008B','#FF1493'],
+  ['#DC143C','#FF6347','#FFA07A'],
+  ['#2F4F4F','#1C1C1C','#8B4513'],
+  ['#191970','#000080','#4B0082'],
+  ['#CD853F','#D2691E','#8B4513'],
+  ['#FF4500','#FFD700','#FF8C00'],
+  ['#00CED1','#4682B4','#1E90FF'],
+  ['#BC8F8F','#CD5C5C','#F08080'],
+  ['#708090','#778899','#B0C4DE']
+];
+let blocks = [];
+let bgHueShift = 0;
+
+function hexToHSL(hex) {
+  let r = parseInt(hex.substr(1,2),16)/255;
+  let g = parseInt(hex.substr(3,2),16)/255;
+  let b = parseInt(hex.substr(5,2),16)/255;
+  let max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if(max===min){h=s=0;}
+  else {
+    let d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d+(g<b?6:0); break;
+      case g: h=(b-r)/d+2; break;
+      case b: h=(r-g)/d+4; break;
+    }
+    h/=6;
+  }
+  return {h:h*360, s:s*100, l:l*100};
+}
+
+function backgroundFromPalette(palette) {
+  const hsls = palette.map(hexToHSL);
+  const avgHue = hsls.reduce((a,c)=>a+c.h,0)/hsls.length;
+  const avgSat = hsls.reduce((a,c)=>a+c.s,0)/hsls.length;
+  const avgLight = hsls.reduce((a,c)=>a+c.l,0)/hsls.length;
+  bgHueShift = avgHue;
+  return `hsl(${avgHue}, ${avgSat*0.4}%, ${avgLight*0.4}%)`;
+}
+
+function initRothko() {
+  const canvas=document.getElementById('canvas');
+  canvas.innerHTML='';
+  const palette=palettes[Math.floor(Math.random()*palettes.length)];
+  canvas.style.backgroundColor = backgroundFromPalette(palette);
+  const count=Math.random()>0.3?3:2;
+  blocks=[];
+  for(let i=0;i<count;i++){
+    const block=document.createElement('div');
+    block.className='color-block';
+    block.style.backgroundColor=palette[i%palette.length];
+    block.style.height=`${30+Math.random()*30}%`;
+    canvas.appendChild(block);
+    blocks.push({
+      el:block,
+      hueShift:hexToHSL(palette[i%palette.length]).h,
+      height:parseFloat(block.style.height),
+      speed:(Math.random()*0.4+0.1)
+    });
+  }
+}
+
+function animate() {
+  blocks.forEach(b=>{
+    b.height += Math.sin(Date.now()/2000*b.speed)*0.25;
+    b.el.style.height=`${b.height}%`;
+
+    b.hueShift += b.speed*0.8;
+    b.el.style.backgroundColor=`hsl(${b.hueShift%360},70%,50%)`;
+
+    const float = Math.sin(Date.now()/1500*b.speed) * 15;
+    b.el.style.transform = `translateY(${float}px)`;
+  });
+
+  bgHueShift += 0.08;
+  const canvas=document.getElementById('canvas');
+  canvas.style.backgroundColor = `hsl(${bgHueShift%360},30%,20%)`;
+
+  requestAnimationFrame(animate);
+}
+
+// Fullscreen logic
+const fullscreenBtn=document.querySelector('.fullscreen-btn');
+const exitBtn=document.querySelector('.exit-fullscreen-btn');
+const body=document.body;
+function toggleFullscreen(){
+  if(document.fullscreenElement){document.exitFullscreen();}
+  else{body.requestFullscreen();}
+}
+function updateFullscreenButton(){
+  if(document.fullscreenElement){
+    fullscreenBtn.style.display='none';
+    exitBtn.classList.add('visible');
+  } else {
+    fullscreenBtn.style.display='block';
+    exitBtn.classList.remove('visible');
+  }
+}
+fullscreenBtn.addEventListener('click',toggleFullscreen);
+exitBtn.addEventListener('click',toggleFullscreen);
+document.addEventListener('fullscreenchange',updateFullscreenButton);
+
+// Exit button fade behaviour
+function showExitButton(){
+  if(document.fullscreenElement){
+    exitBtn.style.opacity='1';
+    clearTimeout(exitBtn.fadeTimeout);
+    exitBtn.fadeTimeout=setTimeout(()=>{exitBtn.style.opacity='0.1';},3000);
+  }
+}
+document.addEventListener('mousemove',showExitButton);
+document.addEventListener('touchstart',showExitButton);
+exitBtn.addEventListener('mouseenter',()=>{clearTimeout(exitBtn.fadeTimeout);exitBtn.style.opacity='1';});
+exitBtn.addEventListener('mouseleave',()=>{exitBtn.fadeTimeout=setTimeout(()=>{exitBtn.style.opacity='0.1';},500);});
+
+// Manual refresh
+document.addEventListener('keydown',e=>{
+  if(e.key==='r'||e.key==='R'){initRothko();}
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('button')){initRothko();}
+});
+
+// Start
+initRothko();
+animate();
+
+// Set music volume
+document.getElementById('bg-music').volume = 0.9;
+</script>
+</body>
+</html>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CUbE - Hybrid 808/909 Engine</title>
+    
+    <!-- SEO & Social Media Metadata -->
+    <meta name="description" content="A generative audio-visual experience blending the mechanical logic of a 3D cube with the legendary sounds of the 808 and 909 rhythm composers.">
+    <meta name="keywords" content="808, 909, Synthesizer, 3D Cube, Audio Visualizer, Generative Music, WebAudio, Three.js">
+    <meta name="author" content="CUbE Engine">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Doto:wght@900&family=Silkscreen&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --kw-red: #D20000;
+            --kw-black: #080808;
+            --kw-white: #E0E0E0;
+            --kw-dark: #000;
+            --kw-light: #fff;
+            --kw-grey: #2A2A2A;
+            --kw-yellow: #FFD700;
+            --kw-blue: #0044CC;
+            --manual-height: 90px; 
+            
+            --tr-909-accent: #f26522;
+            --led-on: #ff1a1a;
+            --led-off: #330000;
+
+            --tr-808-red: #ff4136;
+            --tr-808-orange: #ff851b;
+            --tr-808-yellow: #ffdc00;
+            --tr-808-white: #ffffff;
+
+            --bg-shift-x: 50%;
+            --bg-shift-y: 50%;
+            
+            --top-spacing: 30px;
+            --header-height: 48px;
+        }
+
+        body { 
+            margin: 0; overflow: hidden; font-family: 'Space Mono', monospace; 
+            background-color: var(--kw-black); color: var(--kw-white); overscroll-behavior: none;
+        }
+
+        #main-container { position: relative; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; }
+
+        #canvas-wrapper {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at var(--bg-shift-x) var(--bg-shift-y), 
+                rgba(120, 190, 220, 0.45) 0%, rgba(70, 90, 110, 0.5) 45%, rgba(15, 15, 20, 1) 100%);
+            z-index: 1; transition: background 0.1s ease-out; touch-action: none;
+        }
+
+        canvas { display: block; width: 100% !important; height: 100% !important; position: relative; z-index: 10; }
+
+        #manual-wrapper {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: var(--manual-height);
+            background: rgba(8, 8, 8, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            display: flex; flex-direction: column; border-top: 2px solid var(--kw-white);
+            z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transition: height 0.1s linear;
+            padding-bottom: env(safe-area-inset-bottom, 20px); touch-action: none;
+        }
+
+        @media (min-width: 1024px) {
+            #main-container { display: grid; grid-template-columns: 1fr 450px; grid-template-rows: 100%; }
+            #canvas-wrapper { position: relative; height: 100%; border-right: 2px solid var(--kw-white); }
+            #manual-wrapper { position: relative; height: 100% !important; border-top: none; border-left: 2px solid var(--kw-white); box-shadow: none; padding-bottom: 0; background: rgba(8, 8, 8, 0.9); touch-action: auto; }
+        }
+
+        #interactive-logo {
+            position: absolute; top: var(--top-spacing); left: 30px; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none; cursor: pointer; width: 130px; height: var(--header-height);
+            background: rgba(0,0,0,0.3); border-radius: 4px; transition: background 0.2s;
+        }
+        #interactive-logo:hover { background: rgba(0,0,0,0.6); transform: scale(1.05); transition: all 0.2s; }
+        
+        #cube-matrix { display: grid; grid-template-columns: repeat(15, 5px); grid-template-rows: repeat(3, 5px); gap: 2px; }
+        .matrix-cell { width: 5px; height: 5px; background-color: transparent; border-radius: 0px; transition: background-color 0.5s ease; }
+        .matrix-cell.active { background-color: var(--kw-yellow); }
+        .matrix-cell.flicker { background-color: rgba(255, 215, 0, 0.66); }
+
+        #top-controls { position: absolute; top: var(--top-spacing); right: 30px; z-index: 150; display: flex; align-items: center; gap: 12px; height: var(--header-height); }
+
+        .icon-btn {
+            background: rgba(0,0,0,0.3); border: none; color: var(--kw-white);
+            width: var(--header-height); height: var(--header-height); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; padding: 12px; opacity: 0.8; border-radius: 4px;
+        }
+        .icon-btn img { width: 100%; height: 100%; object-fit: contain; filter: invert(1); }
+        .icon-btn:hover { opacity: 1; transform: scale(1.1); background: rgba(0,0,0,0.6); }
+
+        #status-msg-container {
+            position: absolute; top: var(--top-spacing); left: 180px; right: 180px; height: var(--header-height);
+            z-index: 25; background: rgba(0,0,0,0.8); border: 1px solid var(--kw-grey);
+            overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: flex-start; padding: 0 10px; border-radius: 4px; gap: 10px;
+        }
+
+        #status-text-box {
+            width: 160px; 
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4); border-radius: 4px; height: 32px; flex-shrink: 0;
+        }
+
+        #status-text {
+            font-family: 'Doto', serif; background-color:#182416; border-radius: 4px;
+            font-size: 1.1rem; color: #00ff00; text-transform: uppercase;
+            pointer-events: none; user-select: none; letter-spacing: 0.02em;
+            opacity: 0.8; transition: opacity 0.2s, transform 0.2s, color 0.5s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-align: left; padding-left: 10px; width: 100%;
+        }
+        #status-text.active { color: var(--kw-white); opacity: 1; transform: scale(1.02); text-shadow: 0 0 8px rgba(255,255,255,0.6); }
+
+        /* IDLE Status Styles */
+        #status-text.idle {
+            color: #ff3333;
+            animation: pulse-transparency 4s ease-in-out infinite;
+        }
+        @keyframes pulse-transparency {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.9; }
+        }
+
+        #status-visualizer {
+            flex: 1; height: 30px; display: flex; align-items: stretch; gap: 2px;
+            pointer-events: none; opacity: 0.8; background-color: #12300F; border-radius: 4px;
+        }
+        
+        .vis-bar { flex: 1; display: flex; flex-direction: column-reverse; gap: 1px; }
+        .vis-seg { width: 100%; height: 3px; background: #111; transition: background 0.05s; }
+
+        .glitch-anim { animation: glitch-static 0.6s step-end both infinite; }
+        @keyframes glitch-static {
+            0% { transform: skewX(0deg); }
+            10% { text-shadow: 1px 0 var(--kw-red), -1px 0 var(--kw-blue); }
+            15% { transform: skewX(2deg); }
+            20% { transform: skewX(0deg); text-shadow: none; }
+            45% { text-shadow: 2px 0 var(--kw-yellow); }
+            85% { transform: skewX(-1deg); text-shadow: -1px 0 var(--kw-red); }
+        }
+
+        /* Responsive Mobile Status Bar */
+        @media (max-width: 1023px) {
+            #status-msg-container { left: 170px; right: 150px; }
+        }
+        @media (max-width: 768px) { 
+            #status-msg-container { left: 30px; right: 30px; top: 90px; height: 40px; } 
+            #status-text-box { width: 120px; }
+            #status-text { font-size: 0.9rem; }
+        }
+        @media (max-width: 500px) {
+            #status-msg-container { top: 100px; height: 36px; gap: 6px; }
+            #status-text-box { width: 100px; }
+            #status-text { font-size: 0.75rem; }
+        }
+
+        .bauhaus-header {
+            background: rgba(210, 0, 0, 0.9); color: white; padding: 1rem;
+            font-weight: 700; display: flex; justify-content: space-between; align-items: center;
+            position: relative; touch-action: none; cursor: grab;
+        }
+        .drag-handle { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 5px; background: rgba(255,255,255,0.4); border-radius: 4px; display: block; }
+        @media (min-width: 1024px) { .drag-handle { display: none; } }
+
+        .step-indicator { font-size: 0.8rem; background: black; padding: 2px 8px; }
+        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; touch-action: pan-y; }
+
+        .algo-btn {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+            background: rgba(42, 42, 42, 0.7); border: 1px solid var(--kw-white);
+            color: var(--kw-yellow); padding: 12px 16px; margin: 10px 0;
+            text-align: left; font-family: 'Space Mono', monospace;
+            cursor: pointer; transition: all 0.2s; border-radius: 4px;
+        }
+        .algo-btn:hover { background: var(--kw-white); color: var(--kw-black); border-color: var(--kw-red); }
+        .play-tag { font-size: 0.6rem; background: var(--kw-red); color: white; padding: 2px 6px; font-weight: bold; }
+
+        .control-panel {
+            padding: 1rem; border-top: 2px solid var(--kw-white);
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+            background: transparent; padding-bottom: 20px;
+        }
+
+        .cal-sans-btn {
+            font-family: 'Inter', sans-serif; font-weight: 900;
+            text-transform: uppercase; letter-spacing: -0.05em; font-size: 0.9rem;
+            padding: 12px; border: none; cursor: pointer; transition: transform 0.1s; border-radius: 4px;
+        }
+        .btn-reset { background: transparent; border: 2px solid var(--kw-red); color: var(--kw-red); }
+        .btn-nav { background: var(--kw-blue); color: white; border: 2px solid var(--kw-blue); }
+
+        #twist-controls {
+            position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: stretch; gap: 0; z-index: 120;
+            background: #111; padding: 6px 6px; border: 2px solid #444035;
+            border-bottom: 4px solid #333231; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            user-select: none; touch-action: none; transition: bottom 0.2s;
+            border-radius: 4px; white-space: nowrap; width: max-content;
+            box-sizing: border-box; flex-wrap: nowrap;
+        }
+        @media (min-width: 1024px) { #twist-controls { bottom: 20px; } }
+        
+        .twist-drag-handle { width: 18px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; padding: 0 4px; background: #000; flex-shrink: 0; border-radius: 3px; }
+        .twist-drag-handle div { width: 3px; height: 3px; background: #BBC400; border-radius: 50%; }
+
+        .grid-container { display: grid; grid-template-columns: repeat(9, 36px); grid-template-rows: 40px 18px; gap: 4px; flex-shrink: 0; width: auto; }
+
+        .twist-btn {
+            width: 36px; border: none; color: #1a1a1a; font-family: 'Space Mono', monospace; font-weight: 900;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; transition: all 0.05s;
+        }
+        .twist-btn:active { transform: translateY(1px); }
+        
+        .btn-808 { height: 32px; font-size: 1rem; box-shadow: 0 4px 0 rgba(0,0,0,0.6), inset 1px 10px 0 rgba(255,255,255,0.3); border-radius: 4px; margin-top: 5px; }
+        .btn-808.r { background: var(--tr-808-red); }
+        .btn-808.o { background: var(--tr-808-orange); }
+        .btn-808.y { background: var(--tr-808-yellow); }
+        .btn-808.w { background: var(--tr-808-white); }
+        .btn-808 .led { top: 3px; }
+
+        .btn-909 { 
+            height: 16px; 
+            background: linear-gradient(135deg, #d0cec6 0%, #b0aea6 50%, #807e76 100%); 
+            border-radius: 3px; 
+            box-shadow: 
+                inset 1px 1.5px 1px rgba(255,255,255,0.5), 
+                inset -1px -1px 2px rgba(0,0,0,0.2), 
+                0 2px 3px rgba(0,0,0,0.4); 
+            font-size: 1rem; color: #333; padding-top: 4px; 
+            overflow: hidden;
+        }
+        .btn-909::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 40%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        .btn-909::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--tr-909-accent); opacity: 0.6; border-radius: 2px 2px 0 0; }
+        .btn-909 .led { top: 2px; width: 8px; height: 2px; }
+
+        .led { width: 8px; height: 3px; background: var(--led-off); border-radius: 1px; transition: background 0.05s, box-shadow 0.05s; position: absolute; pointer-events: none; }
+        .led.active { background: var(--led-on); box-shadow: 0 0 8px var(--led-on), 0 0 2px var(--led-on); }
+        
+        #loading { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--kw-black); display: flex; align-items: center; justify-content: center; z-index: 2000; color: var(--tr-909-accent); font-family: 'Space Mono', monospace; font-weight: bold; font-size: 1.5rem; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">HYBRID ENGINE SYNC...</div>
+
+    <div id="main-container">
+        <div id="canvas-wrapper">
+            <div id="interactive-logo" onclick="resetView()" title="Default state">
+                <div id="cube-matrix"></div>
+            </div>
+
+            <div id="status-msg-container">
+                <div id="status-text-box">
+                    <div id="status-text">READY</div>
+                </div>
+                <div id="status-visualizer"></div>
+            </div>
+
+            <div id="top-controls">
+                <button class="icon-btn" onclick="window.cubeGame.scramble()" title="Scramble"><img src="https://img.icons8.com/ios-filled/50/333333/shuffle.png" alt="Scramble"></button>
+                <button class="icon-btn" onclick="toggleFullscreen()" title="Fullscreen"><img src="https://img.icons8.com/ios-filled/50/333333/full-screen.png" alt="Fullscreen"></button>
+            </div>
+
+            <div id="twist-controls">
+                <div class="twist-drag-handle left"><div></div><div></div><div></div><div></div><div></div></div>
+                <div class="grid-container" id="sequencer-grid">
+                    <button class="twist-btn btn-808 r" onclick="window.cubeGame.move('L')"><div class="led"></div>L</button>
+                    <button class="twist-btn btn-808 r" onclick="window.cubeGame.move('R')"><div class="led"></div>R</button>
+                    <button class="twist-btn btn-808 o" onclick="window.cubeGame.move('U')"><div class="led"></div>U</button>
+                    <button class="twist-btn btn-808 o" onclick="window.cubeGame.move('D')"><div class="led"></div>D</button>
+                    <button class="twist-btn btn-808 y" onclick="window.cubeGame.move('F')"><div class="led"></div>F</button>
+                    <button class="twist-btn btn-808 y" onclick="window.cubeGame.move('B')"><div class="led"></div>B</button>
+                    <button class="twist-btn btn-808 w" onclick="window.cubeGame.move('M1')"><div class="led"></div>M1</button>
+                    <button class="twist-btn btn-808 w" onclick="window.cubeGame.move('M2')"><div class="led"></div>M2</button>
+                    <button class="twist-btn btn-808 w" onclick="window.cubeGame.move('M3')"><div class="led"></div>M3</button>
+                    
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('L-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('R-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('U-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('D-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('F-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('B-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('M1-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('M2-')"><div class="led"></div>-</button>
+                    <button class="twist-btn btn-909" onclick="window.cubeGame.move('M3-')"><div class="led"></div>-</button>
+                </div>
+                <div class="twist-drag-handle right"><div></div><div></div><div></div><div></div><div></div></div>
+            </div>
+        </div>
+
+        <div id="manual-wrapper">
+            <div class="bauhaus-header" id="drawer-header">
+                <div class="drag-handle"></div>
+                <span style="font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: -0.05em; font-size: 3rem; line-height: 0.9;">MANUAL</span>
+                <span id="step-counter" class="step-indicator">00 / 07</span>
+            </div>
+            <div id="content-container" class="content-area"></div>
+            <div class="control-panel">
+                <button class="cal-sans-btn btn-nav" onclick="manual.prev()">PREV</button>
+                <button class="cal-sans-btn btn-reset" onclick="window.cubeGame.reset()">RESET</button>
+                <button class="cal-sans-btn btn-nav" onclick="manual.next()">NEXT</button>
+            </div>
+            <div class="bg-neutral-900 p-2 text-xs text-center border-t border-gray-800 text-gray-500">808/909 // CUbE // 2025</div>
+        </div>
+    </div>
+
+    <script>
+        // --- HYBRID AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.connect(audioCtx.destination);
+        
+        function playSynth(freq, type = 'sine', decay = 0.2, vol = 0.5) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.connect(gain); gain.connect(analyser); 
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + decay);
+            osc.start(); osc.stop(audioCtx.currentTime + decay);
+        }
+
+        function playNoise(decay = 0.1, highPass = 1000, vol = 0.3) {
+            const bufferSize = audioCtx.sampleRate * decay;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'highpass'; filter.frequency.value = highPass;
+            const gain = audioCtx.createGain();
+            noise.connect(filter); filter.connect(gain); gain.connect(analyser);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + decay);
+            noise.start(); noise.stop(audioCtx.currentTime + decay);
+        }
+
+        // Improved Kick from 4.html logic
+        function playKick(freq = 55, decay = 0.45, vol = 0.3) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(analyser);
+            osc.frequency.setValueAtTime(freq + 100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(freq, audioCtx.currentTime + 0.05);
+            osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + decay);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
+            osc.start(); osc.stop(audioCtx.currentTime + decay);
+        }
+
+        const soundMap = {
+            'L': () => playSynth(60, 'sine', 0.5, 0.8), 'R': () => playNoise(0.2, 800, 0.4), 'U': () => playSynth(1200, 'square', 0.05, 0.2), 'D': () => playSynth(110, 'triangle', 0.3, 0.5), 'F': () => playNoise(0.05, 4000, 0.2), 'B': () => playNoise(0.3, 3000, 0.2), 'M1': () => playSynth(880, 'sawtooth', 0.1, 0.1), 'M2': () => playSynth(40, 'sine', 0.8, 0.6), 'M3': () => playSynth(2000, 'sine', 0.02, 0.3), 'L-': () => playSynth(70, 'sine', 0.4, 0.7), 'R-': () => playNoise(0.15, 1200, 0.3), 'U-': () => playSynth(1500, 'square', 0.04, 0.15), 'D-': () => playSynth(90, 'triangle', 0.4, 0.4), 'F-': () => playSynth(3000, 'sine', 0.05, 0.1), 'B-': () => playNoise(0.5, 2000, 0.15), 'M1-': () => playSynth(440, 'sawtooth', 0.15, 0.1), 'M2-': () => playSynth(55, 'sine', 1.0, 0.4), 'M3-': () => playSynth(2500, 'sine', 0.03, 0.2)
+        };
+
+        // --- SEQUENCER & HEARTBEAT LOGIC ---
+        let currentSeqStep = 0;
+        let sequencerActive = false;
+        
+        function runSequencer() {
+            const allLeds = document.querySelectorAll('.led');
+            allLeds.forEach(led => led.classList.remove('active'));
+            
+            // Sequential cycle: all 18 LEDs in order (808 row then 909 row)
+            if (allLeds[currentSeqStep]) {
+                allLeds[currentSeqStep].classList.add('active');
+            }
+            
+            // Muted beat logic (triggers every 4 steps in the 18 step sequence)
+            if (currentSeqStep % 4 === 0) {
+                playKick(45, 0.4, 0.25);
+            }
+
+            currentSeqStep = (currentSeqStep + 1) % 18;
+            setTimeout(runSequencer, 150); // Clocked to ~100BPM relative to 18 steps
+        }
+
+        // --- VISUALIZER ---
+        const visContainer = document.getElementById('status-visualizer');
+        const bars = [];
+        const numBars = 32;
+        const numSegs = 8;
+        
+        for(let i=0; i<numBars; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'vis-bar';
+            const segs = [];
+            for(let j=0; j<numSegs; j++) {
+                const s = document.createElement('div');
+                s.className = 'vis-seg';
+                if(j < 4) s.dataset.color = 'rgba(0, 255, 0, '; else if(j < 6) s.dataset.color = 'rgba(255, 215, 0, '; else s.dataset.color = 'rgba(255, 0, 0, ';
+                bar.appendChild(s); segs.push(s);
+            }
+            visContainer.appendChild(bar); bars.push(segs);
+        }
+
+        function updateVisualizer() {
+            analyser.getByteFrequencyData(dataArray);
+            bars.forEach((segs, i) => {
+                const val = dataArray[i % 32];
+                const activeCount = Math.floor((val / 255) * numSegs);
+                segs.forEach((s, j) => {
+                    if(j < activeCount) s.style.background = s.dataset.color + '0.8)';
+                    else s.style.background = '#111';
+                });
+            });
+            requestAnimationFrame(updateVisualizer);
+        }
+        updateVisualizer();
+
+        function showStatus(txt) {
+            const elText = document.getElementById('status-text');
+            elText.innerText = `${txt}`; 
+            elText.classList.add('active', 'glitch-anim');
+            elText.classList.remove('idle');
+
+            if (!window.isMechanicalSolving && window.cubeGame.moveQueue.length === 0) {
+                setTimeout(() => { 
+                    if(elText.innerText === `${txt}`) { 
+                        elText.classList.remove('active', 'glitch-anim'); 
+                        elText.innerText = "IDLE"; 
+                        elText.classList.add('idle');
+                    } 
+                }, 1000);
+            }
+        }
+
+        (function generateLogo() {
+            const matrix = document.getElementById('cube-matrix');
+            const gridData = [1,1,1,0,1,0,1,0,1,0,0,0,1,1,1, 1,0,0,0,1,0,1,0,1,1,1,0,1,1,0, 1,1,1,0,1,1,1,0,1,1,1,0,1,1,1];
+            const letterColumns = [0, 1, 2, 4, 6, 8, 9, 10, 12, 13, 14];
+            const cellsInLetterZones = [];
+            gridData.forEach((val, idx) => {
+                const cell = document.createElement('div'); cell.className = 'matrix-cell';
+                if(val === 1) cell.classList.add('active');
+                if(letterColumns.includes(idx % 15)) cellsInLetterZones.push(cell);
+                matrix.appendChild(cell);
+            });
+            setInterval(() => {
+                cellsInLetterZones.forEach(cell => cell.classList.remove('flicker'));
+                for(let i=0; i<4; i++) cellsInLetterZones[Math.floor(Math.random()*cellsInLetterZones.length)].classList.add('flicker');
+            }, 250);
+        })();
+
+        const steps = [
+            { title: "HYBRID CORE", html: `<p class="mb-4">Generative audio sequences synced to mechanical rotation.</p><button class="algo-btn" onclick="window.cubeGame.scramble()"><span>▶ RANDOMIZE PATTERN</span></button>` },
+            { title: "01. THE CROSS", html: `<p class="mb-4">Goal: White cross around White Center.</p><button class="algo-btn mt-2 bg-black" onclick="window.cubeGame.runSequence('F R U R- U- F-')"><span>FIX FLIPPED EDGE</span><span class="play-tag">RUN</span></button>` },
+            { title: "02. THE CORNERS", html: `<p class="mb-4">Solve the entire White layer.</p><button class="algo-btn" onclick="window.cubeGame.runSequence('R- D- R D')"><span>R- D- R D</span><span class="play-tag">RUN</span></button>` },
+            { title: "03. MIDDLE", html: `<p class="mb-4">FLIP: White is BOTTOM.</p><button class="algo-btn mb-4" onclick="window.cubeGame.runSequence('U R U- R- y- L- U- L U')"><span>U R U- R- y- L- U- L U</span><span class="play-tag">RIGHT</span></button>` },
+            { title: "04. TOP CROSS", html: `<p class="mb-4">Yellow cross on top.</p><button class="algo-btn" onclick="window.cubeGame.runSequence('F R U R- U- F-')"><span>F R U R- U- F-</span><span class="play-tag">RUN</span></button>` },
+            { title: "05. ALIGN", html: `<p class="mb-4">Align corners correctly.</p><button class="algo-btn" onclick="window.cubeGame.runSequence('U R U- L- U R- U- L')"><span>U R U- L- U R- U- L</span><span class="play-tag">RUN</span></button>` },
+            { title: "06. RESOLUTION", html: `<p class="mb-2">Corner Yellow to TOP:</p><button class="algo-btn mb-4" onclick="window.cubeGame.runSequence('R- D- R D')"><span>R- D- R D</span><span class="play-tag">RUN</span></button>` },
+            { title: "07. MECHANICAL", html: `<p class="mb-4">Physical restoration sequence. Precise.</p><button class="algo-btn bg-red-800 border-white text-white" onclick="window.cubeGame.mechanicalSolve()"><span>UNWIND FRAMEWORK</span><span class="play-tag">RUN</span></button>` }
+        ];
+
+        const manual = {
+            currentStep: 0, init: function() { this.render(); },
+            render: function() {
+                const data = steps[this.currentStep];
+                document.getElementById('step-counter').innerText = `0${this.currentStep} / 0${steps.length-1}`;
+                document.getElementById('content-container').innerHTML = `<h2 class="text-xl font-bold mb-4 border-b border-white pb-2">${data.title}</h2><div class="fade-in">${data.html}</div>`;
+            },
+            next: function() { if(this.currentStep < steps.length - 1) { this.currentStep++; this.render(); } },
+            prev: function() { if(this.currentStep > 0) { this.currentStep--; this.render(); } }
+        };
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+        camera.position.set(12, 9, 15);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio); renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-wrapper').appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const spotLight = new THREE.SpotLight(0xffffff, 1.2); spotLight.position.set(15, 30, 20); spotLight.castShadow = true; scene.add(spotLight);
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.ShadowMaterial({ opacity: 0.3 })); floor.rotation.x = -Math.PI / 2; floor.position.y = -4.5; floor.receiveShadow = true; scene.add(floor);
+
+        const COLORS = { U: 0xFFFFFF, D: 0xFFDD00, F: 0x009900, B: 0x0046BD, R: 0xDD0000, L: 0xFF5800 };
+        const cubies = []; let isAnimating = false; const pivot = new THREE.Object3D(); scene.add(pivot);
+
+        function createRoundedSticker(color) {
+            const size = 0.82, radius = 0.12, shape = new THREE.Shape(); const x = -size/2, y = -size/2;
+            shape.moveTo(x, y + radius); shape.lineTo(x, y + size - radius); shape.quadraticCurveTo(x, y + size, x + radius, y + size);
+            shape.lineTo(x + size - radius, y + size); shape.quadraticCurveTo(x + size, y + size, x + size, y + size - radius);
+            shape.lineTo(x + size, y + radius); shape.quadraticCurveTo(x + size, y, x + size - radius, y); shape.lineTo(x + radius, y); shape.quadraticCurveTo(x, y, x, y + radius);
+            const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.02, bevelEnabled: false });
+            return new THREE.Mesh(geometry, new THREE.MeshPhysicalMaterial({ color: color, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 }));
+        }
+
+        function createCubie(x, y, z) {
+            const group = new THREE.Group(); const core = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.98, 0.98), new THREE.MeshPhysicalMaterial({ color: 0x1a1a1a, roughness: 0.7 })); core.castShadow = true; group.add(core);
+            const stickerOffset = 0.49;
+            if (x === 1) { const s = createRoundedSticker(COLORS.R); s.rotation.y = Math.PI/2; s.position.x = stickerOffset; group.add(s); }
+            if (x === -1) { const s = createRoundedSticker(COLORS.L); s.rotation.y = -Math.PI/2; s.position.x = -stickerOffset; group.add(s); }
+            if (y === 1) { const s = createRoundedSticker(COLORS.U); s.rotation.x = -Math.PI/2; s.position.y = stickerOffset; group.add(s); }
+            if (y === -1) { const s = createRoundedSticker(COLORS.D); s.rotation.x = Math.PI/2; s.position.y = -stickerOffset; group.add(s); }
+            if (z === 1) { const s = createRoundedSticker(COLORS.F); s.position.z = stickerOffset; group.add(s); }
+            if (z === -1) { const s = createRoundedSticker(COLORS.B); s.rotation.y = Math.PI; s.position.z = -stickerOffset; group.add(s); }
+            group.position.set(x * 1.04, y * 1.04, z * 1.04); scene.add(group); cubies.push(group);
+        }
+        for(let x=-1; x<=1; x++) for(let y=-1; y<=1; y++) for(let z=-1; z<=1; z++) createCubie(x, y, z);
+
+        let theta = 0.6, phi = 1.2, cameraTarget = new THREE.Vector3(0,0,0), radius = 13, viewIndex = 0;
+
+        window.cubeGame = {
+            moveQueue: [], moveHistory: [],
+            runSequence: function(algStr) { const moves = algStr.replace(/[()]/g, '').trim().split(/\s+/); showStatus(`SEQ START`); moves.forEach(m => { if(m) this.move(m); }); },
+            move: function(moveStr) { 
+                if(!sequencerActive) {
+                    sequencerActive = true;
+                    runSequencer();
+                }
+                this.moveQueue.push(moveStr); if (!window.isMechanicalSolving) this.moveHistory.push(moveStr); if(!isAnimating) this.processQueue(); 
+            },
+            processQueue: function() {
+                if(this.moveQueue.length === 0) { isAnimating = false; if(window.isMechanicalSolving) { window.isMechanicalSolving = false; showStatus("RESTORED"); } return; }
+                const moveStr = this.moveQueue.shift(); showStatus(moveStr);
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                if (soundMap[moveStr]) soundMap[moveStr]();
+                let isPrime = moveStr.includes("'") || moveStr.includes("-"); let face = moveStr.replace("'", "").replace("-", "");
+                if (face.startsWith('y')) this.animateCameraOrbit(isPrime ? -1 : 1); else this.executeFaceMove(face, isPrime);
+            },
+            animateCameraOrbit: function(direction) {
+                isAnimating = true; const duration = 1200, startTime = performance.now(), startTheta = theta, targetDelta = direction * (-Math.PI / 2); 
+                const anim = (time) => {
+                    const t = Math.min(1, (time - startTime) / duration); const ease = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    theta = startTheta + (targetDelta * ease); updateCameraPosition(); if (t < 1) requestAnimationFrame(anim); else { isAnimating = false; viewIndex = (viewIndex + (direction === 1 ? 1 : 3)) % 4; this.processQueue(); }
+                }; requestAnimationFrame(anim);
+            },
+            executeFaceMove: function(face, isPrime) {
+                isAnimating = true; let realFace = face; const ring = ['F', 'R', 'B', 'L'];
+                let axis = new THREE.Vector3(), selection = [], angle = isPrime ? Math.PI/2 : -Math.PI/2, pos = 1.04, tol = 0.5;
+                if (face.startsWith('M')) {
+                    const type = face.substring(1);
+                    if (type === '2') { axis.set(0,1,0); selection = cubies.filter(c => Math.abs(c.position.y) < tol); }
+                    else { let actualType = (viewIndex % 2 !== 0) ? (type === '1' ? '3' : '1') : type; if (actualType === '1') { axis.set(1,0,0); selection = cubies.filter(c => Math.abs(c.position.x) < tol); } else { axis.set(0,0,1); selection = cubies.filter(c => Math.abs(c.position.z) < tol); } }
+                } else {
+                    if (ring.includes(face)) realFace = ring[(ring.indexOf(face) + viewIndex) % 4];
+                    switch(realFace) {
+                        case 'R': axis.set(1,0,0); selection = cubies.filter(c => Math.abs(c.position.x - pos) < tol); break;
+                        case 'L': axis.set(1,0,0); angle = -angle; selection = cubies.filter(c => Math.abs(c.position.x + pos) < tol); break;
+                        case 'U': axis.set(0,1,0); selection = cubies.filter(c => Math.abs(c.position.y - pos) < tol); break;
+                        case 'D': axis.set(0,1,0); angle = -angle; selection = cubies.filter(c => Math.abs(c.position.y + pos) < tol); break;
+                        case 'F': axis.set(0,0,1); selection = cubies.filter(c => Math.abs(c.position.z - pos) < tol); break;
+                        case 'B': axis.set(0,0,1); angle = -angle; selection = cubies.filter(c => Math.abs(c.position.z + pos) < tol); break;
+                    }
+                }
+                this.performRotation(axis, selection, angle);
+            },
+            performRotation: function(axis, selection, angle) {
+                pivot.rotation.set(0,0,0); pivot.updateMatrixWorld(); selection.forEach(cube => pivot.attach(cube));
+                let progress = 0, speed = 0.1; const anim = () => {
+                    if (progress < 1) { progress += speed; const e = 1 - Math.pow(1 - progress, 3); if(axis.x) pivot.rotation.x = angle*e; if(axis.y) pivot.rotation.y = angle*e; if(axis.z) pivot.rotation.z = angle*e; requestAnimationFrame(anim); }
+                    else { pivot.updateMatrixWorld(); selection.forEach(c => { scene.attach(c); const snap = (v) => Math.round(v/1.04)*1.04; c.position.set(snap(c.position.x), snap(c.position.y), snap(c.position.z)); c.quaternion.setFromRotationMatrix(new THREE.Matrix4().extractRotation(c.matrixWorld)); }); pivot.rotation.set(0,0,0); isAnimating = false; this.processQueue(); }
+                }; anim();
+            },
+            mechanicalSolve: function() { if(isAnimating || this.moveHistory.length === 0) return; window.isMechanicalSolving = true; showStatus("UNWINDING"); const rev = [...this.moveHistory].reverse().map(m => m.includes("-") ? m.replace("-","") : m+"-"); this.moveHistory = []; rev.forEach(m => this.moveQueue.push(m)); this.processQueue(); },
+            scramble: function() { let s = ""; const f = ['R','L','U','D','F','B'], m = ['','-']; for(let i=0; i<12; i++) s += (f[Math.floor(Math.random()*f.length)] + m[Math.floor(Math.random()*2)] + " "); this.runSequence(s); },
+            reset: function() { window.location.reload(); }
+        };
+
+        function handleResize() {
+            const wrap = document.getElementById('canvas-wrapper'); const w = wrap.clientWidth, h = wrap.clientHeight;
+            renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); radius = w < 500 ? 18 : (w < 1024 ? 16 : 13); updateCameraPosition();
+        }
+
+        function updateCameraPosition() {
+            radius = Math.max(5, Math.min(40, radius)); phi = Math.max(0.01, Math.min(Math.PI - 0.01, phi));
+            camera.position.set(cameraTarget.x + radius * Math.sin(phi) * Math.sin(theta), cameraTarget.y + radius * Math.cos(phi), cameraTarget.z + radius * Math.sin(phi) * Math.cos(theta)); camera.lookAt(cameraTarget);
+            document.documentElement.style.setProperty('--bg-shift-x', `${50 + (theta*8)%20-10}%`); document.documentElement.style.setProperty('--bg-shift-y', `${50 + (phi*8)%20-10}%`);
+        }
+
+        function resetView() {
+            const startT = theta, startP = phi, startR = radius, startTime = performance.now(), startTarget = cameraTarget.clone(), winW = window.innerWidth, targetBaseY = winW < 1024 ? -1.5 : 0, targetR = winW < 500 ? 18 : (winW < 1024 ? 16 : 13);
+            const anim = (t) => { const f = Math.min(1, (t - startTime) / 800), e = f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2; theta = startT + (0.6 - startT) * e; phi = startP + (1.2 - startP) * e; radius = startR + (targetR - startR) * e; cameraTarget.lerpVectors(startTarget, new THREE.Vector3(0, targetBaseY, 0), e); updateCameraPosition(); if (f < 1) requestAnimationFrame(anim); }; requestAnimationFrame(anim);
+        }
+
+        function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+
+        const canvasWrap = document.getElementById('canvas-wrapper');
+        let isDrag = false, isPanning = false, isSpaceDown = false, prevM = { x: 0, y: 0 };
+        let pinchDist = 0, lastTouchMid = { x: 0, y: 0 };
+
+        window.addEventListener('keydown', e => { if(e.code === 'Space') isSpaceDown = true; });
+        window.addEventListener('keyup', e => { if(e.code === 'Space') isSpaceDown = false; });
+
+        canvasWrap.addEventListener('mousedown', e => { 
+            if(e.target.closest('#twist-controls') || e.target.closest('#top-controls') || e.target.closest('#interactive-logo') || e.target.closest('#status-msg-container')) return;
+            isDrag = true; prevM = { x: e.clientX, y: e.clientY };
+            if(e.button === 2 || isSpaceDown) isPanning = true;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        });
+        canvasWrap.addEventListener('contextmenu', e => e.preventDefault());
+
+        window.addEventListener('mousemove', e => { 
+            if(!isDrag) return;
+            const dx = e.clientX - prevM.x, dy = e.clientY - prevM.y;
+            prevM = { x: e.clientX, y: e.clientY };
+            if(isPanning) {
+                const rT = theta + Math.PI/2, f = radius * 0.0015;
+                cameraTarget.x += -dx * f * Math.sin(rT); cameraTarget.z += -dx * f * Math.cos(rT); cameraTarget.y += dy * f;
+            } else { theta -= dx * 0.005; phi -= dy * 0.005; }
+            updateCameraPosition(); 
+        });
+        window.addEventListener('mouseup', () => { isDrag = false; isPanning = false; });
+
+        canvasWrap.addEventListener('touchstart', e => {
+            if(e.target.closest('#twist-controls') || e.target.closest('#top-controls') || e.target.closest('#interactive-logo') || e.target.closest('#status-msg-container')) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if(e.touches.length === 2) {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                pinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                lastTouchMid = { x: (t1.clientX + t2.clientX)/2, y: (t1.clientY + t2.clientY)/2 };
+                isDrag = false; 
+            } else { 
+                isDrag = true; prevM = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', e => {
+            if(e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                const cx = (t1.clientX + t2.clientX)/2, cy = (t1.clientY + t2.clientY)/2;
+                if (pinchDist > 0) radius -= (d - pinchDist) * 0.05;
+                const dx = cx - lastTouchMid.x, dy = cy - lastTouchMid.y;
+                const rT = theta + Math.PI/2, f = radius * 0.002;
+                cameraTarget.x += -dx * f * Math.sin(rT); cameraTarget.z += -dx * f * Math.cos(rT); cameraTarget.y += dy * f;
+                pinchDist = d; lastTouchMid = { x: cx, y: cy }; updateCameraPosition();
+            } else if(isDrag) {
+                const dx = e.touches[0].clientX - prevM.x, dy = e.touches[0].clientY - prevM.y;
+                theta -= dx * 0.005; phi -= dy * 0.005; prevM = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                updateCameraPosition();
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', () => { isDrag = false; pinchDist = 0; });
+
+        window.addEventListener('wheel', e => {
+            if(e.target.closest('#manual-wrapper') || e.target.closest('#twist-controls')) return;
+            radius += e.deltaY * 0.01; updateCameraPosition();
+        }, { passive: true });
+
+        const drawerHeader = document.getElementById('drawer-header'), manualWrapper = document.getElementById('manual-wrapper'), twistControls = document.getElementById('twist-controls');
+        let isDraggingDrawer = false, drawerStartY = 0, drawerStartH = 0;
+        
+        drawerHeader.addEventListener('touchstart', e => {
+            if (window.innerWidth >= 1024) return;
+            isDraggingDrawer = true; drawerStartY = e.touches[0].clientY; drawerStartH = manualWrapper.offsetHeight;
+            manualWrapper.style.transition = 'none';
+        }, { passive: false });
+        
+        window.addEventListener('touchmove', e => {
+            if (!isDraggingDrawer) return;
+            const h = Math.max(90, Math.min(window.innerHeight * 0.9, drawerStartH + (drawerStartY - e.touches[0].clientY)));
+            manualWrapper.style.height = h + 'px'; 
+            if(!isDragC) {
+                twistControls.style.bottom = (h + 10) + 'px';
+            }
+        }, { passive: false });
+        
+        window.addEventListener('touchend', () => { 
+            isDraggingDrawer = false; manualWrapper.style.transition = 'height 0.3s'; 
+        });
+
+        const cDiv = document.getElementById('twist-controls'), cHandles = document.querySelectorAll('.twist-drag-handle');
+        let isDragC = false, cOff = { x: 0, y: 0 };
+        
+        const sD = (cX, cY) => { 
+            isDragC = true; 
+            const r = cDiv.getBoundingClientRect(); 
+            cOff = { x: cX - r.left, y: cY - r.top }; 
+            cDiv.style.bottom = 'auto'; 
+            cDiv.style.transform = 'none'; 
+            cDiv.style.left = r.left + 'px'; 
+            cDiv.style.top = r.top + 'px'; 
+        };
+        
+        const mD = (cX, cY) => { 
+            if (isDragC) { 
+                const x = Math.max(10, Math.min(window.innerWidth - cDiv.offsetWidth - 10, cX - cOff.x));
+                const y = Math.max(10, Math.min(window.innerHeight - cDiv.offsetHeight - 10, cY - cOff.y));
+                cDiv.style.left = x + 'px'; 
+                cDiv.style.top = y + 'px'; 
+            } 
+        };
+        
+        cHandles.forEach(h => {
+            h.addEventListener('mousedown', e => { e.preventDefault(); sD(e.clientX, e.clientY); });
+            h.addEventListener('touchstart', e => { e.preventDefault(); sD(e.touches[0].clientX, e.touches[0].clientY); });
+        });
+        
+        window.addEventListener('mousemove', e => mD(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => { if(isDragC && e.touches[0]) mD(e.touches[0].clientX, e.touches[0].clientY); });
+        window.addEventListener('mouseup', () => isDragC = false);
+        window.addEventListener('touchend', () => isDragC = false);
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('load', () => { 
+            manual.init(); handleResize(); 
+            document.getElementById('loading').style.display = 'none'; 
+            (function anim() { requestAnimationFrame(anim); renderer.render(scene, camera); })(); 
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Battle Audio Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510; /* Very dark background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #ui-layer {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: opacity 0.5s;
+        }
+        #ui-layer:hover {
+            opacity: 1;
+        }
+        /* Hide default file input */
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        .status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="ui-layer">
+        <div class="controls">
+            <label class="btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                </svg>
+                Upload MP3
+                <input type="file" id="fileInput" accept="audio/*">
+            </label>
+            
+            <button class="btn" id="playBtn" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                </svg>
+                Play
+            </button>
+            
+            <button class="btn" id="pauseBtn" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                </svg>
+                Pause
+            </button>
+        </div>
+        <div class="status" id="statusText">Select a song to begin the dance</div>
+    </div>
+
+    <!-- Audio Element (Hidden) -->
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        // --- Setup Canvas ---
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- Audio Context Setup ---
+        const audioPlayer = document.getElementById('audioPlayer');
+        const fileInput = document.getElementById('fileInput');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const statusText = document.getElementById('statusText');
+
+        let audioContext, analyser, source;
+        let dataArray;
+        let isPlaying = false;
+
+        // Initialize Audio Context (must be triggered by user)
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512; // Controls detail of frequency data
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        // --- File Handling ---
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const objectUrl = URL.createObjectURL(file);
+                audioPlayer.src = objectUrl;
+                playBtn.disabled = false;
+                statusText.textContent = `Ready: ${file.name}`;
+                statusText.style.color = "#4ade80"; // Green tint
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            initAudio();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            audioPlayer.play();
+            playBtn.style.display = 'none';
+            pauseBtn.style.display = 'flex';
+            statusText.textContent = "Playing...";
+            isPlaying = true;
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            statusText.textContent = "Paused";
+            isPlaying = false;
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            statusText.textContent = "Finished";
+            isPlaying = false;
+        });
+
+        // --- Particle System ---
+
+        class Particle {
+            constructor(type) {
+                this.type = type; // 'blue', 'red', 'dust'
+                this.init();
+            }
+
+            init() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                
+                if (this.type === 'blue') {
+                    // Deep Blue: Heavy, slow, large
+                    this.baseSize = Math.random() * 8 + 4;
+                    this.vx = (Math.random() - 0.5) * 1;
+                    this.vy = (Math.random() - 0.5) * 1;
+                    this.color = `rgba(10, 20, 180, ${Math.random() * 0.5 + 0.3})`; // Deep Blue #000099 range
+                    this.drag = 0.98;
+                } else if (this.type === 'red') {
+                    // Bright Red: Fast, erratic, small
+                    this.baseSize = Math.random() * 4 + 2;
+                    this.vx = (Math.random() - 0.5) * 3;
+                    this.vy = (Math.random() - 0.5) * 3;
+                    this.color = `rgba(255, 30, 30, ${Math.random() * 0.5 + 0.4})`; // Bright Red #ff0000 range
+                    this.drag = 0.95;
+                } else {
+                    // Dust: Background, Yellow-Orange
+                    this.baseSize = Math.random() * 2 + 0.5;
+                    this.vx = Math.random() * 0.5 + 0.2; // Drifting right
+                    this.vy = (Math.random() - 0.5) * 0.2;
+                    this.color = `rgba(255, 200, 50, ${Math.random() * 0.3 + 0.1})`;
+                }
+                
+                this.size = this.baseSize;
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+
+            update(bassEnergy, trebleEnergy) {
+                // Wrap around screen
+                if (this.x > width) this.x = 0;
+                if (this.x < 0) this.x = width;
+                if (this.y > height) this.y = 0;
+                if (this.y < 0) this.y = height;
+
+                if (this.type === 'dust') {
+                    // Dust just drifts, mostly ignored by music (maybe slight opacity flicker)
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    return;
+                }
+
+                if (this.type === 'blue') {
+                    // DEEP BLUE: Responds to Bass (Low Freq)
+                    // "Floating around" but "Shaking/Expanding" on heavy hits
+                    
+                    // Smooth movement
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Reaction: Expand size heavily on bass
+                    let targetSize = this.baseSize + (bassEnergy * 0.15);
+                    this.size += (targetSize - this.size) * 0.1; // Ease into size
+
+                    // Reaction: Subtle shake on very deep notes
+                    if (bassEnergy > 100) {
+                        this.x += (Math.random() - 0.5) * 2;
+                        this.y += (Math.random() - 0.5) * 2;
+                    }
+
+                } else if (this.type === 'red') {
+                    // BRIGHT RED: Responds to Treble (High Freq)
+                    // "Shaking", erratic movement
+                    
+                    // Standard movement
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Reaction: Jitter/Shake intensely on high sounds
+                    if (trebleEnergy > 50) {
+                        let intensity = (trebleEnergy / 255) * 10;
+                        this.x += (Math.random() - 0.5) * intensity;
+                        this.y += (Math.random() - 0.5) * intensity;
+                    }
+
+                    // Reaction: Brighten or slight size bump
+                    this.size = this.baseSize + (trebleEnergy * 0.05);
+                }
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                // Create a glow effect
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                
+                if (this.type === 'blue') {
+                    gradient.addColorStop(0, 'rgba(100, 100, 255, 1)'); // White/Blue center
+                    gradient.addColorStop(1, 'rgba(0, 0, 150, 0)'); // Fade out
+                } else if (this.type === 'red') {
+                    gradient.addColorStop(0, 'rgba(255, 200, 200, 1)'); // White/Red center
+                    gradient.addColorStop(1, 'rgba(255, 0, 0, 0)'); // Fade out
+                } else {
+                    gradient.addColorStop(0, this.color);
+                    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                }
+
+                ctx.fillStyle = gradient;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // --- Initialization ---
+        const particles = [];
+        const PARTICLE_COUNT_BLUE = 60;
+        const PARTICLE_COUNT_RED = 80;
+        const PARTICLE_COUNT_DUST = 100;
+
+        function initParticles() {
+            particles.length = 0;
+            for (let i = 0; i < PARTICLE_COUNT_BLUE; i++) particles.push(new Particle('blue'));
+            for (let i = 0; i < PARTICLE_COUNT_RED; i++) particles.push(new Particle('red'));
+            for (let i = 0; i < PARTICLE_COUNT_DUST; i++) particles.push(new Particle('dust'));
+        }
+
+        initParticles();
+
+        // --- Animation Loop ---
+        function animate() {
+            // Semi-transparent clear for trail effect
+            ctx.fillStyle = 'rgba(5, 5, 16, 0.2)'; 
+            ctx.fillRect(0, 0, width, height);
+
+            // Use 'screen' blend mode to make overlapping colors light up (The "Love" mix)
+            ctx.globalCompositeOperation = 'screen';
+
+            let bassAvg = 0;
+            let trebleAvg = 0;
+
+            if (isPlaying && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Calculate Bass (Low frequencies: first ~10% of bins)
+                const bassCount = Math.floor(dataArray.length * 0.1);
+                let bassSum = 0;
+                for (let i = 0; i < bassCount; i++) {
+                    bassSum += dataArray[i];
+                }
+                bassAvg = bassSum / bassCount;
+
+                // Calculate Treble (High frequencies: middle to end)
+                const trebleStart = Math.floor(dataArray.length * 0.5);
+                const trebleEnd = Math.floor(dataArray.length * 0.8);
+                let trebleSum = 0;
+                for (let i = trebleStart; i < trebleEnd; i++) {
+                    trebleSum += dataArray[i];
+                }
+                trebleAvg = trebleSum / (trebleEnd - trebleStart);
+            }
+
+            particles.forEach(p => {
+                p.update(bassAvg, trebleAvg);
+                p.draw(ctx);
+            });
+
+            ctx.globalCompositeOperation = 'source-over'; // Reset for next frame
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>

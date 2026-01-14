@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tri-Lens Observatory — Lens & Oracle</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  /* subtle global */
+  :root{
+    --bg-1:#0f172a;
+    --card:#ffffff;
+    --muted:#94a3b8;
+    --glass: rgba(255,255,255,0.06);
+  }
+  body {
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.08), transparent),
+                radial-gradient(1000px 500px at 90% 90%, rgba(139,92,246,0.05), transparent),
+                linear-gradient(180deg,#071029 0%, #081226 100%);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  /* header */
+  .brand {
+    font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* glass cards */
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.04);
+    backdrop-filter: blur(6px);
+  }
+
+  /* small glyphs */
+  .glyph {
+    width:44px;height:44px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  }
+
+  /* disc area */
+  .oracle-stage {
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));
+    border-top: 1px solid rgba(255,255,255,0.03);
+    padding-top: 40px;
+    padding-bottom: 80px;
+  }
+
+  .disc-wrap {
+    width: min(560px, 86vw);
+    height: min(560px, 86vw);
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .disc {
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    position:relative;
+    transform-origin:center center;
+    transition: transform 1s cubic-bezier(.2,.9,.25,1);
+    box-shadow: 0 30px 60px rgba(2,6,23,0.6), inset 0 6px 30px rgba(255,255,255,0.02);
+    background: conic-gradient(from 0deg, rgba(221,29,43,0.08), rgba(219,221,23,0.06), rgba(124,58,237,0.06));
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .disc-inner {
+    width:62%;
+    height:62%;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+
+  .hal-eye {
+    width:94px;height:94px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background: radial-gradient(circle at 40% 35%, rgba(255,80,80,0.95), rgba(200,0,0,0.95));
+    box-shadow: 0 6px 28px rgba(200,0,0,0.16), 0 0 40px rgba(255,80,80,0.08);
+    border:4px solid rgba(0,0,0,0.12);
+  }
+
+  /* floating words */
+  .word-cloud {
+    position:absolute;
+    top:8%;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    pointer-events:none;
+  }
+
+  .word-cloud span {
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:0.02em;
+    opacity:0;
+    transform: translateY(18px) scale(0.9);
+    animation: wordPop 10s linear infinite;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+  }
+
+  @keyframes wordPop {
+    0% { opacity:0; transform: translateY(28px) scale(0.9); }
+    8% { opacity:1; transform: translateY(0) scale(1); }
+    28% { opacity:0.6; transform: translateY(-80px) scale(1.8); filter:blur(0.6px); }
+    70% { opacity:0; transform: translateY(-220px) scale(3); }
+    100% { opacity:0; transform: translateY(-300px) scale(3.6); }
+  }
+
+  /* word delays - 8 words shown as cycle */
+  .word-cloud span:nth-child(1){ animation-delay: 0s; }
+  .word-cloud span:nth-child(2){ animation-delay: 0.8s; }
+  .word-cloud span:nth-child(3){ animation-delay: 1.6s; }
+  .word-cloud span:nth-child(4){ animation-delay: 2.4s; }
+  .word-cloud span:nth-child(5){ animation-delay: 3.2s; }
+  .word-cloud span:nth-child(6){ animation-delay: 4.0s; }
+  .word-cloud span:nth-child(7){ animation-delay: 4.8s; }
+  .word-cloud span:nth-child(8){ animation-delay: 5.6s; }
+
+  /* small responsive */
+  @media (max-width:640px){
+    .glyph{width:36px;height:36px}
+    .hal-eye{width:72px;height:72px}
+    .word-cloud span{font-size:13px}
+  }
+
+  /* deep reflection button */
+  .btn-deep {
+    background: linear-gradient(90deg,#7c3aed,#2563eb);
+    color:white;
+    box-shadow: 0 8px 30px rgba(14,165,233,0.12);
+  }
+
+  /* subtle fade */
+  .fade-up { transform: translateY(12px); opacity:0; transition: all .55s cubic-bezier(.2,.9,.25,1); }
+  .fade-up.in { transform:none; opacity:1; }
+
+  /* small cards list styles */
+  .approach-li { display:flex; gap:8px; align-items:flex-start; color: #dbeafe; }
+  .approach-li svg { min-width:16px; margin-top:3px; fill: #c7d2fe; opacity:0.92; }
+</style>
+</head>
+<body class="antialiased">
+
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- header -->
+    <header class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="brand text-2xl md:text-3xl font-bold text-white">Tri-Lens Observatory</h1>
+        <p class="text-sm text-slate-300 mt-1">Enter a situation. Explore through Body — Mind — Soul. Ask the Oracle for reflection.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-sm text-slate-300">Mode</div>
+        <div class="text-xs bg-white/6 px-3 py-1 rounded-full text-slate-200">D — Surprising Mix</div>
+      </div>
+    </header>
+
+    <!-- top lens area -->
+    <section class="glass p-6 rounded-2xl shadow-lg">
+      <div class="md:flex md:items-start md:gap-6">
+        <div class="md:flex-1">
+          <label class="text-sm text-slate-300">Describe a life situation</label>
+          <div class="mt-3 flex gap-3">
+            <input id="situationInput" type="text" placeholder="e.g. 'Feeling blocked as a writer' or 'Worried about my health'" class="flex-1 bg-white/6 placeholder:text-slate-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button id="analyzeBtn" class="btn-deep px-4 py-2 rounded-xl font-semibold">Analyze</button>
+          </div>
+          <div class="mt-3 text-sm text-slate-400">Try the examples: <button class="text-indigo-300 underline underline-offset-2" onclick="loadExample('Parkinson\\'s Disease')">Parkinson's</button> · <button class="text-indigo-300 underline underline-offset-2" onclick="loadExample('Creative Block')">Creative Block</button> · <button class="text-indigo-300 underline underline-offset-2" onclick="loadExample('Career Transition')">Career</button></div>
+        </div>
+
+        <div class="md:w-96 mt-6 md:mt-0">
+          <div class="glass p-4 rounded-xl">
+            <div class="flex items-center gap-3">
+              <div id="glyphPreview" class="glyph" style="background:linear-gradient(135deg,#ef4444,#f97316);">
+                <!-- tiny svg placeholder -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" /></svg>
+              </div>
+              <div>
+                <div id="situationTitle" class="text-sm text-slate-100 font-semibold">No situation yet</div>
+                <div id="situationSub" class="text-xs text-slate-400 mt-0.5">Analysis will appear here</div>
+              </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-3 gap-3">
+              <div class="p-3 rounded-lg bg-white/4 text-center">
+                <div class="text-xs text-slate-300">Body</div>
+                <div id="badgeBody" class="text-sm font-semibold mt-1">—</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white/4 text-center">
+                <div class="text-xs text-slate-300">Mind</div>
+                <div id="badgeMind" class="text-sm font-semibold mt-1">—</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white/4 text-center">
+                <div class="text-xs text-slate-300">Soul</div>
+                <div id="badgeSoul" class="text-sm font-semibold mt-1">—</div>
+              </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+              <button id="deepBtn" class="px-3 py-2 rounded-lg bg-indigo-600 text-white font-medium flex-1">Deep Reflection</button>
+              <button id="copyBtn" title="Copy analysis" class="px-3 py-2 rounded-lg bg-white/6 text-slate-200">Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- results cards -->
+      <div id="resultCards" class="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-7 opacity-0 transform translate-y-6 transition-all duration-450">
+        <!-- Body -->
+        <article id="cardBody" class="glass p-5 rounded-2xl">
+          <div class="flex items-start gap-3">
+            <div class="glyph" style="background:linear-gradient(135deg,#ef4444,#f43f5e)">
+              <!-- pulse icon -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M3 13h4l2-6 2 12 2-8 4 2h4" /></svg>
+            </div>
+            <div>
+              <h3 class="text-white font-semibold">Body</h3>
+              <p id="bodyFocus" class="text-sm text-slate-300 mt-1">—</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-2 font-medium">Experience</div>
+            <div id="bodyExperience" class="text-sm text-slate-200 italic">—</div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-2 font-medium">Approaches</div>
+            <ul id="bodyApproaches" class="space-y-2"></ul>
+          </div>
+        </article>
+
+        <!-- Mind -->
+        <article id="cardMind" class="glass p-5 rounded-2xl">
+          <div class="flex items-start gap-3">
+            <div class="glyph" style="background:linear-gradient(135deg,#f59e0b,#f97316)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C8 2 5 6 5 9c0 3 3 7 7 13 4-6 7-10 7-13 0-3-3-7-7-7z"/></svg>
+            </div>
+            <div>
+              <h3 class="text-white font-semibold">Mind</h3>
+              <p id="mindFocus" class="text-sm text-slate-300 mt-1">—</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-2 font-medium">Experience</div>
+            <div id="mindExperience" class="text-sm text-slate-200 italic">—</div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-2 font-medium">Approaches</div>
+            <ul id="mindApproaches" class="space-y-2"></ul>
+          </div>
+        </article>
+
+        <!-- Soul -->
+        <article id="cardSoul" class="glass p-5 rounded-2xl">
+          <div class="flex items-start gap-3">
+            <div class="glyph" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 21s-6-4.5-6-9a6 6 0 1112 0c0 4.5-6 9-6 9z"/></svg>
+            </div>
+            <div>
+              <h3 class="text-white font-semibold">Soul</h3>
+              <p id="soulFocus" class="text-sm text-slate-300 mt-1">—</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-2 font-medium">Experience</div>
+            <div id="soulExperience" class="text-sm text-slate-200 italic">—</div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-2 font-medium">Approaches</div>
+            <ul id="soulApproaches" class="space-y-2"></ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- transitional descent -->
+    <div class="mt-10 text-center">
+      <div class="inline-block px-6 py-1 rounded-full bg-gradient-to-r from-transparent via-white/5 to-transparent text-slate-300">— descend into the oracle —</div>
+    </div>
+
+    <!-- oracle / disc -->
+    <section class="oracle-stage mt-8 rounded-2xl">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-semibold">The Oracle Disc</h2>
+          <p class="text-sm text-slate-300 mt-1">A symbolic reflection that responds to the lens you choose. Click a domain or ask for Deep Reflection.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row items-center gap-8">
+          <!-- disc column -->
+          <div class="flex-1">
+            <div class="disc-wrap mx-auto">
+              <div id="disc" class="disc" style="transform:rotate(240deg)">
+                <div class="word-cloud" id="wordCloud">
+                  <!-- words injected here -->
+                </div>
+
+                <div class="disc-inner">
+                  <div class="hal-eye" id="halEye" title="Sentinel">
+                    <!-- center eye -->
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" fill="rgba(10,10,10,0.6)" />
+                      <circle cx="12" cy="12" r="6" fill="#ff2e2e" />
+                      <circle cx="12" cy="12" r="2.6" fill="#ffb4b4" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center gap-3">
+              <button class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500" onclick="setOracleState('body')">BODY</button>
+              <button class="px-4 py-2 rounded-lg bg-amber-400 text-slate-900 hover:brightness-95" onclick="setOracleState('mind')">MIND</button>
+              <button class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500" onclick="setOracleState('soul')">SOUL</button>
+            </div>
+          </div>
+
+          <!-- text column -->
+          <div class="flex-1">
+            <div class="glass p-6 rounded-xl">
+              <div class="flex items-start gap-4">
+                <div>
+                  <div class="text-xs text-slate-300">Current Focus</div>
+                  <div id="oracleFocus" class="text-xl font-semibold mt-1">—</div>
+                </div>
+                <div class="ml-auto text-sm text-slate-400" id="oracleStateTag">AUTO</div>
+              </div>
+
+              <div class="mt-4">
+                <div class="text-xs text-slate-400">Oracle Quote</div>
+                <div id="oracleQuote" class="mt-2 text-slate-100 italic">Press Deep Reflection for a poetic thought.</div>
+              </div>
+
+              <div class="mt-4">
+                <div class="text-xs text-slate-400">Interpretation</div>
+                <div id="oracleInterpretation" class="mt-2 text-slate-200 leading-relaxed">When you press Deep Reflection the disc will take the situation and spin the lens toward the most evocative domain. It mixes rational advice with a wink of poetry.</div>
+              </div>
+
+              <div class="mt-4 flex gap-2">
+                <button id="reflectBtn" class="btn-deep px-4 py-2 rounded-xl font-semibold w-full">Reflect (sync & spin)</button>
+                <button id="autoToggle" class="px-4 py-2 rounded-xl bg-white/6">Auto</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-12 text-center text-slate-400 text-sm">Made with a little logic + a little oracle. — Enjoy.</footer>
+  </div>
+
+<script>
+/* ---------- Data & helpers (namespaced) ---------- */
+const TLO = (function(){
+  // analysis templates (trimmed, useful)
+  const analysisData = {
+    "Parkinson's Disease":{
+      body:{focus:"Physical & Neurological Health", experience:"Tremors, stiffness, and mobility changes.", approaches:["Medication & Symptom Management","Physical Therapy & Movement","Diet, Sleep, Rest"]},
+      mind:{focus:"Cognitive & Emotional Well-being", experience:"Worry, brain fog, identity shifts.", approaches:["CBT & Support","Mindfulness & Acceptance","Creative outlets"]},
+      soul:{focus:"Meaning & Spiritual Reorientation", experience:"Existential questioning and recalibration.", approaches:["Community & Ritual","Purposeful projects","Gratitude practice"]}
+    },
+    "Creative Block":{
+      body:{focus:"Reset & Sensory Input", experience:"Lethargy, stuck hands.", approaches:["Change scenery","Gentle movement","Short play sessions"]},
+      mind:{focus:"Idea Generation & Play", experience:"Self-critique and blankness.", approaches:["Free-writing","Constraints to spark play","Collaboration"]},
+      soul:{focus:"Reconnect to Why", experience:"Feeling of emptiness around purpose.", approaches:["Revisit early influences","Play without outcome","Meditation to listen"]}
+    },
+    "Career Transition":{
+      body:{focus:"Energy & Presence", experience:"Stress, insomnia", approaches:["Daily routine","Exercise for stamina","Dress rehearsal"]},
+      mind:{focus:"Skill & Strategy", experience:"Decision fatigue", approaches:["Upskilling","Network","Actionable plan"]},
+      soul:{focus:"Meaning & Fit", experience:"Questioning values", approaches:["Values clarification","Mentorship","Vision journaling"]}
+    }
+  };
+
+  // generic inference fallback
+  function genericAnalysis(input){
+    const lc = input.toLowerCase();
+    const map = {health: ['sick','pain','doctor','disease','parkinson'], work:['job','career','boss','office','promotion'], relationship:['partner','love','friend','family','argue'], creative:['write','art','stuck','idea'], money:['debt','money','bill','rent']};
+    let key='creative';
+    for(const k in map){ if(map[k].some(w=>lc.includes(w))){ key=k; break; } }
+    const basic = {
+      body:{focus:"Physical Wellbeing", experience:"Bodily signals and energy levels.", approaches:["Movement","Rest","Nutrition"]},
+      mind:{focus:"Cognitive Clarity", experience:"Thought patterns and plans.", approaches:["Journaling","Planning","Learning"]},
+      soul:{focus:"Meaning & Orientation", experience:"Question of purpose.", approaches:["Reflection","Community","Small rituals"]}
+    };
+    return basic;
+  }
+
+  // oracle words/quotes per domain
+  const oracle = {
+    body:{
+      words:["Ground","Breath","Pulse","Muscle","Strength","Balance","Anchor","Senses"],
+      quotes:["Breathe — there is work your body already knows.","Listen to the small repetitions; they will teach you rhythm.","Small steps build new paths."]
+    },
+    mind:{
+      words:["Think","Pattern","Logic","Focus","Learn","Plan","Question","Map"],
+      quotes:["A focused question often becomes a solution.","Maps don't show every path — they show how to begin.","Curiosity is a muscle; practice it gently."]
+    },
+    soul:{
+      words:["Longing","Home","Meaning","Quiet","Belonging","Story","Grace","Belief"],
+      quotes:["Sometimes the question is your compass.","We are containers for stories — choose kind ones.","Surrender opens the door that struggle bangs upon."]
+    }
+  };
+
+  return {analysisData, genericAnalysis, oracle};
+})();
+
+/* ---------- DOM refs ---------- */
+const refs = {
+  input: document.getElementById('situationInput'),
+  analyzeBtn: document.getElementById('analyzeBtn'),
+  resultCards: document.getElementById('resultCards'),
+  situationTitle: document.getElementById('situationTitle'),
+  situationSub: document.getElementById('situationSub'),
+  badgeBody: document.getElementById('badgeBody'),
+  badgeMind: document.getElementById('badgeMind'),
+  badgeSoul: document.getElementById('badgeSoul'),
+  bodyFocus: document.getElementById('bodyFocus'),
+  mindFocus: document.getElementById('mindFocus'),
+  soulFocus: document.getElementById('soulFocus'),
+  bodyExperience: document.getElementById('bodyExperience'),
+  mindExperience: document.getElementById('mindExperience'),
+  soulExperience: document.getElementById('soulExperience'),
+  bodyApproaches: document.getElementById('bodyApproaches'),
+  mindApproaches: document.getElementById('mindApproaches'),
+  soulApproaches: document.getElementById('soulApproaches'),
+  glyphPreview: document.getElementById('glyphPreview'),
+  deepBtn: document.getElementById('deepBtn'),
+  reflectBtn: document.getElementById('reflectBtn'),
+  disc: document.getElementById('disc'),
+  wordCloud: document.getElementById('wordCloud'),
+  oracleFocus: document.getElementById('oracleFocus'),
+  oracleQuote: document.getElementById('oracleQuote'),
+  oracleStateTag: document.getElementById('oracleStateTag'),
+  autoToggle: document.getElementById('autoToggle'),
+  copyBtn: document.getElementById('copyBtn'),
+  analyzeButton: document.getElementById('analyzeBtn')
+};
+
+/* ---------- UI helpers ---------- */
+function populateList(container, items){
+  container.innerHTML = '';
+  items.forEach(it=>{
+    const li = document.createElement('li');
+    li.className = 'approach-li';
+    li.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path d="M9 12l2 2 4-4" /></svg><div class="text-sm">${it}</div>`;
+    container.appendChild(li);
+  });
+}
+
+// simple glyph selector (changes color)
+function setGlyph(domain){
+  const el = refs.glyphPreview;
+  if(domain==='body'){ el.style.background = 'linear-gradient(135deg,#ef4444,#f97316)'; }
+  if(domain==='mind'){ el.style.background = 'linear-gradient(135deg,#f59e0b,#f97316)'; }
+  if(domain==='soul'){ el.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)'; }
+}
+
+/* ---------- analysis logic ---------- */
+function analyzeSituation(){
+  const val = refs.input.value.trim();
+  if(!val) return;
+  // get template if exists
+  const a = TLO.analysisData[val] || TLO.genericAnalysis(val);
+  // display
+  refs.situationTitle.textContent = val;
+  refs.situationSub.textContent = 'Three-lens snapshot';
+  refs.badgeBody.textContent = a.body.focus.split(' ')[0];
+  refs.badgeMind.textContent = a.mind.focus.split(' ')[0];
+  refs.badgeSoul.textContent = a.soul.focus.split(' ')[0];
+
+  refs.bodyFocus.textContent = a.body.focus;
+  refs.mindFocus.textContent = a.mind.focus;
+  refs.soulFocus.textContent = a.soul.focus;
+
+  refs.bodyExperience.textContent = a.body.experience || '—';
+  refs.mindExperience.textContent = a.mind.experience || '—';
+  refs.soulExperience.textContent = a.soul.experience || '—';
+
+  populateList(refs.bodyApproaches, a.body.approaches || []);
+  populateList(refs.mindApproaches, a.mind.approaches || []);
+  populateList(refs.soulApproaches, a.soul.approaches || []);
+
+  // show cards with gentle reveal
+  refs.resultCards.classList.add('in');
+  refs.resultCards.style.opacity = '1';
+  refs.resultCards.style.transform = 'none';
+
+  // set glyph initially to body
+  setGlyph('body');
+}
+
+/* ---------- oracle integration ---------- */
+let currentDomain = 'soul'; // default disc position (soul angle)
+const domainAngles = { soul:0, mind:120, body:240 }; // degrees rotation for disc (visual mapping)
+
+function setOracleState(domain){
+  currentDomain = domain;
+  // rotate disc to angle (negative to match visual orientation)
+  const deg = domainAngles[domain] || 0;
+  refs.disc.style.transform = `rotate(${deg}deg)`;
+  // update focus & quote
+  const or = TLO.oracle[domain];
+  refs.oracleFocus.textContent = capitalize(domain) + ' — ' + or.words[0];
+  refs.oracleQuote.textContent = or.quotes[Math.floor(Math.random()*or.quotes.length)];
+  refs.oracleStateTag.textContent = domain.toUpperCase();
+  // fill word cloud
+  fillWordCloud(or.words, domain);
+  // change glyph as well top
+  setGlyph(domain);
+}
+
+function fillWordCloud(words, domain){
+  refs.wordCloud.innerHTML = '';
+  // choose 8 words (repeat if needed)
+  const use = words.slice();
+  while(use.length<8) use.push(...words);
+  for(let i=0;i<8;i++){
+    const s = document.createElement('span');
+    s.textContent = use[i];
+    // tint depending on domain
+    if(domain==='body') s.style.color = '#ffd7d7';
+    if(domain==='mind') s.style.color = '#fff5cc';
+    if(domain==='soul') s.style.color = '#dcd7ff';
+    refs.wordCloud.appendChild(s);
+  }
+}
+
+/* ---------- deep reflection (sync analysis -> oracle) ---------- */
+function deepReflect(){
+  // pick dominant domain by heuristics: look for keywords in input
+  const txt = refs.input.value || '';
+  const lc = txt.toLowerCase();
+  let dom = 'mind';
+  if(/pain|sick|disease|parkinson|tremor|health|illness|ache|fatigue/.test(lc)) dom='body';
+  else if(/love|partner|friend|family|lonely|grief|belong/.test(lc)) dom='soul';
+  else if(/job|career|work|learn|study|plan|anx|worry|creative|write|stuck/.test(lc)) dom='mind';
+
+  // give the oracle a nice poetic twist based on the input
+  setOracleState(dom);
+  // spin disc with a little extra jazzy rotation
+  const base = domainAngles[dom] || 0;
+  const extra = 360 * (Math.random()*1.2); // flourish
+  refs.disc.style.transform = `rotate(${base + extra}deg)`;
+
+  // show an interpretation combining a short line
+  const line = `Reflection on “${refs.input.value || 'your situation'}” — ${capitalize(dom)} angle.`;
+  refs.oracleInterpretation.textContent = line + ' ' + (TLO.oracle[dom].quotes[0] || '');
+  // scroll to oracle
+  document.querySelector('.oracle-stage').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* ---------- small utilities ---------- */
+function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+/* ---------- event wiring ---------- */
+refs.analyzeBtn.addEventListener('click', ()=>analyzeSituation());
+refs.input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') analyzeSituation(); });
+refs.deepBtn.addEventListener('click', ()=>{ deepReflect(); });
+refs.reflectBtn.addEventListener('click', ()=>{ deepReflect(); });
+refs.copyBtn.addEventListener('click', ()=>{
+  const text = `Situation: ${refs.input.value}\n\nBody: ${refs.bodyFocus.textContent}\nMind: ${refs.mindFocus.textContent}\nSoul: ${refs.soulFocus.textContent}`;
+  navigator.clipboard?.writeText(text).then(()=>{ refs.copyBtn.textContent='Copied!'; setTimeout(()=>refs.copyBtn.textContent='Copy',900); });
+});
+
+// quick load examples
+function loadExample(s){ refs.input.value = s; analyzeSituation(); setTimeout(()=>{ setOracleState('mind'); }, 300); }
+
+// auto-rotation toggle (small fun)
+let autoOn = true;
+let autoInterval = null;
+function startAuto(){
+  if(autoInterval) clearInterval(autoInterval);
+  autoInterval = setInterval(()=> {
+    const order = ['soul','mind','body'];
+    const idx = order.indexOf(currentDomain);
+    const next = order[(idx+1)%order.length];
+    setOracleState(next);
+  }, 3800);
+  refs.autoToggle.textContent = 'Auto ✓';
+  autoOn = true;
+}
+function stopAuto(){
+  if(autoInterval) clearInterval(autoInterval);
+  refs.autoToggle.textContent = 'Auto';
+  autoOn = false;
+}
+refs.autoToggle.addEventListener('click', ()=>{ if(autoOn){ stopAuto(); } else { startAuto(); } });
+
+// init view
+setTimeout(()=>{ refs.resultCards.style.opacity='1'; refs.resultCards.style.transform='none'; }, 200);
+setOracleState('soul');
+startAuto();
+
+</script>
+</body>
+</html>

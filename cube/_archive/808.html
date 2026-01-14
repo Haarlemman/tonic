@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CUbE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --kw-red: #D20000;
+            --kw-black: #080808;
+            --kw-white: #E0E0E0;
+            --kw-dark: #000;
+            --kw-light: #fff;
+            --kw-grey: #2A2A2A;
+            --kw-yellow: #FFD700;
+            --kw-blue: #0044CC;
+            --manual-height: 90px; 
+            
+            /* 808 Palette */
+            --tr-808-bg: #1a1a1a;
+            --tr-red: #ff3e3e;
+            --tr-orange: #ff9d3e;
+            --tr-yellow: #ffec3e;
+            --tr-white: #ffffff;
+
+            /* Dynamic Background Vars */
+            --bg-shift-x: 50%;
+            --bg-shift-y: 50%;
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Space Mono', monospace; 
+            background-color: var(--kw-black);
+            color: var(--kw-white);
+            overscroll-behavior: none;
+        }
+
+        #main-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh; 
+            height: 100dvh; 
+            overflow: hidden;
+        }
+
+        #canvas-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--bg-shift-x) var(--bg-shift-y), 
+                rgba(120, 190, 220, 0.45) 0%, 
+                rgba(70, 90, 110, 0.5) 45%, 
+                rgba(25, 25, 30, 1) 100%);
+            z-index: 1;
+            transition: background 0.1s ease-out;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        #manual-wrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--manual-height);
+            background: rgba(8, 8, 8, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            border-top: 2px solid var(--kw-white);
+            z-index: 1000;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+            transition: height 0.1s linear;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            touch-action: none;
+        }
+
+        @media (min-width: 1024px) {
+            #main-container {
+                display: grid;
+                grid-template-columns: 1fr 450px;
+                grid-template-rows: 100%;
+            }
+            #canvas-wrapper { position: relative; height: 100%; border-right: 2px solid var(--kw-white); }
+            #manual-wrapper {
+                position: relative;
+                height: 100% !important; 
+                border-top: none;
+                border-left: 2px solid var(--kw-white);
+                box-shadow: none;
+                padding-bottom: 0;
+                background: rgba(8, 8, 8, 0.85);
+                touch-action: auto;
+            }
+        }
+
+        #interactive-logo {
+            position: absolute;
+            top: 30px; left: 30px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            cursor: pointer;
+            width: 130px;
+            height: 48px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        #interactive-logo:hover { background: rgba(0,0,0,0.6); transform: scale(1.1); transition: all 0.2s; }
+        
+        #cube-matrix { display: grid; grid-template-columns: repeat(15, 5px); grid-template-rows: repeat(3, 5px); gap: 2px; }
+        .matrix-cell { width: 5px; height: 5px; background-color: transparent; border-radius: 0px; transition: background-color 0.5s ease; }
+        .matrix-cell.active { background-color: var(--kw-yellow); }
+        .matrix-cell.flicker { background-color: rgba(255, 215, 0, 0.66); }
+
+        #top-controls {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            background: rgba(0,0,0,0.3);
+            border: none;
+            color: var(--kw-white);
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 8px;
+            opacity: 0.8;
+            border-radius: 4px;
+        }
+        .icon-btn img { width: 100%; height: 100%; object-fit: contain; filter: invert(1); }
+        .icon-btn:hover { opacity: 1; transform: scale(1.1); background: rgba(0,0,0,0.6); }
+
+        #status-msg {
+            background: var(--kw-red);
+            color: white;
+            padding: 0 12px;
+            font-size: 1rem;
+            border: 1px solid white;
+            font-family: 'Space Mono', monospace;
+            width: 150px; 
+            height: 42px;
+            line-height: 42px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        .bauhaus-header {
+            background: rgba(210, 0, 0, 0.9);
+            color: white;
+            padding: 1rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            touch-action: none; 
+            cursor: grab;
+        }
+        
+        .drag-handle {
+            position: absolute;
+            top: 8px; left: 50%;
+            transform: translateX(-50%);
+            width: 60px; height: 5px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+            display: block;
+        }
+        @media (min-width: 1024px) { .drag-handle { display: none; } }
+
+        .step-indicator { font-size: 0.8rem; background: black; padding: 2px 8px; }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; touch-action: pan-y; }
+
+        .algo-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: rgba(42, 42, 42, 0.7);
+            border: 1px solid var(--kw-white);
+            color: var(--kw-yellow);
+            padding: 12px 16px;
+            margin: 10px 0;
+            text-align: left;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .algo-btn:hover { background: var(--kw-white); color: var(--kw-black); border-color: var(--kw-red); }
+        .play-tag { font-size: 0.6rem; background: var(--kw-red); color: white; padding: 2px 6px; font-weight: bold; }
+
+        .control-panel {
+            padding: 1rem;
+            border-top: 2px solid var(--kw-white);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            background: transparent;
+            padding-bottom: 20px;
+        }
+
+        .cal-sans-btn {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            font-size: 0.9rem;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+            border-radius: 4px;
+        }
+        .btn-reset { background: transparent; border: 2px solid var(--kw-red); color: var(--kw-red); }
+        .btn-nav { background: var(--kw-blue); color: white; border: 2px solid var(--kw-blue); }
+
+        /* Roland 808 Style Toolbox - HARDENED LAYOUT */
+        #twist-controls {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            z-index: 20;
+            background: var(--tr-808-bg);
+            padding: 12px 8px;
+            border: 2px solid #333;
+            border-top: 4px solid #444;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 2px 0 rgba(255,255,255,0.1);
+            user-select: none;
+            touch-action: none;
+            transition: bottom 0.2s, transform 0.1s ease;
+            border-radius: 2px;
+            white-space: nowrap;
+            width: max-content; /* Ensure the container always hugs content */
+            box-sizing: border-box;
+            flex-wrap: nowrap; /* Prevent items falling apart */
+        }
+        @media (min-width: 1024px) { #twist-controls { bottom: 20px; } }
+        
+        .twist-drag-handle {
+            width: 24px; cursor: grab; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 4px; padding: 0 8px;
+            background: #111;
+            flex-shrink: 0; /* Do not shrink handles */
+        }
+        .twist-drag-handle.left { border-right: 2px solid #000; margin-right: 12px; }
+        .twist-drag-handle.right { border-left: 2px solid #000; margin-left: 12px; }
+        .twist-drag-handle div { width: 4px; height: 4px; background: #555; border-radius: 1px; }
+
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(9, 36px); 
+            gap: 4px; 
+            flex-shrink: 0; 
+            width: 356px; /* Explicit width calculation: 9*36 + 8*4 */
+        }
+
+        .twist-btn {
+            width: 36px; height: 44px;
+            border: none;
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 2px;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.5);
+            transition: transform 0.05s, box-shadow 0.05s;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+            flex-shrink: 0;
+        }
+        .twist-btn:active { transform: translateY(2px); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+        
+        /* 808 Color Coding */
+        .btn-r { background: var(--tr-red); }
+        .btn-o { background: var(--tr-orange); }
+        .btn-y { background: var(--tr-yellow); }
+        .btn-w { background: var(--tr-white); }
+        
+        .twist-btn.prime { 
+            position: relative;
+        }
+        .twist-btn.prime::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 12px;
+            height: 3px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 1px;
+        }
+
+        /* Mobile Toolbar Adjustments - HARDENED */
+        @media (max-width: 480px) {
+            #twist-controls {
+                padding: 8px 4px;
+                max-width: 100vw;
+            }
+            .twist-drag-handle {
+                width: 16px;
+                padding: 0 4px;
+            }
+            .twist-drag-handle.left { margin-right: 6px; }
+            .twist-drag-handle.right { margin-left: 6px; }
+            .twist-drag-handle div { width: 3px; height: 3px; }
+            .grid-container {
+                grid-template-columns: repeat(9, 30px);
+                gap: 2px;
+                width: 286px; /* Explicit width calculation: 9*30 + 8*2 */
+            }
+            .twist-btn {
+                width: 30px;
+                height: 38px;
+                font-size: 0.75rem;
+            }
+            .twist-btn.prime::after {
+                bottom: 2px;
+                width: 10px;
+                height: 2px;
+            }
+        }
+        
+        #loading {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: var(--kw-black);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000; color: var(--kw-red);
+            font-family: 'Space Mono', monospace;
+            font-weight: bold; font-size: 1.5rem; letter-spacing: 2px;
+        }
+        .centered-btn { justify-content: center; gap: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">INITIALIZING SYSTEM...</div>
+
+    <div id="main-container">
+        <div id="canvas-wrapper">
+            <div id="interactive-logo" onclick="resetView()" title="Default state">
+                <div id="cube-matrix"></div>
+            </div>
+
+            <div id="top-controls">
+                <div id="status-msg"></div>
+                <button class="icon-btn" onclick="window.cubeGame.scramble()" title="Scramble"><img src="https://img.icons8.com/ios-filled/50/333333/shuffle.png" alt="Scramble"></button>
+                <button class="icon-btn" onclick="toggleFullscreen()" title="Fullscreen"><img src="https://img.icons8.com/ios-filled/50/333333/full-screen.png" alt="Fullscreen"></button>
+            </div>
+
+            <div id="twist-controls">
+                <div class="twist-drag-handle left"><div></div><div></div><div></div><div></div><div></div></div>
+                <div class="grid-container">
+                    <button class="twist-btn btn-r" onclick="window.cubeGame.move('L')">L</button>
+                    <button class="twist-btn btn-r" onclick="window.cubeGame.move('R')">R</button>
+                    <button class="twist-btn btn-o" onclick="window.cubeGame.move('U')">U</button>
+                    <button class="twist-btn btn-o" onclick="window.cubeGame.move('D')">D</button>
+                    <button class="twist-btn btn-y" onclick="window.cubeGame.move('F')">F</button>
+                    <button class="twist-btn btn-y" onclick="window.cubeGame.move('B')">B</button>
+                    <button class="twist-btn btn-w" onclick="window.cubeGame.move('M1')">M1</button>
+                    <button class="twist-btn btn-w" onclick="window.cubeGame.move('M2')">M2</button>
+                    <button class="twist-btn btn-w" onclick="window.cubeGame.move('M3')">M3</button>
+                    
+                    <button class="twist-btn btn-r prime" onclick="window.cubeGame.move('L-')">L</button>
+                    <button class="twist-btn btn-r prime" onclick="window.cubeGame.move('R-')">R</button>
+                    <button class="twist-btn btn-o prime" onclick="window.cubeGame.move('U-')">U</button>
+                    <button class="twist-btn btn-o prime" onclick="window.cubeGame.move('D-')">D</button>
+                    <button class="twist-btn btn-y prime" onclick="window.cubeGame.move('F-')">F</button>
+                    <button class="twist-btn btn-y prime" onclick="window.cubeGame.move('B-')">B</button>
+                    <button class="twist-btn btn-w prime" onclick="window.cubeGame.move('M1-')">M1</button>
+                    <button class="twist-btn btn-w prime" onclick="window.cubeGame.move('M2-')">M2</button>
+                    <button class="twist-btn btn-w prime" onclick="window.cubeGame.move('M3-')">M3</button>
+                </div>
+                <div class="twist-drag-handle right"><div></div><div></div><div></div><div></div><div></div></div>
+            </div>
+        </div>
+
+        <div id="manual-wrapper">
+            <div class="bauhaus-header" id="drawer-header">
+                <div class="drag-handle"></div>
+                <span style="font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: -0.05em; font-size: 3rem; line-height: 0.9;">MANUAL</span>
+                <span id="step-counter" class="step-indicator">00 / 07</span>
+            </div>
+            <div id="content-container" class="content-area"></div>
+            <div class="control-panel">
+                <button class="cal-sans-btn btn-nav" onclick="manual.prev()">PREV</button>
+                <button class="cal-sans-btn btn-reset" onclick="window.cubeGame.reset()">RESET</button>
+                <button class="cal-sans-btn btn-nav" onclick="manual.next()">NEXT</button>
+            </div>
+            <div class="bg-neutral-900 p-2 text-xs text-center border-t border-gray-800 text-gray-500">2025 // DAVID ENKER</div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(txt) {
+            const el = document.getElementById('status-msg');
+            el.innerText = txt; el.style.display = 'block';
+            if (!window.isMechanicalSolving && window.cubeGame.moveQueue.length === 0) {
+                setTimeout(() => { if(el.innerText === txt) el.style.display = 'none'; }, 2000);
+            }
+        }
+
+     (function generateLogo() {
+            const matrix = document.getElementById('cube-matrix');
+            const gridData = [
+                1,1,1,0,1,0,1,0,1,0,0,0,1,1,1, 
+                1,0,0,0,1,0,1,0,1,1,1,0,1,1,0, 
+                1,1,1,0,1,1,1,0,1,1,1,0,1,1,1
+            ];
+            const letterColumns = [0, 1, 2, 4, 6, 8, 9, 10, 12, 13, 14];
+            const cellsInLetterZones = [];
+            gridData.forEach((val, idx) => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                const col = idx % 15;
+                if(val === 1) cell.classList.add('active');
+                if(letterColumns.includes(col)) cellsInLetterZones.push(cell);
+                matrix.appendChild(cell);
+            });
+            setInterval(() => {
+                cellsInLetterZones.forEach(cell => cell.classList.remove('flicker'));
+                const count = Math.floor(Math.random() * 6);
+                for(let i=0; i<count; i++) {
+                    const rnd = Math.floor(Math.random() * cellsInLetterZones.length);
+                    cellsInLetterZones[rnd].classList.add('flicker');
+                }
+            }, 250);
+        })();
+
+        const steps = [
+            {
+                title: "START HERE",
+                html: `<p class="mb-4">The center pieces are fixed. They determine what color that face <strong>must</strong> be.</p>
+                       <p class="mb-4 text-sm opacity-80">Orient the cube so the White center is facing UP. Use <strong>Right-Click</strong> or <strong>Space+Drag</strong> to pan around.</p>
+                       <div class="border border-white p-4 mb-4">
+                          <h3 class="font-bold text-red-600 mb-2">NOTATION</h3>
+                          <ul class="text-xs grid grid-cols-2 gap-2">
+                             <li>R : Right Face</li><li>L : Left Face</li>
+                             <li>U : Up (Top)</li><li>D : Down (Bottom)</li>
+                             <li>F : Front Face</li><li>B : Back Face</li>
+                             <li>y : Whole Cube</li><li>- : Anti-clockwise</li>
+                          </ul>
+                       </div>
+                       <button class="algo-btn centered-btn" onclick="window.cubeGame.scramble()">
+                          <span>▶ INITIALISE SCRAMBLE</span>
+                       </button>`
+            },
+            {
+                title: "01. THE CROSS",
+                html: `<p class="mb-4">Goal: Create a white cross around the <strong>White Center</strong>.</p>
+                       <p class="mb-4 text-sm">Crucially, the side colors of the white edges must match the centers on the sides.</p>
+                       <div class="bg-gray-800 p-3 mb-2 text-xs border-l-2 border-red-600">
+                          <p class="mb-2"><strong>TIP:</strong> If an edge is flipped, use this sequence to rotate it into position.</p>
+                          <button class="algo-btn mt-2 bg-black" onclick="window.cubeGame.runSequence('F R U R- U- F-')">
+                             <span>FIX FLIPPED EDGE</span>
+                             <span class="play-tag">RUN MOVE</span>
+                          </button>
+                       </div>`
+            },
+            {
+                title: "02. THE CORNERS",
+                html: `<p class="mb-4">Goal: Solve the entire top (White) layer.</p>
+                       <p class="mb-2">Move a white corner directly <strong>under</strong> its destination, then repeat:</p>
+                       <button class="algo-btn" onclick="window.cubeGame.runSequence('R- D- R D')">
+                          <span>R- D- R D</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>`
+            },
+            {
+                title: "03. MIDDLE LAYER",
+                html: `<p class="mb-4 text-red-500 font-bold">FLIP CUBE: White is now BOTTOM.</p>
+                       <p class="mb-2 text-sm">Match side edge with center. Move to <strong>RIGHT</strong>:</p>
+                       <button class="algo-btn mb-4" onclick="window.cubeGame.runSequence('U R U- R- y- L- U- L U')">
+                          <span>U R U- R- y- L- U- L U</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>
+                       <p class="mb-2 text-sm">Move to <strong>LEFT</strong>:</p>
+                       <button class="algo-btn" onclick="window.cubeGame.runSequence('U- L- U L y R U R- U-')">
+                          <span>U- L- U L y R U R- U-</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>`
+            },
+            {
+                title: "04. YELLOW CROSS",
+                html: `<p class="mb-4">Goal: A yellow cross on top face.</p>
+                       <button class="algo-btn" onclick="window.cubeGame.runSequence('F R U R- U- F-')">
+                          <span>F R U R- U- F-</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>`
+            },
+            {
+                title: "05. SWAP CORNERS",
+                html: `<p class="mb-4">Goal: Position corners correctly.</p>
+                       <button class="algo-btn" onclick="window.cubeGame.runSequence('U R U- L- U R- U- L')">
+                          <span>U R U- L- U R- U- L</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>`
+            },
+            {
+                title: "06. FINAL TWIST",
+                html: `<p class="mb-4 text-red-500 font-bold uppercase">IMPORTANT: Do NOT rotate the whole cube!</p>
+                       <p class="mb-2">Repeat until corner shows Yellow on TOP:</p>
+                       <button class="algo-btn mb-4" onclick="window.cubeGame.runSequence('R- D- R D')">
+                          <span>R- D- R D</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>
+                       <p class="mb-2 mt-4 text-sm">Bring the next corner to the front-right:</p>
+                       <button class="algo-btn bg-black" onclick="window.cubeGame.move('U')">
+                          <span>U (NEXT CORNER)</span>
+                          <span class="play-tag">RUN MOVE</span>
+                       </button>`
+            },
+            {
+                title: "07. MECHANICAL SOLVE",
+                html: `<p class="mb-4">Everything that turns can be unturned.</p>
+                       <p class="mb-4 text-sm opacity-80 italic">This initiates a mechanical unwinding of every rotation performed during this session, physically rotating the framework back to zero.</p>
+                       <button class="algo-btn bg-red-800 border-white text-white" onclick="window.cubeGame.mechanicalSolve()">
+                          <span>RUN MECHANICAL SOLVE</span>
+                          <span class="play-tag">UNWIND</span>
+                       </button>`
+            }
+        ];
+
+        const manual = {
+            currentStep: 0,
+            init: function() { this.render(); },
+            render: function() {
+                const data = steps[this.currentStep];
+                document.getElementById('step-counter').innerText = `0${this.currentStep} / 0${steps.length-1}`;
+                document.getElementById('content-container').innerHTML = `
+                    <h2 class="text-2xl font-bold mb-6 border-b-2 border-white pb-2" style="font-family: 'Inter', sans-serif; letter-spacing: -0.05em; font-weight:900;">${data.title}</h2>
+                    <div class="step-content fade-in">${data.html}</div>`;
+            },
+            next: function() { if(this.currentStep < steps.length - 1) { this.currentStep++; this.render(); } },
+            prev: function() { if(this.currentStep > 0) { this.currentStep--; this.render(); } }
+        };
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+        camera.position.set(12, 9, 15); camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-wrapper').appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4)); 
+        const spotLight = new THREE.SpotLight(0xffffff, 1.6);
+        spotLight.position.set(15, 30, 20); 
+        spotLight.angle = Math.PI / 6;
+        spotLight.penumbra = 0.5;
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
+        spotLight.shadow.radius = 4;
+        scene.add(spotLight);
+
+        const fillLight = new THREE.PointLight(0xffffff, 0.25);
+        fillLight.position.set(-15, 5, -15);
+        scene.add(fillLight);
+
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.ShadowMaterial({ opacity: 0.4 }));
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -4.5;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // --- PRIMARY COLORS ---
+        const COLORS = { 
+            U: 0xFFFFFF,
+            D: 0xFFDD00,
+            F: 0x009900,
+            B: 0x0046BD,
+            R: 0xDD0000,
+            L: 0xFF5800,
+            CORE: 0x111111 
+        };
+        const cubies = [];
+        let isAnimating = false;
+        const pivot = new THREE.Object3D();
+        scene.add(pivot);
+
+        function createRoundedSticker(color) {
+            const size = 0.82;
+            const radius = 0.12;
+            const shape = new THREE.Shape();
+            const x = -size/2, y = -size/2;
+            shape.moveTo(x, y + radius);
+            shape.lineTo(x, y + size - radius);
+            shape.quadraticCurveTo(x, y + size, x + radius, y + size);
+            shape.lineTo(x + size - radius, y + size);
+            shape.quadraticCurveTo(x + size, y + size, x + size, y + size - radius);
+            shape.lineTo(x + size, y + radius);
+            shape.quadraticCurveTo(x + size, y, x + size - radius, y);
+            shape.lineTo(x + radius, y);
+            shape.quadraticCurveTo(x, y, x, y + radius);
+            const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.02, bevelEnabled: false });
+            const material = new THREE.MeshPhysicalMaterial({ 
+                color: color, roughness: 0.25, metalness: 0.1, clearcoat: 0.45 
+            });
+            return new THREE.Mesh(geometry, material);
+        }
+
+        function createCubie(x, y, z) {
+            const group = new THREE.Group();
+            const coreGeom = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+            const coreMat = new THREE.MeshPhysicalMaterial({ color: 0x111111, roughness: 0.85 });
+            const core = new THREE.Mesh(coreGeom, coreMat);
+            core.castShadow = true; core.receiveShadow = true;
+            group.add(core);
+            const stickerOffset = 0.49;
+            if (x === 1) { const s = createRoundedSticker(COLORS.R); s.rotation.y = Math.PI / 2; s.position.x = stickerOffset; group.add(s); }
+            if (x === -1) { const s = createRoundedSticker(COLORS.L); s.rotation.y = -Math.PI / 2; s.position.x = -stickerOffset; group.add(s); }
+            if (y === 1) { const s = createRoundedSticker(COLORS.U); s.rotation.x = -Math.PI / 2; s.position.y = stickerOffset; group.add(s); }
+            if (y === -1) { const s = createRoundedSticker(COLORS.D); s.rotation.x = Math.PI / 2; s.position.y = -stickerOffset; group.add(s); }
+            if (z === 1) { const s = createRoundedSticker(COLORS.F); s.position.z = stickerOffset; group.add(s); }
+            if (z === -1) { const s = createRoundedSticker(COLORS.B); s.rotation.y = Math.PI; s.position.z = -stickerOffset; group.add(s); }
+            const pos = new THREE.Vector3(x * 1.04, y * 1.04, z * 1.04);
+            group.position.copy(pos);
+            group.userData.initialPos = pos.clone();
+            scene.add(group); cubies.push(group);
+        }
+
+        for(let x=-1; x<=1; x++) for(let y=-1; y<=1; y++) for(let z=-1; z<=1; z++) createCubie(x, y, z);
+
+        let viewIndex = 0, theta = 0.6, phi = 1.2, cameraTarget = new THREE.Vector3(0,0,0), radius = 13;
+        let baseTargetY = 0; 
+
+        window.cubeGame = {
+            moveQueue: [],
+            moveHistory: [],
+            runSequence: function(algStr) {
+                const cleanStr = algStr.replace(/[()]/g, '').replace(/&apos;/g, "'").replace(/&quot;/g, '"');
+                const moves = cleanStr.trim().split(/\s+/);
+                showStatus(`INITIATING SEQUENCE`);
+                if(this.moveQueue.length === 0) isAnimating = false;
+                moves.forEach(m => { if(m) this.move(m); });
+            },
+            move: function(moveStr) { 
+                this.moveQueue.push(moveStr); 
+                if (!window.isMechanicalSolving) this.moveHistory.push(moveStr);
+                if(!isAnimating) this.processQueue(); 
+            },
+            processQueue: function() {
+                if(this.moveQueue.length === 0) {
+                    isAnimating = false;
+                    if(window.isMechanicalSolving) {
+                        window.isMechanicalSolving = false;
+                        showStatus("CUBE RESTORED");
+                        setTimeout(() => document.getElementById('status-msg').style.display = 'none', 1500);
+                    }
+                    return;
+                }
+                const moveStr = this.moveQueue.shift();
+                showStatus(`ROTATING: ${moveStr}`);
+                let isPrime = moveStr.includes("'") || moveStr.includes("-");
+                let face = moveStr.replace("'", "").replace("-", "");
+                if (face.startsWith('y')) { this.animateCameraOrbit(isPrime ? -1 : 1); } 
+                else { this.executeFaceMove(face, isPrime); }
+            },
+            animateCameraOrbit: function(direction) {
+                isAnimating = true;
+                const duration = 500, startTime = performance.now(), startTheta = theta, targetDelta = direction * (-Math.PI / 2); 
+                const anim = (time) => {
+                    const t = Math.min(1, (time - startTime) / duration);
+                    const ease = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    theta = startTheta + (targetDelta * ease); updateCameraPosition();
+                    if (t < 1) requestAnimationFrame(anim);
+                    else { isAnimating = false; viewIndex = (viewIndex + (direction === 1 ? 1 : 3)) % 4; this.processQueue(); }
+                };
+                requestAnimationFrame(anim);
+            },
+            executeFaceMove: function(face, isPrime) {
+                isAnimating = true;
+                let realFace = face;
+                const ring = ['F', 'R', 'B', 'L'];
+                let axis = new THREE.Vector3(), selection = [], angle = isPrime ? Math.PI / 2 : -Math.PI / 2;
+                const pos = 1.04, tol = 0.5;
+                if (face.startsWith('M')) {
+                    const type = face.substring(1);
+                    if (type === '2') { axis.set(0,1,0); selection = cubies.filter(c => Math.abs(c.position.y) < tol); }
+                    else { 
+                        let actualType = type;
+                        if (viewIndex % 2 !== 0) actualType = (type === '1' ? '3' : '1');
+                        if (actualType === '1') { axis.set(1,0,0); selection = cubies.filter(c => Math.abs(c.position.x) < tol); }
+                        else { axis.set(0,0,1); selection = cubies.filter(c => Math.abs(c.position.z) < tol); }
+                    }
+                } else {
+                    if (ring.includes(face)) realFace = ring[(ring.indexOf(face) + viewIndex) % 4];
+                    switch(realFace) {
+                        case 'R': axis.set(1,0,0); selection = cubies.filter(c => Math.abs(c.position.x - pos) < tol); break;
+                        case 'L': axis.set(1,0,0); angle = -angle; selection = cubies.filter(c => Math.abs(c.position.x + pos) < tol); break;
+                        case 'U': axis.set(0,1,0); selection = cubies.filter(c => Math.abs(c.position.y - pos) < tol); break;
+                        case 'D': axis.set(0,1,0); angle = -angle; selection = cubies.filter(c => Math.abs(c.position.y + pos) < tol); break;
+                        case 'F': axis.set(0,0,1); selection = cubies.filter(c => Math.abs(c.position.z - pos) < tol); break;
+                        case 'B': axis.set(0,0,1); angle = -angle; selection = cubies.filter(c => Math.abs(c.position.z + pos) < tol); break;
+                    }
+                }
+                if (selection.length === 0) { isAnimating = false; this.processQueue(); return; }
+                this.performRotation(axis, selection, angle);
+            },
+            performRotation: function(axis, selection, angle) {
+                pivot.rotation.set(0,0,0); pivot.updateMatrixWorld();
+                selection.forEach(cube => pivot.attach(cube));
+                let progress = 0;
+                const speed = window.isMechanicalSolving ? 0.25 : 0.15;
+                const anim = () => {
+                    if (progress < 1) {
+                        progress += speed; if (progress > 1) progress = 1;
+                        const e = 1 - Math.pow(1 - progress, 3);
+                        if(axis.x) pivot.rotation.x = angle * e; 
+                        if(axis.y) pivot.rotation.y = angle * e; 
+                        if(axis.z) pivot.rotation.z = angle * e;
+                        requestAnimationFrame(anim);
+                    } else {
+                        pivot.updateMatrixWorld();
+                        selection.forEach(c => {
+                            scene.attach(c);
+                            const snap = (v) => Math.round(v / 1.04) * 1.04;
+                            c.position.set(snap(c.position.x), snap(c.position.y), snap(c.position.z));
+                            c.quaternion.setFromRotationMatrix(new THREE.Matrix4().extractRotation(c.matrixWorld));
+                        });
+                        pivot.rotation.set(0,0,0); isAnimating = false; this.processQueue();
+                    }
+                };
+                anim();
+            },
+            mechanicalSolve: function() {
+                if(isAnimating || this.moveHistory.length === 0) {
+                    if (this.moveHistory.length === 0) { resetView(); showStatus("ALREADY ZERO STATE"); setTimeout(() => document.getElementById('status-msg').style.display = 'none', 1000); }
+                    return;
+                }
+                window.isMechanicalSolving = true;
+                showStatus("UNWINDING...");
+                const reverseSequence = [...this.moveHistory].reverse().map(move => {
+                    if (move.includes("-") || move.includes("'")) return move.replace(/-|'/g, "");
+                    else return move + "-";
+                });
+                this.moveHistory = [];
+                reverseSequence.forEach(m => this.moveQueue.push(m));
+                this.processQueue();
+            },
+            scramble: function() {
+                let s = ""; const f = ['R','L','U','D','F','B'], m = ['','-']; 
+                for(let i=0; i<18; i++) s += (f[Math.floor(Math.random()*f.length)] + m[Math.floor(Math.random()*2)] + " ");
+                this.runSequence(s);
+            },
+            reset: function() { window.location.reload(); }
+        };
+
+        function handleResize() {
+            const wrap = document.getElementById('canvas-wrapper');
+            if(!wrap) return;
+            const w = wrap.clientWidth, h = wrap.clientHeight;
+            renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); 
+            radius = w < 1024 ? 20 : 13;
+            baseTargetY = w < 1024 ? -1.5 : 0; 
+            cameraTarget.y = baseTargetY;
+            updateCameraPosition();
+        }
+
+        function updateCameraPosition() {
+            radius = Math.max(5, Math.min(40, radius));
+            phi = Math.max(0.01, Math.min(Math.PI - 0.01, phi));
+            
+            camera.position.set(
+                cameraTarget.x + radius * Math.sin(phi) * Math.sin(theta), 
+                cameraTarget.y + radius * Math.cos(phi), 
+                cameraTarget.z + radius * Math.sin(phi) * Math.cos(theta)
+            );
+            camera.lookAt(cameraTarget);
+
+            const root = document.documentElement;
+            const shiftX = 50 + (theta * 8) % 40 - 20; 
+            const shiftY = 50 + (phi * 8) % 40 - 20;
+            root.style.setProperty('--bg-shift-x', `${shiftX}%`);
+            root.style.setProperty('--bg-shift-y', `${shiftY}%`);
+        }
+
+        function resetView() {
+            const startT = theta, startP = phi, startR = radius, startTime = performance.now(), targetR = window.innerWidth < 1024 ? 20 : 13;
+            const startTarget = cameraTarget.clone();
+            const targetBaseY = window.innerWidth < 1024 ? -1.5 : 0;
+            const anim = (t) => {
+                const f = Math.min(1, (t - startTime) / 800);
+                const e = f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2;
+                theta = startT + (0.6 - startT) * e; phi = startP + (1.2 - startP) * e; radius = startR + (targetR - startR) * e;
+                cameraTarget.lerpVectors(startTarget, new THREE.Vector3(0, targetBaseY, 0), e);
+                updateCameraPosition(); if (f < 1) requestAnimationFrame(anim);
+            };
+            requestAnimationFrame(anim);
+        }
+
+        function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+
+        const canvasWrap = document.getElementById('canvas-wrapper');
+        let isDrag = false, isPanning = false, isSpaceDown = false, prevM = { x: 0, y: 0 };
+        let pinchDist = 0, lastTouchMid = { x: 0, y: 0 };
+
+        window.addEventListener('keydown', e => { if(e.code === 'Space') isSpaceDown = true; });
+        window.addEventListener('keyup', e => { if(e.code === 'Space') isSpaceDown = false; });
+
+        canvasWrap.addEventListener('mousedown', e => { 
+            if(e.target.closest('#twist-controls') || e.target.closest('#top-controls') || e.target.closest('#interactive-logo')) return;
+            isDrag = true; prevM = { x: e.clientX, y: e.clientY };
+            if(e.button === 2 || isSpaceDown) isPanning = true;
+        });
+        canvasWrap.addEventListener('contextmenu', e => e.preventDefault());
+
+        window.addEventListener('mousemove', e => { 
+            if(!isDrag) return;
+            const dx = e.clientX - prevM.x, dy = e.clientY - prevM.y;
+            prevM = { x: e.clientX, y: e.clientY };
+            if(isPanning) {
+                const rT = theta + Math.PI/2, f = radius * 0.0015;
+                cameraTarget.x += -dx * f * Math.sin(rT); cameraTarget.z += -dx * f * Math.cos(rT); cameraTarget.y += dy * f;
+            } else { theta -= dx * 0.005; phi -= dy * 0.005; }
+            updateCameraPosition(); 
+        });
+        window.addEventListener('mouseup', () => { isDrag = false; isPanning = false; });
+
+        window.addEventListener('wheel', e => {
+            if(e.target.closest('#manual-wrapper') || e.target.closest('#twist-controls')) return;
+            radius += e.deltaY * 0.01; updateCameraPosition();
+        }, { passive: true });
+
+        canvasWrap.addEventListener('touchstart', e => {
+            if(e.target.closest('#twist-controls') || e.target.closest('#top-controls') || e.target.closest('#interactive-logo')) return;
+            if(e.touches.length === 2) {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                pinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                lastTouchMid = { x: (t1.clientX + t2.clientX)/2, y: (t1.clientY + t2.clientY)/2 };
+                isDrag = false; 
+            } else { 
+                isDrag = true; 
+                prevM = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', e => {
+            if(e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                const cx = (t1.clientX + t2.clientX)/2, cy = (t1.clientY + t2.clientY)/2;
+                
+                if (pinchDist > 0) radius -= (d - pinchDist) * 0.05;
+                
+                const dx = cx - lastTouchMid.x;
+                const dy = cy - lastTouchMid.y;
+                const rT = theta + Math.PI/2, f = radius * 0.002;
+                cameraTarget.x += -dx * f * Math.sin(rT);
+                cameraTarget.z += -dx * f * Math.cos(rT);
+                cameraTarget.y += dy * f;
+                
+                pinchDist = d;
+                lastTouchMid = { x: cx, y: cy };
+                updateCameraPosition();
+            } else if(isDrag) {
+                const dx = e.touches[0].clientX - prevM.x, dy = e.touches[0].clientY - prevM.y;
+                theta -= dx * 0.005; phi -= dy * 0.005; prevM = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                updateCameraPosition();
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', () => { isDrag = false; pinchDist = 0; });
+
+        const drawerHeader = document.getElementById('drawer-header'), manualWrapper = document.getElementById('manual-wrapper'), twistControls = document.getElementById('twist-controls');
+        let isDraggingDrawer = false, drawerStartY = 0, drawerStartHeight = 0;
+        if (drawerHeader) {
+            drawerHeader.addEventListener('touchstart', (e) => {
+                if (window.innerWidth >= 1024) return;
+                isDraggingDrawer = true; drawerStartY = e.touches[0].clientY; drawerStartHeight = manualWrapper.offsetHeight;
+                manualWrapper.style.transition = 'none'; twistControls.style.transition = 'none';
+            }, { passive: false });
+            window.addEventListener('touchmove', (e) => {
+                if (!isDraggingDrawer) return;
+                const deltaY = drawerStartY - e.touches[0].clientY, newH = Math.max(90, Math.min(window.innerHeight * 0.95, drawerStartHeight + deltaY));
+                manualWrapper.style.height = `${newH}px`; 
+                twistControls.style.bottom = `${newH + 10}px`;
+            }, { passive: false });
+            window.addEventListener('touchend', () => {
+                if (!isDraggingDrawer) return;
+                isDraggingDrawer = false; manualWrapper.style.transition = twistControls.style.transition = 'height 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), bottom 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)';
+                const currentH = manualWrapper.offsetHeight, screenH = window.innerHeight;
+                if (currentH > screenH * 0.6) { manualWrapper.style.height = '92vh'; twistControls.style.bottom = '93vh'; }
+                else if (currentH > screenH * 0.2) { manualWrapper.style.height = '50vh'; twistControls.style.bottom = '51vh'; }
+                else { manualWrapper.style.height = '90px'; twistControls.style.bottom = '120px'; }
+            });
+        }
+
+        const cDiv = document.getElementById('twist-controls');
+        const cHandles = document.querySelectorAll('.twist-drag-handle');
+        let isDragC = false, cOff = { x: 0, y: 0 };
+        
+        function sD(cX, cY) { 
+            isDragC = true; 
+            const r = cDiv.getBoundingClientRect(); 
+            cDiv.style.left = r.left + (r.width/2) + 'px'; 
+            cDiv.style.top = r.top + (r.height/2) + 'px'; 
+            cDiv.style.bottom = 'auto'; 
+            cDiv.style.transform = 'translate(-50%, -50%)'; 
+            cOff = { x: cX - r.left, y: cY - r.top }; 
+        }
+        
+        function mD(cX, cY) { 
+            if (isDragC) { 
+                cDiv.style.left = (cX - cOff.x + cDiv.offsetWidth/2) + 'px'; 
+                cDiv.style.top = (cY - cOff.y + cDiv.offsetHeight/2) + 'px'; 
+            } 
+        }
+
+        cHandles.forEach(h => {
+            h.addEventListener('mousedown', e => sD(e.clientX, e.clientY));
+            h.addEventListener('touchstart', e => { e.preventDefault(); sD(e.touches[0].clientX, e.touches[0].clientY); });
+        });
+
+        window.addEventListener('mousemove', e => mD(e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => isDragC = false);
+        window.addEventListener('touchmove', e => mD(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchend', () => isDragC = false);
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('load', () => { 
+            manual.init(); setTimeout(() => { handleResize(); window.dispatchEvent(new Event('resize')); }, 200);
+            document.getElementById('loading').style.display = 'none'; 
+            (function anim() { requestAnimationFrame(anim); renderer.render(scene, camera); })(); 
+        });
+    </script>
+</body>
+</html>

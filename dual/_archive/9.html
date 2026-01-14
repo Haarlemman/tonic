@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWIN CITY | The Upper and Nether Worlds</title>
+    <style>
+        :root {
+            /* High-Key Daylight */
+            --sky-day: #ffffff;
+            --sky-night: #000000;
+            --mondrian-red: #9e0000;
+            --mondrian-yellow: #f1c40f;
+            --mondrian-blue: #2980b9;
+        }
+
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: #000;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        /* Responsive Background Layer */
+        #bg-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--sky-day);
+            z-index: -1;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #canvas-container { width: 100%; height: 100%; display: block; }
+
+        #hud {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            color: #000;
+            pointer-events: none;
+            z-index: 10;
+            transition: color 0.5s ease;
+        }
+
+        h1 { 
+            font-size: 1.5rem; 
+            font-weight: 900; 
+            letter-spacing: 12px; 
+            text-transform: uppercase; 
+            margin: 0;
+            border-left: 6px solid #600000;
+            padding-left: 20px;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            letter-spacing: 5px;
+            color: #444;
+            margin-top: 10px;
+            padding-left: 26px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .label {
+            position: absolute;
+            color: white;
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            backdrop-filter: blur(4px);
+            border-radius: 2px;
+        }
+
+        #popup {
+            position: absolute;
+            display: none;
+            background: #fff;
+            border: 4px solid #000;
+            padding: 20px;
+            color: #000;
+            font-size: 12px;
+            width: 220px;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            color: rgba(0,0,0,0.4);
+            font-size: 10px;
+            letter-spacing: 2px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bg-layer"></div>
+
+    <div id="hud">
+        <h1>Twin City</h1>
+        <div class="subtitle" id="side-indicator">Upper & Nether World</div>
+    </div>
+
+    <div id="popup">
+        <strong id="p-title" style="display:block; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 5px;"></strong>
+        <span id="p-desc" style="color: #333; display: block; margin-bottom: 12px; line-height: 1.5; font-weight: 600;"></span>
+        <div style="font-size: 9px; color: #000; letter-spacing: 2px; font-weight: 900; background: #eee; padding: 4px; text-align: center;">[ ACCESSING PROXY ]</div>
+    </div>
+
+    <div class="controls" id="control-hint">
+        DRAG: ORBIT (NO LIMITS) • RIGHT-DRAG: PAN • SCROLL: ZOOM
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let ambientLight, sun;
+        let interactiveObjects = [];
+        let labels = [];
+        let chaosTrails = [];
+        let roadRings = [];
+
+        const WORLD_DATA = [
+            { id: 'art', side: 'top', name: 'Art', title: 'The Vault', desc: 'A deep crimson containment of aesthetic resonance.', color: 0x600000, x: 0, z: 0 },
+            { id: 'science', side: 'top', name: 'Science', title: 'The Automaton', desc: 'A static robotic sentinel observing mathematical laws.', color: 0x4a4a55, x: 8, z: -8 },
+            { id: 'spirit', side: 'top', name: 'Spirit', title: 'The Beam', desc: 'A singular bridge dissolving into the white sky.', color: 0xffcc00, x: -8, z: 8 },
+            
+            { id: 'trauma', side: 'bottom', name: 'Trauma', title: 'Submerged Root', desc: 'The anchors of submerged choice and pain.', color: 0x5d3fd3, x: 0, z: 0 },
+            { id: 'identity', side: 'bottom', name: 'Identity', title: 'Mirror Hall', desc: 'Fragmented echoes of the perceived self.', color: 0x2c3e50, x: 8, z: -8 },
+            { id: 'control', side: 'bottom', name: 'Control', title: 'Iron Pillar', desc: 'Rigid prevention of systemic collapse.', color: 0x111111, x: -8, z: 8 }
+        ];
+
+        window.onload = init;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xffffff, 50, 600);
+
+            // Technical/Isometric view settings
+            camera = new THREE.PerspectiveCamera(25, window.innerWidth / window.innerHeight, 1, 5000);
+            camera.position.set(220, 180, 220);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            // Fully unlock vertical rotation
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI;
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
+            
+            sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(60, 200, 60);
+            sun.castShadow = true;
+            scene.add(sun);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            buildWorld();
+
+            window.addEventListener('resize', onResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onClick);
+
+            animate();
+        }
+
+        function buildWorld() {
+            const gridSize = 20;
+            const spacing = 2.6;
+            const offset = (gridSize * spacing) / 2;
+
+            // Architecture Grey (Darkened for contrast)
+            const topBlockMat = new THREE.MeshStandardMaterial({ color: 0x4a4a55, roughness: 0.4 });
+            const botBlockMat = new THREE.MeshStandardMaterial({ color: 0x0a0a1a, roughness: 0.9 });
+
+            for (let x = 0; x < gridSize; x++) {
+                for (let z = 0; z < gridSize; z++) {
+                    const px = x * spacing - offset;
+                    const pz = z * spacing - offset;
+
+                    const isReserved = WORLD_DATA.some(d => Math.abs(d.x - px/spacing) < 0.6 && Math.abs(d.z - pz/spacing) < 0.6);
+                    if (isReserved) continue;
+
+                    // UPPER WORLD
+                    const hTop = 1 + Math.random() * 8;
+                    const topBlock = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1, 1.8), topBlockMat);
+                    topBlock.scale.set(1, hTop, 1);
+                    topBlock.position.set(px, hTop / 2 + 0.1, pz);
+                    topBlock.castShadow = true;
+                    topBlock.receiveShadow = true;
+                    scene.add(topBlock);
+
+                    // NETHER WORLD
+                    const hBot = 1 + Math.random() * 10;
+                    const botBlock = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1, 1.8), botBlockMat);
+                    botBlock.scale.set(1, hBot, 1);
+                    botBlock.position.set(px, -(hBot / 2 + 0.1), pz);
+                    scene.add(botBlock);
+
+                    if (x % 5 === 0 && z % 5 === 0) createStreetlight(px + 1.2, pz + 1.2);
+                }
+            }
+
+            WORLD_DATA.forEach(d => createSpecial(d));
+
+            // THE AVENUE (CONCENTRIC RINGS)
+            const radii = [offset + 12, offset + 18];
+            const mondrianColors = [0xd63031, 0xfeca57, 0x0984e3]; 
+            const tronColors = [0x00f2ff, 0xff00ff]; 
+
+            radii.forEach((radius, ringIndex) => {
+                const road = new THREE.Mesh(
+                    new THREE.TorusGeometry(radius, 1.8, 4, 128),
+                    new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1, emissive: 0x000000 })
+                );
+                road.rotation.x = Math.PI / 2;
+                scene.add(road);
+                roadRings.push(road);
+
+                const count = 20;
+                for (let i = 0; i < count; i++) {
+                    // Geometry is aligned with the tangency of the circle (X is wide, Z is direction)
+                    const trail = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 4), new THREE.MeshBasicMaterial());
+                    trail.userData = { 
+                        angle: (i / count) * Math.PI * 2, 
+                        speed: 0.004 + Math.random() * 0.008, 
+                        radius: radius,
+                        ringIndex: ringIndex,
+                        direction: ringIndex === 0 ? 1 : -1, // Opposite directions
+                        dayColor: mondrianColors[i % 3],
+                        nightColor: tronColors[i % 2]
+                    };
+                    scene.add(trail);
+                    chaosTrails.push(trail);
+                }
+            });
+
+            // Horizon Plane
+            const horizon = new THREE.Mesh(
+                new THREE.PlaneGeometry(2000, 2000),
+                new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.4 })
+            );
+            horizon.rotation.x = -Math.PI / 2;
+            scene.add(horizon);
+        }
+
+        function createStreetlight(x, z) {
+            const pole = new THREE.Mesh(new THREE.BoxGeometry(0.12, 45, 0.12), new THREE.MeshStandardMaterial({color: 0x111111}));
+            pole.position.set(x, 0, z);
+            scene.add(pole);
+            const lDay = new THREE.PointLight(0xfff5e6, 2.2, 35);
+            lDay.position.set(x, 15, z);
+            scene.add(lDay);
+            const lNight = new THREE.PointLight(0x00d2ff, 2.8, 35);
+            lNight.position.set(x, -15, z);
+            scene.add(lNight);
+        }
+
+        function createSpecial(data) {
+            const spacing = 2.6;
+            const x = data.x * spacing;
+            const z = data.z * spacing;
+            let mesh;
+
+            if (data.id === 'spirit') {
+                const vertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+                const fragmentShader = `varying vec2 vUv; uniform vec3 color; void main() { float alpha = pow(1.0 - vUv.y, 4.0); gl_FragColor = vec4(color, alpha * 0.95); }`;
+                const shaderMat = new THREE.ShaderMaterial({
+                    uniforms: { color: { value: new THREE.Color(data.color) } },
+                    vertexShader, fragmentShader, transparent: true
+                });
+                mesh = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 200, 32, 1, true), shaderMat);
+                mesh.position.set(x, 100, z);
+            } else if (data.id === 'science') {
+                // STATIC AUTOMATON sentinel
+                mesh = new THREE.Group();
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(2.8, 4, 2), new THREE.MeshStandardMaterial({color: 0x4a4a55}));
+                const head = new THREE.Mesh(new THREE.BoxGeometry(2, 1.6, 2), new THREE.MeshStandardMaterial({color: 0x0984e3}));
+                head.position.y = 3;
+                const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.8), new THREE.MeshStandardMaterial({color: 0x222222}));
+                neck.position.y = 2;
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3.5, 0.8), new THREE.MeshStandardMaterial({color: 0x111111}));
+                legL.position.set(-0.8, -3, 0);
+                const legR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3.5, 0.8), new THREE.MeshStandardMaterial({color: 0x111111}));
+                legR.position.set(0.8, -3, 0);
+                mesh.add(torso, head, neck, legL, legR);
+                mesh.position.set(x, 4.5, z);
+            } else if (data.id === 'art') {
+                // DEEP CRIMSON VAULT
+                mesh = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 14, 32), new THREE.MeshStandardMaterial({color: 0x600000, roughness: 0.2}));
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(3.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color: 0x600000, roughness: 0.2}));
+                dome.position.y = 7;
+                mesh.add(base, dome);
+                mesh.position.set(x, 7, z);
+            } else if (data.id === 'trauma') {
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(8, 40, 8), new THREE.MeshStandardMaterial({color: data.color, emissive: data.color, emissiveIntensity: 0.2}));
+                mesh.position.set(x, -20, z);
+            } else if (data.id === 'identity') {
+                mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(7), new THREE.MeshStandardMaterial({color: data.color, wireframe: true, emissive: data.color, emissiveIntensity: 0.5}));
+                mesh.position.set(x, -10, z);
+            } else if (data.id === 'control') {
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 70, 4), new THREE.MeshStandardMaterial({color: data.color, metalness: 1, roughness: 0.05}));
+                mesh.position.set(x, -35, z);
+            }
+
+            mesh.userData = data;
+            scene.add(mesh);
+            interactiveObjects.push(mesh);
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.innerText = data.name;
+            document.body.appendChild(label);
+            labels.push({ el: label, pos: new THREE.Vector3(x, data.side === 'top' ? 45 : -45, z) });
+        }
+
+        function updateEnvironment() {
+            const factor = camera.position.y >= 0 ? 1 : 0;
+
+            ambientLight.intensity = factor === 1 ? 1.0 : 0.4;
+            sun.intensity = factor === 1 ? 1.6 : 0.2;
+            
+            const skyColor = factor === 1 ? new THREE.Color(0xffffff) : new THREE.Color(0x000000);
+            scene.fog.color.copy(skyColor);
+
+            const bg = document.getElementById('bg-layer');
+            const hud = document.getElementById('hud');
+            
+            if (factor === 1) {
+                bg.style.opacity = 1; // Pure White Day
+                hud.style.color = "#000";
+                roadRings.forEach(r => r.material.emissive.set(0x000000));
+                document.getElementById('side-indicator').innerText = "UPPER WORLD • BOOGIE WOOGIE PULSE";
+            } else {
+                bg.style.opacity = 0; // Black Night
+                hud.style.color = "#fff";
+                roadRings.forEach(r => r.material.emissive.set(0x002244)); // Tron Glow
+                document.getElementById('side-indicator').innerText = "NETHER WORLD • TRON NEON FLOW";
+            }
+
+
+            const popup = document.getElementById('popup');
+            popup.style.background = factor === 1 ? "#fff" : "#000";
+            popup.style.color = factor === 1 ? "#000" : "#fff";
+            popup.style.border = factor === 1 ? "4px solid #000" : "1px solid #00f2ff";
+
+            chaosTrails.forEach(t => {
+                if (factor === 1) {
+                    t.material.color.set(t.userData.dayColor);
+                    t.scale.set(1.8, 1, 1.8);
+                } else {
+                    t.material.color.set(t.userData.nightColor);
+                    t.scale.set(0.2, 1, 12.0); // Ultra thin/long for Tron
+                }
+            });
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            checkRaycast(event);
+        }
+
+        function checkRaycast(event) {
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(interactiveObjects, true);
+            const pop = document.getElementById('popup');
+
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.id) obj = obj.parent;
+                const d = obj.userData;
+                pop.style.display = 'block';
+                pop.style.left = (event.clientX + 20) + 'px';
+                pop.style.top = (event.clientY + 20) + 'px';
+                document.getElementById('p-title').innerText = d.title;
+                document.getElementById('p-title').style.color = (camera.position.y > 0) ? '#' + d.color.toString(16).padStart(6, '0') : "#fff";
+                document.getElementById('p-desc').innerText = d.desc;
+                document.body.style.cursor = 'pointer';
+            } else {
+                pop.style.display = 'none';
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function onClick() {
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(interactiveObjects, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.id) obj = obj.parent;
+                obj.scale.set(1.2, 1.2, 1.2);
+                setTimeout(() => obj.scale.set(1, 1, 1), 200);
+            }
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateEnvironment();
+
+            labels.forEach(l => {
+                const v = l.pos.clone().project(camera);
+                if (v.z > 1) l.el.style.display = 'none';
+                else {
+                    l.el.style.display = 'block';
+                    l.el.style.left = `${(v.x * 0.5 + 0.5) * window.innerWidth}px`;
+                    l.el.style.top = `${(v.y * -0.5 + 0.5) * window.innerHeight}px`;
+                }
+            });
+
+            interactiveObjects.forEach(obj => {
+                const id = obj.userData.id;
+                if (id === 'identity') {
+                    obj.rotation.x += 0.003;
+                    obj.rotation.y += 0.002;
+                }
+                if (id === 'spirit') {
+                    obj.rotation.y += 0.012;
+                }
+            });
+
+            const factor = camera.position.y >= 0 ? 1 : 0;
+            chaosTrails.forEach(t => {
+                // Movement logic: rings go in opposite directions
+                t.userData.angle += t.userData.direction * t.userData.speed;
+                t.position.x = Math.cos(t.userData.angle) * t.userData.radius;
+                t.position.z = Math.sin(t.userData.angle) * t.userData.radius;
+                
+                // Rotation logic: Point exactly along the tangent of the circle
+                t.rotation.y = -t.userData.angle + Math.PI / 2;
+                t.position.y = 0.5;
+            });
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

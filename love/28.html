@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Clouds + Lyrics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Averia+Libre:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lora:ital@1&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020205;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* --- Lyric Overlay Styles --- */
+        #lyrics-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* WRAPPER */
+        .lyric-wrapper {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        /* ANIMATION: "Zooff" In -> Slow Drift -> "Zooff" Out */
+        .lyric-wrapper.animate-fly {
+            /* Total duration 16s */
+            animation: zooffFly 16s linear forwards;
+        }
+
+        /* EXIT STATE (Triggered via JS) */
+        /* The wrapper continues its drift, but we fade it out */
+        .lyric-wrapper.exiting {
+            transition: opacity 1s ease-out;
+            opacity: 0;
+        }
+        
+        /* The Inner Content handles the Scale/Blur exit */
+        .lyric-wrapper.exiting .lyric-content {
+            transform: scale(0.5);
+            filter: blur(10px);
+            transition: transform 1s ease-out, filter 1s ease-out;
+        }
+
+        @keyframes zooffFly {
+            /* 0% - 5%: ZOOFF IN (Fast) */
+            0% {
+                opacity: 0;
+                transform: translate(calc(var(--x-start) - 40vw), var(--y-start)) scale(0.8);
+            }
+            5% {
+                opacity: 1;
+                /* Arrive at "Start Reading" position */
+                transform: translate(calc(var(--x-start)), var(--y-start)) scale(1);
+            }
+
+            /* 5% - 80%: SLOW DRIFT (Reduced end time to allow natural exit phase) */
+            80% {
+                opacity: 1;
+                transform: translate(calc(var(--x-end)), var(--y-end)) scale(1);
+            }
+
+            /* 80% - 100%: ZOOFF OUT (Natural death if not interrupted) */
+            100% {
+                opacity: 0;
+                /* Move further right, scale down, blur */
+                transform: translate(calc(var(--x-end) + 20vw), var(--y-end)) scale(0.5);
+                filter: blur(10px);
+            }
+        }
+
+        /* CONTENT STYLING */
+        .lyric-content {
+            font-family: 'Averia Libre', cursive;
+            font-size: 3.5rem; /* Slightly larger for impact */
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-align: center;
+            
+            /* High Contrast / Difference Mode */
+            color: #ffffff;
+            mix-blend-mode: difference; 
+            
+            /* NO SHADOWS as requested */
+            text-shadow: none;
+            
+            max-width: 90%;
+            padding: 20px;
+            
+            /* Prepare for exit transition */
+            transform: scale(1);
+            filter: blur(0px);
+            will-change: transform, filter;
+        }
+
+        /* Role Colors - Adjusted for Contrast/Difference Mode */
+        /* Note: In 'difference' mode against dark bg, colors invert differently. 
+           Against black, they look like themselves. Against bright clouds, they invert. */
+        
+        /* Indila Roles */
+        .lyric-content.role-sonny { color: #ff8888; } 
+        .lyric-content.role-woman { color: #88ffff; } 
+        .lyric-content.role-alien { color: #ffff88; font-style: italic; }
+        
+        /* Ohtis Roles - Venom Green & Yellow */
+        .lyric-content.role-man { color: #affc41; } /* Venom Green */
+        .lyric-content.role-accuser { color: #ffeb3b; } /* Bright Yellow */
+        
+        .lyric-content.role-both { color: #ffffff; } 
+
+        /* Translation Styles */
+        #translation-container {
+            position: absolute; bottom: 12%; left: 0; width: 100%;
+            z-index: 6; pointer-events: none;
+            display: flex; justify-content: center; text-align: center;
+        }
+        .translation-line {
+            font-family: 'Lora', serif; font-style: italic; font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.9); 
+            mix-blend-mode: difference;
+            max-width: 80%; transition: opacity 0.5s ease; opacity: 0;
+        }
+        .translation-line.visible { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .lyric-content { font-size: 2rem; }
+            .translation-line { font-size: 1rem; bottom: 18%; }
+        }
+
+        /* --- UI Styles --- */
+        #ui-layer {
+            position: absolute; bottom: 20px; right: 20px; left: auto; z-index: 10;
+            display: flex; flex-direction: column; gap: 10px;
+            background: rgba(10, 10, 15, 0.75); 
+            padding: 15px; border-radius: 16px;
+            backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease; width: 320px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        }
+        .ui-header { display: flex; flex-direction: column; gap: 10px; width: 100%; color: rgba(255, 255, 255, 0.8); user-select: none; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 14px; font-weight: 600; }
+        .header-controls-main { display: flex; justify-content: space-between; align-items: center; width: 100%; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 15px; margin-top: 4px; }
+        .player-btn { background: none; border: none; color: white; cursor: pointer; opacity: 0.7; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .player-btn:hover { opacity: 1; transform: scale(1.1); color: #a78bfa; }
+        .player-btn.play-pause { background: rgba(255,255,255,0.1); border-radius: 50%; width: 32px; height: 32px; opacity: 1; }
+        .player-btn.play-pause:hover { background: rgba(255,255,255,0.2); }
+        .window-controls {display: flex; gap: 12px; align-items: center;}
+        .icon-btn {cursor: pointer; transition: color 0.3s ease, transform 0.3s ease; opacity: 0.5;}
+        .icon-btn:hover {color: white; opacity: 1;}
+        .toggle-icon {transition: transform 0.3s ease;}
+        #ui-content { display: flex; flex-direction: column; gap: 12px; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease; max-height: 600px; opacity: 1; }
+        #ui-layer.collapsed #ui-content {max-height: 0; opacity: 0; margin: 0;}
+        #ui-layer.collapsed .header-controls-main { display: none; }
+        #ui-layer.collapsed .toggle-icon {transform: rotate(-180deg);}
+        #ui-layer.collapsed {width: 160px;}
+        
+        .scrub-container { width: 100%; display: flex; align-items: center; gap: 8px; font-size: 10px; color: rgba(255,255,255,0.5); font-family: monospace; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { height: 12px; width: 12px; border-radius: 50%; background: #a78bfa; -webkit-appearance: none; margin-top: -4px; transition: transform 0.1s; }
+        input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+
+        .playlist-container {width: 100%; max-height: 150px; overflow-y: auto; border-radius: 8px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05);}
+        .playlist-container::-webkit-scrollbar {width: 4px;}
+        .playlist-container::-webkit-scrollbar-track {background: rgba(255, 255, 255, 0.02);}
+        .playlist-container::-webkit-scrollbar-thumb {background: rgba(255, 255, 255, 0.15); border-radius: 2px;}
+        .track-item { padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.6); font-size: 12px; cursor: pointer; transition: background 0.2s, color 0.2s; display: flex; align-items: center; gap: 10px; }
+        .track-item:last-child {border-bottom: none;}
+        .track-item:hover {background: rgba(255, 255, 255, 0.1); color: white;}
+        .track-item.active {background: rgba(167, 139, 250, 0.15); color: #a78bfa; font-weight: 600;}
+        .track-num { opacity: 0.4; width: 15px; font-variant-numeric: tabular-nums; }
+        .track-item.active .track-num { opacity: 1; color: #a78bfa; }
+        input[type="file"] {display: none;}
+        .btn {background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; white-space: nowrap; width: 100%; justify-content: center;}
+        .btn:hover {background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3);}
+        .status {color: rgba(255, 255, 255, 0.4); font-size: 10px; text-align: center; letter-spacing: 0.5px; margin-top: 5px;}
+    </style>
+</head>
+<body>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="lyrics-container"></div>
+    <div id="translation-container">
+        <div id="current-translation" class="translation-line"></div>
+    </div>
+
+    <div id="ui-layer">
+        <div class="ui-header">
+            <div class="header-top">
+                <span id="headerTitle" style="cursor: pointer;">PLAYLIST</span>
+                <div class="window-controls">
+                    <svg id="fsBtn" class="icon-btn" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/></svg>
+                    <svg id="collapseBtn" class="icon-btn toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>
+                </div>
+            </div>
+
+            <div class="header-controls-main">
+                <button class="player-btn" id="prevBtn" title="Previous">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.388c0 .63-.692 1.01-1.232.696L5 8.752V12a.5.5 0 0 1-1 0V4zm7.5.633L5.693 8l5.807 3.367V4.633z"/></svg>
+                </button>
+                <button class="player-btn play-pause" id="headerPlayBtn" title="Play/Pause">
+                    <svg id="headerPlayIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+                    <svg id="headerPauseIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg>
+                </button>
+                <button class="player-btn" id="nextBtn" title="Next">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.696L11.5 8.752V12a.5.5 0 0 0 1 0V4zM5 4.633 10.807 8 5 11.367V4.633z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="ui-content">
+            <div class="scrub-container">
+                <span id="currentTime">0:00</span>
+                <input type="range" id="seekBar" value="0" min="0" step="0.1">
+                <span id="totalTime">0:00</span>
+            </div>
+
+            <div class="playlist-container" id="playlist"></div>
+            
+            <div class="controls">
+                <label class="btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+                    Upload File <input type="file" id="fileInput" accept="audio/*">
+                </label>
+            </div>
+            <div class="status" id="statusText">Select a track to begin</div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // --- 1. DATA ---
+        
+        const indilaTranslations = {
+            "L'âme en peine": "A soul in sorrow",
+            "Il vit mais parle à peine": "He lives but barely speaks",
+            "Il attend devant cette photo d'antan": "He waits before that photo of yesteryear",
+            "Il il n'est pas fou": "He is not crazy",
+            "Il y croit, c'est tout": "He believes in it, that's all",
+            "Il la voit partout": "He sees her everywhere",
+            "Il l'attend debout": "He waits for her standing tall",
+            "Une rose à la main": "A rose in his hand",
+            "À part elle, il n'attend rien": "Apart from her, he waits for nothing",
+            "Rien autour": "Nothing around",
+            "N'a de sens et l'air est lourd": "Makes sense, and the air is heavy",
+            "Le regard absent": "The absent gaze",
+            "Il est seul et lui parle souvent": "He is alone and talks to her often",
+            "Oui, il n'est pas fou": "Yes, he is not crazy",
+            "Il l'aime, c'est tout": "He loves her, that's all",
+            "Debout, une rose à la main": "Standing, a rose in his hand",
+            "Non, non, plus rien ne le retient": "No, no, nothing holds him back anymore",
+            "Dans sa love story": "In his love story",
+            "Sa love story": "His love story",
+            "Prends ma main": "Take my hand",
+            "Promets-moi que tout ira bien": "Promise me everything will be fine",
+            "Serre-moi fort": "Hold me tight",
+            "Près de toi, je rêve encore": "Close to you, I still dream",
+            "Oui, oui, je veux rester": "Yes, yes, I want to stay",
+            "Mais je n'sais plus aimer": "But I don't know how to love anymore",
+            "J'ai été trop bête": "I was too foolish",
+            "Je t'en prie, arrête": "Please, stop",
+            "Arrête, comme je regrette": "Stop, how I regret",
+            "Non, je ne voulais pas tout ça": "No, I didn't want all this",
+            "Je serai riche": "I will be rich",
+            "Et je t'offrirai tout mon or": "And I will offer you all my gold",
+            "Si tu t'en fiches": "If you don't care",
+            "Je t'attendrai sur le port": "I will wait for you at the port",
+            "Et si tu m'ignores": "And if you ignore me",
+            "Je t'offrirai mon dernier souffle de vie": "I will offer you my last breath of life",
+            "Une bougie": "A candle",
+            "Peut illuminer la nuit": "Can light up the night",
+            "Un sourire": "A smile",
+            "Peut bâtir tout un empire": "Can build an empire",
+            "Et il y a toi": "And there is you",
+            "Et il y a moi": "And there is me",
+            "Et personne n'y croit": "And no one believes it",
+            "Mais l'amour fait d'un fou un roi": "But love makes a king out of a madman",
+            "J'me battrai encore et encore": "I will fight again and again",
+            "C'est ta love story": "It's your love story",
+            "C'est ta love story": "It's your love story",
+            "C'est l'histoire d'une vie": "It's the story of a life",
+            "Des cris de joie": "Cries of joy",
+            "Quelques larmes, on s'en va": "A few tears, we go away",
+            "On vit dans cette love story": "We live in this love story"
+        };
+
+        const indilaLyricsRaw = `[00:15.55] L'âme en peine
+[00:19.40] Il vit mais parle à peine
+[00:23.04] Il attend devant cette photo d'antan
+[00:26.48] Il il n'est pas fou
+[00:30.31] Il y croit, c'est tout
+[00:31.60] Il la voit partout
+[00:36.30] Il l'attend debout
+[00:38.06] Une rose à la main
+[00:39.80] À part elle, il n'attend rien
+[00:42.21] Rien autour
+[00:48.27] N'a de sens et l'air est lourd
+[00:52.40] Le regard absent
+[00:55.78] Il est seul et lui parle souvent
+[00:59.83] Oui, il n'est pas fou
+[01:02.38] Il l'aime, c'est tout
+[01:04.18] Il la voit partout
+[01:06.07] Il l'attend debout
+[01:07.76] Debout, une rose à la main
+[01:09.67] Non, non, plus rien ne le retient
+[01:13.94] Dans sa love story
+[01:17.79] Dans sa love story
+[01:21.57] Dans sa love story
+[01:25.86] Sa love story
+[01:30.46] Prends ma main
+[01:33.27] Promets-moi que tout ira bien
+[01:37.93] Serre-moi fort
+[01:40.81] Près de toi, je rêve encore
+[01:44.67] Oui, oui, je veux rester
+[01:47.16] Mais je n'sais plus aimer
+[01:49.07] J'ai été trop bête
+[01:51.01] Je t'en prie, arrête
+[01:53.03] Arrête, comme je regrette
+[01:54.75] Non, je ne voulais pas tout ça
+[01:56.81] Je serai riche
+[02:01.04] Et je t'offrirai tout mon or
+[02:04.93] Si tu t'en fiches
+[02:06.71] Je t'attendrai sur le port
+[02:08.71] Et si tu m'ignores
+[02:10.44] Je t'offrirai mon dernier souffle de vie
+[02:15.68] Dans ma love story
+[02:17.77] Dans ma love story
+[02:21.59] Dans ma love story
+[02:25.93] Ma love story
+[02:30.56] Une bougie
+[02:33.62] Peut illuminer la nuit
+[02:37.99] Un sourire
+[02:40.86] Peut bâtir tout un empire
+[02:44.84] Et il y a toi
+[02:47.38] Et il y a moi
+[02:49.62] Et personne n'y croit
+[02:51.12] Mais l'amour fait d'un fou un roi
+[02:53.77] Et si tu m'ignores
+[02:55.28] J'me battrai encore et encore
+[02:59.31] C'est ta love story
+[03:02.99] C'est ta love story
+[03:06.89] C'est l'histoire d'une vie
+[03:11.36] Love story
+[04:15.74] Des cris de joie
+[04:19.49] Quelques larmes, on s'en va
+[04:23.42] On vit dans cette love story
+[04:30.61] Love story`;
+
+        const sonnyLyricsRaw = `
+[00:08.83] <S> Well, something happened..."
+[00:14.76] <W> "What′s that, Sonny?"
+[00:17.91] <S> "I fell in love"
+[00:20.09] <W> "Oh yeah?"
+[00:21.89] <S> "But it was weird... Really weird"
+[00:27.95] <W> "Good weird, or bad weird?"
+[00:38.05] <S> "I don't know, I guess I really... just don′t know"
+[00:44.96] <S> It was a brief encounter
+[00:47.13] <S> On an unknown planet
+[00:49.43] <S> A strange being, standing all alone
+[00:53.11] <S> "Wanna fix my ship? Would you like to hit The Void?"
+[00:56.71] <A> "Oh is this your ship, this little space toy?"
+[00:59.63] <S> "Oh a spaceling with humor, my favorite kind!"
+[01:03.63] <S> But when I look closer, she's sad inside
+[01:07.01] <S> Oh my android, she sheds real tears, she's weird
+[01:12.96] <S> I think I love you, dear
+[01:29.14] <S> "Well I don′t have to tell you just how great she was"
+[01:32.50] <W> "No... you don′t"
+[01:34.02] <S> "She was amazing! So intelligent, so beautiful--"
+[01:36.72] <W> "Crazy--"
+[01:37.89] <S> "Fun, all those things. But she was married, to some cyborg type"
+[01:43.64] <A> ~!@$%^&&*(()).,&
+[01:47.53] <S> I tried to steal her away
+[01:49.78] <S> And we were on the run
+[01:51.75] <S> her cyborg husband followed with his gun
+[01:55.21] <S> he shot her, he shot her, she bled green blood
+[01:58.87] <S> I cried "Oh, can't I have a normal love?"
+[02:47.57] <W> "What happened?"
+[02:51.23] <S> "She lived... And I really tried, you know...
+[02:57.40] <S> We tried to make a life.
+[02:59.74] <S> But we were so different,
+[03:01.38] <S> such different types.
+[03:02.92] <S> We had to break it off,
+[03:05.43] <S> but I′m still messed up."
+[03:07.52] <A> "Did she go back to her husband?"
+[03:10.22] <S> "I don't know what happened to her,
+[03:13.16] <S> I don′t even know.
+[03:15.72] <S> But I miss her, you know?
+[03:19.29] <S> I really miss her...
+[03:22.94] <S> I really do!"
+[03:56.28] <S> My antennas, went deep into the afterworld
+[04:02.69] <S> And I looked for her
+[04:05.66] <S> And the light was quiet
+[04:08.25] <S> Luminous
+[04:10.32] <S> Star gleams
+[04:12.40] <S> Comet trails`;
+
+        const schatzeLyricsRaw = `
+[00:26.34] <M> I do, do what I please
+[00:29.33] <M> It's my schatze it's my treasure
+[00:32.88] <M> It's not difficult I do it with ease
+[00:36.21] <W> fuck you very much sir
+[00:38.11] <M> It's my pleasure
+[00:40.29] <M> I do, do what I please
+[00:43.19] <M> I'm a piece of shit, I just think I'll get away with it
+[00:46.90] <M> It's not difficult I do it with ease
+[00:49.91] <W> fuck you very much sir
+[00:52.09] <M> Absolutely
+[00:58.09] <W> You've been playing that same goddamn video game
+[01:06.91] <W> For 27 nights and 28 days
+[01:13.74] <W> Grow the fuck up dude, what the fuck
+[01:20.81] <W> You had to get clean, you were getting drunk and being mean
+[01:29.55] <W> Going to the bar and causing a scene
+[01:36.08] <W> But you haven't changed much dude you still suck
+[01:40.24] <M> I do, do what I please
+[01:43.20] <M> It's my schatze it's my treasure
+[01:46.69] <M> It's not difficult I do it with ease
+[01:50.21] <W> fuck you very much sir
+[01:52.29] <M> It's my pleasure
+[01:54.19] <M> I do, do what I please
+[01:57.21] <M> I'm a piece of shit, I just think I'll get away with it
+[02:00.75] <M> It's not difficult I do it with ease
+[02:04.12] <W> fuck you very much sir
+[02:06.01] <M> Absolutely
+[02:21.84] <W> You were fucking around anybody that you found
+[02:30.46] <W> Then you got canceled on Instagram
+[02:37.44] <W> Now you're hiding out in my house, get the fuck out
+[02:41.30] <M> I do
+[02:42.43] <W> yeah you do
+[02:43.14] <M> do what I please
+[02:44.08] <W> good for you
+[02:44.82] <M> It's my schatze
+[02:45.64] <W> what the fuck
+[02:47.26] <M> It's my treasure
+[02:48.49] <W> does that even mean
+[02:49.42] <M> It's not difficult
+[02:50.28] <W> obviously not
+[02:51.88] <M> I do it with ease
+[02:52.60] <W> fuck you very much sir
+[02:53.40] <M> It's my pleasure
+[02:55.19] <M> I do
+[02:56.13] <W> yeah you do
+[02:57.15] <M> do what I please
+[02:58.65] <W> don't you
+[02:59.24] <M> I'm a piece of shit
+[02:59.95] <W> Yeah you are
+[03:00.61] <M> I just think I'll get away with it
+[03:02.24] <W> no you won't
+[03:03.28] <M> It's not difficult
+[03:04.06] <W> obviously not
+[03:05.05] <M> I do it with ease
+[03:05.93] <W> fuck you very much sir
+[03:10.61] <M> Absolutely`;
+
+        // --- 2. SETUP ---
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // UI & WAKE LOCK
+        const uiLayer = document.getElementById('ui-layer');
+        const collapseBtn = document.getElementById('collapseBtn');
+        const headerTitle = document.getElementById('headerTitle');
+        const fsBtn = document.getElementById('fsBtn');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        const translationLineEl = document.getElementById('current-translation');
+        
+        let wakeLock = null;
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) { console.error(err); }
+            }
+        }
+
+        function toggleCollapse() { uiLayer.classList.toggle('collapsed'); }
+        collapseBtn.addEventListener('click', toggleCollapse);
+        headerTitle.addEventListener('click', toggleCollapse);
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+        fsBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
+        function enterFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); }
+
+        // --- 3. AUDIO PLAYER LOGIC ---
+        const audioPlayer = document.getElementById('audioPlayer');
+        const fileInput = document.getElementById('fileInput');
+        const statusText = document.getElementById('statusText');
+        const playlistContainer = document.getElementById('playlist');
+        
+        // Controls
+        const headerPlayBtn = document.getElementById('headerPlayBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const headerPlayIcon = document.getElementById('headerPlayIcon');
+        const headerPauseIcon = document.getElementById('headerPauseIcon');
+        
+        // Scrubbing
+        const seekBar = document.getElementById('seekBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+
+        let audioContext, analyser, source, gainNode;
+        let dataArray;
+        let isPlaying = false;
+        let isDragging = false; 
+        
+        let currentLyrics = []; 
+        let currentTranslationMap = {};
+        let currentTrackTitle = ""; 
+        let activeLyricIndex = -1;
+        let translationTimeout = null;
+        let selectedTrackIndex = -1;
+        
+        // Helper to avoid stacking lines in same spot
+        let lastYPos = 0;
+
+        // Theme Data for Colors
+        const playlistData = [
+            { 
+                title: "Indila - Love Story", 
+                src: "/music/Indila-LoveStory.mp3", 
+                lyricsRaw: indilaLyricsRaw,
+                translations: indilaTranslations,
+                // Soft Blue & Pink
+                theme: { primary: [50, 50, 200], secondary: [200, 50, 150] } 
+            },
+            {
+                title: "Sonny & The Sunsets - Green Blood",
+                src: "/music/GreenBlood.mp3", 
+                lyricsRaw: sonnyLyricsRaw,
+                eqProfile: "sonny",
+                // Green & Orange
+                theme: { primary: [30, 180, 50], secondary: [255, 140, 0] }
+            },
+            { 
+                title: "Schatze - Ohtis", 
+                src: "/music/Schatze-Ohtis.mp3", 
+                lyricsRaw: schatzeLyricsRaw,
+                // Red & Black/Dark Blue
+                theme: { primary: [200, 20, 20], secondary: [10, 10, 50] }
+            },
+            { 
+                title: "Babyyy - Grace Ives", 
+                src: "/music/Babyyy-GraceIves.mp3",
+                theme: { primary: [255, 100, 200], secondary: [100, 200, 255] }
+            },
+            { 
+                title: "Spring Is Coming", 
+                src: "/music/SpringIsComing.mp3",
+                theme: { primary: [100, 255, 100], secondary: [255, 255, 100] }
+            },
+            { 
+                title: "Evening Breeze", 
+                src: "/music/EveningBreeze.mp3",
+                theme: { primary: [20, 20, 80], secondary: [100, 50, 200] }
+            },
+            { 
+                title: "Ghost - Parekh & Singh", 
+                src: "/music/Parekh-singh-ghost.mp3",
+                // UPDATED: Vibrant Mustard Yellow & Bright Cyan
+                theme: { primary: [255, 200, 20], secondary: [0, 190, 230] }
+            },
+            { 
+                title: "Like the Sun - Tanukichan", 
+                src: "/music/LiketheSun-Tanukichan.mp3",
+                theme: { primary: [255, 200, 50], secondary: [255, 100, 50] }
+            },
+            { 
+                title: "Bigger - Fazerdaze", 
+                src: "/music/BiggerFazerdaze.mp3",
+                theme: { primary: [50, 200, 200], secondary: [200, 50, 100] }
+            },
+            { 
+                title: "Cloud Duet - Paradox Prime", 
+                src: "/music/cloudduet.mp3",
+                theme: { primary: [150, 150, 255], secondary: [200, 200, 255] }
+            },
+        ];
+
+        // Global Palette for Particles
+        let currentPalette = { primary: [20, 30, 180], secondary: [200, 30, 50] };
+
+        function parseLRC(lrcText) {
+            if (!lrcText) return [];
+            const lines = lrcText.split('\n');
+            const parsed = lines.map(line => {
+                const match = line.match(/\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/);
+                if (match) {
+                    const min = parseInt(match[1], 10);
+                    const sec = parseInt(match[2], 10);
+                    const ms = match[3] ? parseInt(match[3], 10) : 0;
+                    let text = match[4].trim();
+                    const msInSeconds = (match[3] && match[3].length === 3) ? ms / 1000 : ms / 100;
+                    
+                    let role = 'default';
+                    if (text.startsWith('<S>')) { role = 'sonny'; text = text.substring(3).trim(); }
+                    else if (text.startsWith('<W>') && !text.includes('schatze')) { role = 'woman'; text = text.substring(3).trim(); }
+                    else if (text.startsWith('<A>')) { role = 'alien'; text = text.substring(3).trim(); }
+                    else if (text.startsWith('<M>')) { role = 'man'; text = text.substring(3).trim(); }
+                    else if (text.startsWith('<W>')) { role = 'accuser'; text = text.substring(3).trim(); }
+                    else if (text.startsWith('<B>')) { role = 'both'; text = text.substring(3).trim(); }
+                    
+                    return { time: min * 60 + sec + msInSeconds, text: text, role: role };
+                }
+                return null;
+            }).filter(item => item !== null).sort((a, b) => a.time - b.time);
+            return parsed;
+        }
+
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            playlistData.forEach((track, index) => {
+                const div = document.createElement('div');
+                div.className = 'track-item';
+                div.innerHTML = `
+                    <span class="track-num">${index + 1}</span>
+                    <span>${track.title}</span>
+                `;
+                div.addEventListener('click', () => loadTrack(index));
+                playlistContainer.appendChild(div);
+            });
+        }
+
+        function updatePlayIcon(playing) {
+            if (playing) {
+                headerPlayIcon.style.display = 'none';
+                headerPauseIcon.style.display = 'block';
+            } else {
+                headerPlayIcon.style.display = 'block';
+                headerPauseIcon.style.display = 'none';
+            }
+        }
+
+        function updateCloudTheme(theme) {
+            if(theme) {
+                currentPalette.primary = theme.primary;
+                currentPalette.secondary = theme.secondary;
+                particles.forEach(p => p.init(true, true));
+            }
+        }
+
+        function loadTrack(index) {
+            if(index < 0 || index >= playlistData.length) return;
+
+            selectedTrackIndex = index;
+            const track = playlistData[index];
+            document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            if(playlistContainer.children[index]) playlistContainer.children[index].classList.add('active');
+
+            audioPlayer.src = track.src;
+            statusText.textContent = `Loading: ${track.title}`;
+            statusText.style.color = "#a78bfa";
+            
+            currentTrackTitle = track.title;
+            
+            if (gainNode) {
+                if(track.eqProfile === "sonny") gainNode.gain.value = 0.85; 
+                else gainNode.gain.value = 1.0;
+            }
+
+            // Update Colors
+            updateCloudTheme(track.theme);
+
+            // Reset UI
+            currentLyrics = [];
+            currentTranslationMap = {};
+            activeLyricIndex = -1;
+            lyricsContainer.innerHTML = ''; 
+            if (translationTimeout) clearTimeout(translationTimeout);
+            translationLineEl.textContent = '';
+            translationLineEl.classList.remove('visible');
+            
+            if (track.lyricsRaw) {
+                currentLyrics = parseLRC(track.lyricsRaw);
+                if(track.translations) currentTranslationMap = track.translations;
+            }
+            
+            if (audioContext) { 
+                enterFullscreen(); 
+                togglePlay(true);
+            }
+        }
+
+        renderPlaylist();
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; 
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                gainNode = audioContext.createGain();
+                source.connect(gainNode);
+                gainNode.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        function togglePlay(forcePlay = false) {
+            initAudio();
+            requestWakeLock();
+            if (audioContext.state === 'suspended') audioContext.resume();
+
+            if (audioPlayer.paused || forcePlay) {
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        updatePlayIcon(true);
+                        statusText.textContent = "Flowing...";
+                        isPlaying = true;
+                    }).catch(error => { 
+                        console.log("Playback failed:", error); 
+                        statusText.textContent = "Error or Waiting for interaction.";
+                    });
+                }
+            } else {
+                audioPlayer.pause();
+                updatePlayIcon(false);
+                statusText.textContent = "Paused";
+                isPlaying = false;
+            }
+        }
+
+        // --- BUTTON LISTENERS ---
+        headerPlayBtn.addEventListener('click', () => togglePlay());
+        
+        prevBtn.addEventListener('click', () => {
+            if(selectedTrackIndex > 0) loadTrack(selectedTrackIndex - 1);
+            else loadTrack(playlistData.length - 1); // loop to end
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if(selectedTrackIndex < playlistData.length - 1) loadTrack(selectedTrackIndex + 1);
+            else loadTrack(0); // loop to start
+        });
+
+        // --- SCRUB BAR LOGIC ---
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            seekBar.max = audioPlayer.duration;
+            totalTimeEl.textContent = formatTime(audioPlayer.duration);
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (!isDragging) {
+                seekBar.value = audioPlayer.currentTime;
+                currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+            }
+            updateLyrics();
+        });
+
+        seekBar.addEventListener('input', () => {
+            isDragging = true;
+            currentTimeEl.textContent = formatTime(seekBar.value);
+        });
+
+        seekBar.addEventListener('change', () => {
+            isDragging = false;
+            audioPlayer.currentTime = seekBar.value;
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            isPlaying = false;
+            lyricsContainer.innerHTML = '';
+            if(selectedTrackIndex < playlistData.length - 1) {
+                loadTrack(selectedTrackIndex + 1);
+            } else {
+                updatePlayIcon(false);
+                statusText.textContent = "Playlist Finished";
+            }
+        });
+
+        // --- 4. LYRIC ANIMATION LOGIC ---
+        function updateLyrics() {
+            if (!isPlaying || currentLyrics.length === 0) return;
+
+            const now = audioPlayer.currentTime;
+            
+            // Lookahead
+            const LYRIC_LOOKAHEAD = 2.2;
+            
+            let newIndex = -1;
+            for (let i = 0; i < currentLyrics.length; i++) {
+                if (currentLyrics[i].time <= now + LYRIC_LOOKAHEAD) {
+                    newIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (newIndex !== -1 && newIndex !== activeLyricIndex) {
+                
+                // Standard fade out for all songs now
+                const oldWrapper = document.querySelector('.lyric-wrapper:not(.exiting)');
+                if (oldWrapper) {
+                    oldWrapper.classList.add('exiting');
+                    // Allow 1 second for the CSS transition to complete before DOM removal
+                    setTimeout(() => oldWrapper.remove(), 1000); 
+                }
+
+                const lyricData = currentLyrics[newIndex];
+                const text = lyricData.text;
+                const role = lyricData.role;
+
+                if(text) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'lyric-wrapper animate-fly'; 
+                    
+                    const content = document.createElement('div');
+                    content.className = `lyric-content role-${role}`;
+                    content.textContent = text;
+                    wrapper.appendChild(content);
+                    
+                    // Simple Diagonal or Random Start
+                    if (currentTrackTitle.includes("Green Blood")) {
+                        const startX = (Math.random() < 0.5 ? -1 : 1) * (45 + Math.random() * 10);
+                        const startY = (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 10);
+                        wrapper.style.setProperty('--x-start', `${startX}vw`);
+                        wrapper.style.setProperty('--y-start', `${startY}vh`);
+                        wrapper.style.setProperty('--x-end', `${-startX * 2}vw`); 
+                        wrapper.style.setProperty('--y-end', `${-startY * 2}vh`);
+                    } else {
+                        // Diagonal Fly-Through with increased separation
+                        const offsetY = (newIndex % 2 === 0) ? -15 : 15; 
+                        
+                        wrapper.style.setProperty('--x-start', `-10vw`);
+                        wrapper.style.setProperty('--y-start', `${-10 + offsetY}vh`);
+                        wrapper.style.setProperty('--x-end', `110vw`); 
+                        wrapper.style.setProperty('--y-end', `${20 + offsetY}vh`);
+                    }
+
+                    lyricsContainer.appendChild(wrapper);
+                    
+                    const translation = currentTranslationMap[text];
+                    if (translation) {
+                        translationLineEl.classList.remove('visible');
+                        if (translationTimeout) clearTimeout(translationTimeout);
+                        translationTimeout = setTimeout(() => {
+                            translationLineEl.textContent = translation;
+                            translationLineEl.classList.add('visible');
+                        }, 200); 
+                    } else {
+                         translationLineEl.classList.remove('visible');
+                    }
+                }
+                activeLyricIndex = newIndex;
+            }
+        }
+
+        // --- 5. CANVAS ANIMATION ---
+        const targets = { blue: { x: 0, y: 0 }, red: { x: 0, y: 0 } };
+        class Particle {
+            constructor(type, index) {
+                this.type = type; this.index = index; this.seed = Math.random() * 1000; this.init(false);
+            }
+            init(startRandom = false, keepPos = false) {
+                if(!keepPos) {
+                    this.x = Math.random() * width; this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5;
+                }
+
+                if (this.type === 'blue') { 
+                    this.baseSize = 40 + Math.random() * 50; this.mass = 2.0; this.drag = 0.94; 
+                    const [r,g,b] = currentPalette.primary;
+                    const vr = r + (Math.random()*20 - 10);
+                    const vg = g + (Math.random()*20 - 10);
+                    const vb = b + (Math.random()*20 - 10);
+                    this.color = `rgba(${vr}, ${vg}, ${vb}, 0.03)`; 
+                } 
+                else if (this.type === 'red') { 
+                    this.baseSize = 30 + Math.random() * 40; this.mass = 1.5; this.drag = 0.93; 
+                    const [r,g,b] = currentPalette.secondary;
+                    const vr = r + (Math.random()*20 - 10);
+                    const vg = g + (Math.random()*20 - 10);
+                    const vb = b + (Math.random()*20 - 10);
+                    this.color = `rgba(${vr}, ${vg}, ${vb}, 0.03)`; 
+                } 
+                else { 
+                    this.baseSize = Math.random() * 2 + 0.5; this.mass = 1; this.drag = 0.99; this.vx = Math.random() * 0.4 + 0.1; 
+                    this.color = `rgba(255, 220, 100, ${Math.random() * 0.3 + 0.1})`; 
+                }
+                this.size = this.baseSize;
+            }
+            update(bassEnergy, trebleEnergy) {
+                if (this.type === 'dust') { this.x += this.vx; this.y += Math.sin(this.x * 0.01) * 0.2; if (this.x > width) this.x = 0; return; }
+                const time = Date.now() * 0.001;
+                let tX = this.type === 'blue' ? targets.blue.x : targets.red.x;
+                let tY = this.type === 'blue' ? targets.blue.y : targets.red.y;
+                let spread = 150;
+                if (this.type === 'blue') spread += bassEnergy * 0.8; if (this.type === 'red') spread += trebleEnergy * 0.6;
+                const noiseX = Math.sin(this.seed + time * 0.5) + Math.cos(this.index * 0.1 + time * 0.2);
+                const noiseY = Math.cos(this.seed * 0.9 + time * 0.3) + Math.sin(this.index * 0.15 - time * 0.4);
+                const homeX = tX + noiseX * spread * 0.8; const homeY = tY + noiseY * spread * 0.8;
+                let ax = (homeX - this.x) * 0.0008; let ay = (homeY - this.y) * 0.0008;
+                ax += (Math.random() - 0.5) * 0.05; ay += (Math.random() - 0.5) * 0.05;
+                if (this.type === 'blue' && bassEnergy > 30) { const h = (bassEnergy / 255) * 0.2; ax += (Math.random()-0.5)*h; ay += (Math.random()-0.5)*h; }
+                else if (this.type === 'red' && trebleEnergy > 30) { const s = (trebleEnergy / 255) * 0.3; ax += (Math.random()-0.5)*s; ay += (Math.random()-0.5)*s; }
+                if (this.type === 'blue') this.size += ((this.baseSize + bassEnergy * 0.3) - this.size) * 0.1; else this.size = this.baseSize + (trebleEnergy * 0.15);
+                this.vx += ax / this.mass; this.vy += ay / this.mass; this.x += this.vx; this.y += this.vy; this.vx *= this.drag; this.vy *= this.drag;
+            }
+            draw(ctx) { ctx.beginPath(); ctx.fillStyle = this.color; ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+        }
+
+        const particles = [];
+        for (let i = 0; i < 350; i++) particles.push(new Particle('blue', i));
+        for (let i = 0; i < 400; i++) particles.push(new Particle('red', i));
+        for (let i = 0; i < 100; i++) particles.push(new Particle('dust', i));
+
+        function animate() {
+            const time = Date.now() * 0.0003;
+            targets.blue.x = (width * 0.35) + Math.cos(time * 0.7) * (width * 0.20); targets.blue.y = (height * 0.5) + Math.sin(time * 0.5) * (height * 0.25);
+            targets.red.x = (width * 0.65) + Math.cos(time * 0.6 + 2) * (width * 0.20); targets.red.y = (height * 0.5) + Math.sin(time * 0.4 + 1) * (height * 0.25);
+            
+            ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, width, height); ctx.globalCompositeOperation = 'lighter';
+            
+            let bassAvg = 0, trebleAvg = 0;
+            if (isPlaying && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                for (let i = 0; i < 10; i++) bassAvg += dataArray[i]; bassAvg = (bassAvg / 10) * 1.3;
+                for (let i = 100; i < 200; i++) trebleAvg += dataArray[i]; trebleAvg = (trebleAvg / 100) * 1.5;
+                updateLyrics(); 
+            }
+
+            particles.forEach(p => { p.update(bassAvg, trebleAvg); p.draw(ctx); });
+            ctx.globalCompositeOperation = 'source-over'; requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Custom File Upload
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const objectUrl = URL.createObjectURL(file);
+                if (selectedTrackIndex !== -1) {
+                    playlistData[selectedTrackIndex].src = objectUrl;
+                    loadTrack(selectedTrackIndex);
+                } else {
+                    audioPlayer.src = objectUrl;
+                    currentTrackTitle = "Custom";
+                    togglePlay(true);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

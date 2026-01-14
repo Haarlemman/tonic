@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plutonian Star-Whisker</title>
+    <style>
+        /* CSS Gradient for the sky: Dark Blue at the bottom to Black at the top */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(to top, #0b1a3a 0%, #000000 100%);
+        }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #ui {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #88ccff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px #00ffff;
+            user-select: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">Plutonian Star-Whisker<br><span style="font-size:0.7em; opacity:0.8">Scroll to Zoom • Drag to Rotate</span></div>
+    <div id="canvas-container"></div>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 1. Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        // Remove solid background color so CSS gradient shows through
+        scene.background = null; 
+        
+        // Adjust fog to match the bottom of the gradient (dark blue) so the floor fades nicely
+        scene.fog = new THREE.FogExp2(0x0b1a3a, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 1.5, 9); 
+
+        // Ensure alpha is true for transparent background
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 3;
+        controls.maxDistance = 20;
+        controls.target.set(0, 0, 0);
+
+        // --- 2. Lighting ---
+        const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x222233, 1.0); 
+        scene.add(hemiLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+        keyLight.position.set(5, 8, 8); 
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        scene.add(keyLight);
+
+        const rimLight = new THREE.SpotLight(0x00ffff, 5.0);
+        rimLight.position.set(-6, 4, -5);
+        rimLight.lookAt(0, 0, 0);
+        scene.add(rimLight);
+
+        const purpleFill = new THREE.PointLight(0xaa00ff, 1.5, 10);
+        purpleFill.position.set(3, -2, 3);
+        scene.add(purpleFill);
+
+        // --- 3. Materials ---
+        const skinMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x6655aa,
+            emissive: 0x111122,
+            roughness: 0.4,
+            metalness: 0.1,
+            clearcoat: 0.5,
+        });
+
+        const eyelidMaterial = new THREE.MeshStandardMaterial({
+            color: 0x6655aa,
+            roughness: 0.4,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+            transparent: false,
+            opacity: 1.0,
+            depthWrite: true,
+            depthTest: true
+        });
+
+        // Create canvas texture for pants
+        const pantsCanvas = document.createElement('canvas');
+        pantsCanvas.width = 512;
+        pantsCanvas.height = 512;
+        const pantsCtx = pantsCanvas.getContext('2d');
+        pantsCtx.fillStyle = '#44aa44';
+        pantsCtx.fillRect(0, 0, 512, 512);
+        
+        // Add fabric weave pattern
+        pantsCtx.strokeStyle = '#3a9a3a';
+        pantsCtx.lineWidth = 1;
+        for(let i = 0; i < 512; i += 4) {
+            pantsCtx.beginPath();
+            pantsCtx.moveTo(i, 0);
+            pantsCtx.lineTo(i, 512);
+            pantsCtx.stroke();
+            pantsCtx.beginPath();
+            pantsCtx.moveTo(0, i);
+            pantsCtx.lineTo(512, i);
+            pantsCtx.stroke();
+        }
+        
+        // Add some wear marks
+        for(let i = 0; i < 20; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const size = Math.random() * 30 + 10;
+            pantsCtx.fillStyle = `rgba(58, 154, 58, ${Math.random() * 0.3})`;
+            pantsCtx.fillRect(x, y, size, size * 0.3);
+        }
+        
+        const pantsTexture = new THREE.CanvasTexture(pantsCanvas);
+        pantsTexture.wrapS = THREE.RepeatWrapping;
+        pantsTexture.wrapT = THREE.RepeatWrapping;
+        pantsTexture.repeat.set(2, 2);
+        
+        const pantsMaterial = new THREE.MeshStandardMaterial({
+            map: pantsTexture,
+            color: 0x44aa44, 
+            roughness: 0.9,
+            metalness: 0.0,
+            normalScale: new THREE.Vector2(0.5, 0.5)
+        });
+        
+        const bellyMaterial = new THREE.MeshStandardMaterial({
+            color: 0xaa88cc,
+            roughness: 0.6
+        });
+
+        const glowMaterial = new THREE.MeshStandardMaterial({
+            color: 0x55ffff,
+            emissive: 0x00ffff,
+            emissiveIntensity: 3,
+            roughness: 0.1
+        });
+        
+        const crystalSpikeMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xff00aa,
+            emissive: 0x550022,
+            transmission: 0.5,
+            opacity: 0.9,
+            metalness: 0.1,
+            roughness: 0.0,
+            thickness: 1
+        });
+
+        const eyeWhiteMaterial = new THREE.MeshBasicMaterial({ color: 0xe4f0ef });
+        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x051b2a }); 
+        const glintMaterial = new THREE.MeshBasicMaterial({ color: 0xeeeeff });
+
+        const droneMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8899aa,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        
+        // --- 4. Creature Construction ---
+        const creatureGroup = new THREE.Group();
+        scene.add(creatureGroup);
+
+        // A. Head
+        const headGroup = new THREE.Group();
+        creatureGroup.add(headGroup);
+
+        const headGeo = new THREE.SphereGeometry(1.2, 64, 64);
+        const head = new THREE.Mesh(headGeo, skinMaterial);
+        head.scale.set(1.15, 0.95, 1);
+        head.castShadow = true;
+        headGroup.add(head);
+
+        // Muzzle
+        const muzzleGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const muzzle = new THREE.Mesh(muzzleGeo, bellyMaterial);
+        muzzle.position.set(0, -0.25, 1.1); 
+        muzzle.scale.set(1.2, 0.8, 0.8);
+        headGroup.add(muzzle);
+
+        // Nose
+        const noseGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const noseMaterial = new THREE.MeshStandardMaterial({
+            color: 0xcc4444,
+            roughness: 0.3,
+            emissive: 0x331111,
+            emissiveIntensity: 0.5
+        });
+        const nose = new THREE.Mesh(noseGeo, noseMaterial); 
+        nose.position.set(0, 0.1, 0.4); 
+        muzzle.add(nose);
+
+        // B. EYES
+        
+        const eyeRadius = 0.44;
+        const eyelidRadius = 0.52; 
+        
+        const scleraGeo = new THREE.SphereGeometry(eyeRadius, 32, 32);
+        const pupilGeo = new THREE.CircleGeometry(0.22, 32); 
+        const glintGeo = new THREE.CircleGeometry(0.06, 16);
+        
+        const topHemiGeo = new THREE.SphereGeometry(eyelidRadius, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.5);
+        const botHemiGeo = new THREE.SphereGeometry(eyelidRadius, 32, 32, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5);
+
+        const upperLids = [];
+        const lowerLids = [];
+
+        function createHemisphereEye(isLeft) {
+            const eyeGroup = new THREE.Group();
+            
+            const sclera = new THREE.Mesh(scleraGeo, eyeWhiteMaterial);
+            sclera.position.z = -0.02;
+            eyeGroup.add(sclera);
+
+            const pupil = new THREE.Mesh(pupilGeo, pupilMaterial);
+            pupil.position.z = eyeRadius - 0.02 + 0.001; 
+            eyeGroup.add(pupil);
+
+            const glint = new THREE.Mesh(glintGeo, glintMaterial);
+            glint.position.set(isLeft ? -0.12 : 0.12, 0.12, eyeRadius - 0.02 + 0.002); 
+            eyeGroup.add(glint);
+            
+            const upperLid = new THREE.Mesh(topHemiGeo, eyelidMaterial);
+            upperLid.rotation.x = -Math.PI * 0.3; 
+
+            upperLid.position.z = 0.03; 
+            upperLid.castShadow = true;
+            upperLid.receiveShadow = true;
+            eyeGroup.add(upperLid);
+            upperLids.push(upperLid);
+
+            const lowerLid = new THREE.Mesh(botHemiGeo, eyelidMaterial);
+            lowerLid.rotation.x = Math.PI * 0.3; 
+            lowerLid.position.z = 0.03; 
+            lowerLid.castShadow = true;
+            lowerLid.receiveShadow = true;
+            eyeGroup.add(lowerLid);
+            lowerLids.push(lowerLid);
+
+            return eyeGroup;
+        }
+
+        const leftEyeGroup = createHemisphereEye(true);
+        leftEyeGroup.position.set(-0.5, 0.15, 0.95); 
+        leftEyeGroup.rotation.y = 0.15; 
+        headGroup.add(leftEyeGroup);
+
+        const rightEyeGroup = createHemisphereEye(false);
+        rightEyeGroup.position.set(0.5, 0.15, 0.95);
+        rightEyeGroup.rotation.y = -0.15; 
+        headGroup.add(rightEyeGroup);
+
+
+        // C. Body & Pants
+        const bodyGroup = new THREE.Group();
+        bodyGroup.position.set(0, -1.3, -0.2);
+        creatureGroup.add(bodyGroup);
+
+        const bodyGeo = new THREE.SphereGeometry(0.85, 64, 64);
+        const body = new THREE.Mesh(bodyGeo, skinMaterial);
+        body.scale.set(0.9, 1.1, 0.9);
+        body.castShadow = true;
+        bodyGroup.add(body);
+
+        const pantsGeo = new THREE.SphereGeometry(0.88, 64, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2); 
+        const pantsMain = new THREE.Mesh(pantsGeo, pantsMaterial);
+        pantsMain.scale.set(0.92, 1.12, 0.92);
+        pantsMain.position.y = 0.1; 
+        bodyGroup.add(pantsMain);
+
+        const waistbandGeo = new THREE.TorusGeometry(0.88, 0.05, 16, 64);
+        const waistband = new THREE.Mesh(waistbandGeo, pantsMaterial);
+        waistband.rotation.x = Math.PI / 2;
+        waistband.scale.set(0.92, 0.92, 1);
+        waistband.position.y = 0.1;
+        bodyGroup.add(waistband);
+
+        const bellyGeo = new THREE.SphereGeometry(0.65, 32, 32);
+        const belly = new THREE.Mesh(bellyGeo, bellyMaterial);
+        belly.position.set(0, 0.3, 0.6); 
+        belly.scale.set(1, 0.8, 0.5);
+        body.add(belly);
+
+        // Dark green glove material
+        const gloveMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2a5a2a,
+            roughness: 0.8,
+            metalness: 0.0
+        });
+
+        // D. Limbs with 3-finger cartoon gloves
+        const limbGeo = new THREE.CapsuleGeometry(0.18, 0.4, 4, 16);
+        const toeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+        
+        function createLimb(x, y, z, rotZ, rotX, isLeg) {
+            const group = new THREE.Group();
+            group.position.set(x, y, z);
+            group.rotation.set(rotX, 0, rotZ);
+            
+            if(isLeg) {
+                const cuffGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.2, 16);
+                const cuff = new THREE.Mesh(cuffGeo, pantsMaterial);
+                cuff.position.y = 0.2;
+                group.add(cuff);
+                const limb = new THREE.Mesh(limbGeo, skinMaterial);
+                group.add(limb);
+            } else {
+                const limb = new THREE.Mesh(limbGeo, skinMaterial);
+                group.add(limb);
+                
+                // Add cartoon 3-finger glove
+                const gloveBody = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.18, 16, 16),
+                    gloveMaterial
+                );
+                gloveBody.position.y = -0.35;
+                gloveBody.scale.set(1, 0.8, 1.1);
+                group.add(gloveBody);
+                
+                // Glove cuff
+                const cuffGeo = new THREE.CylinderGeometry(0.19, 0.18, 0.15, 16);
+                const gloveCuff = new THREE.Mesh(cuffGeo, gloveMaterial);
+                gloveCuff.position.y = -0.25;
+                group.add(gloveCuff);
+                
+                // Add 3 rounded fingers
+                const fingerGeo = new THREE.CapsuleGeometry(0.05, 0.15, 4, 8);
+                for(let f = 0; f < 3; f++) {
+                    const finger = new THREE.Mesh(fingerGeo, gloveMaterial);
+                    const angle = (f - 1) * 0.4;
+                    finger.position.set(Math.sin(angle) * 0.13, -0.48, 0.08 + Math.cos(angle) * 0.08);
+                    finger.rotation.z = angle;
+                    finger.rotation.x = 0.2;
+                    group.add(finger);
+                    
+                    // Rounded fingertip
+                    const tip = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.05, 8, 8),
+                        gloveMaterial
+                    );
+                    tip.position.y = -0.09;
+                    finger.add(tip);
+                }
+            }
+            
+            for(let t=-1; t<=1; t++) {
+                const toe = new THREE.Mesh(toeGeo, bellyMaterial);
+                toe.position.set(t * 0.08, -0.3, 0.12); 
+                group.add(toe);
+            }
+            return group;
+        }
+
+        const leftArm = createLimb(-0.7, 0.2, 0.2, -0.6, 0.5, false);
+        body.add(leftArm);
+        const rightArm = createLimb(0.7, 0.2, 0.2, 0.6, 0.5, false);
+        body.add(rightArm);
+        const leftLeg = createLimb(-0.45, -0.75, 0.3, 0, -0.2, true);
+        bodyGroup.add(leftLeg);
+        const rightLeg = createLimb(0.45, -0.75, 0.3, 0, -0.2, true);
+        bodyGroup.add(rightLeg);
+
+
+        // E. Back Spikes
+        for(let i=0; i<5; i++) {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), crystalSpikeMaterial);
+            spike.position.set(0, 0.5 - (i*0.25), -0.75 - (i*0.1));
+            spike.rotation.x = -Math.PI/4;
+            body.add(spike);
+        }
+
+        // F. Tail
+        const tailGroup = new THREE.Group();
+        tailGroup.position.set(0, -0.7, -0.7);
+        bodyGroup.add(tailGroup);
+
+        for(let i=0; i<8; i++) {
+            const s = new THREE.Mesh(
+                new THREE.SphereGeometry(0.14 - (i*0.015), 16, 16), 
+                skinMaterial
+            );
+            s.position.set(0, i * 0.15, -(i * 0.25));
+            tailGroup.add(s);
+        }
+
+
+        // G. Antennae
+        const stalkGeo = new THREE.CylinderGeometry(0.04, 0.02, 0.8, 16);
+
+        const leftStalk = new THREE.Mesh(stalkGeo, skinMaterial);
+        leftStalk.position.set(-0.6, 0.8, 0);
+        leftStalk.rotation.z = 0.5;
+        leftStalk.rotation.x = -0.2;
+        headGroup.add(leftStalk);
+
+        const rightStalk = new THREE.Mesh(stalkGeo, skinMaterial);
+        rightStalk.position.set(0.6, 0.8, 0);
+        rightStalk.rotation.z = -0.5;
+        rightStalk.rotation.x = -0.2;
+        headGroup.add(rightStalk);
+
+
+        // I. DRONE HAT
+        const droneGroup = new THREE.Group();
+        droneGroup.position.set(0, 1.8, 0); 
+        headGroup.add(droneGroup);
+
+        const droneBody = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), droneMaterial);
+        droneGroup.add(droneBody);
+
+        const droneRing = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 32), droneMaterial);
+        droneRing.rotation.x = Math.PI/2;
+        droneGroup.add(droneRing);
+
+        const propGroup = new THREE.Group();
+        droneGroup.add(propGroup);
+        const propGeo = new THREE.BoxGeometry(0.1, 0.01, 0.8);
+        const prop1 = new THREE.Mesh(propGeo, glowMaterial);
+        const prop2 = new THREE.Mesh(propGeo, glowMaterial);
+        prop2.rotation.y = Math.PI/2;
+        propGroup.add(prop1);
+        propGroup.add(prop2);
+
+
+        // --- 5. Environment ---
+        
+        const platformGeo = new THREE.CylinderGeometry(3.5, 2.5, 0.5, 7, 1);
+        const platformMat = new THREE.MeshStandardMaterial({ 
+            color: 0x603000, 
+            roughness: 0.8,
+            flatShading: true
+        });
+        const platform = new THREE.Mesh(platformGeo, platformMat);
+        platform.position.y = -2.6;
+        platform.receiveShadow = true;
+        scene.add(platform);
+
+        for(let i=0; i<15; i++) {
+            const rock = new THREE.Mesh(
+                new THREE.DodecahedronGeometry(Math.random() * 0.3),
+                new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.9 })
+            );
+            rock.position.set(
+                (Math.random() - 0.5) * 4,
+                0.3,
+                (Math.random() - 0.5) * 4
+            );
+            rock.rotation.set(Math.random(), Math.random(), Math.random());
+            platform.add(rock);
+        }
+
+        const ringSystemGeo = new THREE.RingGeometry(8, 12, 64);
+        const ringSystemMat = new THREE.MeshStandardMaterial({ 
+            color: 0x442266, side: THREE.DoubleSide, transparent: true, opacity: 0.4
+        });
+        const planetaryRing = new THREE.Mesh(ringSystemGeo, ringSystemMat);
+        planetaryRing.rotation.x = Math.PI / 2;
+        planetaryRing.position.y = -3;
+        scene.add(planetaryRing);
+
+        const starsGeo = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starPos = new Float32Array(starCount * 3);
+        for(let i=0; i<starCount; i++) {
+            starPos[i*3] = (Math.random() - 0.5) * 200;
+            starPos[i*3+1] = (Math.random() - 0.5) * 200;
+            starPos[i*3+2] = (Math.random() - 0.5) * 200;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starsMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.1});
+        const starSystem = new THREE.Points(starsGeo, starsMat);
+        scene.add(starSystem);
+
+        // --- 6. Animation ---
+
+        const clock = new THREE.Clock();
+        let lookTarget = { x: 0, y: 0 };
+        let nextLookTime = 3;
+        
+        // Track current sky color
+        let skyColorPhase = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            
+            const time = clock.getElapsedTime();
+
+            // Sky color transition (cycles between dark blue and black)
+            skyColorPhase += 0.002;
+            const skyBrightness = (Math.sin(skyColorPhase) + 1) / 2; // 0 to 1
+            const bottomColor = {
+                r: Math.floor(11 + skyBrightness * 20),
+                g: Math.floor(26 + skyBrightness * 40),
+                h: Math.floor(58 + skyBrightness * 60)
+            };
+            document.body.style.background = `linear-gradient(to top, rgb(${bottomColor.r}, ${bottomColor.g}, ${bottomColor.h}) 0%, #000000 100%)`;
+            
+            // Update fog color to match
+            const fogColor = (bottomColor.r << 16) | (bottomColor.g << 8) | bottomColor.h;
+            scene.fog.color.setHex(fogColor);
+
+            creatureGroup.rotation.y = Math.sin(time * 0.2) * 0.05;
+
+            // Eye looking around behavior
+            if (time > nextLookTime) {
+                lookTarget.x = (Math.random() - 0.5) * 0.4;
+                lookTarget.y = (Math.random() - 0.5) * 0.3;
+                nextLookTime = time + 2 + Math.random() * 3;
+            }
+            
+            // Smooth eye movement
+            const currentLeftRot = leftEyeGroup.rotation;
+            const currentRightRot = rightEyeGroup.rotation;
+            const smoothing = 0.02;
+            
+            leftEyeGroup.rotation.y = currentLeftRot.y + (0.15 + lookTarget.x - currentLeftRot.y) * smoothing;
+            leftEyeGroup.rotation.x = currentLeftRot.x + (lookTarget.y - currentLeftRot.x) * smoothing;
+            
+            rightEyeGroup.rotation.y = currentRightRot.y + (-0.15 + lookTarget.x - currentRightRot.y) * smoothing;
+            rightEyeGroup.rotation.x = currentRightRot.x + (lookTarget.y - currentRightRot.x) * smoothing;
+
+            // BLINK Animation
+            const blinkSpeed = 2;
+            let blink = Math.sin(time * blinkSpeed);
+            if (blink > 0.85) {
+                const blinkFactor = (blink - 0.85) / 0.15; 
+                
+                const angleTop = -Math.PI * 0.3 * (1 - blinkFactor);
+                const angleBot = Math.PI * 0.3 * (1 - blinkFactor);
+                
+                upperLids.forEach(l => l.rotation.x = angleTop);
+                lowerLids.forEach(l => l.rotation.x = angleBot);
+            } else {
+                upperLids.forEach(l => l.rotation.x = -Math.PI * 0.3);
+                lowerLids.forEach(l => l.rotation.x = Math.PI * 0.3);
+            }
+
+            leftStalk.rotation.z = 0.5 + Math.sin(time * 2.5) * 0.05;
+            rightStalk.rotation.z = -0.5 + Math.cos(time * 2.5) * 0.05;
+
+            tailGroup.rotation.z = Math.sin(time * 1.5) * 0.15;
+
+            propGroup.rotation.y += 0.3; 
+            droneGroup.position.y = 1.8 + Math.sin(time * 5) * 0.05; 
+            droneGroup.rotation.z = Math.sin(time * 1.2) * 0.1; 
+
+            planetaryRing.rotation.z = time * -0.05;
+            starSystem.rotation.y = time * 0.005;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>

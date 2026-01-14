@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dotted World Map — Interactive Highlights</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --dot: #28ff7a;
+    --dot-dim: #164b34;
+    --ui: #cfd7de;
+    --ui-dim: #9aa4ad;
+    --panel: #121821;
+    --accent: #36c98d;
+    --transition: 240ms cubic-bezier(.2,.7,.2,1);
+  }
+  html, body {
+    height: 100%; margin: 0; background: var(--bg); color: var(--ui); font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 18px; font-weight: 600; margin: 0; color: var(--ui); }
+  .controls { display: flex; gap: 8px; }
+  .btn {
+    border: 1px solid var(--ui-dim);
+    color: var(--ui);
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: linear-gradient(#141b26, #0f141d);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-weight: 600;
+  }
+  .btn:hover { border-color: var(--accent); color: white; }
+  .btn.active {
+    background: linear-gradient(#17212f, #121a26);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+
+  .map-panel {
+    background: linear-gradient(#0e141d, #0b1018);
+    border: 1px solid #182231;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Legend */
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(130px, 1fr));
+    gap: 8px;
+    padding: 12px;
+    align-items: center;
+    border-top: 1px solid #182231;
+    background: #0d131b;
+  }
+  .legend-title { grid-column: 1 / -1; font-size: 13px; color: var(--ui-dim); }
+  .key {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #0c1218; border: 1px solid #1a2331; border-radius: 10px;
+  }
+  .swatch {
+    width: 16px; height: 16px; border-radius: 4px; border: 1px solid #0006;
+  }
+  .key span { font-size: 13px; color: var(--ui); }
+
+  /* SVG sizing */
+  .map {
+    width: 100%;
+    height: 520px;
+    display: block;
+  }
+
+  /* Highlight animation */
+  .region {
+    transition: opacity var(--transition), filter var(--transition);
+  }
+  .region.dim { opacity: 0.12; filter: saturate(0.2); }
+  .region.show { opacity: 0.95; }
+
+  /* Dot layers */
+  .dots { fill: var(--dot-dim); }
+  .dots.highlight { fill: var(--dot); }
+
+  /* Footer note */
+  .note { font-size: 12px; color: var(--ui-dim); margin-top: 6px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Dotted world — highlight by dataset</h1>
+      <div class="controls">
+        <button class="btn active" data-mode="religion">1. Religion</button>
+        <button class="btn" data-mode="languages">2. Languages</button>
+      </div>
+    </header>
+
+    <div class="map-panel">
+      <!-- SVG MAP -->
+      <svg class="map" viewBox="0 0 1200 600" aria-label="Dotted world map">
+        <!-- Background grid of dots -->
+        <defs>
+          <!-- Dot symbol -->
+          <circle id="dot" r="1.7"></circle>
+
+          <!-- Pattern of dots -->
+          <pattern id="dotPattern" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+            <use href="#dot" x="6" y="6" />
+          </pattern>
+
+          <!-- Region masks: coarse continental shapes (you can replace with precise paths) -->
+          <clipPath id="Americas">
+            <path d="M190,60 C260,40 320,120 320,160 C280,200 280,260 330,290 C360,310 400,340 400,380 C360,410 340,460 300,500 C260,540 200,520 160,500 C140,480 120,450 120,420 C140,400 160,380 160,360 C150,330 140,280 140,240 C140,200 140,120 190,60 Z" />
+          </clipPath>
+          <clipPath id="Europe">
+            <path d="M660,120 C690,110 740,120 780,140 C780,170 760,190 740,200 C700,210 680,210 660,200 C640,180 640,150 660,120 Z" />
+          </clipPath>
+          <clipPath id="Africa">
+            <path d="M680,220 C720,210 760,230 780,260 C800,300 800,360 770,400 C740,430 700,440 660,420 C640,390 640,360 650,330 C660,300 660,250 680,220 Z" />
+          </clipPath>
+          <clipPath id="Asia">
+            <path d="M760,110 C820,100 900,130 960,170 C1000,200 1040,240 1060,280 C1040,300 1020,320 1000,330 C960,340 920,330 900,320 C860,300 830,280 820,250 C810,220 790,180 760,110 Z" />
+          </clipPath>
+          <clipPath id="Oceania">
+            <path d="M960,370 C1000,370 1060,400 1075,430 C1040,455 1005,465 980,455 C965,445 955,430 950,410 C950,395 955,380 960,370 Z" />
+          </clipPath>
+        </defs>
+
+        <!-- World land silhouette (very soft backdrop) -->
+        <g opacity="0.12">
+          <rect x="0" y="0" width="1200" height="600" fill="#0b0f14"/>
+          <!-- Suggestive blobs to hint continents (artistically)—replace with real land paths as needed -->
+          <ellipse cx="300" cy="240" rx="180" ry="220" fill="#1a2a24"/>
+          <ellipse cx="720" cy="240" rx="240" ry="220" fill="#1a2a24"/>
+          <ellipse cx="980" cy="420" rx="120" ry="90" fill="#1a2a24"/>
+        </g>
+
+        <!-- Base dot grid clipped to the "land blobs" -->
+        <mask id="landMask">
+          <rect x="0" y="0" width="1200" height="600" fill="black"/>
+          <ellipse cx="300" cy="240" rx="180" ry="220" fill="white"/>
+          <ellipse cx="720" cy="240" rx="240" ry="220" fill="white"/>
+          <ellipse cx="980" cy="420" rx="120" ry="90" fill="white"/>
+        </mask>
+
+        <!-- Background dots (dim) -->
+        <rect x="0" y="0" width="1200" height="600" class="dots" fill="url(#dotPattern)" mask="url(#landMask)"></rect>
+
+        <!-- Highlight layers per region (same dot pattern, clipped) -->
+        <g id="layer-Americas" class="region">
+          <rect x="0" y="0" width="1200" height="600" class="dots highlight" fill="url(#dotPattern)" clip-path="url(#Americas)"></rect>
+        </g>
+        <g id="layer-Europe" class="region dim">
+          <rect x="0" y="0" width="1200" height="600" class="dots highlight" fill="url(#dotPattern)" clip-path="url(#Europe)"></rect>
+        </g>
+        <g id="layer-Africa" class="region dim">
+          <rect x="0" y="0" width="1200" height="600" class="dots highlight" fill="url(#dotPattern)" clip-path="url(#Africa)"></rect>
+        </g>
+        <g id="layer-Asia" class="region dim">
+          <rect x="0" y="0" width="1200" height="600" class="dots highlight" fill="url(#dotPattern)" clip-path="url(#Asia)"></rect>
+        </g>
+        <g id="layer-Oceania" class="region dim">
+          <rect x="0" y="0" width="1200" height="600" class="dots highlight" fill="url(#dotPattern)" clip-path="url(#Oceania)"></rect>
+        </g>
+      </svg>
+
+      <!-- Legend -->
+      <div class="legend" id="legend">
+        <div class="legend-title">Religion</div>
+        <div class="key"><div class="swatch" style="background:#b292ff"></div><span>Christianity</span></div>
+        <div class="key"><div class="swatch" style="background:#f1b04a"></div><span>Islam</span></div>
+        <div class="key"><div class="swatch" style="background:#ff7f36"></div><span>Hinduism</span></div>
+        <div class="key"><div class="swatch" style="background:#78c16b"></div><span>Buddhism</span></div>
+      </div>
+      <div class="note">Coarse region masks for demo. Swap with precise country paths or GeoJSON for production.</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const btns = document.querySelectorAll(".btn");
+  const legend = document.getElementById("legend");
+
+  // Region layers
+  const layers = {
+    Americas: document.getElementById("layer-Americas"),
+    Europe: document.getElementById("layer-Europe"),
+    Africa: document.getElementById("layer-Africa"),
+    Asia: document.getElementById("layer-Asia"),
+    Oceania: document.getElementById("layer-Oceania")
+  };
+
+  // Demo datasets: map region -> group color
+  const DATASETS = {
+    religion: {
+      title: "Religion",
+      groups: [
+        { name: "Christianity", color: "#b292ff", regions: ["Americas","Europe","Oceania","Africa"] },
+        { name: "Islam",        color: "#f1b04a", regions: ["Africa","Asia"] },
+        { name: "Hinduism",     color: "#ff7f36", regions: ["Asia"] },
+        { name: "Buddhism",     color: "#78c16b", regions: ["Asia","Oceania"] }
+      ]
+    },
+    languages: {
+      title: "Languages",
+      groups: [
+        { name: "Indo-European", color: "#66a3ff", regions: ["Americas","Europe","SouthAsiaAlias"] },
+        { name: "Sino-Tibetan",  color: "#ff6699", regions: ["Asia"] },
+        { name: "Afro-Asiatic",  color: "#ffd166", regions: ["Africa","Asia"] },
+        { name: "Niger-Congo",   color: "#33cc88", regions: ["Africa"] }
+      ]
+    }
+  };
+
+  // Assign colors to regions per current dataset
+  function updateRegions(mode) {
+    const set = DATASETS[mode];
+    // Reset region visuals
+    Object.values(layers).forEach(g => {
+      g.classList.add("dim");
+      g.classList.remove("show");
+      g.querySelector("rect").style.filter = "none";
+    });
+
+    // Build region -> color map (first match wins)
+    const regionColor = {};
+    set.groups.forEach(group => {
+      group.regions.forEach(r => {
+        // map coarse aliases to nearest region
+        const key = (r === "SouthAsiaAlias") ? "Asia" : r;
+        if (!regionColor[key]) regionColor[key] = group.color;
+      });
+    });
+
+    // Apply colors and show
+    Object.entries(regionColor).forEach(([region, color]) => {
+      const layer = layers[region];
+      if (!layer) return;
+      const rect = layer.querySelector("rect");
+      rect.style.fill = `url(#dotPattern)`;
+      rect.style.mixBlendMode = "screen";
+      rect.style.filter = `drop-shadow(0 0 6px ${color}80)`;
+      rect.style.fillOpacity = 1;
+      layer.classList.remove("dim");
+      layer.classList.add("show");
+      // Colorize by overlaying a semi-transparent color via SVG <filter> alternative:
+      rect.style.stroke = color;
+      rect.style.strokeWidth = 0; // keep stroke off, we use glow only
+    });
+
+    updateLegend(set);
+  }
+
+  function updateLegend(set) {
+    legend.innerHTML = "";
+    const title = document.createElement("div");
+    title.className = "legend-title";
+    title.textContent = set.title;
+    legend.appendChild(title);
+
+    set.groups.slice(0,4).forEach(group => {
+      const key = document.createElement("div");
+      key.className = "key";
+      const sw = document.createElement("div");
+      sw.className = "swatch";
+      sw.style.background = group.color;
+      const label = document.createElement("span");
+      label.textContent = group.name;
+      key.appendChild(sw);
+      key.appendChild(label);
+      legend.appendChild(key);
+    });
+  }
+
+  // Button interactions
+  btns.forEach(b => {
+    b.addEventListener("click", () => {
+      btns.forEach(x => x.classList.toggle("active", x === b));
+      updateRegions(b.dataset.mode);
+    });
+  });
+
+  // Init
+  updateRegions("religion");
+})();
+</script>
+</body>
+</html>

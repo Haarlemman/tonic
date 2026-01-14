@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Interactive World Dot Map</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <style>
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #map {
+            margin: 20px auto;
+        }
+        button {
+            background-color: #333;
+            color: #eee;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        .dot {
+            animation: flicker 3s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div>
+        <button id="none">None</button>
+        <button id="religion">Religion</button>
+        <button id="freedom">Freedom</button>
+        <button id="gdp">GDP/Wealth</button>
+    </div>
+    <script>
+        const width = 960;
+        const height = 500;
+        const totalDots = 2000; // Reduced for simplicity and performance
+
+        const svg = d3.select("#map").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g");
+
+        const projection = d3.geoMercator()
+            .scale(150)
+            .translate([width / 2, height / 1.7]);
+
+        svg.call(d3.zoom()
+            .scaleExtent([1, 8])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            }));
+
+        // Name mapping (abbreviated for brevity; add more if needed)
+        const nameMapping = {
+            "United States of America": "United States",
+            "Czech Republic": "Czechia",
+            "Myanmar": "Myanmar",
+            "Republic of Congo": "Republic of the Congo",
+            "Dem. Rep. Congo": "DR Congo",
+            // ... (use previous full mapping if issues arise)
+        };
+
+        // Religion data (using predominant religion as per update)
+        const religionList = [ /* full list from previous */ ];
+
+        // Freedom and GDP lists (use previous)
+
+        const religionColors = {
+            "Islam": "green",
+            "Christianity": "purple",
+            "Hinduism": "orange",
+            "Buddhism": "yellow",
+            "Judaism": "cyan",
+            "Other": "#555",
+            "None": "#555"
+        };
+
+        let currentMode = "none";
+
+        function getColor(country, mode) {
+            const dataName = nameMapping[country] || country;
+            if (mode === "religion") {
+                const relEntry = religionList.find(e => e.country === dataName);
+                const rel = relEntry ? relEntry.predominant_religion : "Other";
+                return religionColors[rel] || "#555";
+            } else if (mode === "freedom") {
+                const entry = freedomList.find(e => e.country === dataName);
+                const score = entry ? entry.score : null;
+                if (score === null) return "#555";
+                if (score > 8) return "green";
+                if (score > 6.5) return "yellow";
+                return "red";
+            } else if (mode === "gdp") {
+                const entry = gdpList.find(e => e.country === dataName);
+                const gdp = entry ? entry.gdp : null;
+                if (gdp === null) return "#555";
+                if (gdp > 50000) return "yellow";
+                if (gdp > 10000) return "orange";
+                return "blue";
+            } else {
+                return "#555"; // Muted grey default
+            }
+        }
+
+        function randomPointInPoly(feature) {
+            const bbox = turf.bbox(feature);
+            let count = 0;
+            while (count < 500) {
+                const pt = turf.randomPoint(1, {bbox: bbox}).features[0];
+                if (turf.booleanPointInPolygon(pt, feature)) {
+                    return pt;
+                }
+                count++;
+            }
+            return turf.centroid(feature); // Fallback
+        }
+
+        d3.json("https://unpkg.com/world-atlas@2.0.2/countries-110m.json").then((world) => {
+            const countries = topojson.feature(world, world.objects.countries);
+
+            let totalLandArea = 0;
+            countries.features.forEach((feature) => {
+                if (feature.properties.name !== "Antarctica") {
+                    totalLandArea += turf.area(feature) / 1e6;
+                }
+            });
+
+            const dots = [];
+            countries.features.forEach((feature) => {
+                const name = feature.properties.name;
+                if (name === "Antarctica") return;
+
+                const area = turf.area(feature) / 1e6;
+                let numDots = Math.max(1, Math.round(area / totalLandArea * totalDots));
+                if (name === "Israel") numDots = 1;
+
+                for (let i = 0; i < numDots; i++) {
+                    let pt = (numDots === 1) ? turf.centroid(feature) : randomPointInPoly(feature);
+                    if (pt) {
+                        dots.push({coord: pt.geometry.coordinates, country: name});
+                    }
+                }
+            });
+
+            g.selectAll("circle")
+                .data(dots)
+                .enter()
+                .append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => projection(d.coord)[0])
+                .attr("cy", d => projection(d.coord)[1])
+                .attr("r", 1.5) // Larger dots for simpler look
+                .attr("fill", d => getColor(d.country, currentMode))
+                .style("animation-delay", () => -Math.random() * 3 + "s");
+
+            function updateColors(mode) {
+                currentMode = mode;
+                g.selectAll(".dot")
+                    .attr("fill", d => getColor(d.country, mode));
+            }
+
+            document.getElementById("none").addEventListener("click", () => updateColors("none"));
+            document.getElementById("religion").addEventListener("click", () => updateColors("religion"));
+            document.getElementById("freedom").addEventListener("click", () => updateColors("freedom"));
+            document.getElementById("gdp").addEventListener("click", () => updateColors("gdp"));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Machina // Acceleration</title>
+    
+    <!-- React & ReactDOM (Global CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Strict Reset */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: #F1F0EA;
+            font-family: 'Inter', sans-serif;
+        }
+        #root { 
+            width: 100%; 
+            height: 100%; 
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <!-- Error catching script -->
+    <div id="error-display" style="display:none; padding: 20px; color: red; font-family: monospace;"></div>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.getElementById('error-display').style.display = 'block';
+            document.getElementById('error-display').innerHTML = "SYSTEM ERROR: " + message;
+        };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- DATA ---
+        const ERAS = [
+            {
+                title: "LOGIC GATES",
+                desc: "Rules are absolute. Binary switch.",
+                color: "#E63946", 
+                mode: "binary" 
+            },
+            {
+                title: "EXPERT SYSTEMS",
+                desc: "Rigid maps of human knowledge.",
+                color: "#457B9D",
+                mode: "tree"
+            },
+            {
+                title: "DEEP LEARNING",
+                desc: "Layers of math finding patterns.",
+                color: "#1D3557",
+                mode: "network"
+            },
+            {
+                title: "GENERATIVE FLUX",
+                desc: "Dreaming machines. Improvisation.",
+                color: "#E9C46A",
+                mode: "fluid"
+            },
+            {
+                title: "SINGULARITY",
+                desc: "Symbiosis. The boundary dissolves.",
+                color: "#7209B7",
+                mode: "quantum"
+            }
+        ];
+
+        // 25 Seconds Total Loop (Twice as fast as before)
+        const TOTAL_LOOP_TIME = 25000; 
+        const START_YEAR = 1950;
+        const END_YEAR = 2050;
+
+        // --- ICONS ---
+        const Maximize = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        );
+
+        // --- MAIN COMPONENT ---
+        const AI_Presentation = () => {
+            const [activeEra, setActiveEra] = useState(0);
+            const [displayYear, setDisplayYear] = useState(1950);
+            const [progress, setProgress] = useState(0);
+            
+            // Refs
+            const canvasRef = useRef(null);
+            const requestRef = useRef(null);
+            const containerRef = useRef(null);
+            
+            // Shared State for Animation Loop
+            const animationState = useRef({ 
+                eraIndex: 0, 
+                progress: 0,
+                year: 1950
+            });
+
+            // 1. LOGIC LOOP
+            useEffect(() => {
+                const startTime = Date.now();
+                const timer = setInterval(() => {
+                    const now = Date.now();
+                    const diff = now - startTime;
+                    const loopTime = diff % TOTAL_LOOP_TIME;
+                    
+                    const slideDuration = TOTAL_LOOP_TIME / ERAS.length;
+                    const eraIndex = Math.floor(loopTime / slideDuration);
+                    const eraProg = (loopTime % slideDuration) / slideDuration;
+                    
+                    const totalProg = loopTime / TOTAL_LOOP_TIME;
+                    const currentYear = Math.floor(START_YEAR + (totalProg * (END_YEAR - START_YEAR)));
+
+                    setActiveEra(eraIndex);
+                    setProgress(eraProg);
+                    setDisplayYear(currentYear);
+
+                    animationState.current = { 
+                        eraIndex: eraIndex, 
+                        progress: eraProg,
+                        year: currentYear
+                    };
+
+                }, 30);
+                return () => clearInterval(timer);
+            }, []);
+
+            // 2. VISUAL ENGINE
+            const particles = useMemo(() => {
+                return Array.from({ length: 70 }, () => ({
+                    x: Math.random() * 100, 
+                    y: Math.random() * 100,
+                    vx: (Math.random() - 0.5) * 0.5, 
+                    vy: (Math.random() - 0.5) * 0.5,
+                    size: Math.random() * 8 + 2,
+                    state: Math.random() > 0.5 ? 1 : 0,
+                    angle: Math.random() * Math.PI * 2, 
+                    radius: Math.random() * 30 + 10
+                }));
+            }, []);
+
+            const animate = (time) => {
+                const canvas = canvasRef.current;
+                if (!canvas) return; 
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return; 
+
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                const { eraIndex, progress } = animationState.current;
+                
+                const currentEraData = ERAS[eraIndex] || ERAS[0];
+                const mode = currentEraData.mode;
+                const mainColor = currentEraData.color;
+
+                const autoChaos = (Math.sin(progress * Math.PI) * 0.8) + 0.1; 
+
+                // Clear
+                ctx.fillStyle = 'rgba(241, 240, 234, 0.25)';
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw
+                particles.forEach((p, i) => {
+                    if (mode === 'binary') {
+                        const jitter = autoChaos * 5; 
+                        p.x += (Math.random() - 0.5) * jitter; p.y += (Math.random() - 0.5) * jitter;
+                        const gridSize = 80; 
+                        const drawX = Math.round((p.x / 100) * width / gridSize) * gridSize;
+                        const drawY = Math.round((p.y / 100) * height / gridSize) * gridSize;
+                        ctx.fillStyle = p.state ? mainColor : '#2C3E50';
+                        ctx.fillRect(drawX, drawY, 40, 40);
+                        if (Math.random() < (0.01 + autoChaos * 0.1)) p.state = !p.state;
+                    } 
+                    else if (mode === 'tree') {
+                        p.y += 0.5 + (autoChaos * 3);
+                        if (p.y > 100) p.y = 0;
+                        p.x += Math.sin(time * 0.001 + i) * (0.1 + autoChaos);
+                        const drawX = (p.x / 100) * width; const drawY = (p.y / 100) * height;
+                        ctx.strokeStyle = mainColor; ctx.lineWidth = 4;
+                        ctx.beginPath(); ctx.moveTo(drawX, drawY);
+                        ctx.lineTo(drawX - 25, drawY - 35); ctx.moveTo(drawX, drawY);
+                        ctx.lineTo(drawX + 25, drawY - 35); ctx.stroke();
+                    }
+                    else if (mode === 'network') {
+                        p.x += p.vx * (1 + autoChaos * 4); p.y += p.vy * (1 + autoChaos * 4);
+                        if (p.x <= 0 || p.x >= 100) p.vx *= -1; if (p.y <= 0 || p.y >= 100) p.vy *= -1;
+                        const drawX = (p.x / 100) * width; const drawY = (p.y / 100) * height;
+                        const connectDist = 20 + (autoChaos * 40); 
+                        particles.forEach((p2, j) => {
+                            if (i === j) return;
+                            const dx = p.x - p2.x; const dy = p.y - p2.y;
+                            if (Math.sqrt(dx*dx + dy*dy) < connectDist) {
+                                ctx.strokeStyle = `rgba(29, 53, 87, ${1 - Math.sqrt(dx*dx+dy*dy)/connectDist})`;
+                                ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(drawX, drawY);
+                                ctx.lineTo((p2.x / 100) * width, (p2.y / 100) * height); ctx.stroke();
+                            }
+                        });
+                        ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2); ctx.fill();
+                    }
+                    else if (mode === 'fluid') {
+                        const noise = Math.sin(p.x * 0.1 + time * 0.002) * Math.cos(p.y * 0.1 + time * 0.002);
+                        p.vx += Math.cos(noise * Math.PI * 2) * (0.01 + autoChaos * 0.05);
+                        p.vy += Math.sin(noise * Math.PI * 2) * (0.01 + autoChaos * 0.05);
+                        p.vx *= 0.95; p.vy *= 0.95; p.x += p.vx * 10; p.y += p.vy * 10;
+                        if (p.x > 100) p.x = 0; if (p.x < 0) p.x = 100; if (p.y > 100) p.y = 0; if (p.y < 0) p.y = 100;
+                        const drawX = (p.x / 100) * width; const drawY = (p.y / 100) * height;
+                        ctx.fillStyle = mainColor; ctx.font = `bold ${p.size * (3 + autoChaos * 2)}px monospace`;
+                        ctx.fillText(String.fromCharCode(65 + Math.floor(Math.random() * 26)), drawX, drawY);
+                    }
+                    else if (mode === 'quantum') {
+                        const cx = width / 2; const cy = height / 2;
+                        p.angle += 0.01 + (autoChaos * 0.05);
+                        const breathing = Math.sin(time * 0.002) * 100;
+                        const r = (p.radius * (5 + autoChaos * 5)) + breathing;
+                        let drawX, drawY;
+                        if (autoChaos > 0.8 && Math.random() < 0.1) {
+                             drawX = Math.random() * width; drawY = Math.random() * height;
+                        } else {
+                             drawX = cx + Math.cos(p.angle + i) * r; drawY = cy + Math.sin(p.angle + i) * r;
+                        }
+                        ctx.strokeStyle = `rgba(114, 9, 183, ${0.2})`; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(drawX, drawY); ctx.stroke();
+                        ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(drawX, drawY, p.size * 1.5, 0, Math.PI*2); ctx.fill();
+                    }
+                });
+
+                requestRef.current = requestAnimationFrame(animate);
+            };
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (canvas) {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                }
+                
+                requestRef.current = requestAnimationFrame(animate);
+                
+                return () => {
+                    if (requestRef.current) cancelAnimationFrame(requestRef.current);
+                };
+            }, []);
+
+            const toggleFullscreen = () => {
+                if (containerRef.current && !document.fullscreenElement) {
+                    try { containerRef.current.requestFullscreen(); } catch(e) {}
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            };
+
+            const currentEraData = ERAS[activeEra] || ERAS[0];
+
+            return (
+                <div ref={containerRef} className="relative w-full h-full">
+                    
+                    {/* VISUAL LAYER */}
+                    <canvas ref={canvasRef} className="absolute inset-0 z-0 block" />
+                    
+                    {/* Grid Overlay */}
+                    <div className="absolute inset-0 pointer-events-none z-10 opacity-10" 
+                        style={{
+                        backgroundImage: 'linear-gradient(#2C3E50 1px, transparent 1px), linear-gradient(90deg, #2C3E50 1px, transparent 1px)',
+                        backgroundSize: '50px 50px'
+                        }}>
+                    </div>
+
+                    {/* HUD LAYER */}
+                    <div className="absolute top-0 left-0 h-full w-full max-w-[420px] p-6 z-20 flex flex-col justify-between pointer-events-none">
+                        
+                        {/* 1. HEADER CARD */}
+                        <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl border-l-8 transition-colors duration-500 pointer-events-auto"
+                             style={{borderColor: currentEraData.color}}>
+                            
+                            <div className="flex items-center justify-between mb-4 opacity-60">
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-3 h-3 bg-[#2C3E50] rounded-full"></div>
+                                    <span className="font-mono text-xs tracking-[0.2em] font-bold">MIND_MACHINA</span>
+                                </div>
+                                <button onClick={toggleFullscreen} className="hover:text-[#E63946]"><Maximize/></button>
+                            </div>
+
+                            <h1 className="text-3xl font-black uppercase leading-none tracking-tight mb-4 text-[#2C3E50]">
+                                Evolution of <span style={{color: currentEraData.color}}>AI</span>
+                            </h1>
+
+                            {/* ADJUSTED YEAR SIZE: Reduced slightly to prevent overflow */}
+                            <div className="text-[5rem] sm:text-[6rem] leading-[0.85] font-black tracking-tighter tabular-nums text-[#2C3E50] -ml-2">
+                                {displayYear}
+                            </div>
+                        </div>
+
+                        {/* 2. CONTENT CARD */}
+                        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-2xl shadow-xl pointer-events-auto">
+                            
+                            <div className="w-full h-1 bg-gray-200 rounded-full mb-4 overflow-hidden">
+                                <div className="h-full transition-all duration-100 ease-linear"
+                                     style={{width: `${progress * 100}%`, backgroundColor: currentEraData.color}}></div>
+                            </div>
+
+                            <div className="flex items-center space-x-2 mb-2">
+                                <span className="px-2 py-0.5 bg-[#2C3E50] text-white text-[10px] font-mono font-bold uppercase rounded">
+                                    FIG {activeEra + 1}.0
+                                </span>
+                                <h2 className="text-xl font-black uppercase text-[#2C3E50]">{currentEraData.title}</h2>
+                            </div>
+
+                            <p className="text-lg font-medium leading-snug text-[#2C3E50]/90">
+                                {currentEraData.desc}
+                            </p>
+
+                            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] font-mono font-bold text-gray-400">
+                                <span>FLUX LEVEL</span>
+                                <span style={{color: currentEraData.color}}>
+                                    {Math.round(((Math.sin(progress * Math.PI) * 0.8) + 0.1) * 100)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AI_Presentation />);
+    </script>
+</body>
+</html>

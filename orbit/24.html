@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom – Asymmetric Flattening</title>
+<style>
+    body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; }
+    .atom-container { position:relative; width:600px; height:600px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:160px; height:160px; margin:-80px 0 0 -80px;
+        background:radial-gradient(circle,#fff,#ffeb3b);
+        border-radius:50%;
+        box-shadow:0 0 80px #ffeb3b, 0 0 120px #ff9800;
+        z-index:100;
+    }
+    .electron {
+        position:absolute;
+        width:36px; height:36px;
+        border-radius:50%;
+        margin:-18px 0 0 -18px;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #fff, #f44336); box-shadow:0 0 30px #ff3366, inset -6px -6px 15px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #fff, #4488ff); box-shadow:0 0 30px #4488ff, inset -6px -6px 15px #0033aa; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #fff, #ffeb3b); box-shadow:0 0 30px #ffeb3b, inset -6px -6px 15px #cc9900; }
+    canvas { position:absolute; inset:0; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="trails" width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('trails');
+const ctx = canvas.getContext('2d');
+const radius = 240;
+const centerX = 300;
+const centerY = 300;
+
+// Individual flattening per electron (0 = circle, 1 = completely flat)
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff5588', offset: 0,   tilt: 0,                      flatten: 0.92 },  // red = very flat
+    { el: document.getElementById('e2'), color: '#5588ff', offset: 120, tilt: 120 * Math.PI / 180, flatten: 0.50 },  // blue = moderate
+    { el: document.getElementById('e3'), color: '#ffdd55', offset: 240, tilt: 240 * Math.PI / 180, flatten: 0.50 }   // yellow = moderate
+];
+
+let time = 0;
+ctx.globalAlpha = 0.18;
+ctx.lineWidth = 2.8;
+
+function animate() {
+    time += 0.018;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const angle = time + e.offset * Math.PI / 180;
+
+        let x = Math.cos(angle) * radius;
+        let y = Math.sin(angle) * radius * (1 - e.flatten);  // <-- individual flattening
+        let z = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+
+        const cosT = Math.cos(e.tilt);
+        const sinT = Math.sin(e.tilt);
+        const rotX =  x * cosT + z * sinT;
+        const rotZ = -x * sinT + z * cosT;
+
+        const scale = 1 + rotZ * 0.0010;
+        const brightness = 1 + rotZ * 0.0008;
+
+        e.el.style.left = (centerX + rotX) + 'px';
+        e.el.style.top  = (centerY + y)   + 'px';
+        e.el.style.transform = `scale(${scale})`;
+        e.el.style.filter = `brightness(${brightness})`;
+        e.el.style.zIndex = rotZ > 0 ? 200 : 10;
+
+        // glowing trail
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(centerX + rotX, centerY + y, 4.5, 0, Math.PI*2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+
+        ctx.globalAlpha = 0.18;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX + rotX, centerY + y);
+        ctx.lineTo(centerX + rotX, centerY + y);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

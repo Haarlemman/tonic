@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Mind Soul Lens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Jost&family=Crimson+Pro&family=Cal+Sans&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'display': ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .animated-rainbow {
+            background: linear-gradient(
+                270deg,
+                #f87171, #fb923c, #facc15, #4ade80, #3b82f6, #818cf8, #a78bfa
+            );
+            background-size: 1400% 1400%;
+            animation: rainbow-slide 20s ease infinite;
+        }
+
+        @keyframes rainbow-slide {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .disc-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            flex-shrink: 0;
+        }
+
+        .background-layer, .envelope-layer, .hal9000-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .background-layer { z-index: 1; }
+        .envelope-layer { z-index: 3; pointer-events: none; }
+        .hal9000-layer { width: 80px; height: 80px; z-index: 6; pointer-events: none; object-fit: contain; }
+
+        .disc {
+            width: 78%;
+            height: 78%;
+            transition: transform 0.8s ease-in-out;
+            transform-origin: center center;
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            z-index: 2;
+            filter: drop-shadow(0 0 10px rgba(255, 235, 185, 0.8));
+        }
+
+        .word-display {
+            position: absolute;
+            top: 39%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ec3926;
+            font-family: 'Economica', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .word-display span {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: fadeInOut 12.0s linear infinite;
+            white-space: nowrap;
+        }
+
+        .word-display span:nth-child(1) { animation-delay: 0s; }
+        .word-display span:nth-child(2) { animation-delay: 0.8s; }
+        .word-display span:nth-child(3) { animation-delay: 1.6s; }
+        .word-display span:nth-child(4) { animation-delay: 2.4s; }
+        .word-display span:nth-child(5) { animation-delay: 3.2s; }
+        .word-display span:nth-child(6) { animation-delay: 4.0s; }
+        .word-display span:nth-child(7) { animation-delay: 4.8s; }
+        .word-display span:nth-child(8) { animation-delay: 5.6s; }
+        .word-display span:nth-child(9) { animation-delay: 6.4s; }
+        .word-display span:nth-child(10) { animation-delay: 7.2s; }
+        .word-display span:nth-child(11) { animation-delay: 8.0s; }
+        .word-display span:nth-child(12) { animation-delay: 8.8s; }
+        .word-display span:nth-child(13) { animation-delay: 9.6s; }
+        .word-display span:nth-child(14) { animation-delay: 10.4s; }
+        .word-display span:nth-child(15) { animation-delay: 11.2s; }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, 50px) scale(0.1); color: #ec3926; }
+            10% { opacity: 1; transform: translate(-50%, 0px) scale(0.7); color: #f81800; }
+            40% { opacity: 0.5; transform: translate(-50%, -150px) scale(3); color: #e0da58; }
+            90% { opacity: 0.7; transform: translate(-50%, -300px) scale(7); color: #006cff; }
+            100% { opacity: 0; transform: translate(-50%, -500px) scale(12); color: #1844d0; }
+        }
+
+        .domain-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        @media (hover: hover) {
+            .domain-card:hover {
+                transform: scale(1.02) translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .disc-container {
+                width: 250px;
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body class="animated-rainbow min-h-screen">
+    <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Header with Disc -->
+        <div class="text-center mb-8">
+            <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+                The Body Mind Soul Lens
+            </h1>
+            
+            <!-- Disc Visualization -->
+            <div class="flex justify-center mb-6">
+                <div class="disc-container">
+                    <img src="https://via.placeholder.com/500/53523a/53523a" alt="Background" class="background-layer">
+                    <img src="https://via.placeholder.com/390/ffd700/ffd700?text=☯" alt="Disc" class="disc" id="disc">
+                    <img src="https://via.placeholder.com/500/00000000/00000000" alt="Envelope" class="envelope-layer">
+                    <div id="wordDisplay" class="word-display" style="display: none;">
+                        <span>Dao</span><span>God</span><span>Zen</span><span>Love</span>
+                        <span>Atman</span><span>Ananda</span><span>Kenshō</span><span>Ikigai</span>
+                        <span>Satori</span><span>Nirvana</span><span>Neshama</span><span>Samsara</span>
+                        <span>Ein Sof</span><span>Shekhinah</span><span>Infinity</span>
+                    </div>
+                    <img src="https://via.placeholder.com/100/ff0000/ffffff?text=HAL" alt="HAL 9000" class="hal9000-layer">
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex justify-center gap-3 mb-8">
+                <button onclick="setState('body')" class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-all shadow-lg">BODY</button>
+                <button onclick="setState('mind')" class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold transition-all shadow-lg">MIND</button>
+                <button onclick="setState('soul')" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-all shadow-lg">SOUL</button>
+                <button onclick="toggleWords()" class="px-6 py-3 bg-white hover:bg-gray-100 text-gray-800 rounded-xl font-semibold transition-all shadow-lg">TRUTH</button>
+            </div>
+
+            <p class="text-lg sm:text-xl text-white mb-6 font-light leading-relaxed max-w-3xl mx-auto drop-shadow">
+                <em>"The whole is greater than the sum of its parts."</em><br>
+                Explore any life situation through three interconnected lenses.
+            </p>
+
+            <!-- Input Section -->
+            <div class="max-w-3xl mx-auto mb-8">
+                <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                    <input
+                        type="text"
+                        id="situationInput"
+                        placeholder="Enter any life situation or challenge..."
+                        class="flex-1 px-6 py-4 bg-white/90 backdrop-blur-sm border-2 border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-800 placeholder-gray-500 shadow-lg text-base"
+                    />
+                    <button
+                        onclick="analyzeSituation()"
+                        class="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl hover:from-purple-700 hover:to-indigo-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >Analyze</button>
+                </div>
+                
+                <!-- Example Buttons -->
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <button onclick="loadPredefined('Parkinson\'s Disease')" class="px-4 py-2 text-sm bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-md">Parkinson's</button>
+                    <button onclick="loadPredefined('Career Transition')" class="px-4 py-2 text-sm bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-md">Career Change</button>
+                    <button onclick="loadPredefined('Relationship Conflict')" class="px-4 py-2 text-sm bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-md">Relationship</button>
+                    <button onclick="loadPredefined('Burnout')" class="px-4 py-2 text-sm bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-md">Burnout</button>
+                    <button onclick="loadPredefined('Anxiety')" class="px-4 py-2 text-sm bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-md">Anxiety</button>
+                    <button onclick="loadPredefined('Grief')" class="px-4 py-2 text-sm bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-md">Grief</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysisSection" style="display: none;" class="space-y-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-3 drop-shadow-lg">
+                    <span id="currentSituation"></span>
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Body Card -->
+                <div class="domain-card p-6 rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl">
+                    <div class="flex items-center mb-6">
+                        <div class="p-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white mr-4 shadow-lg">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800">Body</h3>
+                            <p id="bodyFocus" class="text-sm text-gray-600 font-medium"></p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Experience:</span>
+                            <p id="bodyExperience" class="text-sm text-gray-700 italic mt-1"></p>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Approaches:</span>
+                            <ul id="bodyApproaches" class="mt-2 space-y-2"></ul>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Goal:</span>
+                            <p id="bodyGoal" class="text-sm text-gray-700 italic mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mind Card -->
+                <div class="domain-card p-6 rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl">
+                    <div class="flex items-center mb-6">
+                        <div class="p-3 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white mr-4 shadow-lg">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 2.5 1.3 4.7 3.3 6v4.7c0 .6.4 1.1 1 1.3h5.4c.6-.2 1-.7 1-1.3V15c2-.3 3.3-2.5 3.3-6 0-3.87-3.13-7-7-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800">Mind</h3>
+                            <p id="mindFocus" class="text-sm text-gray-600 font-medium"></p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Experience:</span>
+                            <p id="mindExperience" class="text-sm text-gray-700 italic mt-1"></p>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Approaches:</span>
+                            <ul id="mindApproaches" class="mt-2 space-y-2"></ul>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Goal:</span>
+                            <p id="mindGoal" class="text-sm text-gray-700 italic mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Soul Card -->
+                <div class="domain-card p-6 rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl">
+                    <div class="flex items-center mb-6">
+                        <div class="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white mr-4 shadow-lg">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17 17C14.2386 17 11 12 11 12C11 12 14.2386 7 17 7C19.7614 7 22 9.23858 22 12C22 14.7614 19.7614 17 17 17Z" stroke="currentColor" stroke-width="2"/>
+                                <path d="M6 8C8.20914 8 11 12 11 12C11 12 8.20914 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8Z" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800">Soul</h3>
+                            <p id="soulFocus" class="text-sm text-gray-600 font-medium"></p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Experience:</span>
+                            <p id="soulExperience" class="text-sm text-gray-700 italic mt-1"></p>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Approaches:</span>
+                            <ul id="soulApproaches" class="mt-2 space-y-2"></ul>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800 text-sm">Goal:</span>
+                            <p id="soulGoal" class="text-sm text-gray-700 italic mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const analysisData = {
+            "Parkinson's Disease": {
+                body: {
+                    focus: "Physical & Neurological Health",
+                    approaches: ["Medication & Symptom Management", "Physical Therapy & Exercise", "Diet & Nutrition Optimization", "Sleep Hygiene & Rest"],
+                    goal: "Manage symptoms, maintain mobility, and slow disease progression.",
+                    experience: "Tremors, stiffness, slowness of movement, and challenges with balance."
+                },
+                mind: {
+                    focus: "Cognitive & Emotional Well-being",
+                    approaches: ["Cognitive Behavioral Therapy (CBT)", "Mindfulness & Meditation", "Education & Understanding the Disease", "Creative Expression & Hobbies"],
+                    goal: "Cope with cognitive changes, manage anxiety/depression, and maintain mental clarity.",
+                    experience: "Brain fog, anxiety about the future, frustration with limitations."
+                },
+                soul: {
+                    focus: "Spiritual & Existential Adaptation",
+                    approaches: ["Connecting with a Support Community", "Exploring Personal Beliefs & Values", "Finding Purpose Beyond the Diagnosis", "Practicing Gratitude & Acceptance"],
+                    goal: "Find peace, acceptance, and a continued sense of purpose and connection.",
+                    experience: "Questioning life's meaning, deeper connection to spirituality."
+                }
+            },
+            "Career Transition": {
+                body: {
+                    focus: "Energy & Presentation",
+                    approaches: ["Maintaining a Healthy Routine", "Dressing for the Desired Role", "Practicing Confident Body Language", "Ensuring Adequate Rest & Stamina"],
+                    goal: "Project confidence, energy, and professionalism during the job search.",
+                    experience: "Stress-related fatigue, tension, and physical feeling of being 'stuck'."
+                },
+                mind: {
+                    focus: "Strategy & Skill Development",
+                    approaches: ["Updating Resume & LinkedIn Profile", "Networking & Informational Interviews", "Acquiring New Skills or Certifications", "Setting Clear Goals & Action Plans"],
+                    goal: "Strategically navigate the job market and secure a fulfilling new role.",
+                    experience: "Anxiety, self-doubt, excitement, and intellectual challenge of learning."
+                },
+                soul: {
+                    focus: "Alignment & Purpose",
+                    approaches: ["Clarifying Personal Values & Passions", "Journaling & Self-Reflection", "Seeking Mentorship or Guidance", "Trusting Intuition & Inner Calling"],
+                    goal: "Find a career path that aligns with one's true self and provides purpose.",
+                    experience: "A search for meaning in work, desire for fulfillment."
+                }
+            },
+            "Relationship Conflict": {
+                body: {
+                    focus: "Physiological Stress Response",
+                    approaches: ["Deep Breathing & Calming Techniques", "Creating Physical Space When Needed", "Prioritizing Sleep & Nutrition", "Engaging in Physical Activity"],
+                    goal: "Regulate the body's stress response to enable clearer communication.",
+                    experience: "Elevated heart rate, muscle tension, stomach knots."
+                },
+                mind: {
+                    focus: "Communication & Perspective-Taking",
+                    approaches: ["'I' Statements & Active Listening", "Identifying Cognitive Distortions", "Seeking to Understand", "Couples Counseling"],
+                    goal: "Resolve the immediate issue and improve communication patterns.",
+                    experience: "Rumination, blame, defensiveness, mental effort of seeing another's viewpoint."
+                },
+                soul: {
+                    focus: "Connection & Shared Values",
+                    approaches: ["Revisiting Shared Goals & Dreams", "Practicing Forgiveness & Compassion", "Spending Quality Time Together", "Exploring Deeper Lessons"],
+                    goal: "Heal the emotional bond and use conflict as catalyst for growth.",
+                    experience: "Hurt feelings, sense of disconnection, longing for harmony."
+                }
+            },
+            "Burnout": {
+                body: {
+                    focus: "Physical Exhaustion & Recovery",
+                    approaches: ["Prioritize Sleep & Rest Cycles", "Gentle Movement", "Nutrition for Energy", "Digital Detox"],
+                    goal: "Restore physical energy and prevent further depletion.",
+                    experience: "Chronic fatigue, headaches, muscle tension, feeling drained."
+                },
+                mind: {
+                    focus: "Boundary Setting & Workload",
+                    approaches: ["Learn to Say No", "Break Projects into Steps", "Delegate or Ask for Help", "Practice Mindfulness"],
+                    goal: "Regain control over mental load and develop sustainable habits.",
+                    experience: "Mental fog, difficulty concentrating, cynicism, feeling overwhelmed."
+                },
+                soul: {
+                    focus: "Purpose & Values Alignment",
+                    approaches: ["Reconnect with Your 'Why'", "Evaluate What Truly Matters", "Explore Meaning Beyond Achievement", "Consider Life Changes"],
+                    goal: "Rediscover passion and align life with deeper values.",
+                    experience: "Disconnected from purpose, questioning choices, spiritual emptiness."
+                }
+            },
+            "Anxiety": {
+                body: {
+                    focus: "Nervous System Regulation",
+                    approaches: ["Deep Breathing & Box Breathing", "Progressive Muscle Relaxation", "Regular Exercise", "Limit Caffeine"],
+                    goal: "Calm the nervous system and reduce physical symptoms.",
+                    experience: "Racing heart, shallow breathing, muscle tension, feeling 'on edge'."
+                },
+                mind: {
+                    focus: "Thought Pattern Management",
+                    approaches: ["Challenge Catastrophic Thinking", "Grounding Techniques (5-4-3-2-1)", "Write Down Worries", "Learn About Anxiety"],
+                    goal: "Break cycles of anxious thinking and develop coping strategies.",
+                    experience: "Racing thoughts, worst-case scenarios, inability to focus."
+                },
+                soul: {
+                    focus: "Trust & Spiritual Security",
+                    approaches: ["Practice Surrender & Letting Go", "Connect with Faith", "Cultivate Present-Moment Awareness", "Explore Security Beyond Control"],
+                    goal: "Develop deeper trust in life's process and find peace.",
+                    experience: "Existential worry, feeling unsafe, seeking spiritual grounding."
+                }
+            },
+            "Grief": {
+                body: {
+                    focus: "Processing Physical Loss",
+                    approaches: ["Allow Yourself to Cry & Feel", "Maintain Basic Self-Care", "Gentle Movement & Fresh Air", "Nourishing Foods"],
+                    goal: "Honor the body's natural grief response while maintaining health.",
+                    experience: "Heaviness in chest, loss of appetite, fatigue, physical aching."
+                },
+                mind: {
+                    focus: "Memory & Meaning-Making",
+                    approaches: ["Journal About Memories", "Create Memorial Rituals", "Seek Grief Counseling", "Read About Grief Process"],
+                    goal: "Process the loss while preserving meaningful memories.",
+                    experience: "Confusion, disbelief, intrusive thoughts, difficulty concentrating."
+                },
+                soul: {
+                    focus: "Spiritual Processing & Connection",
+                    approaches: ["Explore Beliefs About Life & Death", "Connect with Nature", "Honor the Person's Legacy", "Practice Gratitude"],
+                    goal: "Find meaning in loss and maintain spiritual connection.",
+                    experience: "Questioning life's meaning, feeling spiritually lost, seeking signs."
+                }
+            }
+        };
+
+        let currentRotation = 0;
+        let autoRotateInterval;
+        let isAutoMode = true;
+        const disc = document.getElementById('disc');
+        const states = { soul: 0, mind: 120, body: 240 };
+
+        function rotateDisc(targetRotation) {
+            disc.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg)`;
+            currentRotation = targetRotation;
+        }
+
+        function setState(state) {
+            clearInterval(autoRotateInterval);
+            isAutoMode = false;
+            rotateDisc(states[state]);
+            setTimeout(() => { if (!isAutoMode) startAutoRotation(); }, 5000);
+        }
+
+        function startAutoRotation() {
+            isAutoMode = true;
+            autoRotateInterval = setInterval(() => {
+                currentRotation += 120;
+                if (currentRotation >= 360) currentRotation = 0;
+                rotateDisc(currentRotation);
+            }, 3500);
+        }
+
+        function toggleWords() {
+            const display = document.getElementById('wordDisplay');
+            display.style.display = (display.style.display === 'none') ? 'block' : 'none';
+        }
+
+        function loadPredefined(situation) {
+            document.getElementById('situationInput').value = situation;
+            analyzeSituation();
+        }
+
+        function analyzeSituation() {
+            const input = document.getElementById('situationInput').value;
+            if (!input) return;
+
+            const situationData = analysisData[input] || generateGenericAnalysis(input);
+            
+            document.getElementById('currentSituation').textContent = input;
+
+            // Populate cards
+            ['body', 'mind', 'soul'].forEach(domain => {
+                document.getElementById(`${domain}Focus`).textContent = situationData[domain].focus;
+                document.getElementById(`${domain}Goal`).textContent = situationData[domain].goal;
+                document.getElementById(`${domain}Experience`).textContent = situationData[domain].experience;
+                
+                const ul = document.getElementById(`${domain}Approaches`);
+                ul.innerHTML = '';
+                situationData[domain].approaches.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start text-sm text-gray-700';
+                    li.innerHTML = `<svg class="w-4 h-4 mr-2 mt-1 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>${item}</span>`;
+                    ul.appendChild(li);
+                });
+            });
+
+            const analysisSection = document.getElementById('analysisSection');
+            analysisSection.style.display = 'block';
+            analysisSection.classList.add('fade-in');
+            analysisSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function generateGenericAnalysis(input) {
+            return {
+                body: {
+                    focus: "Physical Well-being",
+                    approaches: ["Mindful Movement", "Balanced Nutrition", "Adequate Rest", "Stress Management"],
+
+                    goal: "Improve physical health and vitality.",
+                    experience: "Physical symptoms and energy levels related to this situation."
+                },
+                mind: {
+                    focus: "Mental Strategy",
+                    approaches: ["Journaling & Reflection", "Learning & Research", "Strategic Planning", "Cognitive Reframing"],
+                    goal: "Develop clear thinking and effective strategies.",
+                    experience: "Mental processing, problem-solving, and emotional regulation."
+                },
+                soul: {

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Side View Rotating Planet</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #181e21;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('solarSystemCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const planet = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 100,
+      rotationAngle: 0
+    };
+
+    function drawPlanet() {
+      ctx.beginPath();
+      ctx.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'blue';
+      ctx.fill();
+    }
+
+    function drawMeridians() {
+      const meridianCount = 12; 
+      for (let i = 0; i < meridianCount; i++) {
+        const angle = (Math.PI * 2 / meridianCount) * i + planet.rotationAngle; 
+        ctx.beginPath();
+        for (let t = -1; t <= 1; t += 0.05) {
+          const x = planet.x + planet.radius * Math.sin(angle) * Math.cos(t * Math.PI / 2);
+          const y = planet.y + planet.radius * Math.sin(t * Math.PI / 2);
+          if (t === -1) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    function drawEquator() {
+      ctx.beginPath();
+      ctx.moveTo(planet.x - planet.radius, planet.y);
+      ctx.lineTo(planet.x + planet.radius, planet.y);
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlanet();
+      drawMeridians();
+      drawEquator();
+      planet.rotationAngle += 0.03; 
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

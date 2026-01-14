@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D World</title>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400&display=swap" rel="stylesheet">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400&display=swap');
+
+    .triadic-atom-responsive {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      background: #000;
+      overflow: hidden;
+      border-radius: 16px;
+      font-family: 'Overpass', sans-serif;
+    }
+
+    .triadic-atom-responsive .nucleus {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 30%; height: 30%;
+      margin: -15% 0 0 -15%;
+      background: radial-gradient(circle, #000, #333 80%, #666);
+      border-radius: 50%;
+      box-shadow: 0 0 50px #ccc, 0 0 100px #ffea88;
+      z-index: 500;
+    }
+
+    .triadic-atom-responsive .electron {
+      position: absolute;
+      width: 6.67%; height: 6.67%;
+      border-radius: 50%;
+      margin: -3.33% 0 0 -3.33%;
+      pointer-events: none;
+    }
+
+    .triadic-atom-responsive #e1 { background: radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow: 0 0 30px #ff4466, inset -4px -4px 12px #900; }
+    .triadic-atom-responsive #e2 { background: radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow: 0 0 30px #55aa99, inset -4px -4px 12px #0066cc; }
+    .triadic-atom-responsive #e3 { background: radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow: 0 0 30px #ffee66, inset -4px -4px 12px #ccaa00; }
+
+    .triadic-atom-responsive canvas { position: absolute; inset: 0; pointer-events: none; }
+    .triadic-atom-responsive .trail-front { z-index: 550; }
+  </style>
+
+  <div class="electron" id="e1"></div>
+  <div class="electron" id="e2"></div>
+  <div class="electron" id="e3"></div>
+  <canvas id="trailsBack"></canvas>
+  <div class="nucleus"></div>
+  <canvas id="trailsFront" class="trail-front"></canvas>
+
+  <script>
+    const container = document.currentScript.parentElement;
+    const size = container.clientWidth;
+    container.querySelectorAll('canvas').forEach(c => {
+      c.width = size; c.height = size;
+    });
+
+    const baseSpeed = 0.04;
+    const trailFade = 0.009;
+    const trailThickness = 3.5;
+
+    const ctxBack = container.querySelector('#trailsBack').getContext('2d');
+    const ctxFront = container.querySelector('#trailsFront').getContext('2d');
+    ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+    ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const nucleusRadius = size * 0.15;
+
+    // Base multipliers
+    const baseMultipliers = { red: 1, blue: 0.75, yellow: 3 };
+
+    const electrons = [
+      { el: container.querySelector('#e1'), color: '#ff3355', baseMult: baseMultipliers.red,   radius: size * 0.375, inclinationDeg: 90, planeRotDeg:   7, rollDeg:   0 },
+      { el: container.querySelector('#e2'), color: '#4488ff', baseMult: baseMultipliers.blue,  radius: size * 0.35,  inclinationDeg: 15, planeRotDeg:  95, rollDeg:  55 },
+      { el: container.querySelector('#e3'), color: '#ffdd33', baseMult: baseMultipliers.yellow, radius: size * 0.35,  inclinationDeg: 15, planeRotDeg: 115, rollDeg: -55 }
+    ];
+
+    electrons.forEach(e => {
+      const rad = deg => deg * Math.PI / 180;
+      e.i = rad(e.inclinationDeg);
+      e.r = rad(e.planeRotDeg);
+      e.o = rad(e.rollDeg);
+      e.currentMult = e.baseMult; // will be modified each frame
+    });
+
+    // 40-second full cycle (20s up, 20s down) → smooth sine-based acceleration
+    const cycleDuration = 40000; // ms
+    const peakYellowMult = 6;
+
+    let startTime = performance.now();
+
+    (function animate() {
+      const elapsed = performance.now() - startTime;
+      const cycleTime = elapsed % cycleDuration;
+      const phase = cycleTime / (cycleDuration / 2); // 0 → 1 → 0 over 40s
+
+      let boost;
+      if (phase <= 1) {
+        boost = Math.sin(phase * Math.PI / 2);             // 0 → 1 (accelerate)
+      } else {
+        boost = Math.sin((2 - phase) * Math.PI / 2);       // 1 → 0 (decelerate)
+      }
+
+      // Yellow reaches exactly 6× at peak, others scale proportionally
+      const yellowMult = baseMultipliers.yellow + (peakYellowMult - baseMultipliers.yellow) * boost;
+
+      electrons[0].currentMult = baseMultipliers.red   * (yellowMult / baseMultipliers.yellow);
+      electrons[1].currentMult = baseMultipliers.blue  * (yellowMult / baseMultipliers.yellow);
+      electrons[2].currentMult = yellowMult;
+
+      // Normal animation with dynamic multipliers
+      const timeStep = baseSpeed * (yellowMult / baseMultipliers.yellow); // overall speed scales with yellow
+      let time = elapsed * 0.001 * 2; // arbitrary time base
+
+      ctxBack.fillStyle = ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`;
+      ctxBack.fillRect(0,0,size,size);
+      ctxFront.fillRect(0,0,size,size);
+
+      electrons.forEach(e => {
+        const a = time * e.currentMult;
+
+        let x = Math.cos(a) * e.radius;
+        let y = Math.sin(a) * e.radius;
+        let z = 0;
+
+        let tx = x * Math.cos(e.i) + z * Math.sin(e.i);
+        z = -x * Math.sin(e.i) + z * Math.cos(e.i);
+        x = tx;
+
+        tx = x * Math.cos(e.r) - z * Math.sin(e.r);
+        z = x * Math.sin(e.r) + z * Math.cos(e.r);
+        x = tx;
+
+        tx = x * Math.cos(e.o) - y * Math.sin(e.o);
+        let ty = x * Math.sin(e.o) + y * Math.cos(e.o);
+        x = tx; y = ty;
+
+        const scale = 1 + z * 0.0038;
+        const screenX = centerX + x;
+        const screenY = centerY + y;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x,y) < nucleusRadius + size*0.033;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+      });
+
+      requestAnimationFrame(animate);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dance of Red & Blue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            color: #e2e8f0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* --- NEW UI STYLE FROM LOVE BATTLE --- */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px; 
+            left: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            width: 280px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        /* Header for Collapse/Expand */
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 600;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .ui-header:hover {
+            color: white;
+        }
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        /* Collapsible Content Wrapper */
+        #ui-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            max-height: 500px;
+            opacity: 1;
+        }
+
+        /* Collapsed State */
+        #ui-layer.collapsed #ui-content {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+        }
+        #ui-layer.collapsed .toggle-icon {
+            transform: rotate(-180deg);
+        }
+        #ui-layer.collapsed {
+            width: 200px;
+        }
+        
+        /* Playlist Styles */
+        .playlist-container {
+            width: 100%;
+            max-height: 120px; /* Scrollable area */
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Custom Scrollbar */
+        .playlist-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .playlist-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .playlist-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+        .track-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .track-item:last-child {
+            border-bottom: none;
+        }
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .track-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a78bfa; 
+            font-weight: 500;
+        }
+        .track-icon {
+            opacity: 0.5;
+            width: 10px;
+            height: 10px;
+        }
+        .track-item.active .track-icon {
+            opacity: 1;
+            color: #a78bfa;
+        }
+
+        /* Buttons & Inputs */
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+            width: 100%;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn.active-state {
+            border-color: #10b981;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .status {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Scrubber */
+        .scrubber-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .time-display {
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* Title Overlay - Separate from controls */
+        .title-overlay {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            pointer-events: none;
+        }
+        .main-title {
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            line-height: 1.1;
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .sub-title {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- Title Top Left -->
+    <div class="title-overlay">
+        <h1 class="main-title text-red-500" style="color: #ff35e0;">RED <span style="font-size: 0.5em; vertical-align: middle; color: #ff89ed;">(BASS)</span></h1>
+        <h1 class="main-title text-blue-500" style="color: #76faff;">& BLUE <span style="font-size: 0.5em; vertical-align: middle; color: #bbfdff;">(TREBLE)</span></h1>
+        <p class="sub-title">Hover to Conduct / Drag to Cluster</p>
+    </div>
+
+    <!-- UI Bottom Right -->
+    <div id="ui-layer">
+        <!-- Header / Toggle -->
+        <div class="ui-header" id="uiHeader">
+            <span>Love Battle</span>
+            <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="ui-content">
+            <!-- Playlist UI -->
+            <div class="playlist-container" id="playlist-container">
+                <!-- Tracks will be injected here by JS -->
+            </div>
+
+            <div class="controls-row">
+                <label class="btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    Upload
+                    <input type="file" id="audio-upload" accept="audio/*" multiple>
+                </label>
+                
+                <button class="btn" id="play-pause-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                    </svg>
+                    Play
+                </button>
+            </div>
+            
+            <div class="scrubber-container">
+                <input type="range" id="seek-bar" value="0" max="100">
+                <div class="time-display" id="time-display">--:--</div>
+            </div>
+
+            <div class="status" id="status-text">Select a track to begin</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const config = {
+            redColor: '255, 60, 60',     
+            blueColor: '60, 100, 255',   
+            redLineColor: '255, 53, 53', // Updated to #ff3535
+            blueLineColor: '118, 250, 255',
+            particleCount: 220,
+            bgFade: 'rgba(5, 5, 5, 0.3)' 
+        };
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const fileInput = document.getElementById('audio-upload');
+        const playlistContainer = document.getElementById('playlist-container');
+        const seekBar = document.getElementById('seek-bar');
+        const timeDisplay = document.getElementById('time-display');
+        const statusText = document.getElementById('status-text');
+        
+        // UI Toggle
+        const uiLayer = document.getElementById('ui-layer');
+        const uiHeader = document.getElementById('uiHeader');
+        
+        uiHeader.addEventListener('click', () => {
+            uiLayer.classList.toggle('collapsed');
+        });
+
+        let width, height;
+        let particles = [];
+        
+        // Audio State
+        let audioCtx;
+        let analyser;
+        let source; 
+        let dataArray;
+        let isAudioInitialized = false;
+        let isPlaying = false;
+        let isGenerative = true;
+        let genOscillators = [];
+        
+        // Playlist
+        let playlist = [
+            { name: "1. Deep Submersion (Bass)", type: "gen", preset: "bass" },
+            { name: "2. Crystal Rain (Treble)", type: "gen", preset: "treble" },
+            { name: "3. Neural Static (Glitch)", type: "gen", preset: "glitch" },
+            { name: "4. Cardiac Pulse (Rhythm)", type: "gen", preset: "pulse" },
+            { name: "5. The Void (Drone)", type: "gen", preset: "drone" }
+        ];
+        
+        let currentTrackIndex = 0;
+        let audioElement = new Audio(); 
+        audioElement.crossOrigin = "anonymous";
+
+        // Frequencies
+        let bassLevel = 0;
+        let trebleLevel = 0;
+        
+        // Mouse state
+        let mouse = { x: null, y: null, active: false, isDown: false, isDragging: false };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- AUDIO ENGINE ---
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 512; 
+                analyser.smoothingTimeConstant = 0.8;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Playlist Logic
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                files.forEach(file => {
+                    playlist.push({
+                        name: `MP3: ${file.name}`,
+                        type: 'file',
+                        file: file
+                    });
+                });
+                renderPlaylist();
+                // Play first new track
+                playTrack(playlist.length - files.length);
+            }
+        });
+
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            playlist.forEach((track, index) => {
+                const div = document.createElement('div');
+                div.className = `track-item ${index === currentTrackIndex ? 'active' : ''}`;
+                div.innerHTML = `
+                    <svg class="track-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2z"/>
+                        <path fill-rule="evenodd" d="M14 11V2h1v9h-1zM6 3v10H5V3h1z"/>
+                    </svg>
+                    <span>${track.name}</span>
+                `;
+                div.onclick = () => playTrack(index);
+                playlistContainer.appendChild(div);
+            });
+        }
+
+        function playTrack(index) {
+            initAudioContext();
+            stopAudio();
+            
+            // Update UI
+            currentTrackIndex = index;
+            renderPlaylist(); // refresh active class
+
+            const track = playlist[index];
+            
+            if (track.type === 'gen') {
+                playGenerativePreset(track.preset);
+                isGenerative = true;
+                seekBar.disabled = true;
+                timeDisplay.innerText = "GEN:∞";
+                playPauseBtn.innerHTML = `Pause`; 
+                playPauseBtn.classList.add('active-state');
+            } else {
+                isGenerative = false;
+                seekBar.disabled = false;
+                const fileURL = URL.createObjectURL(track.file);
+                
+                if (!source || !source.mediaElement) {
+                     source = audioCtx.createMediaElementSource(audioElement);
+                     source.connect(analyser);
+                     analyser.connect(audioCtx.destination);
+                }
+
+                audioElement.src = fileURL;
+                audioElement.play();
+                statusText.innerText = `Playing: ${track.name}`;
+                statusText.style.color = "#a78bfa";
+                isPlaying = true;
+                playPauseBtn.innerHTML = `Pause`;
+                playPauseBtn.classList.add('active-state');
+            }
+        }
+
+        function stopAudio() {
+            if (isGenerative) {
+                genOscillators.forEach(o => {
+                    try { o.stop(); o.disconnect(); } catch(e){}
+                });
+                genOscillators = [];
+            } else {
+                audioElement.pause();
+            }
+            isPlaying = false;
+            playPauseBtn.innerHTML = `Play`;
+            playPauseBtn.classList.remove('active-state');
+            statusText.innerText = "Paused";
+            statusText.style.color = "rgba(255,255,255,0.4)";
+        }
+
+        // GENERATIVE SYNTH ENGINE
+        function playGenerativePreset(preset) {
+            isGenerative = true;
+            genOscillators = [];
+            
+            const masterGenGain = audioCtx.createGain();
+            masterGenGain.gain.value = 0.2;
+            masterGenGain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            const createOsc = (type, freq, detune = 0, gainVal = 0.5) => {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                osc.detune.value = detune;
+                g.gain.value = gainVal;
+                osc.connect(g);
+                g.connect(masterGenGain);
+                osc.start();
+                genOscillators.push(osc);
+            };
+
+            const createLFO = (targetParam, freq, depth) => {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.frequency.value = freq;
+                g.gain.value = depth;
+                osc.connect(g);
+                g.connect(targetParam);
+                osc.start();
+                genOscillators.push(osc);
+            };
+
+            if (preset === 'bass') {
+                createOsc('sine', 55, 0, 0.8);
+                createOsc('triangle', 110, 5, 0.4);
+                createLFO(masterGenGain.gain, 0.5, 0.1);
+            } else if (preset === 'treble') {
+                createOsc('sine', 880, 0, 0.3);
+                createOsc('sine', 1320, 10, 0.2);
+                createLFO(masterGenGain.gain, 4, 0.1);
+            } else if (preset === 'glitch') {
+                createOsc('sawtooth', 40, 0, 0.6);
+                createOsc('square', 41, 0, 0.6);
+            } else if (preset === 'pulse') {
+                createOsc('triangle', 60, 0, 0.7);
+                createLFO(masterGenGain.gain, 2, 0.5);
+            } else {
+                createOsc('sawtooth', 110, 0, 0.1);
+                createOsc('square', 220, 0, 0.1);
+            }
+            
+            statusText.innerText = `Active: ${playlist[currentTrackIndex].name}`;
+            statusText.style.color = "#10b981";
+            isPlaying = true;
+        }
+
+        // Play/Pause Toggle
+        playPauseBtn.addEventListener('click', () => {
+            if (!isAudioInitialized) {
+                playTrack(0);
+                return;
+            }
+            
+            if (isPlaying) {
+                stopAudio();
+            } else {
+                if (playlist[currentTrackIndex].type === 'gen') {
+                    playTrack(currentTrackIndex); 
+                } else {
+                    audioElement.play();
+                    isPlaying = true;
+                    playPauseBtn.innerHTML = `Pause`;
+                    playPauseBtn.classList.add('active-state');
+                    statusText.innerText = "Playing";
+                    statusText.style.color = "#a78bfa";
+                }
+            }
+        });
+
+        // Scrubbing
+        audioElement.addEventListener('timeupdate', () => {
+            if (!isGenerative && audioElement.duration) {
+                const progress = (audioElement.currentTime / audioElement.duration) * 100;
+                seekBar.value = progress;
+                
+                const curMins = Math.floor(audioElement.currentTime / 60);
+                const curSecs = Math.floor(audioElement.currentTime % 60).toString().padStart(2, '0');
+                const durMins = Math.floor(audioElement.duration / 60);
+                const durSecs = Math.floor(audioElement.duration % 60).toString().padStart(2, '0');
+                timeDisplay.innerText = `${curMins}:${curSecs} / ${durMins}:${durSecs}`;
+            }
+        });
+        
+        seekBar.addEventListener('input', () => {
+            if (!isGenerative && audioElement.duration) {
+                const time = (seekBar.value / 100) * audioElement.duration;
+                audioElement.currentTime = time;
+            }
+        });
+
+        // --- INTERACTION ---
+        const handleStart = (x, y) => {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.isDown = true;
+            mouse.isDragging = true; 
+            mouse.active = true;
+        };
+
+        const handleMove = (x, y) => {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.active = true;
+        };
+
+        const handleEnd = () => {
+            mouse.isDown = false;
+            mouse.isDragging = false; 
+        };
+
+        window.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', handleEnd);
+        
+        window.addEventListener('touchstart', e => handleStart(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchmove', e => handleMove(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchend', handleEnd);
+
+        renderPlaylist();
+
+
+        // --- PARTICLES ---
+        class Particle {
+            constructor(type) {
+                this.type = type; 
+                this.reset(true); 
+            }
+
+            reset(initial = false) {
+                if (initial) {
+                    if (this.type === 'red') {
+                        this.x = Math.random() * (width * 0.4);
+                    } else {
+                        this.x = (width * 0.6) + Math.random() * (width * 0.4);
+                    }
+                } else {
+                    this.x = Math.random() * width;
+                }
+                
+                this.y = Math.random() * height;
+                this.vx = 0;
+                this.vy = 0;
+                
+                if (this.type === 'blue') {
+                    // MUCH BIGGER BLUE NODES
+                    this.baseSize = Math.random() * 3 + 3;
+                } else {
+                    this.baseSize = Math.random() * 2 + 1; 
+                }
+                
+                this.angle = Math.random() * Math.PI * 2;
+                this.speedMod = this.type === 'red' ? 0.04 : 0.03; 
+            }
+
+            update(bass, treble) {
+                let energy = (this.type === 'red') ? bass : treble;
+                
+                // Standstill logic
+                const baseSpeed = isPlaying ? 0.005 : 0; 
+                const reactionMult = 8.0; 
+
+                // 1. Base Movement
+                if (this.type === 'red') {
+                    this.angle += this.speedMod;
+                    this.vx += (Math.sin(this.angle) * baseSpeed) + ((Math.random()-0.5) * energy * reactionMult);
+                    this.vy += (Math.cos(this.angle) * baseSpeed) + ((Math.random()-0.5) * energy * reactionMult);
+                } else {
+                    this.angle -= this.speedMod;
+                    this.vx += (Math.cos(this.angle) * baseSpeed) + ((Math.random()-0.5) * energy * reactionMult);
+                    this.vy += (Math.sin(this.angle) * baseSpeed) + ((Math.random()-0.5) * energy * reactionMult);
+                }
+
+                // 2. Interaction
+                if (mouse.active && mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const angle = Math.atan2(dy, dx);
+
+                    if (mouse.isDragging) {
+                        // --- DRAG CLUSTER MODE ---
+                        const force = (1000 - dist) / 1000;
+                        if (dist > 50) { 
+                            this.vx += Math.cos(angle) * force * 3.5;
+                            this.vy += Math.sin(angle) * force * 3.5;
+                        } else {
+                            this.vx += (Math.random()-0.5) * 2;
+                            this.vy += (Math.random()-0.5) * 2;
+                        }
+                    } else if (dist < 300) {
+                        // --- HOVER CONDUCT MODE ---
+                        const force = (300 - dist) / 300;
+                        const pullStrength = 0.5 + (energy * 2); 
+                        this.vx += Math.cos(angle) * force * pullStrength;
+                        this.vy += Math.sin(angle) * force * pullStrength;
+                    }
+                }
+                
+                // 3. Standoff Logic (Return to Sites)
+                if (!mouse.isDragging) {
+                    // Stronger separation force for "On Release" feel
+                    if (this.type === 'red' && this.x > width * 0.5) {
+                        this.vx -= 0.8; // More aggressive pushback
+                    }
+                    if (this.type === 'blue' && this.x < width * 0.5) {
+                        this.vx += 0.8; // More aggressive pushback
+                    }
+                }
+
+                // Friction
+                this.vx *= 0.90; 
+                this.vy *= 0.90;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Wall collisions
+                if (this.x < 0) { this.x = 0; this.vx *= -1; }
+                if (this.x > width) { this.x = width; this.vx *= -1; }
+                if (this.y < 0) { this.y = 0; this.vy *= -1; }
+                if (this.y > height) { this.y = height; this.vy *= -1; }
+            }
+
+            draw(bass, treble) {
+                let energy = (this.type === 'red') ? bass : treble;
+                
+                ctx.beginPath();
+                
+                let r = this.baseSize;
+                if (this.type === 'red') {
+                    r = this.baseSize * (1 + energy * 5); 
+                } else {
+                    r = this.baseSize * (1 + energy * 4);
+                }
+
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                
+                if (this.type === 'red') {
+                    const alpha = 0.2 + (energy * 0.8);
+                    ctx.fillStyle = `rgba(${config.redColor}, ${alpha})`;
+                } else {
+                    const alpha = 0.2 + (energy * 0.8);
+                    ctx.fillStyle = `rgba(${config.blueColor}, ${alpha})`;
+                }
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            particles = [];
+            for (let i = 0; i < config.particleCount / 2; i++) particles.push(new Particle('red'));
+            for (let i = 0; i < config.particleCount / 2; i++) particles.push(new Particle('blue'));
+        }
+
+        function animate() {
+            // Analyze Audio
+            if (analyser && isPlaying) {
+                analyser.getByteFrequencyData(dataArray);
+                const bufferLength = analyser.frequencyBinCount;
+                const splitIndex = Math.floor(bufferLength / 8); 
+                
+                let bassSum = 0;
+                let trebleSum = 0;
+                
+                for(let i = 0; i < splitIndex; i++) bassSum += dataArray[i];
+                for(let i = splitIndex * 4; i < bufferLength; i++) trebleSum += dataArray[i];
+                
+                bassLevel = (bassSum / splitIndex) / 255; 
+                trebleLevel = (trebleSum / (bufferLength - splitIndex*4)) / 255;
+                
+                trebleLevel = Math.min(1, trebleLevel * 4);
+                bassLevel = Math.min(1, bassLevel * 2); 
+            } else {
+                bassLevel *= 0.8;
+                trebleLevel *= 0.8;
+            }
+
+            ctx.fillStyle = config.bgFade; 
+            ctx.fillRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                const p1 = particles[i];
+                p1.update(bassLevel, trebleLevel);
+                p1.draw(bassLevel, trebleLevel);
+
+                // Connections
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx*dx + dy*dy; 
+                    
+                    if (distSq < 15000) { 
+                        const dist = Math.sqrt(distSq);
+                        const opacity = 1 - (dist / 122);
+
+                        if (p1.type === p2.type) {
+                            ctx.beginPath();
+                            ctx.lineWidth = 0.5;
+                            const pulse = p1.type === 'red' ? bassLevel : trebleLevel;
+                            
+                            if (p1.type === 'red') {
+                                ctx.strokeStyle = `rgba(${config.redLineColor}, ${opacity * (0.1 + pulse * 2)})`;
+                            } else {
+                                ctx.strokeStyle = `rgba(${config.blueLineColor}, ${opacity * (0.1 + pulse * 2)})`;
+                            }
+                            
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        } else {
+                            if (dist < 60) {
+                                ctx.beginPath();
+                                ctx.lineWidth = 1 + (bassLevel + trebleLevel) * 2; 
+                                ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 2 * (bassLevel+trebleLevel)})`;
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+    </script>
+</body>
+</html>

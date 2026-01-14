@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom – Three 120° Tilted Orbits</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:600px; height:600px; }
+
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:160px; height:160px; margin:-80px 0 0 -80px;
+        background:radial-gradient(circle, #ffcc00, #fff 70%, #ffea88);
+        border-radius:50%;
+        box-shadow:0 0 80px #ffffcc, 0 0 160px #ffea88, 0 0 300px rgba(255,255,200,0.8);
+        z-index: 500;
+    }
+
+    .electron {
+        position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px;
+        pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #fff, #ff2244); box-shadow:0 0 50px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #fff, #3388ff); box-shadow:0 0 50px #55aaff, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #fff, #ffdd22); box-shadow:0 0 50px #ffee66, inset -8px -8px 20px #ccaa00; }
+
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index: 550; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    
+    <canvas id="trailsBack"  width="600" height="600"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" width="600" height="600" class="trail-front"></canvas>
+</div>
+
+<script>
+// ██████████████████  TWEAK THESE ██████████████████
+const speed          = 0.018;
+const startOffset    = 0;
+const orbitRadius    = 240;
+const inclination    = 62 * Math.PI/180;  // tilt of each orbital plane from vertical
+const trailFade      = 0.032;
+const trailThickness = 2.0;
+// █████████████████████████████████████████████████
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 300;
+const centerY = 300;
+const nucleusRadius = 80;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff4466', planeRotation:   0 * Math.PI/180 },
+    { el: document.getElementById('e2'), color: '#55aaff', planeRotation: 120 * Math.PI/180 },
+    { el: document.getElementById('e3'), color: '#ffee66', planeRotation: 240 * Math.PI/180 }
+];
+
+let time = 0;
+
+function animate() {
+    time += speed;
+
+    ctxBack.fillStyle = `rgba(0,0,0,${trailFade})`;
+    ctxBack.fillRect(0,0,600,600);
+    ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`;
+    ctxFront.fillRect(0,0,600,600);
+
+    electrons.forEach(e => {
+        const angle = time + startOffset * Math.PI/180;
+
+        // 1. Position in its own orbital plane (elliptical because we're viewing at an angle)
+        let x = Math.cos(angle) * orbitRadius;
+        let y = Math.sin(angle) * orbitRadius;
+        let z = 0;
+
+        // 2. Tilt the orbital plane forward (inclination)
+        const X1 = x;
+        const Y1 = y * Math.cos(inclination);
+        const Z1 = y * Math.sin(inclination);
+
+        // 3. Rotate the entire plane around the vertical Y-axis by 0°, 120°, 240°
+        const cosR = Math.cos(e.planeRotation);
+        const sinR = Math.sin(e.planeRotation);
+        const finalX = X1 * cosR - Z1 * sinR;
+        const finalY = Y1;
+        const finalZ = X1 * sinR + Z1 * cosR;
+
+        // Perspective scaling
+        const scale = 1 + finalZ * 0.0032;
+
+        const screenX = centerX + finalX;
+        const screenY = centerY + finalY;
+
+        // Update electron ball
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+
+        e.el.style.transform = `scale(${scale})`;
+
+        // Hide behind nucleus properly
+        const dist2D = Math.sqrt(finalX * finalX + finalY * finalY);
+        const behind = finalZ < 0 && dist2D < nucleusRadius + 15;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        // Draw trail on correct layer
+        const ctx = finalZ < 0 ? ctxBack : ctxFront;
+
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.01, screenY + 0.01);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.09;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 4, 0, Math.PI*2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

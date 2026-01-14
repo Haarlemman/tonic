@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Sprite Playground</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .panel {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid #333;
+            pointer-events: auto;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem;
+            max-width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .control-group { margin-bottom: 0.75rem; }
+        .control-group label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 0.25rem; }
+        .control-group input[type="range"] { width: 100%; accent-color: #6366f1; }
+        .btn {
+            background: #4f46e5;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #4338ca; }
+        .hidden { display: none !important; }
+        
+        /* Custom scrollbar for panels */
+        .panel::-webkit-scrollbar { width: 6px; }
+        .panel::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<!-- Game Canvas -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- UI Layer -->
+<div id="ui-layer">
+    
+    <!-- Setup Panel -->
+    <div id="setup-panel" class="panel ml-4 mt-4 overflow-y-auto max-h-[90vh]">
+        <h2 class="text-xl font-bold mb-4 text-indigo-400">Sprite Setup</h2>
+        
+        <div class="control-group border-b border-gray-700 pb-4">
+            <label>1. Upload Sprite Sheet</label>
+            <input type="file" id="spriteInput" accept="image/*" class="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-900 file:text-indigo-300 hover:file:bg-indigo-800">
+        </div>
+
+        <div id="preview-container" class="hidden mt-4">
+            <div class="control-group">
+                <label>2. Configure Frames</label>
+                <div class="relative bg-gray-800 border border-gray-600 rounded overflow-hidden flex justify-center items-center min-h-[100px]">
+                    <img id="spritePreview" src="" alt="Preview" style="max-width: 100%; opacity: 0.5;">
+                    <!-- Overlay Grid for visualization -->
+                    <div id="gridOverlay" class="absolute top-0 left-0 border-2 border-red-500 box-content pointer-events-none transition-all duration-75"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="control-group">
+                    <label>Rows (Anim States)</label>
+                    <input type="number" id="rowsInput" value="1" min="1" max="20" class="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white">
+                </div>
+                <div class="control-group">
+                    <label>Cols (Frames)</label>
+                    <input type="number" id="colsInput" value="4" min="1" max="20" class="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Animation Speed: <span id="speedVal">10</span>fps</label>
+                <input type="range" id="animSpeed" min="1" max="60" value="10">
+            </div>
+            
+             <div class="control-group">
+                <label>Player Scale: <span id="scaleVal">2</span>x</label>
+                <input type="range" id="scaleInput" min="0.5" max="5" step="0.1" value="2">
+            </div>
+
+            <button id="startGameBtn" class="btn mt-2">Enter World</button>
+        </div>
+        
+        <div id="instructions" class="mt-4 text-xs text-gray-400">
+            <p class="mb-2">This environment creates a dynamic game world for your sprite.</p>
+            <ul class="list-disc pl-4 space-y-1">
+                <li>Upload your image.</li>
+                <li>Set rows/cols to isolate a single frame.</li>
+                <li>Controls: Arrow Keys to Move, Space to Jump, Z to Dash.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Gameplay Controls (Hidden initially) -->
+    <div id="game-controls" class="panel hidden absolute top-4 right-4">
+        <h3 class="font-bold text-sm mb-2 text-indigo-400">World Settings</h3>
+        <div class="control-group">
+            <label>Gravity</label>
+            <input type="range" id="gravityInput" min="0" max="2" step="0.1" value="0.8">
+        </div>
+        <div class="control-group">
+            <label>Jump Force</label>
+            <input type="range" id="jumpInput" min="10" max="30" step="1" value="18">
+        </div>
+        <button id="resetBtn" class="btn bg-red-600 hover:bg-red-700 text-xs mt-2">Respawn</button>
+        <button id="configBtn" class="btn bg-gray-600 hover:bg-gray-700 text-xs mt-2">Back to Setup</button>
+    </div>
+
+</div>
+
+<script>
+/**
+ * Game Engine & Logic
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// UI Elements
+const uiElements = {
+    setupPanel: document.getElementById('setup-panel'),
+    gameControls: document.getElementById('game-controls'),
+    spriteInput: document.getElementById('spriteInput'),
+    previewContainer: document.getElementById('preview-container'),
+    spritePreview: document.getElementById('spritePreview'),
+    gridOverlay: document.getElementById('gridOverlay'),
+    rowsInput: document.getElementById('rowsInput'),
+    colsInput: document.getElementById('colsInput'),
+    startGameBtn: document.getElementById('startGameBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    configBtn: document.getElementById('configBtn'),
+    animSpeed: document.getElementById('animSpeed'),
+    speedVal: document.getElementById('speedVal'),
+    scaleInput: document.getElementById('scaleInput'),
+    scaleVal: document.getElementById('scaleVal'),
+    gravityInput: document.getElementById('gravityInput'),
+    jumpInput: document.getElementById('jumpInput')
+};
+
+// Game State
+let gameState = 'SETUP'; // SETUP, PLAY
+let lastTime = 0;
+let spriteImage = new Image();
+let spriteLoaded = false;
+
+// Physics Config
+let PHYSICS = {
+    gravity: 0.8,
+    friction: 0.85,
+    speed: 1.5,
+    jumpForce: 18,
+    terminalVelocity: 15
+};
+
+// World Data
+const TILE_SIZE = 40;
+const MAP_COLS = 100; // Wide world
+const MAP_ROWS = 20;
+
+// Entities
+let player = {
+    x: 100,
+    y: 100,
+    vx: 0,
+    vy: 0,
+    width: 32,
+    height: 32,
+    onGround: false,
+    facingRight: true,
+    animFrame: 0,
+    animTimer: 0,
+    animRow: 0,
+    isDashing: false,
+    dashCooldown: 0
+};
+
+let particles = [];
+let platforms = [];
+
+// Sprite Config
+let spriteConfig = {
+    rows: 1,
+    cols: 4,
+    fps: 10,
+    scale: 2,
+    frameWidth: 0,
+    frameHeight: 0
+};
+
+/**
+ * Initialization
+ */
+function init() {
+    resize();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(gameLoop);
+    
+    // Generate World
+    generateWorld();
+    
+    // UI Listeners
+    setupUI();
+    setupInput();
+}
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function generateWorld() {
+    platforms = [];
+    
+    // Ground
+    for(let i=0; i<MAP_COLS; i++) {
+        platforms.push({
+            x: i * TILE_SIZE,
+            y: canvas.height - TILE_SIZE,
+            w: TILE_SIZE,
+            h: TILE_SIZE,
+            type: 'ground'
+        });
+    }
+
+    // Floating Platforms
+    for(let i=0; i<20; i++) {
+        let w = Math.floor(Math.random() * 5 + 2) * TILE_SIZE;
+        let x = Math.random() * (canvas.width * 2) + 200;
+        let y = canvas.height - TILE_SIZE * (Math.floor(Math.random() * 8) + 3);
+        
+        platforms.push({ x, y, w, h: 20, type: 'platform' });
+    }
+}
+
+function setupUI() {
+    // File Upload
+    uiElements.spriteInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            spriteImage.src = event.target.result;
+            uiElements.spritePreview.src = event.target.result;
+            uiElements.previewContainer.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    spriteImage.onload = () => {
+        spriteLoaded = true;
+        updateGridPreview();
+    };
+
+    // Configuration Inputs
+    const updateConfig = () => {
+        spriteConfig.rows = parseInt(uiElements.rowsInput.value) || 1;
+        spriteConfig.cols = parseInt(uiElements.colsInput.value) || 1;
+        spriteConfig.fps = parseInt(uiElements.animSpeed.value);
+        spriteConfig.scale = parseFloat(uiElements.scaleInput.value);
+        
+        uiElements.speedVal.innerText = spriteConfig.fps;
+        uiElements.scaleVal.innerText = spriteConfig.scale;
+        
+        updateGridPreview();
+    };
+
+    uiElements.rowsInput.addEventListener('input', updateConfig);
+    uiElements.colsInput.addEventListener('input', updateConfig);
+    uiElements.animSpeed.addEventListener('input', updateConfig);
+    uiElements.scaleInput.addEventListener('input', updateConfig);
+
+    // Game Physics Inputs
+    uiElements.gravityInput.addEventListener('input', (e) => PHYSICS.gravity = parseFloat(e.target.value));
+    uiElements.jumpInput.addEventListener('input', (e) => PHYSICS.jumpForce = parseFloat(e.target.value));
+
+    // Buttons
+    uiElements.startGameBtn.addEventListener('click', () => {
+        if (!spriteLoaded) {
+            alert("Please upload a sprite first!"); // Fallback if no sprite
+            // Actually, let's allow a default box if they really want
+        }
+        
+        // Calculate frame dimensions
+        spriteConfig.frameWidth = spriteImage.width / spriteConfig.cols;
+        spriteConfig.frameHeight = spriteImage.height / spriteConfig.rows;
+        
+        // Reset Player
+        player.width = spriteConfig.frameWidth * spriteConfig.scale;
+        player.height = spriteConfig.frameHeight * spriteConfig.scale;
+        player.y = canvas.height - 200;
+        player.vy = 0;
+        
+        gameState = 'PLAY';
+        uiElements.setupPanel.classList.add('hidden');
+        uiElements.gameControls.classList.remove('hidden');
+    });
+
+    uiElements.configBtn.addEventListener('click', () => {
+        gameState = 'SETUP';
+        uiElements.setupPanel.classList.remove('hidden');
+        uiElements.gameControls.classList.add('hidden');
+    });
+
+    uiElements.resetBtn.addEventListener('click', () => {
+        player.x = 100;
+        player.y = 100;
+        player.vy = 0;
+        player.vx = 0;
+    });
+}
+
+function updateGridPreview() {
+    if (!spriteImage.width) return;
+    
+    // The preview image is scaled in CSS, so we need to calculate the ratio
+    const previewImg = uiElements.spritePreview;
+    const naturalW = spriteImage.width;
+    const naturalH = spriteImage.height;
+    
+    // We simply use the natural dimensions divided by cols/rows to get the aspect ratio of a frame
+    // We visualize this by setting the width/height of the grid overlay
+    
+    // Wait for the preview image to actually render to get its current display size
+    const displayW = previewImg.offsetWidth;
+    const displayH = previewImg.offsetHeight;
+    
+    const frameW = displayW / spriteConfig.cols;
+    const frameH = displayH / spriteConfig.rows;
+    
+    uiElements.gridOverlay.style.width = `${frameW}px`;
+    uiElements.gridOverlay.style.height = `${frameH}px`;
+    
+    // Just show the first frame (top-left) as the "active" zone visualization
+}
+
+/**
+ * Input Handling
+ */
+const keys = {};
+
+function setupInput() {
+    window.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        if (gameState === 'PLAY') {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                if (player.onGround) {
+                    player.vy = -PHYSICS.jumpForce;
+                    player.onGround = false;
+                    spawnParticles(player.x + player.width/2, player.y + player.height, 10, '#fff');
+                }
+            }
+            if (e.code === 'KeyZ' && !player.isDashing && player.dashCooldown <= 0) {
+                player.isDashing = true;
+                player.dashCooldown = 30; // Frames
+                player.vx = player.facingRight ? 20 : -20;
+                spawnParticles(player.x + player.width/2, player.y + player.height/2, 20, '#6366f1');
+            }
+        }
+    });
+    
+    window.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+    });
+}
+
+/**
+ * Game Loop
+ */
+function gameLoop(timestamp) {
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (gameState === 'SETUP') {
+        drawSetupBackground();
+    } else if (gameState === 'PLAY') {
+        updatePhysics();
+        updateCamera();
+        drawWorld();
+        drawPlayer(dt);
+        drawParticles();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function drawSetupBackground() {
+    // Cool grid background
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 1;
+    
+    const spacing = 50;
+    const time = Date.now() / 1000;
+    
+    for (let x = 0; x < canvas.width; x += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    
+    for (let y = 0; y < canvas.height; y += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    
+    // Floating particles in background
+    ctx.fillStyle = '#6366f1';
+    for(let i=0; i<20; i++) {
+        const px = (Math.sin(time + i) * canvas.width/2) + canvas.width/2;
+        const py = (Math.cos(time * 0.5 + i) * canvas.height/2) + canvas.height/2;
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+/**
+ * Physics & Logic
+ */
+let cameraX = 0;
+
+function updatePhysics() {
+    // Horizontal Movement
+    if (!player.isDashing) {
+        if (keys['ArrowRight'] || keys['KeyD']) {
+            player.vx += PHYSICS.speed;
+            player.facingRight = true;
+        }
+        if (keys['ArrowLeft'] || keys['KeyA']) {
+            player.vx -= PHYSICS.speed;
+            player.facingRight = false;
+        }
+        player.vx *= PHYSICS.friction;
+    } else {
+        player.vx *= 0.9; // Drag during dash
+        if (Math.abs(player.vx) < 5) player.isDashing = false;
+    }
+    
+    // Vertical Movement
+    player.vy += PHYSICS.gravity;
+    if (player.vy > PHYSICS.terminalVelocity) player.vy = PHYSICS.terminalVelocity;
+    
+    // Apply Velocity
+    player.x += player.vx;
+    player.y += player.vy;
+    
+    // Floor Collision
+    player.onGround = false;
+    
+    // Simple AABB Collision for platforms
+    for (let plat of platforms) {
+        if (player.x + player.width > plat.x && 
+            player.x < plat.x + plat.w &&
+            player.y + player.height > plat.y &&
+            player.y + player.height < plat.y + plat.h + 20 /* tolerance */) {
+            
+            // Check if falling down
+            if (player.vy > 0 && player.y + player.height - player.vy <= plat.y + 10) {
+                player.y = plat.y - player.height;
+                player.vy = 0;
+                player.onGround = true;
+            }
+        }
+    }
+    
+    // World bounds
+    if (player.y > canvas.height + 100) {
+        // Fall reset
+        player.y = 0;
+        player.vy = 0;
+        player.x = 100;
+        cameraX = 0;
+    }
+    
+    // Cooldowns
+    if (player.dashCooldown > 0) player.dashCooldown--;
+}
+
+function updateCamera() {
+    // Camera follows player smoothly
+    const targetCamX = player.x - canvas.width / 3;
+    cameraX += (targetCamX - cameraX) * 0.1;
+    if (cameraX < 0) cameraX = 0;
+}
+
+/**
+ * Rendering
+ */
+function drawWorld() {
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+    
+    // Draw Platforms
+    ctx.fillStyle = '#333';
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 2;
+    
+    platforms.forEach(plat => {
+        ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+        ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+        
+        // Neon top glow
+        ctx.shadowColor = '#6366f1';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(plat.x, plat.y);
+        ctx.lineTo(plat.x + plat.w, plat.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    });
+    
+    ctx.restore();
+}
+
+function drawPlayer(dt) {
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+    
+    if (spriteLoaded) {
+        // Animation Logic
+        player.animTimer += dt;
+        const msPerFrame = 1000 / spriteConfig.fps;
+        
+        if (player.animTimer > msPerFrame) {
+            player.animTimer = 0;
+            player.animFrame++;
+            if (player.animFrame >= spriteConfig.cols) {
+                player.animFrame = 0;
+            }
+        }
+        
+        // Determine Row based on state (Customizable logic)
+        // For now: Row 0 = Idle/Walk
+        let row = 0;
+        
+        // If we have multiple rows, we can try to be smart
+        if (spriteConfig.rows > 1) {
+            // E.g. If moving, use row 1 (if available)
+            if (Math.abs(player.vx) > 1 && spriteConfig.rows >= 2) {
+                row = 1; 
+            }
+            // If jumping, use row 2 (if available)
+            if (!player.onGround && spriteConfig.rows >= 3) {
+                row = 2;
+            }
+        }
+        
+        // Calculate Source Rect
+        const sx = player.animFrame * spriteConfig.frameWidth;
+        const sy = row * spriteConfig.frameHeight;
+        
+        ctx.save();
+        
+        // Flip logic
+        if (!player.facingRight) {
+            ctx.translate(player.x + player.width, player.y);
+            ctx.scale(-1, 1);
+            ctx.drawImage(
+                spriteImage, 
+                sx, sy, spriteConfig.frameWidth, spriteConfig.frameHeight,
+                0, 0, player.width, player.height
+            );
+        } else {
+            ctx.drawImage(
+                spriteImage, 
+                sx, sy, spriteConfig.frameWidth, spriteConfig.frameHeight,
+                player.x, player.y, player.width, player.height
+            );
+        }
+        
+        ctx.restore();
+        
+    } else {
+        // Fallback Box
+        ctx.fillStyle = '#6366f1';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+        // Eyes
+        ctx.fillStyle = '#fff';
+        if (player.facingRight) {
+            ctx.fillRect(player.x + 20, player.y + 8, 8, 8);
+        } else {
+            ctx.fillRect(player.x + 4, player.y + 8, 8, 8);
+        }
+    }
+    
+    ctx.restore();
+}
+
+function spawnParticles(x, y, count, color) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 5,
+            vy: (Math.random() - 0.5) * 5,
+            life: 1.0,
+            color: color
+        });
+    }
+}
+
+function drawParticles() {
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+    
+    for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 3, 3);
+        
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+    
+    ctx.restore();
+}
+
+// Start
+init();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Orbit</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .atom-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+        }
+        
+        .nucleus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 160px;
+            height: 160px;
+            margin: -80px 0 0 -80px;
+            background: radial-gradient(circle, #fff, #ffeb3b);
+            border-radius: 50%;
+            box-shadow: 0 0 80px #ffeb3b, 0 0 120px #ff9800;
+            z-index: 100;
+        }
+        
+        .electron {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            margin-top: -18px;
+            margin-left: -18px;
+        }
+        
+        .electron-red {
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent 30%),
+                radial-gradient(circle at 50% 50%, #ff4444, #cc0000 60%, #660000);
+            box-shadow: 
+                0 0 25px #ff0000,
+                inset -8px -8px 15px rgba(0, 0, 0, 0.6),
+                inset 8px 8px 15px rgba(255, 100, 100, 0.3);
+        }
+        
+        .electron-blue {
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent 30%),
+                radial-gradient(circle at 50% 50%, #4444ff, #0000cc 60%, #000066);
+            box-shadow: 
+                0 0 25px #0000ff,
+                inset -8px -8px 15px rgba(0, 0, 0, 0.6),
+                inset 8px 8px 15px rgba(100, 100, 255, 0.3);
+        }
+        
+        .electron-yellow {
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent 30%),
+                radial-gradient(circle at 50% 50%, #ffcc44, #cc9900 60%, #886600);
+            box-shadow: 
+                0 0 25px #ffb300,
+                inset -8px -8px 15px rgba(0, 0, 0, 0.6),
+                inset 8px 8px 15px rgba(255, 220, 100, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="atom-container">
+        <div class="electron electron-red" id="red"></div>
+        <div class="electron electron-blue" id="blue"></div>
+        <div class="electron electron-yellow" id="yellow"></div>
+        <div class="nucleus"></div>
+    </div>
+    
+    <script>
+        const radius = 240;
+        const centerX = 300;
+        const centerY = 300;
+        
+        const electrons = [
+            { 
+                el: document.getElementById('red'), 
+                angle: 0, 
+                speed: 0.03,
+                tilt: 60 * Math.PI / 180
+            },
+            { 
+                el: document.getElementById('blue'), 
+                angle: 0, 
+                speed: 0.03,
+                tilt: 180 * Math.PI / 180
+            },
+            { 
+                el: document.getElementById('yellow'), 
+                angle: 0, 
+                speed: 0.03,
+                tilt: 300 * Math.PI / 180
+            }
+        ];
+        
+        function animate() {
+            electrons.forEach(electron => {
+                electron.angle += electron.speed;
+                
+                const x = radius * Math.cos(electron.angle);
+                const y = radius * Math.sin(electron.angle) * Math.cos(70 * Math.PI / 180);
+                const z = radius * Math.sin(electron.angle) * Math.sin(70 * Math.PI / 180);
+                
+                const rotatedX = x * Math.cos(electron.tilt) - z * Math.sin(electron.tilt);
+                const rotatedZ = x * Math.sin(electron.tilt) + z * Math.cos(electron.tilt);
+                
+                electron.el.style.left = (centerX + rotatedX) + 'px';
+                electron.el.style.top = (centerY + y) + 'px';
+                
+                if (rotatedZ < 0) {
+                    electron.el.style.zIndex = '50';
+                } else {
+                    electron.el.style.zIndex = '150';
+                }
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>

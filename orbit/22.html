@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom with Glowing Orbits</title>
+<style>
+    body {
+        margin: 0;
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .atom-container {
+        position: relative;
+        width: 600px;
+        height: 600px;
+    }
+    .nucleus {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 160px; height: 160px;
+        margin: -80px 0 0 -80px;
+        background: radial-gradient(circle, #fff, #ffeb3b);
+        border-radius: 50%;
+        box-shadow: 0 0 80px #ffeb3b, 0 0 120px #ff9800;
+        z-index: 100;
+    }
+    .electron {
+        position: absolute;
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        margin: -18px 0 0 -18px;
+    }
+    .electron-red    { box-shadow: 0 0 30px #ff3366; }
+    .electron-blue   { box-shadow: 0 0 30px #4488ff; }
+    .electron-yellow { box-shadow: 0 0 30px #ffeb3b; }
+
+    .orbit {
+        position: absolute;
+        width: 480px; height: 336px;   /* radius*2 × radius*2*0.7 */
+        border: 1px solid transparent;
+        border-radius: 50%;
+        top: 50%; left: 50%;
+        margin: -168px 0 0 -240px;
+        pointer-events: none;
+        background: transparent;
+    }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron electron-red"    id="e1"></div>
+    <div class="electron electron-blue"   id="e2"></div>
+    <div class="electron electron-yellow" id="e3"></div>
+    
+    <!-- One canvas for all glowing trails -->
+    <canvas id="trails" width="600" height="600"></canvas>
+    
+    <div class="nucleus"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('trails');
+const ctx = canvas.getContext('2d');
+canvas.style.position = 'absolute';
+canvas.style.inset = '0';
+
+const radius = 240;
+const centerX = 300;
+const centerY = 300;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff3366', offset: 0,   tilt: 0                      },
+    { el: document.getElementById('e2'), color: '#4488ff', offset: 120, tilt: 120 * Math.PI / 180 },
+    { el: document.getElementById('e3'), color: '#ffeb3b', offset: 240, tilt: 240 * Math.PI / 180 }
+];
+
+let time = 0;
+
+// Trail persistence buffer
+ctx.globalAlpha = 0.09;
+ctx.lineWidth = 2;
+
+function animate() {
+    time += 0.018;
+
+    // Very gentle fade of old trails
+    ctx.fillStyle = 'rgba(0,0,0,0.07)';
+    ctx.fillRect(0, 0, 600, 600);
+
+    electrons.forEach(e => {
+        const angle = time + e.offset * Math.PI / 180;
+
+        let x = Math.cos(angle) * radius;
+        let y = Math.sin(angle) * radius * 0.7;
+        let z = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+
+        const cosT = Math.cos(e.tilt);
+        const sinT = Math.sin(e.tilt);
+        const rotX =  x * cosT + z * sinT;
+        const rotZ = -x * sinT + z * cosT;
+
+        // Subtle depth cues
+        const scale = 1 + rotZ * 0.0010;       // was 0.0018 → much softer
+        const brightness = 1 + rotZ * 0.0008;  // was 0.002 → barely noticeable
+
+        e.el.style.left = (centerX + rotX) + 'px';
+        e.el.style.top  = (centerY + y)   + 'px';
+        e.el.style.transform = `scale(${scale})`;
+        e.el.style.filter = `brightness(${brightness})`;
+        e.el.style.zIndex = rotZ > 0 ? 200 : 10;
+
+        // Draw glowing trail segment
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX + rotX, centerY + y);
+        ctx.lineTo(centerX + rotX + Math.random()*2-1, centerY + y + Math.random()*2-1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>

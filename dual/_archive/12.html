@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TWIN CITY | The Circular Paradox</title>
+  <style>
+    :root{
+      --day-grad: linear-gradient(to top, #000c24 0%, #001a4d 25%, #4dabff 100%);
+      --night-grad: linear-gradient(to bottom, #000000 0%, #050010 20%, #1e0f3c 100%);
+    }
+    html, body{
+      margin:0; padding:0; width:100%; height:100%;
+      overflow:hidden;
+      background: var(--day-grad);
+      transition: background 1.5s ease-in-out;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    #canvas-container{
+      position: fixed;
+      inset: 0;
+      width:100%;
+      height:100%;
+    }
+    canvas{ display:block; }
+
+    #hud{
+      position: fixed;
+      top: 24px; left: 24px;
+      color: #fff;
+      z-index: 10;
+      pointer-events:none;
+      user-select:none;
+      text-shadow: 0 4px 15px rgba(0,0,0,.6);
+    }
+    h1{
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 12px;
+      text-transform: uppercase;
+      margin: 0;
+      border-left: 6px solid #f1c40f;
+      padding-left: 16px;
+    }
+    .subtitle{
+      font-size: 9px;
+      letter-spacing: 5px;
+      margin-top: 8px;
+      padding-left: 22px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.92);
+    }
+    .status{
+      margin-top: 10px;
+      padding-left: 22px;
+      font-size: 12px;
+      letter-spacing: .2px;
+      color: rgba(255,255,255,.9);
+      max-width: 520px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <h1>Twin City</h1>
+    <div class="subtitle" id="side-indicator">Circular • Paradox • Rhythm</div>
+    <div class="status" id="status">Booting…</div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <!-- THREE r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- OrbitControls for r128 (non-module) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    function setStatus(msg){ statusEl.textContent = msg; }
+
+    let scene, camera, renderer, controls;
+    let ambientLight, sun, nightLight;
+    let upperGroup, lowerGroup;
+    let upperTrails = [], lowerTrails = [];
+    let digitalStars = [];
+    let lastSide = null;
+
+    const NEON_PALETTE = [0x00f2ff, 0xff00ff, 0x00ff00, 0xffee00];
+    const DAY_PALETTE  = [0x444444, 0x333333, 0x222222, 0x555566, 0x4a3a3a, 0x606060];
+
+    window.addEventListener("load", init);
+
+    function init(){
+      try {
+        // Basic sanity checks
+        if (!window.THREE) throw new Error("THREE did not load (three.min.js missing or blocked).");
+
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x000c24, 200, 4500);
+
+        camera = new THREE.PerspectiveCamera(35, window.innerWidth/window.innerHeight, 1, 10000);
+        camera.position.set(350, 350, 350);
+
+        renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0);
+
+        const container = document.getElementById("canvas-container");
+        container.appendChild(renderer.domElement);
+
+        // Controls: don’t crash if OrbitControls didn’t load
+        if (THREE.OrbitControls) {
+          controls = new THREE.OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.05;
+          setStatus("Running ✅ (OrbitControls loaded)");
+        } else {
+          controls = null;
+          setStatus("Running ✅ (OrbitControls NOT loaded — you can still see the scene)");
+        }
+
+        // Lights
+        ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        scene.add(ambientLight);
+
+        sun = new THREE.DirectionalLight(0xffffff, 1.8);
+        sun.position.set(200, 600, 200);
+        scene.add(sun);
+
+        nightLight = new THREE.PointLight(0x7733ff, 4.0, 3000);
+        nightLight.position.set(0, -500, 0);
+        scene.add(nightLight);
+
+        // Groups
+        upperGroup = new THREE.Group();
+        lowerGroup = new THREE.Group();
+        scene.add(upperGroup);
+        scene.add(lowerGroup);
+
+        // DEBUG: Always-visible test objects so you never get a blank screen
+        const axes = new THREE.AxesHelper(120);
+        scene.add(axes);
+
+        const testCube = new THREE.Mesh(
+          new THREE.BoxGeometry(30, 30, 30),
+          new THREE.MeshNormalMaterial()
+        );
+        testCube.position.set(0, 40, 0);
+        scene.add(testCube);
+
+        buildWorld();
+
+        window.addEventListener("resize", onResize);
+        animate();
+
+      } catch (err) {
+        setStatus("Fatal error:\n" + (err && err.message ? err.message : String(err)));
+        console.error(err);
+      }
+    }
+
+    function buildWorld(){
+      const rings = 8;
+      const ringSpacing = 12;
+      const cityEdgeRadius = (rings + 1) * ringSpacing;
+      const roadRadius = cityEdgeRadius + 26;
+
+      // Floor
+      const dividerRadius = roadRadius + 80;
+      const baseFloor = new THREE.Mesh(
+        new THREE.CircleGeometry(dividerRadius, 64),
+        new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide })
+      );
+      baseFloor.rotation.x = Math.PI / 2;
+      scene.add(baseFloor);
+
+      // Day-only white ring
+      const whiteRing = new THREE.Mesh(
+        new THREE.RingGeometry(cityEdgeRadius + 2, roadRadius - 6, 64),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0, metalness: 0 })
+      );
+      whiteRing.rotation.x = -Math.PI / 2;
+      whiteRing.position.y = 0.2;
+      upperGroup.add(whiteRing);
+
+      // Inner black ring
+      const innerRing = new THREE.Mesh(
+        new THREE.TorusGeometry(14, 1.2, 16, 64),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+      );
+      innerRing.rotation.x = Math.PI / 2;
+      innerRing.position.y = 0.3;
+      upperGroup.add(innerRing);
+
+      // Roads (polygonOffset reduces z-fighting)
+      const roadGeom = new THREE.TorusGeometry(roadRadius, 5.0, 16, 128);
+      const roadMat = new THREE.MeshStandardMaterial({
+        color: 0x080808,
+        roughness: 0.6,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
+      });
+
+      const uRoad = new THREE.Mesh(roadGeom, roadMat);
+      uRoad.rotation.x = Math.PI / 2;
+      uRoad.position.y = 0.5;
+      upperGroup.add(uRoad);
+
+      const lRoad = new THREE.Mesh(roadGeom, roadMat);
+      lRoad.rotation.x = Math.PI / 2;
+      lRoad.position.y = -0.5;
+      lowerGroup.add(lRoad);
+
+      // Digital stars
+      for (let i=0; i<500; i++){
+        const starSize = 1.2 + Math.random() * 2.0;
+        const star = new THREE.Mesh(
+          new THREE.PlaneGeometry(starSize, starSize),
+          new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity: 0.2 + Math.random()*0.8 })
+        );
+        const phi = Math.random() * Math.PI * 2;
+        const theta = (Math.random() * 0.4 + 0.6) * Math.PI;
+        const r = 3000 + Math.random() * 1000;
+        star.position.set(
+          r*Math.sin(theta)*Math.cos(phi),
+          r*Math.cos(theta),
+          r*Math.sin(theta)*Math.sin(phi)
+        );
+        star.lookAt(0,0,0);
+        star.userData = { originalOpacity: star.material.opacity, flickerSpeed: 0.1 + Math.random()*0.3 };
+        lowerGroup.add(star);
+        digitalStars.push(star);
+      }
+
+      // Buildings
+      for (let r = 2; r <= rings + 1; r++){
+        const radius = r * ringSpacing;
+        const heightFactor = (rings + 2 - r) / rings;
+        const count = Math.floor(radius * 0.85);
+
+        for (let i=0; i<count; i++){
+          const angle = (i / count) * Math.PI * 2;
+          const px = Math.cos(angle) * radius;
+          const pz = Math.sin(angle) * radius;
+
+          // Day building
+          const hT = 10 + (heightFactor * 55) + (Math.random() * 15);
+          const w = 3.5 + Math.random() * 5;
+          const d = 3.5 + Math.random() * 5;
+          const color = DAY_PALETTE[Math.floor(Math.random() * DAY_PALETTE.length)];
+
+          const dayHouse = new THREE.Group();
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(w, hT, d),
+            new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
+          );
+          box.position.y = hT/2;
+          dayHouse.add(box);
+
+          if (Math.random() > 0.6){
+            const sW = w * (0.4 + Math.random() * 0.4);
+            const sH = hT * (0.3 + Math.random() * 0.5);
+            const sD = d * (0.4 + Math.random() * 0.4);
+            const sideBox = new THREE.Mesh(
+              new THREE.BoxGeometry(sW, sH, sD),
+              new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
+            );
+            if (Math.random() > 0.5) {
+              sideBox.position.y = hT + sH/2 - 1;
+            } else {
+              sideBox.position.set((w/2) * (Math.random() > 0.5 ? 1 : -1), sH/2, 0);
+            }
+            dayHouse.add(sideBox);
+          }
+
+          for (let j=0; j<Math.floor(hT/4); j++){
+            const dotMat = new THREE.MeshBasicMaterial({ color: Math.random() > 0.92 ? 0xf1c40f : 0xdddddd });
+            const dot = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.15), dotMat);
+            const side = Math.random() > 0.5 ? 1 : -1;
+            dot.position.set((Math.random()-0.5)*w*0.8, Math.random()*hT, (d/2 + 0.1)*side);
+            dayHouse.add(dot);
+          }
+
+          dayHouse.position.set(px, 0.1, pz);
+          dayHouse.rotation.y = -angle;
+          upperGroup.add(dayHouse);
+
+          // Night building
+          const hB = 14 + (heightFactor * 75) + (Math.random() * 20);
+          const nHouse = new THREE.Group();
+          const bBox = new THREE.Mesh(
+            new THREE.BoxGeometry(5.0, hB, 5.0),
+            new THREE.MeshStandardMaterial({ color: 0x020208 })
+          );
+          bBox.position.y = -hB/2;
+          nHouse.add(bBox);
+
+          const neonCol = NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)];
+          const win = new THREE.Mesh(
+            new THREE.BoxGeometry(5.1, 1.2, 5.1),
+            new THREE.MeshStandardMaterial({ color: neonCol, emissive: neonCol, emissiveIntensity: 10 })
+          );
+          win.position.y = -Math.random() * hB;
+          nHouse.add(win);
+
+          nHouse.position.set(px, -0.1, pz);
+          nHouse.rotation.y = -angle;
+          lowerGroup.add(nHouse);
+        }
+      }
+
+      // Central beam
+      const beamGroup = new THREE.Group();
+      const redBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(7,7,26,32),
+        new THREE.MeshBasicMaterial({ color: 0x9e0000 })
+      );
+      redBase.position.y = 13;
+      beamGroup.add(redBase);
+
+      const yellowCore = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.5,2.5,2000,32),
+        new THREE.MeshBasicMaterial({ color: 0xfff000 })
+      );
+      yellowCore.position.y = 1000;
+      beamGroup.add(yellowCore);
+
+      const yellowGlow = new THREE.Mesh(
+        new THREE.CylinderGeometry(35, 2.5, 2000, 32),
+        new THREE.MeshBasicMaterial({
+          color: 0xffaa00,
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      yellowGlow.position.y = 1000;
+      beamGroup.add(yellowGlow);
+
+      const violetCore = new THREE.Mesh(
+        new THREE.CylinderGeometry(4,4,2000,32),
+        new THREE.MeshBasicMaterial({ color: 0x9900ff })
+      );
+      violetCore.position.y = -1000;
+      beamGroup.add(violetCore);
+
+      const violetGlow = new THREE.Mesh(
+        new THREE.CylinderGeometry(40,4,2000,32),
+        new THREE.MeshBasicMaterial({
+          color: 0x6600ff,
+          transparent: true,
+          opacity: 0.3,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      violetGlow.position.y = -1000;
+      beamGroup.add(violetGlow);
+
+      scene.add(beamGroup);
+
+      // Traffic (anti-glitch)
+      const mCols = [0x9e0000, 0xf1c40f, 0x2980b9, 0xffffff];
+
+      // Day cars: lift away from road
+      for (let i=0; i<200; i++){
+        const car = new THREE.Mesh(
+          new THREE.BoxGeometry(5.5, 1.8, 9),
+          new THREE.MeshBasicMaterial({ color: mCols[i % 4] })
+        );
+        const inner = Math.random() > 0.5;
+        car.userData = {
+          angle: Math.random() * Math.PI * 2,
+          speed: (0.003 + Math.random() * 0.005) * (inner ? 1 : -1),
+          radius: roadRadius + (inner ? -12 : 12),
+          y: 10.0
+        };
+        upperGroup.add(car);
+        upperTrails.push(car);
+      }
+
+      // Night streaks: depthWrite false + lift away from road
+      for (let i=0; i<500; i++){
+        const col = NEON_PALETTE[i % NEON_PALETTE.length];
+        const streakMat = new THREE.MeshBasicMaterial({
+          color: col,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: true
+        });
+        const streak = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 35), streakMat);
+        const inner = Math.random() > 0.5;
+        streak.userData = {
+          angle: Math.random() * Math.PI * 2,
+          speed: (0.025 + Math.random() * 0.045) * (inner ? 1 : -1),
+          radius: roadRadius + (inner ? -14 : 14),
+          y: -10.0,
+          pulsePhase: Math.random() * Math.PI * 2
+        };
+        streak.renderOrder = 10;
+        lowerGroup.add(streak);
+        lowerTrails.push(streak);
+      }
+    }
+
+    function updateEnvironment(){
+      const y = camera.position.y;
+      const isDay = y > 0;
+
+      if (isDay === lastSide) return;
+      lastSide = isDay;
+
+      if (isDay){
+        document.body.style.background = "var(--day-grad)";
+        scene.fog.color.set(0x000c24);
+        ambientLight.intensity = 1.4;
+        sun.intensity = 2.0;
+        nightLight.intensity = 0;
+        upperGroup.visible = true;
+        lowerGroup.visible = false;
+      } else {
+        document.body.style.background = "var(--night-grad)";
+        scene.fog.color.set(0x000000);
+        ambientLight.intensity = 0.2;
+        sun.intensity = 0;
+        nightLight.intensity = 5.0;
+        upperGroup.visible = false;
+        lowerGroup.visible = true;
+      }
+
+      document.getElementById("side-indicator").innerText =
+        isDay ? "UPPER WORLD • SKYWARD LIGHT" : "NETHER WORLD • DIGITAL PULSE";
+    }
+
+    function onResize(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate(){
+      requestAnimationFrame(animate);
+
+      if (controls) controls.update();
+      updateEnvironment();
+
+      const time = performance.now() * 0.001;
+
+      if (upperGroup.visible){
+        for (const t of upperTrails){
+          t.userData.angle += t.userData.speed;
+          t.position.set(
+            Math.cos(t.userData.angle) * t.userData.radius,
+            t.userData.y,
+            Math.sin(t.userData.angle) * t.userData.radius
+          );
+          t.rotation.y = -t.userData.angle + (t.userData.speed > 0 ? 0 : Math.PI);
+        }
+      }
+
+      if (lowerGroup.visible){
+        for (const t of lowerTrails){
+          t.userData.angle += t.userData.speed;
+          t.position.set(
+            Math.cos(t.userData.angle) * t.userData.radius,
+            t.userData.y,
+            Math.sin(t.userData.angle) * t.userData.radius
+          );
+          t.rotation.y = -t.userData.angle + (t.userData.speed > 0 ? 0 : Math.PI);
+
+          // gentle shimmer; set to 0.85 constant if you want ZERO shimmer
+          const pulse = Math.sin(time * 2 + t.userData.pulsePhase) * 0.08 + 0.85;
+          t.material.opacity = pulse;
+        }
+
+        for (const s of digitalStars){
+          s.material.opacity = s.userData.originalOpacity *
+            (0.4 + 0.6 * Math.sin(time * s.userData.flickerSpeed * 25));
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>

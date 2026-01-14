@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dance of Red & Blue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            color: #e2e8f0;
+            user-select: none;
+        }
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #ui-layer {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 10;
+            font-family: 'Courier New', Courier, monospace;
+            pointer-events: none;
+            /* Remove exclusion blend mode for UI readability */
+        }
+        .title {
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            line-height: 1.1;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+        .subtitle {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+        }
+        
+        /* Controls Container */
+        .controls {
+            pointer-events: auto;
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        /* Buttons */
+        .btn {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #475569;
+            color: #94a3b8;
+            padding: 8px 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            border-color: #e2e8f0;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        .btn.active {
+            border-color: #10b981;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        /* File Input Styling */
+        input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="ui-layer">
+        <h1 class="title text-4xl text-red-500">RED <span class="text-xs text-red-300 align-middle">(BASS)</span></h1>
+        <h1 class="title text-4xl text-blue-500">& BLUE <span class="text-xs text-blue-300 align-middle">(TREBLE)</span></h1>
+        <p class="subtitle text-slate-300">Hover to Conduct / Click to Untie</p>
+        
+        <div class="controls">
+            <!-- Custom File Upload -->
+            <label for="audio-upload" class="btn file-label">
+                <span>📁 Upload Song (MP3)</span>
+            </label>
+            <input type="file" id="audio-upload" accept="audio/*">
+
+            <!-- Play/Pause -->
+            <button id="audio-toggle" class="btn">INITIALIZE SOUND</button>
+            
+            <div id="status-text" class="text-xs text-slate-500 mt-1">Status: Waiting for input...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const config = {
+            redColor: '255, 60, 60',
+            blueColor: '60, 100, 255',
+            particleCount: 220,
+            bgFade: 'rgba(5, 5, 5, 0.3)' 
+        };
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const toggleBtn = document.getElementById('audio-toggle');
+        const fileInput = document.getElementById('audio-upload');
+        const statusText = document.getElementById('status-text');
+
+        let width, height;
+        let particles = [];
+        
+        // Audio State
+        let audioCtx;
+        let analyser;
+        let source; // Can be Oscillator (Synth) or MediaElement (File)
+        let dataArray;
+        let isAudioInitialized = false;
+        let isPlaying = false;
+        let audioElement; // For uploaded files
+        
+        // Frequencies
+        let bassLevel = 0;
+        let trebleLevel = 0;
+        
+        // Mouse state
+        let mouse = { x: null, y: null, active: false, isDown: false };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- AUDIO ENGINE ---
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 512; // Higher res for bass/treble split
+                analyser.smoothingTimeConstant = 0.85;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // 1. GENERATIVE MODE (Default)
+        function startGenerativeAudio() {
+            if (source) source.disconnect(); // Clear previous
+            
+            // Create a complex drone
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.value = 110; // Bass
+
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'square';
+            osc2.frequency.value = 220; // Mid
+
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.15;
+
+            // Connect graph
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            
+            // We treat the oscillators as the 'source' for tracking purposes
+            source = {
+                stop: () => {
+                    osc1.stop();
+                    osc2.stop();
+                },
+                disconnect: () => {
+                    osc1.disconnect();
+                    osc2.disconnect();
+                    gainNode.disconnect();
+                }
+            };
+            
+            statusText.innerText = "Playing: Generative Drone";
+        }
+
+        // 2. FILE MODE
+        function playUserFile(file) {
+            if (audioElement) {
+                audioElement.pause();
+                audioElement.src = '';
+            }
+            
+            audioElement = new Audio(URL.createObjectURL(file));
+            audioElement.loop = true;
+            
+            if (source && source.disconnect) source.disconnect();
+
+            source = audioCtx.createMediaElementSource(audioElement);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            
+            audioElement.play();
+            statusText.innerText = `Playing: ${file.name}`;
+        }
+
+        // --- UI HANDLERS ---
+        
+        // Upload Handler
+        fileInput.addEventListener('change', (e) => {
+            initAudioContext();
+            const file = e.target.files[0];
+            if (file) {
+                playUserFile(file);
+                isPlaying = true;
+                toggleBtn.innerText = "PAUSE MUSIC";
+                toggleBtn.classList.add('active');
+            }
+        });
+
+        // Toggle Button Handler
+        toggleBtn.addEventListener('click', () => {
+            initAudioContext();
+            
+            if (!isPlaying) {
+                // If audio element exists (file loaded), play it. Else start generative.
+                if (audioElement) {
+                    audioElement.play();
+                    statusText.innerText = "Resumed Track";
+                } else {
+                    startGenerativeAudio();
+                }
+                toggleBtn.innerText = "PAUSE MUSIC";
+                toggleBtn.classList.add('active');
+                isPlaying = true;
+            } else {
+                if (audioElement) {
+                    audioElement.pause();
+                } else if (source && source.stop) {
+                    source.stop();
+                }
+                statusText.innerText = "Paused";
+                toggleBtn.innerText = "RESUME";
+                toggleBtn.classList.remove('active');
+                isPlaying = false;
+            }
+        });
+
+
+        // --- INTERACTION ---
+        const handleInteraction = (x, y, active, isDown = false) => {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.active = active;
+            mouse.isDown = isDown;
+        };
+
+        window.addEventListener('mousedown', e => handleInteraction(e.clientX, e.clientY, true, true));
+        window.addEventListener('mousemove', e => handleInteraction(e.clientX, e.clientY, true, mouse.isDown));
+        window.addEventListener('mouseup', e => handleInteraction(e.clientX, e.clientY, true, false));
+        
+        window.addEventListener('touchstart', e => handleInteraction(e.touches[0].clientX, e.touches[0].clientY, true, true));
+        window.addEventListener('touchmove', e => handleInteraction(e.touches[0].clientX, e.touches[0].clientY, true, true));
+        window.addEventListener('touchend', () => handleInteraction(mouse.x, mouse.y, false, false));
+
+
+        // --- PARTICLES ---
+        class Particle {
+            constructor(type) {
+                this.type = type; 
+                this.reset(true); 
+            }
+
+            reset(initial = false) {
+                // RESTORED STANDOFF LOGIC
+                if (initial) {
+                    if (this.type === 'red') {
+                        // Left Side
+                        this.x = Math.random() * (width * 0.4);
+                    } else {
+                        // Right Side
+                        this.x = (width * 0.6) + Math.random() * (width * 0.4);
+                    }
+                } else {
+                    this.x = Math.random() * width;
+                }
+                
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.8; // Faster base speed from old version
+                this.vy = (Math.random() - 0.5) * 0.8;
+                
+                // RESTORED SIZE (Larger)
+                this.baseSize = Math.random() * 2 + 1; 
+                this.angle = Math.random() * Math.PI * 2;
+                this.speedMod = this.type === 'red' ? 0.04 : 0.03; 
+            }
+
+            update(bass, treble) {
+                // Assign Audio Energy
+                // Red listens to Bass, Blue listens to Treble
+                let energy = 0;
+                if (this.type === 'red') energy = bass;
+                else energy = treble;
+
+                // 1. Natural Drift (Restored from preferred structure)
+                if (this.type === 'red') {
+                    this.angle += this.speedMod;
+                    this.vx += Math.sin(this.angle) * 0.02;
+                    this.vy += Math.cos(this.angle) * 0.02;
+                } else {
+                    this.angle -= this.speedMod;
+                    this.vx += Math.cos(this.angle) * 0.02;
+                    this.vy += Math.sin(this.angle) * 0.02;
+                }
+
+                // Add Audio Energy to movement
+                this.vx += (Math.random() - 0.5) * energy * 2;
+                this.vy += (Math.random() - 0.5) * energy * 2;
+
+                // 2. Interaction
+                if (mouse.active && mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < 500) {
+                        const force = (500 - dist) / 500;
+                        const angle = Math.atan2(dy, dx);
+
+                        if (mouse.isDown) {
+                            // --- UNTIE (REPULSION) MODE ---
+                            // This matches the "Structure" you liked: Scattering
+                            this.vx -= Math.cos(angle) * force * 2.5;
+                            this.vy -= Math.sin(angle) * force * 2.5;
+                        } else {
+                            // --- CONDUCT (ATTRACTION) MODE ---
+                            const pullStrength = 0.8 + (energy * 2);
+                            this.vx += Math.cos(angle) * force * pullStrength;
+                            this.vy += Math.sin(angle) * force * pullStrength;
+                        }
+                    }
+                } else {
+                    // SEPARATION FORCE (Keep them somewhat apart when idle)
+                    // This maintains the "Standoff" when not interacting
+                    if (this.type === 'red' && this.x > width * 0.5) this.vx -= 0.02;
+                    if (this.type === 'blue' && this.x < width * 0.5) this.vx += 0.02;
+                }
+
+                // Friction
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Wrap
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            draw(bass, treble) {
+                let energy = (this.type === 'red') ? bass : treble;
+                
+                ctx.beginPath();
+                // Base size + Music Pulse
+                const r = this.baseSize * (1 + energy * 1.5); 
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                
+                if (this.type === 'red') {
+                    // Red gets brighter with Bass
+                    const alpha = 0.8; // Fixed base opacity from preferred version
+                    ctx.fillStyle = `rgba(${config.redColor}, ${alpha})`;
+                } else {
+                    // Blue gets brighter with Treble
+                    const alpha = 0.8;
+                    ctx.fillStyle = `rgba(${config.blueColor}, ${alpha})`;
+                }
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            particles = [];
+            for (let i = 0; i < config.particleCount / 2; i++) particles.push(new Particle('red'));
+            for (let i = 0; i < config.particleCount / 2; i++) particles.push(new Particle('blue'));
+        }
+
+        function animate() {
+            // Analyze Audio
+            if (analyser && isPlaying) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Split bands
+                const bufferLength = analyser.frequencyBinCount;
+                const splitIndex = Math.floor(bufferLength / 4); // Low end
+                
+                let bassSum = 0;
+                let trebleSum = 0;
+                
+                // Bass (0 to splitIndex)
+                for(let i = 0; i < splitIndex; i++) {
+                    bassSum += dataArray[i];
+                }
+                
+                // Treble (splitIndex to end) - usually mostly empty in high freq, so we take a slice
+                for(let i = splitIndex; i < bufferLength; i++) {
+                    trebleSum += dataArray[i];
+                }
+                
+                bassLevel = (bassSum / splitIndex) / 255; 
+                trebleLevel = (trebleSum / (bufferLength - splitIndex)) / 255;
+                
+                // Boost treble level artificially as it's usually quieter
+                trebleLevel = Math.min(1, trebleLevel * 3);
+            } else {
+                bassLevel *= 0.9;
+                trebleLevel *= 0.9;
+            }
+
+            // Draw Background
+            ctx.fillStyle = config.bgFade; 
+            ctx.fillRect(0, 0, width, height);
+
+            // Update Particles
+            for (let i = 0; i < particles.length; i++) {
+                const p1 = particles[i];
+                p1.update(bassLevel, trebleLevel);
+                p1.draw(bassLevel, trebleLevel);
+
+                // Connections
+                // Optimization: Check fewer neighbors
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx*dx + dy*dy; 
+                    
+                    if (distSq < 15000) { // Approx 122px distance
+                        const dist = Math.sqrt(distSq);
+                        const opacity = 1 - (dist / 122);
+
+                        if (p1.type === p2.type) {
+                            // Intra-Team
+                            ctx.beginPath();
+                            ctx.lineWidth = 0.5;
+                            const color = p1.type === 'red' ? config.redColor : config.blueColor;
+                            // Beat sensitivity for lines
+                            const pulse = p1.type === 'red' ? bassLevel : trebleLevel;
+                            
+                            // BRIGHTER LINES (Kept this enhancement)
+                            ctx.strokeStyle = `rgba(${color}, ${opacity * (0.6 + pulse)})`;
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        } else {
+                            // Inter-Team (The Dance)
+                            // Only connect if VERY close or forced by mouse
+                            if (dist < 60) {
+                                ctx.beginPath();
+                                ctx.lineWidth = 1 + (bassLevel + trebleLevel); 
+                                ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 1.5})`; // Super bright
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+    </script>
+</body>
+</html>

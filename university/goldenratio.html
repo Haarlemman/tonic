@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Golden Ratio Blueprint - Tron Edition (Audio)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: #060c1e;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+            background-image: 
+                linear-gradient(rgba(0, 188, 212, 0.25) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 188, 212, 0.25) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+        }
+
+        .canvas-wrapper {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        path, line, circle, polygon {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0; 
+        }
+
+        .blue { stroke: #00eaff; stroke-width: 2px; filter: drop-shadow(0 0 5px #00eaff); }
+        .white-dashed { stroke: #446688; stroke-width: 1px; stroke-dasharray: 4, 4; }
+        .yellow { stroke: #ffea00; stroke-width: 3px; filter: drop-shadow(0 0 6px #ffea00); }
+        .pink { stroke: #ff00ff; stroke-width: 2px; filter: drop-shadow(0 0 5px #ff00ff); }
+        .green { stroke: #00ff66; stroke-width: 2px; filter: drop-shadow(0 0 5px #00ff66); }
+        .orange { stroke: #ff9900; stroke-width: 2px; fill: rgba(255, 153, 0, 0.3); filter: drop-shadow(10px 20px 50px #ff9900); }
+        .purple { stroke: #aa00ff; stroke-width: 3px; fill: rgba(170, 0, 255, 0.15); }
+        
+        .white-star { stroke: #ffffff; stroke-width: 3px;   fill: rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 18px #ffffff); }
+        .inner-star { stroke: #0000ee; stroke-width: 1.5px; fill: rgba(0, 245, 245, 0.2);   filter: drop-shadow(0 0 5px #0000ee);  }   
+        .micro-star { stroke: #ff0000; stroke-width: 1px;   fill: rgba(245, 0, 0, 0.5);     filter: drop-shadow(0 0 8px #dd0000);  }
+
+        .walker {stroke: #cc00cc; stroke-width: 1px; stroke-dasharray: 4, 4; opacity: 0;    filter: drop-shadow(0 0 2px #ff00ff);  }
+
+        text {
+            fill: #00eaff;
+            font-size: 10px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 1s;
+            text-shadow: 0 0 4px #0088aa;
+			z-index: 101;
+        }
+
+        #status {
+            position: absolute;
+            bottom: 40px; 
+            color: #00eaff;
+            font-size: 18px; 
+            font-weight: 900; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-align: center;
+			width: 100%;
+            text-shadow: 0 0 10px #00bcd4, 0 0 20px #00bcd4; 
+            font-family: monospace; 
+			padding-top: 10px; padding-bottom: 10px; padding-left: 15px; padding-right: 15px;
+			background-color: #223056;
+			z-index: 100;
+        }
+
+        #arm-group {
+            transition: transform 2s cubic-bezier(0.25, 1, 0.5, 1);
+            transform-origin: 0px 0px;
+            transform: rotate(0deg);
+        }
+        
+        .rotated {transform: rotate(63.435deg) !important;}
+        
+        .gold-state {
+            stroke: #ff9900 !important;
+            filter: drop-shadow(0 0 15px #ff9900) !important;
+            stroke-width: 3px !important;
+            stroke-dasharray:  !important;
+            transition: stroke 1s, filter 1s;
+        }
+
+    </style>
+</head>
+	
+<body onclick="restartSequence()">
+
+    <div class="canvas-wrapper">
+        <svg id="svg" viewBox="-220 -250 500 500" preserveAspectRatio="xMidYMid meet">
+            
+            <path id="tri" class="blue" d="M 0,0 L 0,-100 L 200,0 L 0,0" />
+            <text x="-25" y="-50" class="label">1.0</text>
+            <text x="100" y="20" class="label">2.0</text>
+            
+            <path id="arc-hyp" class="white-dashed" d="M 0,-100 m -223.6,0 a 223.6,223.6 0 1,0 447.2,0 a 223.6,223.6 0 1,0 -447.2,0" />
+
+            <circle id="circ-small" class="yellow" cx="0" cy="-100" r="100" />
+            <circle id="pt-P" cx="89.44" cy="-55.28" r="4" fill="white" style="opacity:0" />
+
+            <g id="pivot-wrapper" transform="translate(200, 0)">
+                <g id="arm-group">
+                    <line id="line-pivot" class="pink" x1="0" y1="0" x2="-110.56" y2="-55.28" />
+                </g>
+            </g>
+
+            <path id="rect-rest" class="orange" d="M 200,-123.6 L 0,-123.6 L 0,0 L 200,0" />
+
+            <circle id="circ-big" class="green" cx="0" cy="0" r="200" />
+
+            <g id="walkers-group">
+                <circle id="w0" class="walker" cx="200" cy="0" r="123.6" />
+                <circle id="w1" class="walker" cx="161.8" cy="-117.6" r="123.6" />
+                <circle id="w2" class="walker" cx="61.8" cy="-190.2" r="123.6" />
+                <circle id="w3" class="walker" cx="-61.8" cy="-190.2" r="123.6" />
+                <circle id="w4" class="walker" cx="-161.8" cy="-117.6" r="123.6" />
+                <circle id="w5" class="walker" cx="-200" cy="0" r="123.6" />
+                <circle id="w6" class="walker" cx="-161.8" cy="117.6" r="123.6" />
+                <circle id="w7" class="walker" cx="-61.8" cy="190.2" r="123.6" />
+                <circle id="w8" class="walker" cx="61.8" cy="190.2" r="123.6" />
+                <circle id="w9" class="walker" cx="161.8" cy="117.6" r="123.6" />
+            </g>
+
+            <path id="star" class="white-star" d="M 200,0 L -161.8,-117.5 L 61.8,190.2 L 61.8,-190.2 L -161.8,117.5 Z" />
+            
+            <path id="star-inner" class="inner-star" d="M 61.8,-44.9 L -76.4,0 L 61.8,44.9 L -23.6,-72.6 L -23.6,72.6 Z" />
+
+            <path id="star-micro" class="micro-star" d="M 29.2,0 L -23.6,-17.2 L 9.0,27.8 L 9.0,-27.8 L -23.6,17.2 Z" />
+
+        </svg>
+    </div>
+
+    <div id="status">TAP SCREEN TO INITIALIZE</div>
+
+<script>
+    let audioCtx;
+    
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playTone(freq, type, duration, vol = 0.1) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; 
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const SFX = {
+        blip: () => playTone(880, 'sine', 0.1, 0.05),
+        lowBlip: () => playTone(220, 'triangle', 0.2, 0.05),
+        rotate: () => {
+             if (!audioCtx) return;
+             const osc = audioCtx.createOscillator();
+             const gain = audioCtx.createGain();
+             osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+             osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 2);
+             gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+             osc.connect(gain);
+             gain.connect(audioCtx.destination);
+             osc.start();
+             osc.stop(audioCtx.currentTime + 2);
+        },
+        powerUp: () => {
+            playTone(440, 'triangle', 1, 0.05);
+            setTimeout(() => playTone(554, 'triangle', 1, 0.05), 50);
+            setTimeout(() => playTone(659, 'triangle', 1, 0.05), 100);
+            setTimeout(() => playTone(880, 'sine', 1.5, 0.05), 150);
+        },
+        chain: (i) => {
+            playTone(400 + (i * 100), 'square', 0.1, 0.03);
+        },
+        star: () => {
+             if (!audioCtx) return;
+             const osc = audioCtx.createOscillator();
+             const gain = audioCtx.createGain();
+             osc.type = 'sine';
+             osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+             osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 2);
+             gain.gain.setValueAtTime(0, audioCtx.currentTime);
+             gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
+             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+             osc.connect(gain);
+             gain.connect(audioCtx.destination);
+             osc.start();
+             osc.stop(audioCtx.currentTime + 2);
+        }
+    };
+
+
+    const sequence = [
+        { id: 'tri', text: "1. 1:2 FRAMEWORK", sound: 'blip' },
+        { id: 'arc-hyp', text: "2. RADIUS = √5", sound: 'lowBlip' },
+        { id: 'circ-small', text: "3. UNIT CIRCLE (R=1)", sound: 'lowBlip' },
+        { id: 'pt-P', type: 'fade', text: "4. INTERSECTION P", sound: 'blip' },
+        { id: 'line-pivot', text: "5. DEFINE LENGTH PC", sound: 'blip' },
+        { action: 'rotate', text: "6. ROTATE TO VERTICAL", sound: 'rotate' },
+        { action: 'goldify', text: "7. GOLDEN RATIO FOUND", sound: 'powerUp' },
+        { id: 'rect-rest', text: "8. GOLDEN RECTANGLE", sound: 'blip' },
+        { id: 'circ-big', text: "9. THE STAGE (R=2)", sound: 'lowBlip' },
+        { action: 'chain-reaction', text: "10. DECAGON SEQUENCE", sound: null },
+        { id: 'star', text: "11. THE PENTAGRAM", sound: 'star' },
+        { id: 'star-inner', text: "12. THE INFINITE", sound: 'star' },
+        { id: 'star-micro', text: "13. AD INFINITUM", sound: 'star' }
+    ];
+
+    let currentIndex = 0;
+    let isRunning = false;
+
+    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@#$%^&*";
+    let textInterval = null;
+
+    function setStatusText(finalText) {
+        const el = document.getElementById('status');
+        let iterations = 0;
+        
+        if (textInterval) clearInterval(textInterval);
+        
+        textInterval = setInterval(() => {
+            el.innerText = finalText
+                .split("")
+                .map((char, index) => {
+                    if (index < iterations) {
+                        return finalText[index];
+                    }
+                    return CHARS[Math.floor(Math.random() * CHARS.length)];
+                })
+                .join("");
+            
+            if (iterations >= finalText.length) { 
+                clearInterval(textInterval);
+            }
+            
+            iterations += 1/2;
+        }, 30);
+    }
+
+
+    function restartSequence() {
+        initAudio(); 
+        
+        if (isRunning) return;
+        isRunning = true;
+        currentIndex = 0;
+        
+        const allPaths = document.querySelectorAll('path, circle, polygon, g, line');
+        allPaths.forEach(el => {
+            if(el.id !== 'pivot-wrapper' && el.id !== 'walkers-group' && el.id !== 'arm-group') {
+                el.style.opacity = 0;
+                el.style.transition = 'none';
+                el.style.strokeDasharray = 'none';
+                el.style.strokeDashoffset = 0;
+            }
+            if(el.id === 'rect-rest' || el.id === 'star' || el.id === 'star-inner' || el.id === 'star-micro') {
+                el.style.fillOpacity = 0;
+            }
+            el.classList.remove('gold-state');
+        });
+        
+        const armGroup = document.getElementById('arm-group');
+        armGroup.classList.remove('rotated');
+        
+        for(let i=0; i<10; i++) {
+            document.getElementById('w'+i).style.opacity = 0;
+        }
+
+        document.querySelectorAll('.label').forEach(l => l.style.opacity = 0);
+        
+        playNext();
+    }
+
+    function playNext() {
+        if (currentIndex >= sequence.length) {
+            setStatusText("SYSTEM COMPLETE");
+            isRunning = false;
+            return;
+        }
+
+        const step = sequence[currentIndex];
+        setStatusText(step.text);
+        
+        if (step.sound && SFX[step.sound]) SFX[step.sound]();
+
+        if (step.action === 'rotate') {
+            document.getElementById('arm-group').classList.add('rotated');
+            setTimeout(next, 2000); 
+            return;
+        }
+
+        if (step.action === 'goldify') {
+            document.getElementById('line-pivot').classList.add('gold-state');
+            setTimeout(next, 1200);
+            return;
+        }
+
+        if (step.action === 'chain-reaction') {
+            triggerChainReaction();
+            return; 
+        }
+
+        const el = document.getElementById(step.id);
+        
+        if (!el) { next(); return; }
+
+        if (step.type === 'fade') {
+            el.style.opacity = 1;
+            el.style.transition = "opacity 1s ease";
+        } else {
+            try {
+                el.getBoundingClientRect(); 
+                const len = el.getTotalLength();
+                
+                if (el.classList.contains('walker') || el.classList.contains('white-dashed')) {
+                     el.style.opacity = 0;
+                     el.style.transition = "opacity 1s ease";
+                     el.getBoundingClientRect();
+                     el.style.opacity = 1;
+                } else {
+                    el.style.strokeDasharray = len;
+                    el.style.strokeDashoffset = len;
+                    el.style.opacity = 1;
+                    el.getBoundingClientRect();
+                    el.style.transition = "stroke-dashoffset 1.5s ease-in-out";
+                    el.style.strokeDashoffset = 0;
+                }
+            } catch (e) {
+                el.style.opacity = 1;
+            }
+
+            if (step.id === 'rect-rest' || step.id === 'star' || step.id === 'star-inner' || step.id === 'star-micro') {
+                setTimeout(() => {
+                    el.style.transition = "fill-opacity 1s ease";
+                    el.style.fillOpacity = 1;
+                }, 1000);
+            }
+        }
+        
+        if (step.id === 'tri') {
+            document.querySelectorAll('.label').forEach(l => l.style.opacity = 1);
+        }
+
+        next();
+    }
+
+    function next() {
+        currentIndex++;
+        setTimeout(playNext, 1800);
+    }
+
+    function triggerChainReaction() {
+        let i = 0;
+        const interval = setInterval(() => {
+            if(i >= 10) {
+                clearInterval(interval);
+                setTimeout(next, 500);
+                return;
+            }
+            SFX.chain(i);
+            const w = document.getElementById('w' + i);
+            w.style.opacity = 0;
+            w.style.transition = "opacity 0.4s ease-out"; 
+            w.getBoundingClientRect();
+            w.style.opacity = 1;
+            i++;
+        }, 200); 
+    }
+
+    window.onload = () => {
+        setStatusText("TAP SCREEN TO START");
+    };
+</script>
+</body>
+</html>

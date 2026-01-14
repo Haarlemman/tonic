@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic Audio: Magenta & Green Mist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        /* --- CANVAS LAYERING --- */
+        
+        #canvas-battle {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1; 
+        }
+
+        #canvas-clouds {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            pointer-events: none; 
+            transition: opacity 2s ease;
+        }
+        
+        /* --- UI STYLES --- */
+
+        #bg-titles {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 5;
+            font-family: 'Courier New', Courier, monospace;
+            pointer-events: none;
+            opacity: 0.5;
+            transition: opacity 2s ease;
+        }
+
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 280px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        .playlist-container {
+            width: 100%;
+            max-height: 120px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .playlist-container::-webkit-scrollbar { width: 4px; }
+        .playlist-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .playlist-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 2px; }
+
+        .track-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .track-item:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .track-item.active { background: rgba(255, 255, 255, 0.1); color: #a78bfa; font-weight: 500; }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+        .controls { display: flex; gap: 8px; width: 100%; }
+        
+        #driftBtn {
+            margin-top: 5px;
+            width: 100%;
+            background: rgba(100, 100, 255, 0.1);
+            border-color: rgba(100, 100, 255, 0.3);
+            transition: background 0.3s;
+        }
+        #driftBtn:hover { background: rgba(100, 100, 255, 0.2); }
+        #driftBtn.active { background: rgba(167, 139, 250, 0.3); color: #a78bfa; }
+
+        .status { color: rgba(255, 255, 255, 0.4); font-size: 10px; text-align: center; margin-top: 5px; }
+        input[type="file"] { display: none; }
+        
+        .progress-area { margin-top: 4px; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%;
+            background: #a78bfa; cursor: pointer; margin-top: -3px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px;
+        }
+        .time-display { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255, 255, 255, 0.5); font-family: monospace; }
+        
+        /* Updated Title Colors to match Clouds slightly */
+        .title-text { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+        .subtitle-text { font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem; text-shadow: 0 0 5px rgba(0,0,0,0.8); }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-battle"></canvas>
+    <canvas id="canvas-clouds"></canvas>
+
+    <div id="bg-titles">
+        <h1 class="title-text text-4xl text-red-500">RED <span class="text-xs text-red-300 align-middle">(BASS)</span></h1>
+        <h1 class="title-text text-4xl text-blue-500">& BLUE <span class="text-xs text-blue-300 align-middle">(TREBLE)</span></h1>
+        <p class="subtitle-text text-slate-300">Hover to Conduct / Drag to Gather</p>
+    </div>
+
+    <div id="ui-layer">
+        <div class="playlist-container" id="playlist"></div>
+        <div class="progress-area">
+            <input type="range" id="progressBar" value="0" min="0" step="0.1">
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+        <div class="controls">
+            <label class="btn">
+                Upload
+                <input type="file" id="fileInput" accept="audio/*">
+            </label>
+            <button class="btn" id="playBtn" disabled>Play</button>
+            <button class="btn" id="pauseBtn" style="display:none;">Pause</button>
+        </div>
+        
+        <button class="btn" id="driftBtn">Drift Clouds Away</button>
+        
+        <div class="status" id="statusText">Select a track to begin</div>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // ==========================================
+        // SHARED AUDIO ENGINE
+        // ==========================================
+        const audioPlayer = document.getElementById('audioPlayer');
+        let audioContext, analyser, source;
+        let dataArray;
+        let isPlaying = false;
+        
+        let bassEnergy = 0; 
+        let trebleEnergy = 0; 
+        let bassNorm = 0; 
+        let trebleNorm = 0; 
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; 
+                analyser.smoothingTimeConstant = 0.85;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        function analyzeAudio() {
+            if (!analyser) return;
+            analyser.getByteFrequencyData(dataArray);
+
+            let bassSum = 0;
+            for (let i = 0; i < 15; i++) bassSum += dataArray[i];
+            bassEnergy = bassSum / 15;
+            
+            let trebleSum = 0;
+            let trebleCount = 0;
+            for (let i = 100; i < 250; i++) {
+                trebleSum += dataArray[i];
+                trebleCount++;
+            }
+            trebleEnergy = trebleSum / trebleCount;
+
+            bassNorm = Math.min(1, (bassEnergy / 255) * 1.8);
+            trebleNorm = Math.min(1, (trebleEnergy / 255) * 3.5);
+
+            bassEnergy *= 1.2;
+            trebleEnergy *= 1.4;
+        }
+
+        // ==========================================
+        // VISUALIZER 1: THE CLOUDS (Foreground)
+        // ==========================================
+        const cloudCanvas = document.getElementById('canvas-clouds');
+        const cCtx = cloudCanvas.getContext('2d');
+        let cWidth, cHeight;
+        let isDrifting = false; 
+
+        const cloudParticles = [];
+        const cloudTargets = { blue: {x:0, y:0}, red: {x:0, y:0} };
+
+        class CloudParticle {
+            constructor(type, index) {
+                this.type = type; 
+                this.index = index;
+                this.seed = Math.random() * 1000;
+                this.init();
+            }
+
+            init() {
+                this.x = Math.random() * cWidth;
+                this.y = Math.random() * cHeight;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                
+                // Color Logic Modified here for #bc178b (Magenta) and #2e9260 (Green)
+                if (this.type === 'blue') {
+                    // Mapped to GREEN (#2e9260) -> RGB: 46, 146, 96
+                    // Added randomness for organic texture
+                    const r = 46 + Math.random() * 20;
+                    const g = 146 + Math.random() * 30;
+                    const b = 96 + Math.random() * 20;
+                    this.baseSize = 40 + Math.random() * 50; 
+                    this.mass = 2.0; 
+                    this.drag = 0.94;
+                    // Lower alpha for transparency (0.025)
+                    this.color = `rgba(${r}, ${g}, ${b}, 0.025)`; 
+                } else if (this.type === 'red') {
+                    // Mapped to MAGENTA (#bc178b) -> RGB: 188, 23, 139
+                    const r = 188 + Math.random() * 20;
+                    const g = 23 + Math.random() * 10;
+                    const b = 139 + Math.random() * 20;
+                    this.baseSize = 30 + Math.random() * 40; 
+                    this.mass = 1.5; 
+                    this.drag = 0.93; 
+                    // Lower alpha for transparency (0.025)
+                    this.color = `rgba(${r}, ${g}, ${b}, 0.025)`;
+                } else {
+                    // Dust (Golden)
+                    this.baseSize = Math.random() * 2 + 0.5;
+                    this.mass = 1;
+                    this.drag = 0.99;
+                    this.vx = Math.random() * 0.4 + 0.1;
+                    this.color = `rgba(255, 220, 100, ${Math.random() * 0.3 + 0.1})`;
+                }
+                this.size = this.baseSize;
+            }
+
+            update(bass, treble) {
+                if (this.type === 'dust') {
+                    this.x += this.vx;
+                    this.y += Math.sin(this.x * 0.01) * 0.2; 
+                    if (this.x > cWidth) this.x = 0;
+                    return;
+                }
+
+                // --- DRIFT LOGIC (Leaving) ---
+                if (isDrifting) {
+                    this.vx += 0.2 / this.mass; 
+                    const wave = Math.sin(this.index * 0.1 + (Date.now() * 0.002));
+                    this.vy += wave * 0.05;
+                    this.size *= 0.995;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    return; 
+                }
+
+                // --- NORMAL LOGIC (Hovering/Returning) ---
+                let targetX = (this.type === 'blue') ? cloudTargets.blue.x : cloudTargets.red.x;
+                let targetY = (this.type === 'blue') ? cloudTargets.blue.y : cloudTargets.red.y;
+                let spread = 150 + ((this.type === 'blue' ? bass : treble) * 0.8);
+
+                const time = Date.now() * 0.001;
+                const noiseX = Math.sin(this.seed + time * 0.5) + Math.cos(this.index * 0.1 + time * 0.2);
+                const noiseY = Math.cos(this.seed * 0.9 + time * 0.3) + Math.sin(this.index * 0.15 - time * 0.4);
+
+                const homeX = targetX + noiseX * spread * 0.8;
+                const homeY = targetY + noiseY * spread * 0.8;
+                
+                const dx = homeX - this.x;
+                const dy = homeY - this.y;
+
+                this.vx += dx * 0.0008;
+                this.vy += dy * 0.0008;
+
+                if (this.type === 'blue' && bass > 30) {
+                    this.vx += (Math.random() - 0.5) * (bass/255) * 0.2;
+                    this.vy += (Math.random() - 0.5) * (bass/255) * 0.2;
+                    this.size += ((this.baseSize + bass*0.3) - this.size) * 0.1;
+                } else if (this.type === 'red') {
+                    this.size = this.baseSize + (treble * 0.15);
+                }
+
+                this.vx *= this.drag;
+                this.vy *= this.drag;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw() {
+                cCtx.beginPath();
+                cCtx.fillStyle = this.color;
+                cCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                cCtx.fill();
+            }
+        }
+
+        function initClouds() {
+            cloudParticles.length = 0;
+            for(let i=0; i<350; i++) cloudParticles.push(new CloudParticle('blue', i)); // Green now
+            for(let i=0; i<400; i++) cloudParticles.push(new CloudParticle('red', i));  // Magenta now
+            for(let i=0; i<100; i++) cloudParticles.push(new CloudParticle('dust', i));
+        }
+
+        function animateClouds() {
+            if (!isDrifting) {
+                const time = Date.now() * 0.0003;
+                cloudTargets.blue.x = (cWidth * 0.35) + Math.cos(time * 0.7) * (cWidth * 0.20);
+                cloudTargets.blue.y = (cHeight * 0.5) + Math.sin(time * 0.5) * (cHeight * 0.25);
+                cloudTargets.red.x = (cWidth * 0.65) + Math.cos(time * 0.6 + 2) * (cWidth * 0.20);
+                cloudTargets.red.y = (cHeight * 0.5) + Math.sin(time * 0.4 + 1) * (cHeight * 0.25);
+            }
+
+            cCtx.clearRect(0,0, cWidth, cHeight);
+            
+            if (!isDrifting) {
+                // Background dim only when clouds are present
+                cCtx.fillStyle = 'rgba(2, 2, 5, 0.2)'; 
+                cCtx.fillRect(0,0,cWidth,cHeight);
+            }
+
+            cCtx.globalCompositeOperation = 'lighter';
+            
+            let particlesActive = false;
+            cloudParticles.forEach(p => {
+                // Optimization: Draw if on screen OR if drifting (to finish exit)
+                if (p.x < cWidth + 100 && p.x > -200) {
+                    p.update(bassEnergy, trebleEnergy);
+                    p.draw();
+                    particlesActive = true;
+                } else {
+                    // Still update physics if drifting so they don't freeze
+                     p.update(bassEnergy, trebleEnergy);
+                }
+            });
+            cCtx.globalCompositeOperation = 'source-over';
+            
+            if (!particlesActive && isDrifting) {
+                cloudCanvas.style.display = 'none';
+            }
+        }
+
+        // ==========================================
+        // VISUALIZER 2: THE LOVE BATTLE (Background)
+        // ==========================================
+        const battleCanvas = document.getElementById('canvas-battle');
+        const bCtx = battleCanvas.getContext('2d');
+        let bWidth, bHeight;
+        let battleParticles = [];
+        
+        let mouse = { x: null, y: null, active: false, isDown: false };
+
+        class BattleParticle {
+            constructor(type) {
+                this.type = type;
+                this.reset(true);
+            }
+            reset(initial = false) {
+                this.x = initial 
+                    ? (this.type==='red' ? Math.random()*bWidth*0.4 : (bWidth*0.6)+Math.random()*bWidth*0.4)
+                    : Math.random() * bWidth;
+                this.y = Math.random() * bHeight;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.baseSize = Math.random() * 2 + 1;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speedMod = this.type === 'red' ? 0.04 : 0.03;
+            }
+            update(bLvl, tLvl) {
+                let energy = (this.type === 'red') ? bLvl : tLvl;
+                
+                if(this.type === 'red') {
+                    this.angle += this.speedMod;
+                    this.vx += Math.sin(this.angle) * 0.02;
+                    this.vy += Math.cos(this.angle) * 0.02;
+                } else {
+                    this.angle -= this.speedMod;
+                    this.vx += Math.cos(this.angle) * 0.02;
+                    this.vy += Math.sin(this.angle) * 0.02;
+                }
+                this.vx += (Math.random()-0.5) * energy * 4.0;
+                this.vy += (Math.random()-0.5) * energy * 4.0;
+
+                if (mouse.active && mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 500) {
+                        const force = (500 - dist) / 500;
+                        const angle = Math.atan2(dy, dx);
+                        const strength = mouse.isDown ? 3.0 : (0.5 + energy*1.5);
+                        this.vx += Math.cos(angle) * force * strength;
+                        this.vy += Math.sin(angle) * force * strength;
+                    }
+                }
+
+                this.vx *= 0.96; this.vy *= 0.96;
+                this.x += this.vx; this.y += this.vy;
+
+                if (this.x < 0) this.x = bWidth;
+                if (this.x > bWidth) this.x = 0;
+                if (this.y < 0) this.y = bHeight;
+                if (this.y > bHeight) this.y = 0;
+            }
+            draw(bLvl, tLvl) {
+                let energy = (this.type === 'red') ? bLvl : tLvl;
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, this.baseSize * (1 + energy*3), 0, Math.PI*2);
+                bCtx.fillStyle = (this.type==='red') 
+                    ? `rgba(255, 60, 60, 0.8)` 
+                    : `rgba(60, 100, 255, 0.8)`;
+                bCtx.fill();
+            }
+        }
+
+        function initBattle() {
+            battleParticles = [];
+            for(let i=0; i<110; i++) battleParticles.push(new BattleParticle('red'));
+            for(let i=0; i<110; i++) battleParticles.push(new BattleParticle('blue'));
+        }
+
+        function animateBattle() {
+            bCtx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+            bCtx.fillRect(0, 0, bWidth, bHeight);
+
+            for (let i = 0; i < battleParticles.length; i++) {
+                const p1 = battleParticles[i];
+                p1.update(bassNorm, trebleNorm);
+                p1.draw(bassNorm, trebleNorm);
+
+                for (let j = i + 1; j < battleParticles.length; j++) {
+                    const p2 = battleParticles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx*dx + dy*dy;
+                    
+                    if (distSq < 15000) {
+                        const dist = Math.sqrt(distSq);
+                        const opacity = 1 - (dist/122);
+                        if(p1.type === p2.type) {
+                            bCtx.beginPath();
+                            bCtx.lineWidth = 0.5;
+                            const color = p1.type==='red' ? '255,60,60' : '60,100,255';
+                            const pulse = p1.type==='red' ? bassNorm : trebleNorm;
+                            bCtx.strokeStyle = `rgba(${color}, ${opacity * (0.6 + pulse)})`;
+                            bCtx.moveTo(p1.x, p1.y);
+                            bCtx.lineTo(p2.x, p2.y);
+                            bCtx.stroke();
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // MAIN LOOP
+        // ==========================================
+        
+        function resize() {
+            cWidth = cloudCanvas.width = window.innerWidth;
+            cHeight = cloudCanvas.height = window.innerHeight;
+            bWidth = battleCanvas.width = window.innerWidth;
+            bHeight = battleCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+        initClouds();
+        initBattle();
+
+        function masterAnimate() {
+            if(isPlaying) analyzeAudio();
+            else {
+                bassEnergy *= 0.95; trebleEnergy *= 0.95;
+                bassNorm *= 0.9; trebleNorm *= 0.9;
+            }
+
+            animateBattle(); 
+            animateClouds(); 
+
+            requestAnimationFrame(masterAnimate);
+        }
+        masterAnimate();
+
+        // ==========================================
+        // UI
+        // ==========================================
+        
+        const playlistData = [
+            { title: "Lovin U", src: "songs/LovinU-CocoBryce.mp3" },
+            { title: "Nespole", src: "songs/Nespole.mp3" },
+            { title: "Spring Is Coming", src: "songs/SpringIsComing.mp3" },
+            { title: "Evening Breeze", src: "songs/EveningBreeze.mp3" },
+            { title: "Drum and Bass", src: "songs/Freestyle.mp3" }
+        ];
+
+        const playlistContainer = document.getElementById('playlist');
+        const statusText = document.getElementById('statusText');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const driftBtn = document.getElementById('driftBtn');
+
+        playlistData.forEach((track, index) => {
+            const div = document.createElement('div');
+            div.className = 'track-item';
+            div.innerHTML = `<span>${index+1}. ${track.title}</span>`;
+            div.onclick = () => loadTrack(index);
+            playlistContainer.appendChild(div);
+        });
+
+        function loadTrack(index) {
+            const track = playlistData[index];
+            document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            playlistContainer.children[index].classList.add('active');
+            audioPlayer.src = track.src;
+            statusText.textContent = `Selected: ${track.title}`;
+            statusText.style.color = "#a78bfa";
+            playBtn.disabled = false;
+            if(audioContext && audioContext.state === 'running') playBtn.click();
+        }
+
+        playBtn.addEventListener('click', () => {
+            initAudio();
+            if(audioContext.state === 'suspended') audioContext.resume();
+            
+            audioPlayer.play().then(() => {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+                statusText.textContent = "Flowing...";
+                isPlaying = true;
+
+                // --- AUTO DRIFT AFTER 8 SECONDS ---
+                setTimeout(() => {
+                    // Only trigger if user hasn't already manually toggled it
+                    if(!isDrifting) {
+                        toggleDrift();
+                    }
+                }, 8000);
+
+            }).catch(e => console.error(e));
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            isPlaying = false;
+            statusText.textContent = "Paused";
+        });
+
+        // --- DRIFT FUNCTIONALITY ---
+        function toggleDrift() {
+            if(isDrifting) {
+                // RESET: Bring clouds back
+                isDrifting = false;
+                cloudCanvas.style.display = 'block';
+                driftBtn.textContent = "Drift Clouds Away";
+                driftBtn.classList.remove('active');
+                
+                // RESEED: Move all particles to the left so they flow in
+                cloudParticles.forEach(p => {
+                    p.x = -Math.random() * (cWidth * 0.5); // Start off-screen left
+                    p.size = p.baseSize; // Reset size
+                });
+
+            } else {
+                // DRIFT AWAY
+                isDrifting = true;
+                driftBtn.textContent = "Bring Clouds Back";
+                driftBtn.classList.add('active');
+            }
+        }
+
+        driftBtn.addEventListener('click', toggleDrift);
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const file = this.files[0];
+            if(file) {
+                audioPlayer.src = URL.createObjectURL(file);
+                playBtn.disabled = false;
+                statusText.textContent = `Ready: ${file.name}`;
+                document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            }
+        });
+
+        function handleMouse(x, y, active, down) {
+            mouse.x = x; mouse.y = y; mouse.active = active; mouse.isDown = down;
+        }
+        window.addEventListener('mousemove', e => handleMouse(e.clientX, e.clientY, true, mouse.isDown));
+        window.addEventListener('mousedown', e => handleMouse(e.clientX, e.clientY, true, true));
+        window.addEventListener('mouseup', e => {
+            handleMouse(e.clientX, e.clientY, true, false);
+            // Explosion logic for Battle particles
+            battleParticles.forEach(p => {
+                const dx = p.x - e.clientX;
+                const dy = p.y - e.clientY;
+                if(Math.sqrt(dx*dx+dy*dy) < 300) {
+                    const angle = Math.atan2(dy, dx);
+                    p.vx += Math.cos(angle) * 15;
+                    p.vy += Math.sin(angle) * 15;
+                }
+            });
+        });
+        
+        const progressBar = document.getElementById('progressBar');
+        const cTime = document.getElementById('currentTime');
+        const dTime = document.getElementById('duration');
+        
+        function formatTime(s) {
+            const m = Math.floor(s/60);
+            const sec = Math.floor(s%60);
+            return `${m}:${sec<10?'0':''}${sec}`;
+        }
+        audioPlayer.addEventListener('timeupdate', () => {
+            if(audioPlayer.duration) {
+                progressBar.value = (audioPlayer.currentTime/audioPlayer.duration)*100;
+                cTime.textContent = formatTime(audioPlayer.currentTime);
+                dTime.textContent = formatTime(audioPlayer.duration);
+            }
+        });
+        progressBar.addEventListener('input', () => {
+            audioPlayer.currentTime = (progressBar.value/100)*audioPlayer.duration;
+        });
+
+    </script>
+</body>
+</html>

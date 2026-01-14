@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONIC | The Art & Soul of Adversity</title>
+    
+    <style>
+        /* SWISS INDUSTRIAL DESIGN SYSTEM [Source 1, 9, 24] */
+        :root {
+            --ink: #111111;       /* Text / Void */
+            --paper: #f4f4f0;     /* Background */
+            --red: #ff3300;       /* BODY: Action / Pain [Source 25] */
+            --yellow: #ffcc00;    /* MIND: Logic / Anxiety [Source 4] */
+            --blue: #0033cc;      /* SOUL: Depth / Jimmy [Source 6, 111] */
+        }
+
+        body { 
+            margin: 0; overflow: hidden; background: var(--paper);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            cursor: crosshair; /* Precision cursor [Source 8] */
+        }
+
+        /* LAYER 1: THE VISUALIZER CANVAS */
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
+
+        /* LAYER 2: THE UI (Swiss Typography) [Source 1] */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 40px; box-sizing: border-box;
+            mix-blend-mode: difference; /* Inverts colors for high contrast [Source 9] */
+            color: white;
+        }
+
+        /* TYPOGRAPHY: Big, Bold, Urgent [Source 27] */
+        h1 {
+            font-size: 10vw; line-height: 0.8; margin: 0; letter-spacing: -4px;
+            font-weight: 900; text-transform: uppercase;
+        }
+
+        .meta-data {
+            font-family: 'Courier New', monospace; font-size: 1rem;
+            border-top: 2px solid white; padding-top: 10px; display: inline-block;
+            margin-top: 20px;
+        }
+
+        /* NAVIGATION: "De Stijl" Blocks [Source 4, 5] */
+        .nav-container {
+            display: flex; gap: 0; pointer-events: auto; border: 4px solid white;
+            width: fit-content; margin: 0 auto;
+        }
+        
+        .nav-block {
+            padding: 20px 40px; border-right: 2px solid white;
+            font-weight: 900; text-transform: uppercase; cursor: pointer;
+            transition: all 0.2s; background: black; color: white;
+        }
+        .nav-block:last-child { border-right: none; }
+        .nav-block:hover { background: white; color: black; }
+
+        /* PERSUASION BUTTON: "The Uncommitted" [Source 171] */
+        #cta-btn {
+            position: absolute; bottom: 40px; right: 40px; pointer-events: auto;
+            border: 4px solid white; padding: 20px 30px; 
+            font-weight: bold; text-transform: uppercase; text-decoration: none; color: white;
+            display: none; /* Hides until active */
+        }
+        #cta-btn:hover { background: white; color: black; }
+
+        /* INTRO OVERLAY [Source 130] */
+        #intro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ink); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; cursor: pointer; transition: opacity 1s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VISUALIZER CANVAS -->
+    <canvas id="canvas"></canvas>
+
+    <!-- INTRO SCREEN: Definition of Tonic [Source 130] -->
+    <div id="intro" onclick="startExperience()">
+        <h1 style="font-size: 5rem; letter-spacing: -2px;">TONIC.</h1>
+        <p style="font-family:'Courier New'; max-width: 400px; margin-top: 20px; line-height: 1.5;">
+            "A liquid medicine that has the general effect of making you feel better...<br>
+            Something that makes you feel stronger."
+        </p>
+        <p style="margin-top: 50px; border: 1px solid white; padding: 10px 20px; text-transform: uppercase; font-size: 0.8rem;">
+            [ Click to Ingest ]
+        </p>
+    </div>
+
+    <!-- UI LAYER -->
+    <div id="ui-layer" style="opacity: 0; transition: opacity 2s;">
+        <!-- HEADER -->
+        <div>
+            <h1>Tonic</h1>
+            <h1>For The</h1>
+            <h1>Bones.</h1>
+            <div class="meta-data">
+                THE ART & SOUL OF ADVERSITY [Source 27]<br>
+                STATUS: <span id="status-text">EQUILIBRIUM</span>
+            </div>
+        </div>
+
+        <!-- FOOTER NAV [Source 4] -->
+        <div class="nav-container">
+            <div class="nav-block" onclick="setMode('body')">Body (5mg)</div>
+            <div class="nav-block" onclick="setMode('mind')">Mind (10mg)</div>
+            <div class="nav-block" onclick="setMode('soul')">Soul (Full)</div>
+        </div>
+    </div>
+
+    <!-- THE PERSUASION [Source 171] -->
+    <a href="https://amazon.com" id="cta-btn">Join The Uncommitted</a>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let mode = 'soul'; // Default state: Soul
+        let time = 0;
+        
+        // "Bradykinesia" Mouse Tracking [Source 56, 162]
+        // The mouse lags behind, simulating the resistance described in the book.
+        let mouse = { x: 0, y: 0 };
+        let lagMouse = { x: 0, y: 0 };
+        
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        
+        // Touch support for mobile
+        window.addEventListener('touchmove', e => {
+             mouse.x = e.touches.clientX;
+             mouse.y = e.touches.clientY;
+        });
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // THE DRAWING ENGINE
+        function draw() {
+            // Clear Background (Paper Color) [Source 24]
+            ctx.fillStyle = '#f4f4f0';
+            ctx.fillRect(0, 0, width, height);
+
+            // Calculate "Tremor" (The Glitch) [Source 35]
+            // Even in stillness, there is a slight shake
+            const tremor = (Math.random() - 0.5) * 5;
+
+            if (mode === 'body') {
+                // RED MODE: "Action > Reaction" [Source 56]
+                // Visual: The Industrial Dots [Source 24]
+                ctx.fillStyle = '#ff3300'; 
+                const spacing = 50;
+                
+                for (let x = 0; x < width; x += spacing) {
+                    for (let y = 0; y < height; y += spacing) {
+                        // The dots react to the mouse but with a delay
+                        const dist = Math.hypot(x - lagMouse.x, y - lagMouse.y);
+                        const size = Math.max(2, (300 - dist) / 10);
+                        
+                        ctx.beginPath();
+                        ctx.arc(x + tremor, y + tremor, size, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                }
+                document.getElementById('status-text').innerText = "THE BODY (ACTION > REACTION)";
+
+            } else if (mode === 'mind') {
+                // YELLOW MODE: "Logic & Anxiety" [Source 53]
+                // Visual: The Perception Square [Source 25]
+                ctx.fillStyle = '#ffcc00'; 
+                ctx.save();
+                ctx.translate(width/2, height/2);
+                
+                // Rotating recursive squares (The "Monkey Mind" Loop) [Source 122]
+                for (let i = 0; i < 25; i++) {
+                    ctx.rotate(time * 0.05 + (lagMouse.x * 0.0002)); 
+                    const size = 800 - (i * 30);
+                    // Alternating Yellow and Ink
+                    ctx.fillStyle = i % 2 === 0 ? '#111' : '#ffcc00';
+                    ctx.fillRect(-size/2, -size/2, size, size);
+                }
+                ctx.restore();
+                document.getElementById('status-text').innerText = "THE MIND (LOGIC / ANXIETY)";
+
+            } else {
+                // BLUE MODE: "The Soul / Jimmy" [Source 111]
+                // Visual: The Cosmic Circles [Source 6]
+                ctx.fillStyle = '#0033cc';
+                
+                // The breathing circle (Equilibrium)
+                const breath = Math.sin(time * 2) * 20;
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, 200 + breath, 0, Math.PI * 2);
+                ctx.fill();
+
+                // The Connection Line (Umbilical) [Source 104]
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(width/2, height/2);
+                ctx.lineTo(lagMouse.x, lagMouse.y);
+                ctx.stroke();
+
+                document.getElementById('status-text').innerText = "THE SOUL (EQUILIBRIUM)";
+            }
+        }
+
+        function animate() {
+            time += 0.05;
+            // Physics: Ease the lag mouse towards real mouse (Bradykinesia)
+            lagMouse.x += (mouse.x - lagMouse.x) * 0.08;
+            lagMouse.y += (mouse.y - lagMouse.y) * 0.08;
+            
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function setMode(newMode) {
+            mode = newMode;
+        }
+
+        function startExperience() {
+            // Hide Intro, Show UI
+            const intro = document.getElementById('intro');
+            intro.style.opacity = 0;
+            setTimeout(() => { intro.style.display = 'none'; }, 1000);
+            
+            document.getElementById('ui-layer').style.opacity = 1;
+            document.getElementById('cta-btn').style.display = 'block';
+            
+            animate();
+        }
+    </script>
+</body>
+</html>

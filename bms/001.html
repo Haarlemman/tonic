@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASR Triangle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 100%);
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        svg {
+            width: 90vmin;
+            height: 90vmin;
+            filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.1));
+        }
+
+        .vertex {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .vertex:hover .vertex-glow {
+            opacity: 1;
+            r: 50;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.08); }
+        }
+
+        @keyframes blackHolePulse {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% { 
+                transform: scale(0.85);
+                opacity: 1;
+            }
+        }
+
+        @keyframes blackHoleRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        .eternal-circle {
+            animation: pulse 5s ease-in-out infinite;
+        }
+
+        .infinity-path {
+            animation: shimmer 2.5s ease-in-out infinite;
+        }
+
+        .edge {
+            stroke-dasharray: 5, 5;
+            animation: dash 15s linear infinite;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
+
+        .particle {
+            filter: drop-shadow(0 0 4px currentColor);
+        }
+
+        .center-text {
+            font-size: 13px;
+            fill: rgba(255, 255, 255, 0.5);
+            text-anchor: middle;
+            pointer-events: none;
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        .vertex-label {
+            font-size: 28px;
+            font-weight: bold;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+            opacity: 0.95;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .black-hole-center {
+            transform-origin: center;
+            animation: blackHoleRotate 20s linear infinite;
+        }
+
+        .black-hole-pulse {
+            animation: blackHolePulse 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="artGradient">
+                    <stop offset="0%" style="stop-color:#ff4444;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#cc0000;stop-opacity:0.5" />
+                </radialGradient>
+                <radialGradient id="scienceGradient">
+                    <stop offset="0%" style="stop-color:#ffff44;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#ffdd00;stop-opacity:0.5" />
+                </radialGradient>
+                <radialGradient id="religionGradient">
+                    <stop offset="0%" style="stop-color:#4466ff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0022aa;stop-opacity:0.5" />
+                </radialGradient>
+                <radialGradient id="blackHoleGradient">
+                    <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:0.9" />
+                    <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.2" />
+                </radialGradient>
+                
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="10" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <filter id="strongGlow">
+                    <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- Eternal Circle -->
+            <g class="eternal-circle">
+                <circle cx="400" cy="400" r="280" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+                <circle cx="400" cy="400" r="260" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                <circle cx="400" cy="400" r="300" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                <circle cx="400" cy="400" r="320" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            </g>
+
+            <!-- Infinity lemniscate integrated into circle -->
+            <path class="infinity-path" d="M 280 400 Q 240 340, 300 340 Q 360 340, 400 400 Q 440 460, 300 460 Q 240 460, 280 400 M 520 400 Q 560 340, 500 340 Q 440 340, 400 400 Q 360 460, 500 460 Q 560 460, 520 400" 
+                  fill="none" stroke="rgba(100,120,255,0.4)" stroke-width="3" filter="url(#glow)"/>
+
+            <!-- Triangle edges -->
+            <line class="edge" x1="400" y1="120" x2="680" y2="580" stroke="rgba(255,255,100,0.4)" stroke-width="2.5"/>
+            <line class="edge" x1="680" y1="580" x2="120" y2="580" stroke="rgba(255,100,100,0.4)" stroke-width="2.5"/>
+            <line class="edge" x1="120" y1="580" x2="400" y2="120" stroke="rgba(100,120,255,0.4)" stroke-width="2.5"/>
+
+            <!-- Enhanced particle system - spiraling into black hole -->
+            <circle class="particle" cx="400" cy="120" r="4" fill="#ffff88" opacity="0.9">
+                <animateMotion dur="8s" repeatCount="indefinite"
+                    path="M 0 0 L 280 460 L -100 200 L -50 100 L -20 50 L -5 15 L 0 0"/>
+                <animate attributeName="r" values="4;4;3;2.5;1.5;0.5;0" dur="8s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.9;0.9;0.8;0.7;0.5;0.2;0" dur="8s" repeatCount="indefinite"/>
+            </circle>
+            <circle class="particle" cx="680" cy="580" r="4" fill="#ff8888" opacity="0.9">
+                <animateMotion dur="9s" repeatCount="indefinite"
+                    path="M 0 0 L -560 0 L 120 -300 L 60 -150 L 20 -70 L 5 -20 L 0 0"/>
+                <animate attributeName="r" values="4;4;3;2.5;1.5;0.5;0" dur="9s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.9;0.9;0.8;0.7;0.5;0.2;0" dur="9s" repeatCount="indefinite"/>
+            </circle>
+            <circle class="particle" cx="120" cy="580" r="4" fill="#8888ff" opacity="0.9">
+                <animateMotion dur="7.5s" repeatCount="indefinite"
+                    path="M 0 0 L 280 -460 L 150 -100 L 70 -50 L 30 -20 L 10 -5 L 0 0"/>
+                <animate attributeName="r" values="4;4;3;2.5;1.5;0.5;0" dur="7.5s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.9;0.9;0.8;0.7;0.5;0.2;0" dur="7.5s" repeatCount="indefinite"/>
+            </circle>
+            
+            <!-- Additional particles spiraling in -->
+            <circle class="particle" cx="540" cy="350" r="3" fill="#ffddaa" opacity="0.7">
+                <animateMotion dur="10s" repeatCount="indefinite"
+
+                    path="M 0 0 L -420 230 L -80 80 L -40 40 L -15 15 L -3 3 L 0 0"/>
+                <animate attributeName="r" values="3;3;2.5;2;1;0.3;0" dur="10s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.7;0.7;0.6;0.5;0.3;0.1;0" dur="10s" repeatCount="indefinite"/>
+            </circle>
+            <circle class="particle" cx="260" cy="350" r="3" fill="#ffaaaa" opacity="0.7">
+                <animateMotion dur="9.5s" repeatCount="indefinite"
+                    path="M 0 0 L 140 -230 L 100 -80 L 50 -40 L 20 -15 L 5 -3 L 0 0"/>
+                <animate attributeName="r" values="3;3;2.5;2;1;0.3;0" dur="9.5s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.7;0.7;0.6;0.5;0.3;0.1;0" dur="9.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle class="particle" cx="400" cy="500" r="3" fill="#aaaaff" opacity="0.7">
+                <animateMotion dur="8.5s" repeatCount="indefinite"
+                    path="M 0 0 L -280 -380 L -60 -100 L -25 -45 L -10 -18 L -2 -5 L 0 0"/>
+                <animate attributeName="r" values="3;3;2.5;2;1;0.3;0" dur="8.5s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.7;0.7;0.6;0.5;0.3;0.1;0" dur="8.5s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Black Hole Portal at Center -->
+            <g class="black-hole-center" transform="translate(400, 400)">
+                <!-- Accretion disk rings -->
+                <circle class="black-hole-pulse" r="80" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                <circle class="black-hole-pulse" r="65" fill="none" stroke="rgba(200,200,255,0.15)" stroke-width="2" 
+                        style="animation-delay: -0.5s"/>
+                <circle class="black-hole-pulse" r="50" fill="none" stroke="rgba(150,150,255,0.2)" stroke-width="2"
+                        style="animation-delay: -1s"/>
+                <circle class="black-hole-pulse" r="35" fill="none" stroke="rgba(100,100,255,0.25)" stroke-width="2"
+                        style="animation-delay: -1.5s"/>
+            </g>
+
+            <!-- Black hole event horizon -->
+            <circle cx="400" cy="400" r="25" fill="url(#blackHoleGradient)" filter="url(#strongGlow)"/>
+            <circle cx="400" cy="400" r="20" fill="#000000" opacity="0.95"/>
+            
+            <!-- Singularity point -->
+            <circle cx="400" cy="400" r="3" fill="white" opacity="0.8">
+                <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+                <animate attributeName="r" values="3;4;3" dur="2s" repeatCount="indefinite"/>
+            </circle>
+
+
+
+            <!-- Religion vertex (top) - Dark Blue -->
+            <g class="vertex" data-vertex="religion" data-color="#4466ff">
+                <circle class="vertex-glow" cx="400" cy="120" r="45" fill="url(#religionGradient)" opacity="0.5"/>
+                <circle cx="400" cy="120" r="38" fill="url(#religionGradient)" filter="url(#glow)"/>
+                
+                <g class="vertex-icon" transform="translate(400, 120)">
+                    <line x1="0" y1="-18" x2="0" y2="-25" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="14" y1="-12" x2="19" y2="-17" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="18" y1="0" x2="25" y2="0" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="14" y1="12" x2="19" y2="17" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="0" y1="18" x2="0" y2="25" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="-14" y1="12" x2="-19" y2="17" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="-18" y1="0" x2="-25" y2="0" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="-14" y1="-12" x2="-19" y2="-17" stroke="#aabbff" stroke-width="2.5" opacity="0.9"/>
+                </g>
+            </g>
+
+            <!-- Science vertex (bottom right) - Bright Yellow -->
+            <g class="vertex" data-vertex="science" data-color="#ffff44">
+                <circle class="vertex-glow" cx="680" cy="580" r="45" fill="url(#scienceGradient)" opacity="0.5"/>
+                <circle cx="680" cy="580" r="38" fill="url(#scienceGradient)" filter="url(#glow)"/>
+                
+                <g class="vertex-icon" transform="translate(680, 580)">
+                    <circle cx="0" cy="0" r="4" fill="#ffffaa"/>
+                    <ellipse cx="0" cy="0" rx="20" ry="9" fill="none" stroke="#ffffaa" stroke-width="2" opacity="0.9"/>
+                    <ellipse cx="0" cy="0" rx="20" ry="9" fill="none" stroke="#ffffaa" stroke-width="2" opacity="0.9" transform="rotate(60)"/>
+                    <ellipse cx="0" cy="0" rx="20" ry="9" fill="none" stroke="#ffffaa" stroke-width="2" opacity="0.9" transform="rotate(120)"/>
+                </g>
+            </g>
+
+            <!-- Art vertex (bottom left) - Warm Red -->
+            <g class="vertex" data-vertex="art" data-color="#ff4444">
+                <circle class="vertex-glow" cx="120" cy="580" r="45" fill="url(#artGradient)" opacity="0.5"/>
+                <circle cx="120" cy="580" r="38" fill="url(#artGradient)" filter="url(#glow)"/>
+                
+                <g class="vertex-icon" transform="translate(120, 580)">
+                    <path d="M 0,-10 Q -10,-20 -14,-10 Q -18,0 0,14 Q 18,0 14,-10 Q 10,-20 0,-10" 
+                          fill="#ffaaaa" opacity="0.9"/>
+                </g>
+            </g>
+
+            <!-- Expanding circles container (for click effects) -->
+            <g id="expandingCircles"></g>
+        </svg>
+    </div>
+
+    <script>
+        const vertices = document.querySelectorAll('.vertex');
+        const svg = document.querySelector('svg');
+        const expandingCirclesContainer = document.getElementById('expandingCircles');
+
+        // Vertex positions
+        const vertexPositions = {
+            religion: { cx: 400, cy: 120 },
+            science: { cx: 680, cy: 580 },
+            art: { cx: 120, cy: 580 }
+        };
+
+        vertices.forEach(vertex => {
+            vertex.addEventListener('click', () => {
+                const vertexType = vertex.dataset.vertex;
+                const color = vertex.dataset.color;
+                const pos = vertexPositions[vertexType];
+                
+                // Create expanding circle
+                const expandCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                expandCircle.setAttribute('cx', pos.cx);
+                expandCircle.setAttribute('cy', pos.cy);
+                expandCircle.setAttribute('r', '40');
+                expandCircle.setAttribute('fill', 'none');
+                expandCircle.setAttribute('stroke', color);
+                expandCircle.setAttribute('stroke-width', '3');
+                expandCircle.setAttribute('opacity', '0.8');
+                
+                expandingCirclesContainer.appendChild(expandCircle);
+                
+                // Animate expansion
+                let radius = 40;
+                let opacity = 0.8;
+                const maxRadius = 2000;
+                const expandInterval = setInterval(() => {
+                    radius += 30;
+                    opacity -= 0.015;
+                    
+                    expandCircle.setAttribute('r', radius);
+                    expandCircle.setAttribute('opacity', opacity);
+                    expandCircle.setAttribute('stroke-width', Math.max(1, 4 - radius / 500));
+                    
+                    if (radius >= maxRadius || opacity <= 0) {
+                        clearInterval(expandInterval);
+                        expandingCirclesContainer.removeChild(expandCircle);
+                    }
+                }, 20);
+                
+                // Pulse effect on vertex
+                const circles = vertex.querySelectorAll('circle');
+                circles.forEach(circle => {
+                    const originalTransform = circle.style.transform;
+                    circle.style.transform = 'scale(1.3)';
+                    circle.style.transition = 'transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                    setTimeout(() => {
+                        circle.style.transform = originalTransform || 'scale(1)';
+                    }, 400);
+                });
+            });
+        });
+
+        // Enhanced eternal circle breathing
+        const eternalCircle = document.querySelector('.eternal-circle');
+        setInterval(() => {
+            eternalCircle.style.transform = 'scale(1.03)';
+            setTimeout(() => {
+                eternalCircle.style.transform = 'scale(1)';
+            }, 2500);
+        }, 5000);
+
+        // Add subtle mouse interaction with black hole
+        const blackHole = document.querySelector('.black-hole-center');
+        
+        svg.addEventListener('mousemove', (e) => {
+            const rect = svg.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            const distance = Math.sqrt(x * x + y * y);
+            const maxDistance = rect.width / 2;
+            const intensity = 1 - Math.min(distance / maxDistance, 1);
+            
+            blackHole.style.transform = `translate(400, 400) scale(${1 + intensity * 0.1})`;
+        });
+    </script>
+</body>
+</html>

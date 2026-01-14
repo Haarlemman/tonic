@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morphing Mathematical Paradox</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000; /* Deep Black */
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* TOP TITLE - STATIC */
+        #header {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #ffffff; /* Stark White */
+            font-size: 32px; 
+            font-weight: bold;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 8px; /* Wide spacing for cinematic look */
+            z-index: 10;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            font-family: "Lucida Console", "Monaco", "Courier New", monospace;
+        }
+
+        /* BOTTOM STATUS - CHANGING */
+        #status {
+            position: absolute;
+            bottom: 40px; /* Back to bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px; 
+            font-weight: bold;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 3px; 
+            z-index: 10;
+            text-shadow: 0 0 10px currentColor; 
+        }
+
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            cursor: pointer;
+            transition: opacity 0.5s;
+        }
+        #start-text {
+            color: #ff0000;
+            font-size: 24px;
+            letter-spacing: 4px;
+            border: 2px solid #ff0000;
+            padding: 20px 40px;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; text-shadow: 0 0 10px #ff0000; }
+            50% { opacity: 0.5; text-shadow: 0 0 0px #ff0000; }
+            100% { opacity: 1; text-shadow: 0 0 10px #ff0000; }
+        }
+    </style>
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <div id="start-text">Initialize Man-Machine</div>
+    </div>
+
+    <!-- Static Title -->
+    <div id="header">PARADOX</div>
+
+    <!-- Changing Description -->
+    <div id="status">WAITING FOR INPUT...</div>
+    
+    <div id="canvas-container"></div>
+
+    <script>
+        // --- AUDIO ENGINE (Web Audio API) ---
+        const AudioEngine = {
+            ctx: null,
+            droneOsc: null,
+            droneGain: null,
+            filter: null,
+
+            init: function() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                
+                const masterGain = this.ctx.createGain();
+                masterGain.gain.value = 0.4;
+                masterGain.connect(this.ctx.destination);
+
+                this.droneOsc = this.ctx.createOscillator();
+                this.droneOsc.type = 'sawtooth';
+                this.droneOsc.frequency.value = 55; // Low A
+                
+                this.filter = this.ctx.createBiquadFilter();
+                this.filter.type = 'lowpass';
+                this.filter.frequency.value = 200;
+                this.filter.Q.value = 1;
+
+                this.droneGain = this.ctx.createGain();
+                this.droneGain.gain.value = 0.5;
+
+                this.droneOsc.connect(this.filter);
+                this.filter.connect(this.droneGain);
+                this.droneGain.connect(masterGain);
+                
+                this.droneOsc.start();
+            },
+
+            // No blips, just drone modulation based on speed
+            updateDrone: function(speed) {
+                if (!this.filter) return;
+                // Smoother filter opening
+                const targetFreq = 100 + (Math.abs(speed) * 2000);
+                this.filter.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.2);
+            }
+        };
+
+        // --- VISUAL ENGINE ---
+        
+        let hasStarted = false;
+
+        document.getElementById('start-overlay').addEventListener('click', function() {
+            const overlay = document.getElementById('start-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 500);
+            
+            AudioEngine.init();
+            hasStarted = true;
+            init();
+        });
+
+        function init() {
+            if(document.querySelector('canvas')) return;
+
+            const container = document.getElementById('canvas-container');
+            const statusLabel = document.getElementById('status');
+            
+            // 1. Scene & Camera
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); 
+            scene.fog = new THREE.FogExp2(0x000000, 0.02); 
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 24; 
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // 2. Shape Configurations
+            const knotConfigs = [
+                { type: 'KNOT', p: 2, q: 3, r: 6, tube: 2.2, name: "TREFOIL" },
+                { type: 'GEO', shape: 'CUBE', r: 5.5, tube: 0.1, name: "CUBE STRUCTURE" },
+                { type: 'KNOT', p: 3, q: 4, r: 6, tube: 1.5, name: "CELTIC WEAVE" },
+                { type: 'GEO', shape: 'OCTA', r: 6, tube: 0.1, name: "OCTA DIAMOND" },
+                { type: 'KNOT', p: 2, q: 9, r: 7, tube: 1.0, name: "GORGON KNOT" },
+                { type: 'KNOT', p: 7, q: 2, r: 6, tube: 1.8, name: "HELIX LOOP" },
+                { type: 'KNOT', p: 1, q: 6, r: 6, tube: 1.5, name: "MÖBIUS TWIST" },
+                { type: 'KNOT', p: 3, q: 7, r: 7, tube: 1.1, name: "CHAOS THEORY" }
+            ];
+
+            const paletteData = [
+                { color: new THREE.Color(0xff0000) }, 
+                { color: new THREE.Color(0xffff00) }, 
+                { color: new THREE.Color(0x0033ff) }, 
+                { color: new THREE.Color(0x00ff00) }, 
+                { color: new THREE.Color(0xffffff) }  
+            ];
+
+            // 3. Geometry Helpers
+            const tubularSegments = 150; 
+            const radialSegments = 12;
+            const vertexCount = (tubularSegments + 1) * (radialSegments + 1);
+
+            function getKnotPoint(u, v, config, targetVec) {
+                const p = config.p;
+                const q = config.q;
+                const radius = config.r;
+                const tube = config.tube;
+                const cu = Math.cos(u * p);
+                const su = Math.sin(u * p);
+                const quOverP = u * q;
+                const cs = Math.cos(quOverP);
+                const tx = (radius + tube * cs) * cu;
+                const ty = (radius + tube * cs) * su;
+                const tz = tube * Math.sin(quOverP);
+                const nextU = u + 0.01;
+                const ncu = Math.cos(nextU * p);
+                const nsu = Math.sin(nextU * p);
+                const nquOverP = nextU * q;
+                const ncs = Math.cos(nquOverP);
+                const ntx = (radius + tube * ncs) * ncu;
+                const nty = (radius + tube * ncs) * nsu;
+                const ntz = tube * Math.sin(nquOverP);
+                const tx_tan = ntx - tx;
+                const ty_tan = nty - ty;
+                const tz_tan = ntz - tz;
+                const len = Math.sqrt(tx_tan*tx_tan + ty_tan*ty_tan + tz_tan*tz_tan);
+                const tanX = tx_tan/len; const tanY = ty_tan/len; const tanZ = tz_tan/len;
+                let nX = -tanY; let nY = tanX; let nZ = 0; 
+                if (Math.abs(tanZ) > 0.99) { nX = 1; nY = 0; nZ = 0; } 
+                const nLen = Math.sqrt(nX*nX + nY*nY + nZ*nZ);
+                nX /= nLen; nY /= nLen; nZ /= nLen;
+                const bX = tanY*nZ - tanZ*nY;
+                const bY = tanZ*nX - tanX*nZ;
+                const bZ = tanX*nY - tanY*nX;
+                const cx = Math.cos(v);
+                const cy = Math.sin(v);
+                const finalX = tx + (tube * (cx * nX + cy * bX));
+                const finalY = ty + (tube * (cx * nY + cy * bY));
+                const finalZ = tz + (tube * (cx * nZ + cy * bZ));
+                targetVec.set(finalX, finalY, finalZ);
+            }
+
+            function getGeometricPoint(u, v, config, targetVec) {
+                const p = 1; const q = 0; 
+                const radius = config.r; 
+                const tube = config.r; 
+                const cu = Math.cos(u * p);
+                const su = Math.sin(u * p);
+                const tx = radius * cu;
+                const ty = radius * su;
+                const tz = 0;
+                const cx = Math.cos(v);
+                const cy = Math.sin(v);
+                const nX = cu * cx;
+                const nY = su * cx;
+                const nZ = cy;
+                let x = tx + tube * nX;
+                let y = ty + tube * nY;
+                let z = tz + tube * nZ;
+                if (config.shape === 'CUBE') {
+                    const maxVal = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
+                    if (maxVal > 0.001) {
+                        const scale = config.r / maxVal;
+                        x *= scale;
+                        y *= scale;
+                        z *= scale;
+                    }
+                } else if (config.shape === 'OCTA') {
+                    const sum = Math.abs(x) + Math.abs(y) + Math.abs(z);
+                    if (sum > 0.001) {
+                        const scale = config.r / sum;
+                        x *= scale;
+                        y *= scale;
+                        z *= scale;
+                    }
+                }
+                targetVec.set(x, y, z);
+            }
+
+            function generateShapeData(config, buffer) {
+                const tempVec = new THREE.Vector3();
+                let idx = 0;
+                for (let i = 0; i <= tubularSegments; i++) {
+                    const u = (i / tubularSegments) * Math.PI * 2;
+                    for (let j = 0; j <= radialSegments; j++) {
+                        const v = (j / radialSegments) * Math.PI * 2;
+                        if (config.type === 'GEO') {
+                            getGeometricPoint(u, v, config, tempVec);
+                        } else {
+                            getKnotPoint(u, v, config, tempVec);
+                        }
+                        buffer[idx] = tempVec.x;
+                        buffer[idx+1] = tempVec.y;
+                        buffer[idx+2] = tempVec.z;
+                        idx += 3;
+                    }
+                }
+            }
+
+            // 4. Multi-Layer Setup (The Overlap Logic)
+            const layers = [];
+            const numLayers = 2; // Two overlapping sequences
+            const zoomSpeed = 0.002; 
+
+            for(let i = 0; i < numLayers; i++) {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(vertexCount * 3);
+                // Initialize topology indices once
+                const indices = [];
+                for (let r = 0; r < tubularSegments; r++) {
+                    for (let s = 0; s < radialSegments; s++) {
+                        const a = (radialSegments + 1) * (r + 1) + (s + 1);
+                        const b = (radialSegments + 1) * r + (s + 1);
+                        const c = (radialSegments + 1) * r + s;
+                        const d = (radialSegments + 1) * (r + 1) + s;
+                        indices.push(a, b, d);
+                        indices.push(b, c, d);
+                    }
+                }
+                geometry.setIndex(indices);
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                // Materials per layer
+                const occlusionMat = new THREE.MeshBasicMaterial({ 
+                    color: 0x000000, 
+                    side: THREE.DoubleSide,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 2, 
+                    polygonOffsetUnits: 1
+                });
+                
+                const wireframeMat = new THREE.MeshBasicMaterial({ 
+                    color: 0xff0000, // Initial color
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.0 // Start invisible
+                });
+
+                const meshOcclusion = new THREE.Mesh(geometry, occlusionMat);
+                const meshWireframe = new THREE.Mesh(geometry, wireframeMat);
+                
+                const group = new THREE.Group();
+                group.add(meshOcclusion);
+                group.add(meshWireframe);
+                scene.add(group);
+
+                // Initial State
+                // Offset the phases: Layer 0 starts at 0.5, Layer 1 starts at 0.0
+                const initialPhase = (i * 0.5); 
+                
+                // Random starting shape
+                const currentIdx = Math.floor(Math.random() * knotConfigs.length);
+                let nextIdx = Math.floor(Math.random() * knotConfigs.length);
+                while(nextIdx === currentIdx) nextIdx = Math.floor(Math.random() * knotConfigs.length);
+
+                const startPos = new Float32Array(vertexCount * 3);
+                const endPos = new Float32Array(vertexCount * 3);
+                
+                generateShapeData(knotConfigs[currentIdx], startPos);
+                generateShapeData(knotConfigs[nextIdx], endPos);
+
+                // Color
+                const colIdx = i % paletteData.length;
+                wireframeMat.color.set(paletteData[colIdx].color);
+
+                layers.push({
+                    group: group,
+                    geometry: geometry,
+                    wireMat: wireframeMat,
+                    startPos: startPos,
+                    endPos: endPos,
+                    currentIdx: currentIdx,
+                    nextIdx: nextIdx,
+                    zoomProgress: initialPhase,
+                    colIdx: colIdx
+                });
+            }
+
+            // Text Scrambler Helper
+            const scrambleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_#-/|";
+            function getScrambledText(targetStr, progress) {
+                let result = "";
+                const len = targetStr.length;
+                const revealIdx = Math.floor((progress * progress) * len);
+                for (let i = 0; i < len; i++) {
+                    if (i < revealIdx) {
+                        result += targetStr[i];
+                    } else {
+                        result += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                    }
+                }
+                return result;
+            }
+
+            let time = 0;
+            let rotSpeedX = 0;
+            let rotSpeedY = 0;
+
+            // 6. Main Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.01;
+                
+                // Track which layer is "dominant" (closest to camera without fading) for text
+                let dominantLayer = layers[0];
+                let maxProgress = -1;
+
+                // UPDATE LAYERS
+                layers.forEach(layer => {
+                    layer.zoomProgress += zoomSpeed;
+
+                    // --- RESET CYCLE ---
+                    if (layer.zoomProgress >= 1) {
+                        layer.zoomProgress = 0;
+                        
+                        // Swap
+                        layer.startPos.set(layer.endPos);
+                        
+                        // New Target
+                        layer.currentIdx = layer.nextIdx;
+                        let nextRand = layer.currentIdx;
+                        while(nextRand === layer.currentIdx) {
+                            nextRand = Math.floor(Math.random() * knotConfigs.length);
+                        }
+                        layer.nextIdx = nextRand;
+                        
+                        generateShapeData(knotConfigs[layer.nextIdx], layer.endPos);
+
+                        // New Color (Silent update)
+                        layer.colIdx = (layer.colIdx + 1) % paletteData.length;
+                        layer.wireMat.color.set(paletteData[layer.colIdx].color);
+                    }
+
+                    const zp = layer.zoomProgress;
+
+                    // --- Easing ---
+                    const easedAlpha = zp < 0.5 ? 4 * zp * zp * zp : 1 - Math.pow(-2 * zp + 2, 3) / 2;
+
+                    // --- Scale (Exponential Growth) ---
+                    // Start absolute zero, grow to pass camera
+                    const scaleCurve = Math.pow(zp, 3.5); 
+                    const currentScale = 0.001 + (scaleCurve * 18.0); 
+                    layer.group.scale.set(currentScale, currentScale, currentScale);
+
+                    // --- Opacity Logic (Fade In -> Solid -> Fade Out) ---
+                    let opacity = 0;
+                    if (zp < 0.15) {
+                        // Fade In (0 to 15%)
+                        opacity = zp / 0.15; 
+                    } else if (zp > 0.85) {
+                        // Fade Out (85% to 100%)
+                        opacity = 1.0 - ((zp - 0.85) / 0.15);
+                    } else {
+                        // Solid
+                        opacity = 1.0;
+                    }
+                    layer.wireMat.opacity = opacity * 0.8; // Max 0.8
+
+                    // --- Vertex Morphing ---
+                    const posAttr = layer.geometry.attributes.position;
+                    for (let i = 0; i < posAttr.count * 3; i++) {
+                        const start = layer.startPos[i];
+                        const end = layer.endPos[i];
+                        posAttr.array[i] = start + (end - start) * easedAlpha;
+                    }
+                    posAttr.needsUpdate = true;
+
+                    // Determine Dominance for Text
+                    // We prefer the layer that is in the "sweet spot" (0.5 - 0.9)
+                    if (zp > 0.5 && zp < 0.95) {
+                        if (zp > maxProgress) {
+                            maxProgress = zp;
+                            dominantLayer = layer;
+                        }
+                    }
+                });
+
+                // --- Global Physics (Shared Rotation) ---
+                let baseSpeed = 0.002;
+                // Accel based on dominant layer progress
+                let accel = (dominantLayer.zoomProgress) * 0.03; 
+                let driftX = Math.sin(time * 0.5) * 0.001;
+                let driftY = Math.cos(time * 0.3) * 0.001;
+                let targetSpeedX = baseSpeed + accel + driftX;
+                let targetSpeedY = baseSpeed + accel + driftY;
+
+                rotSpeedX += (targetSpeedX - rotSpeedX) * 0.1;
+                rotSpeedY += (targetSpeedY - rotSpeedY) * 0.1;
+
+                // Apply rotation to all layers
+                layers.forEach(layer => {
+                    layer.group.rotation.x += rotSpeedX;
+                    layer.group.rotation.y += rotSpeedY;
+                });
+
+                // --- Text Update ---
+                const activeName = knotConfigs[dominantLayer.nextIdx].name;
+                const oldName = knotConfigs[dominantLayer.currentIdx].name;
+                const zp = dominantLayer.zoomProgress;
+                
+                // Color Sync
+                statusLabel.style.color = '#' + dominantLayer.wireMat.color.getHexString();
+
+                // Scramble Logic
+                if (zp > 0.6) {
+                    const textProgress = (zp - 0.6) / 0.4;
+                    statusLabel.innerText = getScrambledText(activeName, textProgress);
+                } else {
+                     statusLabel.innerText = oldName;
+                }
+
+                // Audio Update
+                const currentTotalSpeed = Math.abs(rotSpeedX) + Math.abs(rotSpeedY);
+                AudioEngine.updateDrone(currentTotalSpeed);
+
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+    </script>
+</body>
+</html>

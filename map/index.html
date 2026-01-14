@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal World Map</title>
+    <style>
+        :root {
+            --bg: #0b0c10;
+            --panel: #1f2833;
+            --text: #c5c6c7;
+            --cyan: #66fcf1;
+            --green: #45a29e;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The Container forces a strict 2:1 aspect ratio */
+        #map-wrapper {
+            position: relative;
+            width: 90vw;
+            max-width: 1200px;
+            aspect-ratio: 2 / 1;
+            background: radial-gradient(circle at center, #1a1a20 0%, #000 100%);
+            border: 1px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- CONTROLS --- */
+        .ui-bar {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            background: var(--panel);
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        button {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-family: inherit;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        button:hover { color: #fff; }
+
+        button.active {
+            color: var(--cyan);
+            text-shadow: 0 0 8px rgba(102, 252, 241, 0.4);
+        }
+        
+        button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--cyan);
+        }
+
+        .legend {
+            font-size: 11px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            color: #888;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .legend.visible { opacity: 1; }
+        .dot-icon { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; display: inline-block; }
+
+    </style>
+</head>
+<body>
+
+    <div id="map-wrapper">
+        <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <div class="ui-bar">
+        <button class="active" onclick="setMode('default')" id="btn-default">Base</button>
+        <button onclick="setMode('religion')" id="btn-religion">Faith</button>
+        <button onclick="setMode('freedom')" id="btn-freedom">Freedom</button>
+        <button onclick="setMode('gdp')" id="btn-gdp">Economy</button>
+        
+        <div style="width: 1px; background: #444; height: 20px;"></div>
+        
+        <div id="legend" class="legend"></div>
+    </div>
+
+    <script>
+        // --- 1. PRECISE GEOMETRY ---
+        // Instead of guessing, we render high-fidelity paths to a virtual grid once,
+        // then cache the "Hit" coordinates. This guarantees the shape is correct every time.
+        
+        const PATHS = [
+            // North America
+            "M170,60 L280,50 L400,30 L450,40 L420,100 L380,120 L300,120 L280,180 L250,220 L200,200 L160,240 L150,220 L130,150 Z", 
+            "M280,40 L350,35 L360,80 L320,90 Z", // Greenland
+            // South America
+            "M290,270 L340,290 L380,330 L350,450 L310,540 L290,540 L280,450 L260,350 Z",
+            // Europe
+            "M430,220 L440,240 L460,240 L470,230 L490,230 L500,220 L490,200 L530,200 L550,150 L530,120 L500,100 L460,110 L440,150 L420,180 Z",
+            "M425,165 L445,160 L450,185 L430,190 Z", // UK
+            // Africa
+            "M420,245 L470,240 L520,260 L570,260 L590,300 L550,400 L520,500 L480,500 L450,400 L410,300 Z",
+            "M565,420 L585,410 L580,470 L560,460 Z", // Madagascar
+            // Asia
+            "M550,150 L600,140 L700,130 L850,130 L920,140 L950,180 L900,240 L880,280 L860,350 L800,400 L750,380 L720,330 L680,300 L640,280 L600,270 L570,240 Z",
+            "M910,210 L930,200 L940,240 L920,250 Z", // Japan
+            "M780,410 L840,400 L880,430 L800,440 Z", // Indo
+            // Aus/NZ
+            "M820,460 L920,450 L940,510 L900,560 L840,560 L800,520 Z",
+            "M950,560 L970,550 L960,610 L940,600 Z"
+        ];
+
+        // Colors
+        const C = {
+            land: '#2c3035',    // Subtle Dark Grey (Base)
+            
+            // Bright overlays
+            jewish: '#00ffff',     // Cyan
+            christian: '#a855f7',  // Purple
+            muslim: '#3b82f6',     // Blue
+            hindu: '#f97316',      // Orange
+            buddhist: '#eab308',   // Yellow
+            
+            free: '#4ade80',       // Green
+            partly: '#facc15',     // Yellow
+            not: '#f87171',        // Red
+            
+            rich: '#facc15',
+            mid: '#fb923c',
+            poor: '#ef4444'
+        };
+
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State
+        let dots = []; // The array of {x, y, color}
+        let mode = 'default';
+        let width, height;
+
+        // --- 2. INITIALIZATION ---
+        function init() {
+            // Get physical size
+            const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            // High DPI scaling for crispness
+            const dpr = window.devicePixelRatio || 1;
+            width = canvas.width = rect.width * dpr;
+            height = canvas.height = rect.height * dpr;
+            
+            // Normalize drawing context
+            ctx.scale(dpr, dpr);
+            const w = rect.width;
+            const h = rect.height;
+
+            // GENERATE DOTS
+            // We draw the vector paths to a small "virtual grid" in memory
+            // then turn every white pixel into a dot coordinate.
+            // This guarantees the map shape is correct.
+            
+            const gridW = 160; // 160 columns = "High Detail" but clean
+            const gridH = 80;  // 2:1 ratio
+            
+            const vCanvas = document.createElement('canvas');
+            vCanvas.width = gridW;
+            vCanvas.height = gridH;
+            const vCtx = vCanvas.getContext('2d');
+            
+            // Draw map white on black
+            vCtx.fillStyle = '#fff';
+            // Scale paths to fit the grid
+            // The paths above are roughly 0-1000 range.
+            vCtx.scale(gridW/1000, gridH/500); 
+            const p = new Path2D(PATHS.join(" "));
+            vCtx.fill(p);
+
+            // Read the grid
+            const data = vCtx.getImageData(0,0, gridW, gridH).data;
+            dots = [];
+            
+            for(let y=0; y<gridH; y++) {
+                for(let x=0; x<gridW; x++) {
+                    const i = (y*gridW + x) * 4;
+                    // If pixel is lit
+                    if(data[i+3] > 100) {
+                        // Normalize 0-1
+                        const nx = x / gridW;
+                        const ny = y / gridH;
+                        
+                        // Check Israel (Approx Normalized 0.59, 0.33)
+                        const isIsrael = (Math.abs(nx - 0.59) < 0.01 && Math.abs(ny - 0.33) < 0.015);
+                        
+                        dots.push({
+                            nx, ny, 
+                            isIsrael,
+                            color: C.land,
+                            targetColor: C.land
+                        });
+                    }
+                }
+            }
+            
+            // Add Israel manually if the grid missed it (ensures detail)
+            if(!dots.find(d => d.isIsrael)) {
+                dots.push({ nx: 0.595, ny: 0.33, isIsrael: true, color:C.land, targetColor:C.land });
+            }
+
+            // Start loop
+            updateColors('default');
+            animate();
+        }
+
+        // --- 3. RENDERING ---
+        function animate() {
+            requestAnimationFrame(animate);
+            // Clear
+            ctx.clearRect(0, 0, width, height);
+            
+            // Physical Dimensions (undone scale for render loop logic)
+            const rw = canvas.width / (window.devicePixelRatio || 1);
+            const rh = canvas.height / (window.devicePixelRatio || 1);
+            
+            const dotSize = (rw / 160) * 0.65; // Radius
+            const time = Date.now();
+
+            dots.forEach(d => {
+                // Color Lerp (Instant for crisp UI)
+                if(d.color !== d.targetColor) d.color = d.targetColor;
+                
+                // Position
+                const x = d.nx * rw;
+                const y = d.ny * rh;
+
+                // Subtle Pulse for Data Points Only
+                let alpha = 1.0;
+                if(d.color !== C.land) {
+                    // Data points pulse
+                    alpha = 0.8 + Math.sin(time * 0.003 + d.nx * 10) * 0.2;
+                } else {
+                    // Land is static
+                    alpha = 1.0;
+                }
+
+                ctx.fillStyle = d.color;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(x, y, dotSize, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        // --- 4. LOGIC ---
+        window.setMode = (m) => {
+            mode = m;
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${m}`).classList.add('active');
+            updateColors(m);
+            updateLegend(m);
+        };
+
+        function updateColors(m) {
+            dots.forEach(d => {
+                let c = C.land;
+                const { nx, ny, isIsrael } = d;
+
+                if (m === 'default') {
+                    // Just a cool matrix effect: Israel is highlighted slightly
+                    if(isIsrael) c = '#555'; 
+                }
+                else if (m === 'religion') {
+                    if (isIsrael) c = C.jewish;
+                    else if (nx < 0.35 || (nx > 0.45 && nx < 0.6 && ny < 0.3) || (nx > 0.8 && ny > 0.6)) c = C.christian;
+                    else if (nx > 0.45 && nx < 0.68 && ny > 0.25 && ny < 0.5) c = C.muslim;
+                    else if (nx > 0.68 && nx < 0.75 && ny > 0.35 && ny < 0.55) c = C.hindu;
+                    else if (nx > 0.75 && nx < 0.9 && ny < 0.6) c = C.buddhist;
+                }
+                else if (m === 'freedom') {
+                    if (nx < 0.35 || (nx > 0.45 && nx < 0.6 && ny < 0.3) || nx > 0.8) c = C.free;
+                    else if ((nx > 0.6 && ny < 0.4) || (nx > 0.7 && ny < 0.5)) c = C.not;
+                    else c = C.partly;
+                    if(isIsrael) c = C.partly;
+                }
+                else if (m === 'gdp') {
+                    if (nx < 0.3 && ny < 0.45) c = C.rich;
+                    else if (nx > 0.45 && nx < 0.6 && ny < 0.3) c = C.rich;
+                    else if (nx > 0.8 && ny > 0.6) c = C.rich;
+                    else if (nx > 0.7 && ny < 0.5) c = C.mid;
+                    else c = C.poor;
+                    if(isIsrael) c = C.rich;
+                }
+                d.targetColor = c;
+            });
+        }
+
+        function updateLegend(m) {
+            const el = document.getElementById('legend');
+            el.classList.remove('visible');
+            setTimeout(() => {
+                let h = '';
+                if(m === 'religion') h = dot(C.jewish, 'Jew') + dot(C.christian, 'Chr') + dot(C.muslim, 'Isl') + dot(C.hindu, 'Hin');
+                if(m === 'freedom') h = dot(C.free, 'Free') + dot(C.partly, 'Partly') + dot(C.not, 'Not');
+                if(m === 'gdp') h = dot(C.rich, 'High') + dot(C.mid, 'Mid') + dot(C.poor, 'Low');
+                el.innerHTML = h;
+                if(h) el.classList.add('visible');
+            }, 300);
+        }
+
+        function dot(color, label) {
+            return `<div><span class="dot-icon" style="background:${color}"></span>${label}</div>`;
+        }
+
+        let resizeT;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeT);
+            resizeT = setTimeout(init, 100);
+        });
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Play 'Solar Sprint', an exciting game that offers thrilling challenges and fun gameplay. Play now and enjoy hours of entertainment!">
+    <meta name="keywords" content="game, play, online game, action game, adventure game">
+    <title>SOLAR SPRINT</title>
+    <style>
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-image: url('images/dots.gif');
+    background-repeat: repeat;
+}
+
+canvas {
+    display: block;
+    background: url('images/ruimte.jpg') center center / cover no-repeat;
+}
+
+#zon {
+    position: absolute;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    pointer-events: none;
+    width: 50vw;
+    max-width: 400px;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}
+
+#controls {
+    position: fixed;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    background: transparent;
+    width: 70vw;
+    max-width: 280px;
+    padding: 5px;
+}
+
+#controls .row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 3px 0;
+}
+
+#controls button {
+    background: none;
+    border: none;
+    padding: 3px;
+    cursor: pointer;
+}
+
+#controls button img {
+    width: 11vw;
+    max-width: 50px;
+    height: auto;
+}
+
+#playAgainLink {
+    position: fixed;
+    bottom: 18vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: none;
+}
+
+#playAgainLink img {
+    display: block;
+    width: 25vw;
+    max-width: 150px;
+    height: auto;
+}
+
+#score, #highScore {
+    position: fixed;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    z-index: 2;
+    text-shadow: 2px 2px 2px rgba(0,0,0,0.5);
+    padding: 5px;
+}
+
+#score {
+    top: 5px;
+    left: 5px;
+}
+
+#highScore {
+    top: 5px;
+    right: 5px;
+}
+
+@media (max-width: 768px) {
+    #zon {
+        top: -40px;
+        width: 45vw;
+    }
+    
+    #controls {
+        bottom: 2px;
+        width: 65vw;
+    }
+    
+    #controls button img {
+        width: 10vw;
+    }
+    
+    #playAgainLink {
+        bottom: 15vh;
+    }
+    
+    #score, #highScore {
+        font-size: 12px;
+    }
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+@keyframes wobble {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(10deg); }
+    50% { transform: rotate(-10deg); }
+    75% { transform: rotate(5deg); }
+}
+
+.player-wobble {
+    animation: wobble 0.5s infinite;
+}
+
+    </style>
+</head>
+<body>
+    <img id="zon" src="/game/images/sol.gif" alt="Zon Image" style="width: 600px;">
+    <canvas id="gameCanvas"></canvas>
+    <div id="controls">
+        <div class="row">
+            <button id="upButton"><img src="/game/images/direction-up.png" alt="up"></button>
+        </div>
+        <div class="row">
+            <button id="leftButton"><img src="/game/images/direction-left.png" alt="left"></button>
+            <button id="downButton"><img src="/game/images/direction-down.png" alt="down"></button>
+            <button id="rightButton"><img src="/game/images/direction-right.png" alt="right"></button>
+        </div>
+    </div>
+    <a id="playAgainLink" href="/game/game.html">
+        <img src="/game/images/but-playagain.png" alt="Play Again">
+    </a>
+    
+    <!-- Just import the main module -->
+    <script type="module" src="/game/js/main.js"></script>
+    <script type="module" >
+// Sound management using basic Audio elements
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const sounds = {};
+const soundFiles = {
+    collision: '/game/sound/glitshowman.mp3',
+    hooray: '/game/sound/hoorayscratch.mp3',
+    level1: '/game/sound/level1.mp3',
+    level2: '/game/sound/cool.wav',
+    level3: '/game/sound/drum2.wav',
+    level4: '/game/sound/drum3.wav',
+    victory: '/game/sound/drum19.wav'
+};
+
+export async function loadSounds() {
+    const soundPromises = Object.entries(soundFiles).map(async ([name, url]) => {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        sounds[name] = await audioContext.decodeAudioData(arrayBuffer);
+    });
+    await Promise.all(soundPromises);
+}
+
+export function initSounds() {
+    audioContext.resume();
+}
+
+export function playSound(name) {
+    if (sounds[name]) {
+        const source = audioContext.createBufferSource();
+        source.buffer = sounds[name];
+        source.connect(audioContext.destination);
+        source.start(0);
+    }
+}
+
+export function playLevelMusic(level) {
+    const musicName = `level${level}`;
+    playSound(musicName);
+}
+
+export const SOUNDS = {
+    COLLISION: 'collision',
+    HOORAY: 'hooray',
+    LEVEL1: 'level1',
+    LEVEL2: 'level2',
+    LEVEL3: 'level3',
+    LEVEL4: 'level4',
+    VICTORY: 'victory'
+};
+
+    </script>
+
+
+</body>
+</html>

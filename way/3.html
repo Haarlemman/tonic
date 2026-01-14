@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Perspective Engine</title>
+    <style>
+        /* --- Basic Setup --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #121212;
+            color: #eaeaea;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        #app {
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        /* --- Utility --- */
+        .hidden {
+            display: none;
+        }
+
+        /* --- Buttons & Inputs --- */
+        input[type="text"], textarea {
+            background-color: #222;
+            color: #eee;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            box-sizing: border-box; /* Important for padding */
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        button {
+            background-color: #0a84ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 24px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0a73df;
+        }
+
+        button#reset-btn {
+            background-color: #555;
+        }
+        button#reset-btn:hover {
+            background-color: #444;
+        }
+
+        /* --- Typography --- */
+        h1 {
+            font-weight: 700;
+            color: #fff;
+        }
+        h2 {
+            font-weight: 600;
+            color: #eee;
+        }
+        h3 {
+            font-weight: 500;
+            color: #0a84ff; /* Accent color for the current lens */
+            font-size: 1.8em;
+            margin-top: 0;
+        }
+
+        /* --- Step-Specific --- */
+
+        /* Step 1: The Disc */
+        #truth-disc-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 30px auto 40px;
+        }
+        #truth-disc {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #777;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            animation: pulse 4s infinite ease-in-out;
+        }
+        #truth-disc::before { /* Inner circle */
+            content: '';
+            width: 60%;
+            height: 60%;
+            border: 2px solid #555;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        #truth-label {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #fff;
+            position: relative; /* To be on top */
+        }
+        
+        /* Labels on the disc */
+        .lens-label {
+            position: absolute;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #aaa;
+        }
+        #label-body { top: -30px; }
+        #label-mind { right: -50px; }
+        #label-soul { left: -50px; }
+
+
+        /* Step 2: The Analysis */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .analysis-grid label {
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: -5px;
+        }
+
+        /* Step 3: The Synthesis */
+        #synthesis-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            margin-bottom: 30px;
+        }
+        #synthesis-table th, #synthesis-table td {
+            border: 1px solid #555;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        #synthesis-table th {
+            background-color: #333;
+            width: 100px;
+            color: #0a84ff;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px 0 #777; }
+            50% { box-shadow: 0 0 25px 5px #777; }
+            100% { box-shadow: 0 0 10px 0 #777; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app">
+
+        <div id="step-1">
+            <h1>The Perspective Engine</h1>
+            
+            <div id="truth-disc-container">
+                <div id="truth-disc">
+                    <div id="truth-label">TRUTH</div>
+                </div>
+                <div class="lens-label" id="label-body">BODY</div>
+                <div class="lens-label" id="label-mind" style="right: -60px; top: 110px;">MIND</div>
+                <div class="lens-label" id="label-soul" style="left: -60px; top: 110px;">SOUL</div>
+            </div>
+
+            <h2>What life situation would you like to explore?</h2>
+            <input type="text" id="situation-input" placeholder="e.g., My writer's block, Grief, My diagnosis">
+            <button id="start-btn">Begin Journey</button>
+        </div>
+
+        <div id="step-2" class="hidden">
+            <h2 id="situation-title"></h2>
+            <h3 id="lens-title"></h3>
+
+            <div class="analysis-grid">
+                <label for="experience-input">Experience:</label>
+                <textarea id="experience-input" placeholder="How does this manifest here?"></textarea>
+
+                <label for="approaches-input">Approaches:</label>
+                <textarea id="approaches-input" placeholder="What actions can be taken here?"></textarea>
+
+                <label for="goal-input">Goal:</label>
+                <textarea id="goal-input" placeholder="What is the desired outcome here?"></textarea>
+            </div>
+
+            <button id="next-lens-btn">Next: Mind</button>
+        </div>
+
+        <div id="step-3" class="hidden">
+            <h1>Your Synthesis</h1>
+            <h2 id="summary-situation"></h2>
+            <table id="synthesis-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Experience</th>
+                        <th>Approaches</th>
+                        <th>Goal</th>
+                    </tr>
+                </thead>
+                <tbody id="summary-table-body">
+                    </tbody>
+            </table>
+            <button id="reset-btn">Explore Another</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- STATE VARIABLES ---
+        let currentLensIndex = 0;
+        let userSituation = "";
+        const lenses = ["Body", "Mind", "Soul"];
+        const analysisData = [
+            { lens: "Body", experience: "", approaches: "", goal: "" },
+            { lens: "Mind", experience: "", approaches: "", goal: "" },
+            { lens: "Soul", experience: "", approaches: "", goal: "" }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const step1 = document.getElementById("step-1");
+        const step2 = document.getElementById("step-2");
+        const step3 = document.getElementById("step-3");
+
+        const startBtn = document.getElementById("start-btn");
+        const nextLensBtn = document.getElementById("next-lens-btn");
+        const resetBtn = document.getElementById("reset-btn");
+
+        const situationInput = document.getElementById("situation-input");
+        const situationTitle = document.getElementById("situation-title");
+        const summarySituation = document.getElementById("summary-situation");
+        const lensTitle = document.getElementById("lens-title");
+
+        const experienceInput = document.getElementById("experience-input");
+        const approachesInput = document.getElementById("approaches-input");
+        const goalInput = document.getElementById("goal-input");
+        const summaryTableBody = document.getElementById("summary-table-body");
+
+        // --- EVENT LISTENERS ---
+
+        // Start Button: Go from Step 1 to Step 2
+        startBtn.addEventListener("click", () => {
+            userSituation = situationInput.value;
+            if (!userSituation) {
+                alert("Please enter a situation to explore.");
+                return;
+            }
+
+            // Setup Step 2
+            situationTitle.textContent = `Exploring: "${userSituation}"`;
+            currentLensIndex = 0;
+            showLens(currentLensIndex);
+            
+            // Transition
+            step1.classList.add("hidden");
+            step2.classList.remove("hidden");
+        });
+
+        // Next Lens Button: Save data and move to next lens or Step 3
+        nextLensBtn.addEventListener("click", () => {
+            // 1. Save current data
+            saveLensData(currentLensIndex);
+
+            // 2. Increment lens index
+            currentLensIndex++;
+
+            if (currentLensIndex < lenses.length) {
+                // 3a. Show next lens
+                showLens(currentLensIndex);
+                clearInputs();
+            } else {
+                // 3b. Go to Synthesis (Step 3)
+                populateSynthesisTable();
+                step2.classList.add("hidden");
+                step3.classList.remove("hidden");
+            }
+        });
+
+        // Reset Button: Go from Step 3 back to Step 1
+        resetBtn.addEventListener("click", () => {
+            // Clear all data
+            situationInput.value = "";
+            userSituation = "";
+            clearInputs();
+            analysisData.forEach(data => {
+                data.experience = "";
+                data.approaches = "";
+                data.goal = "";
+            });
+
+            // Transition
+            step3.classList.add("hidden");
+            step1.classList.remove("hidden");
+        });
+
+        // --- HELPER FUNCTIONS ---
+
+        // Update UI for the current lens (Body, Mind, or Soul)
+        function showLens(index) {
+            const lensName = lenses[index];
+            lensTitle.textContent = lensName;
+
+            // Update button text for the last step
+            if (index === lenses.length - 1) {
+                nextLensBtn.textContent = "View Synthesis";
+            } else {
+                nextLensBtn.textContent = `Next: ${lenses[index + 1]}`;
+            }
+        }
+
+        // Save the data from textareas into our state
+        function saveLensData(index) {
+            analysisData[index].experience = experienceInput.value;
+            analysisData[index].approaches = approachesInput.value;
+            analysisData[index].goal = goalInput.value;
+        }
+
+        // Clear textareas for the next lens
+        function clearInputs() {
+            experienceInput.value = "";
+            approachesInput.value = "";
+            goalInput.value = "";
+        }
+
+        // Build the final summary table in Step 3
+        function populateSynthesisTable() {
+            summarySituation.textContent = `Your Synthesis for: "${userSituation}"`;
+            summaryTableBody.innerHTML = ""; // Clear old data
+
+            analysisData.forEach(data => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <th>${data.lens}</th>
+                    <td>${data.experience}</td>
+                    <td>${data.approaches}</td>
+                    <td>${data.goal}</td>
+                `;
+                summaryTableBody.appendChild(row);
+            });
+        }
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Atomic Orbits – True 3D, Front & Behind Sun</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            perspective: 1200px;
+            perspective-origin: 50% 50%;
+        }
+
+        .scene {
+            width: 400px;
+            height: 400px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .sun {
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle at 30% 30%, #fff, #ffffcc);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(0px);
+            box-shadow: 
+                0 0 40px #ffff99,
+                0 0 80px #ffcc00,
+                0 0 120px #ff9900;
+            z-index: 10;
+        }
+
+        /* Orbit Group: Rotated in Y for 120° separation */
+        .orbit-group {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            transform-style: preserve-3d;
+        }
+
+        /* Each orbit is a circle in the XZ plane (rotateX(90deg)) */
+        .orbit {
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        .orbit-path {
+            width: 100%;
+            height: 100%;
+            border: 2px solid;
+            border-radius: 50%;
+            opacity: 0.4;
+            box-sizing: border-box;
+            transform: rotateX(90deg);
+        }
+
+        .electron {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            margin: -11px;
+            box-shadow: 0 0 20px currentColor;
+            transform-style: preserve-3d;
+        }
+
+        /* Animation: Electron orbits full 360° in its plane */
+        @keyframes orbit {
+            from { transform: rotateZ(0deg); }
+            to { transform: rotateZ(360deg); }
+        }
+
+        /* === RED ORBIT (0°) === */
+        .group-red { transform: rotateY(0deg); }
+        .orbit-red { width: 240px; height: 240px; margin: -120px 0 0 -120px; animation: orbit 3s infinite linear; }
+        .path-red { border-color: #ff3333; }
+        .electron-red { background: #ff0000; color: #ff6666; }
+
+        /* === BLUE ORBIT (120°) === */
+        .group-blue { transform: rotateY(120deg); }
+        .orbit-blue { width: 280px; height: 280px; margin: -140px 0 0 -140px; animation: orbit 4s infinite linear; }
+        .path-blue { border-color: #3333ff; }
+        .electron-blue { background: #0000ff; color: #6666ff; }
+
+        /* === YELLOW ORBIT (240°) === */
+        .group-yellow { transform: rotateY(240deg); }
+        .orbit-yellow { width: 320px; height: 320px; margin: -160px 0 0 -160px; animation: orbit 5s infinite linear; }
+        .path-yellow { border-color: #cccc00; }
+        .electron-yellow { background: #ffff00; color: #ffff66; }
+    </style>
+</head>
+<body>
+    <div class="scene">
+        <!-- Glowing Sun (Fixed) -->
+        <div class="sun"></div>
+
+        <!-- RED ORBIT (0°) -->
+        <div class="orbit-group group-red">
+            <div class="orbit-path path-red"></div>
+            <div class="orbit orbit-red">
+                <div class="electron electron-red"></div>
+            </div>
+        </div>
+
+        <!-- BLUE ORBIT (120°) -->
+        <div class="orbit-group group-blue">
+            <div class="orbit-path path-blue"></div>
+            <div class="orbit orbit-blue">
+                <div class="electron electron-blue"></div>
+            </div>
+        </div>
+
+        <!-- YELLOW ORBIT (240°) -->
+        <div class="orbit-group group-yellow">
+            <div class="orbit-path path-yellow"></div>
+            <div class="orbit orbit-yellow">
+                <div class="electron electron-yellow"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom — Exact Look You Posted</title>
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:660px; height:660px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        background:radial-gradient(circle, #ffffaa, #ffdd44 40%, #ff8800);
+        border-radius:50%;
+        box-shadow:0 0 120px #ffff88, 0 0 200px #ffaa00;
+        z-index:500;
+    }
+    .electron {
+        position:absolute; width:48px; height:48px; border-radius:50%; margin:-24px 0 0 -24px;
+        pointer-events:none; filter:drop-shadow(0 0 20px currentColor);
+    }
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index:550; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1" style="background:#ff2266; color:#ff5588;"></div> <!-- red -->
+    <div class="electron" id="e2" style="background:#4488ff; color:#66aaff;"></div> <!-- blue -->
+    <div class="electron" id="e3" style="background:#ffdd00; color:#ffee66;"></div> <!-- yellow -->
+    <canvas id="trailsBack"  width="660" height="660"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" width="660" height="660" class="trail-front"></canvas>
+</div>
+
+<script>
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = 6;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 330;
+const centerY = 330;
+
+const electrons = [
+    // RED — perfect horizontal ring (the equatorial one in your picture)
+    { el: document.getElementById('e1'), 
+	 color: '#ff3366', 
+	 speed: 0.8, 
+	 radius: 230, 
+	 inclinationDeg: 0,   
+	 planeRotDeg: 0   },
+
+    // YELLOW — tilted ~60° ellipse (top-left → bottom-right)
+    { el: document.getElementById('e3'), 
+	 color: '#ffdd33', 
+	 speed: 1.1, 
+	 radius: 215, 
+	 inclinationDeg: 58, 
+	 planeRotDeg: 135 },
+
+    // BLUE — tilted ~60° ellipse crossing the yellow one (bottom-left → top-right)
+    { el: document.getElementById('e2'), 
+	 color: '#4488ff', 
+	 speed: 0.95, 
+	 radius: 225, 
+	 inclinationDeg: 58, 
+	 planeRotDeg: 165 }
+];
+
+// convert degrees → radians once
+electrons.forEach(e => {
+    e.inc = e.inclinationDeg * Math.PI / 180;
+    e.rot = e.planeRotDeg    * Math.PI / 180;
+});
+
+let time = 0;
+function animate() {
+    time += 0.025;
+
+    ctxBack.fillStyle  = 'rgba(0,0,0,0.008)'; ctxBack.fillRect(0,0,660,660);
+    ctxFront.fillStyle = 'rgba(0,0,0,0.008)'; ctxFront.fillRect(0,0,660,660);
+
+    electrons.forEach(e => {
+        const a = time * e.speed;
+
+        // local coordinates in the orbital plane
+        const lx = Math.cos(a) * e.radius;
+        const ly = Math.sin(a) * e.radius;
+        const lz = 0;
+
+        // apply inclination (0° = flat horizontal, 90° = vertical)
+        const sinI = Math.sin(e.inc);
+        const cosI = Math.cos(e.inc);
+        let x = lx * cosI;
+        let y = ly;
+        let z = lx * sinI;
+
+        // rotate plane around vertical Y axis (this is your “clock dial” control!)
+        const cosR = Math.cos(e.rot);
+        const sinR = Math.sin(e.rot);
+        const finalX =  x * cosR + z * sinR;
+        const finalZ = -x * sinR + z * cosR;
+        const finalY =  y;
+
+        const scale = 1 + finalZ * 0.003;
+        const sx = centerX + finalX;
+        const sy = centerY + finalY;
+
+        e.el.style.left = sx + 'px';
+        e.el.style.top  = sy + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const ctx = finalZ < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + 0.1, sy + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

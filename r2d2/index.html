@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2-D2</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #010103; font-family: 'Segoe UI', sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; touch-action: none; cursor: grab; display: block; }
+        #canvas-container:active { cursor: grabbing; }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00abff;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 171, 255, 0.5);
+            z-index: 10;
+        }
+
+        .audio-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 171, 255, 0.1);
+            border: 1px solid #00abff;
+            color: #00abff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            pointer-events: auto;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            z-index: 20;
+        }
+        .audio-btn:hover { background: rgba(0, 171, 255, 0.3); color: white; }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(0, 171, 255, 0.4);
+            font-size: 0.75rem;
+            pointer-events: none;
+            text-align: center;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        #loading {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #00abff;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+            letter-spacing: 5px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading">loadingS...</div>
+
+<div class="ui-overlay">
+    <h1 style="margin:0; font-size: 1.1rem; letter-spacing: 5px;">R2-D2</h1>
+    <p style="opacity: 0.5; font-size: 0.7rem;">bleep bleep bleep</p>
+</div>
+
+<button class="audio-btn" onclick="playR2Beep()">Interface</button>
+<div class="controls-hint">DRAG TO ROTATE • SCROLL TO ZOOM</div>
+
+<div id="canvas-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+    let scene, camera, renderer, r2d2, bodyGroup, domeGroup, hologramGroup, particles;
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let targetRotation = { x: 0, y: 0 };
+    let currentRotation = { x: 0, y: 0 };
+    let zoom = 11;
+    
+    let nextTwitchTime = 0;
+    let domeTargetY = 0;
+    let domeCurrentY = 0;
+    let audioCtx = null;
+
+    let lightRed, lightBlue, lightGreen;
+
+    function init() {
+        const container = document.getElementById('canvas-container');
+        if (!container) return;
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x010103);
+        scene.fog = new THREE.Fog(0x010103, 5, 45);
+
+        camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, zoom);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(5, 10, 7);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+
+        const pointLight = new THREE.PointLight(0x00abff, 0.8, 20);
+        pointLight.position.set(-5, 5, 5);
+        scene.add(pointLight);
+
+        scene.add(new THREE.GridHelper(50, 50, 0x111122, 0x050510));
+
+        // CONSTANTS FOR ALIGNMENT
+        const sideLegHeight = 2.2;
+        const groundY = 0;
+        const bodyPivotY = sideLegHeight; // Shoulder joint height
+        const bodyTiltAngle = -0.32; // Lean back
+
+        // BUILD R2
+        r2d2 = new THREE.Group();
+        const white = new THREE.MeshStandardMaterial({ color: 0xefefef, roughness: 0.4 });
+        const silver = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
+        const blue = new THREE.MeshStandardMaterial({ color: 0x0044bb, roughness: 0.3 });
+        const dark = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+        // --- BODY GROUP (Tilted torso) ---
+        bodyGroup = new THREE.Group();
+        const bodyCyl = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 3, 40), white);
+        bodyCyl.castShadow = true;
+        bodyGroup.add(bodyCyl);
+
+        // Body Details
+        const ventGeo = new THREE.BoxGeometry(0.6, 0.4, 0.1);
+        const vent1 = new THREE.Mesh(ventGeo, blue);
+        vent1.position.set(0.4, 0.5, 1.35);
+        bodyGroup.add(vent1);
+        const vent2 = new THREE.Mesh(ventGeo, blue);
+        vent2.position.set(-0.4, 0.5, 1.35);
+        bodyGroup.add(vent2);
+
+        const ringGeo = new THREE.TorusGeometry(1.41, 0.015, 8, 40);
+        const ring1 = new THREE.Mesh(ringGeo, dark);
+        ring1.rotation.x = Math.PI/2;
+        ring1.position.y = 0.8;
+        bodyGroup.add(ring1);
+        const ring2 = ring1.clone();
+        ring2.position.y = -0.8;
+        bodyGroup.add(ring2);
+
+        bodyGroup.rotation.x = bodyTiltAngle; 
+        bodyGroup.position.y = bodyPivotY; 
+        r2d2.add(bodyGroup);
+
+        // Dome
+        domeGroup = new THREE.Group();
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(1.4, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2), silver);
+        domeGroup.add(dome);
+
+        const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.1, 20), dark);
+        eye.rotation.x = Math.PI / 2;
+        eye.position.set(0, 0.75, 1.3);
+        domeGroup.add(eye);
+
+        const proj = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.15, 12), silver);
+        proj.rotation.x = 0.6;
+        proj.position.set(0, 0.35, 1.3);
+        domeGroup.add(proj);
+
+        // Blinking Lights
+        lightRed = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+        lightRed.position.set(0.4, 0.6, 1.25);
+        domeGroup.add(lightRed);
+        lightBlue = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
+        lightBlue.position.set(-0.4, 0.7, 1.25);
+        domeGroup.add(lightBlue);
+        lightGreen = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+        lightGreen.position.set(0, 0.9, 1.1);
+        domeGroup.add(lightGreen);
+
+        domeGroup.position.y = 1.5;
+        bodyGroup.add(domeGroup);
+
+        // --- FOOT DESIGN HELPER ---
+        function createFoot() {
+            const foot = new THREE.Group();
+            const footTop = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), white);
+            footTop.scale.set(1, 1, 2.2);
+            foot.add(footTop);
+            const sole = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.2, 1.7), dark);
+            sole.position.y = -0.1;
+            foot.add(sole);
+            return foot;
+        }
+
+        // --- SIDE LEGS (PARALLEL TO GROUND) ---
+        function createSideLeg(side) {
+            const legGroup = new THREE.Group();
+            const joint = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 20), white);
+            joint.rotation.z = Math.PI / 2;
+            joint.position.x = side * 1.5; 
+            legGroup.add(joint);
+
+            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.4, sideLegHeight, 0.7), white);
+            strut.position.y = -sideLegHeight/2;
+            strut.position.x = side * 1.5;
+            legGroup.add(strut);
+
+            const foot = createFoot();
+            foot.position.y = -sideLegHeight;
+            foot.position.z = 0.1;
+            foot.position.x = side * 1.5;
+            legGroup.add(foot);
+
+            legGroup.position.y = bodyPivotY; 
+            return legGroup;
+        }
+
+        r2d2.add(createSideLeg(1));
+        r2d2.add(createSideLeg(-1));
+
+        // --- THIRD CENTRAL LEG (ALIGNED & PARALLEL FOOT) ---
+        const centralLeg = new THREE.Group();
+        const legSlant = -0.48; // Forward slant
+        
+        // Strut length needs to hit ground exactly
+        // Y_base = -1.5 (local to bodyGroup). We need it to hit Y_world = 0.
+        const cStrutHeight = 1.5;
+        const cStrut = new THREE.Mesh(new THREE.BoxGeometry(0.4, cStrutHeight, 0.4), white);
+        cStrut.position.y = -cStrutHeight/2;
+        centralLeg.add(cStrut);
+        
+        const cFoot = createFoot();
+        // Calculation to keep it parallel to other 2 feet:
+        // Torso tilt (-0.32) + Leg slant (-0.48) = -0.8 world rotation.
+        // We rotate foot +0.8 to make it flat again.
+        cFoot.rotation.x = Math.abs(bodyTiltAngle) + Math.abs(legSlant); 
+        
+        cFoot.position.y = -cStrutHeight; 
+        cFoot.position.z = 0.05;
+        centralLeg.add(cFoot);
+
+        centralLeg.position.set(0, -1.5, 0); 
+        centralLeg.rotation.x = legSlant; 
+        bodyGroup.add(centralLeg);
+
+        scene.add(r2d2);
+
+        // --- ENHANCED HOLOGRAM ---
+        hologramGroup = new THREE.Group();
+        const beamGeo = new THREE.ConeGeometry(1.2, 5.5, 32, 1, true);
+        beamGeo.translate(0, -2.75, 0); 
+        const beamMat = new THREE.MeshBasicMaterial({ 
+            color: 0x44eeff, transparent: true, opacity: 0.18, 
+            blending: THREE.AdditiveBlending, side: THREE.DoubleSide 
+        });
+        const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+        beamMesh.rotation.x = Math.PI; 
+        hologramGroup.add(beamMesh);
+
+        const particleCount = 250;
+        const particleGeo = new THREE.BufferGeometry();
+        const posArray = new Float32Array(particleCount * 3);
+        for(let i=0; i < particleCount * 3; i++) { posArray[i] = 0; }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0xccffff, size: 0.08, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+        particles = new THREE.Points(particleGeo, pMat);
+        particles.userData = { 
+            speeds: Array.from({length: particleCount}, () => 0.06 + Math.random() * 0.14),
+            angles: Array.from({length: particleCount}, () => Math.random() * Math.PI * 2),
+        };
+        hologramGroup.add(particles);
+
+        const obj = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 1), new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.9 }));
+        obj.position.y = 5.5; 
+        obj.name = "holoObj";
+        hologramGroup.add(obj);
+
+        hologramGroup.position.set(0, 0.35, 1.3);
+        hologramGroup.rotation.x = 0.7; 
+        domeGroup.add(hologramGroup);
+
+        setupInteraction(container);
+        window.addEventListener('resize', onWindowResize);
+        animate();
+        
+        const loader = document.getElementById('loading');
+        if(loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
+        }
+    }
+
+    function setupInteraction(container) {
+        const start = (x, y) => { isDragging = true; previousMousePosition = { x, y }; };
+        const move = (x, y) => {
+            if (!isDragging) return;
+            targetRotation.y += (x - previousMousePosition.x) * 0.01;
+            targetRotation.x += (y - previousMousePosition.y) * 0.01;
+            previousMousePosition = { x, y };
+        };
+        container.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => isDragging = false);
+        container.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), {passive:false});
+        window.addEventListener('touchmove', e => move(e.touches[0].clientX, e.touches[0].clientY), {passive:false});
+        window.addEventListener('touchend', () => isDragging = false);
+        window.addEventListener('wheel', e => zoom = Math.max(7, Math.min(25, zoom + e.deltaY * 0.01)));
+    }
+
+    function playR2Beep() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        let t = now;
+        for(let i=0; i<4; i++) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+            const f = 1200 + Math.random() * 800;
+            osc.frequency.setValueAtTime(f, t);
+            osc.frequency.exponentialRampToValueAtTime(f * (0.3 + Math.random()), t + 0.1);
+            g.gain.setValueAtTime(0.04, t);
+            g.gain.linearRampToValueAtTime(0, t + 0.15);
+            osc.connect(g); g.connect(audioCtx.destination);
+            osc.start(t); osc.stop(t + 0.15);
+            t += 0.1 + Math.random() * 0.1;
+        }
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.001;
+
+        if (r2d2) {
+            currentRotation.y += (targetRotation.y - currentRotation.y) * 0.1;
+            currentRotation.x += (targetRotation.x - currentRotation.x) * 0.1;
+            r2d2.rotation.y = currentRotation.y;
+            r2d2.rotation.x = Math.max(-0.2, Math.min(0.2, currentRotation.x));
+            camera.position.z += (zoom - camera.position.z) * 0.1;
+
+            if(lightRed) lightRed.material.opacity = Math.sin(time * 18) > 0 ? 1 : 0.2;
+            if(lightBlue) lightBlue.material.opacity = Math.cos(time * 10) > 0 ? 1 : 0.3;
+            if(lightGreen) lightGreen.material.opacity = Math.sin(time * 5) > 0 ? 1 : 0.4;
+
+            if (time > nextTwitchTime) {
+                domeTargetY = (Math.random() - 0.5) * Math.PI * 1.3;
+                nextTwitchTime = time + 1.5 + Math.random() * 4;
+                if(Math.random() > 0.8) playR2Beep();
+            }
+            domeCurrentY += (domeTargetY - domeCurrentY) * 0.12;
+            if(domeGroup) domeGroup.rotation.y = domeCurrentY;
+
+            if (hologramGroup) {
+                hologramGroup.visible = Math.random() > 0.03;
+                const h = hologramGroup.getObjectByName("holoObj");
+                if(h) {
+                    h.rotation.y += 0.04;
+                    h.scale.setScalar(1 + Math.sin(time * 15) * 0.08);
+                }
+
+                const positions = particles.geometry.attributes.position.array;
+                for(let i=0; i<250; i++) {
+                    const idx = i * 3;
+                    positions[idx+1] += particles.userData.speeds[i]; 
+                    const spread = positions[idx+1] * 0.22;
+                    positions[idx] = Math.cos(particles.userData.angles[i] + time * 3) * spread + (Math.random() - 0.5) * 0.03;
+                    positions[idx+2] = Math.sin(particles.userData.angles[i] + time * 3) * spread + (Math.random() - 0.5) * 0.03;
+                    if(positions[idx+1] > 5.5) {
+                        positions[idx] = 0; positions[idx+1] = 0; positions[idx+2] = 0;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+        renderer.render(scene, camera);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

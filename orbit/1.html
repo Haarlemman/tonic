@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Atomic Orbit Animation</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  canvas {
+    width: 600px;
+    height: 600px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="orbitCanvas" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("orbitCanvas");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+const cx = W / 2;
+const cy = H / 2;
+
+const coreRadius = 80;
+
+// Define the three orbiting bodies
+const orbiters = [
+  { color: "red",    angle: 0,   tilt: 0,           radius: 160, speed: 0.02 },
+  { color: "yellow", angle: 0,   tilt: 120*Math.PI/180, radius: 160, speed: 0.018 },
+  { color: "blue",   angle: 0,   tilt: 240*Math.PI/180, radius: 160, speed: 0.015 }
+];
+
+// 3D projection helpers
+function project3D(x, y, z) {
+  const scale = 1; 
+  return {
+    x: cx + x,
+    y: cy + y*0.6 - z*0.6
+  };
+}
+
+// Draw ellipse arc for orbit (split front/back)
+function drawOrbit(orbiter) {
+  const steps = 200;
+  const pts = [];
+
+  for (let i = 0; i <= steps; i++) {
+    let t = (i / steps) * Math.PI * 2;
+    let x = orbiter.radius * Math.cos(t);
+    let y = orbiter.radius * Math.sin(t) * Math.cos(orbiter.tilt);
+    let z = orbiter.radius * Math.sin(t) * Math.sin(orbiter.tilt);
+
+    let p = project3D(x, y, z);
+    pts.push({ ...p, z });
+  }
+
+  // Split into back and front
+  let back = pts.filter(p => p.z < 0);
+  let front = pts.filter(p => p.z >= 0);
+
+  ctx.lineWidth = 3;
+
+  // Back arc
+  ctx.strokeStyle = orbiter.color;
+  ctx.beginPath();
+  back.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+
+  return { front };
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Glow for the central sphere
+  let g = ctx.createRadialGradient(cx, cy, 10, cx, cy, 150);
+  g.addColorStop(0, "rgba(255,255,200,1)");
+  g.addColorStop(1, "rgba(255,255,0,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 150, 0, Math.PI*2);
+  ctx.fill();
+
+  // Draw back halves of all orbits first
+  const fronts = [];
+  orbiters.forEach(o => {
+    fronts.push(drawOrbit(o));
+  });
+
+  // Draw core (white)
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(cx, cy, coreRadius, 0, Math.PI*2);
+  ctx.fill();
+
+  // Draw front arcs
+  orbiters.forEach((o, i) => {
+    ctx.strokeStyle = o.color;
+    ctx.beginPath();
+    fronts[i].front.forEach((p, j) => {
+      if (j === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    });
+    ctx.stroke();
+  });
+
+  // Draw orbiting spheres
+  orbiters.forEach(o => {
+    // position in 3D
+    let x = o.radius * Math.cos(o.angle);
+    let y = o.radius * Math.sin(o.angle) * Math.cos(o.tilt);
+    let z = o.radius * Math.sin(o.angle) * Math.sin(o.tilt);
+
+    let p = project3D(x, y, z);
+
+    ctx.fillStyle = o.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 15, 0, Math.PI*2);
+    ctx.fill();
+
+    // advance the orbit
+    o.angle += o.speed;
+  });
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>

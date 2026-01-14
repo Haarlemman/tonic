@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE FLOAT: Digital Twilight</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #010915; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* --- CANVAS LAYERING --- */
+        #canvas-bg {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1; 
+        }
+
+        #bg-titles {
+            position: absolute;
+            top: 25px;
+            left: 30px;
+            z-index: 5; 
+            pointer-events: none;
+            opacity: 0.9;
+            font-family: 'Share Tech Mono', monospace; 
+        }
+        
+        @media (max-width: 768px) {
+            #bg-titles {
+                top: 20px;
+                left: 20px;
+            }
+        }
+
+        #canvas-battle {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10; 
+            pointer-events: none;
+        }
+
+        /* --- UI STYLES --- */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.75); 
+            padding: 10px 15px; 
+            border-radius: 4px; 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 280px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            cursor: default;
+            font-family: 'Share Tech Mono', monospace; 
+            transition: all 0.4s ease;
+        }
+
+        /* --- HEADER --- */
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            padding-bottom: 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            cursor: pointer;
+            transition: color 0.3s ease, transform 0.3s ease;
+            opacity: 0.7;
+        }
+        .icon-btn:hover {
+            color: white;
+            opacity: 1;
+        }
+
+        /* --- COLLAPSIBLE CONTENT --- */
+        #ui-content {
+            overflow: hidden;
+            max-height: 500px; 
+            opacity: 1;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #ui-content.minimized {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #toggleIcon { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .rotated { transform: rotate(180deg); }
+
+        /* --- PLAYLIST --- */
+        .playlist-container {
+            width: 100%;
+            max-height: 120px; 
+            overflow-y: auto;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+            touch-action: pan-y;
+        }
+
+        .playlist-container::-webkit-scrollbar { width: 4px; }
+        .playlist-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .playlist-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+
+        .track-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .track-item:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .track-item.active { background: rgba(255, 255, 255, 0.1); color: #a78bfa; }
+        
+        /* --- CONTROLS --- */
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+        
+        .status { color: rgba(255, 255, 255, 0.4); font-size: 10px; text-align: center; margin-top: 5px; }
+        .controls { display: flex; gap: 8px; width: 100%; }
+        input[type="file"] { display: none; }
+        
+        .progress-area { margin-top: 4px; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 0; 
+            background: #a78bfa; cursor: pointer; margin-top: -3px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px;
+        }
+        .time-display { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255, 255, 255, 0.5); font-family: 'Share Tech Mono', monospace; }
+        
+        .logo-text { 
+            text-transform: uppercase; 
+            letter-spacing: 0.15em; 
+            font-weight: 400; 
+            text-shadow: 0 0 15px rgba(0,0,0,0.9); 
+            line-height: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div id="bg-titles">
+        <h1 class="logo-text text-xl md:text-3xl">
+            <span id="titleNode">NODE</span> <span id="titleFloat">FLOAT</span>
+        </h1>
+        <p class="text-[10px] md:text-xs text-slate-400 mt-1 opacity-70 tracking-widest uppercase">
+            Audio Visual Interface
+        </p>
+    </div>
+
+    <canvas id="canvas-battle"></canvas>
+
+    <div id="ui-layer">
+        <div class="ui-header">
+            <span id="headerTitle" style="cursor: pointer;">PLAYLIST</span>
+            
+            <div class="header-controls">
+                <svg id="fsBtn" class="icon-btn" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                </svg>
+
+                <svg id="toggleIcon" class="icon-btn" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor">
+                    <path d="M1 5L5 1L9 5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+
+        <div id="ui-content">
+            <div class="playlist-container" id="playlist"></div>
+
+            <div class="progress-area">
+                <input type="range" id="progressBar" value="0" min="0" step="0.1">
+                <div class="time-display">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="controls">
+                <label class="btn">
+                    Upload
+                    <input type="file" id="fileInput" accept="audio/*">
+                </label>
+                <button class="btn" id="playBtn" disabled>Play</button>
+                <button class="btn" id="pauseBtn" style="display:none;">Pause</button>
+            </div>
+            <div class="status" id="statusText">Select a track to begin</div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const BASS_COLOR_HEX = "#8d086f";   
+        const TREBLE_COLOR_HEX = "#00ffca"; 
+
+        // ==========================================
+        // SHARED STATE & AUDIO
+        // ==========================================
+        const audioPlayer = document.getElementById('audioPlayer');
+        let audioContext, analyser, source;
+        let dataArray;
+        let isPlaying = false;
+        let currentTrackIndex = 0; 
+        let isLocalFile = false; 
+        
+        let bassEnergy = 0, trebleEnergy = 0; 
+        let bassNorm = 0, trebleNorm = 0; 
+
+        // --- WAKE LOCK IMPLEMENTATION ---
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log(`Wake Lock Error: ${err.name}, ${err.message}`);
+            }
+        }
+
+        async function releaseWakeLock() {
+            if (wakeLock !== null) {
+                await wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : {r:255, g:255, b:255};
+        }
+        
+        const bassRGB = hexToRgb(BASS_COLOR_HEX);
+        const trebleRGB = hexToRgb(TREBLE_COLOR_HEX);
+
+        document.getElementById('titleNode').style.color = BASS_COLOR_HEX;
+        document.getElementById('titleFloat').style.color = TREBLE_COLOR_HEX;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; 
+                analyser.smoothingTimeConstant = 0.85;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+        }
+
+        function analyzeAudio() {
+            if (!analyser) return;
+            analyser.getByteFrequencyData(dataArray);
+
+            let bassSum = 0;
+            for (let i = 0; i < 15; i++) bassSum += dataArray[i];
+            bassEnergy = bassSum / 15;
+            
+            let trebleSum = 0;
+            let trebleCount = 0;
+            for (let i = 100; i < 250; i++) {
+                trebleSum += dataArray[i];
+                trebleCount++;
+            }
+            trebleEnergy = trebleSum / trebleCount;
+
+            bassNorm = Math.min(1, (bassEnergy / 255) * 1.8);
+            trebleNorm = Math.min(1, (trebleEnergy / 255) * 3.5);
+            bassEnergy *= 1.2;
+            trebleEnergy *= 1.4;
+        }
+
+        // ==========================================
+        // COLOR UTILS FOR GRADIENT
+        // ==========================================
+        function lerpColor(a, b, amount) { 
+            const ah = parseInt(a.replace(/#/g, ''), 16),
+                  ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
+                  bh = parseInt(b.replace(/#/g, ''), 16),
+                  br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
+                  rr = ar + amount * (br - ar),
+                  rg = ag + amount * (bg - ag),
+                  rb = ab + amount * (bb - ab);
+            return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + (rb | 0)).toString(16).slice(1).split('.')[0];
+        }
+
+        // ==========================================
+        // LAYER 1: BACKGROUND (Animated Clouds & Grid)
+        // ==========================================
+        const bgCanvas = document.getElementById('canvas-bg');
+        const bgCtx = bgCanvas.getContext('2d');
+        let bgWidth, bgHeight;
+
+        const cloudParticles = [];
+        class DigitalCloud {
+            constructor() { this.init(true); }
+            init(initial = false) {
+                this.x = initial ? Math.random() * bgWidth : -300;
+                this.y = Math.random() * (bgHeight * 0.4); 
+                this.vx = Math.random() * 0.5 + 0.2; 
+                const colors = [
+                    'rgba(0, 255, 255, 0.15)', 'rgba(50, 200, 255, 0.1)', 
+                    'rgba(180, 0, 255, 0.1)'
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.pixels = [];
+                const pixelSize = 8; 
+                const w = 10 + Math.random() * 10; 
+                const h = 4 + Math.random() * 4;   
+                
+                for(let ix=0; ix<w; ix++) {
+                    for(let iy=0; iy<h; iy++) {
+                        if(Math.random() > 0.4) { 
+                            this.pixels.push({
+                                ox: ix * pixelSize, 
+                                oy: iy * pixelSize, 
+                                s: pixelSize,
+                                active: true
+                            });
+                        }
+                    }
+                }
+            }
+            update() {
+                this.x += this.vx;
+                if (this.x > bgWidth + 100) this.init(false);
+            }
+            draw() {
+                bgCtx.fillStyle = this.color;
+                for(let p of this.pixels) {
+                    if (Math.random() > 0.96) p.active = !p.active;
+                    if (p.active) {
+                        bgCtx.fillRect(this.x + p.ox, this.y + p.oy, p.s - 1, p.s - 1);
+                    }
+                }
+            }
+        }
+        function initClouds() {
+            cloudParticles.length = 0;
+            for(let i=0; i<40; i++) cloudParticles.push(new DigitalCloud()); 
+        }
+
+        // --- MOVING TRON GRID ---
+        let gridPhaseZ = 0; 
+        let gridPhaseX = 0; 
+
+        function drawTronGrid() {
+            const hY = bgHeight * 0.65; 
+            const cx = bgWidth / 2;     
+
+            bgCtx.fillStyle = "#010915";
+            bgCtx.fillRect(0, hY, bgWidth, bgHeight - hY);
+
+            const r = bassNorm * 255;
+            const g = 255 - (bassNorm * 200);
+            const b = 255;
+            
+            const gridColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
+            const glowColor = `rgba(${r}, ${g}, ${b}, ${0.3 + bassNorm*0.5})`;
+
+            bgCtx.save();
+            bgCtx.beginPath();
+            bgCtx.rect(0, hY, bgWidth, bgHeight - hY);
+            bgCtx.clip(); 
+
+            bgCtx.strokeStyle = gridColor;
+            bgCtx.shadowBlur = 10 + (bassNorm * 10);
+            bgCtx.shadowColor = glowColor;
+
+            bgCtx.lineWidth = 1 + (bassNorm * 2); 
+            gridPhaseX += 0.002; 
+            const numVLines = 24; 
+            const bottomWidth = bgWidth * 6; 
+            
+            for (let i = 0; i <= numVLines; i++) {
+                let t = (i / numVLines) + (gridPhaseX % 1);
+                let wrappedT = t % 1;
+                const xBottom = (cx - bottomWidth/2) + (wrappedT * bottomWidth);
+                
+                bgCtx.beginPath();
+                bgCtx.moveTo(cx, hY);
+                bgCtx.lineTo(xBottom, bgHeight);
+                bgCtx.stroke();
+            }
+
+            const speed = 2 + (bassNorm * 12); 
+            gridPhaseZ += speed;
+            const spacing = 100; 
+            const maxDepth = 4000; 
+            
+            for (let z = spacing - (gridPhaseZ % spacing); z < maxDepth; z += spacing) {
+                const scale = 25000; 
+                const y = hY + (scale / z);
+
+                if (y > bgHeight) continue; 
+                if (y < hY) continue;       
+
+                const proximity = Math.min(1, (y - hY) / (bgHeight - hY));
+                
+                bgCtx.globalAlpha = proximity;
+                bgCtx.lineWidth = 1 + (bassNorm * 2) + (proximity * 3);
+
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, y);
+                bgCtx.lineTo(bgWidth, y);
+                bgCtx.stroke();
+            }
+            
+            bgCtx.globalAlpha = 1.0;
+            bgCtx.beginPath();
+            bgCtx.moveTo(0, hY);
+            bgCtx.lineTo(bgWidth, hY);
+            bgCtx.lineWidth = 2;
+            bgCtx.strokeStyle = "#00ffca"; 
+            bgCtx.shadowBlur = 20;
+            bgCtx.shadowColor = "#00ffca";
+            bgCtx.stroke();
+
+            bgCtx.restore();
+        }
+
+        const paletteA = ['#000000', '#020205', '#05101a', '#0b202e'];
+        const paletteB = ['#000000', '#000033', '#57064e', '#007c87'];
+        
+        function animateBg() {
+            const time = Date.now() * 0.0002; 
+            const cycle = (Math.sin(time) + 1) / 2; 
+            
+            const c1 = lerpColor(paletteA[0], paletteB[0], cycle);
+            const c2 = lerpColor(paletteA[1], paletteB[1], cycle);
+            const c3 = lerpColor(paletteA[2], paletteB[2], cycle);
+            const c4 = lerpColor(paletteA[3], paletteB[3], cycle);
+
+            const grad = bgCtx.createLinearGradient(0, 0, 0, bgHeight);
+            grad.addColorStop(0, c1);
+            grad.addColorStop(0.1, c2); 
+            grad.addColorStop(0.5, c3); 
+            grad.addColorStop(1, c4);   
+            
+            bgCtx.fillStyle = grad;
+            bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+            cloudParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            drawTronGrid(); 
+        }
+
+        // ==========================================
+        // LAYER 2: THE 3D BATTLE (FOREGROUND)
+        // ==========================================
+        const battleCanvas = document.getElementById('canvas-battle');
+        const bCtx = battleCanvas.getContext('2d');
+        let bWidth, bHeight;
+        let battleParticles = [];
+        let mouse = { x: null, y: null, active: false, isDown: false };
+
+        // --- BLACK HOLE LOGIC ---
+        class BlackHole {
+            constructor() {
+                this.active = false;
+                this.x = -500;
+                this.y = 0;
+                this.radius = 60;
+                this.influence = 250;
+                this.nextSpawnTime = Date.now() + 5000;
+            }
+            
+            update() {
+                // Spawn Check
+                if (!this.active && Date.now() > this.nextSpawnTime) {
+                    this.active = true;
+                    this.y = Math.random() * (bHeight * 0.4) + (bHeight * 0.05);
+                    this.x = -150; 
+                    this.vx = 2 + Math.random() * 2;
+                }
+
+                if (this.active) {
+                    this.x += this.vx;
+                    if (this.x > bWidth + 150) {
+                        this.active = false;
+                        this.nextSpawnTime = Date.now() + 10000 + Math.random() * 10000;
+                    }
+                }
+            }
+
+            draw() {
+                if (!this.active) return;
+                
+                // Draw Void
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                bCtx.fillStyle = "black";
+                bCtx.fill();
+                
+                // Draw Accretion Disk / Rim
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                bCtx.lineWidth = 4;
+                bCtx.strokeStyle = `rgba(255, 255, 255, 0.8)`;
+                bCtx.shadowColor = "#00ffca";
+                bCtx.shadowBlur = 20;
+                bCtx.stroke();
+                bCtx.shadowBlur = 0; // Reset
+            }
+        }
+        
+        const blackHole = new BlackHole();
+
+        // Particle States
+        const P_NORMAL = 0;
+        const P_SUCKING = 1;
+        const P_WAITING = 2;
+        const P_RETURNING = 3;
+
+        class BattleParticle {
+            constructor(type) {
+                this.type = type;
+                this.reset(true);
+            }
+            
+            reset(initial = false) {
+                this.state = P_NORMAL;
+                this.waitTimer = 0;
+                this.returnScale = 1.0;
+                
+                this.x = initial 
+                    ? (this.type==='bass' ? Math.random()*bWidth*0.4 : (bWidth*0.6)+Math.random()*bWidth*0.4)
+                    : Math.random() * bWidth;
+                this.y = Math.random() * bHeight * 0.8;
+                this.z = Math.random(); 
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.baseSize = Math.random() * 3 + 2; 
+                this.angle = Math.random() * Math.PI * 2;
+                this.speedMod = this.type === 'bass' ? 0.02 : 0.015;
+            }
+            
+            update(bLvl, tLvl) {
+                // --- STATE MACHINE ---
+                if (this.state === P_NORMAL) {
+                    this.updateNormal(bLvl, tLvl);
+                    
+                    // Check Black Hole Interaction
+                    if (blackHole.active) {
+                        const dx = blackHole.x - this.x;
+                        const dy = blackHole.y - this.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        // Occasionally suck particles if they are within influence
+                        if (dist < blackHole.influence && Math.random() > 0.98) {
+                            this.state = P_SUCKING;
+                        }
+                    }
+                } 
+                else if (this.state === P_SUCKING) {
+                    const dx = blackHole.x - this.x;
+                    const dy = blackHole.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // Move towards hole center
+                    this.x += dx * 0.08;
+                    this.y += dy * 0.08;
+                    
+                    // Shrink
+                    this.baseSize *= 0.95;
+                    
+                    if (dist < 10 || this.baseSize < 0.1) {
+                        this.state = P_WAITING;
+                        this.waitTimer = Date.now() + 2000; // 2 Seconds Wait
+                    }
+                }
+                else if (this.state === P_WAITING) {
+                    if (Date.now() > this.waitTimer) {
+                        this.state = P_RETURNING;
+                        this.returnScale = 50.0; // Start HUGE (Zoom effect)
+                        
+                        // Reset properties for re-entry
+                        this.baseSize = Math.random() * 3 + 2;
+                        this.x = Math.random() * bWidth;
+                        this.y = Math.random() * bHeight;
+                        this.z = Math.random();
+                        this.vx = (Math.random() - 0.5) * 0.5;
+                        this.vy = (Math.random() - 0.5) * 0.5;
+                    }
+                }
+                else if (this.state === P_RETURNING) {
+                    // Zoom In Effect (decay scale)
+                    this.returnScale += (1.0 - this.returnScale) * 0.05;
+                    
+                    // Resume mild movement while zooming
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    if (Math.abs(this.returnScale - 1.0) < 0.1) {
+                        this.returnScale = 1.0;
+                        this.state = P_NORMAL;
+                    }
+                }
+                
+                // Boundary Wrap (Only for NORMAL)
+                if (this.state === P_NORMAL) {
+                    if (this.x < -50) this.x = bWidth + 50;
+                    if (this.x > bWidth + 50) this.x = -50;
+                    if (this.y < -50) this.y = bHeight + 50;
+                    if (this.y > bHeight + 50) this.y = -50;
+                }
+            }
+
+            updateNormal(bLvl, tLvl) {
+                let energy = (this.type === 'bass') ? bLvl : tLvl;
+                
+                if(this.type === 'bass') {
+                    this.angle += this.speedMod;
+                    this.vx += Math.sin(this.angle) * 0.01;
+                    this.vy += Math.cos(this.angle) * 0.01;
+                } else {
+                    this.angle -= this.speedMod;
+                    this.vx += Math.cos(this.angle) * 0.01;
+                    this.vy += Math.sin(this.angle) * 0.01;
+                }
+                
+                this.vx += (Math.random()-0.5) * energy * 2.0;
+                this.vy += (Math.random()-0.5) * energy * 2.0;
+
+                if (mouse.active && mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 400) {
+                        const force = (400 - dist) / 400;
+                        const angle = Math.atan2(dy, dx);
+                        const strength = mouse.isDown ? 2.0 : (0.2 + energy);
+                        const zFactor = 0.5 + this.z; 
+                        this.vx += Math.cos(angle) * force * strength * zFactor;
+                        this.vy += Math.sin(angle) * force * strength * zFactor;
+                    }
+                }
+
+                this.vx *= 0.96; this.vy *= 0.96;
+                this.x += this.vx; this.y += this.vy;
+            }
+
+            draw(bLvl, tLvl) {
+                // Don't draw if waiting inside black hole
+                if (this.state === P_WAITING) return;
+                
+                let energy = (this.type === 'bass') ? bLvl : tLvl;
+                
+                // Calculate Scale Multiplier based on State
+                let scaleMult = 1.0;
+                if (this.state === P_RETURNING) scaleMult = this.returnScale;
+                
+                // Visual Perspective
+                const perspective = 0.5 + (this.z * 1.5); 
+                const drawSize = this.baseSize * perspective * (1 + energy) * scaleMult;
+                
+                const rgb = (this.type === 'bass') ? bassRGB : trebleRGB;
+
+                // Opacity handling for zooming back in
+                let alpha = 0.9 + this.z * 0.1;
+                if (this.state === P_RETURNING) {
+                    // Fade in as it shrinks
+                    alpha = 1.0 - ((this.returnScale - 1.0) / 40.0); 
+                    if (alpha < 0) alpha = 0;
+                    if (alpha > 1) alpha = 1;
+                }
+
+                const grad = bCtx.createRadialGradient(
+                    this.x - drawSize * 0.3, this.y - drawSize * 0.3, drawSize * 0.1, 
+                    this.x, this.y, drawSize
+                );
+
+                grad.addColorStop(0, `rgba(${Math.min(255, rgb.r+100)}, ${Math.min(255, rgb.g+100)}, ${Math.min(255, rgb.b+100)}, ${alpha})`);
+                grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha * 0.8})`);
+
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, drawSize, 0, Math.PI*2);
+                bCtx.fillStyle = grad;
+                bCtx.fill();
+            }
+        }
+
+        function initBattle() {
+            battleParticles = [];
+            for(let i=0; i<80; i++) battleParticles.push(new BattleParticle('bass'));
+            for(let i=0; i<80; i++) battleParticles.push(new BattleParticle('treble'));
+        }
+
+        function animateBattle() {
+            bCtx.clearRect(0, 0, bWidth, bHeight);
+            
+            // Update & Draw Black Hole
+            blackHole.update();
+            blackHole.draw();
+
+            if (mouse.active) {
+                bCtx.beginPath();
+                bCtx.arc(mouse.x, mouse.y, 20, 0, Math.PI*2);
+                bCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                bCtx.stroke();
+            }
+
+            // Draw Connections (ONLY FOR NORMAL PARTICLES)
+            bCtx.beginPath();
+            for (let i = 0; i < battleParticles.length; i++) {
+                const p1 = battleParticles[i];
+                p1.update(bassNorm, trebleNorm);
+                
+                // Skip lines if not normal
+                if (p1.state !== P_NORMAL) continue;
+
+                for (let j = i + 1; j < battleParticles.length; j++) {
+                    const p2 = battleParticles[j];
+                    
+                    if (p2.state !== P_NORMAL) continue;
+
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx*dx + dy*dy;
+                    
+                    if (distSq < 15000) {
+                        const zAvg = (p1.z + p2.z) / 2;
+                        
+                        if(p1.type === p2.type) {
+                            const dist = Math.sqrt(distSq);
+                            const opacityBase = 1 - (dist/122);
+                            const zWeight = 0.1 + (zAvg * 0.9); 
+                            
+                            if (opacityBase > 0) {
+                                const rgb = p1.type === 'bass' ? bassRGB : trebleRGB;
+                                const pulse = p1.type === 'bass' ? bassNorm : trebleNorm;
+                                
+                                bCtx.lineWidth = 0.2 + (zAvg * 1.5); 
+                                bCtx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacityBase * zWeight * (0.5 + pulse)})`;
+                                
+                                bCtx.moveTo(p1.x, p1.y);
+                                bCtx.lineTo(p2.x, p2.y);
+                            }
+                        }
+                    }
+                }
+            }
+            bCtx.stroke();
+
+            // Draw Particles (Handling all states)
+            for (let i = 0; i < battleParticles.length; i++) {
+                battleParticles[i].draw(bassNorm, trebleNorm);
+            }
+        }
+
+        function resize() {
+            bgWidth = bgCanvas.width = window.innerWidth;
+            bgHeight = bgCanvas.height = window.innerHeight;
+            bWidth = battleCanvas.width = window.innerWidth;
+            bHeight = battleCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+        initClouds();
+        initBattle();
+
+        function masterAnimate() {
+            if(isPlaying) analyzeAudio();
+            else {
+                bassEnergy *= 0.95; trebleEnergy *= 0.95;
+                bassNorm *= 0.9; trebleNorm *= 0.9;
+            }
+            animateBg();     
+            animateBattle(); 
+            requestAnimationFrame(masterAnimate);
+        }
+        masterAnimate();
+
+        // Playlist & UI
+        const playlistData = [
+            { title: "Lovin U - Coco Bryce", src: "songs/LovinU-CocoBryce.mp3" },
+            { title: "Nespole", src: "songs/Nespole.mp3" },
+            { title: "Andrea Parker - Unconnected.mp3", src: "songs/AndreaParker-Unconnected.mp3" },
+            { title: "Spring Is Coming", src: "songs/SpringIsComing.mp3" },
+            { title: "Eutow - Autechre", src: "songs/Eutow.mp3" },
+            { title: "Kalkbrenner & Stromae", src: "songs/KalkbrennerStromae.mp3" },
+            { title: "Evening Breeze", src: "songs/EveningBreeze.mp3" },
+            { title: "MONDO GROSSO ラビリンス", src: "songs/MondoGrosso.mp3" },
+            { title: "The Sound", src: "songs/TheSound.mp3" },
+            { title: "Freestyle - Drum & Bass", src: "songs/Freestyle.mp3" }
+        ];
+
+        const playlistContainer = document.getElementById('playlist');
+        const uiContent = document.getElementById('ui-content');
+        const toggleIcon = document.getElementById('toggleIcon');
+        const headerTitle = document.getElementById('headerTitle');
+        const fsBtn = document.getElementById('fsBtn');
+        
+        function toggleUI() {
+            uiContent.classList.toggle('minimized');
+            toggleIcon.classList.toggle('rotated');
+        }
+
+        toggleIcon.addEventListener('click', toggleUI);
+        headerTitle.addEventListener('click', toggleUI);
+
+        // --- FULLSCREEN LOGIC ---
+        function enterFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
+            }
+        }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) enterFullscreen();
+            else if (document.exitFullscreen) document.exitFullscreen();
+        }
+        fsBtn.addEventListener('click', toggleFullscreen);
+
+        const statusText = document.getElementById('statusText');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        playlistData.forEach((track, index) => {
+            const div = document.createElement('div');
+            div.className = 'track-item';
+            div.innerHTML = `<span>${index+1}. ${track.title}</span>`;
+            div.onclick = () => loadTrack(index);
+            playlistContainer.appendChild(div);
+        });
+
+        function loadTrack(index) {
+            isLocalFile = false; // Reset flag
+            currentTrackIndex = index; // Store Current Index
+            const track = playlistData[index];
+            document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+            playlistContainer.children[index].classList.add('active');
+            audioPlayer.src = track.src;
+            statusText.textContent = `Selected: ${track.title}`;
+            statusText.style.color = "#a78bfa";
+            playBtn.disabled = false;
+            
+            if(audioContext) {
+                enterFullscreen();
+                playBtn.click();
+            }
+        }
+
+        // --- PLAY/PAUSE LOGIC WITH WAKE LOCK ---
+        playBtn.addEventListener('click', async () => {
+            initAudio();
+            enterFullscreen(); 
+            requestWakeLock(); // Request Screen Stay On
+            
+            if(audioContext.state === 'suspended') audioContext.resume();
+            
+            audioPlayer.play().then(() => {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+                statusText.textContent = "Flowing...";
+                isPlaying = true;
+            }).catch(e => console.error(e));
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            releaseWakeLock(); // Release Screen Lock
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+            isPlaying = false;
+            statusText.textContent = "Paused";
+        });
+
+        // --- AUTO ADVANCE LOGIC ---
+        audioPlayer.addEventListener('ended', () => {
+            if(isLocalFile) {
+                // If local file, just stop
+                releaseWakeLock();
+                playBtn.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+                isPlaying = false;
+                statusText.textContent = "Finished";
+            } else {
+                // If playlist, go to next
+                let nextIndex = currentTrackIndex + 1;
+                if(nextIndex >= playlistData.length) nextIndex = 0; // Loop
+                loadTrack(nextIndex);
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const file = this.files[0];
+            if(file) {
+                isLocalFile = true; // Mark as local
+                audioPlayer.src = URL.createObjectURL(file);
+                playBtn.disabled = false;
+                statusText.textContent = `Ready: ${file.name}`;
+                document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+                enterFullscreen();
+                // We don't auto-play here usually, but if user wants consistent behavior:
+                // playBtn.click();
+            }
+        });
+
+        // ==========================================
+        // INTERACTION HANDLERS (MOUSE + TOUCH)
+        // ==========================================
+        function handleMouse(x, y, active, down) {
+            mouse.x = x; mouse.y = y; mouse.active = active; mouse.isDown = down;
+        }
+
+        // Mouse Events
+        window.addEventListener('mousemove', e => handleMouse(e.clientX, e.clientY, true, mouse.isDown));
+        window.addEventListener('mousedown', e => handleMouse(e.clientX, e.clientY, true, true));
+        window.addEventListener('mouseup', e => triggerExplosion(e.clientX, e.clientY));
+
+        // Touch Events
+        window.addEventListener('touchstart', e => {
+            if(e.target.closest('#ui-layer')) return;
+            const touch = e.touches[0];
+            handleMouse(touch.clientX, touch.clientY, true, true);
+        }, {passive: false});
+
+        window.addEventListener('touchmove', e => {
+             if(e.target.closest('#ui-layer')) return;
+             e.preventDefault(); 
+            const touch = e.touches[0];
+            handleMouse(touch.clientX, touch.clientY, true, mouse.isDown);
+        }, {passive: false});
+
+        window.addEventListener('touchend', e => {
+            if(e.target.closest('#ui-layer')) {
+                handleMouse(mouse.x, mouse.y, false, false);
+                return;
+            }
+            if (e.changedTouches.length > 0) {
+                const touch = e.changedTouches[0];
+                handleMouse(touch.clientX, touch.clientY, true, false);
+                triggerExplosion(touch.clientX, touch.clientY);
+            } else {
+                handleMouse(mouse.x, mouse.y, false, false);
+            }
+        });
+
+        function triggerExplosion(x, y) {
+            handleMouse(x, y, true, false);
+            battleParticles.forEach(p => {
+                const dx = p.x - x;
+                const dy = p.y - y;
+                if(Math.sqrt(dx*dx+dy*dy) < 300) {
+                    const angle = Math.atan2(dy, dx);
+                    p.vx += Math.cos(angle) * 15;
+                    p.vy += Math.sin(angle) * 15;
+                }
+            });
+        }
+        
+        const progressBar = document.getElementById('progressBar');
+        const cTime = document.getElementById('currentTime');
+        const dTime = document.getElementById('duration');
+        
+        function formatTime(s) {
+            const m = Math.floor(s/60);
+            const sec = Math.floor(s%60);
+            return `${m}:${sec<10?'0':''}${sec}`;
+        }
+        audioPlayer.addEventListener('timeupdate', () => {
+            if(audioPlayer.duration) {
+                progressBar.value = (audioPlayer.currentTime/audioPlayer.duration)*100;
+                cTime.textContent = formatTime(audioPlayer.currentTime);
+                dTime.textContent = formatTime(audioPlayer.duration);
+            }
+        });
+        progressBar.addEventListener('input', () => {
+            audioPlayer.currentTime = (progressBar.value/100)*audioPlayer.duration;
+        });
+
+    </script>
+</body>
+</html>

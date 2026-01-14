@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Mind Soul</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            position: relative;
+            width: 100vmin;
+            height: 100vmin;
+            max-width: 600px;
+            max-height: 600px;
+            animation: rotate-container 5s linear infinite;
+        }
+
+        @keyframes rotate-container {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .node {
+            position: absolute;
+            width: 25%;
+            height: 25%;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* Position nodes from their center point */
+            transform: translate(-50%, -50%);
+        }
+
+        .node-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .node-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .node-ring {
+            position: absolute;
+			background-color: #000;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid;
+            animation: rotate 3s linear infinite;
+        }
+
+        .node-center {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Soul Node - Cyan - Top */
+        .node-soul {
+            top: 21.11%;
+            left: 50%;
+        }
+
+        .node-soul .node-glow {
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.8) 0%, rgba(0, 255, 255, 0) 90%);
+            box-shadow: 0 0 60px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(0, 255, 255, 0.75);
+        }
+
+        .node-soul .node-ring {
+            border-color: #00ffff;
+            box-shadow: 0 0 120px rgba(0, 255, 255, 0.8);
+        }
+
+        .node-soul .node-center {
+            width: 30px;
+            height: 30px;
+            background: #00ffff;
+            border-radius: 50%;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+        }
+
+        /* Body Node - Red - Bottom Left */
+        .node-body {
+            top: 64.45%;
+            left: 25%;
+        }
+
+        .node-body .node-glow {
+            background: radial-gradient(circle, rgba(255, 50, 50, 0.4) 0%, rgba(255, 50, 50, 0) 70%);
+            box-shadow: 0 0 60px rgba(255, 50, 50, 0.6), inset 0 0 40px rgba(255, 50, 50, 0.5);
+        }
+
+        .node-body .node-ring {
+            border-color: #ff3232;
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.8);
+            animation: rotate 3s linear infinite reverse;
+        }
+
+        .node-body .node-center {
+            width: 25px;
+            height: 25px;
+            background: #ff3232;
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.8);
+        }
+
+        /* Mind Node - Yellow - Bottom Right */
+        .node-mind {
+            top: 64.45%;
+            left: 75%;
+        }
+
+        .node-mind .node-glow {
+            background: radial-gradient(circle, rgba(255, 255, 0, 0.4) 0%, rgba(255, 255, 0, 0) 70%);
+            box-shadow: 0 0 60px rgba(255, 255, 0, 0.6), inset 0 0 40px rgba(255, 255, 0, 0.3);
+        }
+
+        .node-mind .node-ring {
+            border-color: #ffff00;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+        }
+
+        .node-mind .node-center {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 26px solid #ffff00;
+            background: none !important;
+        }
+        
+        .node-mind .node-center::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 26px solid #ffff00;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.8));
+            top: 0;
+            left: -15px;
+        }
+
+        /* Connection Lines */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .connection-line {
+            stroke-width: 6;
+            stroke-dasharray: 10, 10;
+            animation: dash 5s linear infinite;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 0, 0.5));
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.08);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -200;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <svg viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet">
+            <!-- Perfect equilateral triangle -->
+            <!-- Top vertex: (300, 126.67) = (50%, 21.11%) -->
+            <!-- Bottom-left vertex: (150, 386.67) = (25%, 64.45%) -->
+            <!-- Bottom-right vertex: (450, 386.67) = (75%, 64.45%) -->
+            <!-- Centroid: (300, 300) = (50%, 50%) -->
+            <line class="connection-line" stroke="#00ff00" x1="300" y1="126.67" x2="150" y2="386.67" />
+            <line class="connection-line" stroke="#00ff00" x1="300" y1="126.67" x2="450" y2="386.67" />
+            <line class="connection-line" stroke="#00ff00" x1="150" y1="386.67" x2="450" y2="386.67" />
+        </svg>
+
+        <div class="node node-soul">
+            <div class="node-inner">
+                <div class="node-glow"></div>
+                <div class="node-ring"></div>
+                <div class="node-center"></div>
+            </div>
+        </div>
+
+        <div class="node node-body">
+            <div class="node-inner">
+                <div class="node-glow"></div>
+                <div class="node-ring"></div>
+                <div class="node-center"></div>
+            </div>
+        </div>
+
+        <div class="node node-mind">
+            <div class="node-inner">
+                <div class="node-glow"></div>
+                <div class="node-ring"></div>
+                <div class="node-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create lots of varying pulsating effects
+        const nodes = document.querySelectorAll('.node');
+        
+        function varyPulse() {
+            nodes.forEach((node, index) => {
+                const glow = node.querySelector('.node-glow');
+                // Random duration between 0.5 and 2 seconds for faster pulsing
+                const duration = 0.5 + Math.random() * 1.5;
+                glow.style.animationDuration = duration + 's';
+                
+                // Random delay to desynchronize pulses
+                const delay = Math.random() * 1;
+                glow.style.animationDelay = delay + 's';
+            });
+        }
+        
+        // Vary pulses initially and every 1-2 seconds
+        varyPulse();
+        setInterval(varyPulse, 1000 + Math.random() * 1000);
+    </script>
+</body>
+</html>

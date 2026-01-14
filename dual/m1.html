@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWIN CITY | MOTION CAPTURE</title>
+    <style>
+        :root {
+            --day-grad: linear-gradient(to bottom,
+                    rgba(0, 17, 34, 0) 0%,
+                    rgba(0, 150, 255, 0.95) 25%,
+                    rgba(30, 100, 240, 0.98) 47%,
+                    rgba(0, 20, 180, 0.9) 65%,
+                    rgba(0, 10, 100, 0.7) 85%,
+                    rgba(0, 33, 100, 0) 100%);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #101223;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #day-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: var(--day-grad);
+            background-size: 200% 200%;
+            background-position: 50% 50%;
+            transition: opacity 0.6s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #day-bg.hidden { opacity: 0; }
+
+        #stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out, transform 0.3s ease-out;
+            transform-origin: center center;
+        }
+
+        #stars.visible { opacity: 1; }
+
+        .star {
+            position: absolute;
+            transition: transform 0.3s ease-out;
+            border-radius: 50%;
+        }
+
+        #light-bloom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            background: radial-gradient(circle at center, rgba(200, 150, 30, 0.4) 0%, rgba(150, 100, 10, 0.3) 40%, transparent 70%);
+            mix-blend-mode: screen;
+            transition: opacity 0.5s ease;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        #hud {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #recorder-panel {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 100;
+            background: rgba(16, 18, 35, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            backdrop-filter: blur(20px);
+            min-width: 220px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+
+        .rec-btn {
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .rec-btn:hover { background: rgba(255,255,255,0.15); }
+        .rec-btn.active { background: #ff3366; box-shadow: 0 0 20px rgba(255, 51, 102, 0.4); }
+        .rec-btn.export { background: #3498db; }
+        .rec-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        #stats { font-size: 9px; opacity: 0.5; font-family: monospace; text-align: center; margin-top: 5px; }
+
+        #hud.day-mode { color: #ffffff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+        #hud.night-mode { color: #e0b0ff; text-shadow: 0 0 10px #bf00ff; }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: 14px;
+            text-transform: uppercase;
+            margin: 0;
+            border-left: 6px solid #f1c40f;
+            padding-left: 20px;
+        }
+
+        .subtitle {
+            font-size: 10px;
+            letter-spacing: 4px;
+            margin-top: 8px;
+            padding-left: 26px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="day-bg"></div>
+    <div id="stars"></div>
+    <div id="light-bloom"></div>
+
+    <div id="hud">
+        <h1>Twin City</h1>
+        <div class="subtitle" id="side-indicator">ART • SCIENCE • SPIRIT</div>
+    </div>
+
+    <div id="recorder-panel">
+        <div style="font-size: 9px; font-weight: 900; letter-spacing: 3px; margin-bottom: 5px; opacity: 0.7;">MOTION RECORDER</div>
+        <button id="btn-record" class="rec-btn">
+            <div class="dot"></div> CAPTURE PATH
+        </button>
+        <button id="btn-smooth" class="rec-btn" disabled>
+            TEMPER (SMOOTH)
+        </button>
+        <button id="btn-export" class="rec-btn export" disabled>
+            COPY PATH DATA
+        </button>
+        <div id="stats">SYSTEM READY</div>
+        <div style="font-size: 8px; opacity: 0.4; text-align: center; line-height: 1.4;">Capture your path, smooth it, then click copy to move to the final file.</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let ambientLight, sunLight, nightLight;
+        let upperGroup, lowerGroup, beamGroup;
+        let upperTrails = [], lowerTrails = [];
+        let lastSide = null;
+        let mouseX = 0, mouseY = 0;
+
+        let isRecording = false;
+        let recordedData = [];
+
+        const NEON_PALETTE = [0x00ffff, 0xff00ff, 0x00ff00, 0xffff00];
+
+        window.onload = init;
+
+        function init() {
+            setupStars();
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x4dabff, 100, 3500);
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(400, 400, 400);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x000000, 0);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            setupLights();
+            buildWorld();
+            prepareGhostMaterials(upperGroup);
+            prepareGhostMaterials(lowerGroup);
+            setupUI();
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function setupUI() {
+            const btnRec = document.getElementById('btn-record');
+            const btnSmooth = document.getElementById('btn-smooth');
+            const btnExport = document.getElementById('btn-export');
+            const stats = document.getElementById('stats');
+
+            btnRec.onclick = () => {
+                isRecording = !isRecording;
+                if (isRecording) {
+                    recordedData = [];
+                    btnRec.classList.add('active');
+                    btnRec.innerHTML = '<div class="dot"></div> STOP CAPTURE';
+                    btnSmooth.disabled = true;
+                    btnExport.disabled = true;
+                } else {
+                    btnRec.classList.remove('active');
+                    btnRec.innerHTML = '<div class="dot"></div> CAPTURE PATH';
+                    if (recordedData.length > 0) {
+                        btnSmooth.disabled = false;
+                        btnExport.disabled = false;
+                        stats.innerText = `${recordedData.length} FRAMES CAPTURED`;
+                    }
+                }
+            };
+
+            btnSmooth.onclick = () => {
+                if (recordedData.length < 10) return;
+                const windowSize = 10;
+                let smoothed = [];
+                for (let i = 0; i < recordedData.length; i++) {
+                    let sumP = { x: 0, y: 0, z: 0 }, sumT = { x: 0, y: 0, z: 0 }, count = 0;
+                    for (let j = -windowSize; j <= windowSize; j++) {
+                        let idx = i + j;
+                        if (idx >= 0 && idx < recordedData.length) {
+                            sumP.x += recordedData[idx].pos.x; sumP.y += recordedData[idx].pos.y; sumP.z += recordedData[idx].pos.z;
+                            sumT.x += recordedData[idx].tar.x; sumT.y += recordedData[idx].tar.y; sumT.z += recordedData[idx].tar.z;
+                            count++;
+                        }
+                    }
+                    smoothed.push({
+                        pos: { x: sumP.x/count, y: sumP.y/count, z: sumP.z/count },
+                        tar: { x: sumT.x/count, y: sumT.y/count, z: sumT.z/count }
+                    });
+                }
+                recordedData = smoothed;
+                stats.innerText = "PATH TEMPERED (SMOOTH)";
+            };
+
+            btnExport.onclick = () => {
+                // Minify data for copying
+                const cleanData = recordedData.map(d => ({
+                    p: [Math.round(d.pos.x), Math.round(d.pos.y), Math.round(d.pos.z)],
+                    t: [Math.round(d.tar.x), Math.round(d.tar.y), Math.round(d.tar.z)]
+                }));
+                const json = JSON.stringify(cleanData);
+                const textArea = document.createElement("textarea");
+                textArea.value = json;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                stats.innerText = "COPIED TO CLIPBOARD!";
+                setTimeout(() => stats.innerText = "READY FOR FINAL FILE", 2000);
+            };
+        }
+
+        // Original World Building Logic (Preserved exactly)
+        function setupStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                const size = (1 + Math.random() * 2) + 'px';
+                star.style.width = size; star.style.height = size;
+                star.style.backgroundColor = Math.random() < 0.5 ? '#9933ff' : '#00ffff';
+                star.style.animation = 'blink ' + (1 + Math.random() * 2) + 's infinite ease-in-out';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        function setupLights() {
+            ambientLight = new THREE.AmbientLight(0xffeeaa, 1.3); scene.add(ambientLight);
+            sunLight = new THREE.DirectionalLight(0xffeedd, 1.6); sunLight.position.set(100, 500, 100); scene.add(sunLight);
+            nightLight = new THREE.PointLight(0x6633ff, 4.5, 2500); nightLight.position.set(0, -300, 0); scene.add(nightLight);
+        }
+
+        function buildWorld() {
+            upperGroup = new THREE.Group(); lowerGroup = new THREE.Group();
+            scene.add(upperGroup); scene.add(lowerGroup);
+            const rings = 6, ringSpacing = 12, roadRadius = (rings + 1) * ringSpacing + 22;
+            const floor = new THREE.Mesh(new THREE.CircleGeometry(roadRadius + 40, 64), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }));
+            floor.rotation.x = Math.PI/2; scene.add(floor);
+            const dayBuildingColors = [0x1a3a52, 0x2c4a5e, 0x1e384a, 0x263d50, 0x4a3a2a, 0x3e2e1e];
+
+            for (let r = 2; r <= rings + 1; r++) {
+                const radius = r * ringSpacing, count = Math.floor(radius * 0.9);
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2, px = Math.cos(angle) * radius, pz = Math.sin(angle) * radius;
+                    const hT = (8 + Math.random() * 15) * (0.5 + (rings+2-r)/rings * 2);
+                    const upBox = new THREE.Mesh(new THREE.BoxGeometry(4, hT, 4), new THREE.MeshStandardMaterial({ color: dayBuildingColors[i % 6], roughness: 0.9 }));
+                    upBox.position.set(px, hT/2, pz); upperGroup.add(upBox);
+                    const hB = (10 + Math.random() * 45) * ((rings+2-r)/rings * 2.5);
+                    const loBox = new THREE.Mesh(new THREE.BoxGeometry(4.5, hB, 4.5), new THREE.MeshStandardMaterial({ color: 0x010105 }));
+                    loBox.position.set(px, -hB/2, pz); lowerGroup.add(loBox);
+                    const neonCol = NEON_PALETTE[i % 4];
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.7, 4.6), new THREE.MeshStandardMaterial({ color: neonCol, emissive: neonCol, emissiveIntensity: 12 }));
+                    win.position.set(px, -Math.random() * hB, pz); lowerGroup.add(win);
+                }
+            }
+
+            beamGroup = new THREE.Group();
+            const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 1000, 32), new THREE.MeshBasicMaterial({ color: 0xfff0aa, transparent: true, opacity: 0.9 }));
+            beam.position.y = 500; beamGroup.add(beam);
+            scene.add(beamGroup);
+
+            for (let i = 0; i < 40; i++) {
+                const car = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 7), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
+                car.userData = { angle: (i / 40) * Math.PI * 2, speed: 0.015 + Math.random() * 0.02, radius: roadRadius + (i % 2 === 0 ? -10 : 10), y: 3.5 };
+                upperGroup.add(car); upperTrails.push(car);
+            }
+        }
+
+        function prepareGhostMaterials(group) {
+            group.traverse((c) => { if (c.isMesh) { c.material = c.material.clone(); c.material.transparent = true; c.userData.origColor = c.material.color.clone(); c.userData.origOpacity = 1; } });
+        }
+
+        function applyGhostState(group, realness) {
+            group.traverse((c) => { if (c.isMesh && c.userData.origColor) { c.material.color.lerpColors(new THREE.Color(0x336699), c.userData.origColor, realness); c.material.opacity = THREE.MathUtils.lerp(0.15, c.userData.origOpacity, realness); c.material.depthWrite = realness > 0.5; } });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (isRecording) { recordedData.push({ pos: camera.position.clone(), tar: controls.target.clone() }); }
+            controls.update();
+            const y = camera.position.y, isDay = y > 0;
+            const uR = Math.max(0, Math.min(1, (y + 150) / 225)), lR = Math.max(0, Math.min(1, (-y + 150) / 225));
+            applyGhostState(upperGroup, uR); applyGhostState(lowerGroup, lR);
+            if (isDay !== lastSide) {
+                lastSide = isDay; document.getElementById('day-bg').className = isDay ? '' : 'hidden'; document.getElementById('stars').className = isDay ? '' : 'visible';
+                document.getElementById('hud').className = isDay ? 'day-mode' : 'night-mode'; document.getElementById('side-indicator').innerText = isDay ? "UPPER WORLD" : "NETHER WORLD";
+                scene.fog.color.set(isDay ? 0x4dabff : 0x050210); ambientLight.intensity = isDay ? 1.4 : 0.2; sunLight.intensity = isDay ? 2.0 : 0; nightLight.intensity = isDay ? 0 : 6.0;
+            }
+            upperTrails.forEach(t => { t.userData.angle += t.userData.speed; t.position.set(Math.cos(t.userData.angle)*t.userData.radius, t.userData.y, Math.sin(t.userData.angle)*t.userData.radius); t.rotation.y = -t.userData.angle + Math.PI/2; });
+            renderer.render(scene, camera);
+        }
+
+        function onResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
+    </script>
+</body>
+</html>

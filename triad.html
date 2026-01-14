@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Triad: Schematic Loop</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0a0a0a;
+            font-family: 'Courier New', Courier, monospace; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #EAEAEA;
+            position: fixed; 
+            width: 100%;
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 93, 185, 0.5);
+            border: 1px solid #333;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            pointer-events: none;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 12px;
+            border: 1px solid #333;
+            max-width: 85%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #ui span { color: #D22B2B; }
+        
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            flex-direction: column;
+            pointer-events: auto; 
+        }
+        
+        .btn {
+            border: 1px solid #D22B2B;
+            padding: 15px 30px; 
+            color: #D22B2B;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            background: #000;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(210, 43, 43, 0.2);
+        }
+        .btn:hover {
+            background: #D22B2B;
+            color: #000;
+            box-shadow: 0 0 20px #D22B2B;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Audio Start Overlay -->
+<div id="overlay">
+    <div class="btn" id="startBtn">SYSTEM START</div>
+    <div style="margin-top:15px; font-size: 0.75rem; color: #666; font-family: monospace;">
+        // BAUHAUS PROTOCOL //
+    </div>
+</div>
+
+<div id="ui">// STATUS: <span id="statusText">STANDBY</span> // <span id="subStatus">WAITING FOR INPUT</span></div>
+<canvas id="canvas"></canvas>
+
+<script>
+/**
+ * The Triad: Man-Machine Schematic (Loop Version)
+ * Extended with 12-Node Ring & Implosion Finale
+ */
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statusText = document.getElementById('statusText');
+const subStatus = document.getElementById('subStatus');
+
+// --- COLORS ---
+const COLORS = {
+    bg: '#0a0a0a',
+    grid: '#1a1a1a',
+    red: '#D22B2B',
+    blue: '#005DB9',
+    yellow: '#F4B61A',
+    purple: '#D600FF',
+    white: '#EAEAEA',
+    terminalGreen: '#0f0'
+};
+
+// --- AUDIO ENGINE ---
+const AudioEngine = {
+    ctx: null,
+    isInit: false,
+    
+    init: function() {
+        if (this.isInit) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+        this.isInit = true;
+    },
+    playTone: function(freq, type, duration, vol = 0.1) {
+        if (!this.isInit) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type; 
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+    playGlitch: function() {
+        const freq = 400 + Math.random() * 800;
+        this.playTone(freq, 'square', 0.08, 0.04);
+    },
+    playLock: function() {
+        this.playTone(100, 'sawtooth', 0.3, 0.1);
+        this.playTone(50, 'sine', 0.4, 0.15);
+    },
+    playTransmission: function() {
+        if (!this.isInit) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(1760, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    },
+    playBoot: function() {
+        if (!this.isInit) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(55, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 1.2);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.5);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 1.5);
+    },
+    playServo: function() {
+        if (!this.isInit) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(60, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
+    },
+    playHeartbeat: function() {
+        if (!this.isInit) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(50, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+    }
+};
+
+// --- STATE ---
+
+let frames = 0;
+let phase = 'start'; 
+let animationId;
+let input = { x: 0, y: 0 };
+let tilt = { x: 0, y: 0 };
+
+// Dynamic Sizing
+let width, height, centerX, centerY;
+let RADIUS_FINAL = 250; 
+let TEXT_SCALE = 1;
+let globalScale = 1; // For shrinking effect
+
+// Content
+const CHAOS_WORDS = [
+    "ORDER", "CHAOS", "AI", "TRUTH", "POWER", "MYSTERY", 
+    "PARADOX", "TWIST", "WILL", "FRAME", "CONTROL", 
+    "DESIGN", "TONIC", "SYNTHESIS", "ARCHETYPE", "GESTALT"
+];
+
+// TRIANGLES
+const GROUP_1 = [
+    { text: "BODY", angle: -Math.PI / 2, color: COLORS.blue },
+    { text: "MIND", angle: -Math.PI / 2 + (2 * Math.PI / 3), color: COLORS.blue },
+    { text: "SOUL", angle: -Math.PI / 2 + (4 * Math.PI / 3), color: COLORS.blue }
+];
+
+const GROUP_2 = [
+    { text: "ART", angle: -Math.PI / 2 + Math.PI/3, color: COLORS.red },
+    { text: "SCIENCE", angle: -Math.PI / 2 + Math.PI/3 + (2 * Math.PI / 3), color: COLORS.red },
+    { text: "SPIRIT", angle: -Math.PI / 2 + Math.PI/3 + (4 * Math.PI / 3), color: COLORS.red }
+];
+
+const GROUP_3 = [
+    { text: "LOVE", angle: -Math.PI / 2 + Math.PI/6, color: COLORS.yellow },
+    { text: "LOGIC", angle: -Math.PI / 2 + Math.PI/6 + (2 * Math.PI / 3), color: COLORS.yellow },
+    { text: "SOLACE", angle: -Math.PI / 2 + Math.PI/6 + (4 * Math.PI / 3), color: COLORS.yellow }
+];
+
+const GROUP_4 = [
+    { text: "PAST", angle: -Math.PI / 2 + Math.PI/2, color: COLORS.purple },
+    { text: "PRESENT", angle: -Math.PI / 2 + Math.PI/2 + (2 * Math.PI / 3), color: COLORS.purple },
+    { text: "FUTURE", angle: -Math.PI / 2 + Math.PI/2 + (4 * Math.PI / 3), color: COLORS.purple }
+];
+
+let chaosWord = { text: "", color: COLORS.white };
+let circleRadius = 0;
+let systemRotation = 0;
+// Progression vars
+let triangle1Progress = 0, triangle2Progress = 0, triangle3Progress = 0, triangle4Progress = 0;
+let group1State = 0, group2State = 0, group3State = 0, group4State = 0;
+let scannerAngle = 0;
+let isRunning = false;
+let rotationSpeed = 0; 
+let eternityFrames = 0;
+
+// --- UTILITY ---
+
+function resize() {
+    width = document.documentElement.clientWidth;
+    height = document.documentElement.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+    centerX = width / 2;
+    centerY = height / 2;
+
+    const minDim = Math.min(width, height);
+    RADIUS_FINAL = minDim * 0.38;
+    RADIUS_FINAL = Math.max(RADIUS_FINAL, 140);
+    RADIUS_FINAL = Math.min(RADIUS_FINAL, 320);
+    
+    TEXT_SCALE = RADIUS_FINAL / 250; 
+    TEXT_SCALE = Math.max(TEXT_SCALE, 0.7);
+    TEXT_SCALE = Math.min(TEXT_SCALE, 1.2);
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
+resize();
+
+// UI INTERACTION
+document.getElementById('startBtn').addEventListener('click', (e) => {
+    e.preventDefault(); 
+    AudioEngine.init();
+    document.getElementById('overlay').style.display = 'none';
+    isRunning = true;
+    reset();
+}, { once: true });
+
+function handleInputMove(e) {
+    let clientX, clientY;
+    if(e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    let x = (clientX - width / 2) / width;
+    let y = (clientY - height / 2) / height;
+    tilt.x = x * 0.2; 
+    tilt.y = y * 0.2;
+}
+window.addEventListener('mousemove', handleInputMove);
+window.addEventListener('touchmove', handleInputMove, {passive: false});
+
+function reset() {
+    if(!isRunning) return;
+    frames = 0;
+    eternityFrames = 0;
+    phase = 'start';
+    circleRadius = 0;
+    systemRotation = 0;
+    triangle1Progress = 0; triangle2Progress = 0; triangle3Progress = 0; triangle4Progress = 0;
+    group1State = 0; group2State = 0; group3State = 0; group4State = 0;
+    rotationSpeed = 0;
+    globalScale = 1;
+    chaosWord = { text: "", color: COLORS.white };
+    statusText.innerText = "BOOT_SEQUENCE";
+    subStatus.innerText = "INITIALIZING...";
+    statusText.style.color = COLORS.red;
+    AudioEngine.playBoot();
+}
+
+function drawGrid() {
+    ctx.save();
+    ctx.strokeStyle = COLORS.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const gridSize = 50 * TEXT_SCALE;
+    let constOffset = (frames * 0.5) % gridSize;
+    
+    for (let x = -gridSize + constOffset; x < width; x += gridSize) {
+        ctx.moveTo(x, 0); ctx.lineTo(x, height);
+    }
+    for (let y = -gridSize + constOffset; y < height; y += gridSize) {
+        ctx.moveTo(0, y); ctx.lineTo(width, y);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = '#111';
+    for (let i = -width; i < width * 2; i += gridSize * 2) {
+         ctx.moveTo(i, 0); ctx.lineTo(i - height, height);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawSchematicLine(x1, y1, x2, y2, color, progress) {
+    if(progress <= 0) return;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]); 
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const currentX = x1 + dx * progress;
+    const currentY = y1 + dy * progress;
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+    ctx.setLineDash([]); 
+
+    if (progress > 0 && progress < 1) {
+        const packetSize = 6 * TEXT_SCALE;
+        ctx.fillStyle = color; 
+        ctx.fillRect(currentX - packetSize/2, currentY - packetSize/2, packetSize, packetSize);
+    }
+}
+
+function drawBauhausBlock(text, x, y, bgColor, textColor = COLORS.white) {
+    ctx.save();
+    ctx.font = `bold ${14 * TEXT_SCALE}px "Courier New", monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const textMetrics = ctx.measureText(text);
+    const paddingX = 12 * TEXT_SCALE;
+    const blockW = textMetrics.width + paddingX * 2;
+    const blockH = 26 * TEXT_SCALE;
+
+    // Shadow
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - blockW/2 + (4*TEXT_SCALE), y - blockH/2 + (4*TEXT_SCALE), blockW, blockH);
+    // Block
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(x - blockW/2, y - blockH/2, blockW, blockH);
+    // Text
+    ctx.fillStyle = textColor;
+    ctx.fillText(text, x, y);
+    // Border
+    ctx.strokeStyle = COLORS.white;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - blockW/2, y - blockH/2, blockW, blockH);
+    ctx.restore();
+}
+
+function drawGlitchText(text, x, y) {
+    ctx.save();
+    ctx.font = `bold ${24 * TEXT_SCALE}px "Courier New", monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = COLORS.red;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(text, x + (Math.random() * 4 - 2), y + (Math.random() * 4 - 2));
+    ctx.fillStyle = COLORS.blue;
+    ctx.fillText(text, x + (Math.random() * 4 - 2), y + (Math.random() * 4 - 2));
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+}
+
+function drawSingularityDot() {
+    ctx.save();
+    // Pulse
+    let pulse = Math.sin(eternityFrames * 0.05) * 0.3 + 1; // Slow pulse
+    let r = 5 * TEXT_SCALE * pulse; 
+    
+    // Slow color shift
+    let hue = (eternityFrames * 0.5) % 360;
+    let glowColor = `hsl(${hue}, 80%, 60%)`;
+
+    // Outer Glow
+    let grad = ctx.createRadialGradient(0, 0, r, 0, 0, r * 8);
+    grad.addColorStop(0, glowColor);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    
+    ctx.fillStyle = grad;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // White Core
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    ctx.restore();
+}
+
+// Helpers to separate Layers
+function drawGroupLines(group, color, progress) {
+    if(progress <= 0) return;
+    const pts = group.map(p => ({ x: Math.cos(p.angle)*circleRadius, y: Math.sin(p.angle)*circleRadius }));
+    drawSchematicLine(pts[0].x, pts[0].y, pts[1].x, pts[1].y, color, progress);
+    drawSchematicLine(pts[1].x, pts[1].y, pts[2].x, pts[2].y, color, progress);
+    drawSchematicLine(pts[2].x, pts[2].y, pts[0].x, pts[0].y, color, progress);
+}
+
+function drawGroupBlocks(group) {
+    group.forEach(item => {
+        let x = Math.cos(item.angle) * circleRadius;
+        let y = Math.sin(item.angle) * circleRadius;
+        
+        // Connector Node (drawn under block, over line)
+        ctx.fillStyle = item.color;
+        ctx.fillRect(x-5, y-5, 10, 10);
+        
+        ctx.save(); 
+        ctx.translate(x, y); 
+        ctx.rotate(-systemRotation); 
+        // Force black text for yellow blocks
+        let txtCol = (item.color === COLORS.yellow) ? '#000' : '#fff';
+        drawBauhausBlock(item.text, 0, 0, item.color, txtCol);
+        ctx.restore();
+    });
+}
+
+
+// --- UPDATE LOOP ---
+
+function update() {
+    if(!isRunning) {
+        requestAnimationFrame(update);
+        return;
+    }
+    
+    frames++;
+    scannerAngle += 0.05;
+    
+    // 1. Start / Boot
+    if (frames < 80) {
+        phase = 'start';
+    } 
+    // 2. Expand
+    else if (frames < 180) {
+        phase = 'boot_sequence';
+        let step = Math.floor((frames - 80) / 10);
+        circleRadius = (RADIUS_FINAL / 9) * step;
+        if(frames % 10 === 0 && step < 10) AudioEngine.playTone(100 + step*20, 'square', 0.05, 0.03); 
+    }
+    // 3. Chaos Words
+    else if (frames < 350) {
+        phase = 'chaos_data';
+        statusText.innerText = "DATA_INGESTION";
+        subStatus.innerText = "PARSING VARIABLES...";
+        circleRadius = RADIUS_FINAL;
+        if (frames % 8 === 0) {
+            chaosWord.text = CHAOS_WORDS[Math.floor(Math.random() * CHAOS_WORDS.length)];
+            const colors = [COLORS.red, COLORS.blue, COLORS.yellow, COLORS.white];
+            chaosWord.color = colors[Math.floor(Math.random() * colors.length)];
+            AudioEngine.playGlitch();
+        }
+    }
+    // 4. Stabilize 1 (Blue)
+    else if (frames < 400) { 
+        if(group1State === 0) AudioEngine.playLock();
+        phase = 'stabilize_1'; 
+        group1State = 1; 
+        statusText.innerText = "CORE_LOCK";
+        subStatus.innerText = "TRIAD: PRIMARY";
+    }
+    // 5. Connect 1
+    else if (frames < 500) {
+        phase = 'transmission_1';
+        triangle1Progress = (frames - 400) / 100;
+        if(frames % 20 === 0) AudioEngine.playTransmission();
+    }
+    // 6. Rotate 1
+    else if (frames < 600) {
+        if(frames === 500) AudioEngine.playServo(); 
+        phase = 'mechanical_rotate';
+        statusText.innerText = "REALIGNING_AXIS";
+        subStatus.innerText = "ROTATION: 60 DEG";
+        let p = (frames - 500) / 100;
+        p = Math.floor(p * 6) / 6; 
+        systemRotation = p * (Math.PI / 3); 
+    }
+    // 7. Stabilize 2 (Red)
+    else if (frames < 650) { 
+        if(group2State === 0) AudioEngine.playLock();
+        phase = 'stabilize_2'; 
+        systemRotation = Math.PI / 3; 
+        group2State = 1; 
+        statusText.innerText = "SECONDARY_LOCK";
+        subStatus.innerText = "TRIAD: REFLECTION";
+    }
+    // 8. Connect 2
+    else if (frames < 750) {
+        phase = 'transmission_2';
+        triangle2Progress = (frames - 650) / 100;
+        if(frames % 20 === 0) AudioEngine.playTransmission();
+    }
+    // 9. Rotate 2
+    else if (frames < 850) {
+        if(frames === 750) AudioEngine.playServo();
+        phase = 'mechanical_rotate_2';
+        statusText.innerText = "EXPANDING_MATRIX";
+        let p = (frames - 750) / 100;
+        subStatus.innerText = "SYNCING NEW NODES";
+    }
+    // 10. Stabilize 3 & 4
+    else if (frames < 950) {
+        if(group3State === 0) { AudioEngine.playLock(); AudioEngine.playLock(); }
+        phase = 'stabilize_3_4';
+        group3State = 1;
+        group4State = 1;
+        statusText.innerText = "FULL_POPULATION";
+        subStatus.innerText = "TRIAD: TEMPORAL + EMOTIONAL";
+    }
+    // 11. Connect 3 & 4
+    else if (frames < 1100) {
+        phase = 'transmission_3_4';
+        triangle3Progress = (frames - 950) / 150;
+        triangle4Progress = (frames - 950) / 150;
+        if(frames % 20 === 0) AudioEngine.playTransmission();
+    }
+    // 12. HOLD MATRIX
+    else if (frames < 1340) {
+        phase = 'hold_matrix';
+        statusText.innerText = "MATRIX_STABILIZED";
+        subStatus.innerText = "ANALYZING PATTERNS...";
+    }
+    // 13. IMPLOSION START
+    else if (phase !== 'eternity') {
+        phase = 'implosion';
+        statusText.innerText = "CRITICAL_MASS";
+        subStatus.innerText = "IMPLOSION IMMINENT";
+        statusText.style.color = COLORS.yellow;
+        
+        // Spin fast
+        rotationSpeed = Math.min(rotationSpeed + 0.002, 0.4); // Much faster
+        systemRotation += rotationSpeed;
+
+        // Shrink (Zoom Out)
+        globalScale *= 0.985;
+
+        // Check for singularity
+        if (globalScale * RADIUS_FINAL < 2) {
+            phase = 'eternity';
+            statusText.innerText = "SINGULARITY";
+            subStatus.innerText = "ESSENCE REMAINING";
+            statusText.style.color = COLORS.white;
+            subStatus.style.color = '#777';
+            AudioEngine.playHeartbeat();
+        }
+    }
+    // 14. ETERNITY (The Dot)
+    else {
+        phase = 'eternity';
+        eternityFrames++;
+        if (eternityFrames % 120 === 0) AudioEngine.playHeartbeat();
+    }
+
+    draw();
+    animationId = requestAnimationFrame(update);
+}
+
+function draw() {
+    ctx.fillStyle = COLORS.bg;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Grid fades out in eternity
+    if(phase !== 'eternity') drawGrid(); 
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    
+    if (phase === 'eternity') {
+        drawSingularityDot();
+    } else {
+        // --- RING LAYER ---
+        ctx.save();
+        let ringScale = (1 - Math.abs(tilt.x * 0.1)) * globalScale;
+        ctx.scale(ringScale, ringScale);
+        ctx.rotate(systemRotation);
+
+        if (phase !== 'start') {
+            // Main Circle
+            ctx.beginPath();
+            ctx.arc(0, 0, circleRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = COLORS.white;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]); 
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            if (circleRadius > 0) {
+                let scanX = Math.cos(scannerAngle) * circleRadius;
+                let scanY = Math.sin(scannerAngle) * circleRadius;
+                ctx.fillStyle = COLORS.yellow;
+                ctx.fillRect(scanX - 4, scanY - 4, 8, 8);
+            }
+        }
+
+        // LAYER 1: LINES (BACKGROUND)
+        if (group1State) drawGroupLines(GROUP_1, COLORS.blue, triangle1Progress);
+        if (group2State) drawGroupLines(GROUP_2, COLORS.red, triangle2Progress);
+        if (group3State) drawGroupLines(GROUP_3, COLORS.yellow, triangle3Progress);
+        if (group4State) drawGroupLines(GROUP_4, COLORS.purple, triangle4Progress);
+
+        // LAYER 2: BLOCKS (FOREGROUND)
+        if (group1State) drawGroupBlocks(GROUP_1);
+        if (group2State) drawGroupBlocks(GROUP_2);
+        if (group3State) drawGroupBlocks(GROUP_3);
+        if (group4State) drawGroupBlocks(GROUP_4);
+
+        ctx.restore(); // END RING LAYER
+    }
+
+    // Chaos Data (only early phases)
+    if (phase === 'chaos_data') {
+        drawGlitchText(chaosWord.text, 0, 0);
+        if (Math.random() > 0.85) {
+            ctx.fillStyle = COLORS.terminalGreen;
+            ctx.globalAlpha = 0.2;
+            ctx.fillRect(Math.random() * width - width/2, -height/2, Math.random() * 50 + 10, height);
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    ctx.restore(); // End Center Translation
+
+    // Final CRT overlay
+    if (frames % 2 === 0) {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        for (let i = 0; i < height; i += 4) {
+            ctx.fillRect(0, i, width, 2);
+        }
+    }
+}
+
+// Start
+update();
+
+</script>
+</body>
+</html>

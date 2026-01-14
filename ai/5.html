@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Machina // The Future</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F1F0EA;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #2C3E50;
+            border-radius: 4px;
+            border: 2px solid #F1F0EA;
+        }
+        
+        /* Range Slider Styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            background: #E63946;
+            cursor: pointer;
+            border: 2px solid #2C3E50;
+            margin-top: -8px; /* Alignment fix */
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            background: #E63946;
+            cursor: pointer;
+            border: 2px solid #2C3E50;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="bg-[#F1F0EA]">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- AUDIO ENGINE (Web Audio API) ---
+        // This generates sounds procedurally so no external files are needed.
+        const SoundEngine = {
+            ctx: null,
+            masterGain: null,
+            activeNodes: [],
+            
+            init: function() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.value = 0.3; // Master volume
+                    this.masterGain.connect(this.ctx.destination);
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            stopAll: function() {
+                this.activeNodes.forEach(node => {
+                    try {
+                        if (node.stop) node.stop();
+                        if (node.disconnect) node.disconnect();
+                    } catch (e) { console.log(e) }
+                });
+                this.activeNodes = [];
+            },
+
+            play: function(eraIndex) {
+                this.init();
+                this.stopAll();
+
+                const now = this.ctx.currentTime;
+
+                // --- 1950: THEREMIN ---
+                if (eraIndex === 0) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    const lfo = this.ctx.createOscillator();
+                    const lfoGain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    // Portamento slide up
+                    osc.frequency.exponentialRampToValueAtTime(550, now + 2);
+                    
+                    // Vibrato
+                    lfo.frequency.value = 6; // 6Hz vibrato
+                    lfoGain.gain.value = 10; // Depth
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(osc.frequency);
+
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.5, now + 1);
+
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+
+                    osc.start();
+                    lfo.start();
+                    this.activeNodes.push(osc, gain, lfo, lfoGain);
+                }
+
+                // --- 1980: TRON / SYNTHWAVE ---
+                else if (eraIndex === 1) {
+                    const frequencies = [110, 220, 164.81, 196]; // A2, A3, E3, G3
+                    
+                    const playArp = () => {
+                        if (!this.activeNodes.includes(intervalId)) return;
+                        
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        
+                        osc.type = 'square';
+                        // Pick random note from scale
+                        const freq = frequencies[Math.floor(Math.random() * frequencies.length)];
+                        osc.frequency.value = freq;
+
+                        // Envelope
+                        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+
+                        osc.connect(gain);
+                        gain.connect(this.masterGain);
+                        
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + 0.5);
+                    };
+
+                    // Bass drone
+                    const drone = this.ctx.createOscillator();
+                    const droneGain = this.ctx.createGain();
+                    drone.type = 'sawtooth';
+                    drone.frequency.value = 55; // Low A
+                    droneGain.gain.value = 0.1;
+                    drone.connect(droneGain);
+                    droneGain.connect(this.masterGain);
+                    drone.start();
+                    this.activeNodes.push(drone, droneGain);
+
+                    // Arpeggiator loop
+                    const intervalId = setInterval(playArp, 250); 
+                    // Store interval ID in a way we can clear it, hacky but works for single file
+                    this.activeNodes.push({ stop: () => clearInterval(intervalId) });
+                    this.activeNodes.push(intervalId); // Marker
+                }
+
+                // --- 2010: COOL SYNTH / SUPERSAW ---
+                else if (eraIndex === 2) {
+                    // Create a "Supersaw" by detuning multiple saws
+                    for (let i = 0; i < 3; i++) {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        const filter = this.ctx.createBiquadFilter();
+
+                        osc.type = 'sawtooth';
+                        // C minor pad: C3, Eb3, G3
+                        const chord = [130.81, 155.56, 196.00]; 
+                        osc.frequency.value = chord[i] * 2; 
+                        osc.detune.value = (Math.random() - 0.5) * 20; // Detune
+
+                        filter.type = 'lowpass';
+                        filter.frequency.value = 800;
+                        filter.Q.value = 5;
+
+                        // Slow filter sweep
+                        const lfo = this.ctx.createOscillator();
+                        lfo.frequency.value = 0.2;
+                        const lfoGain = this.ctx.createGain();
+                        lfoGain.gain.value = 400;
+                        lfo.connect(lfoGain);
+                        lfoGain.connect(filter.frequency);
+
+                        gain.gain.value = 0.1;
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(this.masterGain);
+
+                        osc.start();
+                        lfo.start();
+                        this.activeNodes.push(osc, gain, filter, lfo, lfoGain);
+                    }
+                }
+
+                // --- 2024: KRAFTWERK / ROBOTIC DATA ---
+                else if (eraIndex === 3) {
+                    // Replaced ScriptProcessor with FM Synthesis for reliable, loud "Glitch" sound
+                    const playDataBurst = () => {
+                        const now = this.ctx.currentTime;
+                        const osc = this.ctx.createOscillator();
+                        const modulator = this.ctx.createOscillator();
+                        const modGain = this.ctx.createGain();
+                        const gain = this.ctx.createGain();
+
+                        // Carrier
+                        osc.type = 'square';
+                        osc.frequency.value = 440; 
+
+                        // Modulator (creates the robotic texture)
+                        modulator.type = 'sawtooth';
+                        modulator.frequency.value = 50 + Math.random() * 200;
+                        modGain.gain.value = 500; // FM Depth
+
+                        modulator.connect(modGain);
+                        modGain.connect(osc.frequency);
+
+                        // Short percussive envelope
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                        osc.connect(gain);
+                        gain.connect(this.masterGain);
+
+                        osc.start(now);
+                        modulator.start(now);
+                        osc.stop(now + 0.2);
+                        modulator.stop(now + 0.2);
+                    };
+
+                    const intervalId = setInterval(() => {
+                        if(Math.random() > 0.4) playDataBurst();
+                    }, 150); // Fast chaotic clock
+                    
+                    this.activeNodes.push({ stop: () => clearInterval(intervalId) });
+                }
+
+                // --- 2045: LIQUID / UNDERWATER ---
+                else if (eraIndex === 4) {
+                    // Pink Noise buffer for water sound
+                    const bufferSize = 2 * this.ctx.sampleRate;
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    
+                    // FIXED: Variable hoisting issue that caused silence
+                    let lastOut = 0; 
+                    
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        // Pink noise formula
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5; 
+                    }
+
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+                    noise.loop = true;
+
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 600; // Increased base freq for better audibility
+                    filter.Q.value = 8; // High resonance for bubble sound
+
+                    // Modulate filter to sound like waves
+                    const lfo = this.ctx.createOscillator();
+                    lfo.type = 'sine';
+                    lfo.frequency.value = 0.3; // Slow waves
+                    const lfoGain = this.ctx.createGain();
+                    lfoGain.gain.value = 400; // Larger sweep depth
+
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(filter.frequency);
+
+                    const gain = this.ctx.createGain();
+                    gain.gain.value = 0.4; // Boosted volume
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.masterGain);
+
+                    noise.start();
+                    lfo.start();
+                    this.activeNodes.push(noise, filter, lfo, lfoGain, gain);
+                }
+            }
+        };
+
+        // --- ICONS (Inline SVG to ensure single-file portability) ---
+        const Play = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        );
+        const Pause = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        );
+        const ArrowRight = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        );
+        const Info = ({ size = 24, style }) => (
+            <svg width={size} height={size} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        );
+        const VolumeOn = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        );
+        const VolumeOff = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+        );
+
+
+        // --- MAIN APPLICATION ---
+        const AI_Timeline = () => {
+            const [activeEra, setActiveEra] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [isMuted, setIsMuted] = useState(true);
+            const [chaosLevel, setChaosLevel] = useState(0.5); // 0 = Order, 1 = Chaos
+            const canvasRef = useRef(null);
+            const requestRef = useRef(null);
+
+            // Audio Effect Hook
+            useEffect(() => {
+                if (!isMuted) {
+                    SoundEngine.play(activeEra);
+                } else {
+                    SoundEngine.stopAll();
+                }
+                // Cleanup on unmount or change
+                return () => {
+                   if (isMuted) SoundEngine.stopAll(); 
+                }
+            }, [activeEra, isMuted]);
+
+            // Data for the eras
+            const eras = [
+                {
+                    year: "1950",
+                    title: "THE LOGIC GATE",
+                    short: "Binary Logic",
+                    desc: "Strict rules. No deviation. The machine does exactly what it is told.",
+                    color: "#E63946", // Red
+                    shape: "square",
+                    mode: "binary",
+                    sound: "Theremin Loop" 
+                },
+                {
+                    year: "1980",
+                    title: "EXPERT SYSTEMS",
+                    short: "Decision Trees",
+                    desc: "If-This-Then-That. A complex subway map of pre-programmed choices.",
+                    color: "#457B9D", // Blue Note Blue
+                    shape: "triangle",
+                    mode: "tree",
+                    sound: "Analog Arp"
+                },
+                {
+                    year: "2010",
+                    title: "DEEP LEARNING",
+                    short: "Neural Nets",
+                    desc: "Pattern recognition. The machine learns to 'see' by analyzing millions of examples.",
+                    color: "#1D3557", // Dark Navy
+                    shape: "circle",
+                    mode: "network",
+                    sound: "Supersaw Pad"
+                },
+                {
+                    year: "2024",
+                    title: "GENERATIVE FLUX",
+                    short: "LLMs & Diffusion",
+                    desc: "Dreaming. The machine predicts and hallucinates new content from noise.",
+                    color: "#E9C46A", // Yellow
+                    shape: "organic",
+                    mode: "fluid",
+                    sound: "Glitch Vocoder"
+                },
+                {
+                    year: "2045",
+                    title: "THE SINGULARITY",
+                    short: "Hybrid Minds",
+                    desc: "Symbiosis. The boundary dissolves. Wetware meets hardware. Is it a tool, or is it us?",
+                    color: "#7209B7", // Electric Violet
+                    shape: "infinity",
+                    mode: "quantum",
+                    sound: "Liquid Data"
+                }
+            ];
+
+            // --- Animation Logic ---
+            const particles = useMemo(() => {
+                return Array.from({ length: 80 }, () => ({
+                    x: Math.random() * 100,
+                    y: Math.random() * 100,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    size: Math.random() * 5 + 2,
+                    state: Math.random() > 0.5 ? 1 : 0,
+                    angle: Math.random() * Math.PI * 2, 
+                    radius: Math.random() * 30 + 10     
+                }));
+            }, []);
+
+            const animate = (time) => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                // Clear with trail for retro screen effect
+                ctx.fillStyle = 'rgba(241, 240, 234, 0.25)'; 
+                ctx.fillRect(0, 0, width, height);
+
+                const mode = eras[activeEra].mode;
+                const mainColor = eras[activeEra].color;
+                
+                particles.forEach((p, i) => {
+                    // VISUALIZER LOGIC BASED ON SLIDER (CHAOS LEVEL)
+                    
+                    if (mode === 'binary') {
+                        // Low chaos: Perfect Grid. High chaos: Jittery Grid.
+                        const jitter = chaosLevel * 5; 
+                        p.x += (Math.random() - 0.5) * jitter;
+                        p.y += (Math.random() - 0.5) * jitter;
+                        
+                        // Snap to grid logic
+                        const gridSize = 50;
+                        const rawX = (p.x / 100) * width;
+                        const rawY = (p.y / 100) * height;
+                        const drawX = Math.round(rawX / gridSize) * gridSize;
+                        const drawY = Math.round(rawY / gridSize) * gridSize;
+                        
+                        ctx.fillStyle = p.state ? mainColor : '#2C3E50';
+                        ctx.fillRect(drawX, drawY, 20, 20);
+                        
+                        if (Math.random() < (0.01 + chaosLevel * 0.1)) p.state = !p.state;
+                    } 
+                    else if (mode === 'tree') {
+                        p.y += 0.5 + (chaosLevel * 2);
+                        if (p.y > 100) p.y = 0;
+                        
+                        p.x += Math.sin(time * 0.001 + i) * (0.1 + chaosLevel);
+
+                        const drawX = (p.x / 100) * width;
+                        const drawY = (p.y / 100) * height;
+
+                        ctx.strokeStyle = mainColor;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(drawX, drawY);
+                        ctx.lineTo(drawX - 15, drawY - 20);
+                        ctx.moveTo(drawX, drawY);
+                        ctx.lineTo(drawX + 15, drawY - 20);
+                        ctx.stroke();
+                    }
+                    else if (mode === 'network') {
+                        p.x += p.vx * (1 + chaosLevel * 4);
+                        p.y += p.vy * (1 + chaosLevel * 4);
+
+                        if (p.x <= 0 || p.x >= 100) p.vx *= -1;
+                        if (p.y <= 0 || p.y >= 100) p.vy *= -1;
+
+                        const drawX = (p.x / 100) * width;
+                        const drawY = (p.y / 100) * height;
+
+                        const connectDist = 15 + (chaosLevel * 30);
+
+                        particles.forEach((p2, j) => {
+                            if (i === j) return;
+                            const dx = p.x - p2.x;
+                            const dy = p.y - p2.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            
+                            if (dist < connectDist) {
+                                ctx.strokeStyle = `rgba(29, 53, 87, ${1 - dist/connectDist})`;
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                ctx.moveTo(drawX, drawY);
+                                ctx.lineTo((p2.x / 100) * width, (p2.y / 100) * height);
+                                ctx.stroke();
+                            }
+                        });
+
+                        ctx.fillStyle = mainColor;
+                        ctx.beginPath();
+                        ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    else if (mode === 'fluid') {
+                        const noise = Math.sin(p.x * 0.1 + time * 0.002) * Math.cos(p.y * 0.1 + time * 0.002);
+                        
+                        p.vx += Math.cos(noise * Math.PI * 2) * (0.01 + chaosLevel * 0.05);
+                        p.vy += Math.sin(noise * Math.PI * 2) * (0.01 + chaosLevel * 0.05);
+                        
+                        p.vx *= 0.95;
+                        p.vy *= 0.95;
+                        p.x += p.vx * 10;
+                        p.y += p.vy * 10;
+
+                        if (p.x > 100) p.x = 0;
+                        if (p.x < 0) p.x = 100;
+                        if (p.y > 100) p.y = 0;
+                        if (p.y < 0) p.y = 100;
+
+                        const drawX = (p.x / 100) * width;
+                        const drawY = (p.y / 100) * height;
+
+                        ctx.fillStyle = mainColor;
+                        ctx.font = `${p.size * (2 + chaosLevel * 4)}px monospace`;
+                        const char = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                        ctx.fillText(char, drawX, drawY);
+                    }
+                    else if (mode === 'quantum') {
+                        // Center of screen
+                        const cx = width / 2;
+                        const cy = height / 2;
+                        
+                        // Chaos affects how "tight" the orbit is vs random teleportation
+                        p.angle += 0.02 + (chaosLevel * 0.05);
+                        
+                        // Radius expands and contracts with breathing motion
+                        const breathing = Math.sin(time * 0.002) * 50;
+                        const r = (p.radius * (2 + chaosLevel * 5)) + breathing;
+
+                        // If chaos is very high, particles "quantum tunnel" (teleport)
+                        let drawX, drawY;
+                        
+                        if (chaosLevel > 0.8 && Math.random() < 0.1) {
+                            drawX = Math.random() * width;
+                            drawY = Math.random() * height;
+                        } else {
+                            drawX = cx + Math.cos(p.angle + i) * r;
+                            drawY = cy + Math.sin(p.angle + i) * r;
+                        }
+
+                        // Connect to center to look like a brain/eye
+                        // Electric Violet: #7209B7 -> 114, 9, 183
+                        ctx.strokeStyle = `rgba(114, 9, 183, ${0.1 + (1-chaosLevel)*0.2})`; 
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.lineTo(drawX, drawY);
+                        ctx.stroke();
+
+                        ctx.fillStyle = mainColor;
+                        // Shape changes to diamond
+                        ctx.beginPath();
+                        ctx.moveTo(drawX, drawY - p.size);
+                        ctx.lineTo(drawX + p.size, drawY);
+                        ctx.lineTo(drawX, drawY + p.size);
+                        ctx.lineTo(drawX - p.size, drawY);
+                        ctx.fill();
+                    }
+                });
+
+                requestRef.current = requestAnimationFrame(animate);
+            };
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (canvas) {
+                    canvas.width = canvas.parentElement.clientWidth;
+                    canvas.height = canvas.parentElement.clientHeight;
+                }
+                requestRef.current = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [activeEra, chaosLevel]);
+
+            // Auto-play
+            useEffect(() => {
+                let interval;
+                if (isPlaying) {
+                    interval = setInterval(() => {
+                        setActiveEra((prev) => (prev + 1) % eras.length);
+                    }, 5000);
+                }
+                return () => clearInterval(interval);
+            }, [isPlaying]);
+
+            return (
+                <div className="min-h-screen bg-[#F1F0EA] text-[#2C3E50] font-sans overflow-hidden flex flex-col md:flex-row select-none">
+                
+                {/* --- LEFT PANEL: CONTROLS --- */}
+                <div className="w-full md:w-[420px] p-6 flex flex-col border-r-4 border-[#2C3E50] relative z-10 bg-[#F1F0EA] shadow-2xl h-screen overflow-y-auto custom-scrollbar">
+                    
+                    {/* Header */}
+                    <div className="mb-6 border-b-4 border-[#2C3E50] pb-6 shrink-0">
+                    <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-4 h-4 bg-[#E63946]"></div>
+                        <span className="font-mono text-xs tracking-widest text-[#2C3E50]/60">PROJECT: MIND_MACHINA</span>
+                    </div>
+                    <h1 className="text-5xl font-black tracking-tighter uppercase leading-[0.9]">
+                        AI History<br/>
+                        <span className="text-[#E63946]">Visualizer</span>
+                    </h1>
+                    </div>
+
+                    {/* --- INSTRUCTION LAYER --- */}
+                    <div className="flex items-center space-x-2 text-xs font-mono text-[#E63946] mb-2 opacity-80 shrink-0">
+                    <ArrowRight size={12} />
+                    <span>SELECT AN ERA TO TRAVEL IN TIME</span>
+                    </div>
+
+                    {/* Timeline Buttons */}
+                    <div className="space-y-3 pb-6 shrink-0">
+                    {eras.map((era, index) => (
+                        <button
+                        key={index}
+                        onClick={() => setActiveEra(index)}
+                        className={`w-full group relative transition-all duration-200 outline-none text-left
+                            ${activeEra === index ? 'translate-x-4' : 'hover:translate-x-2'}
+                        `}
+                        >
+                        <div className={`absolute inset-0 border-2 border-[#2C3E50] transform translate-x-1 translate-y-1 ${activeEra === index ? 'bg-[#2C3E50]' : 'bg-transparent'}`}></div>
+                        
+                        <div className={`relative flex items-center justify-between p-3 border-2 border-[#2C3E50] bg-[#F1F0EA] hover:bg-white transition-colors
+                            ${activeEra === index ? 'border-[#E63946]' : ''}
+                        `}>
+                            <div>
+                            <div className="font-mono text-xs font-bold opacity-60">{era.year}</div>
+                            <div className="font-black uppercase text-base leading-none">{era.short}</div>
+                            </div>
+                            {activeEra === index && <div style={{backgroundColor: era.color}} className="w-3 h-3 rounded-full animate-pulse shadow-sm"></div>}
+                        </div>
+                        </button>
+                    ))}
+                    </div>
+
+                    {/* --- CONTROL SECTION --- */}
+                    <div className="mt-auto pt-6 border-t-4 border-[#2C3E50] shrink-0">
+                    
+                    <div className="mb-6">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="font-mono text-xs font-bold">PLAYBACK CONTROL</span>
+                            <span className={`font-mono text-xs ${isPlaying ? 'text-[#E63946] animate-pulse' : 'text-gray-400'}`}>
+                            {isPlaying ? '● RUNNING' : '○ PAUSED'}
+                            </span>
+                        </div>
+                        <div className="flex space-x-2">
+                            <button 
+                                onClick={() => setIsPlaying(!isPlaying)}
+                                className={`flex-grow py-3 border-2 border-[#2C3E50] font-bold uppercase tracking-widest flex items-center justify-center space-x-2 hover:bg-[#2C3E50] hover:text-white transition-all
+                                ${isPlaying ? 'bg-[#2C3E50] text-white' : 'bg-transparent'}
+                                `}
+                            >
+                                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                                <span>{isPlaying ? "Stop" : "Auto-Pilot"}</span>
+                            </button>
+                            
+                            <button 
+                                onClick={() => setIsMuted(!isMuted)}
+                                className={`w-16 flex items-center justify-center border-2 border-[#2C3E50] transition-colors
+                                    ${!isMuted ? 'bg-[#E63946] text-white border-[#E63946]' : 'hover:bg-gray-200'}
+                                `}
+                            >
+                                {isMuted ? <VolumeOff size={20} /> : <VolumeOn size={20} />}
+                            </button>
+                        </div>
+                        {isMuted && <p className="text-[10px] mt-2 font-mono text-gray-400 text-center">CLICK SPEAKER TO ENABLE AUDIO ENGINE</p>}
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between items-end mb-2">
+                        <span className="font-mono text-xs font-bold text-[#2C3E50]">
+                            RIGIDITY<br/>(Order)
+                        </span>
+                        <span className="font-mono text-xs font-bold text-[#E63946] text-right">
+                            FLUX<br/>(Surprise)
+                        </span>
+                        </div>
+                        
+                        <div className="relative h-12 w-full flex items-center">
+                        <div className="absolute w-full h-2 bg-[#2C3E50]/20 rounded-full overflow-hidden">
+                            <div className="h-full bg-[#E63946]" style={{width: `${chaosLevel * 100}%`}}></div>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="1" 
+                            step="0.01" 
+                            value={chaosLevel} 
+                            onChange={(e) => setChaosLevel(parseFloat(e.target.value))}
+                            className="w-full absolute opacity-0 cursor-pointer h-full z-20"
+                        />
+                        <div 
+                            className="absolute h-8 w-4 bg-[#2C3E50] border-2 border-[#F1F0EA] shadow-md pointer-events-none z-10 transition-transform"
+                            style={{ left: `calc(${chaosLevel * 100}% - 8px)` }}
+                        >
+                            <div className="w-full h-[1px] bg-white mt-3"></div>
+                            <div className="w-full h-[1px] bg-white mt-1"></div>
+                        </div>
+                        </div>
+                    </div>
+
+                    </div>
+                </div>
+
+                {/* --- RIGHT PANEL: VISUALIZER --- */}
+                <div className="flex-grow relative bg-[#F1F0EA] flex flex-col h-screen overflow-hidden">
+                    
+                    {/* Info Label */}
+                    <div className="absolute top-6 left-6 z-20 font-mono text-xs text-[#2C3E50]/50 pointer-events-none hidden md:block">
+                    <p>FIG 2.4 // VISUAL CORTEX</p>
+                    <p>RENDER MODE: {eras[activeEra].mode.toUpperCase()}</p>
+                    <p>AUDIO CORE: {isMuted ? "OFFLINE" : eras[activeEra].sound.toUpperCase()}</p>
+                    </div>
+
+                    {/* Canvas */}
+                    <div className="absolute inset-0 z-0">
+                    <canvas ref={canvasRef} className="w-full h-full block" />
+                    </div>
+
+                    {/* Grid Overlay */}
+                    <div className="absolute inset-0 pointer-events-none z-10 opacity-10" 
+                        style={{
+                        backgroundImage: 'linear-gradient(#2C3E50 1px, transparent 1px), linear-gradient(90deg, #2C3E50 1px, transparent 1px)',
+                        backgroundSize: '40px 40px'
+                        }}>
+                    </div>
+
+                    {/* Description Box (Bottom) */}
+                    <div className="relative z-20 mt-auto p-6 md:p-12 pointer-events-none">
+                    <div className="bg-[#F1F0EA] border-l-8 p-6 shadow-xl max-w-2xl pointer-events-auto" style={{borderColor: eras[activeEra].color}}>
+                        <div className="flex items-center space-x-3 mb-2">
+                            <div className="bg-[#2C3E50] text-white px-2 py-0.5 font-mono text-sm font-bold">{eras[activeEra].year}</div>
+                            <h2 className="text-3xl font-black uppercase">{eras[activeEra].title}</h2>
+                        </div>
+                        <p className="text-lg md:text-xl font-medium leading-relaxed text-[#2C3E50]">
+                            {eras[activeEra].desc}
+                        </p>
+                        
+                        <div className="mt-4 pt-4 border-t border-[#2C3E50]/20 flex items-start space-x-2">
+                            <Info size={16} className="mt-1 flex-shrink-0" style={{color: eras[activeEra].color}}/>
+                            <p className="text-sm font-mono text-[#2C3E50]/70">
+                            {activeEra === 0 && "Observe the grid. Try moving the Rigidity slider to see how order breaks down."}
+                            {activeEra === 1 && "Logic flows like a river. It splits and decides."}
+                            {activeEra === 2 && "Neurons connect. High flux creates more random connections."}
+                            {activeEra === 3 && "Total fluidity. The machine is improvising."}
+                            {activeEra === 4 && "The hive mind. Low chaos = Uniformity. High chaos = Quantum tunneling."}
+                            </p>
+                        </div>
+                    </div>
+                    </div>
+
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AI_Timeline />);
+    </script>
+</body>
+</html>

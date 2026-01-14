@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Atom — Classic 120° (Really Works This Time)</title>
+<style>
+    body { margin:0; background:#2D052B; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:660px; height:660px; }
+
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        background:radial-gradient(circle, #000, #333 80%, #666);
+        border-radius:50%;
+        box-shadow:0 0 90px #ccc, 0 0 180px #ffea88;
+        z-index:500;
+    }
+
+    .electron {
+        position:absolute; width:44px; height:44px; border-radius:50%; margin:-22px 0 0 -22px;
+        pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #ff3366, #cc1122); box-shadow:0 0 50px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #4488ff, #1166cc); box-shadow:0 0 50px #66aaff, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffdd33, #ccaa00); box-shadow:0 0 50px #ffee66, inset -8px -8px 20px #ccaa00; }
+
+    canvas { position:absolute; inset:0; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <canvas id="back" width="660" height="660"></canvas>
+    <div class="nucleus"></div>
+    <canvas id="front" width="660" height="660"></canvas>
+</div>
+
+<script>
+const ctxB = document.getElementById('back').getContext('2d');
+const ctxF = document.getElementById('front').getContext('2d');
+ctxB.lineWidth = ctxF.lineWidth = 5;
+ctxB.lineCap = ctxF.lineCap = 'round';
+
+const centerX = 330;
+const centerY = 330;
+let t = 0;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff4466', speed: 1.0,  radius: 220, node:   0 },
+    { el: document.getElementById('e2'), color: '#4488ff', speed: 0.8,  radius: 220, node: 120 },
+    { el: document.getElementById('e3'), color: '#ffdd44', speed: 1.15, radius: 220, node: 240 }
+];
+
+function animate() {
+    t += 0.03;
+
+    ctxB.fillStyle = 'rgba(45,5,43,0.025)'; ctxB.fillRect(0,0,660,660);
+    ctxF.fillStyle = 'rgba(45,5,43,0.025)'; ctxF.fillRect(0,0,660,660);
+
+    electrons.forEach(e => {
+        const angle = t * e.speed;
+
+        let x = Math.cos(angle) * e.radius;
+        let y = Math.sin(angle) * e.radius;
+
+        const tilt = 70 * Math.PI / 180;
+        const Y = y * Math.cos(tilt);
+        const Z = y * Math.sin(tilt);
+
+        const node = e.node * Math.PI / 180;
+        const finalX = x * Math.cos(node) - Z * Math.sin(node);
+        const finalY = Y;
+        const finalZ = x * Math.sin(node) + Z * Math.cos(node);
+
+        const scale = 1 + finalZ * 0.0035;
+        const sx = centerX + finalX;
+        const sy = centerY + finalY;
+
+        e.el.style.left = sx + 'px';
+        e.el.style.top  = sy + 'px';
+        e.el.style.transform = `scale(${scale})`;
+        e.el.style.zIndex = finalZ < 0 ? 400 : 600;
+
+        // ← THIS LINE WAS BROKEN BEFORE — NOW FIXED
+        const ctx = finalZ < 0 ? ctxB : ctxF;
+        ctx.globalAlpha = 0.75;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + 0.1, sy + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>

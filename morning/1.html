@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morning Light</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            overflow-x: hidden;
+            background-color: rgb(2, 11, 28); 
+            color: white; 
+            transition: color 0.5s ease; 
+        }
+
+        #dynamic-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            background: rgb(2, 11, 28);
+        }
+
+        /* Typography & Layout */
+        .verse-container {
+            min-height: 70vh; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        /* Initial padding to push start lower */
+        #v1 {
+            padding-top: 35vh;
+        }
+
+        .verse-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-size: 3.5rem; font-weight: 300; letter-spacing: 0.1em;
+            text-transform: uppercase; font-family: 'Montserrat', sans-serif;
+        }
+
+        p {
+            font-size: 1.8rem; line-height: 1.6; margin: 0.5rem 0;
+            font-weight: 400;
+        }
+
+        .sub-text { font-size: 1.2rem; font-style: italic; opacity: 0.7; margin-top: 0.5rem; }
+
+        .scroll-arrow {
+            margin-top: 2rem; opacity: 0.6; animation: bounce-slow 3s infinite;
+        }
+        @keyframes bounce-slow {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(10px);} 60% {transform: translateY(5px);}
+        }
+
+        .pulse-text { animation: pulse-dim 4s infinite ease-in-out; }
+        @keyframes pulse-dim {
+            0%, 100% { opacity: 0.6; } 50% { opacity: 1; }
+        }
+
+        .glimmer {
+            background: linear-gradient(90deg, currentColor, #ffd700, currentColor);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shine 3s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        .sun-text { transition: all 1s ease; }
+        .sun-text-glow { text-shadow: 0 0 20px #ffd700, 0 0 40px #ff8c00; color: #fffacd !important; }
+
+        .dot { font-size: 3rem; line-height: 1rem; }
+
+        /* Animation Containers */
+        .center-fixed-container {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: none; 
+            z-index: -1;
+        }
+
+        /* Wrapper controls the Scroll Scaling (JS) */
+        .growth-wrapper {
+            transform: scale(0); /* Default invisible */
+            width: 50px; height: 50px;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Visuals control the look and breathing (CSS) */
+        .sun-visual {
+            width: 100%; height: 100%;
+            background: #ffe600;
+            border-radius: 50%;
+            box-shadow: 0 0 50px #ffd700, 0 0 100px #ffff00;
+            animation: sun-breathe 4s infinite ease-in-out;
+        }
+
+        .void-visual {
+            width: 100%; height: 100%;
+            background: rgb(2, 11, 28);
+            border-radius: 50%;
+            /* Reverse shine shadow */
+            box-shadow: 0 0 60px 30px rgba(0,0,0,0.9), 0 0 120px 60px rgba(2, 11, 28, 0.8);
+            z-index: 10;
+        }
+
+        @keyframes sun-breathe {
+            0%, 100% { transform: scale(0.8); opacity: 0.9; }
+            50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 70px #ffd700, 0 0 120px #ffff00; }
+        }
+
+        /* Punchline Text Styling */
+        #punchline-container {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20; /* Above everything */
+            opacity: 0;
+            transition: opacity 2s ease-in;
+            pointer-events: none;
+        }
+        
+        .punchline-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 4rem; 
+            font-weight: 200; 
+            letter-spacing: 0.2em;
+            color: rgba(255,255,255,0.9);
+            text-transform: uppercase;
+        }
+
+        /* Massive spacer */
+        .final-spacer {
+            height: 600vh; /* Increased even more to accommodate the pauses */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="dynamic-bg"></div>
+
+    <!-- Center elements wrapped for separate animations -->
+    <div class="center-fixed-container">
+        <div id="sun-wrapper" class="growth-wrapper">
+            <div class="sun-visual"></div>
+        </div>
+    </div>
+    
+    <div class="center-fixed-container">
+        <div id="void-wrapper" class="growth-wrapper" style="z-index: 10;">
+            <div class="void-visual"></div>
+        </div>
+    </div>
+    
+    <!-- The Punchline -->
+    <div id="punchline-container">
+        <h2 class="punchline-text">Sleep.</h2>
+    </div>
+
+    <main class="relative z-10 w-full max-w-2xl mx-auto">
+
+        <section class="verse-container" id="v1">
+            <h1>Morning Light</h1>
+            <div class="scroll-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+        </section>
+
+        <section class="verse-container" id="v2">
+            <p>Late</p> <p class="sub-text pl-12">Awake</p>
+            <p class="mt-8">Too much</p> <p class="sub-text pl-12">Anxiety</p>
+        </section>
+
+        <section class="verse-container" id="v3">
+            <p class="pulse-text tracking-widest text-2xl">Waking Nights</p>
+            <p class="italic text-xl mt-4 opacity-80">Again and Again</p>
+            <p class="mt-8 text-xl">Nocturnal Days</p>
+            <p class="sub-text text-right w-full pr-12">Afternoon evaporates</p>
+        </section>
+
+        <section class="verse-container" id="v4">
+            <p class="opacity-60">In the Darkest of Hours</p>
+            <p class="font-semibold mt-2 transform scale-105">Everything changes</p>
+            <div class="mt-12 border-l-2 border-current pl-6 text-left">
+                <p>A crack in the dark</p>
+                <p class="glimmer text-2xl font-serif italic">A glimmer of hope</p>
+            </div>
+        </section>
+
+        <section class="verse-container" id="v5">
+            <p class="sun-text text-4xl font-light">The sun will rise</p>
+            <p class="mt-4 text-xl tracking-wide">As always</p>
+        </section>
+
+        <section class="verse-container pb-40" id="v6">
+            <p class="text-3xl mb-8">Again,</p>
+            <p class="text-2xl opacity-80 mb-12">again</p>
+            <p class="mb-4">and</p>
+            
+            <div class="flex flex-col items-center space-y-4 mt-8">
+                <span class="falling-char" style="transform: translateX(-20px);">ag</span>
+                <span class="falling-char" style="transform: translateX(10px);">ai</span>
+                <span class="falling-char" style="transform: translateX(-5px);">n</span>
+                <span class="dot mt-16">.</span>
+                <span class="dot opacity-50">.</span>
+                <span class="dot opacity-25">.</span>
+            </div>
+        </section>
+        
+        <div class="final-spacer"></div>
+
+    </main>
+
+    <script>
+        const bgElement = document.getElementById('dynamic-bg');
+        const sunWrapper = document.getElementById('sun-wrapper');
+        const voidWrapper = document.getElementById('void-wrapper');
+        const punchline = document.getElementById('punchline-container');
+        const sunText = document.querySelector('.sun-text');
+
+        // Color Definitions
+        const colors = {
+            night: { r: 2, g: 11, b: 28 },
+            dawn: { r: 43, g: 50, b: 178 },
+            sunrise: { r: 86, g: 204, b: 242 },
+            day: { r: 242, g: 153, b: 74 },
+            brightDay: { r: 255, g: 230, b: 0 }
+        };
+
+        function lerp(start, end, t) { return start * (1 - t) + end * t; }
+
+        function lerpColor(color1, color2, t) {
+            const r = Math.round(lerp(color1.r, color2.r, t));
+            const g = Math.round(lerp(color1.g, color2.g, t));
+            const b = Math.round(lerp(color1.b, color2.b, t));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function getPerceivedBrightness(r, g, b) { return (r * 299 + g * 587 + b * 114) / 1000; }
+
+        function updateContrast(r, g, b) {
+            const brightness = getPerceivedBrightness(r, g, b);
+            if (brightness > 150) { 
+                document.body.style.color = "rgb(2, 11, 28)"; 
+                sunText.classList.remove('sun-text-glow'); 
+            } else {
+                document.body.style.color = "rgb(255, 255, 255)"; 
+                 sunText.classList.add('sun-text-glow'); 
+            }
+        }
+
+        function mapRange(value, inMin, inMax, outMin, outMax) {
+            return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        }
+
+        function handleScroll() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollProgress = Math.min(scrollTop / docHeight, 1);
+
+            let currentBgColor;
+            let r, g, b;
+
+            // --- ANIMATION STAGES ---
+            // 0.00 - 0.50 : Poem & BG Gradient
+            // 0.50 - 0.60 : Sun Phase 1 (Hover & Breathe)
+            // 0.60 - 0.75 : Sun Phase 2 (Grow to fill)
+            // 0.75 - 0.82 : Void Phase 1 (Hover Small)
+            // 0.82 - 1.00 : Void Phase 2 (Grow to fill)
+
+            // Calculate Max Scale based on screen size
+            const viewportDiag = Math.sqrt(window.innerWidth**2 + window.innerHeight**2);
+            // 50px is base size. Multiplier needs to cover screen.
+            const maxScale = (viewportDiag / 50) * 2.5; 
+
+            // STAGE 1: Poem (0% - 50%)
+            if (scrollProgress < 0.5) {
+                // Reset Animations
+                sunWrapper.style.opacity = 0;
+                sunWrapper.style.transform = `scale(0)`;
+                voidWrapper.style.transform = `scale(0)`;
+                punchline.style.opacity = 0;
+
+                const gradientProgress = mapRange(scrollProgress, 0, 0.5, 0, 1);
+
+                if (gradientProgress < 0.33) {
+                    const t = mapRange(gradientProgress, 0, 0.33, 0, 1);
+                    currentBgColor = lerpColor(colors.night, colors.dawn, t);
+                    r = lerp(colors.night.r, colors.dawn.r, t);
+                    g = lerp(colors.night.g, colors.dawn.g, t);
+                    b = lerp(colors.night.b, colors.dawn.b, t);
+                } else if (gradientProgress < 0.66) {
+                    const t = mapRange(gradientProgress, 0.33, 0.66, 0, 1);
+                    currentBgColor = lerpColor(colors.dawn, colors.sunrise, t);
+                    r = lerp(colors.dawn.r, colors.sunrise.r, t);
+                    g = lerp(colors.dawn.g, colors.sunrise.g, t);
+                    b = lerp(colors.dawn.b, colors.sunrise.b, t);
+                } else {
+                    const t = mapRange(gradientProgress, 0.66, 1, 0, 1);
+                    currentBgColor = lerpColor(colors.sunrise, colors.day, t);
+                    r = lerp(colors.sunrise.r, colors.day.r, t);
+                    g = lerp(colors.sunrise.g, colors.day.g, t);
+                    b = lerp(colors.sunrise.b, colors.day.b, t);
+                }
+                bgElement.style.background = currentBgColor;
+                updateContrast(r, g, b);
+            } 
+            
+            // STAGE 2a: Sun Hover (50% - 60%)
+            else if (scrollProgress >= 0.5 && scrollProgress < 0.6) {
+                 voidWrapper.style.transform = `scale(0)`;
+                 punchline.style.opacity = 0;
+                 
+                 // Fade in the sun container, but keep scale small (~1)
+                 // Map progress to opacity 0->1
+                 const hoverProgress = mapRange(scrollProgress, 0.5, 0.6, 0, 1);
+                 sunWrapper.style.opacity = hoverProgress;
+                 sunWrapper.style.transform = `scale(1)`; // Fixed size, CSS handles breathing
+                 
+                 // Maintain Day BG
+                 bgElement.style.background = `rgb(${colors.day.r}, ${colors.day.g}, ${colors.day.b})`;
+                 updateContrast(colors.day.r, colors.day.g, colors.day.b);
+            }
+
+            // STAGE 2b: Sun Grow (60% - 75%)
+            else if (scrollProgress >= 0.6 && scrollProgress < 0.75) {
+                voidWrapper.style.transform = `scale(0)`;
+                punchline.style.opacity = 0;
+                sunWrapper.style.opacity = 1;
+
+                const growProgress = mapRange(scrollProgress, 0.6, 0.75, 0, 1);
+                
+                // Scale from 1 to Max
+                const currentScale = mapRange(growProgress, 0, 1, 1, maxScale);
+                sunWrapper.style.transform = `scale(${currentScale})`;
+
+                // Brighten Background
+                const t = growProgress;
+                currentBgColor = lerpColor(colors.day, colors.brightDay, t);
+                bgElement.style.background = currentBgColor;
+                
+                r = lerp(colors.day.r, colors.brightDay.r, t);
+                g = lerp(colors.day.g, colors.brightDay.g, t);
+                b = lerp(colors.day.b, colors.brightDay.b, t);
+                updateContrast(r, g, b);
+            }
+
+            // STAGE 3a: Void Hover (75% - 82%)
+            else if (scrollProgress >= 0.75 && scrollProgress < 0.82) {
+                // Sun stays max
+                sunWrapper.style.opacity = 1;
+                sunWrapper.style.transform = `scale(${maxScale})`;
+                
+                // Void fades in small
+                const voidHoverProgress = mapRange(scrollProgress, 0.75, 0.82, 0, 1);
+                voidWrapper.style.transform = `scale(${voidHoverProgress * 1})`; // 0 -> 1 scale
+                
+                punchline.style.opacity = 0;
+                
+                // BG is Bright Day
+                bgElement.style.background = `rgb(${colors.brightDay.r}, ${colors.brightDay.g}, ${colors.brightDay.b})`;
+                updateContrast(colors.brightDay.r, colors.brightDay.g, colors.brightDay.b);
+            }
+
+            // STAGE 3b: Void Grow (82% - 100%)
+            else if (scrollProgress >= 0.82) {
+               // Sun stays max
+               sunWrapper.style.opacity = 1;
+               sunWrapper.style.transform = `scale(${maxScale})`;
+               
+               const voidGrowProgress = mapRange(scrollProgress, 0.82, 1, 0, 1);
+
+               // Void Grows Massive
+               const currentScaleVoid = mapRange(voidGrowProgress, 0, 1, 1, maxScale * 1.2); // Slightly bigger
+               voidWrapper.style.transform = `scale(${currentScaleVoid})`;
+
+               // Contrast Update (Simulate darkening)
+               r = lerp(colors.brightDay.r, colors.night.r, voidGrowProgress);
+               g = lerp(colors.brightDay.g, colors.night.g, voidGrowProgress);
+               b = lerp(colors.brightDay.b, colors.night.b, voidGrowProgress);
+               updateContrast(r,g,b);
+               
+               // Show Punchline Earlier (Starts at 88% global scroll, which is approx 30% into void growth)
+               // Adjust logic to ensure it's visible well before end.
+               if (voidGrowProgress > 0.4) {
+                   // Map opacity from 0.4 to 0.8 of the growth phase
+                   let punchOpacity = mapRange(voidGrowProgress, 0.4, 0.8, 0, 1);
+                   punchOpacity = Math.min(Math.max(punchOpacity, 0), 1);
+                   punchline.style.opacity = punchOpacity;
+               } else {
+                   punchline.style.opacity = 0;
+               }
+            }
+        }
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll();
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+                else entry.target.classList.remove('visible');
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.verse-container').forEach(section => {
+            observer.observe(section);
+        });
+
+    </script>
+</body>
+</html>

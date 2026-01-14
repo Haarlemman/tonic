@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The University of Free Will</title>
+	
+    <style>
+    :root {
+        --ink: #111111;
+        --red: #ff3300;
+        --yellow: #ffcc00;
+        --blue: #0033cc;
+    }
+
+    body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #0f172a; /* Darker start to match scene */
+        font-family: 'Courier New', monospace; /* switched to digital style globally */
+        opacity: 1;
+        transition: opacity 0.5s ease;
+    }
+
+    #canvas-container {
+        width: 100vw;
+        height: 100vh;
+        cursor: pointer; /* Changed to pointer to indicate clickability */
+    }
+
+    /* Intro Overlay */
+    #intro-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(10px);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-align: center;
+        transition: opacity 1.5s ease, visibility 1.5s;
+    }
+
+    #intro-text {
+        font-size: 1.5rem;
+        font-weight: 300;
+        max-width: 600px;
+        min-height: 100px;
+        line-height: 1.6;
+        margin-bottom: 80px; /* Increased margin to push button higher */
+        padding: 0 20px;
+        letter-spacing: 1px;
+        transition: opacity 0.8s ease;
+        font-style: italic;
+        font-family: 'Helvetica Neue', sans-serif; /* Keep intro text readable */
+    }
+
+    .intro-btns {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    /* FADE IN ANIMATION FOR BUTTON */
+    @keyframes fadeInSlow {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .action-btn {
+        background: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: white;
+        padding: 15px 40px;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        pointer-events: auto;
+        min-width: 100px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        
+        /* Animation settings */
+        opacity: 0; /* Start hidden */
+        animation: fadeInSlow 3s ease forwards;
+        animation-delay: 2s; /* Wait a bit before appearing */
+    }
+
+    .action-btn:hover {
+        background: white;
+        color: #1e293b;
+        border-color: white;
+        transform: scale(1.05);
+    }
+
+    /* Faculty Screen Overlay */
+    #faculty-screen {
+        position: absolute;
+        width: 260px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+        z-index: 80;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        text-align: center;
+        transform: translate(-50%, -120%);
+    }
+
+    #faculty-screen.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .neon-text {
+        font-family: 'Courier New', monospace;
+        font-weight: 900;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        line-height: 1.2;
+        min-height: 3em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .neon-art { color: #ff3e3e; text-shadow: 0 0 8px #ef4444; }
+    .neon-science { color: #3e9bff; text-shadow: 0 0 8px #3b82f6; }
+    .neon-spirit { color: #ffff3e; text-shadow: 0 0 8px #facc15; }
+
+    .screen-sub {
+        color: #666;
+        font-size: 0.5rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 6px;
+    }
+
+    /* HUD */
+    #hud-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px;
+        box-sizing: border-box;
+        z-index: 50;
+        opacity: 0;
+        transition: opacity 1.5s ease;
+    }
+
+    .top-right-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        gap: 15px;
+        pointer-events: auto;
+    }
+
+    .icon-btn {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover { background: white; color: black; }
+    .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .bottom-nav {
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        z-index: 1000;
+        pointer-events: none; 
+    }
+
+    .building-tag {
+        pointer-events: auto;
+        cursor: pointer;
+        padding: 10px 20px;
+        border-radius: 4px; /* More digital/boxy look */
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        font-family: 'Courier New', monospace;
+    }
+
+    .building-tag:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: white;
+    }
+    
+    .tag-red { border-bottom: 2px solid #ff4444 !important; }
+    .tag-blue { border-bottom: 2px solid #4444ff !important; }
+    .tag-yellow { border-bottom: 2px solid #ffff44 !important; }
+
+    #audio-status {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(255, 255, 255, 0.4);
+        font-family: 'Courier New', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        z-index: 40;
+        opacity: 0;
+        transition: opacity 2s;
+    }
+    </style>
+</head>
+
+<body>
+
+    <audio id="bg-music" loop crossorigin="anonymous">
+        <source src="audio/MysteriousHeartbeat1.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="intro-overlay">
+        <div id="intro-text"></div>
+        <div class="intro-btns">
+            <button id="skip-btn" class="action-btn">Learn</button>
+        </div>
+    </div>
+
+    <div id="faculty-screen">
+        <div id="screen-content" class="neon-text"></div>
+        <div class="screen-sub">FACULTY DATA FEED</div>
+    </div>
+
+    <div id="hud-layer">
+        <div class="top-right-controls">
+            <button class="icon-btn" onclick="toggleMusic()" id="music-btn" title="Toggle Audio">
+                <svg id="icon-sound-on" viewBox="0 0 24 24">
+                    <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zm-4 0c-4.01.91-7 4.49-7 8.77s2.99 7.86 7 8.77v-2.06c-2.89-.86-5-3.54-5-6.71s2.11-5.85 5-6.71V3.23zM9 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/> 
+                    <path d="M3 9v6h4l5 5V4L7 9H3z"/>
+                </svg>
+                <svg id="icon-sound-off" viewBox="0 0 24 24" style="display:none;">
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                </svg>
+            </button>
+
+            <button class="icon-btn" onclick="toggleFullScreen()" id="fs-btn" title="Toggle Fullscreen">
+                <svg id="icon-fs-enter" viewBox="0 0 24 24">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+                <svg id="icon-fs-exit" viewBox="0 0 24 24" style="display:none;">
+                    <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-14v3h3v2h-5V5z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="building-tag tag-red" onclick="navigateTo('art')">Beauty</div>
+            <div class="building-tag tag-blue" onclick="navigateTo('science')">Knowledge</div>
+            <div class="building-tag tag-yellow" onclick="navigateTo('spirit')">Wisdom</div>
+        </div>
+    </div>
+
+    <div id="audio-status" style="display:none;">Audio Kinetic Analysis Online</div>
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+let scene, camera, renderer, raycaster, mouse, controls;
+let specialBlocks = [];
+let leaderLines = [];
+let atomGroup, spiritBeam, spiritGlowVolume;
+
+let audioCtx, analyser, dataArray;
+let audioInitialized = false;
+let beatLevel = 0;
+
+let introActive = true;
+let skipRequested = false;
+let cinematicTarget = null;
+let lastZoomTime = 0;
+let lastQuoteTime = 0;
+const ZOOM_INTERVAL = 14000;
+const QUOTE_INTERVAL = 2500;
+
+// Removed tooltip logic as requested
+const introTextEl = document.getElementById('intro-text');
+const skipBtn = document.getElementById('skip-btn');
+const hudLayer = document.getElementById('hud-layer');
+const bgMusic = document.getElementById('bg-music');
+const facultyScreen = document.getElementById('faculty-screen');
+const screenContent = document.getElementById('screen-content');
+
+const facultyData = {
+    art: {
+        quotes: ["UNUSUAL IS BEAUTY", "TO CREATE IS TO LIVE", "ESTHETICS OF THE SOUL", "FORM FOLLOWS FREEDOM", "THE CANVAS BLEEDS", "THE MIND IS THE BRUSH"],
+        class: "neon-art",
+        quoteIndex: 0
+    },
+    science: {
+        quotes: ["FREE WILL IS A PARADOX", "THE ANSWER IS WHERE YOU ARE NOT LOOKING", "THE MORE YOU KNOW, THE LESS YOU UNDERSTAND", "REALITY IS RELATIVE", "ENTROPY IS A BEGINNING"],
+        class: "neon-science",
+        quoteIndex: 0
+    },
+    spirit: {
+        quotes: ["ADVERSITY IS YOUR TEACHER", "LETTING GO IS POWER", "SILENCE SPEAKS VOLUMES", "WISDOM THROUGH SURRENDER", "THE VOID STARES BACK", "EGOS ARE NULL"],
+        class: "neon-spirit",
+        quoteIndex: 0
+    }
+};
+
+const introQuotes = [
+    "Welcome to the University of Free Will.",
+    "A place of knowledge, wisdom and beauty.",
+    "Where letting go of control equals freedom.",
+    "And where adversity becomes your teacher."
+];
+
+window.onload = function () {
+    init();
+    animate();
+    runIntroSequence();
+    skipBtn.onclick = (e) => { e.stopPropagation(); startExperience(); };
+    // Add Click listener for 3D navigation
+    window.addEventListener('click', onMouseClick, false);
+};
+
+function navigateTo(type) {
+    // Helper for buttons to navigate directly
+    window.location.href = type + '.html';
+}
+
+function toggleMusic() {
+    if (!audioInitialized) initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+    const btn = document.getElementById('music-btn');
+    const onIcon = document.getElementById('icon-sound-on');
+    const offIcon = document.getElementById('icon-sound-off');
+
+    if (bgMusic.paused) {
+        bgMusic.play();
+        onIcon.style.display = 'block';
+        offIcon.style.display = 'none';
+    } else {
+        bgMusic.pause();
+        onIcon.style.display = 'none';
+        offIcon.style.display = 'block';
+    }
+}
+
+async function runIntroSequence() {
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.0;
+    for (let quote of introQuotes) {
+        if (skipRequested) break;
+        introTextEl.style.opacity = 0;
+        await new Promise(r => setTimeout(r, 800));
+        if (skipRequested) break;
+        introTextEl.innerText = quote;
+        introTextEl.style.opacity = 1;
+        await new Promise(r => setTimeout(r, 3500));
+    }
+}
+
+function initAudio() {
+    if (audioInitialized) return;
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaElementSource(bgMusic);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        analyser.fftSize = 256;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        audioInitialized = true;
+        document.getElementById('audio-status').style.opacity = 1;
+    } catch (e) { console.log("Audio Error:", e); }
+}
+
+function startExperience() {
+    skipRequested = true;
+    introActive = false;
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    bgMusic.volume = 0.5;
+    bgMusic.play().catch(() => { });
+    document.getElementById('intro-overlay').style.opacity = 0;
+    setTimeout(() => {
+        document.getElementById('intro-overlay').style.visibility = 'hidden';
+        hudLayer.style.opacity = 1;
+        lastZoomTime = Date.now();
+    }, 1000);
+}
+
+function focusBuilding(type) {
+    const b = specialBlocks.find(b => b.userData.type === type);
+    if (b) {
+        cinematicTarget = b;
+        lastZoomTime = Date.now();
+        lastQuoteTime = Date.now();
+        updateFacultyScreen(type);
+        facultyScreen.classList.add('active');
+    }
+}
+
+function updateFacultyScreen(type) {
+    const data = facultyData[type];
+    if (!data) return;
+    screenContent.className = 'neon-text ' + data.class;
+    screenContent.innerText = data.quotes[data.quoteIndex];
+    data.quoteIndex = (data.quoteIndex + 1) % data.quotes.length;
+}
+
+function createTextSprite(text, color = "#ffffff") {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set font first to measure
+    const fontSize = 48;
+    ctx.font = `Bold ${fontSize}px "Courier New", monospace`; // Digital font
+    
+    const paddingH = 30; // Horizontal padding
+    const paddingV = 10; // Vertical padding
+    
+    const textMetrics = ctx.measureText(text);
+    const textWidth = textMetrics.width;
+    
+    // Dynamically size canvas based on text? 
+    // Actually, Sprite canvas usually needs to be somewhat fixed or power of 2 for memory, 
+    // but 1024x256 is fine if we just draw in the center.
+    canvas.width = 1024;
+    canvas.height = 256;
+    
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    
+    // Recalculate context properties after resize (sometimes they reset)
+    ctx.font = `Bold ${fontSize}px "Courier New", monospace`;
+    ctx.textAlign = 'center'; 
+    ctx.textBaseline = 'middle'; 
+    
+    // TIGHT BACKGROUND
+    const bgWidth = textWidth + (paddingH * 2);
+    const bgHeight = fontSize + (paddingV * 2);
+    
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    
+    // Draw centered rounded rect
+    // x = cx - half width
+    // y = cy - half height
+    if (ctx.roundRect) {
+        ctx.roundRect(cx - bgWidth/2, cy - bgHeight/2, bgWidth, bgHeight, 4); // Sharper corners for digital look
+    } else {
+        ctx.fillRect(cx - bgWidth/2, cy - bgHeight/2, bgWidth, bgHeight);
+    }
+    ctx.fill();
+
+    // Draw Text
+    ctx.fillStyle = color;
+    ctx.fillText(text, cx, cy + 4); // +4 for slight optical adjustment
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    
+    // Scale sprite to match aspect ratio of the drawing area roughly, preventing stretch
+    // But since we use a 1024 width canvas for a small text, we need to be careful.
+    // The previous scale was 7.5, 1.875.
+    // Let's keep it similar but maybe slightly smaller vertically.
+    sprite.scale.set(7.5, 1.875, 1);
+    
+    return sprite;
+}
+
+function createGradientTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 256, 0, 0);
+    grad.addColorStop(0, 'white'); grad.addColorStop(0.7, 'rgba(255,255,255,0.2)'); grad.addColorStop(1, 'black');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 1, 256);
+    return new THREE.CanvasTexture(canvas);
+}
+
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1e293b);
+    scene.fog = new THREE.Fog(0x1e293b, 40, 140);
+    const aspect = window.innerWidth / window.innerHeight;
+    const d = 16;
+    camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+    camera.position.set(45, 45, 45);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+    sun.position.set(20, 50, 10);
+    sun.castShadow = true;
+    scene.add(sun);
+    createCampus();
+    window.addEventListener('resize', onWindowResize, false);
+}
+
+function createCampus() {
+    const SPACING = 1.6;
+    const GRID = 14;
+    const centerOffset = (GRID * SPACING) / 2;
+    const gradTexture = createGradientTexture();
+    const materials = {
+        campus: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 }),
+        museumWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 }),
+        museumRed: new THREE.MeshStandardMaterial({ color: 0xef4444 }),
+        science: new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x1d4ed8, emissiveIntensity: 0.5 }),
+        scienceBase: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 }),
+        spiritNeon: new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xfacc15, emissiveIntensity: 10, transparent: true, alphaMap: gradTexture }),
+        spiritGlow: new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, alphaMap: gradTexture }),
+        dottedLine: new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.2, gapSize: 0.2, transparent: true, opacity: 0.7 })
+    };
+    for (let x = 0; x < GRID; x++) {
+        for (let z = 0; z < GRID; z++) {
+            let mesh;
+            let type = "campus";
+            let labelText = "";
+            let labelY = 0;
+            if (x === 6 && z === 7) {
+                type = "art"; labelText = "BEAUTY"; labelY = 11.5;
+                const g = new THREE.Group();
+                const core = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6.5, 0.8), materials.museumRed);
+                core.position.y = 3.25; g.add(core);
+                const shards = [{ size: [4.5, 0.8, 3], pos: [0, 1.5, 0], rot: [0.2, 0.1, 0.1] }, { size: [3, 0.8, 5], pos: [-0.5, 3.8, 0.5], rot: [-0.3, -0.4, 0.1] }, { size: [5.5, 0.4, 2.5], pos: [0.8, 2.6, -0.2], rot: [0.1, 0.6, -0.2] }];
+                shards.forEach(s => { const sh = new THREE.Mesh(new THREE.BoxGeometry(...s.size), materials.museumWhite); sh.position.set(...s.pos); sh.rotation.set(...s.rot); g.add(sh); });
+                mesh = g;
+            }
+             else if (x === 10 && z === 3) {
+                type = "science"; labelText = "KNOWLEDGE"; labelY = 11.5;
+                const g = new THREE.Group();
+                const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.2, 3, 4), materials.scienceBase);
+                ped.position.y = 1.5; g.add(ped);
+                atomGroup = new THREE.Group();
+                const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 24), materials.science);
+                atomGroup.add(nuc);
+                const rGeom = new THREE.TorusGeometry(1.4, 0.05, 12, 64);
+                // GLOWING WHITE RINGS
+                const rMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+                [0, Math.PI / 2].forEach((rot, i) => { const r = new THREE.Mesh(rGeom, rMat); if (i === 1) r.rotation.x = rot; atomGroup.add(r); });
+                atomGroup.position.y = 4.8; g.add(atomGroup);
+                mesh = g;
+            }
+            else if (x === 3 && z === 10) {
+                type = "spirit"; labelText = "WISDOM"; labelY = 3.6;
+                mesh = new THREE.Group();
+                spiritBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.4, 18, 32), materials.spiritNeon);
+                spiritBeam.position.y = 9; mesh.add(spiritBeam);
+                spiritGlowVolume = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.9, 18, 32), materials.spiritGlow);
+                spiritGlowVolume.position.y = 9; mesh.add(spiritGlowVolume);
+            }
+            else {
+                let h = 0.3 + Math.random() * 2.2;
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials.campus);
+                mesh.scale.set(1, h, 1); mesh.position.y = h / 2;
+            }
+            mesh.position.x = x * SPACING - centerOffset;
+            mesh.position.z = z * SPACING - centerOffset;
+            mesh.userData = { type, label: labelText || type };
+            scene.add(mesh);
+            if (type !== "campus") {
+                specialBlocks.push(mesh);
+                const label = createTextSprite(labelText, (type === 'spirit' ? '#fef08a' : '#ffffff'));
+                const off = (type === 'spirit') ? 3.5 : 1.2;
+                label.position.set(mesh.position.x + off, labelY, mesh.position.z + off);
+                scene.add(label);
+                const linePts = [new THREE.Vector3(mesh.position.x, 0.5, mesh.position.z), new THREE.Vector3(label.position.x, label.position.y, label.position.z)];
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePts), materials.dottedLine.clone());
+                line.computeLineDistances(); scene.add(line); leaderLines.push(line);
+            }
+        }
+    }
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+}
+
+// Click Handler for Navigation
+function onMouseClick(event) {
+    if (introActive) return;
+    
+    // Don't trigger if we clicked a HUD element
+    if (event.target.closest('.hud-btn') || event.target.closest('.building-tag') || event.target.closest('.icon-btn')) return;
+
+    mouse = mouse || new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster = raycaster || new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(specialBlocks, true);
+
+    if (intersects.length > 0) {
+        // Find the root parent object with the userData type
+        let t = intersects[0].object; 
+        while (t.parent && !t.userData.type) t = t.parent;
+        
+        if (t.userData.type && t.userData.type !== 'campus') {
+            window.location.href = t.userData.type + '.html';
+        }
+    }
+}
+
+function onWindowResize() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const d = 16;
+    camera.left = -d * aspect; camera.right = d * aspect;
+    camera.top = d; camera.bottom = -d;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const time = Date.now() * 0.001;
+    const now = Date.now();
+    if (audioInitialized && !bgMusic.paused) {
+        analyser.getByteFrequencyData(dataArray);
+        let bass = 0; for (let i = 0; i < 16; i++) bass += dataArray[i];
+        beatLevel = (bass / 16 / 255) * 1.5;
+        if (controls.autoRotate) controls.autoRotateSpeed = 0.2 + (beatLevel * 6.0);
+        specialBlocks.forEach((b, idx) => {
+            const f = dataArray[10 + idx * 8] / 255;
+            const s = 1 + (f * 0.5) + (beatLevel * 0.3);
+            b.scale.lerp(new THREE.Vector3(s, s, s), 0.2);
+        });
+    } else {
+        beatLevel = 0;
+        if (controls.autoRotate && !introActive) controls.autoRotateSpeed = 0.2;
+    }
+    if (atomGroup) { atomGroup.rotation.y += 0.03 + beatLevel * 0.2; atomGroup.rotation.z += 0.02 + beatLevel * 0.2; }
+    if (spiritBeam) {
+        const s = 1 + Math.sin(time * 5) * 0.1 + beatLevel * 0.8;
+        spiritBeam.scale.set(s, 1, s);
+        spiritGlowVolume.material.opacity = 0.1 + beatLevel * 0.6;
+    }
+    leaderLines.forEach(l => {
+        l.material.dashOffset -= 0.02 + beatLevel * 0.1;
+        l.material.opacity = 0.2 + beatLevel * 0.8;
+    });
+    if (!introActive && now - lastZoomTime > ZOOM_INTERVAL) {
+        if (cinematicTarget) { cinematicTarget = null; facultyScreen.classList.remove('active'); }
+        else { cinematicTarget = specialBlocks[Math.floor(Math.random() * specialBlocks.length)]; facultyScreen.classList.add('active'); }
+        lastZoomTime = now;
+    }
+    if (cinematicTarget) {
+        controls.target.lerp(cinematicTarget.position.clone(), 0.08);
+        camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.5, 0.04);
+        if (now - lastQuoteTime > QUOTE_INTERVAL) { updateFacultyScreen(cinematicTarget.userData.type); lastQuoteTime = now; }
+        const vector = cinematicTarget.position.clone();
+        vector.y += 2.5; vector.project(camera);
+        const x = (vector.x * .5 + .5) * window.innerWidth;
+        const y = (vector.y * -.5 + .5) * window.innerHeight;
+        facultyScreen.style.left = x + 'px';
+        facultyScreen.style.top = y + 'px';
+    } else {
+        controls.target.lerp(new THREE.Vector3(0, 0, 0), 0.03);
+        camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.0, 0.03);
+    }
+    camera.updateProjectionMatrix();
+    controls.update();
+    renderer.render(scene, camera);
+}
+       function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

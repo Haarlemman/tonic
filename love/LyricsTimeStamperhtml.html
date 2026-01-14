@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyric Stamper Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        .lyric-line-item {
+            transition: all 0.2s ease;
+        }
+        .lyric-line-item:hover {
+            transform: translateX(4px);
+        }
+        .active-line {
+            color: #34d399; /* Emerald 400 */
+            text-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center shrink-0 shadow-md z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-emerald-500/10 p-2 rounded-lg text-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">Lyric Stamper</h1>
+                <p class="text-xs text-slate-400">Play music & tap lines to sync</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <label class="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-full cursor-pointer transition text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+                Load MP3
+                <input type="file" id="audioInput" accept="audio/*" class="hidden">
+            </label>
+            <button onclick="downloadLRC()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full cursor-pointer transition text-sm font-medium shadow-lg shadow-emerald-900/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                Save .LRC
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left: Text Editor -->
+        <section class="w-1/3 min-w-[320px] bg-slate-800 border-r border-slate-700 flex flex-col p-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Source Text</h2>
+                <button onclick="resetText()" class="text-xs text-slate-400 hover:text-white underline">Reset Default</button>
+            </div>
+            <textarea id="rawInput" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-4 font-mono text-sm leading-relaxed text-slate-300 focus:outline-none focus:border-emerald-500 resize-none" spellcheck="false" placeholder="Paste lyrics here..."></textarea>
+            <p class="text-xs text-slate-500 mt-2">Edit text here. Click lines on right to sync.</p>
+        </section>
+
+        <!-- Right: Clickable Stamper -->
+        <section class="flex-1 bg-slate-900 flex flex-col relative">
+            <div class="absolute inset-0 overflow-y-auto p-8 pb-32 scroll-smooth" id="visualContainer">
+                <!-- Lines will be injected here -->
+                <div class="text-slate-500 text-center mt-20 italic">Load audio and verify text to begin...</div>
+            </div>
+            
+            <!-- Bottom Player Bar -->
+            <div class="absolute bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur border-t border-slate-700 p-4 flex items-center gap-6 z-20">
+                <button id="playBtn" class="w-12 h-12 flex items-center justify-center rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+                    <svg id="pauseIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg>
+                </button>
+                
+                <div class="flex-1">
+                    <div class="flex justify-between text-xs text-slate-400 mb-1 font-mono">
+                        <span id="currentTime">0:00</span>
+                        <span id="duration">0:00</span>
+                    </div>
+                    <input type="range" id="progressBar" value="0" min="0" max="100" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <audio id="audio" class="hidden"></audio>
+
+    <script>
+        const audio = document.getElementById('audio');
+        const playBtn = document.getElementById('playBtn');
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const audioInput = document.getElementById('audioInput');
+        const rawInput = document.getElementById('rawInput');
+        const visualContainer = document.getElementById('visualContainer');
+
+        let isPlaying = false;
+        let lines = []; // Array of {text, time (or null), originalIndex}
+
+        // Default Sonny Lyrics
+        const defaultLyrics = `
+You look deep in the dark at my shape
+I'm a dart flying for you
+I talk a lot, never stay in one spot
+You know I'm moving for you
+Hm-mm, playing that song about you
+They keep playing that song about you
+I have been dancing, you are romancing
+I caught a glance and found you in a trance and
+Thought this wouldn't faze me, now you call her, baby
+I'm scared you don't see me, now I just feel crazy
+Think that I'll go home
+Dancing, you are romancing
+I caught a glance and found you in a trance and
+Thought this wouldn't faze me, you call her, baby
+I'm scared you don't see me, now I just feel crazy
+
+`;
+
+        rawInput.value = defaultLyrics;
+
+        // --- Init ---
+        function init() {
+            parseText();
+            rawInput.addEventListener('input', parseText);
+        }
+
+        // --- Audio Logic ---
+        audioInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                audio.src = URL.createObjectURL(file);
+                playBtn.disabled = false;
+            }
+        });
+
+        playBtn.addEventListener('click', togglePlay);
+        
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                isPlaying = true;
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+            } else {
+                audio.pause();
+                isPlaying = false;
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
+        }
+
+        audio.addEventListener('timeupdate', () => {
+            const cur = audio.currentTime;
+            const dur = audio.duration || 1;
+            progressBar.value = (cur / dur) * 100;
+            currentTimeEl.textContent = formatTime(cur);
+            
+            // Highlight active line logic could go here if we wanted auto-scroll during playback
+            // For now, we focus on stamping
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+            durationEl.textContent = formatTime(audio.duration);
+        });
+
+        progressBar.addEventListener('input', (e) => {
+            const pct = e.target.value;
+            const dur = audio.duration || 1;
+            audio.currentTime = (pct / 100) * dur;
+        });
+
+        // --- Core Logic: Parsing & Stamping ---
+
+        function parseText() {
+            const raw = rawInput.value;
+            const rawLines = raw.split('\n');
+            
+            lines = rawLines.map((line, index) => {
+                // Check if already has timestamp
+                const match = line.match(/\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/);
+                if (match) {
+                    const min = parseInt(match[1]);
+                    const sec = parseInt(match[2]);
+                    const ms = match[3] ? parseFloat("0." + match[3]) : 0;
+                    return {
+                        hasTime: true,
+                        time: min * 60 + sec + ms,
+                        text: match[4].trim(),
+                        rawLine: line,
+                        index: index
+                    };
+                } else {
+                    return {
+                        hasTime: false,
+                        time: null,
+                        text: line.trim(),
+                        rawLine: line,
+                        index: index
+                    };
+                }
+            });
+            renderVisuals();
+        }
+
+        function renderVisuals() {
+            visualContainer.innerHTML = '';
+            // Add spacer
+            const spacerTop = document.createElement('div');
+            spacerTop.className = "h-[40vh]";
+            visualContainer.appendChild(spacerTop);
+
+            lines.forEach((line, idx) => {
+                const div = document.createElement('div');
+                div.className = `lyric-line-item p-4 mb-2 rounded-lg cursor-pointer text-xl text-center select-none transition-all duration-200 border border-transparent ${line.hasTime ? 'bg-slate-800/50 text-emerald-100 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'}`;
+                
+                div.innerHTML = `
+                    <span class="font-mono text-xs opacity-50 mr-4 inline-block w-16 text-right">${line.hasTime ? formatTime(line.time, true) : '--:--'}</span>
+                    <span>${line.text || "&nbsp;"}</span>
+                `;
+
+                div.addEventListener('click', () => stampLine(idx));
+                visualContainer.appendChild(div);
+            });
+
+            const spacerBot = document.createElement('div');
+            spacerBot.className = "h-[40vh]";
+            visualContainer.appendChild(spacerBot);
+        }
+
+        function stampLine(index) {
+            const currentTime = audio.currentTime;
+            
+            // Format time [mm:ss.xx]
+            const min = Math.floor(currentTime / 60);
+            const sec = Math.floor(currentTime % 60);
+            const ms = Math.floor((currentTime % 1) * 100);
+            
+            const stamp = `[${pad(min)}:${pad(sec)}.${pad(ms)}]`;
+            
+            // Update Data Source (Textarea)
+            const rawLines = rawInput.value.split('\n');
+            const targetLine = lines[index]; // Get current state of line
+            
+            // Strip existing timestamp if present to avoid double stamping
+            let cleanText = targetLine.text;
+            
+            // Update the line in the array
+            rawLines[targetLine.index] = `${stamp} ${cleanText}`;
+            
+            // Write back
+            rawInput.value = rawLines.join('\n');
+            
+            // Re-parse to update UI
+            parseText();
+            
+            // Visual feedback - scroll to next?
+            // Optionally auto-scroll logic here
+        }
+
+        // --- Utilities ---
+        function formatTime(s, highPrecision = false) {
+            if (isNaN(s)) return "0:00";
+            const min = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            if (highPrecision) {
+                const ms = Math.floor((s % 1) * 100);
+                return `${min}:${pad(sec)}.${pad(ms)}`;
+            }
+            return `${min}:${pad(sec)}`;
+        }
+
+        function pad(n) {
+            return n < 10 ? '0' + n : n;
+        }
+
+        function resetText() {
+            if(confirm("Reset to default Sonny lyrics?")) {
+                rawInput.value = defaultLyrics;
+                parseText();
+            }
+        }
+
+        function downloadLRC() {
+            const text = rawInput.value;
+            const blob = new Blob([text], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "lyrics.lrc";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>

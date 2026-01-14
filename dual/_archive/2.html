@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWIN CITY | The Upper and Nether Worlds</title>
+    <style>
+        :root {
+            /* Lighter, whiter Daylight Palette */
+            --sky-day-top: #ffffff;
+            --sky-day-bottom: #f0f8ff;
+            /* Deep Nether Palette */
+            --sky-night-top: #020205;
+            --sky-night-bottom: #08081a;
+            
+            --neon-blue: #00d2ff;
+            --neon-red: #ff2d55;
+            --mondrian-red: #d63031; /* Deeper red */
+            --mondrian-yellow: #feca57;
+            --mondrian-blue: #54a0ff;
+            --text: #000;
+        }
+
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Dynamic Background Layer */
+        #bg-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(to bottom, var(--sky-day-top) 0%, var(--sky-day-bottom) 100%);
+            z-index: -1;
+            transition: background 0.8s ease, opacity 0.8s ease;
+        }
+
+        #canvas-container { width: 100%; height: 100%; display: block; }
+
+        #hud {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #000;
+            pointer-events: none;
+            z-index: 10;
+            transition: color 0.5s ease;
+        }
+
+        h1 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            letter-spacing: 10px; 
+            text-transform: uppercase; 
+            margin: 0;
+            border-left: 4px solid var(--mondrian-red);
+            padding-left: 20px;
+        }
+
+        .subtitle {
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: #555;
+            margin-top: 10px;
+            padding-left: 24px;
+            font-weight: 600;
+        }
+
+        .label {
+            position: absolute;
+            color: white;
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            backdrop-filter: blur(4px);
+            border-radius: 2px;
+        }
+
+        #popup {
+            position: absolute;
+            display: none;
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #000;
+            padding: 20px;
+            color: #000;
+            font-size: 12px;
+            width: 220px;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.15);
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            color: rgba(0,0,0,0.5);
+            font-size: 9px;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bg-layer"></div>
+
+    <div id="hud">
+        <h1>Twin City</h1>
+        <div class="subtitle" id="side-indicator">Upper & Nether World</div>
+    </div>
+
+    <div id="popup">
+        <strong id="p-title" style="display:block; margin-bottom: 5px; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px;"></strong>
+        <span id="p-desc" style="color: #333; display: block; margin-bottom: 12px; line-height: 1.5; font-weight: 500;"></span>
+        <div style="font-size: 8px; color: #000; letter-spacing: 1px; font-weight: bold;">[ ACTIVATE PROXY ]</div>
+    </div>
+
+    <div class="controls" id="control-hint">
+        DRAG: ROTATE • RIGHT-DRAG: PAN • SCROLL: ZOOM
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let ambientLight, sun;
+        let interactiveObjects = [];
+        let labels = [];
+        let chaosTrails = [];
+        let roadRing;
+
+        const WORLD_DATA = [
+            { id: 'art', side: 'top', name: 'Art', title: 'The Vault', desc: 'The rounded containment of aesthetic frequency.', color: 0x8b0000, x: 0, z: 0 }, // Deeper Red
+            { id: 'science', side: 'top', name: 'Science', title: 'The Automaton', desc: 'The robotic observer of mathematical logic.', color: 0x3388ff, x: 8, z: -8 },
+            { id: 'spirit', side: 'top', name: 'Spirit', title: 'The Fading Beam', desc: 'A singular bridge to the unknown infinite.', color: 0xffdd44, x: -8, z: 8 },
+            
+            { id: 'trauma', side: 'bottom', name: 'Trauma', title: 'The Abyss Root', desc: 'Submerged anchors of the human experience.', color: 0x6e3d9e, x: 0, z: 0 },
+            { id: 'identity', side: 'bottom', name: 'Identity', title: 'Mirror Hall', desc: 'Fragmented echoes of the perceived self.', color: 0x4a5a6a, x: 8, z: -8 },
+            { id: 'control', side: 'bottom', name: 'Control', title: 'Iron Pillar', desc: 'The rigid framework that prevents collapse.', color: 0x111111, x: -8, z: 8 }
+        ];
+
+        window.onload = init;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xffffff, 10, 300);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1500);
+            // Starting position for a classic isometric-style perspective
+            camera.position.set(80, 80, 80);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            // Fully unlock rotation
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI;
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            sun = new THREE.DirectionalLight(0xffffff, 1.0);
+            sun.position.set(30, 80, 30);
+            sun.castShadow = true;
+            scene.add(sun);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            buildWorld();
+
+            window.addEventListener('resize', onResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onClick);
+
+            animate();
+        }
+
+        function buildWorld() {
+            const gridSize = 18;
+            const spacing = 1.8;
+            const offset = (gridSize * spacing) / 2;
+
+            // Definition: Darkened grey for buildings to avoid washing out
+            const topBlockMat = new THREE.MeshStandardMaterial({ color: 0x666677, roughness: 0.5 });
+            const botBlockMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.8 });
+
+            for (let x = 0; x < gridSize; x++) {
+                for (let z = 0; z < gridSize; z++) {
+                    const px = x * spacing - offset;
+                    const pz = z * spacing - offset;
+
+                    const isReserved = WORLD_DATA.some(d => Math.abs(d.x - px/spacing) < 0.5 && Math.abs(d.z - pz/spacing) < 0.5);
+                    if (isReserved) continue;
+
+                    // UPPER WORLD
+                    const hTop = 0.5 + Math.random() * 5.5;
+                    const topBlock = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1, 1.4), topBlockMat);
+                    topBlock.scale.set(1, hTop, 1);
+                    topBlock.position.set(px, hTop/2 + 0.1, pz);
+                    topBlock.castShadow = true;
+                    topBlock.receiveShadow = true;
+                    scene.add(topBlock);
+
+                    // NETHER WORLD
+                    const hBot = 0.5 + Math.random() * 8;
+                    const botBlock = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1, 1.4), botBlockMat);
+                    botBlock.scale.set(1, hBot, 1);
+                    botBlock.position.set(px, -(hBot/2 + 0.1), pz);
+                    scene.add(botBlock);
+
+                    if (x % 5 === 0 && z % 5 === 0) createLightPole(px + 0.8, pz + 0.8);
+                }
+            }
+
+            WORLD_DATA.forEach(d => createSpecial(d));
+
+            // THE RING (Avenue) - Visible with neon glow in dark
+            const roadRadius = offset + 8;
+            roadRing = new THREE.Mesh(
+                new THREE.TorusGeometry(roadRadius, 1.6, 8, 128),
+                new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1, emissive: 0x000000 })
+            );
+            roadRing.rotation.x = Math.PI / 2;
+            scene.add(roadRing);
+
+            const mondrianColors = [0xff0000, 0xffde00, 0x0000ff];
+            const tronColors = [0x00ffff, 0xff00ff];
+            
+            for (let i = 0; i < 28; i++) {
+                const trailMat = new THREE.MeshBasicMaterial();
+                const trail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 2.5), trailMat);
+                trail.userData = { 
+                    angle: (i / 28) * Math.PI * 2, 
+                    speed: 0.003 + Math.random() * 0.015, 
+                    radius: roadRadius,
+                    dayColor: mondrianColors[i % 3],
+                    nightColor: tronColors[i % 2]
+                };
+                scene.add(trail);
+                chaosTrails.push(trail);
+            }
+
+            const threshold = new THREE.Mesh(
+                new THREE.PlaneGeometry(800, 800),
+                new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.3 })
+            );
+            threshold.rotation.x = -Math.PI / 2;
+            scene.add(threshold);
+        }
+
+        function createLightPole(x, z) {
+            const pole = new THREE.Mesh(new THREE.BoxGeometry(0.1, 25, 0.1), new THREE.MeshStandardMaterial({color: 0x111111}));
+            pole.position.set(x, 0, z);
+            scene.add(pole);
+
+            const lDay = new THREE.PointLight(0xfff8e1, 1.8, 18);
+            lDay.position.set(x, 9, z);
+            scene.add(lDay);
+
+            const lNight = new THREE.PointLight(0x00d2ff, 2.0, 18);
+            lNight.position.set(x, -9, z);
+            scene.add(lNight);
+        }
+
+        function createSpecial(data) {
+            const spacing = 1.8;
+            const x = data.x * spacing;
+            const z = data.z * spacing;
+            let mesh;
+
+            if (data.id === 'spirit') {
+                const vertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+                const fragmentShader = `varying vec2 vUv; uniform vec3 color; void main() { float alpha = pow(1.0 - vUv.y, 2.5); gl_FragColor = vec4(color, alpha * 0.95); }`;
+                const shaderMat = new THREE.ShaderMaterial({
+                    uniforms: { color: { value: new THREE.Color(data.color) } },
+                    vertexShader, fragmentShader, transparent: true
+                });
+                mesh = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 100, 32, 1, true), shaderMat);
+                mesh.position.set(x, 50, z);
+            } else if (data.id === 'science') {
+                // STATIC ROBOT SCIENCE
+                mesh = new THREE.Group();
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.2, 1.2), new THREE.MeshStandardMaterial({color: 0x7f8c8d}));
+                const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({color: 0x3498db}));
+                head.position.y = 1.7;
+                const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.5), new THREE.MeshStandardMaterial({color: 0x2c3e50}));
+                neck.position.y = 1.1;
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.2, 0.4), new THREE.MeshStandardMaterial({color: 0x2c3e50}));
+                legL.position.set(-0.5, -1.8, 0);
+                const legR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.2, 0.4), new THREE.MeshStandardMaterial({color: 0x2c3e50}));
+                legR.position.set(0.5, -1.8, 0);
+                const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2), new THREE.MeshStandardMaterial({color: 0x34495e}));
+                armL.position.set(-1.1, 0.4, 0);
+                armL.rotation.z = 0.4;
+                const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2), new THREE.MeshStandardMaterial({color: 0x34495e}));
+                armR.position.set(1.1, 0.4, 0);
+                armR.rotation.z = -0.4;
+                
+                mesh.add(torso, head, neck, legL, legR, armL, armR);
+                mesh.position.set(x, 2.8, z);
+            } else if (data.id === 'art') {
+                // ROUNDED ART VAULT
+                mesh = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 10, 32), new THREE.MeshStandardMaterial({color: data.color}));
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(2.2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color: data.color}));
+                dome.position.y = 5;
+                mesh.add(base, dome);
+                mesh.position.set(x, 5, z);
+            } else if (data.id === 'trauma') {
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(5.5, 25, 5.5), new THREE.MeshStandardMaterial({color: data.color, emissive: data.color, emissiveIntensity: 0.2}));
+                mesh.position.set(x, -12.5, z);
+            } else if (data.id === 'identity') {
+                mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(4.5), new THREE.MeshStandardMaterial({color: data.color, wireframe: true}));
+                mesh.position.set(x, -7, z);
+            } else if (data.id === 'control') {
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(2.8, 40, 2.8), new THREE.MeshStandardMaterial({color: data.color, metalness: 1, roughness: 0.1}));
+                mesh.position.set(x, -20, z);
+            }
+
+            mesh.userData = data;
+            scene.add(mesh);
+            interactiveObjects.push(mesh);
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.innerText = data.name;
+            document.body.appendChild(label);
+            labels.push({ el: label, pos: new THREE.Vector3(x, data.side === 'top' ? 30 : -30, z) });
+        }
+
+        function updateEnvironment() {
+            const limit = 20;
+            let factor = (camera.position.y + limit) / (limit * 2);
+            factor = Math.max(0, Math.min(1, factor));
+
+            // Lighting Adjustment
+            ambientLight.intensity = 0.5 + (factor * 0.9);
+            sun.intensity = 0.4 + (factor * 1.6);
+            
+            // Fog & Background colors
+            const skyDay = new THREE.Color(0xffffff);
+            const skyNight = new THREE.Color(0x020205);
+            scene.fog.color.lerpColors(skyNight, skyDay, factor);
+
+            const bg = document.getElementById('bg-layer');
+            const hud = document.getElementById('hud');
+            const hints = document.getElementById('control-hint');
+            
+            if (factor > 0.5) {
+                bg.style.background = `linear-gradient(to bottom, var(--sky-day-top) 0%, var(--sky-day-bottom) 100%)`;
+                hud.style.color = "#000";
+                hints.style.color = "rgba(0,0,0,0.5)";
+                roadRing.material.emissive.set(0x000000);
+            } else {
+                bg.style.background = `linear-gradient(to bottom, var(--sky-night-top) 0%, var(--sky-night-bottom) 100%)`;
+                hud.style.color = "#fff";
+                hints.style.color = "rgba(255,255,255,0.4)";
+                // Make ring road visible in nether world
+                roadRing.material.emissive.set(0x001133);
+            }
+
+            // HUD / Popup Logic
+            const indicator = document.getElementById('side-indicator');
+            const popup = document.getElementById('popup');
+            if (camera.position.y > 2) {
+                indicator.innerText = "UPPER WORLD • BOOGIE WOOGIE";
+                popup.style.background = "#fff";
+                popup.style.color = "#000";
+            } else if (camera.position.y < -2) {
+                indicator.innerText = "NETHER WORLD • TRON NEON";
+                popup.style.background = "#020205";
+                popup.style.color = "#fff";
+                popup.style.border = "1px solid #00d2ff";
+            }
+
+            // Update Chaos Trails (Boogie Woogie vs Tron)
+            chaosTrails.forEach(t => {
+                if (factor > 0.5) {
+                    t.material.color.set(t.userData.dayColor);
+                    t.scale.set(1.4, 1, 1.4);
+                } else {
+                    t.material.color.set(t.userData.nightColor);
+                    t.scale.set(0.3, 1, 5.5);
+                }
+            });
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            checkRaycast(event);
+        }
+
+        function checkRaycast(event) {
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(interactiveObjects, true);
+            const pop = document.getElementById('popup');
+
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.id) obj = obj.parent;
+                const d = obj.userData;
+                pop.style.display = 'block';
+                pop.style.left = (event.clientX + 20) + 'px';
+                pop.style.top = (event.clientY + 20) + 'px';
+                document.getElementById('p-title').innerText = d.title;
+                document.getElementById('p-title').style.color = (camera.position.y > 0) ? '#' + d.color.toString(16).padStart(6, '0') : "#fff";
+                document.getElementById('p-desc').innerText = d.desc;
+                document.body.style.cursor = 'pointer';
+            } else {
+                pop.style.display = 'none';
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function onClick() {
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(interactiveObjects, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.id) obj = obj.parent;
+                obj.scale.set(1.1, 1.1, 1.1);
+                setTimeout(() => obj.scale.set(1, 1, 1), 150);
+            }
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateEnvironment();
+
+            labels.forEach(l => {
+                const v = l.pos.clone().project(camera);
+                if (v.z > 1) l.el.style.display = 'none';
+                else {
+                    l.el.style.display = 'block';
+                    l.el.style.left = `${(v.x * 0.5 + 0.5) * window.innerWidth}px`;
+                    l.el.style.top = `${(v.y * -0.5 + 0.5) * window.innerHeight}px`;
+                }
+            });
+
+            interactiveObjects.forEach(obj => {
+                const id = obj.userData.id;
+                if (id === 'identity') {
+                    obj.rotation.x += 0.005;
+                    obj.rotation.z += 0.004;
+                }
+                if (id === 'spirit') {
+                    obj.rotation.y += 0.015;
+                }
+            });
+
+            chaosTrails.forEach(t => {
+                t.userData.angle += t.userData.speed;
+                t.position.x = Math.cos(t.userData.angle) * t.userData.radius;
+                t.position.z = Math.sin(t.userData.angle) * t.userData.radius;
+                t.rotation.y = -t.userData.angle;
+                t.position.y = 0.25;
+            });
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

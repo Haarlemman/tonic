@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Distorter FX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        h1, h2, h3, .tech-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #22d3ee;
+            cursor: pointer;
+            margin-top: -8px; 
+            box-shadow: 0 0 10px #22d3ee;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        .visualizer-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
+            border: 1px solid #334155;
+            background: #020617;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .recording-pulse {
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-2xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-cyan-400 mb-2 tracking-wider">VOICE <span class="text-white">DISTORTER</span></h1>
+            <p class="text-slate-400 text-sm">Record. Mutate. Download.</p>
+        </div>
+
+        <!-- Visualizer -->
+        <div class="visualizer-container rounded-lg overflow-hidden h-40 mb-8 w-full">
+            <canvas id="visualizer" class="w-full h-full"></canvas>
+        </div>
+
+        <!-- Controls Area -->
+        <div class="space-y-8">
+
+            <!-- Transport Controls -->
+            <div class="flex justify-center gap-6">
+                <button id="recordBtn" class="btn-glow flex flex-col items-center justify-center w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-700 text-red-500 hover:text-red-400 hover:border-red-500 transition-all duration-300">
+                    <i class="fa-solid fa-microphone text-2xl mb-1"></i>
+                    <span class="text-xs font-bold">REC</span>
+                </button>
+
+                <button id="stopBtn" disabled class="btn-glow flex flex-col items-center justify-center w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-700 text-slate-500 opacity-50 cursor-not-allowed transition-all duration-300">
+                    <i class="fa-solid fa-square text-2xl mb-1"></i>
+                    <span class="text-xs font-bold">STOP</span>
+                </button>
+
+                <button id="playBtn" disabled class="btn-glow flex flex-col items-center justify-center w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-700 text-cyan-500 opacity-50 cursor-not-allowed hover:text-cyan-400 hover:border-cyan-500 transition-all duration-300">
+                    <i class="fa-solid fa-play text-2xl mb-1"></i>
+                    <span class="text-xs font-bold">PLAY</span>
+                </button>
+            </div>
+
+            <!-- FX Controls -->
+            <div id="fxControls" class="bg-slate-800/50 rounded-xl p-6 border border-slate-700 opacity-50 pointer-events-none transition-opacity duration-300">
+                <h3 class="text-cyan-400 text-sm font-bold mb-4 tracking-widest border-b border-slate-700 pb-2">MODULATION MATRIX</h3>
+                
+                <!-- Speed / Pitch -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-300">PITCH / SPEED</label>
+                        <span id="speedVal" class="text-xs font-mono text-cyan-400">1.0x</span>
+                    </div>
+                    <input type="range" id="speedRange" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
+                    <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>Demon</span>
+                        <span>Normal</span>
+                        <span>Chipmunk</span>
+                    </div>
+                </div>
+
+                <!-- Distortion -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-300">DISTORTION (CRUNCH)</label>
+                        <span id="distVal" class="text-xs font-mono text-purple-400">0%</span>
+                    </div>
+                    <input type="range" id="distRange" min="0" max="100" step="1" value="0" class="w-full">
+                </div>
+
+                <!-- Wobble / Tremolo -->
+                <div class="mb-2">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-300">ROBOT WOBBLE</label>
+                        <span id="wobbleVal" class="text-xs font-mono text-green-400">0%</span>
+                    </div>
+                    <input type="range" id="wobbleRange" min="0" max="100" step="1" value="0" class="w-full">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col gap-3">
+                 <button id="downloadBtn" disabled class="w-full py-4 rounded-lg bg-slate-800 text-slate-500 font-bold border border-slate-700 transition-all duration-300 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
+                    <i class="fa-solid fa-download"></i> Download Processed Audio
+                </button>
+                <div id="status" class="text-center text-xs text-slate-500 h-4">Ready to initialize.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Hidden audio element for fallback -->
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <script>
+        // --- Variables ---
+        let audioCtx;
+        let analyser;
+        let microphoneStream;
+        let mediaRecorder;
+        let chunks = [];
+        let originalAudioBuffer = null;
+        let sourceNode = null;
+        let isPlaying = false;
+        
+        // Canvas
+        const canvas = document.getElementById('visualizer');
+        const canvasCtx = canvas.getContext('2d');
+        let animationId;
+
+        // UI Elements
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const playBtn = document.getElementById('playBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const fxControls = document.getElementById('fxControls');
+        const statusEl = document.getElementById('status');
+        
+        // Sliders
+        const speedRange = document.getElementById('speedRange');
+        const distRange = document.getElementById('distRange');
+        const wobbleRange = document.getElementById('wobbleRange');
+        const speedVal = document.getElementById('speedVal');
+        const distVal = document.getElementById('distVal');
+        const wobbleVal = document.getElementById('wobbleVal');
+
+        // --- Initialization ---
+        
+        async function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- Visualizer ---
+        
+        function startVisualizer(streamOrNode) {
+            if(!audioCtx) return;
+
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            
+            if (streamOrNode instanceof MediaStream) {
+                const source = audioCtx.createMediaStreamSource(streamOrNode);
+                source.connect(analyser);
+            } else if (streamOrNode instanceof AudioNode) {
+                streamOrNode.connect(analyser);
+            }
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                analyser.getByteTimeDomainData(dataArray);
+
+                canvasCtx.fillStyle = '#020617';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = '#22d3ee';
+                canvasCtx.beginPath();
+
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+
+                    x += sliceWidth;
+                }
+
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+            draw();
+        }
+
+        function stopVisualizer() {
+            if(animationId) cancelAnimationFrame(animationId);
+            // Clear canvas
+            canvasCtx.fillStyle = '#020617';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+            // Draw a flat line
+            canvasCtx.beginPath();
+            canvasCtx.strokeStyle = '#334155';
+            canvasCtx.moveTo(0, canvas.height/2);
+            canvasCtx.lineTo(canvas.width, canvas.height/2);
+            canvasCtx.stroke();
+        }
+
+        // --- Recording Logic ---
+
+        recordBtn.addEventListener('click', async () => {
+            await initAudio();
+            
+            try {
+                microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // UI Updates
+                recordBtn.classList.add('recording-pulse', 'border-red-500', 'text-red-500');
+                recordBtn.disabled = true;
+                stopBtn.disabled = false;
+                stopBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                stopBtn.classList.add('text-slate-200', 'hover:text-white', 'hover:border-slate-400');
+                playBtn.disabled = true;
+                playBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                downloadBtn.classList.remove('bg-cyan-600', 'text-white', 'hover:bg-cyan-500');
+                downloadBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
+                
+                fxControls.classList.add('opacity-50', 'pointer-events-none');
+                statusEl.textContent = "Recording...";
+
+                // Start Visualizer
+                startVisualizer(microphoneStream);
+
+                // Start Recorder
+                mediaRecorder = new MediaRecorder(microphoneStream);
+                chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+                    const arrayBuffer = await blob.arrayBuffer();
+                    originalAudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    
+                    // UI Cleanup
+                    recordBtn.classList.remove('recording-pulse', 'border-red-500', 'text-red-500');
+                    recordBtn.disabled = false;
+                    
+                    stopBtn.disabled = true;
+                    stopBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    stopBtn.classList.remove('text-slate-200', 'hover:text-white');
+                    
+                    playBtn.disabled = false;
+                    playBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    playBtn.classList.add('text-cyan-400');
+
+                    // Enable FX
+                    fxControls.classList.remove('opacity-50', 'pointer-events-none');
+                    statusEl.textContent = "Recording saved. Adjust FX and Play.";
+                    
+                    stopVisualizer();
+                    
+                    // Stop Mic Stream
+                    microphoneStream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+                statusEl.textContent = "Error: Could not access microphone. (Check browser permissions)";
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        });
+
+        // --- Playback & Effects Logic ---
+
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 50;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            
+            for (let i = 0; i < n_samples; ++i) {
+                let x = i * 2 / n_samples - 1;
+                // A classic sigmoid distortion curve
+                curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        function createFxChain(source, destination) {
+            // 1. Distortion
+            const distortion = audioCtx.createWaveShaper();
+            const distAmount = parseInt(distRange.value);
+            if (distAmount > 0) {
+                distortion.curve = makeDistortionCurve(distAmount * 2); // Scale up effect
+                distortion.oversample = '4x';
+            } else {
+                distortion.curve = null;
+            }
+
+            // 2. Wobble (Tremolo / Ring Mod)
+            // Signal flow: Source -> VCA (GainNode) -> Output
+            // Oscillator -> VCA.gain
+            const vca = audioCtx.createGain();
+            const wobbleAmount = parseInt(wobbleRange.value);
+            
+            // Default connection
+            source.connect(distortion);
+
+            if (wobbleAmount > 0) {
+                // Create Oscillator
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                // Frequency based on slider (0-100 map to 0-50Hz)
+                osc.frequency.value = (wobbleAmount / 2); 
+                
+                // Gain node to control depth of modulation
+                const depth = audioCtx.createGain();
+                depth.gain.value = 0.8; // Depth
+
+                osc.connect(depth).connect(vca.gain);
+                osc.start();
+                
+                distortion.connect(vca);
+                vca.connect(destination);
+            } else {
+                distortion.connect(destination);
+            }
+            
+            return { distortion, vca };
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                if (sourceNode) sourceNode.stop();
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="fa-solid fa-play text-2xl mb-1"></i><span class="text-xs font-bold">PLAY</span>';
+                statusEl.textContent = "Playback stopped.";
+                stopVisualizer();
+                return;
+            }
+
+            if (!originalAudioBuffer) return;
+
+            isPlaying = true;
+            playBtn.innerHTML = '<i class="fa-solid fa-stop text-2xl mb-1"></i><span class="text-xs font-bold">STOP</span>';
+            statusEl.textContent = "Playing...";
+
+            sourceNode = audioCtx.createBufferSource();
+            sourceNode.buffer = originalAudioBuffer;
+
+            // Apply Pitch/Speed
+            sourceNode.playbackRate.value = parseFloat(speedRange.value);
+
+            // Master Gain (Volume)
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.8;
+
+            // Connect FX Chain
+            // Chain: Source -> Distortion -> Wobble -> Master -> Analyser -> Destination
+            
+            const distortion = audioCtx.createWaveShaper();
+            const distAmount = parseInt(distRange.value);
+            distortion.curve = (distAmount > 0) ? makeDistortionCurve(distAmount * 4) : null;
+            
+            const wobbleGain = audioCtx.createGain(); // The VCA
+            const wobbleAmount = parseInt(wobbleRange.value);
+
+            // Build Graph
+            sourceNode.connect(distortion);
+            
+            if (wobbleAmount > 0) {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = wobbleAmount / 2; // 0 to 50hz
+                
+                const depth = audioCtx.createGain();
+                depth.gain.value = 1.0; // Full modulation
+
+                // We need to offset the gain so it doesn't go negative and phase flip (unless we want ring mod)
+                // For simple tremolo, we want 0 to 1.
+                // Ring mod is -1 to 1. Let's do Ring Mod for "Robot" feel.
+                osc.connect(depth).connect(wobbleGain.gain);
+                osc.start();
+
+                distortion.connect(wobbleGain);
+                wobbleGain.connect(masterGain);
+            } else {
+                distortion.connect(masterGain);
+            }
+
+            masterGain.connect(audioCtx.destination);
+            
+            // Visualizer connection
+            startVisualizer(masterGain);
+
+            sourceNode.onended = () => {
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="fa-solid fa-play text-2xl mb-1"></i><span class="text-xs font-bold">PLAY</span>';
+                statusEl.textContent = "Playback finished.";
+                stopVisualizer();
+            };
+
+            sourceNode.start();
+
+            // Enable download after first play attempt (so user knows what they are getting)
+            downloadBtn.disabled = false;
+            downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
+            downloadBtn.classList.add('bg-cyan-600', 'text-white', 'hover:bg-cyan-500');
+        });
+
+        // --- Download Logic (Offline Rendering) ---
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!originalAudioBuffer) return;
+
+            statusEl.textContent = "Rendering audio file...";
+            downloadBtn.disabled = true;
+
+            // Create Offline Context
+            const duration = originalAudioBuffer.duration / parseFloat(speedRange.value); // Adjust for speed
+            const offlineCtx = new OfflineAudioContext(
+                originalAudioBuffer.numberOfChannels,
+                duration * 44100, // sample rate
+                44100
+            );
+
+            // Recreate Graph in Offline Context
+            const source = offlineCtx.createBufferSource();
+            source.buffer = originalAudioBuffer;
+            source.playbackRate.value = parseFloat(speedRange.value);
+
+            const distortion = offlineCtx.createWaveShaper();
+            const distAmount = parseInt(distRange.value);
+            distortion.curve = (distAmount > 0) ? makeDistortionCurve(distAmount * 4) : null;
+
+            const wobbleGain = offlineCtx.createGain();
+            const wobbleAmount = parseInt(wobbleRange.value);
+
+            source.connect(distortion);
+
+            if (wobbleAmount > 0) {
+                const osc = offlineCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = wobbleAmount / 2;
+                const depth = offlineCtx.createGain();
+                depth.gain.value = 1.0;
+                osc.connect(depth).connect(wobbleGain.gain);
+                osc.start();
+                distortion.connect(wobbleGain);
+                wobbleGain.connect(offlineCtx.destination);
+            } else {
+                distortion.connect(offlineCtx.destination);
+            }
+
+            source.start();
+
+            // Render
+            const renderedBuffer = await offlineCtx.startRendering();
+            
+            // Convert to WAV
+            const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
+            const url = URL.createObjectURL(wavBlob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'distorted_voice.wav';
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                downloadBtn.disabled = false;
+                statusEl.textContent = "Download started.";
+            }, 100);
+        });
+
+
+        // --- Helper: AudioBuffer to WAV ---
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                buffer = new ArrayBuffer(length),
+                view = new DataView(buffer),
+                channels = [], i, sample,
+                offset = 0,
+                pos = 0;
+
+            // write WAVE header
+            setUint32(0x46464952);                         // "RIFF"
+            setUint32(length - 8);                         // file length - 8
+            setUint32(0x45564157);                         // "WAVE"
+
+            setUint32(0x20746d66);                         // "fmt " chunk
+            setUint32(16);                                 // length = 16
+            setUint16(1);                                  // PCM (uncompressed)
+            setUint16(numOfChan);
+            setUint32(abuffer.sampleRate);
+            setUint32(abuffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+            setUint16(numOfChan * 2);                      // block-align
+            setUint16(16);                                 // 16-bit (hardcoded in this example)
+
+            setUint32(0x61746164);                         // "data" - chunk
+            setUint32(length - pos - 4);                   // chunk length
+
+            // write interleaved data
+            for(i = 0; i < abuffer.numberOfChannels; i++)
+                channels.push(abuffer.getChannelData(i));
+
+            while(pos < len) {
+                for(i = 0; i < numOfChan; i++) {             // interleave channels
+                    sample = Math.max(-1, Math.min(1, channels[i][pos])); // clamp
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; // scale to 16-bit signed int
+                    view.setInt16(44 + offset, sample, true);          // write 16-bit sample
+                    offset += 2;
+                }
+                pos++;
+            }
+
+            return new Blob([buffer], {type: "audio/wav"});
+
+            function setUint16(data) {
+                view.setUint16(pos, data, true);
+                pos += 2;
+            }
+
+            function setUint32(data) {
+                view.setUint32(pos, data, true);
+                pos += 4;
+            }
+        }
+
+        // UI Slider Value Updates
+        speedRange.addEventListener('input', (e) => speedVal.textContent = e.target.value + 'x');
+        distRange.addEventListener('input', (e) => distVal.textContent = e.target.value + '%');
+        wobbleRange.addEventListener('input', (e) => wobbleVal.textContent = e.target.value + '%');
+
+        // Init blank visualizer
+        stopVisualizer();
+
+    </script>
+</body>
+</html>

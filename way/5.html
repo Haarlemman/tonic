@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tri-Lens Observatory — Upgraded Oracle</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg-0: #071029;
+    --muted: #94a3b8;
+    --card-bg: rgba(255,255,255,0.03);
+    --glass-border: rgba(255,255,255,0.04);
+  }
+  body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: #e6eef8;
+    background:
+      radial-gradient(800px 400px at 10% 10%, rgba(124,58,237,0.06), transparent),
+      radial-gradient(900px 500px at 90% 90%, rgba(59,130,246,0.03), transparent),
+      linear-gradient(180deg,var(--bg-0), #021022 100%);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .glass { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid var(--glass-border); backdrop-filter: blur(6px); }
+  .glyph{ width:48px;height:48px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center; }
+  .disc-wrap{ width:min(560px,86vw); height:min(560px,86vw); margin:0 auto; position:relative; }
+  .disc{ width:100%; height:100%; border-radius:50%; transition: transform 1.2s cubic-bezier(.2,.9,.25,1); display:flex; align-items:center; justify-content:center; box-shadow: 0 24px 60px rgba(2,6,23,0.6), inset 0 6px 30px rgba(255,255,255,0.02); background: conic-gradient(from 0deg, rgba(221,29,43,0.06), rgba(249,115,22,0.04), rgba(124,58,237,0.05)); }
+  .disc-inner{ width:62%; height:62%; border-radius:50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), rgba(0,0,0,0.22)); display:flex; align-items:center; justify-content:center; position:relative; }
+  .hal-eye{ width:94px; height:94px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at 40% 35%, rgba(255,80,80,0.95), rgba(200,0,0,0.95)); box-shadow: 0 6px 28px rgba(200,0,0,0.12); border:4px solid rgba(0,0,0,0.12); }
+  .word-cloud{ position:absolute; top:6%; left:50%; transform:translateX(-50%); display:flex; gap:10px; width:100%; justify-content:center; pointer-events:none; flex-wrap:wrap; max-width:84%; }
+  .word-cloud .word{ font-weight:700; font-size:15px; color: rgba(255,255,255,0.95); opacity:0; transform:translateY(24px) scale(0.95); animation:pop 10s linear infinite; text-shadow: 0 6px 24px rgba(0,0,0,0.55); padding:2px 6px; border-radius:6px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+  @keyframes pop { 0%{opacity:0; transform:translateY(28px) scale(.95);} 8%{opacity:1; transform:translateY(0) scale(1);} 30%{opacity:.6; transform:translateY(-80px) scale(1.6);} 68%{opacity:0; transform:translateY(-220px) scale(2.6);} 100%{opacity:0; transform:translateY(-280px) scale(3);} }
+  .word:nth-child(1){ animation-delay: 0s } .word:nth-child(2){ animation-delay:.6s } .word:nth-child(3){ animation-delay:1.2s } .word:nth-child(4){ animation-delay:1.8s } .word:nth-child(5){ animation-delay:2.4s } .word:nth-child(6){ animation-delay:3.0s } .word:nth-child(7){ animation-delay:3.6s } .word:nth-child(8){ animation-delay:4.2s }
+  textarea { resize:vertical; min-height:70px; max-height:220px; }
+  .small-muted { color: var(--muted); font-size:13px; }
+  .metric-pill { background: rgba(255,255,255,0.02); padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.03); color:#e6eef8; font-weight:600; }
+  .bar { height:10px; background: linear-gradient(90deg,#3b82f6,#8b5cf6); border-radius:999px; }
+  .no-select { user-select:none; -webkit-user-select:none; }
+</style>
+</head>
+<body>
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <header class="flex items-start justify-between gap-6 mb-6">
+      <div>
+        <h1 class="text-2xl font-semibold">Tri-Lens Observatory — Upgraded Oracle</h1>
+        <p class="small-muted mt-1">Type honestly. Press <span class="metric-pill">Deep Reflection</span> — the Disc will tilt to show the true blend, then speak.</p>
+      </div>
+      <div class="text-right small-muted">
+        <div>Design: D-Mode (logic + poetry)</div>
+        <div class="mt-2">Disc angles: <span class="font-medium">Soul 0° • Mind 120° • Body 240°</span></div>
+      </div>
+    </header>
+
+    <!-- Input + controls -->
+    <section class="glass p-6 rounded-2xl">
+      <label class="text-sm small-muted">Describe your situation (be direct — the engine reads tone & content)</label>
+      <textarea id="situationInput" class="w-full mt-3 p-3 rounded-xl bg-black/20 text-white placeholder:opacity-60" placeholder="e.g. 'I’m exhausted, my Parkinson’s is advancing and I’m worried I won’t be there for my son'"></textarea>
+
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex gap-2 items-center">
+          <button id="analyzeBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-semibold">Analyze</button>
+          <button id="deepBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-400 font-semibold">Deep Reflection</button>
+          <button id="clearBtn" class="px-3 py-2 rounded-xl bg-white/6">Clear</button>
+        </div>
+        <div class="small-muted text-right">Tip: press <kbd class="bg-white/6 px-2 py-1 rounded">Enter</kbd> to Analyze</div>
+      </div>
+
+      <!-- quick summary -->
+      <div id="summary" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 opacity-80">
+        <div class="p-4 glass rounded-xl">
+          <div class="text-xs small-muted">Dominant Tilt</div>
+          <div id="tiltLabel" class="text-lg font-semibold mt-1">—</div>
+          <div id="tiltVector" class="mt-2 text-sm small-muted">—</div>
+        </div>
+        <div class="p-4 glass rounded-xl">
+          <div class="text-xs small-muted">Subtext Signature</div>
+          <div id="signatureSummary" class="text-sm mt-1">—</div>
+          <div class="mt-2 small-muted text-xs">(Tension, Longing, Dissociation, Initiation, Ancestral)</div>
+        </div>
+        <div class="p-4 glass rounded-xl">
+          <div class="text-xs small-muted">Archetypal Position</div>
+          <div id="archetype" class="text-lg font-semibold mt-1">—</div>
+          <div id="archeDesc" class="mt-2 small-muted text-sm">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- detailed analysis results -->
+    <section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <article class="glass p-5 rounded-2xl">
+        <h3 class="text-white font-semibold">Body</h3>
+        <div class="small-muted mt-1" id="bodyFocus">—</div>
+        <div class="mt-4 small-muted">Score</div>
+        <div class="mt-2 flex items-center gap-3">
+          <div class="w-full bg-white/6 rounded-full overflow-hidden" style="height:10px;">
+            <div id="bodyBar" class="bar" style="width:0%"></div>
+          </div>
+          <div id="bodyPct" class="text-sm font-medium">0%</div>
+        </div>
+        <div class="mt-4 text-sm" id="bodyAdvice">—</div>
+      </article>
+
+      <article class="glass p-5 rounded-2xl">
+        <h3 class="text-white font-semibold">Mind</h3>
+        <div class="small-muted mt-1" id="mindFocus">—</div>
+        <div class="mt-4 small-muted">Score</div>
+        <div class="mt-2 flex items-center gap-3">
+          <div class="w-full bg-white/6 rounded-full overflow-hidden" style="height:10px;">
+            <div id="mindBar" class="bar" style="width:0%"></div>
+          </div>
+          <div id="mindPct" class="text-sm font-medium">0%</div>
+        </div>
+        <div class="mt-4 text-sm" id="mindAdvice">—</div>
+      </article>
+
+      <article class="glass p-5 rounded-2xl">
+        <h3 class="text-white font-semibold">Soul</h3>
+        <div class="small-muted mt-1" id="soulFocus">—</div>
+        <div class="mt-4 small-muted">Score</div>
+        <div class="mt-2 flex items-center gap-3">
+          <div class="w-full bg-white/6 rounded-full overflow-hidden" style="height:10px;">
+            <div id="soulBar" class="bar" style="width:0%"></div>
+          </div>
+          <div id="soulPct" class="text-sm font-medium">0%</div>
+        </div>
+        <div class="mt-4 text-sm" id="soulAdvice">—</div>
+      </article>
+    </section>
+
+    <!-- separator -->
+    <div class="mt-8 text-center">
+      <div class="inline-block px-6 py-1 rounded-full bg-white/3 small-muted">— Descend into the Oracle —</div>
+    </div>
+
+    <!-- Oracle Disc -->
+    <section class="mt-8 glass p-6 rounded-2xl">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-4">
+          <h2 class="text-xl font-semibold">The Oracle Disc</h2>
+          <p class="small-muted">The disc angle is the *weighted blend* of Body, Mind & Soul. Floating words and the quote reflect subtext signatures and archetype.</p>
+        </div>
+
+        <div class="lg:flex lg:gap-8 items-center">
+          <div class="flex-1">
+            <div class="disc-wrap">
+              <div id="disc" class="disc" style="transform:rotate(0deg);">
+                <div class="word-cloud" id="wordCloud"></div>
+                <div class="disc-inner">
+                  <div class="hal-eye" id="halEye" title="Sentinel">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="10" fill="rgba(3,7,18,0.6)"/>
+                      <circle cx="12" cy="12" r="5.4" fill="#ff3b3b"/>
+                      <circle cx="12" cy="12" r="2.4" fill="#ffd5d5"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 flex gap-3 justify-center">
+              <button onclick="manualSet('body')" class="px-4 py-2 rounded-lg bg-red-600">BODY</button>
+              <button onclick="manualSet('mind')" class="px-4 py-2 rounded-lg bg-amber-400 text-black">MIND</button>
+              <button onclick="manualSet('soul')" class="px-4 py-2 rounded-lg bg-indigo-600">SOUL</button>
+              <button id="autoToggle" onclick="toggleAuto()" class="px-4 py-2 rounded-lg bg-white/6">Auto</button>
+            </div>
+          </div>
+
+          <div class="flex-1">
+            <div class="glass p-4 rounded-xl">
+              <div class="flex items-start gap-3">
+                <div><div class="text-xs small-muted">Oracle Focus</div><div id="oracleFocus" class="text-lg font-semibold">—</div></div>
+                <div class="ml-auto small-muted">State <span id="oracleState">IDLE</span></div>
+              </div>
+
+              <div class="mt-4">
+                <div class="text-xs small-muted">Oracle Quote</div>
+                <div id="oracleQuote" class="mt-2 text-slate-50 italic leading-relaxed">Press Deep Reflection for a direct reflection.</div>
+              </div>
+
+              <div class="mt-4">
+                <div class="text-xs small-muted">Interpretation</div>
+                <div id="oracleInterpret" class="mt-2 text-slate-100 leading-relaxed">—</div>
+              </div>
+
+              <div class="mt-4 flex gap-2">
+                <button id="reflectBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex-1" onclick="deepReflection()">Reflect (sync & spin)</button>
+                <button id="exportBtn" class="px-3 py-2 rounded-xl bg-white/6" onclick="exportSnapshot()">Export</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <footer class="mt-8 text-center small-muted">Made with pattern-sense, a dash of poetry, and a practical nudge.</footer>
+  </div>
+
+<script>
+/* =========================
+   Lexicons, templates & tools
+   ========================= */
+
+const LEX = {
+  bodyWords: ['breath','pulse','tremor','pain','mobility','muscle','balance','sleep','fatigue','rest','movement','symptom'],
+  mindWords: ['think','worry','plan','anxious','memory','focus','decision','rumination','strategy','idea','problem','learn'],
+  soulWords: ['meaning','longing','home','belong','spirit','soul','purpose','identity','faith','story','connection'],
+  // subtext signature indicators
+  sig: {
+    tension: ['stuck','can\'t','should','press','overwhelm','tight','tense','trapped','blocked','afraid','fearful'],
+    longing: ['miss','wish','long','want','crave','yearn','desire','hope','seek'],
+    dissociation: ['numb','empty','float','detached','dissociate','blur','robot','away'],
+    initiation: ['start','begin','change','shift','transition','new','leave','end','restart','pivot'],
+    ancestral: ['mother','father','parents','heritage','history','lineage','ancestor','before','grand','born']
+  },
+  // small oracle quotes by domain (templates/strings)
+  quotes: {
+    body: [
+      "The body speaks in pulses; listen with gentle attention.",
+      "Tend the vessel: small choices steady large storms.",
+      "Presence is a practice — begin with the breath."
+    ],
+    mind: [
+      "A clear question dissolves half the problem.",
+      "Naming a worry disempowers it; curiosity invites it in.",
+      "One small plan will quiet many wild loops."
+    ],
+    soul: [
+      "Longing points the way home; honor it like a map.",
+      "Meaning is found in the repeated, not the dramatic.",
+      "A quiet ritual often says what advice cannot."
+    ]
+  },
+  archetypes: {
+    doorway: {desc: "At the threshold: change is possible; fear is part of the gate.", hint: "Small experiments, ceremonial beginnings."},
+    crossroads: {desc: "Facing choices: multiple paths, uncertain footing.", hint: "Map options, test one path briefly."},
+    wound: {desc: "Wound holds attention: loss or pain is central.", hint: "Soothing routines, small embodied acts."},
+    ascent: {desc: "You are moving upward; effort and practice will compound.", hint: "Sustain recovery with gentle consistency."},
+    return: {desc: "A homeward motion: reclaiming what feels lost.", hint: "Remind yourself of small anchors and stories."}
+  }
+};
+
+/* =========================
+   DOM refs
+   ========================= */
+const refs = {
+  input: document.getElementById('situationInput'),
+  analyzeBtn: document.getElementById('analyzeBtn'),
+  deepBtn: document.getElementById('deepBtn'),
+  reflectBtn: document.getElementById('reflectBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  tiltLabel: document.getElementById('tiltLabel'),
+  tiltVector: document.getElementById('tiltVector'),
+  signatureSummary: document.getElementById('signatureSummary'),
+  archetype: document.getElementById('archetype'),
+  archeDesc: document.getElementById('archeDesc'),
+  bodyBar: document.getElementById('bodyBar'),
+  mindBar: document.getElementById('mindBar'),
+  soulBar: document.getElementById('soulBar'),
+  bodyPct: document.getElementById('bodyPct'),
+  mindPct: document.getElementById('mindPct'),
+  soulPct: document.getElementById('soulPct'),
+  bodyAdvice: document.getElementById('bodyAdvice'),
+  mindAdvice: document.getElementById('mindAdvice'),
+  soulAdvice: document.getElementById('soulAdvice'),
+  disc: document.getElementById('disc'),
+  wordCloud: document.getElementById('wordCloud'),
+  oracleFocus: document.getElementById('oracleFocus'),
+  oracleQuote: document.getElementById('oracleQuote'),
+  oracleInterpret: document.getElementById('oracleInterpret'),
+  oracleState: document.getElementById('oracleState'),
+  autoToggle: document.getElementById('autoToggle'),
+  exportBtn: document.getElementById('exportBtn'),
+  analyzeButton: document.getElementById('analyzeBtn')
+};
+
+/* =========================
+   Utility helpers
+   ========================= */
+function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+function pct(v){ return Math.round(v*1000)/10 + '%'; } // one decimal
+function numPct(v){ return Math.round(v*1000)/10; } // number
+function unique(arr){ return [...new Set(arr)]; }
+function choose(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* =========================
+   Scoring functions
+   ========================= */
+function tokenize(text){
+  return text.toLowerCase().replace(/[^\w\s']/g,' ').split(/\s+/).filter(Boolean);
+}
+
+// count weighted presence of lexicon words
+function scoreDomain(tokens){
+  let body=0, mind=0, soul=0;
+  tokens.forEach(t=>{
+    if(LEX.bodyWords.includes(t)) body += 1.0;
+    if(LEX.mindWords.includes(t)) mind += 1.0;
+    if(LEX.soulWords.includes(t)) soul += 1.0;
+    // also fuzzy checks
+    if(t.endsWith('ing') || t.endsWith('ed')) mind += 0.05;
+  });
+  // small baseline to avoid zero-total
+  return {body, mind, soul};
+}
+
+// signatures scoring (0..1)
+function scoreSignatures(tokens){
+  function sigScore(list){
+    let c=0;
+    list.forEach(k=> tokens.forEach(t=> { if(t.includes(k)) c += 1; }));
+    return clamp01(Math.min(1, c/Math.max(1, list.length*1.5)));
+  }
+  return {
+    tension: sigScore(LEX.sig.tension),
+    longing: sigScore(LEX.sig.longing),
+    dissociation: sigScore(LEX.sig.dissociation),
+    initiation: sigScore(LEX.sig.initiation),
+    ancestral: sigScore(LEX.sig.ancestral)
+  };
+}
+
+// archetype derivation (simple rules)
+function deriveArchetype(sign){
+  // prioritize initiation + ancestral + tension combos
+  if(sign.initiation > 0.45 && sign.tension < 0.45) return 'doorway';
+  if(sign.tension > 0.5 && sign.ancestral > 0.35) return 'wound';
+  if(sign.initiation > 0.5 && sign.longing > 0.35) return 'ascent';
+  if(sign.longing > 0.45 && sign.dissociation < 0.3) return 'return';
+  return 'crossroads';
+}
+
+/* =========================
+   Blend & rotation logic
+   ========================= */
+
+// angles (degrees)
+const ANG = { soul: 0, mind: 120, body: 240 };
+
+function weightedAngle(weights){
+  // weights: {body,mind,soul} normalized to sum 1
+  const deg = weights.soul*ANG.soul + weights.mind*ANG.mind + weights.body*ANG.body;
+  return deg;
+}
+
+/* =========================
+   UI update functions
+   ========================= */
+
+function updateBars(weights){
+  const b = weights.body, m = weights.mind, s = weights.soul;
+  refs.bodyBar.style.width = (b*100) + '%';
+  refs.mindBar.style.width = (m*100) + '%';
+  refs.soulBar.style.width = (s*100) + '%';
+  refs.bodyPct.textContent = pct(b);
+  refs.mindPct.textContent = pct(m);
+  refs.soulPct.textContent = pct(s);
+  refs.bodyAdvice.textContent = adviceSnippet('body', b);
+  refs.mindAdvice.textContent = adviceSnippet('mind', m);
+  refs.soulAdvice.textContent = adviceSnippet('soul', s);
+}
+
+function updateSummary(weights, tiltLabel, sig, arche){
+  refs.tiltLabel.textContent = tiltLabel;
+  refs.tiltVector.textContent = `(${pct(weights.body)} body • ${pct(weights.mind)} mind • ${pct(weights.soul)} soul)`;
+  const sigs = Object.entries(sig).map(([k,v]) => `${k}:${Math.round(v*100)}%`).join(' • ');
+  refs.signatureSummary.textContent = sigs;
+  refs.archetype.textContent = arche.toUpperCase();
+  refs.archeDesc.textContent = LEX.archetypes[arche].desc;
+}
+
+function fillWordCloud(words, signature){
+  refs.wordCloud.innerHTML = '';
+  // choose 8 words mixing domain + signature words
+  const pool = unique(words.slice(0,12));
+  // signature influence: add some signature-specific terms
+  if(signature.tension>0.3) pool.push('tense','tight');
+  if(signature.longing>0.3) pool.push('yearn','seek');
+  if(signature.dissociation>0.3) pool.push('floating','numb');
+  if(signature.initiation>0.3) pool.push('begin','threshold');
+  if(signature.ancestral>0.25) pool.push('lineage','story');
+  const pick = [];
+  while(pick.length < 8 && pool.length){
+    const i = Math.floor(Math.random()*pool.length);
+    pick.push(pool.splice(i,1)[0]);
+  }
+  // render
+  pick.forEach((w, idx)=>{
+    const el = document.createElement('div');
+    el.className = 'word no-select';
+    el.textContent = w;
+    // color tints based on signature strengths (visual cue)
+    el.style.background = 'transparent';
+    refs.wordCloud.appendChild(el);
+  });
+}
+
+/* =========================
+   Interpretation & advice
+   ========================= */
+
+function adviceSnippet(domain, score){
+  if(domain==='body'){
+    if(score>0.6) return 'Focus: gentle movement, sleep hygiene, and a short daily grounding routine.';
+    if(score>0.3) return 'Tend to routine: short walks, hydration, and a check-in with your clinician as needed.';
+    return 'Attune to small body signals: breath checks and micro-movements.';
+  }
+  if(domain==='mind'){
+    if(score>0.6) return 'Cognitive focus: structured planning, micro-goals, and consider therapy or journaling.';
+    if(score>0.3) return 'Curb rumination: one question at a time, short planning blocks.';
+    return 'Nurture curiosity: read a small piece, note one idea.';
+  }
+  if(domain==='soul'){
+    if(score>0.6) return 'Address longing: ritual, community contact, and story work.';
+    if(score>0.3) return 'Daily meaning: brief reflection, small creative act, or gratitude practice.';
+    return 'Tiny symbolic acts (lighting a candle, writing one line) help anchor.';
+  }
+  return '';
+}
+
+/* =========================
+   Main engine: Analyze and Deep Reflect
+   ========================= */
+
+function analyzeSituation(){
+  const text = refs.input.value.trim();
+  if(!text) return;
+  const tokens = tokenize(text);
+  // domain raw scoring
+  const raw = scoreDomain(tokens);
+  // normalize to sum=1
+  const total = raw.body + raw.mind + raw.soul + 0.0001;
+  let weights = { body: raw.body/total, mind: raw.mind/total, soul: raw.soul/total };
+  // small smoothing: if token counts low, boost generic distribution from keywords
+  const tokenCount = tokens.length;
+  if(tokenCount < 6){
+    // mild prior: mind 0.35 body 0.33 soul 0.32 -> nudge toward center
+    weights.body = clamp01((weights.body + 0.33)/2);
+    weights.mind = clamp01((weights.mind + 0.34)/2);
+    weights.soul = clamp01((weights.soul + 0.33)/2);
+    const sum = weights.body + weights.mind + weights.soul;
+    weights = { body:weights.body/sum, mind:weights.mind/sum, soul:weights.soul/sum };
+  }
+  // signatures
+  const sign = scoreSignatures(tokens);
+  // archetype
+  const arche = deriveArchetype(sign);
+
+  // choose tiltLabel based on dominant weight
+  const dom = Object.entries(weights).sort((a,b)=>b[1]-a[1])[0][0];
+  const tiltLabel = dom.toUpperCase();
+
+  // update UI
+  updateSummary(weights, tiltLabel, sign, arche);
+  updateBars(weights);
+
+  // set focus strings
+  refs.bodyFocus.textContent = 'Focus: ' + (weights.body>0.4 ? 'Physical & symptom attention' : 'Maintain bodily rhythm');
+  refs.mindFocus.textContent = 'Focus: ' + (weights.mind>0.4 ? 'Cognitive clarity and planning' : 'Curiosity & small learning');
+  refs.soulFocus.textContent = 'Focus: ' + (weights.soul>0.4 ? 'Meaning, belonging, and ritual' : 'Tiny symbolic actions');
+
+  // fill oracle preview but do not spin until deep reflection
+  const domainWords = pickDomainWords(weights);
+  fillWordCloud(domainWords, sign);
+
+  // small minimal oracle preview text
+  refs.oracleFocus.textContent = `${tiltLabel} lean — balanced view`;
+  refs.oracleQuote.textContent = "Press Deep Reflection to let the Disc mix tilt, signature, and archetype into a short, concrete reading.";
+  refs.oracleInterpret.textContent = `Pre-reflection: ${pct(weights[dom])} ${dom}. Archetype candidate: ${arche}. Press Deep Reflection for a full reading.`;
+  refs.oracleState.textContent = 'PREVIEW';
+  // store for later
+  window._lastAnalysis = { text, tokens, weights, sign, arche, dominant: dom };
+}
+
+/* pick domain words weighted by weights */
+function pickDomainWords(weights){
+  const words = [];
+  // add more from dominant domain
+  const wBody = Math.round(weights.body*6);
+  const wMind = Math.round(weights.mind*6);
+  const wSoul = Math.round(weights.soul*6);
+  for(let i=0;i<wBody;i++) words.push(choose(LEX.bodyWords));
+  for(let i=0;i<wMind;i++) words.push(choose(LEX.mindWords));
+  for(let i=0;i<wSoul;i++) words.push(choose(LEX.soulWords));
+  // mix and unique
+  return unique(words).slice(0,12);
+}
+
+/* Deep reflection: combine logic + poetic templates */
+function deepReflection(){
+  const analysis = window._lastAnalysis || null;
+  if(!analysis){ analyzeSituation(); }
+  const A = window._lastAnalysis;
+  if(!A) { refs.oracleQuote.textContent = 'Please type a situation and press Analyze first.'; return; }
+
+  // determine weighted angle and spin disc
+  const angle = weightedAngle(A.weights);
+  // apply a flourish depending on signatures
+  const flourish = 360 * (A.sign.initiation*0.8 + Math.random()*0.6);
+  const finalAngle = angle + flourish;
+  refs.disc.style.transform = `rotate(${finalAngle}deg)`;
+
+  // build quote: choose domain then template
+  const dom = A.dominant;
+  const domainQuotes = LEX.quotes[dom] || [];
+  let baseQuote = choose(domainQuotes);
+  // personalize: if ancestral present, add whisper
+  let whisper = '';
+  if(A.sign.ancestral > 0.25){
+    whisper = " A faint ancestral memory hums under this: you are not starting from nowhere.";
+  }
+  // compose
+  refs.oracleQuote.textContent = baseQuote + (whisper ? (' ' + whisper) : '');
+
+  // interpretation: numeric + narrative + tips
+  const bodyP = numPct(A.weights.body), mindP = numPct(A.weights.mind), soulP = numPct(A.weights.soul);
+  const header = `Tilt: ${bodyP}% body • ${mindP}% mind • ${soulP}% soul — Archetype: ${A.arche.toUpperCase()}.`;
+  const narrative = buildNarrative(A);
+  const tips = `Practical nudge — Body: ${adviceSnippet('body', A.weights.body)} Mind: ${adviceSnippet('mind', A.weights.mind)} Soul: ${adviceSnippet('soul', A.weights.soul)}`;
+
+  refs.oracleInterpret.innerHTML = `<strong>${header}</strong><p style="margin-top:6px">${narrative}</p><p style="margin-top:8px;font-weight:600">${LEX.archetypes[A.arche].hint}</p><p style="margin-top:8px;color:var(--muted)">${tips}</p>`;
+  refs.oracleState.textContent = 'REFLECTED';
+  // refill wordcloud with signature influence
+  const domainWords = pickDomainWords(A.weights);
+  fillWordCloud(domainWords, A.sign);
+  // small animated nudge: scroll to oracle
+  document.querySelector('.disc-wrap').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* build a short narrative combining signatures & archetype */
+function buildNarrative(A){
+  // use signature values to craft sentences
+  const s = A.sign;
+  const pieces = [];
+  if(s.tension > 0.45) pieces.push("There's a tense thread here — pressure and 'should' language are active.");
+  if(s.longing > 0.35) pieces.push("A note of longing colors this: something (or someone) is being sought.");
+  if(s.dissociation > 0.35) pieces.push("Parts of you describe distance or numbness; grounding will be useful.");
+  if(s.initiation > 0.35) pieces.push("You are near a threshold — the momentum to begin is present.");
+  if(s.ancestral > 0.25) pieces.push("Family or lineage shadows this text; a story from the past matters.");
+  if(pieces.length===0) pieces.push("The tone is quietly practical; attention to small next steps will move things forward.");
+
+  // tie to tilt
+  const dom = A.dominant;
+  let conclusion = "";
+  if(dom === 'body') conclusion = "The oracle leans toward embodied care: partner with your body, not against it.";
+  if(dom === 'mind') conclusion = "This favors mental clarity: one question, one plan, one small experiment.";
+  if(dom === 'soul') conclusion = "Meaning-making and belonging are active: small rituals and stories matter.";
+
+  return pieces.join(' ') + ' ' + conclusion;
+}
+
+/* manualSet buttons (quick) */
+function manualSet(domain){
+  // force weights fully to domain
+  const w = { body:0, mind:0, soul:0 };
+  w[domain] = 1;
+  window._lastAnalysis = window._lastAnalysis || { text: refs.input.value || '', tokens: tokenize(refs.input.value || ''), sign: {tension:0, longing:0, dissociation:0, initiation:0, ancestral:0}, arche:'crossroads', dominant:domain, weights: w };
+  deepReflection();
+}
+
+/* export snapshot: copy summary text */
+function exportSnapshot(){
+  const A = window._lastAnalysis;
+  if(!A) { alert('No analysis yet. Press Analyze first.'); return; }
+  const out = [
+    `Situation: ${A.text}`,
+    `Tilt: ${pct(A.weights.body)} body • ${pct(A.weights.mind)} mind • ${pct(A.weights.soul)} soul`,
+    `Signatures: Tension ${Math.round(A.sign.tension*100)}% • Longing ${Math.round(A.sign.longing*100)}% • Dissociation ${Math.round(A.sign.dissociation*100)}% • Initiation ${Math.round(A.sign.initiation*100)}% • Ancestral ${Math.round(A.sign.ancestral*100)}%`,
+    `Archetype: ${A.arche}`,
+    `Interpretation excerpt: ${document.getElementById('oracleInterpret').innerText}`
+  ].join('\n\n');
+  navigator.clipboard.writeText(out).then(()=> { refs.exportBtn.textContent = 'Copied'; setTimeout(()=>refs.exportBtn.textContent='Export',900); }).catch(()=> alert('Copy failed.'));
+}
+
+/* =========================
+   Event wiring
+   ========================= */
+
+refs.analyzeBtn.addEventListener('click', analyzeSituation);
+refs.input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); analyzeSituation(); } });
+refs.deepBtn.addEventListener('click', ()=>{ analyzeSituation(); setTimeout(()=>deepReflection(), 160); });
+refs.reflectBtn.addEventListener('click', deepReflection);
+refs.clearBtn.addEventListener('click', ()=>{ refs.input.value=''; window._lastAnalysis=null; location.reload(); });
+
+/* simple auto toggle (cycles the disc gently) */
+let auto = true, autoI;
+function toggleAuto(){
+  auto = !auto;
+  refs.autoToggle.textContent = auto ? 'Auto ✓' : 'Auto';
+  if(auto){ autoI = setInterval(()=>{ const order=['soul','mind','body']; const angle = (Math.random()*360); refs.disc.style.transform = `rotate(${angle}deg)`; }, 3600); }
+  else { clearInterval(autoI); }
+}
+toggleAuto(); // start auto by default
+
+/* small initialization */
+(function init(){
+  refs.oracleQuote.textContent = 'The Oracle is ready — type and press Deep Reflection.';
+  refs.oracleInterpret.textContent = 'The Oracle reads tilt, signature, and archetype to create an actionable reflection.';
+  refs.oracleState.textContent = 'IDLE';
+})();
+
+</script>
+</body>
+</html>

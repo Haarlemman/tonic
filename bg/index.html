@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblical Genealogy: HTML/CSS Version</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #ccc;
+            overflow-x: auto; /* Allows horizontal scrolling if needed */
+        }
+        
+        /* --- General Layout --- */
+        #chart-container {
+            position: relative;
+            min-width: 1500px; /* Define a minimum width for the full chart */
+            min-height: 1500px; /* Define a minimum height for the full chart */
+            padding-top: 50px;
+            margin: 0 auto;
+        }
+
+        .generation {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 70px; /* Vertical space between generations */
+            position: relative;
+        }
+
+        /* --- Node Styles --- */
+        .node-wrapper {
+            position: relative;
+            text-align: center;
+            padding: 0 15px; /* Horizontal spacing between nodes in a generation */
+            flex-shrink: 0;
+        }
+
+        .node-box {
+            background-color: #2c3e50;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #999;
+            cursor: default;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+        
+        .wife-node {
+            border: 2px solid #f1c40f; /* Yellow border for wives/multiple wives */
+        }
+        
+        .final-level {
+            margin-top: 1000px; /* Move the final level way down for vertical separation */
+            position: absolute;
+            left: 0;
+            right: 0;
+            justify-content: space-around; /* Distribute modern people evenly */
+            border-top: 1px solid #555; /* Visual line for the present time */
+            padding-top: 20px;
+        }
+        
+        /* --- UI Elements --- */
+        #ui-controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 10;
+        }
+        
+        #highlight-button {
+            padding: 5px 10px;
+            margin-top: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 3px;
+            background-color: #555;
+            color: #fff;
+        }
+        
+        /* --- Davidic Line Highlight (Conceptual) --- */
+        .davidic {
+            /* This class will be added/removed by JavaScript */
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        
+        .davidic.highlight-on {
+            border-color: gold !important;
+            box-shadow: 0 0 8px gold;
+            transform: scale(1.05);
+        }
+
+        /* --- Connections (Lines) --- */
+        .connection {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            height: 70px; /* Matches generation margin */
+            width: 2px; /* Line thickness */
+            background-color: #e74c3c;
+            transform: translateX(-50%);
+            z-index: -1;
+            transition: background-color 0.3s;
+        }
+
+        .dotted-skip {
+            border-left: 2px dotted #f39c12;
+            background-color: transparent;
+        }
+        
+        .line-cain .connection { background-color: #f39c12; }
+        .line-shem .connection { background-color: #2ecc71; }
+        .line-israel .connection { background-color: #f1c40f; }
+
+        /* Messiah Line (Separate Dotted Line from David) */
+        .messiah-line {
+            position: absolute;
+            width: 2px;
+            height: 400px; /* Long, manually positioned line */
+            background-color: transparent;
+            border-left: 3px dotted gold;
+            z-index: 1;
+        }
+
+        /* Adjustments for non-tree structures */
+        #node-david {
+            /* David's node is an ancestor to many, so lines need custom positioning */
+            margin-bottom: 250px; 
+        }
+
+        /* Media Query for Mobile Legend */
+        @media (max-width: 600px) {
+            #legend-list {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-out;
+            }
+            #legend-list.expanded {
+                max-height: 200px; 
+            }
+            #ui-controls h4 {
+                 text-decoration: underline;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-controls">
+        <div id="legend">
+            <h4 style="margin: 0 0 5px 0; font-size: 12px; cursor: pointer;" onclick="document.getElementById('legend-list').classList.toggle('expanded')">
+                Legend (Tap on mobile)
+            </h4>
+            <div id="legend-list">
+                <div class="legend-item"><span style="background-color: #e74c3c; display: block; height: 3px;"></span> Main Line</div>
+                <div class="legend-item"><span style="border-left: 2px dotted #f39c12; display: block; width: 15px; height: 3px;"></span> Generational Skip</div>
+                <div class="legend-item"><span style="background-color: #f1c40f; display: block; height: 3px;"></span> Israel Line</div>
+                <div class="legend-item"><span style="border-left: 3px dotted gold; display: block; width: 15px; height: 3px;"></span> Future Messiah Line</div>
+            </div>
+        </div>
+        <button id="highlight-button" onclick="toggleDavidicHighlight()">
+            Show Davidic Line
+        </button>
+    </div>
+
+    <div id="chart-container">
+
+        <div class="generation" style="margin-bottom: 50px;">
+            <div class="node-wrapper line-adam">
+                <div class="node-box wife-node davidic">Adam & Eve</div>
+            </div>
+        </div>
+        
+        <div style="height: 50px; display: flex; justify-content: center; width: 100%; position: absolute; top: 75px;">
+             <div style="position: absolute; width: 2px; height: 50px; background-color: #e74c3c;"></div>
+             <div style="position: absolute; left: 50%; width: 120px; border-top: 2px solid #e74c3c; transform: translateY(50px);"></div>
+             <div style="position: absolute; left: 50%; margin-left: -60px; height: 50px; width: 2px; background-color: #e74c3c;"></div>
+             <div style="position: absolute; left: 50%; margin-left: 60px; height: 50px; width: 2px; border-left: 2px dotted #f39c12; background-color: transparent;"></div>
+        </div>
+
+        <div class="generation" style="margin-bottom: 250px; position: absolute; top: 125px;">
+            <div class="node-wrapper line-adam" style="margin-right: 100px;">
+                <div class="node-box wife-node davidic">Seth (Line of Promise)</div>
+                <div class="connection" style="top: 20px; height: 250px;"></div>
+            </div>
+            <div class="node-wrapper line-cain" style="margin-left: 100px;">
+                <div class="node-box dotted-skip">Cain (Line of Contradiction)</div>
+                <div class="connection dotted-skip" style="top: 20px; height: 1000px;"></div> 
+            </div>
+        </div>
+        
+        <div class="generation" style="position: absolute; top: 450px;">
+            <div class="node-wrapper line-adam">
+                <div class="node-box wife-node davidic">Noah & Wife</div>
+                <div class="connection"></div>
+            </div>
+        </div>
+        
+        <div style="height: 70px; display: flex; justify-content: center; width: 100%; position: absolute; top: 565px;">
+             <div style="position: absolute; width: 2px; height: 70px; background-color: #e74c3c;"></div>
+             <div style="position: absolute; left: 50%; width: 600px; border-top: 2px solid #e74c3c; transform: translateY(70px);"></div>
+             
+             <div style="position: absolute; left: 50%; margin-left: -200px; height: 70px; width: 2px; background-color: #2ecc71;"></div>
+             <div style="position: absolute; left: 50%; margin-left: 0; height: 70px; width: 2px; background-color: #3498db;"></div>
+             <div style="position: absolute; left: 50%; margin-left: 200px; height: 70px; width: 2px; background-color: #9b59b6;"></div>
+        </div>
+
+        <div class="generation" style="margin-bottom: 100px; position: absolute; top: 680px;">
+            <div class="node-wrapper line-shem" style="margin-right: 350px;">
+                <div class="node-box wife-node davidic">Shem (Semites)</div>
+                <div class="connection line-shem"></div>
+            </div>
+            <div class="node-wrapper line-ham" style="margin-right: 150px; margin-left: -150px;">
+                <div class="node-box wife-node">Ham (Afro-Asiatic)</div>
+                <div class="connection line-ham"></div>
+            </div>
+            <div class="node-wrapper line-juniper" style="margin-left: 350px;">
+                <div class="node-box wife-node">Japheth (Indo-European)</div>
+                <div class="connection line-juniper"></div>
+            </div>
+        </div>
+        
+        <div class="generation" style="position: absolute; top: 800px; justify-content: flex-start; left: 200px;">
+            <div class="node-wrapper line-shem" style="padding: 0;">
+                <div class="node-box wife-node davidic">Abraham & Wives</div>
+                <div class="connection line-israel"></div>
+            </div>
+            </div>
+
+        <div style="height: 70px; display: flex; justify-content: center; width: 100%; position: absolute; top: 915px;">
+             <div style="position: absolute; left: 200px; width: 2px; height: 70px; background-color: #f1c40f;"></div>
+             <div style="position: absolute; left: 200px; width: 350px; border-top: 2px solid #f1c40f; transform: translateY(70px);"></div>
+             
+             <div style="position: absolute; left: 200px; margin-left: -100px; height: 70px; width: 2px; background-color: #f1c40f;"></div>
+             <div style="position: absolute; left: 200px; margin-left: 100px; height: 70px; width: 2px; background-color: #9b59b6;"></div>
+        </div>
+
+        <div class="generation" style="margin-bottom: 70px; position: absolute; top: 1030px; justify-content: flex-start; left: 100px;">
+            <div class="node-wrapper line-israel" style="margin-right: 150px; padding: 0;">
+                <div class="node-box wife-node davidic">Isaac & Rebekah</div>
+                <div class="connection line-israel"></div>
+            </div>
+            <div class="node-wrapper line-juniper" style="padding: 0;">
+                <div class="node-box">Ishmael</div>
+                <div class="connection line-juniper" style="height: 100px;"></div>
+            </div>
+        </div>
+        
+        <div class="generation" style="position: absolute; top: 1140px; justify-content: flex-start; left: 100px;">
+            <div class="node-wrapper line-israel" style="padding: 0;">
+                <div class="node-box wife-node davidic">Jacob (Israel) & Wives</div>
+                <div class="connection line-israel"></div>
+            </div>
+        </div>
+
+        <div style="height: 70px; display: flex; justify-content: center; width: 100%; position: absolute; top: 1255px;">
+             <div style="position: absolute; left: 185px; width: 2px; height: 70px; background-color: #f1c40f;"></div>
+             <div style="position: absolute; left: 185px; width: 300px; border-top: 2px solid #f1c40f; transform: translateY(70px);"></div>
+             
+             <div style="position: absolute; left: 185px; margin-left: -120px; height: 70px; width: 2px; background-color: #f1c40f;"></div>
+             <div style="position: absolute; left: 185px; margin-left: 0; height: 70px; width: 2px; background-color: #f1c40f;"></div>
+             <div style="position: absolute; left: 185px; margin-left: 120px; height: 70px; width: 2px; background-color: #f1c40f;"></div>
+        </div>
+
+
+        <div class="generation" style="margin-bottom: 70px; position: absolute; top: 1370px; justify-content: flex-start; left: 65px; z-index: 2;">
+            <div class="node-wrapper line-israel" style="margin-right: 70px; padding: 0;">
+                <div class="node-box wife-node davidic">Judah (Davidic Line)</div>
+                <div class="connection line-israel davidic" style="height: 100px;"></div>
+            </div>
+             <div class="node-wrapper line-israel" style="margin-right: 70px; margin-left: -50px; padding: 0;">
+                <div class="node-box">Ephraim/Manasseh (Lost)</div>
+                <div class="connection line-israel" style="height: 100px;"></div>
+            </div>
+             <div class="node-wrapper line-israel" style="padding: 0;">
+                <div class="node-box">Other Tribes</div>
+                <div class="connection line-israel" style="height: 100px;"></div>
+            </div>
+        </div>
+        
+        <div class="generation" style="position: absolute; top: 1540px; justify-content: flex-start; left: 65px;">
+            <div class="node-wrapper line-israel" style="margin-right: 70px; padding: 0;">
+                <div class="node-box wife-node davidic" id="node-david">King David & Wives</div>
+                <div class="connection line-israel davidic" style="height: 70px;"></div>
+            </div>
+        </div>
+
+        <div class="messiah-line" style="top: 1610px; left: 105px; height: 250px;"></div>
+        
+        <div class="generation final-level" style="top: 1900px;">
+            <div class="node-wrapper" style="width: 150px; text-align: left; padding-right: 50px;">
+                <div class="node-box final-node line-juniper">Modern Arabs</div>
+                <div class="node-box final-node line-ham" style="margin-top: 10px;">African/Canaanite Peoples</div>
+            </div>
+             <div class="node-wrapper" style="width: 150px;">
+                <div class="node-box final-node davidic" id="final-jewry">Present Day Jewry (Davidic)</div>
+                <div class="node-box final-node line-israel" style="margin-top: 10px;">Other Modern Jews</div>
+            </div>
+            <div class="node-wrapper" style="width: 150px; text-align: right; padding-left: 50px;">
+                <div class="node-box final-node line-israel" style="margin-left: auto;">10 Lost Tribes</div>
+                <div class="node-box final-node line-juniper" style="margin-top: 10px; margin-left: auto;">Indo-European Peoples</div>
+            </div>
+            
+            <div class="node-wrapper" style="position: absolute; top: 350px; left: 100px; transform: translateX(-50%);">
+                <div class="node-box davidic" id="final-messiah" style="border: 3px dashed gold;">Future Messiah</div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        function toggleDavidicHighlight() {
+            const button = document.getElementById('highlight-button');
+            const davidicNodes = document.querySelectorAll('.davidic');
+            const lines = document.querySelectorAll('.connection');
+
+            if (button.textContent.includes('Show')) {
+                // Highlight nodes
+                davidicNodes.forEach(node => node.classList.add('highlight-on'));
+                
+                // Highlight connecting lines (using the same class)
+                lines.forEach(line => {
+                    if (line.classList.contains('davidic') || line.closest('.davidic')) {
+                         line.style.backgroundColor = 'gold';
+                    }
+                });
+
+                // Highlight Messiah line
+                const messiahLine = document.querySelector('.messiah-line');
+                if (messiahLine) {
+                    messiahLine.style.borderLeftColor = 'gold';
+                    messiahLine.style.borderWidth = '4px';
+                }
+
+                button.textContent = 'Hide Davidic Line';
+                button.style.backgroundColor = 'gold';
+                button.style.color = '#000';
+
+            } else {
+                // Remove highlight
+                davidicNodes.forEach(node => node.classList.remove('highlight-on'));
+                lines.forEach(line => {
+                    if (line.classList.contains('davidic') || line.closest('.davidic')) {
+                         line.style.backgroundColor = ''; // Revert to CSS default (or specify the color)
+                    }
+                });
+                
+                // Reset Messiah line
+                const messiahLine = document.querySelector('.messiah-line');
+                if (messiahLine) {
+                    messiahLine.style.borderLeftColor = 'gold'; // Gold is the default for this line
+                    messiahLine.style.borderWidth = '3px';
+                }
+                
+                button.textContent = 'Show Davidic Line';
+                button.style.backgroundColor = '#555';
+                button.style.color = '#fff';
+            }
+        }
+    </script>
+</body>
+</html>

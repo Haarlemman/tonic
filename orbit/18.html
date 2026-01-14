@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Stylized Atom — True Occlusion, 3 Electrons</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #000;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  svg { width: min(86vmin, 900px); height: auto; filter: saturate(1.06) contrast(1.06); }
+
+  /* Orbits */
+  .orbit { fill: none; stroke-width: 2.5; opacity: 0.9; }
+  .orbit.orange { stroke: #ff8a2d; filter: drop-shadow(0 0 6px #ff8a2d); }
+  .orbit.red    { stroke: #ff3a3a; filter: drop-shadow(0 0 6px #ff3a3a); }
+  .orbit.blue   { stroke: #2da8ff; filter: drop-shadow(0 0 6px #2da8ff); }
+
+  /* Nucleus */
+  .nucleus-core {
+    fill: url(#nucleusFill);
+    filter: drop-shadow(0 0 24px rgba(255,255,255,0.85)) drop-shadow(0 0 60px rgba(255,255,255,0.35));
+  }
+
+  /* Electrons */
+  .electron { r: 3; }
+  .electron.yellow { fill: url(#gradYellow); filter: drop-shadow(0 0 10px rgba(255,212,82,0.85)); }
+  .electron.red    { fill: url(#gradRed);    filter: drop-shadow(0 0 10px rgba(255,90,90,0.85)); }
+  .electron.blue   { fill: url(#gradBlue);   filter: drop-shadow(0 0 10px rgba(58,168,255,0.85)); }
+</style>
+</head>
+<body>
+<svg viewBox="-60 -60 120 120" aria-label="Three electrons orbiting a glowing nucleus with true occlusion">
+  <!-- Gradients -->
+  <defs>
+    <radialGradient id="nucleusFill" cx="45%" cy="45%">
+      <stop offset="0%"  stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f7f7f7"/>
+      <stop offset="100%" stop-color="#d9d9d9"/>
+    </radialGradient>
+    <radialGradient id="gradBlue" cx="35%" cy="35%">
+      <stop offset="0%"  stop-color="#dff2ff"/>
+      <stop offset="55%" stop-color="#8fd2ff"/>
+      <stop offset="100%" stop-color="#3aa8ff"/>
+    </radialGradient>
+    <radialGradient id="gradRed" cx="35%" cy="35%">
+      <stop offset="0%"  stop-color="#ffe4e4"/>
+      <stop offset="55%" stop-color="#ff9d9d"/>
+      <stop offset="100%" stop-color="#ff5a5a"/>
+    </radialGradient>
+    <radialGradient id="gradYellow" cx="35%" cy="35%">
+      <stop offset="0%"  stop-color="#fff7d6"/>
+      <stop offset="55%" stop-color="#ffe48a"/>
+      <stop offset="100%" stop-color="#ffd452"/>
+    </radialGradient>
+
+    <!-- Mask to hide orbit lines under the nucleus -->
+    <mask id="hideUnderNucleus">
+      <!-- Show everything by default -->
+      <rect x="-100" y="-100" width="200" height="200" fill="white"/>
+      <!-- Punch a hole where the nucleus sits (black = hidden) -->
+      <circle cx="0" cy="0" r="20" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Orbits: equal ellipses, rotated 120° apart, masked under the nucleus -->
+  <g mask="url(#hideUnderNucleus)">
+    <ellipse class="orbit orange" cx="0" cy="0" rx="28" ry="14" transform="rotate(0)"/>
+    <ellipse class="orbit red"    cx="0" cy="0" rx="28" ry="14" transform="rotate(120)"/>
+    <ellipse class="orbit blue"   cx="0" cy="0" rx="28" ry="14" transform="rotate(240)"/>
+  </g>
+
+  <!-- Invisible motion paths (same geometry as the orbits) -->
+  <path id="path-orange" d="M 28 0 A 28 14 0 1 1 -28 0 A 28 14 0 1 1 28 0" fill="none"/>
+  <path id="path-red"    d="M 28 0 A 28 14 0 1 1 -28 0 A 28 14 0 1 1 28 0" fill="none" transform="rotate(120)"/>
+  <path id="path-blue"   d="M 28 0 A 28 14 0 1 1 -28 0 A 28 14 0 1 1 28 0" fill="none" transform="rotate(240)"/>
+
+  <!-- Electrons: each follows its own colored lane -->
+  <!-- Yellow electron on orange lane -->
+  <circle class="electron yellow">
+    <animateMotion dur="8s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#path-orange"/>
+    </animateMotion>
+    <!-- Stagger start so courses are independent -->
+    <animate attributeName="visibility" values="hidden;visible" dur="0.001s" begin="0.5s" fill="freeze"/>
+  </circle>
+
+  <!-- Red electron on red lane -->
+  <circle class="electron red">
+    <animateMotion dur="8s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#path-red"/>
+    </animateMotion>
+    <animate attributeName="visibility" values="hidden;visible" dur="0.001s" begin="2s" fill="freeze"/>
+  </circle>
+
+  <!-- Blue electron on blue lane -->
+  <circle class="electron blue">
+    <animateMotion dur="8s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#path-blue"/>
+    </animateMotion>
+    <animate attributeName="visibility" values="hidden;visible" dur="0.001s" begin="3.5s" fill="freeze"/>
+  </circle>
+
+  <!-- Nucleus drawn last (on top), naturally occluding paths and electrons -->
+  <circle class="nucleus-core" cx="0" cy="0" r="20"/>
+</svg>
+</body>
+</html>

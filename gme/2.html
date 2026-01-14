@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Capture Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #121212; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        
+        /* Layout */
+        #app { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Left: The Studio (Editor) */
+        #studio { 
+            flex: 1; 
+            background: #1a1a1a; 
+            position: relative; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
+            border-right: 1px solid #333;
+        }
+
+        /* The Canvas Area */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(45deg, #222 25%, transparent 25%), 
+                linear-gradient(-45deg, #222 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #222 75%), 
+                linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            cursor: crosshair;
+        }
+
+        /* Right: The Preview / Game */
+        #game-panel { width: 400px; background: #000; display: flex; flex-direction: column; }
+        #gameCanvas { width: 100%; height: 50%; display: block; background: #000; border-bottom: 1px solid #333; }
+        
+        /* The Film Strip (Captured Frames) */
+        #strip-panel { 
+            flex: 1; 
+            background: #111; 
+            padding: 1rem; 
+            overflow-y: auto;
+        }
+        .strip-header { color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+        
+        #frame-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .captured-frame {
+            border: 1px solid #444;
+            background: #222;
+            width: 48px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+        .captured-frame:hover { border-color: #fff; }
+        .captured-frame canvas { max-width: 100%; max-height: 100%; }
+        .frame-number { position: absolute; top: 1px; left: 3px; font-size: 8px; color: #fff; text-shadow: 0 1px 2px #000; }
+
+        /* UI Controls */
+        #toolbar {
+            height: 60px;
+            background: #222;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+        }
+
+        /* Overlay Messages */
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 50;
+        }
+        .card {
+            background: #222; border: 1px solid #444; padding: 2rem; border-radius: 12px;
+            text-align: center; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .btn {
+            background: #4f46e5; color: white; border: none; padding: 10px 20px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            margin-top: 1rem; display: inline-block;
+        }
+        .btn:hover { background: #4338ca; }
+        .btn-sub { background: #333; font-size: 0.8rem; padding: 6px 12px; }
+
+        /* Mouse Cursor Box */
+        #cursor-box {
+            position: absolute;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px rgba(0,255,0,0.3);
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+            background: rgba(0, 255, 0, 0.1);
+            transform: translate(-50%, -50%); /* Center on mouse */
+        }
+        .crosshair {
+            position: absolute; width: 4px; height: 4px; background: #00ff00;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            border-radius: 50%;
+        }
+
+        input[type=range] { width: 150px; }
+        label { color: #888; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    
+    <!-- LEFT: EDITING STUDIO -->
+    <div id="studio">
+        <div id="canvas-container">
+            <canvas id="sourceCanvas"></canvas>
+            <div id="cursor-box"><div class="crosshair"></div></div>
+        </div>
+        
+        <div id="toolbar">
+            <div class="flex flex-col">
+                <label>Box Size</label>
+                <input type="range" id="sizeSlider" min="16" max="256" value="64">
+            </div>
+            <div class="h-8 w-px bg-gray-700"></div>
+            <button id="undoBtn" class="btn-sub">Undo Last</button>
+            <button id="clearBtn" class="btn-sub bg-red-900 text-red-200">Clear All</button>
+            <div class="flex-1 text-right text-gray-500 text-xs">
+                Scroll to Resize • Click to Capture
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: GAME & STRIP -->
+    <div id="game-panel">
+        <canvas id="gameCanvas"></canvas>
+        <div class="p-2 text-center text-xs text-gray-500 border-b border-gray-800 bg-gray-900">
+            ARROWS to Move • SPACE to Jump
+        </div>
+        <div id="strip-panel">
+            <div class="strip-header">Captured Frames (<span id="frameCount">0</span>)</div>
+            <div id="frame-list">
+                <!-- Frames injected here -->
+            </div>
+            <div id="empty-msg" class="text-gray-700 text-sm mt-4 text-center italic">
+                No frames yet.<br>Click on the image to capture poses.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- UPLOAD OVERLAY -->
+<div id="overlay">
+    <div class="card">
+        <h1 class="text-2xl font-bold text-white mb-2">Capture Studio</h1>
+        <p class="text-gray-400 mb-6 text-sm">
+            Control the chaos. Capture your frames manually.<br>
+            Works with any image format.
+        </p>
+        <label class="btn cursor-pointer">
+            Upload Sprite Sheet
+            <input type="file" id="fileInput" accept="image/*" class="hidden">
+        </label>
+    </div>
+</div>
+
+<script>
+/**
+ * --- APP STATE ---
+ */
+const state = {
+    img: null,
+    frames: [], // {x, y, w, h}
+    boxSize: 64,
+    scale: 1, // Viewport zoom (not implemented fully for simplicity, assume 1:1)
+    mouseX: 0,
+    mouseY: 0
+};
+
+// DOM Elements
+const dom = {
+    overlay: document.getElementById('overlay'),
+    fileInput: document.getElementById('fileInput'),
+    sourceCanvas: document.getElementById('sourceCanvas'),
+    ctx: document.getElementById('sourceCanvas').getContext('2d'),
+    container: document.getElementById('canvas-container'),
+    cursorBox: document.getElementById('cursor-box'),
+    sizeSlider: document.getElementById('sizeSlider'),
+    undoBtn: document.getElementById('undoBtn'),
+    clearBtn: document.getElementById('clearBtn'),
+    frameList: document.getElementById('frame-list'),
+    frameCount: document.getElementById('frameCount'),
+    emptyMsg: document.getElementById('empty-msg'),
+    gameCanvas: document.getElementById('gameCanvas')
+};
+
+/**
+ * --- STEP 1: UPLOAD ---
+ */
+dom.fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        const img = new Image();
+        img.onload = () => {
+            state.img = img;
+            startStudio();
+        };
+        img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+function startStudio() {
+    dom.overlay.style.display = 'none';
+    
+    // Setup Canvas size to match image
+    dom.sourceCanvas.width = state.img.width;
+    dom.sourceCanvas.height = state.img.height;
+    dom.ctx.drawImage(state.img, 0, 0);
+
+    // Initial Box
+    updateBox();
+    
+    // Start Game Loop (it will run empty first)
+    requestAnimationFrame(gameLoop);
+}
+
+/**
+ * --- STEP 2: CAPTURE LOGIC ---
+ */
+
+// Mouse Movement
+dom.container.addEventListener('mousemove', (e) => {
+    if (!state.img) return;
+    
+    const rect = dom.container.getBoundingClientRect();
+    const scrollX = dom.container.scrollLeft;
+    const scrollY = dom.container.scrollTop;
+
+    // Mouse relative to the viewport
+    const viewX = e.clientX - rect.left;
+    const viewY = e.clientY - rect.top;
+
+    // Update Box Visual
+    dom.cursorBox.style.display = 'block';
+    dom.cursorBox.style.left = viewX + scrollX + 'px';
+    dom.cursorBox.style.top = viewY + scrollY + 'px';
+
+    // Store actual coordinates relative to image
+    state.mouseX = viewX + scrollX;
+    state.mouseY = viewY + scrollY;
+});
+
+dom.container.addEventListener('mouseleave', () => {
+    dom.cursorBox.style.display = 'none';
+});
+
+// Scroll Wheel to Resize Box
+dom.container.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) return; // Allow normal zoom if browser wants
+    e.preventDefault();
+    
+    let delta = e.deltaY > 0 ? -4 : 4;
+    state.boxSize = Math.max(16, Math.min(256, state.boxSize + delta));
+    dom.sizeSlider.value = state.boxSize;
+    updateBox();
+});
+
+// Click to Capture
+dom.container.addEventListener('click', (e) => {
+    if (!state.img) return;
+
+    // Calculate capture coordinates (Center based)
+    const half = state.boxSize / 2;
+    const x = Math.max(0, state.mouseX - half);
+    const y = Math.max(0, state.mouseY - half);
+    
+    captureFrame(x, y, state.boxSize);
+});
+
+// Slider Control
+dom.sizeSlider.addEventListener('input', (e) => {
+    state.boxSize = parseInt(e.target.value);
+    updateBox();
+});
+
+function updateBox() {
+    dom.cursorBox.style.width = state.boxSize + 'px';
+    dom.cursorBox.style.height = state.boxSize + 'px';
+}
+
+function captureFrame(x, y, size) {
+    // Add to data
+    const frame = { x, y, w: size, h: size };
+    state.frames.push(frame);
+    
+    // Update UI
+    dom.emptyMsg.style.display = 'none';
+    dom.frameCount.innerText = state.frames.length;
+    
+    // Create Thumbnail
+    const div = document.createElement('div');
+    div.className = 'captured-frame';
+    
+    const tnCanvas = document.createElement('canvas');
+    tnCanvas.width = size;
+    tnCanvas.height = size;
+    const tnCtx = tnCanvas.getContext('2d');
+    
+    // Draw only that part
+    tnCtx.drawImage(state.img, x, y, size, size, 0, 0, size, size);
+    
+    div.appendChild(tnCanvas);
+    
+    // Number badge
+    const span = document.createElement('span');
+    span.className = 'frame-number';
+    span.innerText = state.frames.length;
+    div.appendChild(span);
+
+    // Click thumbnail to remove? (Optional, skipping for simplicity)
+    
+    dom.frameList.appendChild(div);
+    
+    // Visual Feedback on main canvas
+    drawFlash(x, y, size);
+}
+
+function drawFlash(x, y, size) {
+    dom.ctx.strokeStyle = '#00ff00';
+    dom.ctx.lineWidth = 3;
+    dom.ctx.strokeRect(x, y, size, size);
+    
+    // Fade out effect could go here, but keeping it simple: just leave the mark
+}
+
+// Controls
+dom.undoBtn.addEventListener('click', () => {
+    if (state.frames.length === 0) return;
+    state.frames.pop();
+    dom.frameList.lastChild.remove();
+    dom.frameCount.innerText = state.frames.length;
+    // Redraw image to clear the green box
+    dom.ctx.drawImage(state.img, 0, 0);
+    // Redraw remaining boxes
+    state.frames.forEach(f => {
+        dom.ctx.strokeStyle = 'rgba(0,255,0,0.5)';
+        dom.ctx.lineWidth = 1;
+        dom.ctx.strokeRect(f.x, f.y, f.w, f.h);
+    });
+});
+
+dom.clearBtn.addEventListener('click', () => {
+    state.frames = [];
+    dom.frameList.innerHTML = '';
+    dom.frameCount.innerText = '0';
+    dom.emptyMsg.style.display = 'block';
+    dom.ctx.drawImage(state.img, 0, 0);
+});
+
+/**
+ * --- STEP 3: GAME ENGINE ---
+ */
+const gameCtx = dom.gameCanvas.getContext('2d');
+let player = {
+    x: 100, y: 0, vx: 0, vy: 0, 
+    facingRight: true,
+    animTimer: 0,
+    animIndex: 0
+};
+const keys = {};
+
+function gameLoop() {
+    // Resize game canvas if needed
+    if (dom.gameCanvas.width !== dom.gameCanvas.offsetWidth) {
+        dom.gameCanvas.width = dom.gameCanvas.offsetWidth;
+        dom.gameCanvas.height = dom.gameCanvas.offsetHeight;
+    }
+
+    const w = dom.gameCanvas.width;
+    const h = dom.gameCanvas.height;
+    
+    // 1. Logic
+    if (keys['ArrowRight']) { player.vx += 1.5; player.facingRight = true; }
+    if (keys['ArrowLeft']) { player.vx -= 1.5; player.facingRight = false; }
+    
+    player.vx *= 0.8;
+    player.vy += 0.8; // Gravity
+    
+    if (keys['Space'] && player.y >= h - 150) {
+        player.vy = -15;
+    }
+    
+    player.x += player.vx;
+    player.y += player.vy;
+    
+    // Floor
+    if (player.y > h - 150) {
+        player.y = h - 150;
+        player.vy = 0;
+    }
+    
+    // Walls
+    if (player.x < 0) player.x = 0;
+    if (player.x > w) player.x = w;
+
+    // Animation
+    if (state.frames.length > 0) {
+        // Speed depends on movement
+        const speed = Math.abs(player.vx) > 0.5 ? 5 : 15;
+        player.animTimer++;
+        if (player.animTimer > speed) {
+            player.animTimer = 0;
+            player.animIndex = (player.animIndex + 1) % state.frames.length;
+        }
+    }
+
+    // 2. Render
+    gameCtx.fillStyle = '#000';
+    gameCtx.fillRect(0, 0, w, h);
+    
+    // Draw Floor
+    gameCtx.fillStyle = '#222';
+    gameCtx.fillRect(0, h-100, w, 100);
+    gameCtx.strokeStyle = '#6366f1';
+    gameCtx.beginPath(); gameCtx.moveTo(0, h-100); gameCtx.lineTo(w, h-100); gameCtx.stroke();
+    
+    if (state.frames.length > 0) {
+        const f = state.frames[player.animIndex];
+        const pSize = f.w * 2; // Scale up 2x for game
+        
+        gameCtx.save();
+        gameCtx.translate(player.x, player.y + 50); // +50 to sit on floor
+        
+        if (!player.facingRight) gameCtx.scale(-1, 1);
+        
+        gameCtx.drawImage(
+            state.img,
+            f.x, f.y, f.w, f.h,
+            -pSize/2, -pSize, pSize, pSize
+        );
+        gameCtx.restore();
+    } else {
+        // Placeholder
+        gameCtx.fillStyle = '#333';
+        gameCtx.font = '14px sans-serif';
+        gameCtx.textAlign = 'center';
+        gameCtx.fillText("Capture frames to start!", w/2, h/2);
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Input Handlers
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+</script>
+</body>
+</html>

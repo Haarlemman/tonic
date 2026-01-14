@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones: Dune Odyssey</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020617;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* UI Overlays */
+        #intro-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fbbf24;
+            text-align: center;
+            transition: opacity 1.5s ease;
+        }
+
+        #intro-text {
+            font-size: 1.2rem;
+            font-weight: 300;
+            max-width: 500px;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            padding: 0 20px;
+            font-style: italic;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid #fbbf24;
+            color: #fbbf24;
+            padding: 12px 35px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #fbbf24;
+            color: #020617;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+
+        .brand {
+            color: #fbbf24;
+            border-left: 3px solid #fbbf24;
+            padding-left: 15px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .brand p {
+            margin: 5px 0 0;
+            font-size: 0.6rem;
+            opacity: 0.7;
+        }
+
+        #faculty-screen {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            padding: 15px;
+            pointer-events: none;
+            display: none;
+            z-index: 80;
+            text-align: center;
+            transform: translate(-50%, -120%);
+            min-width: 200px;
+        }
+
+        .neon-text {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .text-tonic { color: #f87171; text-shadow: 0 0 8px #ef4444; }
+        .text-lens { color: #60a5fa; text-shadow: 0 0 8px #3b82f6; }
+        .text-void { color: #a78bfa; text-shadow: 0 0 8px #8b5cf6; }
+
+        .sub-data { font-size: 0.5rem; color: #666; letter-spacing: 2px; }
+
+        #audio-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 90;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+
+        .hud-btn {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #fbbf24;
+            color: #fbbf24;
+            padding: 8px 15px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            pointer-events: auto;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hud-btn:hover {
+            background: #fbbf24;
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Using a public URL to ensure sound works in preview. Replace with your local path for production. -->
+    <audio id="bg-music" loop crossorigin="anonymous">
+        <source src="audio/MysteriousHeartbeat1.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="intro-overlay">
+        <div id="intro-text">Deep in the dunes, where stillness meets movement...</div>
+        <button id="start-btn" class="action-btn">Enter the Sands</button>
+    </div>
+
+    <div id="hud">
+        <div class="brand">
+            <h1>Tonic for the Bones</h1>
+            <p>ADVERSITY IS YOUR TEACHER</p>
+        </div>
+    </div>
+
+    <div id="audio-controls">
+        <button class="hud-btn" onclick="toggleMusic()">AUDIO: <span id="music-status">OFF</span></button>
+    </div>
+
+    <div id="faculty-screen">
+        <div id="screen-content" class="neon-text"></div>
+        <div class="sub-data">GEOSPATIAL ANOMALY DETECTED</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let dunes, bottle, telescope, portal;
+        let audioCtx, analyser, dataArray;
+        let isAudioInit = false;
+        let cinematicTarget = null;
+        let lastZoomTime = Date.now();
+        let bubbles = [];
+        const ZOOM_INTERVAL = 10000;
+
+        const POIs = [];
+        const quotes = {
+            tonic: ["STRENGTH IN THE BITTERNESS", "EFFERVESCENT RESOLVE", "TONIC FOR THE MARROW", "BUBBLES OF FREE WILL"],
+            lens: ["THE VOID IS NOT EMPTY", "LOOKING BEYOND THE SELF", "FOCUS ON THE HORIZON", "DISTANCE REVEALS TRUTH"],
+            void: ["LETTING GO IS POWER", "INTO THE BLACK", "THE CIRCLE OF SILENCE", "SURRENDER TO THE UNKNOWN"]
+        };
+
+        const screen = document.getElementById('faculty-screen');
+        const screenContent = document.getElementById('screen-content');
+        const bgMusic = document.getElementById('bg-music');
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+            scene.fog = new THREE.FogExp2(0x020617, 0.015);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(40, 30, 40);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.maxPolarAngle = Math.PI / 2.1;
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambient);
+
+            const moon = new THREE.DirectionalLight(0xfbbf24, 0.8);
+            moon.position.set(50, 50, -20);
+            scene.add(moon);
+
+            createLandscape();
+            createTonicBottle();
+            createTelescope();
+            createPortal();
+
+            window.addEventListener('resize', onResize);
+            document.getElementById('start-btn').onclick = startExperience;
+        }
+
+        function createLandscape() {
+            const geo = new THREE.PlaneGeometry(200, 200, 120, 120);
+            const pos = geo.attributes.position;
+            
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                // Create larger, more organic dunes
+                const z = Math.sin(x * 0.05) * Math.cos(y * 0.05) * 8 + 
+                          Math.sin(x * 0.02) * 6 + 
+                          (Math.random() * 0.1);
+                pos.setZ(i, z);
+            }
+            geo.computeVertexNormals();
+            
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: 0x92400e, 
+                roughness: 1.0, 
+                metalness: 0.0,
+                wireframe: false 
+            });
+            dunes = new THREE.Mesh(geo, mat);
+            dunes.rotation.x = -Math.PI / 2;
+            scene.add(dunes);
+        }
+
+        function createTonicBottle() {
+            const group = new THREE.Group();
+            
+            // Bottle Body
+            const bodyGeo = new THREE.CylinderGeometry(1.5, 1.5, 6, 32);
+            const bodyMat = new THREE.MeshPhysicalMaterial({ 
+                color: 0x1e40af, 
+                transmission: 0.9, 
+                thickness: 0.5, 
+                roughness: 0.05,
+                transparent: true,
+                opacity: 0.8
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 3;
+            group.add(body);
+
+            // Neck
+            const neckGeo = new THREE.CylinderGeometry(0.6, 1.2, 2, 32);
+            const neck = new THREE.Mesh(neckGeo, bodyMat);
+            neck.position.y = 7;
+            group.add(neck);
+
+            // Cap
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.4, 16), new THREE.MeshStandardMaterial({color: 0xf87171, metalness: 0.5}));
+            cap.position.y = 8.2;
+            group.add(cap);
+
+            // Bubble Emitter Group
+            const bubbleGroup = new THREE.Group();
+            bubbleGroup.position.y = 8.5;
+            group.add(bubbleGroup);
+            group.userData.bubbleGroup = bubbleGroup;
+
+            group.position.set(-25, 1, -15);
+            group.userData.type = 'tonic';
+            group.userData.label = 'THE TONIC';
+            scene.add(group);
+            POIs.push(group);
+            bottle = group;
+        }
+
+        function createTelescope() {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({color: 0x334155, metalness: 0.9, roughness: 0.1});
+            
+            // Main Tube
+            const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 8, 32), mat);
+            tube.rotation.z = Math.PI / 3.5;
+            tube.position.y = 5.5;
+            group.add(tube);
+
+            // Lens detail
+            const lens = new THREE.Mesh(new THREE.CircleGeometry(0.8, 32), new THREE.MeshBasicMaterial({color: 0x60a5fa}));
+            lens.position.set(2.8, 7.3, 0);
+            lens.rotation.y = Math.PI / 2;
+            lens.rotation.z = -Math.PI / 3.5;
+            group.add(lens);
+
+            // Tripod
+            for(let i=0; i<3; i++) {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.05, 6, 8), new THREE.MeshStandardMaterial({color: 0x000000}));
+                leg.position.y = 2.5;
+                leg.rotation.z = 0.35;
+                leg.rotation.y = (i * Math.PI * 2) / 3;
+                group.add(leg);
+            }
+
+            group.position.set(20, 2, -25);
+            group.userData.type = 'lens';
+            group.userData.label = 'THE LENS';
+            scene.add(group);
+            POIs.push(group);
+            telescope = group;
+        }
+
+        function createPortal() {
+            const group = new THREE.Group();
+            
+            // Neon Ring
+            const ringGeo = new THREE.TorusGeometry(6, 0.4, 16, 100);
+            const ringMat = new THREE.MeshStandardMaterial({ 
+                color: 0x8b5cf6, 
+                emissive: 0x8b5cf6, 
+                emissiveIntensity: 8 
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            group.add(ring);
+
+            // The Void
+            const voidGeo = new THREE.CircleGeometry(5.8, 64);
+            const voidMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+            const blackHole = new THREE.Mesh(voidGeo, voidMat);
+            group.add(blackHole);
+
+            group.position.set(10, 8, 30);
+            group.userData.type = 'void';
+            group.userData.label = 'THE SPIRIT';
+            scene.add(group);
+            POIs.push(group);
+            portal = group;
+        }
+
+        function toggleMusic() {
+            if(!isAudioInit) initAudio();
+            if(bgMusic.paused) {
+                bgMusic.play();
+                document.getElementById('music-status').innerText = "ON";
+            } else {
+                bgMusic.pause();
+                document.getElementById('music-status').innerText = "OFF";
+            }
+        }
+
+        function initAudio() {
+            if (isAudioInit) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            const source = audioCtx.createMediaElementSource(bgMusic);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            analyser.fftSize = 256;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            isAudioInit = true;
+        }
+
+        function startExperience() {
+            // Force Audio Context setup on user gesture
+            initAudio();
+            bgMusic.play().then(() => {
+                document.getElementById('music-status').innerText = "ON";
+            }).catch(e => console.log("Auto-play blocked, button required."));
+
+            document.getElementById('intro-overlay').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('intro-overlay').style.display = 'none';
+                document.getElementById('hud').style.opacity = 1;
+                document.getElementById('audio-controls').style.opacity = 1;
+            }, 1500);
+        }
+
+        function updateUI(poi) {
+            if(!poi) { screen.style.display = 'none'; return; }
+            screen.style.display = 'block';
+            const data = quotes[poi.userData.type];
+            screenContent.innerText = data[Math.floor(Date.now()/3500 % data.length)];
+            screenContent.className = 'neon-text text-' + poi.userData.type;
+
+            const vector = poi.position.clone();
+            vector.y += 10;
+            vector.project(camera);
+            screen.style.left = (vector.x * 0.5 + 0.5) * window.innerWidth + 'px';
+            screen.style.top = (vector.y * -0.5 + 0.5) * window.innerHeight + 'px';
+        }
+
+        function spawnBubble(bass) {
+            if (Math.random() > 0.1 + bass) return;
+            const geo = new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8);
+            const mat = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.6});
+            const bubble = new THREE.Mesh(geo, mat);
+            
+            bubble.position.set(
+                (Math.random() - 0.5) * 0.5,
+                0,
+                (Math.random() - 0.5) * 0.5
+            );
+            
+            bottle.userData.bubbleGroup.add(bubble);
+            bubbles.push({
+                mesh: bubble,
+                speed: 0.05 + Math.random() * 0.1,
+                life: 1.0
+            });
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+            
+            let bass = 0;
+            if (isAudioInit && !bgMusic.paused) {
+                analyser.getByteFrequencyData(dataArray);
+                bass = dataArray[2] / 255; // Low-end frequency
+                
+                // Dunes movement
+                const pos = dunes.geometry.attributes.position;
+                for (let i = 0; i < pos.count; i++) {
+                    const originalZ = pos.getZ(i);
+                    pos.setZ(i, originalZ + Math.sin(time*2 + i*0.05) * bass * 0.15);
+                }
+                dunes.geometry.attributes.position.needsUpdate = true;
+
+                // Tonic Fizz logic
+                spawnBubble(bass);
+                
+                // Telescope Sway
+                telescope.rotation.y += 0.005 + bass * 0.04;
+                telescope.rotation.x = Math.sin(time) * 0.05;
+                
+                // Portal Pulse
+                const pScale = 1 + bass * 0.3;
+                portal.scale.set(pScale, pScale, pScale);
+                portal.rotation.z += 0.01 + bass * 0.1;
+            }
+
+            // Bubble life cycle
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                bubbles[i].mesh.position.y += bubbles[i].speed;
+                bubbles[i].life -= 0.01;
+                bubbles[i].mesh.material.opacity = bubbles[i].life;
+                if (bubbles[i].life <= 0) {
+                    bottle.userData.bubbleGroup.remove(bubbles[i].mesh);
+                    bubbles.splice(i, 1);
+                }
+            }
+
+            // Cinematic Logic
+            if (Date.now() - lastZoomTime > ZOOM_INTERVAL) {
+                cinematicTarget = cinematicTarget ? null : POIs[Math.floor(Math.random() * POIs.length)];
+                lastZoomTime = Date.now();
+            }
+
+            if (cinematicTarget) {
+                controls.target.lerp(cinematicTarget.position, 0.05);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.6, 0.04);
+                updateUI(cinematicTarget);
+            } else {
+                controls.target.lerp(new THREE.Vector3(0,0,0), 0.02);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.0, 0.02);
+                updateUI(null);
+            }
+
+            camera.updateProjectionMatrix();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>

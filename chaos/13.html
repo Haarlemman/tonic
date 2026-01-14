@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dance of Red & Blue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205; /* Pitch black/blue tint */
+            color: #e2e8f0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* --- UI STYLE --- */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px; 
+            left: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            width: 280px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        /* Header */
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 600;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .ui-header:hover { color: white; }
+        .toggle-icon { transition: transform 0.3s ease; }
+        
+        /* Content Wrapper */
+        #ui-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            max-height: 500px;
+            opacity: 1;
+        }
+
+        /* Collapsed State */
+        #ui-layer.collapsed #ui-content {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+        }
+        #ui-layer.collapsed .toggle-icon { transform: rotate(-180deg); }
+        #ui-layer.collapsed { width: 200px; }
+        
+        /* Playlist */
+        .playlist-container {
+            width: 100%;
+            max-height: 120px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .playlist-container::-webkit-scrollbar { width: 4px; }
+        .playlist-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .playlist-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 2px; }
+        
+        .track-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track-item:last-child { border-bottom: none; }
+        .track-item:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .track-item.active { background: rgba(255, 255, 255, 0.1); color: #a78bfa; font-weight: 500; }
+        .track-icon { opacity: 0.5; min-width: 10px; width: 10px; height: 10px; }
+        .track-item.active .track-icon { opacity: 1; color: #a78bfa; }
+
+        /* Controls */
+        input[type="file"] { display: none; }
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+            width: 100%;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn.active-state {
+            border-color: #10b981;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .controls-row { display: flex; gap: 8px; width: 100%; }
+        .status {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            text-align: center;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Scrubber */
+        .scrubber-container { display: flex; align-items: center; gap: 10px; }
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 4px;
+            background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 10px; height: 10px;
+            background: #e2e8f0; border-radius: 50%; cursor: pointer;
+        }
+        .time-display { font-size: 10px; color: rgba(255,255,255,0.4); min-width: 50px; text-align: right; }
+
+        /* Title Overlay */
+        .title-overlay { position: absolute; top: 30px; left: 30px; pointer-events: none; }
+        .main-title {
+            text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;
+            line-height: 1.1; font-size: 2.5rem; text-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .sub-title {
+            font-family: 'Courier New', Courier, monospace; font-size: 0.8rem;
+            color: #94a3b8; margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- Title -->
+    <div class="title-overlay">
+        <h1 class="main-title text-red-500" style="color: #ff35e0;">RED <span style="font-size: 0.5em; vertical-align: middle; color: #ff89ed;">(BASS)</span></h1>
+        <h1 class="main-title text-blue-500" style="color: #76faff;">& BLUE <span style="font-size: 0.5em; vertical-align: middle; color: #bbfdff;">(TREBLE)</span></h1>
+        <p class="sub-title">Hover to Conduct / Drag to Cluster</p>
+    </div>
+
+    <!-- UI -->
+    <div id="ui-layer">
+        <div class="ui-header" id="uiHeader">
+            <span>Love Battle</span>
+            <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        </div>
+
+        <div id="ui-content">
+            <div class="playlist-container" id="playlist-container"></div>
+
+            <div class="controls-row">
+                <label class="btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    Upload
+                    <input type="file" id="audio-upload" accept="audio/*" multiple>
+                </label>
+                
+                <button class="btn" id="play-pause-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                    </svg>
+                    Play
+                </button>
+            </div>
+            
+            <div class="scrubber-container">
+                <input type="range" id="seek-bar" value="0" max="100">
+                <div class="time-display" id="time-display">--:--</div>
+            </div>
+
+            <div class="status" id="status-text">Select or Upload to begin</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const config = {
+            redLineColor: '255, 53, 53', // #ff3535
+            blueLineColor: '118, 250, 255',
+            particleCountRed: 150, 
+            particleCountBlue: 100, // Fewer but bigger
+            particleCountDust: 100,
+            bgFade: 'rgba(2, 2, 5, 0.4)' 
+        };
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const fileInput = document.getElementById('audio-upload');
+        const playlistContainer = document.getElementById('playlist-container');
+        const seekBar = document.getElementById('seek-bar');
+        const timeDisplay = document.getElementById('time-display');
+        const statusText = document.getElementById('status-text');
+        
+        // UI Toggle
+        const uiLayer = document.getElementById('ui-layer');
+        const uiHeader = document.getElementById('uiHeader');
+        
+        uiHeader.addEventListener('click', () => {
+            uiLayer.classList.toggle('collapsed');
+        });
+
+        let width, height;
+        let particles = [];
+        
+        // Audio State
+        let audioCtx;
+        let analyser;
+        let source; 
+        let dataArray;
+        let isAudioInitialized = false;
+        let isPlaying = false;
+        let isGenerative = true;
+        let genOscillators = [];
+        
+        // Playlist (Files only)
+        let playlist = [];
+        let currentTrackIndex = -1;
+        
+        let audioElement = new Audio(); 
+        audioElement.crossOrigin = "anonymous";
+
+        // Frequencies
+        let bassLevel = 0;
+        let trebleLevel = 0;
+        
+        // Wandering Targets
+        const targets = {
+            blue: { x: 0, y: 0 },
+            red: { x: 0, y: 0 }
+        };
+        
+        // Mouse state
+        let mouse = { x: null, y: null, active: false, isDown: false };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- AUDIO ENGINE ---
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 2048; 
+                analyser.smoothingTimeConstant = 0.85;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // File Loading
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                files.forEach(file => {
+                    playlist.push({
+                        name: file.name,
+                        file: file
+                    });
+                });
+                renderPlaylist();
+                playTrack(playlist.length - files.length); // Play first of new batch
+            }
+        });
+
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            if (playlist.length === 0) {
+                playlistContainer.innerHTML = '<div style="padding:10px; font-size:10px; color:#666;">No files uploaded</div>';
+                return;
+            }
+            playlist.forEach((track, index) => {
+                const div = document.createElement('div');
+                div.className = `track-item ${index === currentTrackIndex ? 'active' : ''}`;
+                div.innerHTML = `
+                    <svg class="track-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2z"/>
+                    </svg>
+                    <span>${track.name}</span>
+                `;
+                div.onclick = () => playTrack(index);
+                playlistContainer.appendChild(div);
+            });
+        }
+
+        function playTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            initAudioContext();
+            
+            // Stop Generative if running
+            if (isGenerative) {
+                stopAudio();
+                isGenerative = false;
+            }
+            
+            currentTrackIndex = index;
+            renderPlaylist();
+
+            const track = playlist[index];
+            seekBar.disabled = false;
+            
+            const fileURL = URL.createObjectURL(track.file);
+            
+            // Setup Source
+            if (!source || !source.mediaElement) {
+                 source = audioCtx.createMediaElementSource(audioElement);
+                 source.connect(analyser);
+                 analyser.connect(audioCtx.destination);
+            }
+
+            audioElement.src = fileURL;
+            audioElement.play();
+            statusText.innerText = `Playing: ${track.name}`;
+            statusText.style.color = "#a78bfa";
+            isPlaying = true;
+            playPauseBtn.innerHTML = `Pause`;
+            playPauseBtn.classList.add('active-state');
+        }
+
+        function stopAudio() {
+            if (isGenerative) {
+                genOscillators.forEach(o => { try{o.stop();o.disconnect();}catch(e){} });
+                genOscillators = [];
+            } else {
+                audioElement.pause();
+            }
+            isPlaying = false;
+            playPauseBtn.innerHTML = `Play`;
+            playPauseBtn.classList.remove('active-state');
+            statusText.innerText = "Paused";
+            statusText.style.color = "rgba(255,255,255,0.4)";
+        }
+
+        // Toggle
+        playPauseBtn.addEventListener('click', () => {
+            if (!isAudioInitialized) initAudioContext();
+            
+            if (isPlaying) {
+                if (!isGenerative) audioElement.pause();
+                isPlaying = false;
+                playPauseBtn.innerHTML = `Play`;
+                playPauseBtn.classList.remove('active-state');
+            } else {
+                if (!isGenerative && audioElement.src) {
+                    audioElement.play();
+                    isPlaying = true;
+                    playPauseBtn.innerHTML = `Pause`;
+                    playPauseBtn.classList.add('active-state');
+                } else if (playlist.length === 0) {
+                    statusText.innerText = "Upload MP3 first!";
+                } else if (currentTrackIndex !== -1) {
+                    playTrack(currentTrackIndex);
+                }
+            }
+        });
+
+        // Scrubber Updates
+        audioElement.addEventListener('timeupdate', () => {
+            if (!isGenerative && audioElement.duration) {
+                const progress = (audioElement.currentTime / audioElement.duration) * 100;
+                seekBar.value = progress;
+                
+                const curMins = Math.floor(audioElement.currentTime / 60);
+                const curSecs = Math.floor(audioElement.currentTime % 60).toString().padStart(2, '0');
+                const durMins = Math.floor(audioElement.duration / 60);
+                const durSecs = Math.floor(audioElement.duration % 60).toString().padStart(2, '0');
+                timeDisplay.innerText = `${curMins}:${curSecs} / ${durMins}:${durSecs}`;
+            }
+        });
+        
+        seekBar.addEventListener('input', () => {
+            if (!isGenerative && audioElement.duration) {
+                const time = (seekBar.value / 100) * audioElement.duration;
+                audioElement.currentTime = time;
+            }
+        });
+
+        // --- INTERACTION ---
+        const handleInteraction = (x, y, active, isDown) => {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.active = active;
+            mouse.isDown = isDown;
+        };
+
+        window.addEventListener('mousedown', e => handleInteraction(e.clientX, e.clientY, true, true));
+        window.addEventListener('mousemove', e => handleInteraction(e.clientX, e.clientY, true, mouse.isDown));
+        window.addEventListener('mouseup', e => handleInteraction(e.clientX, e.clientY, true, false));
+        
+        window.addEventListener('touchstart', e => handleInteraction(e.touches[0].clientX, e.touches[0].clientY, true, true));
+        window.addEventListener('touchmove', e => handleInteraction(e.touches[0].clientX, e.touches[0].clientY, true, true));
+        window.addEventListener('touchend', () => handleInteraction(mouse.x, mouse.y, false, false));
+
+        // --- TARGETS (Lissajous Movement) ---
+        function updateTargets() {
+            const time = Date.now() * 0.0003;
+            // Blue Target (Left side generally)
+            targets.blue.x = (width * 0.3) + Math.cos(time * 0.7) * (width * 0.15) + Math.sin(time * 0.2) * (width * 0.05);
+            targets.blue.y = (height * 0.5) + Math.sin(time * 0.5) * (height * 0.25);
+
+            // Red Target (Right side generally)
+            targets.red.x = (width * 0.7) + Math.cos(time * 0.6 + 2) * (width * 0.15);
+            targets.red.y = (height * 0.5) + Math.sin(time * 0.4 + 1) * (height * 0.25);
+        }
+
+        // --- PARTICLES ---
+        class Particle {
+            constructor(type, index) {
+                this.type = type;
+                this.index = index;
+                this.seed = Math.random() * 1000;
+                this.init(true);
+            }
+
+            init(initial = false) {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = 0;
+                this.vy = 0;
+                
+                if (this.type === 'blue') {
+                    // BIG CLOUDS
+                    this.baseSize = 40 + Math.random() * 50;
+                    this.mass = 2.0;
+                    this.drag = 0.94;
+                    this.color = `rgba(${10 + Math.random()*20}, ${100 + Math.random()*50}, ${200 + Math.random()*55}, 0.05)`;
+                } else if (this.type === 'red') {
+                    // Smaller energetic clouds
+                    this.baseSize = 15 + Math.random() * 20; 
+                    this.mass = 1.2;
+                    this.drag = 0.92;
+                    this.color = `rgba(${200 + Math.random()*55}, ${20 + Math.random()*40}, ${40 + Math.random()*40}, 0.08)`;
+                } else {
+                    // Dust
+                    this.baseSize = Math.random() * 2;
+                    this.mass = 0.5;
+                    this.drag = 0.98;
+                    this.color = `rgba(255, 255, 255, ${Math.random() * 0.2})`;
+                }
+                this.size = this.baseSize;
+            }
+
+            update(bass, treble) {
+                if (this.type === 'dust') {
+                    this.x += (Math.random()-0.5)*0.5;
+                    this.y += (Math.random()-0.5)*0.5;
+                    if (mouse.isDown) { // Suck dust in too
+                        const dx = mouse.x - this.x;
+                        const dy = mouse.y - this.y;
+                        this.x += dx * 0.05;
+                        this.y += dy * 0.05;
+                    }
+                    return;
+                }
+
+                // --- PHYSICS ---
+                let targetX, targetY;
+                
+                if (mouse.isDown) {
+                    // DRAG MODE: Target is Mouse
+                    targetX = mouse.x;
+                    targetY = mouse.y;
+                } else {
+                    // RELEASE MODE: Target is Wandering Center
+                    if (this.type === 'blue') {
+                        targetX = targets.blue.x;
+                        targetY = targets.blue.y;
+                    } else {
+                        targetX = targets.red.x;
+                        targetY = targets.red.y;
+                    }
+                }
+
+                // 1. Calculate Force towards Target
+                // Add noise offset so they don't all stack on one pixel
+                const time = Date.now() * 0.001;
+                let spread = mouse.isDown ? 50 : 200; // Tighter cluster when dragging
+                
+                // Expand with music
+                if (this.type === 'blue') spread += bass * 2; 
+                if (this.type === 'red') spread += treble * 2;
+
+                const noiseX = Math.sin(this.seed + time * 0.5) + Math.cos(this.index * 0.1);
+                const noiseY = Math.cos(this.seed * 0.9 + time * 0.3);
+                
+                const homeX = targetX + noiseX * spread * 0.5;
+                const homeY = targetY + noiseY * spread * 0.5;
+
+                const dx = homeX - this.x;
+                const dy = homeY - this.y;
+
+                // Strength of pull
+                let cohesion = mouse.isDown ? 0.005 : 0.0008; // Stronger pull when dragging
+                if (!mouse.isDown) {
+                    // Repulsion logic on release: If we were just dragging (implied), 
+                    // we want them to fly back fast. 
+                    // We simulate this by checking distance to home. 
+                    // If far, pull harder.
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist > 300) cohesion = 0.002; 
+                }
+
+                let ax = dx * cohesion;
+                let ay = dy * cohesion;
+
+                // 2. Audio Reaction (Turbulence)
+                if (this.type === 'blue') {
+                    this.size = this.baseSize + (bass * 0.5); // Pump size
+                    ax += (Math.random()-0.5) * (bass/255) * 0.5;
+                    ay += (Math.random()-0.5) * (bass/255) * 0.5;
+                } else {
+                    this.size = this.baseSize + (treble * 0.3);
+                    ax += (Math.random()-0.5) * (treble/255) * 0.8; // Zippy red
+                    ay += (Math.random()-0.5) * (treble/255) * 0.8;
+                }
+
+                this.vx += ax / this.mass;
+                this.vy += ay / this.mass;
+                this.vx *= this.drag;
+                this.vy *= this.drag;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // --- INIT ---
+        function init() {
+            particles = [];
+            for (let i = 0; i < config.particleCountBlue; i++) particles.push(new Particle('blue', i));
+            for (let i = 0; i < config.particleCountRed; i++) particles.push(new Particle('red', i));
+            for (let i = 0; i < config.particleCountDust; i++) particles.push(new Particle('dust', i));
+        }
+
+        // --- ANIMATE ---
+        function animate() {
+            updateTargets();
+
+            // Audio Analysis
+            if (analyser && isPlaying) {
+                analyser.getByteFrequencyData(dataArray);
+                const bufferLength = analyser.frequencyBinCount;
+                const splitIndex = Math.floor(bufferLength / 8); 
+                
+                let bassSum = 0;
+                let trebleSum = 0;
+                
+                for(let i = 0; i < splitIndex; i++) bassSum += dataArray[i];
+                for(let i = splitIndex * 4; i < bufferLength; i++) trebleSum += dataArray[i];
+                
+                bassLevel = (bassSum / splitIndex) / 255; 
+                trebleLevel = (trebleSum / (bufferLength - splitIndex*4)) / 255;
+                
+                bassLevel *= 255; // Scale up for logic
+                trebleLevel *= 255;
+            } else {
+                bassLevel *= 0.9;
+                trebleLevel *= 0.9;
+            }
+
+            // Draw Background
+            ctx.fillStyle = config.bgFade; 
+            ctx.fillRect(0, 0, width, height);
+
+            // Additive Blending for Glow
+            ctx.globalCompositeOperation = 'lighter';
+
+            // Draw Particles & Connections
+            for (let i = 0; i < particles.length; i++) {
+                const p1 = particles[i];
+                p1.update(bassLevel, trebleLevel);
+                p1.draw();
+
+                // Connections (Optimization: Only check close neighbors and limit count)
+                // Drawing lines between gas clouds looks cool if subtle
+                if (p1.type !== 'dust') {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        if (p2.type === 'dust') continue;
+
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const distSq = dx*dx + dy*dy;
+
+                        // Connection Distance (120px)
+                        if (distSq < 14400) {
+                            const dist = Math.sqrt(distSq);
+                            const opacity = 1 - (dist / 120);
+                            
+                            ctx.beginPath();
+                            ctx.lineWidth = 0.5; // Thin lines
+
+                            if (p1.type === p2.type) {
+                                // Same Color connection
+                                if (p1.type === 'red') {
+                                    ctx.strokeStyle = `rgba(${config.redLineColor}, ${opacity * 0.4})`;
+                                } else {
+                                    ctx.strokeStyle = `rgba(${config.blueLineColor}, ${opacity * 0.3})`;
+                                }
+                            } else {
+                                // Cross connection (White/Purple) - rare unless dragging
+                                ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.2})`;
+                            }
+                            
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            ctx.globalCompositeOperation = 'source-over';
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+    </script>
+</body>
+</html>

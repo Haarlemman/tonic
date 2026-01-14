@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+
+    <meta name="title" content="SOLAR SPRINT">
+    <meta name="description" content="Solar Sprint - An exciting arcade-style game.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nabla&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Sixtyfour+Convergence&display=swap"
+        rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="images/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="shortcut icon" href="images/favicon.ico" />
+
+    <title>SOLAR SPRINT</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Smooch Sans', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #00182e;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            /* CHANGED: Removed /solar/ prefix */
+            background: url('images/ruimte.jpg') center center / cover no-repeat;
+            background-color: #00182e;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+
+        button {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            background: transparent;
+            padding: 10px;
+            outline: none;
+            transition: transform 0.2s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        button[aria-label]::after {
+            content: attr(aria-label);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        button:focus[aria-label]::after {
+            opacity: 1;
+        }
+    </style>
+
+    <link rel="stylesheet" href="game.css">
+
+</head>
+<script>
+    window.onerror = function (message, source, lineno, colno, error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 0, 0, 0.9);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: monospace;
+        max-width: 80%;
+        word-wrap: break-word;
+    `;
+        errorDiv.textContent = `Error: ${message} at ${source}:${lineno}:${colno}`;
+        document.body.appendChild(errorDiv);
+        console.error('Global Error:', error);
+        return false;
+    };
+</script>
+
+
+<body>
+    <div style="position: relative; display: inline-block;">
+        <img id="zon" src="images/sol.gif" alt="Zon Image" style="width: 600px;">
+        <div class="nabla-unique">Solar Sprint</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="winMessage">YOU WIN!!!</div>
+
+    <div id="controls">
+        <div class="row">
+            <button id="upButton" aria-label="Move Up"><img src="images/direction-up.png" alt="up"></button>
+        </div>
+        <div class="row">
+            <button id="leftButton" aria-label="Move Left"><img src="images/direction-left.png" alt="left"></button>
+            <button id="rightButton" aria-label="Move Right"><img src="images/direction-right.png" alt="right"></button>
+        </div>
+        <div class="row">
+            <button id="downButton" aria-label="Move Down"><img src="images/direction-down.png" alt="down"></button>
+        </div>
+    </div>
+
+    <a id="playAgainLink" href=".">
+        <img src="images/but-playagain.png" alt="Play Again">
+    </a>
+
+    <script type="text/javascript">
+        function loadGameScript() {
+            const script = document.createElement('script');
+            // Cache busting: Append timestamp to force reload
+            script.src = 'game.js?v=' + new Date().getTime();
+            script.async = true;
+            script.onerror = function () {
+                console.error('Failed to load game.js');
+                // Fallback content
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                z-index: 1000;
+            `;
+                errorDiv.textContent = 'Error loading game. Please refresh the page.';
+                document.body.appendChild(errorDiv);
+            };
+            document.body.appendChild(script);
+        }
+
+        // Load game script after DOM is ready
+        document.addEventListener('DOMContentLoaded', loadGameScript);
+    </script>
+
+    <footer>
+        <p>© 2025 Prime Paradox Productions</p>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE FRAMEWORK // CUBE // TMM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FONTS: Space Mono for Data, Inter for Headlines/Buttons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- AESTHETICS --- */
+        :root {
+            --kw-red: #D20000;
+            --kw-black: #080808;
+            --kw-white: #E0E0E0;
+            --kw-grey: #2A2A2A;
+            --kw-yellow: #FFD700;
+            --kw-blue: #0044CC;
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Space Mono', monospace; 
+            background-color: var(--kw-black);
+            color: var(--kw-white);
+        }
+
+        /* Layout Grid */
+        #main-grid {
+            display: grid;
+            grid-template-rows: 60vh 40vh;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        @media (min-width: 1024px) {
+            #main-grid {
+                grid-template-rows: 100%;
+                grid-template-columns: 1fr 450px;
+            }
+        }
+
+        /* 3D Viewport */
+        #canvas-wrapper {
+            position: relative;
+            background: 
+                linear-gradient(rgba(8,8,8,0.9), rgba(8,8,8,0.9)),
+                repeating-linear-gradient(0deg, transparent, transparent 19px, #1a1a1a 20px),
+                repeating-linear-gradient(90deg, transparent, transparent 19px, #1a1a1a 20px);
+            background-size: 100% 100%;
+            border-right: 2px solid var(--kw-white);
+            overflow: hidden;
+        }
+
+        /* --- COMPLEX LOGO SYSTEM --- */
+        #interactive-logo {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 50;
+            display: flex;
+            gap: 16px; 
+            user-select: none;
+            align-items: flex-start;
+        }
+
+        /* The "CUbe" Grid Container - HORIZONTAL */
+        #cube-matrix {
+            display: grid;
+            /* 4 letters * 3px + 3 gaps * 1px = 15 columns */
+            grid-template-columns: repeat(15, 6px); 
+            grid-template-rows: repeat(3, 6px);
+            gap: 2px;
+        }
+
+        .matrix-cell {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+
+        .matrix-cell.active {
+            background-color: var(--kw-yellow);
+            /* Slower, subtler blink */
+            animation: blink-anim 6s infinite;
+        }
+
+        /* Randomize blink timings via nth-child for organic look, but slower */
+        .matrix-cell.active:nth-child(2n) { animation-duration: 4.5s; animation-delay: 0.1s; }
+        .matrix-cell.active:nth-child(3n) { animation-duration: 5.3s; animation-delay: 1.3s; }
+        .matrix-cell.active:nth-child(5n) { animation-duration: 6.8s; animation-delay: 0.5s; }
+        .matrix-cell.active:nth-child(7n) { animation-duration: 7.2s; animation-delay: 2s; }
+
+        @keyframes blink-anim {
+            0%, 40% { opacity: 1; }
+            50% { opacity: 0.4; } /* Only dim to 0.4, not 0 */
+            60%, 100% { opacity: 1; }
+        }
+
+        /* Controls Column */
+        #logo-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 22px; /* Adjusted for smaller horizontal logo height */
+            margin-top: 2px; /* Align with top of grid */
+        }
+
+        .logo-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            height: 10px; /* Smaller */
+        }
+        .logo-btn:hover { opacity: 0.7; }
+        
+        /* The Square Icon */
+        .btn-square {
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+        }
+
+        .logo-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 0.6rem;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            padding-top: 2px; 
+        }
+
+        /* Colors */
+        .c-red { color: var(--kw-red); }
+        .c-red .btn-square { background-color: var(--kw-red); }
+        
+        .c-blue { color: var(--kw-blue); }
+        .c-blue .btn-square { background-color: var(--kw-blue); }
+
+
+        /* Manual / Data Bank */
+        #manual-wrapper {
+            background: var(--kw-black);
+            display: flex;
+            flex-direction: column;
+            border-top: 2px solid var(--kw-white);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        @media (min-width: 1024px) {
+            #manual-wrapper {
+                border-top: none;
+                border-left: 2px solid var(--kw-white);
+            }
+        }
+
+        /* Typography & Components */
+        h1, h2, h3 { text-transform: uppercase; letter-spacing: -1px; }
+        
+        .bauhaus-header {
+            background: var(--kw-red);
+            color: white;
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-indicator {
+            font-size: 0.8rem;
+            background: black;
+            padding: 2px 8px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .algo-btn {
+            display: block;
+            width: 100%;
+            background: var(--kw-grey);
+            border: 1px solid var(--kw-white);
+            color: var(--kw-yellow);
+            padding: 10px;
+            margin: 10px 0;
+            text-align: left;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .algo-btn:hover {
+            background: var(--kw-white);
+            color: var(--kw-black);
+            border-color: var(--kw-red);
+        }
+
+        .algo-btn::after {
+            content: "► PLAY";
+            position: absolute;
+            right: 10px;
+            opacity: 0.5;
+        }
+        
+        .algo-btn:hover::after { opacity: 1; }
+
+        .control-panel {
+            padding: 1rem;
+            border-top: 2px solid var(--kw-white);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        /* --- CAL SANS STYLE BUTTONS --- */
+        .cal-sans-btn {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900; /* Black weight */
+            text-transform: uppercase;
+            letter-spacing: -0.05em; /* Tight tracking like Cal Sans */
+            font-size: 0.9rem;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .cal-sans-btn:active { transform: scale(0.98); }
+        .cal-sans-btn:hover { opacity: 0.9; }
+
+        .btn-reset {
+            background: transparent;
+            border: 2px solid var(--kw-red);
+            color: var(--kw-red);
+        }
+        .btn-reset:hover { background: var(--kw-red); color: white; }
+
+        .btn-nav {
+            background: var(--kw-blue);
+            color: white;
+            border: 2px solid var(--kw-blue);
+        }
+        .btn-nav:disabled { background: #333; border-color: #333; cursor: not-allowed; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--kw-black); }
+        ::-webkit-scrollbar-thumb { background: var(--kw-red); }
+
+        /* Manual Twist Controls Overlay */
+        #twist-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            z-index: 20;
+            background: rgba(8, 8, 8, 0.95);
+            padding: 10px;
+            border: 1px solid var(--kw-grey);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            user-select: none;
+            touch-action: none;
+        }
+        
+        #twist-header {
+            width: 100%;
+            text-align: center;
+            background: var(--kw-grey);
+            color: var(--kw-yellow);
+            font-size: 0.65rem;
+            padding: 4px 0;
+            margin-bottom: 4px;
+            cursor: grab;
+            letter-spacing: 2px;
+            border: 1px solid transparent;
+        }
+
+        #twist-header:active {
+            cursor: grabbing;
+            border-color: var(--kw-white);
+        }
+
+        .twist-row { display: flex; gap: 4px; }
+
+        .twist-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--kw-black);
+            border: 1px solid var(--kw-white);
+            color: var(--kw-white);
+            font-family: 'Space Mono', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.1s;
+        }
+
+        .twist-btn:hover { background: var(--kw-white); color: var(--kw-black); }
+        .twist-btn:active { background: var(--kw-red); color: white; border-color: var(--kw-red); }
+
+        /* Loader Overlay */
+        #loading {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: var(--kw-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: var(--kw-red);
+            font-family: 'Space Mono', monospace;
+            font-weight: bold;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">INITIALIZING SYSTEM...</div>
+
+    <div id="main-grid">
+        <!-- 3D VIEWPORT -->
+        <div id="canvas-wrapper">
+            
+            <!-- NEW COMPOSITE LOGO -->
+            <div id="interactive-logo">
+                <!-- Yellow CUbe Matrix (Generated by JS) -->
+                <div id="cube-matrix"></div>
+
+                <!-- Controls -->
+                <div id="logo-controls">
+                    <!-- Reset Button -->
+                    <div class="logo-btn c-red" onclick="cubeGame.reset()">
+                        <div class="btn-square"></div>
+                        <span class="logo-label">RESET</span>
+                    </div>
+
+                    <!-- Shuffle Button -->
+                    <div class="logo-btn c-blue" onclick="cubeGame.scramble()">
+                        <div class="btn-square"></div>
+                        <span class="logo-label">SHUFFLE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DRAGGABLE CONTROLS -->
+            <div id="twist-controls">
+                <div id="twist-header">:: CONTROLS ::</div>
+                <div class="twist-row">
+                    <button class="twist-btn" title="Rotate Left Face" onclick="cubeGame.move('L')">L</button>
+                    <button class="twist-btn" title="Rotate Up Face" onclick="cubeGame.move('U')">U</button>
+                    <button class="twist-btn" title="Rotate Right Face" onclick="cubeGame.move('R')">R</button>
+                </div>
+                <div class="twist-row">
+                    <button class="twist-btn" title="Rotate Front Face" onclick="cubeGame.move('F')">F</button>
+                    <button class="twist-btn" title="Rotate Down Face" onclick="cubeGame.move('D')">D</button>
+                    <button class="twist-btn" title="Rotate Back Face" onclick="cubeGame.move('B')">B</button>
+                </div>
+            </div>
+
+            <!-- Canvas injected here -->
+        </div>
+
+        <!-- MANUAL / DATA BANK -->
+        <div id="manual-wrapper">
+            <div class="bauhaus-header">
+                <span style="font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: -0.05em; font-size: 3rem; line-height: 0.9;">MANUAL</span>
+                <span id="step-counter" class="step-indicator">00 / 06</span>
+            </div>
+
+            <div id="content-container" class="content-area">
+                <!-- Dynamic Content Loads Here -->
+            </div>
+
+            <div class="control-panel">
+                <button class="cal-sans-btn btn-nav" onclick="manual.prev()">PREV</button>
+                <button class="cal-sans-btn btn-reset" onclick="cubeGame.reset()">RESET</button>
+                <button class="cal-sans-btn btn-nav" onclick="manual.next()">NEXT</button>
+            </div>
+            
+            <div class="bg-neutral-900 p-2 text-xs text-center border-t border-gray-800 text-gray-500">
+                TONIC FOR THE BONES // v2.3
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGO GENERATION (PIXEL LETTERS) ---
+        (function generateLogo() {
+            const matrix = document.getElementById('cube-matrix');
+            // HORIZONTAL "C U b e"
+            // Grid: 15 cols x 3 rows
+            // Logic: C (3px) + Gap(1) + U(3px) + Gap(1) + b(3px) + Gap(1) + e(3px)
+            
+            // 1 = Active (Yellow), 0 = Empty
+            const gridData = [
+                // ROW 0 (Top)
+                // C (111) . U (101) . b (100) . e (011)
+                1,1,1, 0, 1,0,1, 0, 1,0,0, 0, 0,1,1,
+                
+                // ROW 1 (Mid)
+                // C (100) . U (101) . b (111) . e (111)
+                1,0,0, 0, 1,0,1, 0, 1,1,1, 0, 1,1,1,
+                
+                // ROW 2 (Bot)
+                // C (111) . U (111) . b (111) . e (011)
+                1,1,1, 0, 1,1,1, 0, 1,1,1, 0, 0,1,1
+            ];
+
+            gridData.forEach(val => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                if(val === 1) cell.classList.add('active');
+                matrix.appendChild(cell);
+            });
+        })();
+
+
+        // --- DATA BANK (MANUAL CONTENT) ---
+        const steps = [
+            {
+                title: "INTRODUCTION",
+                html: `
+                    <p class="mb-4">Welcome to the framework. The cube has 6 centers that never move relative to each other. They define the color of the face.</p>
+                    
+                    <div class="border border-white p-4 mb-4">
+                        <h3 class="font-bold text-red-600 mb-2">NOTATION KEY</h3>
+                        <ul class="text-sm grid grid-cols-2 gap-2">
+                            <li>R : Right Clockwise</li>
+                            <li>R': Right Counter-CW</li>
+                            <li>U : Up Clockwise</li>
+                            <li>F : Front Clockwise</li>
+                        </ul>
+                    </div>
+                    <p class="text-xs text-gray-400">Drag background to rotate view. Use the CONTROLS deck to twist manually. You can drag the input deck by its handle.</p>
+                    <button class="algo-btn mt-4 text-center" onclick="cubeGame.scramble()">>> INITIALIZE SCRAMBLE <<</button>
+                `
+            },
+            {
+                title: "01. WHITE CROSS",
+                html: `
+                    <p class="mb-4">Goal: Create a white cross on the top face. The edge colors must match the side centers.</p>
+                    <p class="mb-4 text-sm text-yellow-500">Logic: This step is intuitive. There are no fixed algorithms. You must observe and act.</p>
+                    <div class="bg-gray-800 p-2 mb-2 text-xs border-l-2 border-red-600">
+                        TIP: If a white edge is flipped in place, move it to the side layer, rotate top, and bring it back up.
+                    </div>
+                `
+            },
+            {
+                title: "02. WHITE CORNERS",
+                html: `
+                    <p class="mb-4">Goal: Finish the first layer.</p>
+
+                    <p class="mb-2">Place a corner containing white directly <strong>above</strong> where it needs to go.</p>
+                    <p class="mb-2">Hold the cube so the target slot is bottom-right-front. Perform this sequence until solved:</p>
+                    
+                    <button class="algo-btn" onclick="cubeGame.runSequence('R U R\' U\'')">
+                        R U R' U'
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Click the block above to execute the move on the schematic.</p>
+                `
+            },
+            {
+                title: "03. MIDDLE LAYER",
+                html: `
+                    <p class="mb-4">Flip the cube. White is now BOTTOM.</p>
+                    <p class="mb-2">Find a non-yellow edge on top. Align it with its center color.</p>
+                    
+                    <p class="text-sm font-bold text-blue-400 mt-4">Target goes to the RIGHT:</p>
+                    <button class="algo-btn" onclick="cubeGame.runSequence('U R U\' R\' y\' L\' U\' L U')">
+                        U R U' R' (Left Turn) L' U' L U
+                    </button>
+
+                    <p class="text-sm font-bold text-red-400 mt-4">Target goes to the LEFT:</p>
+                    <button class="algo-btn" onclick="cubeGame.runSequence('U\' L\' U L y R U R\' U\'')">
+                        U' L' U L (Right Turn) R U R' U'
+                    </button>
+                `
+            },
+            {
+                title: "04. YELLOW CROSS",
+                html: `
+                    <p class="mb-4">Goal: A yellow cross on the top face.</p>
+                    <p class="mb-2">Look at the yellow pattern on top:</p>
+                    <ul class="text-sm list-disc pl-4 mb-4 space-y-1">
+                        <li>Dot: Execute once.</li>
+                        <li>L-Shape: Place in Back-Left. Execute.</li>
+                        <li>Line: Hold horizontal. Execute.</li>
+                    </ul>
+
+                    <button class="algo-btn" onclick="cubeGame.runSequence('F R U R\' U\' F\'')">
+                        F R U R' U' F'
+                    </button>
+                `
+            },
+            {
+                title: "05. POSITION CORNERS",
+                html: `
+                    <p class="mb-4">Rotate Top (U) until two adjacent corners match colors.</p>
+                    <p class="mb-2">If diagonal swap needed: Do the move once, then realign.</p>
+                    <p class="mb-2">Hold matching corners on the Right/Back. Swap the front-left and front-right:</p>
+
+                    <button class="algo-btn" onclick="cubeGame.runSequence('U R U\' L\' U R\' U\' L')">
+                        U R U' L' U R' U' L
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Repeat until all corners are in the correct physical location (orientation doesn't matter yet).</p>
+                `
+            },
+            {
+                title: "06. ORIENT CORNERS",
+                html: `
+                    <p class="mb-4 text-red-500 font-bold">WARNING: DO NOT ROTATE THE WHOLE CUBE.</p>
+                    <p class="mb-2">1. Bring an unsolved corner to Front-Right-Top (FRT).</p>
+                    <p class="mb-2">2. Repeat this until Yellow faces UP:</p>
+                    
+                    <button class="algo-btn" onclick="cubeGame.runSequence('R\' D\' R D')">
+                        R' D' R D
+                    </button>
+
+                    <p class="mb-2 mt-4">3. Once solved, turn ONLY the Top Layer (U) to bring the next unsolved corner to FRT.</p>
+                    <button class="algo-btn" onclick="cubeGame.move('U')">U (Next Corner)</button>
+                    
+                    <p class="mt-4 text-sm italic">"The more you learn, the more you realize you know nothing."</p>
+                `
+            }
+        ];
+
+        // --- MANUAL CONTROLLER ---
+        const manual = {
+            currentStep: 0,
+            
+            init: function() {
+                this.render();
+            },
+
+            render: function() {
+                const data = steps[this.currentStep];
+                const counter = document.getElementById('step-counter');
+                if(counter) counter.innerText = `0${this.currentStep} / 0${steps.length-1}`;
+                
+                const container = document.getElementById('content-container');
+                if(container) {
+                    container.innerHTML = `
+                        <h2 class="text-2xl font-bold mb-6 border-b-2 border-white pb-2" style="font-family: 'Inter', sans-serif; letter-spacing: -0.05em; font-weight:900;">${data.title}</h2>
+                        <div class="step-content fade-in">
+                            ${data.html}
+                        </div>
+                    `;
+                }
+            },
+
+            next: function() {
+                if(this.currentStep < steps.length - 1) {
+                    this.currentStep++;
+                    this.render();
+                }
+            },
+
+            prev: function() {
+                if(this.currentStep > 0) {
+                    this.currentStep--;
+                    this.render();
+                }
+            }
+        };
+
+        // --- 3D ENGINE (THREE.JS) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111111); 
+
+        const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+        camera.position.set(8, 6, 10);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-wrapper').appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); 
+        scene.add(ambientLight);
+
+        // BAUHAUS PALETTE
+        const COLORS = {
+            U: 0xFFFFFF, // White
+            D: 0xFFD700, // Yellow
+            F: 0x009900, // Green 
+            B: 0x0044CC, // Blue
+            R: 0xD20000, // Red
+            L: 0xFF8800, // Orange
+            CORE: 0x000000, // Black plastic
+        };
+
+        const CUBE_SIZE = 1;
+        const SPACING = 0.02;
+        const cubies = [];
+        let isAnimating = false;
+        const pivot = new THREE.Object3D();
+        scene.add(pivot);
+
+        function createCubie(x, y, z) {
+            const geometry = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+            const createMat = (color) => new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
+
+            const materials = [
+                createMat(x === 1 ? COLORS.R : COLORS.CORE), // Right
+                createMat(x === -1 ? COLORS.L : COLORS.CORE), // Left
+                createMat(y === 1 ? COLORS.U : COLORS.CORE), // Top
+                createMat(y === -1 ? COLORS.D : COLORS.CORE), // Bottom
+                createMat(z === 1 ? COLORS.F : COLORS.CORE), // Front
+                createMat(z === -1 ? COLORS.B : COLORS.CORE), // Back
+            ];
+
+            const cube = new THREE.Mesh(geometry, materials);
+            cube.position.set(
+                x * (CUBE_SIZE + SPACING),
+                y * (CUBE_SIZE + SPACING),
+                z * (CUBE_SIZE + SPACING)
+            );
+            
+            cube.userData = { x, y, z };
+            
+            const edgeGeo = new THREE.EdgesGeometry(geometry);
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+            const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+            cube.add(edges);
+
+            scene.add(cube);
+            cubies.push(cube);
+        }
+
+        // Generate Grid
+        for(let x=-1; x<=1; x++) {
+            for(let y=-1; y<=1; y++) {
+                for(let z=-1; z<=1; z++) {
+                    createCubie(x, y, z);
+                }
+            }
+        }
+
+        // GAME LOGIC
+        let viewIndex = 0; 
+        let theta = 0.6, phi = 1.0;
+
+        const cubeGame = {
+            moveQueue: [],
+            
+            runSequence: function(algStr) {
+                algStr = algStr.replace(/\([^\)]+\)/g, '');
+                const moves = algStr.trim().split(/\s+/);
+                moves.forEach(m => {
+                    if(m) this.moveQueue.push(m);
+                });
+                if(!isAnimating) this.processQueue();
+            },
+
+            move: function(moveStr) {
+                this.moveQueue.push(moveStr);
+                if(!isAnimating) this.processQueue();
+            },
+
+            processQueue: function() {
+                if(this.moveQueue.length === 0) return;
+                
+                const moveStr = this.moveQueue.shift();
+                let face = moveStr[0];
+                let isPrime = moveStr.includes("'");
+                
+                if (face === 'y') {
+                   this.animateCameraOrbit(isPrime ? -1 : 1);
+                   return;
+                }
+
+                this.executeFaceMove(face, isPrime);
+            },
+            
+            animateCameraOrbit: function(direction) {
+                isAnimating = true;
+                if(direction === 1) viewIndex = (viewIndex + 1) % 4;
+                else viewIndex = (viewIndex + 3) % 4;
+                
+                const duration = 500;
+                const startTime = performance.now();
+                const startTheta = theta;
+                const targetDelta = direction * (-Math.PI / 2); 
+                const endTheta = startTheta + targetDelta;
+
+                const animateOrbit = (time) => {
+                    const elapsed = time - startTime;
+                    const t = Math.min(1, elapsed / duration);
+                    const ease = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    
+                    theta = startTheta + (targetDelta * ease);
+                    updateCameraPosition();
+                    
+                    if (t < 1) {
+                        requestAnimationFrame(animateOrbit);
+                    } else {
+                        isAnimating = false;
+                        theta = endTheta;
+                        updateCameraPosition();
+                        this.processQueue();
+                    }
+                };
+                requestAnimationFrame(animateOrbit);
+            },
+
+            executeFaceMove: function(face, isPrime) {
+                isAnimating = true;
+                
+                let realFace = face;
+                const ring = ['F', 'R', 'B', 'L'];
+                if (ring.includes(face)) {
+                    const baseIdx = ring.indexOf(face);
+                    const realIdx = (baseIdx + viewIndex) % 4;
+                    realFace = ring[realIdx];
+                }
+                
+                let axis = new THREE.Vector3();
+                let selection = [];
+                let angle = isPrime ? Math.PI / 2 : -Math.PI / 2;
+                const tolerance = 0.1;
+                const pos = CUBE_SIZE + SPACING;
+
+                switch(realFace) {
+                    case 'R': 
+                        axis.set(1,0,0); 
+                        selection = cubies.filter(c => Math.abs(c.position.x - pos) < tolerance);
+                        break;
+                    case 'L': 
+                        axis.set(1,0,0); 
+                        angle = -angle; 
+                        selection = cubies.filter(c => Math.abs(c.position.x + pos) < tolerance);
+                        break;
+                    case 'U': 
+                        axis.set(0,1,0); 
+                        selection = cubies.filter(c => Math.abs(c.position.y - pos) < tolerance);
+                        break;
+                    case 'D': 
+                        axis.set(0,1,0); 
+                        angle = -angle;
+                        selection = cubies.filter(c => Math.abs(c.position.y + pos) < tolerance);
+                        break;
+                    case 'F': 
+                        axis.set(0,0,1); 
+                        selection = cubies.filter(c => Math.abs(c.position.z - pos) < tolerance);
+                        break;
+                    case 'B': 
+                        axis.set(0,0,1); 
+                        angle = -angle;
+                        selection = cubies.filter(c => Math.abs(c.position.z + pos) < tolerance);
+                        break;
+                }
+                
+                this.animateRotation(axis, angle, selection);
+            },
+
+            animateRotation: function(axisOrChar, angle, selection) {
+                isAnimating = true;
+                let axis = axisOrChar;
+                
+                pivot.rotation.set(0,0,0);
+                pivot.position.set(0,0,0);
+                pivot.scale.set(1,1,1);
+                
+                selection.forEach(cube => pivot.attach(cube));
+
+                let progress = 0;
+                const speed = 0.2; 
+
+                const animateTurn = () => {
+                    if (progress < 1) {
+                        progress += speed;
+                        if (progress > 1) progress = 1;
+                        const ease = 1 - Math.pow(1 - progress, 3);
+                        if(axis.x) pivot.rotation.x = angle * ease;
+                        if(axis.y) pivot.rotation.y = angle * ease;
+                        if(axis.z) pivot.rotation.z = angle * ease;
+                        requestAnimationFrame(animateTurn);
+                    } else {
+                        pivot.updateMatrixWorld();
+                        
+                        selection.forEach(cube => {
+                            scene.attach(cube);
+                            const mat = cube.matrix;
+                            const x = new THREE.Vector3();
+                            const y = new THREE.Vector3();
+                            const z = new THREE.Vector3();
+                            mat.extractBasis(x, y, z);
+                            
+                            const snapVec = (v) => {
+                                const ax = Math.abs(v.x);
+                                const ay = Math.abs(v.y);
+                                const az = Math.abs(v.z);
+                                const max = Math.max(ax, ay, az);
+                                if (max === ax) return new THREE.Vector3(Math.sign(v.x), 0, 0);
+                                if (max === ay) return new THREE.Vector3(0, Math.sign(v.y), 0);
+                                return new THREE.Vector3(0, 0, Math.sign(v.z));
+                            };
+                            
+                            const sx = snapVec(x);
+                            const sy = snapVec(y);
+                            const sz = new THREE.Vector3().crossVectors(sx, sy);
+                            
+                            const cleanMat = new THREE.Matrix4().makeBasis(sx, sy, sz);
+                            
+                            const snapPos = (val) => Math.round(val / (CUBE_SIZE+SPACING)) * (CUBE_SIZE+SPACING);
+                            const px = snapPos(cube.position.x);
+                            const py = snapPos(cube.position.y);
+                            const pz = snapPos(cube.position.z);
+                            cleanMat.setPosition(px, py, pz);
+                            
+                            cube.matrix.copy(cleanMat);
+                            cube.matrix.decompose(cube.position, cube.quaternion, cube.scale);
+                            cube.scale.set(1, 1, 1);
+                            cube.updateMatrixWorld();
+                        });
+                        
+                        pivot.rotation.set(0,0,0);
+                        pivot.scale.set(1,1,1);
+                        isAnimating = false;
+                        this.processQueue();
+                    }
+                    renderer.render(scene, camera);
+                };
+                animateTurn();
+            },
+
+            scramble: function() {
+                let scrambleStr = "";
+                const faces = ['R','L','U','D','F','B'];
+                const mods = ['','\'','']; 
+                for(let i=0; i<20; i++) {
+                    const f = faces[Math.floor(Math.random() * faces.length)];
+                    const m = mods[Math.floor(Math.random() * mods.length)];
+                    scrambleStr += (f + m + " ");
+                }
+                this.runSequence(scrambleStr);
+            },
+            
+            reset: function() {
+                window.location.reload(); 
+            }
+        };
+
+        // --- INTERACTION ---
+        let isDraggingCube = false;
+        let prevMouse = { x: 0, y: 0 };
+        let radius = 10;
+        const canvasWrap = document.getElementById('canvas-wrapper');
+
+        function updateCameraPosition() {
+            phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
+            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+            camera.position.y = radius * Math.cos(phi);
+            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(0,0,0);
+            renderer.render(scene, camera);
+        }
+
+        canvasWrap.addEventListener('mousedown', e => {
+            if(e.target.closest('#twist-controls') || e.target.closest('#interactive-logo')) return;
+            isDraggingCube = true;
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mousemove', e => {
+            if(!isDraggingCube) return;
+            theta -= (e.clientX - prevMouse.x) * 0.005;
+            phi -= (e.clientY - prevMouse.y) * 0.005;
+            prevMouse = { x: e.clientX, y: e.clientY };
+            updateCameraPosition();
+        });
+
+        window.addEventListener('mouseup', () => isDraggingCube = false);
+        
+        canvasWrap.addEventListener('touchstart', e => {
+             if(e.target.closest('#twist-controls') || e.target.closest('#interactive-logo')) return;
+            isDraggingCube = true;
+            prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, {passive: false});
+
+        window.addEventListener('touchmove', e => {
+            if(!isDraggingCube) return;
+            e.preventDefault();
+            theta -= (e.touches[0].clientX - prevMouse.x) * 0.005;
+            phi -= (e.touches[0].clientY - prevMouse.y) * 0.005;
+            prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            updateCameraPosition();
+        }, {passive: false});
+        
+        window.addEventListener('touchend', () => isDraggingCube = false);
+
+        // --- DRAGGABLE CONTROLS LOGIC ---
+        const controlsDiv = document.getElementById('twist-controls');
+        const controlsHeader = document.getElementById('twist-header');
+        
+        let isDraggingControls = false;
+        let controlOffset = { x: 0, y: 0 };
+
+        function startDragControls(clientX, clientY) {
+            isDraggingControls = true;
+            const rect = controlsDiv.getBoundingClientRect();
+            if(controlsDiv.style.bottom !== 'auto') {
+                controlsDiv.style.left = rect.left + 'px';
+                controlsDiv.style.top = rect.top + 'px';
+                controlsDiv.style.bottom = 'auto';
+                controlsDiv.style.transform = 'none';
+            }
+            controlOffset.x = clientX - rect.left;
+            controlOffset.y = clientY - rect.top;
+        }
+
+        function moveDragControls(clientX, clientY) {
+            if (!isDraggingControls) return;
+            let newX = clientX - controlOffset.x;
+            let newY = clientY - controlOffset.y;
+            controlsDiv.style.left = newX + 'px';
+            controlsDiv.style.top = newY + 'px';
+        }
+
+        controlsHeader.addEventListener('mousedown', (e) => startDragControls(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => moveDragControls(e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => isDraggingControls = false);
+
+        controlsHeader.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startDragControls(e.touches[0].clientX, e.touches[0].clientY);
+        });
+        window.addEventListener('touchmove', (e) => moveDragControls(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchend', () => isDraggingControls = false);
+
+        // Resize Handler
+        function handleResize() {
+            if (!canvasWrap) return;
+            const w = canvasWrap.clientWidth;
+            const h = canvasWrap.clientHeight;
+            if(renderer) renderer.setSize(w, h);
+            if(camera) {
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+            updateCameraPosition();
+        }
+        window.addEventListener('resize', handleResize);
+
+        // --- INITIALIZATION ---
+        const safeLoadTimer = setTimeout(() => {
+             const loader = document.getElementById('loading');
+             if(loader) loader.style.display = 'none';
+        }, 2000);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(isAnimating) renderer.render(scene, camera);
+        }
+
+        window.addEventListener('load', () => {
+            manual.init();
+            handleResize();
+            clearTimeout(safeLoadTimer);
+            const loader = document.getElementById('loading');
+            if(loader) loader.style.display = 'none';
+            animate();
+        });
+    </script>
+</body>
+</html>

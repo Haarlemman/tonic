@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D World</title>
+</head>
+<body>
+<div class="triadic-atom-responsive">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400&display=swap');
+	  
+     body { margin:0; background:#491545; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+
+
+    .triadic-atom-responsive {
+      position: relative;
+      width: 100%;
+      max-width: 400px;          /* you can change this if you want it larger on big screens */
+      aspect-ratio: 1 / 1;       /* perfect square */
+      margin: 0 auto;            /* centers it in the block */
+      background: #491545;
+      overflow: hidden;
+      font-family: 'Overpass', sans-serif;
+      border-radius: 16px;       /* optional soft corners */
+    }
+
+    .triadic-atom-responsive .nucleus {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 30%; height: 30%;
+      margin: -15% 0 0 -15%;
+      background: radial-gradient(circle, #491545, #333 80%, #666);
+      border-radius: 50%;
+      box-shadow: 0 0 50px #ccc, 0 0 100px #ffea88;
+      z-index: 500;
+    }
+
+    .triadic-atom-responsive .electron {
+      position: absolute;
+      width: 6.67%; height: 6.67%;   /* 40px on 600px base → scaled down */
+      border-radius: 50%;
+      margin: -3.33% 0 0 -3.33%;
+      pointer-events: none;
+    }
+
+    .triadic-atom-responsive #e1 { background: radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow: 0 0 30px #ff4466, inset -4px -4px 12px #900; }
+    .triadic-atom-responsive #e2 { background: radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow: 0 0 30px #55aa99, inset -4px -4px 12px #0066cc; }
+    .triadic-atom-responsive #e3 { background: radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow: 0 0 30px #ffee66, inset -4px -4px 12px #ccaa00; }
+
+    .triadic-atom-responsive canvas { position: absolute; inset: 0; pointer-events: none; }
+    .triadic-atom-responsive .trail-front { z-index: 550; }
+  </style>
+
+  <div class="electron" id="e1"></div>
+  <div class="electron" id="e2"></div>
+  <div class="electron" id="e3"></div>
+  <canvas id="trailsBack"></canvas>
+  <div class="nucleus"></div>
+  <canvas id="trailsFront" class="trail-front"></canvas>
+
+  <script>
+    const container = document.currentScript.parentElement;
+    const size = container.clientWidth;
+    container.querySelectorAll('canvas').forEach(c => {
+      c.width = size;
+      c.height = size;
+    });
+
+    const baseSpeed = 0.04, trailFade = 0.009, trailThickness = 3.5;
+    const ctxBack = container.querySelector('#trailsBack').getContext('2d');
+    const ctxFront = container.querySelector('#trailsFront').getContext('2d');
+    ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+    ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+    const centerX = size / 2, centerY = size / 2;
+    const nucleusRadius = size * 0.15;   // 90px on 600px base
+
+    const electrons = [
+      { el: container.querySelector('#e1'), color: '#ff3355', speedMultiplier: 1,    radius: size * 0.375,  inclinationDeg: 90, planeRotDeg:   7, rollDeg:   0 },
+      { el: container.querySelector('#e2'), color: '#4488ff', speedMultiplier: 0.75, radius: size * 0.35,   inclinationDeg: 15, planeRotDeg:  95, rollDeg:  55 },
+      { el: container.querySelector('#e3'), color: '#ffdd33', speedMultiplier: 3,    radius: size * 0.35,   inclinationDeg: 15, planeRotDeg: 115, rollDeg: -55 }
+    ];
+
+    electrons.forEach(e => {
+      const rad = deg => deg * Math.PI / 180;
+      e.i = rad(e.inclinationDeg);
+      e.r = rad(e.planeRotDeg);
+      e.o = rad(e.rollDeg);
+    });
+
+    let time = 0;
+    (function animate() {
+      time += baseSpeed;
+
+      ctxBack.fillStyle = ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`;
+      ctxBack.fillRect(0,0,size,size);
+      ctxFront.fillRect(0,0,size,size);
+
+      electrons.forEach(e => {
+        let a = time * e.speedMultiplier;
+        let x = Math.cos(a) * e.radius;
+        let y = Math.sin(a) * e.radius;
+        let z = 0;
+
+        let tx = x * Math.cos(e.i) + z * Math.sin(e.i);
+        z = -x * Math.sin(e.i) + z * Math.cos(e.i);
+        x = tx;
+
+        tx = x * Math.cos(e.r) - z * Math.sin(e.r);
+        z = x * Math.sin(e.r) + z * Math.cos(e.r);
+        x = tx;
+
+        tx = x * Math.cos(e.o) - y * Math.sin(e.o);
+        let ty = x * Math.sin(e.o) + y * Math.cos(e.o);
+        x = tx; y = ty;
+
+        const scale = 1 + z * 0.0038;
+        const screenX = centerX + x;
+        const screenY = centerY + y;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x,y) < nucleusRadius + size*0.033;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+      });
+
+      requestAnimationFrame(animate);
+    })();
+  </script>
+</div>
+</body>
+</html>

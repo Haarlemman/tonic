@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Office</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a2e; /* Default dark */
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            touch-action: none;
+            transition: background-color 1s;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Level 2: Office (Sickly Green/Grey for Zombies) */
+        body.level-2 {
+            background-color: #2d3e30; 
+        }
+
+        /* Level 3: Christmas (Festive Red/Green Dark) */
+        body.level-3 {
+            background-color: #2c0b0e; 
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: flex-start; /* Aligns to top */
+            align-items: center;
+            flex-direction: column;
+            padding-top: 70px; /* FORCE DOWN: Significant top space */
+        }
+
+        .game-title {
+            font-size: 20px; /* Slightly smaller to save space */
+            color: #fbbf24; /* Construction Yellow */
+            text-shadow: 3px 3px 0px #000;
+            margin-bottom: 10px; 
+            text-align: center;
+            line-height: 1.2;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+        
+        .level-2 .game-title {
+            color: #4ade80; /* Zombie Green */
+            text-shadow: 3px 3px 0px #064e3b;
+        }
+        
+        .level-3 .game-title {
+            color: #f87171; /* Santa Red */
+            text-shadow: 3px 3px 0px #0f392b; 
+        }
+
+        .ui-layer {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            pointer-events: none;
+            z-index: 10;
+            margin-bottom: 5px;
+            flex-shrink: 0;
+        }
+
+        canvas {
+            background-color: #0f0f1a; 
+            border: 4px solid #4b5563; 
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            image-rendering: pixelated;
+            max-width: 100%;
+            flex-grow: 0;
+            flex-shrink: 1;
+            /* Default height constraint */
+            max-height: 55vh; 
+            transition: border-color 1s, box-shadow 1s;
+        }
+        
+        .level-2 canvas {
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+        
+        .level-3 canvas {
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            justify-content: space-between;
+            padding: 20px;
+            position: absolute;
+            bottom: 60px; /* Nice and high */
+            z-index: 20;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            #mobile-controls { display: flex; }
+            canvas { 
+                /* On mobile, shrink canvas to ensure it fits between title and controls */
+                max-height: 45vh; 
+            }
+            #game-container {
+                padding-top: 50px; /* Adjust slightly for mobile */
+            }
+        }
+
+        .d-pad { display: grid; grid-template-columns: 60px 60px 60px; gap: 5px; }
+        .action-pad { display: flex; gap: 15px; align-items: center; }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            width: 60px; height: 60px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; color: white;
+            user-select: none; touch-action: manipulation;
+        }
+        .btn:active { background: rgba(255, 255, 255, 0.4); }
+
+        .btn-jump {
+            width: 80px; height: 80px;
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24; color: #fbbf24;
+            font-size: 14px;
+        }
+        
+        .level-2 .btn-jump { background: rgba(74, 222, 128, 0.2); border-color: #4ade80; color: #4ade80; }
+        .level-3 .btn-jump { background: rgba(248, 113, 113, 0.2); border-color: #f87171; color: #f87171; }
+
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 50;
+        }
+        .hidden { display: none !important; }
+        
+        h1.overlay-title { color: #fbbf24; margin-bottom: 20px; font-size: 24px; line-height: 1.5; text-align: center; }
+        p { font-size: 12px; color: #ccc; margin-bottom: 30px; line-height: 1.8; text-align: center; }
+        
+        .start-btn {
+            background: #4b5563; color: white; border: none;
+            padding: 15px 30px; font-family: 'Press Start 2P', cursive;
+            font-size: 16px; cursor: pointer; border-bottom: 4px solid #1f2937;
+        }
+        .start-btn:active { transform: translateY(4px); border-bottom: none; }
+        .lives-container { color: #ff4444; font-size: 20px; text-shadow: 2px 2px 0 #000; }
+    </style>
+</head>
+<body id="main-body">
+
+<div id="game-container">
+    <h1 class="game-title" id="main-title">THE OFFICE</h1>
+    <div class="ui-layer">
+        <span id="score-display" class="text-yellow-400 text-xl shadow-black drop-shadow-md">SCORE: 0</span>
+        <span id="lives-display" class="lives-container">❤❤❤</span>
+    </div>
+    <canvas id="gameCanvas" width="600" height="700"></canvas>
+
+    <!-- Overlay Screens -->
+    <div id="overlay">
+        <div id="start-screen" class="text-center px-4">
+            <h1 class="overlay-title">THE OFFICE</h1>
+            <p>Help JK survive the corporate ladder!</p>
+            <p class="text-yellow-400">LEVEL 1: CONSTRUCTION SITE</p>
+            <p>Dodge Hammers & Falling Tools!</p>
+            <button class="start-btn" onclick="startGame(1)">START GAME</button>
+        </div>
+        
+        <div id="level-screen-2" class="hidden text-center px-4">
+            <h1 class="overlay-title" style="color:#4ade80;">LEVEL 2</h1>
+            <h2 class="text-white mb-4">ZOMBIE OFFICE</h2>
+            <p>The deadlines are killing them!<br>Avoid Zombie Coworkers & Captain Underpants!</p>
+            <button class="start-btn" onclick="startLevel(2)">ENTER OFFICE</button>
+        </div>
+
+        <div id="level-screen-3" class="hidden text-center px-4">
+            <h1 class="overlay-title" style="color:#f87171;">LEVEL 3</h1>
+            <h2 class="text-white mb-4">CHRISTMAS PARTY</h2>
+            <p>Ho Ho No!<br>Avoid Reindeer & Santa's Presents!</p>
+            <button class="start-btn" onclick="startLevel(3)">START PARTY</button>
+        </div>
+
+        <div id="game-over-screen" class="hidden text-center px-4">
+            <h1 class="text-red-500 overlay-title">FIRED!</h1>
+            <h2 id="final-score" class="text-white mb-4">Score: 0</h2>
+            <button class="start-btn" onclick="resetGame()">TRY AGAIN</button>
+        </div>
+
+        <div id="win-screen" class="hidden text-center px-4">
+            <h1 class="text-green-500 overlay-title">CEO STATUS!</h1>
+            <p>Best Christmas Ever!</p>
+            <h2 id="win-score" class="text-white mb-4">Score: 0</h2>
+            <button class="start-btn" onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div></div><div class="btn" id="btn-up">⬆️</div><div></div>
+            <div class="btn" id="btn-left">⬅️</div><div class="btn" id="btn-down">⬇️</div><div class="btn" id="btn-right">➡️</div>
+        </div>
+        <div class="action-pad"><div class="btn btn-jump" id="btn-jump">JUMP</div></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startScreen = document.getElementById('start-screen');
+    const levelScreen2 = document.getElementById('level-screen-2');
+    const levelScreen3 = document.getElementById('level-screen-3');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const winScreen = document.getElementById('win-screen');
+    const scoreDisplay = document.getElementById('score-display');
+    const livesDisplay = document.getElementById('lives-display');
+    const body = document.getElementById('main-body');
+    const title = document.getElementById('main-title');
+
+    // Images
+    const andySprite = new Image();
+    andySprite.src = "https://davidenker.com/dk/images/andy.png";
+
+    // --- AUDIO SYSTEM ---
+    let audioCtx;
+    
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        switch(type) {
+            case 'jump':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.05, now); // Volume
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+                break;
+            case 'coin':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.exponentialRampToValueAtTime(2000, now + 0.1);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+                break;
+            case 'hit':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+                break;
+            case 'fart':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+                break;
+            case 'levelup':
+                osc.type = 'square';
+                // Quick Arpeggio
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554, now + 0.1);
+                osc.frequency.setValueAtTime(659, now + 0.2);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+                break;
+            case 'gameover':
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.5);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+                break;
+        }
+    }
+
+    // Constants
+    const GRAVITY = 0.5;
+    const FRICTION = 0.8;
+    const JUMP_FORCE = -8.5;
+    const SPEED = 4;
+    const CLIMB_SPEED = 3;
+    
+    let gameRunning = false;
+    let score = 0;
+    let lives = 3;
+    let currentLevel = 1;
+    let animationId;
+    let enemySpawnTimer = 0;
+
+    const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, Space: false };
+
+    // --- CLASSES ---
+
+    class Player {
+        constructor() {
+            this.width = 24; this.height = 30;
+            this.resetPosition();
+            this.color = '#fbbf24'; // Construction Yellow
+            this.grounded = false; this.climbing = false; this.facingRight = true; this.invulnerable = false;
+        }
+
+        resetPosition() {
+            this.x = 50; this.y = canvas.height - 50;
+            this.velX = 0; this.velY = 0;
+            this.climbing = false; this.grounded = false;
+        }
+
+        hit() {
+            if (this.invulnerable) return;
+            playSound('hit');
+            lives--; updateUI();
+            if (lives <= 0) gameOver(false);
+            else {
+                this.invulnerable = true;
+                this.resetPosition();
+                setTimeout(() => { this.invulnerable = false; }, 1000);
+            }
+        }
+
+        update(platforms, ladders) {
+            if (keys.ArrowRight) { this.velX = SPEED; this.facingRight = true; } 
+            else if (keys.ArrowLeft) { this.velX = -SPEED; this.facingRight = false; } 
+            else { this.velX *= FRICTION; }
+            this.x += this.velX;
+
+            if (this.x < 0) this.x = 0;
+            if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+
+            let onLadder = false;
+            let ladderCenterX = 0;
+            for (let ladder of ladders) {
+                const ladderCenter = ladder.x + ladder.width/2;
+                if (Math.abs(ladderCenter - (this.x + this.width/2)) < 25 && 
+                    this.y + this.height > ladder.y && this.y < ladder.y + ladder.height) {
+                    onLadder = true;
+                    ladderCenterX = ladderCenter - (this.width / 2);
+                }
+            }
+
+            if (onLadder && (keys.ArrowUp || keys.ArrowDown)) {
+                this.climbing = true; this.grounded = false; this.velX = 0;
+                this.x += (ladderCenterX - this.x) * 0.3;
+            } else if (!onLadder) this.climbing = false;
+
+            if (this.climbing) {
+                this.velY = 0;
+                if (keys.ArrowUp) this.velY = -CLIMB_SPEED;
+                if (keys.ArrowDown) this.velY = CLIMB_SPEED;
+            } else {
+                this.velY += GRAVITY;
+                if (keys.Space && this.grounded) {
+                    this.velY = JUMP_FORCE; this.grounded = false; this.climbing = false;
+                    playSound('jump');
+                }
+            }
+            this.y += this.velY;
+
+            this.grounded = false;
+            if (!this.climbing) { 
+                for (let plat of platforms) {
+                    if (this.x < plat.x + plat.width && this.x + this.width > plat.x &&
+                        this.y + this.height > plat.y && this.y + this.height < plat.y + plat.height + 15 && 
+                        this.velY >= 0) {
+                        this.y = plat.y - this.height; this.velY = 0; this.grounded = true;
+                    }
+                }
+            }
+            if (this.y + this.height > canvas.height) {
+                this.y = canvas.height - this.height; this.velY = 0; this.grounded = true;
+            }
+        }
+
+        draw() {
+            if (this.invulnerable && Math.floor(Date.now() / 100) % 2 === 0) return; 
+
+            // Dynamic Shirt Color
+            let shirtColor = '#fbbf24'; // L1
+            if (currentLevel === 2) shirtColor = '#fff'; // White shirt (office)
+            if (currentLevel === 3) shirtColor = '#166534'; // Xmas sweater green
+
+            ctx.fillStyle = shirtColor;
+            ctx.fillRect(this.x, this.y + 10, this.width, this.height - 10);
+            
+            // Pants
+            ctx.fillStyle = '#1f2937'; 
+            ctx.fillRect(this.x, this.y + 22, this.width, 8);
+            
+            // Head
+            ctx.fillStyle = '#ffccaa'; 
+            ctx.beginPath(); ctx.arc(this.x + this.width/2, this.y + 8, 9, 0, Math.PI * 2); ctx.fill();
+
+            // Hat logic
+            if (currentLevel === 1) {
+                // Hard Hat
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath(); ctx.arc(this.x + this.width/2, this.y + 5, 9, Math.PI, 0); ctx.fill();
+                ctx.fillRect(this.facingRight ? this.x + 8 : this.x - 4, this.y + 4, 20, 3);
+            } else if (currentLevel === 3) {
+                // Santa Hat
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath(); ctx.moveTo(this.x, this.y+5); ctx.lineTo(this.x+this.width/2, this.y-5); ctx.lineTo(this.x+this.width, this.y+5); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.fillRect(this.x, this.y+3, this.width, 4);
+            }
+
+            // Eyes
+            ctx.fillStyle = 'black';
+            if (this.facingRight) ctx.fillRect(this.x + 16, this.y + 6, 2, 2);
+            else ctx.fillRect(this.x + 6, this.y + 6, 2, 2);
+        }
+    }
+
+    // --- ENEMIES & OBJECTS ---
+
+    // Level 1: Hammer (Spinning)
+    class Hammer {
+        constructor() {
+            this.y = Math.random() * (canvas.height - 200) + 150; 
+            this.width = 20; this.height = 20;
+            this.speed = Math.random() * 2 + 3; 
+            if (Math.random() > 0.5) { this.x = -50; this.direction = 1; } 
+            else { this.x = canvas.width + 50; this.direction = -1; }
+            this.active = true;
+            this.angle = 0;
+        }
+        update() {
+            this.x += this.speed * this.direction;
+            this.angle += 0.2;
+            if (this.x < -100 || this.x > canvas.width + 100) this.active = false;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + 10, this.y + 10);
+            ctx.rotate(this.angle);
+            ctx.fillStyle = '#9ca3af'; // Metal head
+            ctx.fillRect(-6, -10, 12, 8);
+            ctx.fillStyle = '#92400e'; // Handle
+            ctx.fillRect(-2, -2, 4, 15);
+            ctx.restore();
+        }
+    }
+
+    // Level 2: Captain Underpants (Flying)
+    class CaptainUnderpants {
+        constructor() {
+            this.y = 100 + Math.random() * 200; 
+            this.width = 40; this.height = 30; this.speed = 3;
+            if (Math.random() > 0.5) { this.x = -60; this.direction = 1; } 
+            else { this.x = canvas.width + 60; this.direction = -1; }
+            this.active = true; this.bobAngle = 0;
+        }
+        update() {
+            this.x += this.speed * this.direction;
+            this.bobAngle += 0.1;
+            this.y += Math.sin(this.bobAngle) * 2; 
+            if (this.x < -100 || this.x > canvas.width + 100) this.active = false;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            if (this.direction === -1) ctx.scale(-1, 1);
+            ctx.fillStyle = '#ef4444'; // Cape
+            ctx.beginPath(); ctx.moveTo(-10, -5); ctx.lineTo(-30, 5); ctx.lineTo(-10, 15); ctx.fill();
+            ctx.fillStyle = '#ffccaa'; ctx.fillRect(-10, -5, 25, 15); // Body
+            ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(5, 8, 10, 0, Math.PI, false); ctx.fill(); // Briefs
+            ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(12, -5, 8, 0, Math.PI * 2); ctx.fill(); // Head
+            ctx.restore();
+        }
+    }
+
+    // Level 2: Zombie Suit (Walking)
+    class ZombieSuit {
+        constructor(x, y, rangeX) {
+            this.x = x; this.y = y; this.startX = x; this.rangeX = rangeX;
+            this.width = 24; this.height = 40; this.speed = 1.0; this.direction = 1; this.active = true;
+        }
+        update() {
+            this.x += this.speed * this.direction;
+            if (this.x > this.startX + this.rangeX || this.x > canvas.width - this.width) this.direction = -1;
+            if (this.x < this.startX || this.x < 0) this.direction = 1;
+        }
+        draw() {
+            ctx.fillStyle = '#374151'; // Ripped Suit
+            ctx.fillRect(this.x, this.y + 10, this.width, this.height - 10);
+            ctx.fillStyle = '#86efac'; // Green Skin
+            ctx.beginPath(); ctx.arc(this.x + this.width/2, this.y + 8, 9, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'red'; // Zombie eyes
+            if (this.direction === 1) ctx.fillRect(this.x + 16, this.y + 6, 2, 2);
+            else ctx.fillRect(this.x + 6, this.y + 6, 2, 2);
+            // Arms out
+            ctx.fillStyle = '#86efac';
+            if (this.direction === 1) ctx.fillRect(this.x + 10, this.y + 15, 15, 4);
+            else ctx.fillRect(this.x - 5, this.y + 15, 15, 4);
+        }
+    }
+
+    // Level 3: Reindeer (Flying)
+    class Reindeer {
+        constructor() {
+            this.y = Math.random() * (canvas.height - 200) + 100; 
+            this.width = 40; this.height = 30; this.speed = 4; 
+            if (Math.random() > 0.5) { this.x = -50; this.direction = 1; } 
+            else { this.x = canvas.width + 50; this.direction = -1; }
+            this.active = true;
+        }
+        update() {
+            this.x += this.speed * this.direction;
+            this.y += Math.sin(this.x * 0.05) * 2; // Wavy flight
+            if (this.x < -100 || this.x > canvas.width + 100) this.active = false;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            if (this.direction === -1) ctx.scale(-1, 1);
+            ctx.fillStyle = '#78350f'; // Brown body
+            ctx.fillRect(-15, -10, 30, 20);
+            ctx.fillStyle = '#red'; // Nose (Rudolph)
+            ctx.beginPath(); ctx.arc(15, -5, 3, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fde047'; // Antlers
+            ctx.fillRect(5, -20, 2, 10); ctx.fillRect(10, -20, 2, 10);
+            ctx.restore();
+        }
+    }
+
+    // Falling Hazard (Barrel, Present)
+    class Hazard {
+        constructor(x, y, type) {
+            this.x = x; this.y = y; this.width = 20; this.height = 20;
+            this.speed = 2.5; this.direction = 1; this.velY = 0; this.rotation = 0; this.active = true;
+            this.type = type; // 'barrel' or 'present'
+        }
+        update(platforms) {
+            this.velY += GRAVITY;
+            this.y += this.velY;
+            this.x += this.speed * this.direction;
+            this.rotation += this.speed * this.direction * 0.1;
+
+            for(let p of platforms) {
+                if(this.x + this.width/2 > p.x && this.x + this.width/2 < p.x + p.width &&
+                   this.y + this.height >= p.y && this.y + this.height <= p.y + p.height + 15 && this.velY >= 0) {
+                    if (this.velY > 5) this.direction = (this.x < canvas.width/2) ? 1 : -1;
+                    this.y = p.y - this.height; this.velY = 0;
+                }
+            }
+            if (this.x < 0) { this.x = 0; this.direction = 1; }
+            if (this.x > canvas.width - this.width) { this.x = canvas.width - this.width; this.direction = -1; }
+            if (this.y > canvas.height) { this.active = false; score += 20; updateUI(); }
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + 10, this.y + 10);
+            ctx.rotate(this.rotation);
+            if (this.type === 'barrel') {
+                ctx.fillStyle = '#718096'; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.fillText('☢', -4, 4);
+            } else {
+                ctx.fillStyle = '#22c55e'; // Green box
+                ctx.fillRect(-10, -10, 20, 20);
+                ctx.fillStyle = '#ef4444'; // Red ribbon
+                ctx.fillRect(-3, -10, 6, 20); ctx.fillRect(-10, -3, 20, 6);
+            }
+            ctx.restore();
+        }
+    }
+
+    class Boss {
+        constructor() {
+            this.x = 80; this.y = 80; this.width = 40; this.height = 45;
+            this.throwTimer = 0; this.state = 'idle'; 
+        }
+        update() {
+            this.throwTimer++;
+            this.x = 80 + Math.sin(Date.now() / 500) * 30;
+            if (this.throwTimer > 150) { 
+                this.state = 'throw'; this.throwTimer = 0;
+                let type = (currentLevel === 3) ? 'present' : 'barrel';
+                // Level 2 doesn't have falling hazards from boss, just uncle andy waiting
+                if (currentLevel !== 2) spawnHazard(this.x + 20, this.y + 40, type);
+            } 
+        }
+        draw() {
+            if (currentLevel === 3) {
+                // Santa Draw
+                ctx.fillStyle = '#ef4444'; ctx.fillRect(this.x, this.y, 40, 45); // Suit
+                ctx.fillStyle = '#fff'; ctx.fillRect(this.x + 10, this.y + 10, 20, 20); // Beard area
+                ctx.fillStyle = '#000'; ctx.fillRect(this.x, this.y + 25, 40, 5); // Belt
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x+20, this.y-5, 5, 0, Math.PI*2); ctx.fill(); // Pom pom
+            } else {
+                ctx.drawImage(andySprite, this.x, this.y, this.width, this.height);
+            }
+        }
+    }
+
+    class Collectible {
+        constructor(x, y, type) {
+            this.x = x; this.y = y; this.type = type; this.width = 16; this.height = 16; this.active = true;
+        }
+        draw() {
+            if (!this.active) return;
+            const bobY = Math.sin(Date.now() / 200) * 3;
+            if (this.type === 'coin') {
+                ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(this.x+8, this.y+8+bobY, 7, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.font='10px monospace'; ctx.fillText('$', this.x+5, this.y+11+bobY);
+            } else {
+                ctx.fillStyle = '#FFFF00'; 
+                ctx.beginPath(); ctx.moveTo(this.x+8, this.y+bobY); ctx.lineTo(this.x, this.y+16+bobY); ctx.lineTo(this.x+16, this.y+16+bobY); ctx.fill();
+            }
+        }
+    }
+
+    // --- GAME DATA ---
+
+    let player;
+    let boss;
+    let hazards = [];
+    let enemies = []; 
+    let platforms = [];
+    let ladders = [];
+    let collectibles = [];
+
+    function initLevel(level) {
+        currentLevel = level;
+        body.className = `level-${level}`;
+        title.innerText = level === 1 ? "CONSTRUCTION" : (level === 2 ? "ZOMBIE OFFICE" : "XMAS PARTY");
+
+        // Shared Geometry
+        platforms = [
+            { x: 0, y: canvas.height - 10, width: canvas.width, height: 10 }, 
+            { x: 0, y: 550, width: 450, height: 20 },
+            { x: 150, y: 440, width: 450, height: 20 },
+            { x: 0, y: 330, width: 450, height: 20 },
+            { x: 150, y: 220, width: 450, height: 20 },
+            { x: 0, y: 125, width: 250, height: 20 }
+        ];
+
+        ladders = [
+            { x: 400, y: 550, width: 30, height: 140 }, 
+            { x: 200, y: 440, width: 30, height: 110 }, 
+            { x: 400, y: 330, width: 30, height: 110 },
+            { x: 200, y: 220, width: 30, height: 110 },
+            { x: 200, y: 125, width: 30, height: 95 }   
+        ];
+
+        hazards = [];
+        enemies = [];
+        collectibles = [];
+        
+        // Coins always
+        collectibles.push(new Collectible(300, 530, 'coin'));
+        collectibles.push(new Collectible(100, 310, 'coin'));
+        collectibles.push(new Collectible(400, 200, 'coin'));
+
+        if (level === 2) {
+            // Level 2: Zombies on floors
+            enemies.push(new ZombieSuit(50, 510, 300));
+            enemies.push(new ZombieSuit(200, 400, 200));
+            enemies.push(new ZombieSuit(50, 290, 300));
+        }
+
+        player = new Player();
+        boss = new Boss();
+        updateUI();
+    }
+
+    function spawnHazard(x, y, type) {
+        hazards.push(new Hazard(x, y, type));
+    }
+
+    function spawnFlyingEnemy() {
+        if (currentLevel === 1) {
+            if (Math.random() < 0.5) enemies.push(new Hammer());
+        } else if (currentLevel === 2) {
+            if (Math.random() < 0.3) enemies.push(new CaptainUnderpants());
+        } else if (currentLevel === 3) {
+            if (Math.random() < 0.6) enemies.push(new Reindeer());
+        }
+    }
+
+    function checkCollision(r1, r2) {
+        return (r1.x < r2.x + r2.width && r1.x + r1.width > r2.x && r1.y < r2.y + r2.height && r1.y + r1.height > r2.y);
+    }
+
+    function updateUI() {
+        scoreDisplay.innerText = "SCORE: " + score;
+        livesDisplay.innerText = "❤".repeat(lives);
+    }
+
+    function update() {
+        if (!gameRunning) return;
+
+        player.update(platforms, ladders);
+        boss.update();
+
+        enemySpawnTimer++;
+        if (enemySpawnTimer > 200) { 
+            spawnFlyingEnemy();
+            enemySpawnTimer = 0;
+        }
+
+        if (checkCollision(player, boss)) {
+            levelComplete();
+            return;
+        }
+
+        for (let c of collectibles) {
+            if (c.active && checkCollision(player, c)) {
+                c.active = false; score += 10; updateUI();
+                playSound('coin');
+            }
+        }
+
+        for (let i = hazards.length - 1; i >= 0; i--) {
+            let h = hazards[i];
+            h.update(platforms);
+            let hitBox = { x: h.x + 4, y: h.y + 4, width: 10, height: 10 };
+            if (h.active && checkCollision(player, hitBox)) player.hit();
+            if (!h.active) hazards.splice(i, 1);
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.update();
+            let hitBox = { x: e.x + 2, y: e.y + 2, width: e.width - 4, height: e.height - 4 };
+            if (e.active && checkCollision(player, hitBox)) player.hit();
+            if (!e.active && (e.x < -100 || e.x > canvas.width + 100)) enemies.splice(i, 1);
+        }
+    }
+
+    function drawBackground() {
+        if (currentLevel === 1) {
+            // Construction
+            ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); ctx.arc(500, 80, 40, 0, Math.PI*2); ctx.fill(); // Moon
+            ctx.fillStyle = '#2d3748'; ctx.fillRect(50, 300, 100, 400); // Building
+        } else if (currentLevel === 2) {
+            // Office
+            ctx.fillStyle = '#fff'; ctx.fillRect(450, 50, 100, 150); // Window
+            ctx.fillStyle = '#bae6fd'; ctx.fillRect(455, 55, 90, 140); 
+            ctx.fillStyle = '#166534'; ctx.beginPath(); ctx.arc(30, 600, 20, 0, Math.PI*2); ctx.fill(); // Plant
+        } else {
+            // Christmas
+            // String Lights
+            ctx.beginPath(); ctx.moveTo(0, 50); ctx.quadraticCurveTo(300, 150, 600, 50); ctx.strokeStyle='#fff'; ctx.stroke();
+            for(let i=0; i<600; i+=60) {
+                ctx.fillStyle = (Math.floor(Date.now()/500)%2===0) ? '#ef4444' : '#22c55e';
+                ctx.beginPath(); ctx.arc(i+10, 85, 5, 0, Math.PI*2); ctx.fill();
+            }
+            // Tree
+            ctx.fillStyle = '#064e3b';
+            ctx.beginPath(); ctx.moveTo(100, 600); ctx.lineTo(150, 400); ctx.lineTo(200, 600); ctx.fill();
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = (currentLevel === 3) ? '#2c0b0e' : (currentLevel === 2 ? '#fff' : '#0f0f1a');
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawBackground();
+
+        // Ladders & Platforms
+        ctx.fillStyle = '#6b7280';
+        for (let l of ladders) {
+            ctx.fillRect(l.x, l.y, 4, l.height); ctx.fillRect(l.x + l.width - 4, l.y, 4, l.height);
+            for (let y = l.y; y < l.y + l.height; y += 15) ctx.fillRect(l.x, y, l.width, 3);
+        }
+
+        for (let p of platforms) {
+            ctx.fillStyle = (currentLevel === 1) ? '#4b5563' : (currentLevel === 2 ? '#9ca3af' : '#7f1d1d');
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+        }
+
+        for (let c of collectibles) c.draw();
+        boss.draw();
+        for (let h of hazards) h.draw();
+        for (let e of enemies) e.draw();
+        player.draw();
+    }
+
+    function loop() {
+        if(gameRunning) { update(); draw(); animationId = requestAnimationFrame(loop); }
+    }
+
+    function startGame(level) {
+        initAudio(); 
+        document.querySelectorAll('.hidden').forEach(el => el.classList.add('hidden')); // Clear all overlays
+        startScreen.classList.add('hidden');
+        overlay.classList.add('hidden');
+        if (level === 1) { score = 0; lives = 3; }
+        initLevel(level);
+        gameRunning = true;
+        loop();
+    }
+
+    function startLevel(level) {
+        startGame(level);
+    }
+
+    function levelComplete() {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        overlay.classList.remove('hidden');
+        score += 500;
+        playSound('levelup');
+
+        if (currentLevel === 1) levelScreen2.classList.remove('hidden');
+        else if (currentLevel === 2) levelScreen3.classList.remove('hidden');
+        else {
+            document.getElementById('win-score').innerText = "Final Score: " + score;
+            winScreen.classList.remove('hidden');
+        }
+    }
+
+    function resetGame() {
+        document.querySelectorAll('.hidden').forEach(el => el.classList.add('hidden'));
+        overlay.classList.remove('hidden');
+        startScreen.classList.remove('hidden');
+    }
+
+    function gameOver(win) {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        overlay.classList.remove('hidden');
+        playSound('gameover');
+        document.getElementById('final-score').innerText = "Final Score: " + score;
+        gameOverScreen.classList.remove('hidden');
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space') { keys.Space = true; }
+        if(e.code === 'ArrowUp') keys.ArrowUp = true;
+        if(e.code === 'ArrowDown') keys.ArrowDown = true;
+        if(e.code === 'ArrowLeft') keys.ArrowLeft = true;
+        if(e.code === 'ArrowRight') keys.ArrowRight = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if(e.code === 'Space') keys.Space = false;
+        if(e.code === 'ArrowUp') keys.ArrowUp = false;
+        if(e.code === 'ArrowDown') keys.ArrowDown = false;
+        if(e.code === 'ArrowLeft') keys.ArrowLeft = false;
+        if(e.code === 'ArrowRight') keys.ArrowRight = false;
+    });
+
+    const btnUp = document.getElementById('btn-up');
+    const btnDown = document.getElementById('btn-down');
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnJump = document.getElementById('btn-jump');
+
+    const handleTouch = (btn, key) => {
+        const start = () => keys[key] = true;
+        const end = () => keys[key] = false;
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            start(); 
+            if(key === 'Space') { // Jump sound on touch
+                 if (player && player.grounded) {
+                    player.velY = JUMP_FORCE; 
+                    player.grounded = false; 
+                    player.climbing = false;
+                    playSound('jump');
+                 }
+            }
+        });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); end(); });
+    };
+
+    handleTouch(btnUp, 'ArrowUp'); handleTouch(btnDown, 'ArrowDown');
+    handleTouch(btnLeft, 'ArrowLeft'); handleTouch(btnRight, 'ArrowRight');
+    handleTouch(btnJump, 'Space');
+
+    // Initial Draw
+    ctx.fillStyle = '#0f0f1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+</script>
+</body>
+</html>
+

@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The University of Free Will | Bauhaus Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+        :root {
+            --bauhaus-red: #E30613;
+            --bauhaus-blue: #0055A4;
+            --bauhaus-yellow: #FFD700;
+            --bauhaus-black: #1A1A1A;
+            --bauhaus-cream: #F2F2E9;
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: var(--bauhaus-cream); 
+            font-family: 'Space Grotesk', sans-serif; 
+            color: var(--bauhaus-black);
+            user-select: none;
+        }
+
+        #canvas-container { width: 100vw; height: 100vh; cursor: crosshair; }
+        
+        /* Intro Overlay */
+        #intro-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: var(--bauhaus-cream);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.5s ease;
+        }
+        
+        #intro-text {
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 700;
+            max-width: 900px;
+            line-height: 0.85;
+            margin-bottom: 60px;
+            padding: 0 40px;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            text-align: center;
+        }
+
+        .action-btn {
+            background: var(--bauhaus-black);
+            border: none;
+            color: var(--bauhaus-cream);
+            padding: 20px 60px;
+            text-transform: uppercase;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 101;
+        }
+        .action-btn:hover {
+            background: var(--bauhaus-red);
+            transform: scale(1.05);
+            letter-spacing: 2px;
+        }
+
+        /* Bauhaus Grid HUD */
+        #hud-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            display: grid;
+            grid-template-columns: 350px 1fr 300px;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        .grid-block {
+            border: 2px solid var(--bauhaus-black);
+            padding: 25px;
+            pointer-events: auto;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .brand-block {
+            grid-column: 1; grid-row: 1;
+            background: var(--bauhaus-red);
+            color: white;
+        }
+        .brand-block h1 { 
+            margin: 0; font-size: 2.5rem; line-height: 0.85; text-transform: uppercase; 
+        }
+
+        .nav-block {
+            grid-column: 3; grid-row: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+            background: white;
+        }
+
+        .directory-block {
+            grid-column: 3; grid-row: 2;
+            align-self: end;
+            background: white;
+        }
+
+        .status-block {
+            grid-column: 1; grid-row: 3;
+            background: var(--bauhaus-blue);
+            color: white;
+        }
+
+        .menu-btn {
+            background: var(--bauhaus-black);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
+        .menu-btn:hover { background: var(--bauhaus-yellow); color: black; }
+
+        .building-link {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--bauhaus-black);
+            border-bottom: 4px solid var(--bauhaus-black);
+            margin-bottom: 15px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .building-link:hover { border-color: var(--bauhaus-red); padding-left: 10px; }
+
+        /* Faculty Overlay */
+        #faculty-screen {
+            position: absolute;
+            background: white;
+            border: 4px solid var(--bauhaus-black);
+            padding: 20px;
+            width: 280px;
+            z-index: 80;
+            display: none;
+            pointer-events: none;
+            box-shadow: 15px 15px 0px var(--bauhaus-black);
+            transform: translate(-50%, -100%);
+            margin-top: -20px;
+        }
+        #faculty-screen.active { display: block; }
+        .quote-text { font-weight: 700; font-size: 1.2rem; text-transform: uppercase; line-height: 1.1; }
+
+        /* Custom Modal */
+        #custom-modal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 8px solid var(--bauhaus-black);
+            padding: 40px;
+            z-index: 200;
+            display: none;
+            width: 400px;
+            box-shadow: 20px 20px 0px var(--bauhaus-red);
+        }
+        #modal-close {
+            background: var(--bauhaus-yellow);
+            padding: 10px 20px;
+            border: 2px solid var(--bauhaus-black);
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        #tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            background: var(--bauhaus-black);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            pointer-events: none;
+            display: none;
+            z-index: 60;
+            transform: translate(15px, 15px);
+            font-size: 0.7rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #hud-layer {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+            }
+            .grid-block { padding: 15px; }
+            .nav-block { grid-column: 1; grid-row: 2; align-items: stretch; }
+            .directory-block { display: none; }
+        }
+    </style>
+ </head>
+ <body>
+
+  <audio id="bg-music" loop crossorigin="anonymous">
+    <source src="audio/MysteriousHeartbeat1.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="intro-overlay">
+    <div id="intro-text">UNIVERSITY<br>OF FREE<br>WILL</div>
+    <button id="skip-btn" class="action-btn">
+        ENTER CAMPUS 
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <div id="hud-layer">
+    <div class="grid-block brand-block">
+        <h1>UNIV.<br>FREE<br>WILL</h1>
+        <div style="font-weight:500; margin-top:15px; font-size:0.8rem; letter-spacing: 2px;">EST. PARADOX</div>
+    </div>
+
+    <div class="grid-block nav-block">
+        <button class="menu-btn" onclick="toggleMusic()" id="music-toggle">AUDIO: ON</button>
+        <button class="menu-btn" style="background:var(--bauhaus-blue)" onclick="showNotification('DATA TERMINAL', 'Identification required for architectural access.')">LOGIN</button>
+    </div>
+
+    <div class="grid-block directory-block">
+        <div style="font-weight:700; border-bottom:2px solid black; margin-bottom:15px; padding-bottom:5px; font-size: 0.7rem;">CAMPUS DIRECTORY</div>
+        <div class="building-link" onclick="focusBuilding('art')">01 ART</div>
+        <div class="building-link" onclick="focusBuilding('science')">02 SCIENCE</div>
+        <div class="building-link" onclick="focusBuilding('spirit')">03 SPIRIT</div>
+    </div>
+
+    <div class="grid-block status-block">
+        <div style="font-weight:700; font-size: 0.8rem;">SYSTEM STATUS</div>
+        <div style="font-size:0.7rem; margin-top:5px; line-height: 1.4;">BEAT-SYNC: ACTIVE<br>ORTHOGRAPHIC: ENGAGED<br>GRID-STABILITY: 100%</div>
+    </div>
+  </div>
+
+  <div id="faculty-screen">
+    <div style="font-size: 0.6rem; color: #888; margin-bottom: 8px;">FACULTY QUOTE</div>
+    <div id="screen-content" class="quote-text"></div>
+  </div>
+
+  <div id="custom-modal">
+    <h2 style="margin-top:0; text-transform:uppercase; border-bottom: 4px solid black; padding-bottom: 10px;">Security Alert</h2>
+    <p id="modal-body" style="font-weight: 500;"></p>
+    <button id="modal-close" onclick="closeModal()">ACKNOWLEDGE</button>
+  </div>
+
+  <div id="tooltip"></div>
+  <div id="canvas-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script>
+        let scene, camera, renderer, raycaster, mouse, controls;
+        let specialBlocks = [];
+        let atomGroup, spiritBeam;
+        
+        let audioCtx, analyser, dataArray;
+        let audioInitialized = false;
+        let beatLevel = 0;
+
+        let introActive = true;
+        let cinematicTarget = null;
+        let lastZoomTime = 0;
+        let lastQuoteTime = 0;
+        const ZOOM_INTERVAL = 10000; 
+
+        const facultyData = {
+            art: ["FORM FOLLOWS FREEDOM", "THE CANVAS BLEEDS", "MIND IS THE BRUSH", "GEOMETRY IS DESTINY"],
+            science: ["ADVERSITY IS YOUR TEACHER", "MAP IS NOT TERRITORY", "ENTROPY IS KING", "OBSERVATION COLLAPSES"],
+            spirit: ["THE VOID IS FULL", "WISDOM THROUGH SURRENDER", "SILENCE SPEAKS", "LETTING GO IS POWER"]
+        };
+
+        window.onload = function() {
+            init();
+            animate();
+            document.getElementById('skip-btn').addEventListener('click', startExperience);
+        };
+
+        function startExperience() {
+            if (!introActive) return;
+            introActive = false;
+            
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const music = document.getElementById('bg-music');
+            music.volume = 0.4;
+            music.play().catch(() => {
+                console.log("Audio play blocked or file missing.");
+            });
+            
+            const overlay = document.getElementById('intro-overlay');
+            overlay.style.transform = 'translateY(-100%)';
+            overlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('hud-layer').style.opacity = 1;
+                lastZoomTime = Date.now();
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = 0.5;
+            }, 800);
+        }
+
+        function initAudio() {
+            if (audioInitialized) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                const source = audioCtx.createMediaElementSource(document.getElementById('bg-music'));
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                audioInitialized = true;
+            } catch(e) {
+                console.warn("Web Audio API not supported.");
+            }
+        }
+
+        function toggleMusic() {
+            const music = document.getElementById('bg-music');
+            if (music.paused) { 
+                music.play().catch(()=>{}); 
+                document.getElementById('music-toggle').innerText = "AUDIO: ON"; 
+            } else { 
+                music.pause(); 
+                document.getElementById('music-toggle').innerText = "AUDIO: OFF"; 
+            }
+        }
+
+        function showNotification(title, body) {
+            document.getElementById('modal-body').innerText = body;
+            document.getElementById('custom-modal').style.display = 'block';
+        }
+        function closeModal() { document.getElementById('custom-modal').style.display = 'none'; }
+
+        function focusBuilding(type) {
+            const b = specialBlocks.find(b => b.userData.type === type);
+            if (b) {
+                cinematicTarget = b;
+                lastZoomTime = Date.now();
+                updateFacultyScreen(type);
+                controls.autoRotate = false;
+            }
+        }
+
+        function updateFacultyScreen(type) {
+            const quotes = facultyData[type];
+            document.getElementById('screen-content').innerText = quotes[Math.floor(Math.random()*quotes.length)];
+            document.getElementById('faculty-screen').classList.add('active');
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xF2F2E9);
+            
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = 14;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(40, 40, 40);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+            sun.position.set(20, 40, 20);
+            scene.add(sun);
+
+            createCampus();
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+        }
+
+        function createCampus() {
+            const mats = {
+                base: new THREE.MeshStandardMaterial({ color: 0x1a1a1a }),
+                red: new THREE.MeshStandardMaterial({ color: 0xE30613 }),
+                blue: new THREE.MeshStandardMaterial({ color: 0x0055A4 }),
+                yellow: new THREE.MeshStandardMaterial({ color: 0xFFD700 }),
+                white: new THREE.MeshStandardMaterial({ color: 0xffffff })
+            };
+
+            const GRID = 10;
+            const SPACING = 3.0;
+            const offset = (GRID * SPACING) / 2;
+
+            for(let x=0; x<GRID; x++) {
+                for(let z=0; z<GRID; z++) {
+                    let mesh;
+                    let type = "campus";
+                    let px = x * SPACING - offset;
+                    let pz = z * SPACING - offset;
+
+                    if (x === 2 && z === 2) {
+                        type = "art";
+                        mesh = new THREE.Group();
+                        const c = new THREE.Mesh(new THREE.BoxGeometry(1.8, 7, 1.8), mats.red);
+                        const s = new THREE.Mesh(new THREE.SphereGeometry(1.2, 4, 4), mats.white);
+                        s.position.y = 4.5;
+                        mesh.add(c, s);
+                    } else if (x === 7 && z === 3) {
+                        type = "science";
+                        mesh = new THREE.Group();
+                        const base = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 5, 32), mats.blue);
+                        atomGroup = new THREE.Group();
+                        atomGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), mats.white));
+                        atomGroup.position.y = 3.5;
+                        mesh.add(base, atomGroup);
+                    } else if (x === 3 && z === 7) {
+                        type = "spirit";
+                        mesh = new THREE.Group();
+                        const pyr = new THREE.Mesh(new THREE.ConeGeometry(2, 9, 4), mats.yellow);
+                        pyr.position.y = 4.5;
+                        spiritBeam = pyr;
+                        mesh.add(pyr);
+                    } else {
+                        const h = 0.5 + Math.random() * 4;
+                        mesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, h, 1.5), mats.base);
+                        mesh.position.y = h/2;
+                    }
+
+                    mesh.position.x = px;
+                    mesh.position.z = pz;
+                    mesh.userData = { type, label: type.toUpperCase() };
+                    scene.add(mesh);
+                    if(type !== "campus") specialBlocks.push(mesh);
+                }
+            }
+            
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0xE6E6DA }));
+            floor.rotation.x = -Math.PI/2;
+            floor.position.y = -0.01;
+            scene.add(floor);
+        }
+
+        function onMouseMove(e) {
+            if (introActive) return;
+            mouse = mouse || new THREE.Vector2();
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster = raycaster || new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            const tooltip = document.getElementById('tooltip');
+            if (intersects.length > 0) {
+                tooltip.style.display = 'block';
+                tooltip.style.left = e.clientX + 'px';
+                tooltip.style.top = e.clientY + 'px';
+                let t = intersects[0].object; while(t.parent && !t.userData.type) t = t.parent;
+                tooltip.innerText = t.userData.label;
+            } else tooltip.style.display = 'none';
+        }
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = 14;
+            camera.left = -d * aspect; camera.right = d * aspect;
+            camera.top = d; camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = Date.now();
+            
+            if (audioInitialized && !document.getElementById('bg-music').paused) {
+                analyser.getByteFrequencyData(dataArray);
+                let avg = 0; for(let i=0; i<10; i++) avg += dataArray[i];
+                beatLevel = (avg / 10 / 255);
+            } else {
+                beatLevel = 0;
+            }
+
+            if (atomGroup) atomGroup.rotation.y += 0.01 + beatLevel * 0.1;
+            if (spiritBeam) spiritBeam.scale.x = spiritBeam.scale.z = 1 + beatLevel * 0.3;
+
+            // Idle Cinematic Auto-rotation logic
+            if (!introActive && !cinematicTarget && now - lastZoomTime > ZOOM_INTERVAL) {
+                controls.autoRotate = true;
+            }
+
+            if (cinematicTarget) {
+                const targetPos = new THREE.Vector3();
+                cinematicTarget.getWorldPosition(targetPos);
+                controls.target.lerp(targetPos, 0.08);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.2, 0.08);
+                
+                // Position Faculty Screen
+                const v = targetPos.clone(); v.y += 5; v.project(camera);
+                const fs = document.getElementById('faculty-screen');
+                fs.style.left = (v.x * .5 + .5) * window.innerWidth + 'px';
+                fs.style.top = (v.y * -.5 + .5) * window.innerHeight + 'px';
+            } else {
+                controls.target.lerp(new THREE.Vector3(0,0,0), 0.05);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.0, 0.05);
+            }
+
+            camera.updateProjectionMatrix();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+ </body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones: The Sequence</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* The Stage */
+        #stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            opacity: 0;
+            transition: opacity 2.5s ease-in-out;
+            pointer-events: none; /* Block clicks until active */
+        }
+
+        iframe.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #cinematic-text {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            color: #EAEAEA;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 0.8rem;
+            margin: 5px 0 0 0;
+            color: #D22B2B; /* Red accent */
+            font-weight: normal;
+        }
+
+        /* Controls */
+        #controls {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid #333;
+            color: #666;
+            padding: 10px 20px;
+            font-family: 'Courier New', Courier, monospace;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.7rem;
+        }
+
+        button:hover {
+            border-color: #EAEAEA;
+            color: #EAEAEA;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Progress Bar */
+        .progress-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: #D22B2B;
+            width: 0%;
+            transition: width 1s linear;
+        }
+        
+        /* Start Overlay */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            pointer-events: auto;
+        }
+        
+        .start-btn {
+            border: 1px solid #EAEAEA;
+            padding: 20px 40px;
+            color: #EAEAEA;
+            font-size: 1.2rem;
+            cursor: pointer;
+            letter-spacing: 4px;
+        }
+        .start-btn:hover {
+            background: #EAEAEA;
+            color: #000;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <div class="start-btn" onclick="beginSequence()">INITIATE SEQUENCE</div>
+        <div style="margin-top: 20px; color: #666; font-size: 0.8rem;">AUDIO ENABLED // FULLSCREEN RECOMMENDED</div>
+    </div>
+
+    <div id="stage">
+        <iframe id="frame-0" src="atom.html"></iframe>
+        <iframe id="frame-1" src="universe.html"></iframe>
+        <iframe id="frame-2" src="triad.html"></iframe>
+        <iframe id="frame-3" src="5d.html"></iframe>
+    </div>
+
+    <div id="progress-line" class="progress-line"></div>
+    <div id="ui-layer">
+        <div id="cinematic-text">
+            <h1 id="chapter-title">LOADING...</h1>
+            <h2 id="chapter-subtitle">SYSTEM STANDBY</h2>
+        </div>
+
+        <div id="controls">
+            <button onclick="prevScene()">[ PREV ]</button>
+            <button id="next-btn" onclick="nextScene()">[ NEXT PHASE ]</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SCENES = [
+            {
+                id: 'frame-0',
+                title: "01 // THE FOUNDATION",
+                subtitle: "SCALE: SUBATOMIC",
+                duration: 12000 // 12 seconds looking at the atom
+            },
+            {
+                id: 'frame-1',
+                title: "02 // THE EXPANSION",
+                subtitle: "SCALE: COSMIC",
+                duration: 18000 // 18 seconds flying through universe
+            },
+            {
+                id: 'frame-2',
+                title: "03 // THE ARCHETYPE",
+                subtitle: "SCALE: CONCEPTUAL",
+                duration: 25000 // 25 seconds for the schematic to build
+            },
+            {
+                id: 'frame-3',
+                title: "04 // THE CONTROL",
+                subtitle: "SCALE: 5TH DIMENSION",
+                duration: 0 // 0 means Infinite (User controls this now)
+            }
+        ];
+
+        let currentSceneIndex = -1;
+        let timer;
+        let progressBar = document.getElementById('progress-line');
+
+        function beginSequence() {
+            // Hide start screen
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-screen').style.display = 'none';
+            }, 1000);
+
+            // Start Scene 0
+            loadScene(0);
+        }
+
+        function loadScene(index) {
+            if (index < 0 || index >= SCENES.length) return;
+            
+            clearTimeout(timer);
+            currentSceneIndex = index;
+            const scene = SCENES[index];
+
+            // 1. Update UI
+            document.getElementById('chapter-title').innerText = scene.title;
+            document.getElementById('chapter-subtitle').innerText = scene.subtitle;
+            
+            // 2. Handle Iframes
+            // Fade out all
+            document.querySelectorAll('iframe').forEach(el => el.classList.remove('active'));
+            // Fade in current
+            const currentFrame = document.getElementById(scene.id);
+            currentFrame.classList.add('active');
+
+            // Optional: Reload the iframe source to restart animations from 0
+            // currentFrame.src = currentFrame.src; 
+
+            // 3. Handle Auto-Advance
+            if (scene.duration > 0) {
+                // Reset animation on progress bar
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
+                
+                setTimeout(() => {
+                    progressBar.style.transition = `width ${scene.duration}ms linear`;
+                    progressBar.style.width = '100%';
+                }, 50);
+
+                timer = setTimeout(() => {
+                    nextScene();
+                }, scene.duration);
+                
+                document.getElementById('next-btn').innerText = "[ NEXT PHASE >> ]";
+            } else {
+                // Infinite scene
+                progressBar.style.width = '100%';
+                document.getElementById('next-btn').innerText = "[ END SEQUENCE ]";
+            }
+        }
+
+        function nextScene() {
+            if (currentSceneIndex < SCENES.length - 1) {
+                loadScene(currentSceneIndex + 1);
+            }
+        }
+
+        function prevScene() {
+            if (currentSceneIndex > 0) {
+                loadScene(currentSceneIndex - 1);
+            }
+        }
+
+    </script>
+</body>
+</html>

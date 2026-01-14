@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Atomic Orbit Animation</title>
+<style>
+  html,body{height:100%;margin:0;background:#050507;display:flex;align-items:center;justify-content:center}
+  canvas{width:90vmin;height:90vmin;box-shadow:0 10px 40px rgba(0,0,0,.7);border-radius:8px}
+  .hint{position:fixed;left:10px;bottom:10px;color:#aaa;font-family:system-ui,Segoe UI,Roboto; font-size:13px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hint">Red = body, Yellow = mind, Blue = soul — tweak inclinations in code.</div>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha: true });
+
+  // Resize to device pixels
+  function resize() {
+    const ratio = window.devicePixelRatio || 1;
+    const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    canvas.width = Math.floor(size * ratio);
+    canvas.height = Math.floor(size * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // viewer / perspective
+  const focal = 800;            // focal length (increase for less perspective)
+  const center = { x: canvas.width / 2 / (window.devicePixelRatio||1), y: canvas.height / 2 / (window.devicePixelRatio||1) };
+
+  // Orbiters configuration
+  // azimuth = rotation around vertical axis (degrees) -> 0,120,240 as requested
+  // inclination = tilt of plane (deg) — change as you like for more dramatic "atomic" look
+  const orbiters = [
+    { color:'#ff4b4b', azimuthDeg: 0,   inclinationDeg: 5,   radius: 140, speed: 4.9, size:15 }, // body (red) - almost flat
+    { color:'#ffd54f', azimuthDeg: 120, inclinationDeg: 35,  radius: 180, speed: 2.7, size:15 }, // mind (yellow) - tilted
+    { color:'#5fa8ff', azimuthDeg: 240, inclinationDeg: -45, radius: 220, speed: 1.5, size:15 }  // soul (blue) - strongly tilted
+  ];
+
+  // add an initial phase offset so they look evenly spaced around circle visually
+  orbiters.forEach((o,i)=> o.phase = i * (Math.PI*2/3));
+
+  // helpers: deg->rad, 3D rotate & project
+  const deg = d => d * Math.PI / 180;
+
+  function rotateX(p, a){ // rotate point p around X by angle a (rad)
+    const ca = Math.cos(a), sa = Math.sin(a);
+    return { x: p.x, y: p.y * ca - p.z * sa, z: p.y * sa + p.z * ca };
+  }
+  function rotateZ(p, a){ // rotate around Z
+    const ca = Math.cos(a), sa = Math.sin(a);
+    return { x: p.x * ca - p.y * sa, y: p.x * sa + p.y * ca, z: p.z };
+  }
+  function project(p){
+    // simple perspective projection
+    const scale = focal / (focal + p.z);
+    return { x: center.x + p.x * scale, y: center.y + p.y * scale, s: scale };
+  }
+
+  // draw glowing sun
+  function drawSun() {
+    const sunR = 42;
+    // big glow
+    const g = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, sunR*6);
+    g.addColorStop(0, 'rgba(255,220,120,0.95)');
+    g.addColorStop(0.12, 'rgba(255,200,80,0.85)');
+    g.addColorStop(0.35, 'rgba(255,140,40,0.18)');
+    g.addColorStop(1, 'rgba(255,80,10,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, sunR*6, 0, Math.PI*2);
+    ctx.fill();
+
+    // core
+    ctx.beginPath();
+    ctx.fillStyle = '#fff7e6';
+    ctx.arc(center.x, center.y, sunR*0.6, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.fillStyle = '#ffb84d';
+    ctx.arc(center.x, center.y, sunR, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // draw orbital ellipse (projected) as faint stroke to show plane
+  function drawOrbitPlane(o){
+    // draw many points around circle in plane, project each and connect
+    const n = 128;
+    ctx.beginPath();
+    for(let i=0;i<=n;i++){
+      const theta = (i / n) * Math.PI * 2;
+      // point on local plane circle before rotation
+      let p = { x: Math.cos(theta) * o.radius, y: Math.sin(theta) * o.radius, z: 0 };
+      // tilt around X by inclination
+      p = rotateX(p, deg(o.inclinationDeg));
+      // rotate plane around Z by azimuth
+      p = rotateZ(p, deg(o.azimuthDeg));
+      // small global tilt to give 3D perspective (so 'up' is slightly off)
+      p = rotateX(p, deg(-20));
+      // project
+      const P = project(p);
+      if(i===0) ctx.moveTo(P.x,P.y); else ctx.lineTo(P.x,P.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // draw orbiter with subtle motion blur (trail)
+  const trailLen = 18;
+  const history = orbiters.map(()=> []);
+  function drawOrbiter(o, t){
+    // angle along orbit
+    const ang = t * o.speed + o.phase;
+    // local point
+    let p = { x: Math.cos(ang) * o.radius, y: Math.sin(ang) * o.radius, z: 0 };
+    p = rotateX(p, deg(o.inclinationDeg));
+    p = rotateZ(p, deg(o.azimuthDeg));
+    p = rotateX(p, deg(-20));
+    const P = project(p);
+
+    // update trail history
+    const h = history[orbiters.indexOf(o)];
+    h.unshift(P);
+    if(h.length>trailLen) h.pop();
+
+    // draw subtle glowing trail (fading)
+    for(let i=h.length-1;i>=0;i--){
+      const q = h[i];
+      const alpha = (i+1)/h.length * 0.14;
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, (o.size/2) * (0.6 + i/h.length*0.8), 0, Math.PI*2);
+      ctx.fillStyle = hexToRgba(o.color, alpha);
+      ctx.fill();
+    }
+
+    // main orb
+    const depthScale = Math.max(0.5, Math.min(1.4, P.s * 1.1)); // scale by perspective
+    const r = o.size * depthScale;
+    // little shine
+    const grad = ctx.createRadialGradient(P.x - r*0.25, P.y - r*0.25, 0, P.x, P.y, r*1.6);
+    grad.addColorStop(0, hexToRgba(o.color, 1));
+    grad.addColorStop(0.5, hexToRgba(o.color, 0.85));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.fillStyle = grad;
+    ctx.arc(P.x, P.y, r, 0, Math.PI*2);
+    ctx.fill();
+
+    // crisp highlight
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.arc(P.x - r*0.28, P.y - r*0.28, Math.max(1, r*0.28), 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function hexToRgba(hex, a){
+    const c = hex.replace('#','');
+    const r = parseInt(c.substring(0,2),16);
+    const g = parseInt(c.substring(2,4),16);
+    const b = parseInt(c.substring(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // animation loop
+  let start = performance.now();
+  function frame(now){
+    const t = (now - start) / 1000;
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+
+    // update center in case of resize
+    center.x = canvas.width / 2 / (window.devicePixelRatio||1);
+    center.y = canvas.height / 2 / (window.devicePixelRatio||1);
+
+    // faint vignette background
+    ctx.fillStyle = 'rgba(3,3,6,0.18)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // draw orbits (back-to-front based on their average z to keep occlusion believable)
+    const planes = orbiters.map(o=>{
+      // compute a representative z (at theta = 0)
+      let p = { x: o.radius, y: 0, z: 0 };
+      p = rotateX(p, deg(o.inclinationDeg));
+      p = rotateZ(p, deg(o.azimuthDeg));
+      p = rotateX(p, deg(-20));
+      return { o, z: p.z };
+    }).sort((a,b)=> a.z - b.z);
+
+    // draw orbit strokes
+    planes.forEach(p => drawOrbitPlane(p.o));
+
+    // sun in middle
+    drawSun();
+
+    // draw orbiters front-to-back (so front ones draw last) — we sort by projected z (depth)
+    const orbStates = orbiters.map(o=>{
+      const ang = t * o.speed + o.phase;
+      let p = { x: Math.cos(ang) * o.radius, y: Math.sin(ang) * o.radius, z: 0 };
+      p = rotateX(p, deg(o.inclinationDeg));
+      p = rotateZ(p, deg(o.azimuthDeg));
+      p = rotateX(p, deg(-20));
+      return { o, z: p.z };
+    }).sort((a,b)=> a.z - b.z);
+
+    orbStates.forEach(s => drawOrbiter(s.o, t));
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
