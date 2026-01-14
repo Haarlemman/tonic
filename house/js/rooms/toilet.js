@@ -120,14 +120,14 @@ function createToiletInterior() {
 
     // Bulb/Glass
     const bulbGeo = new THREE.SphereGeometry(0.15, 32, 32);
-    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffaa77 }); // Warmer/Dimmer look
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xff6600 }); // Deeper orange glow
     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
     bulb.position.z = 0.1;
     lampGroup.add(bulb);
 
-    // COZY DIM LIGHT
-    // Reduced intensity 1.5 -> 0.6
-    // Changed color to warmer orange
-    const backLight = new THREE.PointLight(0xffaa55, 0.6, 12);
+    // COZY DIM LIGHT - Even Darker (V5)
+    // Reduce intensity 0.6 -> 0.35
+    // Color warmer/redder
+    const backLight = new THREE.PointLight(0xff5500, 0.35, 12);
     lampGroup.add(backLight);
 }

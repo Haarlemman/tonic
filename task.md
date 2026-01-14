@@ -19,6 +19,15 @@
     - [x] Smooth Seat (Fix dent).
     - [x] Visible Lamp Model + Darker Scene.
     - [x] Clickable Hologram + "NOTEPAD" text on pad.
+  - [x] Toilet Room V4 Feedback
+    - [x] Move Lamp Up + Dim (Cozy).
+    - [x] Fix Seat Dent (Rotate seam/Geometry).
+    - [x] Bolder/Centered Notepad Text.
+  - [x] **Fix Sound/Video Paths in JS**
+    - [x] Run `fix_js_paths.js`.
+    - [x] Update `house.js`, `data.js` cache busters.
+  - [x] **Toilet Room V5**
+    - [x] Even Darker/Warmer Lighting (0.35).
 - [ ] **Verification**
-  - [x] Commit changes.
-  - [x] Push to GitHub.
+  - [ ] Commit changes.
+  - [ ] Push to GitHub.

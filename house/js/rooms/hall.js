@@ -1,6 +1,6 @@
 function createHallInterior() {
     // -- BACKGROUND VIDEO --
-    videoElement.src = "assets/video/dots.mp4";
+    videoElement.src = "../assets/video/dots.mp4";
     videoElement.muted = true;
     videoElement.loop = true;
     videoElement.play().catch(e => console.warn("Video play failed", e));

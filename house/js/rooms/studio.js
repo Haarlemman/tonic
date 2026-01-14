@@ -121,12 +121,12 @@ window.createStudioInterior = function () {
     };
 
     // Metropolis (Back Wall)
-    const mepo = createVideoPoster('assets/video/mepo.mp4', 0.8);
+    const mepo = createVideoPoster('../assets/video/mepo.mp4', 0.8);
     mepo.mesh.position.set(1.0, 5, -4.9);
     interiorGroup.add(mepo.mesh);
 
     // Tron (Left Wall)
-    const tron = createVideoPoster('assets/video/tronai.mp4', 0.9);
+    const tron = createVideoPoster('../assets/video/tronai.mp4', 0.9);
     tron.mesh.scale.set(0.75, 0.75, 0.75);
     tron.mesh.position.set(-4.9, 5, 3.5);
     tron.mesh.rotation.y = Math.PI / 2;
@@ -293,7 +293,7 @@ window.createR2D2InCorner = function () {
 
     // HOLOGRAM
     const vid = document.createElement('video');
-    vid.src = 'assets/video/hologram.mp4';
+    vid.src = '../assets/video/hologram.mp4';
     vid.loop = true;
     vid.muted = true;
     vid.preload = 'auto';
