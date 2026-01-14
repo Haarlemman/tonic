@@ -236,7 +236,7 @@ window.enterExperience = function () {
 
     // 3. Play Sound
     // 3. Play Sound
-    const audio = new Audio('audio/Tension_Short_07.wav');
+    const audio = new Audio('assets/audio/Tension_Short_07.wav');
     audio.volume = 0.8;
     // V21: Skip first 2 seconds
     audio.currentTime = 2;
@@ -244,7 +244,7 @@ window.enterExperience = function () {
     // V54: Audio Sequencing FIX - Listen to THIS audio object
     audio.addEventListener('ended', () => {
         if (audioPlayer) {
-            audioPlayer.src = "audio/NightDrive-RobSimonsen.mp3";
+            audioPlayer.src = "assets/audio/NightDrive-RobSimonsen.mp3";
             audioPlayer.loop = true;
             audioPlayer.play().catch(e => console.warn("NightDrive Play Fail", e));
         }
@@ -722,7 +722,7 @@ function createIntroSign() {
 function startInteractiveIntro() {
     // 1. Play Audio (Immediately)
     // Sound should start immediately after clicking 'ENTER'
-    const audio = new Audio('audio/Tension_Short_07.wav');
+    const audio = new Audio('assets/audio/Tension_Short_07.wav');
     audio.volume = 0.8;
     audio.play().catch(e => console.warn("Audio play error", e));
 

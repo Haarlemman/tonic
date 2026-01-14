@@ -20,7 +20,7 @@ async function loadImages(imageSources) {
 
     // Add the play again button image to the list of sources
     playAgainButtonImage = new Image();
-    playAgainButtonImage.src = 'images/but-playagain.png';
+    playAgainButtonImage.src = 'assets/images/but-playagain.png';
 
     await Promise.all(promises);
 }

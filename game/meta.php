@@ -26,9 +26,9 @@
 <meta property="twitter:url" content="https://www.davidenker.com/game/" />
 <meta property="twitter:title" content="SOLAR SPRINT" />
 <meta property="twitter:description" content="Play 'Solar Sprint', an exciting game that offers thrilling challenges and fun gameplay. Play now and enjoy hours of entertainment!" />
-<meta property="twitter:image" content="images/solar.jpg" />
+<meta property="twitter:image" content="assets/images/solar.jpg" />
 	
 	
-<link rel="icon" type="image/svg+xml" href="images/fav.svg">
-<link rel="icon" type="image/png" href="images/fav.png">
-<link rel="icon" type="image/x-icon" href="images/fav.ico">
+<link rel="icon" type="image/svg+xml" href="assets/images/fav.svg">
+<link rel="icon" type="image/png" href="assets/images/fav.png">
+<link rel="icon" type="image/x-icon" href="assets/images/fav.ico">

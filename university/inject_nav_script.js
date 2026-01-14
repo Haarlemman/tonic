@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const dir = __dirname;
-const scriptTag = '<script src="nav.js"></script>';
+const scriptTag = '<script src="js/nav.js"></script>';
 
 fs.readdir(dir, (err, files) => {
     if (err) {

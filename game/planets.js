@@ -35,14 +35,14 @@ class Planet {
 }
 
 const planets = [
-    new Planet('images/planet1.png', 100, 0.01, 0.01, 0.8),
-    new Planet('images/planet2.png', 150, 0.02, 0.02, 0.6),
-    new Planet('images/planet3.png', 200, 0.015, 0.015, 0.7),
-    new Planet('images/planet4.png', 250, 0.03, 0.03, 0.5),
-    new Planet('images/planet5.png', 300, 0.025, 0.025, 0.9),
-    new Planet('images/planet6.png', 350, 0.02, 0.02, 0.4),
-    new Planet('images/planet7.png', 400, 0.035, 0.035, 0.3),
-    new Planet('images/planet8.png', 450, 0.04, 0.04, 0.2),
+    new Planet('assets/images/planet1.png', 100, 0.01, 0.01, 0.8),
+    new Planet('assets/images/planet2.png', 150, 0.02, 0.02, 0.6),
+    new Planet('assets/images/planet3.png', 200, 0.015, 0.015, 0.7),
+    new Planet('assets/images/planet4.png', 250, 0.03, 0.03, 0.5),
+    new Planet('assets/images/planet5.png', 300, 0.025, 0.025, 0.9),
+    new Planet('assets/images/planet6.png', 350, 0.02, 0.02, 0.4),
+    new Planet('assets/images/planet7.png', 400, 0.035, 0.035, 0.3),
+    new Planet('assets/images/planet8.png', 450, 0.04, 0.04, 0.2),
     // Add more planets as needed
 ];
 

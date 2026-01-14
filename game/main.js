@@ -109,23 +109,23 @@ window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', async () => {
     resizeCanvas();
     await loadImages({
-        dancing: 'images/dancingspritesheet.png',
-        face: 'images/face.png',
-        faceboom: 'images/faceboom.png',
-        stripe: 'images/stripe.png',
-        monster3: 'images/monster3.png',
-        blob: 'images/blob.png',
-        monster1: 'images/monster1.png',
-        augurk: 'images/augurk.png',
-        monster2: 'images/monster2.png',
-        planet1: 'images/planet1.png',
-        planet2: 'images/planet2.png',
-        planet3: 'images/planet3.png',
-        planet4: 'images/planet4.png',
-        planet5: 'images/planet5.png',
-        planet6: 'images/planet6.png',
-        planet7: 'images/planet7.png',
-        planet8: 'images/planet8.png'
+        dancing: 'assets/images/dancingspritesheet.png',
+        face: 'assets/images/face.png',
+        faceboom: 'assets/images/faceboom.png',
+        stripe: 'assets/images/stripe.png',
+        monster3: 'assets/images/monster3.png',
+        blob: 'assets/images/blob.png',
+        monster1: 'assets/images/monster1.png',
+        augurk: 'assets/images/augurk.png',
+        monster2: 'assets/images/monster2.png',
+        planet1: 'assets/images/planet1.png',
+        planet2: 'assets/images/planet2.png',
+        planet3: 'assets/images/planet3.png',
+        planet4: 'assets/images/planet4.png',
+        planet5: 'assets/images/planet5.png',
+        planet6: 'assets/images/planet6.png',
+        planet7: 'assets/images/planet7.png',
+        planet8: 'assets/images/planet8.png'
     });
     await loadSounds();
     createCars(); // Ensure cars are created when the game starts

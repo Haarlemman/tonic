@@ -6,7 +6,7 @@ const leftButton = document.getElementById("leftButton");
 const rightButton = document.getElementById("rightButton");
 
 const spriteSheet = new Image();
-spriteSheet.src = "images/dancingspritesheet.png";
+spriteSheet.src = "assets/images/dancingspritesheet.png";
 
 let tileSize, rows, cols, player, cars = [], animationFrameId;
 const images = {};
@@ -404,14 +404,14 @@ window.addEventListener('load', () => {
     resizeCanvas();
    // Load non-dancing images first
 loadImages({
-    face: 'images/face.png',
-    faceboom: 'images/faceboom.png',
-    monster1: 'images/monster1.png',
-    monster2: 'images/monster2.png',
-    monster3: 'images/monster3.png',
-    blob: 'images/blob.png',
-    augurk: 'images/augurk.png',
-    stripe: 'images/stripe.png'
+    face: 'assets/images/face.png',
+    faceboom: 'assets/images/faceboom.png',
+    monster1: 'assets/images/monster1.png',
+    monster2: 'assets/images/monster2.png',
+    monster3: 'assets/images/monster3.png',
+    blob: 'assets/images/blob.png',
+    augurk: 'assets/images/augurk.png',
+    stripe: 'assets/images/stripe.png'
 }).then(() => {
     // After non-dancing images are loaded, load the dancing sprite sheet
     spriteSheet.onload = () => {
@@ -425,7 +425,7 @@ loadImages({
         console.error("Error loading dancing sprite sheet", err);
     };
 
-    spriteSheet.src = "images/dancingspritesheet.png"; // Load dancing sprite sheet here
+    spriteSheet.src = "assets/images/dancingspritesheet.png"; // Load dancing sprite sheet here
 }).catch(error => {
     console.error('Failed to load images:', error);
 });

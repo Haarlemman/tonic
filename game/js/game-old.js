@@ -336,16 +336,16 @@ window.addEventListener('load', async () => {
         console.log('Game initializing...');
         resizeCanvas();
         await loadImages({
-            background: 'images/ruimte.jpg',  // Add background image
-            dancing: 'images/dancingspritesheet.png',
-            face: 'images/face.png',
-            faceboom: 'images/faceboom.png',
-            stripe: 'images/stripe.png',
-            monster3: 'images/monster3.png',
-            blob: 'images/blob.png',
-            monster1: 'images/monster1.png',
-            augurk: 'images/augurk.png',
-            monster2: 'images/monster2.png'
+            background: 'assets/images/ruimte.jpg',  // Add background image
+            dancing: 'assets/images/dancingspritesheet.png',
+            face: 'assets/images/face.png',
+            faceboom: 'assets/images/faceboom.png',
+            stripe: 'assets/images/stripe.png',
+            monster3: 'assets/images/monster3.png',
+            blob: 'assets/images/blob.png',
+            monster1: 'assets/images/monster1.png',
+            augurk: 'assets/images/augurk.png',
+            monster2: 'assets/images/monster2.png'
         });
         
         createCars();

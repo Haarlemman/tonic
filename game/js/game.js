@@ -424,15 +424,15 @@ async function loadSounds() {
 window.addEventListener('load', async () => {
     resizeCanvas();
     await loadImages({
-        dancing: 'images/dancingspritesheet.png',
-        face: 'images/face.png', // Replace with your actual image paths
-        faceboom: 'images/faceboom.png',
-        stripe: 'images/stripe.png', // Example image for street lines
-        monster3: 'images/monster3.png', // Add your images here
-        blob: 'images/blob.png',
-        monster1: 'images/monster1.png',
-        augurk: 'images/augurk.png',
-        monster2: 'images/monster2.png'
+        dancing: 'assets/images/dancingspritesheet.png',
+        face: 'assets/images/face.png', // Replace with your actual image paths
+        faceboom: 'assets/images/faceboom.png',
+        stripe: 'assets/images/stripe.png', // Example image for street lines
+        monster3: 'assets/images/monster3.png', // Add your images here
+        blob: 'assets/images/blob.png',
+        monster1: 'assets/images/monster1.png',
+        augurk: 'assets/images/augurk.png',
+        monster2: 'assets/images/monster2.png'
     });
     await loadSounds();
     gameLoop();  // Start the game loop after loading all assets
@@ -461,15 +461,15 @@ window.addEventListener('resize', resizeCanvas);
 
 window.onload = async () => {
     await loadImages({
-        dancing: 'images/dancingspritesheet.png',
-        face: 'images/face.png', // Replace with your actual image paths
-        faceboom: 'images/faceboom.png',
-        stripe: 'images/stripe.png', // Example image for street lines
-        monster3: 'images/monster3.png', // Add your images here
-        blob: 'images/blob.png',
-        monster1: 'images/monster1.png',
-        augurk: 'images/augurk.png',
-        monster2: 'images/monster2.png'
+        dancing: 'assets/images/dancingspritesheet.png',
+        face: 'assets/images/face.png', // Replace with your actual image paths
+        faceboom: 'assets/images/faceboom.png',
+        stripe: 'assets/images/stripe.png', // Example image for street lines
+        monster3: 'assets/images/monster3.png', // Add your images here
+        blob: 'assets/images/blob.png',
+        monster1: 'assets/images/monster1.png',
+        augurk: 'assets/images/augurk.png',
+        monster2: 'assets/images/monster2.png'
     });
     await loadSounds();
     resizeCanvas();

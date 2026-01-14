@@ -32,7 +32,7 @@ function createBasementInterior() {
     interiorGroup.add(basementLines);
 
     // -- V16: TRON SPACE VIDEO ON BACK WALL (Kept) --
-    videoElement.src = "video/tron-space.mp4";
+    videoElement.src = "assets/video/tron-space.mp4";
     videoElement.muted = true;
     videoElement.loop = true;
     videoElement.play().catch(e => console.warn("Video play failed", e));

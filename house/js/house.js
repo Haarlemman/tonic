@@ -255,14 +255,14 @@ window.enterExperience = function () {
     // if (headerEl) headerEl.style.display = 'none';
 
     // 3. Play Sound
-    const audio = new Audio('audio/Tension_Short_07.wav');
+    const audio = new Audio('assets/audio/Tension_Short_07.wav');
     audio.volume = 0.8;
     audio.currentTime = 1;
 
     // V54: Audio Sequencing FIX - Listen to THIS audio object
     audio.addEventListener('ended', () => {
         if (audioPlayer) {
-            audioPlayer.src = "audio/NightDrive-RobSimonsen.mp3";
+            audioPlayer.src = "assets/audio/NightDrive-RobSimonsen.mp3";
             audioPlayer.loop = true;
             // V200: 3 second delay as requested
             setTimeout(() => {
@@ -736,7 +736,7 @@ function createIntroSign() {
 function startInteractiveIntro() {
     // 1. Play Audio (Immediately)
     // Sound should start immediately after clicking 'ENTER'
-    const audio = new Audio('audio/Tension_Short_07.wav');
+    const audio = new Audio('assets/audio/Tension_Short_07.wav');
     audio.volume = 0.8;
     audio.play().catch(e => console.warn("Audio play error", e));
 
