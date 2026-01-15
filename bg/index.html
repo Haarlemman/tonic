@@ -3,366 +3,756 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblical Genealogy: HTML/CSS Version</title>
+    <title>Biblical Genealogy Fixed</title>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
-            color: #ccc;
-            overflow-x: auto; /* Allows horizontal scrolling if needed */
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        /* --- General Layout --- */
-        #chart-container {
-            position: relative;
-            min-width: 1500px; /* Define a minimum width for the full chart */
-            min-height: 1500px; /* Define a minimum height for the full chart */
-            padding-top: 50px;
-            margin: 0 auto;
-        }
-
-        .generation {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            margin-bottom: 70px; /* Vertical space between generations */
-            position: relative;
-        }
-
-        /* --- Node Styles --- */
-        .node-wrapper {
-            position: relative;
-            text-align: center;
-            padding: 0 15px; /* Horizontal spacing between nodes in a generation */
-            flex-shrink: 0;
-        }
-
-        .node-box {
-            background-color: #2c3e50;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            overflow: hidden;
             color: #fff;
-            padding: 5px 10px;
-            border-radius: 5px;
-            border: 1px solid #999;
-            cursor: default;
-            font-size: 11px;
-            transition: all 0.3s;
         }
         
-        .wife-node {
-            border: 2px solid #f1c40f; /* Yellow border for wives/multiple wives */
-        }
-        
-        .final-level {
-            margin-top: 1000px; /* Move the final level way down for vertical separation */
-            position: absolute;
-            left: 0;
-            right: 0;
-            justify-content: space-around; /* Distribute modern people evenly */
-            border-top: 1px solid #555; /* Visual line for the present time */
-            padding-top: 20px;
-        }
-        
-        /* --- UI Elements --- */
-        #ui-controls {
+        #controls {
             position: fixed;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 10;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
         }
         
-        #highlight-button {
-            padding: 5px 10px;
-            margin-top: 5px;
-            cursor: pointer;
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 3px;
-            background-color: #555;
-            color: #fff;
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
         }
         
-        /* --- Davidic Line Highlight (Conceptual) --- */
-        .davidic {
-            /* This class will be added/removed by JavaScript */
-            transition: box-shadow 0.3s, border-color 0.3s;
-        }
-        
-        .davidic.highlight-on {
-            border-color: gold !important;
-            box-shadow: 0 0 8px gold;
+        .control-btn:hover {
             transform: scale(1.05);
         }
-
-        /* --- Connections (Lines) --- */
-        .connection {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            height: 70px; /* Matches generation margin */
-            width: 2px; /* Line thickness */
-            background-color: #e74c3c;
-            transform: translateX(-50%);
-            z-index: -1;
-            transition: background-color 0.3s;
-        }
-
-        .dotted-skip {
-            border-left: 2px dotted #f39c12;
-            background-color: transparent;
+        
+        .control-btn.active {
+            background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
         }
         
-        .line-cain .connection { background-color: #f39c12; }
-        .line-shem .connection { background-color: #2ecc71; }
-        .line-israel .connection { background-color: #f1c40f; }
-
-        /* Messiah Line (Separate Dotted Line from David) */
-        .messiah-line {
-            position: absolute;
-            width: 2px;
-            height: 400px; /* Long, manually positioned line */
-            background-color: transparent;
-            border-left: 3px dotted gold;
-            z-index: 1;
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+            position: relative;
         }
-
-        /* Adjustments for non-tree structures */
-        #node-david {
-            /* David's node is an ancestor to many, so lines need custom positioning */
-            margin-bottom: 250px; 
+        
+        #canvas-container.grabbing {
+            cursor: grabbing;
         }
-
-        /* Media Query for Mobile Legend */
-        @media (max-width: 600px) {
-            #legend-list {
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height 0.3s ease-out;
-            }
-            #legend-list.expanded {
-                max-height: 200px; 
-            }
-            #ui-controls h4 {
-                 text-decoration: underline;
-            }
+        
+        canvas {
+            display: block;
+        }
+        
+        #tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 999;
+            max-width: 300px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+        
+        .legend-line {
+            width: 30px;
+            height: 2px;
+            margin-right: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="ui-controls">
-        <div id="legend">
-            <h4 style="margin: 0 0 5px 0; font-size: 12px; cursor: pointer;" onclick="document.getElementById('legend-list').classList.toggle('expanded')">
-                Legend (Tap on mobile)
-            </h4>
-            <div id="legend-list">
-                <div class="legend-item"><span style="background-color: #e74c3c; display: block; height: 3px;"></span> Main Line</div>
-                <div class="legend-item"><span style="border-left: 2px dotted #f39c12; display: block; width: 15px; height: 3px;"></span> Generational Skip</div>
-                <div class="legend-item"><span style="background-color: #f1c40f; display: block; height: 3px;"></span> Israel Line</div>
-                <div class="legend-item"><span style="border-left: 3px dotted gold; display: block; width: 15px; height: 3px;"></span> Future Messiah Line</div>
-            </div>
-        </div>
-        <button id="highlight-button" onclick="toggleDavidicHighlight()">
-            Show Davidic Line
-        </button>
+    <div id="controls">
+        <button class="control-btn" onclick="resetView()">Reset View</button>
+        <button class="control-btn" onclick="expandAll()">Expand All</button>
+        <button class="control-btn" onclick="collapseAll()">Collapse All</button>
+        <button class="control-btn" id="highlightBtn" onclick="toggleHighlight()">Highlight Davidic Line</button>
+        <button class="control-btn" onclick="toggleNames()">Toggle Details</button>
     </div>
-
-    <div id="chart-container">
-
-        <div class="generation" style="margin-bottom: 50px;">
-            <div class="node-wrapper line-adam">
-                <div class="node-box wife-node davidic">Adam & Eve</div>
-            </div>
+    
+    <div id="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f39c12;"></div>
+            <span>Patriarch</span>
         </div>
-        
-        <div style="height: 50px; display: flex; justify-content: center; width: 100%; position: absolute; top: 75px;">
-             <div style="position: absolute; width: 2px; height: 50px; background-color: #e74c3c;"></div>
-             <div style="position: absolute; left: 50%; width: 120px; border-top: 2px solid #e74c3c; transform: translateY(50px);"></div>
-             <div style="position: absolute; left: 50%; margin-left: -60px; height: 50px; width: 2px; background-color: #e74c3c;"></div>
-             <div style="position: absolute; left: 50%; margin-left: 60px; height: 50px; width: 2px; border-left: 2px dotted #f39c12; background-color: transparent;"></div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #3498db;"></div>
+            <span>Descendant</span>
         </div>
-
-        <div class="generation" style="margin-bottom: 250px; position: absolute; top: 125px;">
-            <div class="node-wrapper line-adam" style="margin-right: 100px;">
-                <div class="node-box wife-node davidic">Seth (Line of Promise)</div>
-                <div class="connection" style="top: 20px; height: 250px;"></div>
-            </div>
-            <div class="node-wrapper line-cain" style="margin-left: 100px;">
-                <div class="node-box dotted-skip">Cain (Line of Contradiction)</div>
-                <div class="connection dotted-skip" style="top: 20px; height: 1000px;"></div> 
-            </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #e74c3c;"></div>
+            <span>Davidic Line</span>
         </div>
-        
-        <div class="generation" style="position: absolute; top: 450px;">
-            <div class="node-wrapper line-adam">
-                <div class="node-box wife-node davidic">Noah & Wife</div>
-                <div class="connection"></div>
-            </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFD700;"></div>
+            <span>Mashiach (Expected)</span>
         </div>
-        
-        <div style="height: 70px; display: flex; justify-content: center; width: 100%; position: absolute; top: 565px;">
-             <div style="position: absolute; width: 2px; height: 70px; background-color: #e74c3c;"></div>
-             <div style="position: absolute; left: 50%; width: 600px; border-top: 2px solid #e74c3c; transform: translateY(70px);"></div>
-             
-             <div style="position: absolute; left: 50%; margin-left: -200px; height: 70px; width: 2px; background-color: #2ecc71;"></div>
-             <div style="position: absolute; left: 50%; margin-left: 0; height: 70px; width: 2px; background-color: #3498db;"></div>
-             <div style="position: absolute; left: 50%; margin-left: 200px; height: 70px; width: 2px; background-color: #9b59b6;"></div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #27ae60;"></div>
+            <span>Modern Peoples</span>
         </div>
-
-        <div class="generation" style="margin-bottom: 100px; position: absolute; top: 680px;">
-            <div class="node-wrapper line-shem" style="margin-right: 350px;">
-                <div class="node-box wife-node davidic">Shem (Semites)</div>
-                <div class="connection line-shem"></div>
-            </div>
-            <div class="node-wrapper line-ham" style="margin-right: 150px; margin-left: -150px;">
-                <div class="node-box wife-node">Ham (Afro-Asiatic)</div>
-                <div class="connection line-ham"></div>
-            </div>
-            <div class="node-wrapper line-juniper" style="margin-left: 350px;">
-                <div class="node-box wife-node">Japheth (Indo-European)</div>
-                <div class="connection line-juniper"></div>
-            </div>
+        <hr style="margin: 8px 0; border-color: rgba(255,255,255,0.2);">
+        <div class="legend-item">
+            <div class="legend-line" style="background: white;"></div>
+            <span>Direct lineage</span>
         </div>
-        
-        <div class="generation" style="position: absolute; top: 800px; justify-content: flex-start; left: 200px;">
-            <div class="node-wrapper line-shem" style="padding: 0;">
-                <div class="node-box wife-node davidic">Abraham & Wives</div>
-                <div class="connection line-israel"></div>
-            </div>
-            </div>
-
-        <div style="height: 70px; display: flex; justify-content: center; width: 100%; position: absolute; top: 915px;">
-             <div style="position: absolute; left: 200px; width: 2px; height: 70px; background-color: #f1c40f;"></div>
-             <div style="position: absolute; left: 200px; width: 350px; border-top: 2px solid #f1c40f; transform: translateY(70px);"></div>
-             
-             <div style="position: absolute; left: 200px; margin-left: -100px; height: 70px; width: 2px; background-color: #f1c40f;"></div>
-             <div style="position: absolute; left: 200px; margin-left: 100px; height: 70px; width: 2px; background-color: #9b59b6;"></div>
+        <div class="legend-item">
+            <svg width="30" height="2" style="margin-right: 10px;">
+                <line x1="0" y1="1" x2="30" y2="1" stroke="white" stroke-width="2" stroke-dasharray="5,5"/>
+            </svg>
+            <span>Future/Cultural</span>
         </div>
-
-        <div class="generation" style="margin-bottom: 70px; position: absolute; top: 1030px; justify-content: flex-start; left: 100px;">
-            <div class="node-wrapper line-israel" style="margin-right: 150px; padding: 0;">
-                <div class="node-box wife-node davidic">Isaac & Rebekah</div>
-                <div class="connection line-israel"></div>
-            </div>
-            <div class="node-wrapper line-juniper" style="padding: 0;">
-                <div class="node-box">Ishmael</div>
-                <div class="connection line-juniper" style="height: 100px;"></div>
-            </div>
-        </div>
-        
-        <div class="generation" style="position: absolute; top: 1140px; justify-content: flex-start; left: 100px;">
-            <div class="node-wrapper line-israel" style="padding: 0;">
-                <div class="node-box wife-node davidic">Jacob (Israel) & Wives</div>
-                <div class="connection line-israel"></div>
-            </div>
-        </div>
-
-        <div style="height: 70px; display: flex; justify-content: center; width: 100%; position: absolute; top: 1255px;">
-             <div style="position: absolute; left: 185px; width: 2px; height: 70px; background-color: #f1c40f;"></div>
-             <div style="position: absolute; left: 185px; width: 300px; border-top: 2px solid #f1c40f; transform: translateY(70px);"></div>
-             
-             <div style="position: absolute; left: 185px; margin-left: -120px; height: 70px; width: 2px; background-color: #f1c40f;"></div>
-             <div style="position: absolute; left: 185px; margin-left: 0; height: 70px; width: 2px; background-color: #f1c40f;"></div>
-             <div style="position: absolute; left: 185px; margin-left: 120px; height: 70px; width: 2px; background-color: #f1c40f;"></div>
-        </div>
-
-
-        <div class="generation" style="margin-bottom: 70px; position: absolute; top: 1370px; justify-content: flex-start; left: 65px; z-index: 2;">
-            <div class="node-wrapper line-israel" style="margin-right: 70px; padding: 0;">
-                <div class="node-box wife-node davidic">Judah (Davidic Line)</div>
-                <div class="connection line-israel davidic" style="height: 100px;"></div>
-            </div>
-             <div class="node-wrapper line-israel" style="margin-right: 70px; margin-left: -50px; padding: 0;">
-                <div class="node-box">Ephraim/Manasseh (Lost)</div>
-                <div class="connection line-israel" style="height: 100px;"></div>
-            </div>
-             <div class="node-wrapper line-israel" style="padding: 0;">
-                <div class="node-box">Other Tribes</div>
-                <div class="connection line-israel" style="height: 100px;"></div>
-            </div>
-        </div>
-        
-        <div class="generation" style="position: absolute; top: 1540px; justify-content: flex-start; left: 65px;">
-            <div class="node-wrapper line-israel" style="margin-right: 70px; padding: 0;">
-                <div class="node-box wife-node davidic" id="node-david">King David & Wives</div>
-                <div class="connection line-israel davidic" style="height: 70px;"></div>
-            </div>
-        </div>
-
-        <div class="messiah-line" style="top: 1610px; left: 105px; height: 250px;"></div>
-        
-        <div class="generation final-level" style="top: 1900px;">
-            <div class="node-wrapper" style="width: 150px; text-align: left; padding-right: 50px;">
-                <div class="node-box final-node line-juniper">Modern Arabs</div>
-                <div class="node-box final-node line-ham" style="margin-top: 10px;">African/Canaanite Peoples</div>
-            </div>
-             <div class="node-wrapper" style="width: 150px;">
-                <div class="node-box final-node davidic" id="final-jewry">Present Day Jewry (Davidic)</div>
-                <div class="node-box final-node line-israel" style="margin-top: 10px;">Other Modern Jews</div>
-            </div>
-            <div class="node-wrapper" style="width: 150px; text-align: right; padding-left: 50px;">
-                <div class="node-box final-node line-israel" style="margin-left: auto;">10 Lost Tribes</div>
-                <div class="node-box final-node line-juniper" style="margin-top: 10px; margin-left: auto;">Indo-European Peoples</div>
-            </div>
-            
-            <div class="node-wrapper" style="position: absolute; top: 350px; left: 100px; transform: translateX(-50%);">
-                <div class="node-box davidic" id="final-messiah" style="border: 3px dashed gold;">Future Messiah</div>
-            </div>
-        </div>
-
-
     </div>
-
+    
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    
+    <div id="tooltip"></div>
+    
     <script>
-        function toggleDavidicHighlight() {
-            const button = document.getElementById('highlight-button');
-            const davidicNodes = document.querySelectorAll('.davidic');
-            const lines = document.querySelectorAll('.connection');
-
-            if (button.textContent.includes('Show')) {
-                // Highlight nodes
-                davidicNodes.forEach(node => node.classList.add('highlight-on'));
-                
-                // Highlight connecting lines (using the same class)
-                lines.forEach(line => {
-                    if (line.classList.contains('davidic') || line.closest('.davidic')) {
-                         line.style.backgroundColor = 'gold';
-                    }
-                });
-
-                // Highlight Messiah line
-                const messiahLine = document.querySelector('.messiah-line');
-                if (messiahLine) {
-                    messiahLine.style.borderLeftColor = 'gold';
-                    messiahLine.style.borderWidth = '4px';
-                }
-
-                button.textContent = 'Hide Davidic Line';
-                button.style.backgroundColor = 'gold';
-                button.style.color = '#000';
-
-            } else {
-                // Remove highlight
-                davidicNodes.forEach(node => node.classList.remove('highlight-on'));
-                lines.forEach(line => {
-                    if (line.classList.contains('davidic') || line.closest('.davidic')) {
-                         line.style.backgroundColor = ''; // Revert to CSS default (or specify the color)
-                    }
-                });
-                
-                // Reset Messiah line
-                const messiahLine = document.querySelector('.messiah-line');
-                if (messiahLine) {
-                    messiahLine.style.borderLeftColor = 'gold'; // Gold is the default for this line
-                    messiahLine.style.borderWidth = '3px';
-                }
-                
-                button.textContent = 'Show Davidic Line';
-                button.style.backgroundColor = '#555';
-                button.style.color = '#fff';
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        const container = document.getElementById('canvas-container');
+        
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        let scale = 0.4;
+        let offsetX = width / 2;
+        let offsetY = 50;
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        let showDetails = true;
+        let highlightDavidicLine = false;
+        
+        const genealogyData = {
+            name: "Adam & Eve",
+            details: "Innocent awareness",
+            davidicLine: true,
+            children: [{
+                name: "Seth",
+                details: "Moral awareness begins",
+                davidicLine: true,
+                children: [{
+                    name: "Enosh",
+                    davidicLine: true,
+                    children: [{
+                        name: "Kenan",
+                        davidicLine: true,
+                        children: [{
+                            name: "Mahalalel",
+                            davidicLine: true,
+                            children: [{
+                                name: "Jared",
+                                davidicLine: true,
+                                children: [{
+                                    name: "Enoch",
+                                    davidicLine: true,
+                                    children: [{
+                                        name: "Methuselah",
+                                        davidicLine: true,
+                                        children: [{
+                                            name: "Lamech",
+                                            davidicLine: true,
+                                            children: [{
+                                                name: "Noah",
+                                                details: "Reset of the psyche",
+                                                davidicLine: true,
+                                                children: [
+                                                    {
+                                                        name: "Shem",
+                                                        details: "Spirit/Semitic",
+                                                        davidicLine: true,
+                                                        children: [
+                                                            { name: "Elam" },
+                                                            { name: "Asshur" },
+                                                            { name: "Aram" },
+                                                            { name: "Lud" },
+                                                            {
+                                                                name: "Arphaxad",
+                                                                davidicLine: true,
+                                                                children: [{
+                                                                    name: "Shelah",
+                                                                    davidicLine: true,
+                                                                    children: [{
+                                                                        name: "Eber",
+                                                                        davidicLine: true,
+                                                                        children: [
+                                                                            { name: "Joktan" },
+                                                                            {
+                                                                                name: "Peleg",
+                                                                                davidicLine: true,
+                                                                                children: [{
+                                                                                    name: "Reu",
+                                                                                    davidicLine: true,
+                                                                                    children: [{
+                                                                                        name: "Serug",
+                                                                                        davidicLine: true,
+                                                                                        children: [{
+                                                                                            name: "Nahor",
+                                                                                            davidicLine: true,
+                                                                                            children: [{
+                                                                                                name: "Terah",
+                                                                                                davidicLine: true,
+                                                                                                children: [
+                                                                                                    { name: "Nahor" },
+                                                                                                    { name: "Haran" },
+                                                                                                    {
+                                                                                                        name: "Abraham",
+                                                                                                        details: "Covenant of consciousness",
+                                                                                                        davidicLine: true,
+                                                                                                        children: [
+                                                                                                            { 
+                                                                                                                name: "Ishmael",
+                                                                                                                details: "Son of Hagar",
+                                                                                                                descendants: [
+                                                                                                                    { name: "Arabs", modern: true, details: "Islamic peoples" }
+                                                                                                                ]
+                                                                                                            },
+                                                                                                            {
+                                                                                                                name: "Isaac",
+                                                                                                                details: "Son of Promise",
+                                                                                                                davidicLine: true,
+                                                                                                                children: [
+                                                                                                                    { 
+                                                                                                                        name: "Esau",
+                                                                                                                        details: "Edom",
+                                                                                                                        descendants: [
+                                                                                                                            { name: "Edomites", modern: true }
+                                                                                                                        ]
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                        name: "Jacob (Israel)",
+                                                                                                                        details: "Wrestling with divine",
+                                                                                                                        davidicLine: true,
+                                                                                                                        children: [
+                                                                                                                            {
+                                                                                                                                name: "Reuben",
+                                                                                                                                details: "Firstborn - Instability"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Simeon",
+                                                                                                                                details: "Violence tempered"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Levi",
+                                                                                                                                details: "Priestly - Sacred service",
+                                                                                                                                descendants: [
+                                                                                                                                    {
+                                                                                                                                        name: "Aaron",
+                                                                                                                                        details: "High Priest",
+                                                                                                                                        descendants: [
+                                                                                                                                            { name: "Kohanim", modern: true, details: "Priestly Jews" }
+                                                                                                                                        ]
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        name: "Moses",
+                                                                                                                                        details: "Lawgiver"
+                                                                                                                                    }
+                                                                                                                                ]
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Judah",
+                                                                                                                                details: "Royalty - The heart",
+                                                                                                                                davidicLine: true,
+                                                                                                                                descendants: [
+                                                                                                                                    {
+                                                                                                                                        name: "Perez",
+                                                                                                                                        davidicLine: true,
+                                                                                                                                        children: [{
+                                                                                                                                            name: "... (generations)",
+                                                                                                                                            davidicLine: true,
+                                                                                                                                            children: [{
+                                                                                                                                                name: "Boaz & Ruth",
+                                                                                                                                                details: "Gentile grafted in",
+                                                                                                                                                davidicLine: true,
+                                                                                                                                                children: [{
+                                                                                                                                                    name: "Obed",
+                                                                                                                                                    davidicLine: true,
+                                                                                                                                                    children: [{
+                                                                                                                                                        name: "Jesse",
+                                                                                                                                                        davidicLine: true,
+                                                                                                                                                        children: [{
+                                                                                                                                                            name: "King David",
+                                                                                                                                                            details: "Artist-king, heart united",
+                                                                                                                                                            davidicLine: true,
+                                                                                                                                                            children: [{
+                                                                                                                                                                name: "Solomon",
+                                                                                                                                                                details: "Wisdom, First Temple",
+                                                                                                                                                                davidicLine: true,
+                                                                                                                                                                children: [{
+                                                                                                                                                                    name: "Kings of Judah",
+                                                                                                                                                                    details: "Through exile",
+                                                                                                                                                                    davidicLine: true,
+                                                                                                                                                                    children: [{
+                                                                                                                                                                        name: "... (exile & return)",
+                                                                                                                                                                        davidicLine: true,
+                                                                                                                                                                        descendants: [
+                                                                                                                                                                            {
+                                                                                                                                                                                name: "Mashiach ben David",
+                                                                                                                                                                                details: "Collective awakening",
+                                                                                                                                                                                davidicLine: true,
+                                                                                                                                                                                expected: true
+                                                                                                                                                                            }
+                                                                                                                                                                        ]
+                                                                                                                                                                    }]
+                                                                                                                                                                }]
+                                                                                                                                                            }]
+                                                                                                                                                        }]
+                                                                                                                                                    }]
+                                                                                                                                                }]
+                                                                                                                                            }]
+                                                                                                                                        }]
+                                                                                                                                    }
+                                                                                                                                ]
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Dan",
+                                                                                                                                details: "Judgment"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Naphtali",
+                                                                                                                                details: "Struggle rewarded"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Gad",
+                                                                                                                                details: "Fortune, warrior"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Asher",
+                                                                                                                                details: "Happiness, abundance"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Issachar",
+                                                                                                                                details: "Scholarship, burden"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Zebulun",
+                                                                                                                                details: "Commerce, sea"
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Joseph",
+                                                                                                                                details: "Dreams, Egypt, provider",
+                                                                                                                                children: [
+                                                                                                                                    { name: "Ephraim", details: "Fruitfulness" },
+                                                                                                                                    { name: "Manasseh", details: "Forgetfulness" }
+                                                                                                                                ]
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                name: "Benjamin",
+                                                                                                                                details: "Youngest, beloved"
+                                                                                                                            }
+                                                                                                                        ],
+                                                                                                                        descendants: [
+                                                                                                                            { name: "Ashkenazi Jews", modern: true, details: "Central/Eastern Europe" },
+                                                                                                                            { name: "Sephardic Jews", modern: true, details: "Iberian Peninsula" },
+                                                                                                                            { name: "Mizrahi Jews", modern: true, details: "Middle East/North Africa" },
+                                                                                                                            { name: "Beta Israel", modern: true, details: "Ethiopian Jews" },
+                                                                                                                            { name: "Bukharan Jews", modern: true, details: "Central Asia" },
+                                                                                                                            { name: "Persian Jews", modern: true, details: "Iran" }
+                                                                                                                        ]
+                                                                                                                    }
+                                                                                                                ]
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                ]
+                                                                                            }]
+                                                                                        }]
+                                                                                    }]
+                                                                                }]
+                                                                            }
+                                                                        ]
+                                                                    }]
+                                                                }]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        name: "Japheth",
+                                                        details: "Mind/Reason/Expansion",
+                                                        children: [
+                                                            { name: "Gomer" },
+                                                            { name: "Magog" },
+                                                            { name: "Madai" },
+                                                            { name: "Javan" },
+                                                            { name: "Tubal" },
+                                                            { name: "Meshech" },
+                                                            { name: "Tiras" }
+                                                        ],
+                                                        descendants: [
+                                                            { name: "Indo-Europeans", modern: true, details: "Europe, India" }
+                                                        ]
+                                                    },
+                                                    {
+                                                        name: "Ham",
+                                                        details: "Body/Material/Sensual",
+                                                        children: [
+                                                            { name: "Cush" },
+                                                            { name: "Mizraim", details: "Egypt" },
+                                                            { name: "Put" },
+                                                            { name: "Canaan" }
+                                                        ],
+                                                        descendants: [
+                                                            { name: "African peoples", modern: true, details: "Africa" }
+                                                        ]
+                                                    }
+                                                ]
+                                            }]
+                                        }]
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            },
+            {
+                name: "Cain",
+                details: "Violence, exile",
+                children: [
+                    { name: "Enoch" },
+                    { name: "..." }
+                ]
+            },
+            {
+                name: "Abel",
+                details: "Innocence destroyed"
+            }]
+        };
+        
+        function addCollapsedState(node) {
+            node.collapsed = false;
+            if (node.children) {
+                node.children.forEach(addCollapsedState);
+            }
+            if (node.descendants) {
+                node.descendants.forEach(addCollapsedState);
             }
         }
+        addCollapsedState(genealogyData);
+        
+        function drawNode(x, y, node, isPatriarch = false) {
+            const nodeRadius = node.expected ? 12 : (node.modern ? 10 : 8);
+            let color;
+            
+            if (node.collapsed && (node.children || node.descendants)) {
+                color = '#9b59b6';
+            } else if (node.expected) {
+                color = '#FFD700';
+            } else if (node.modern) {
+                color = '#27ae60';
+            } else if (highlightDavidicLine && node.davidicLine) {
+                color = '#e74c3c';
+            } else if (isPatriarch) {
+                color = '#f39c12';
+            } else {
+                color = '#3498db';
+            }
+            
+            if (node.expected) {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#FFD700';
+            }
+            
+            ctx.beginPath();
+            ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = node.expected ? 'bold 16px Arial' : (node.modern ? 'italic 13px Arial' : 'bold 14px Arial');
+            ctx.textAlign = 'center';
+            ctx.fillText(node.name, x, y - 15);
+            
+            if (showDetails && node.details) {
+                ctx.font = '11px Arial';
+                ctx.fillStyle = '#aaa';
+                ctx.fillText(node.details, x, y + 25);
+            }
+            
+            if ((node.children || node.descendants) && (node.children?.length > 0 || node.descendants?.length > 0)) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(node.collapsed ? '+' : '−', x, y + 5);
+            }
+            
+            return { x, y, radius: nodeRadius, node };
+        }
+        
+        function drawTree(node, x, y, level = 0, parent = null, isDottedLine = false) {
+            const verticalSpacing = 100;
+            const horizontalSpacing = 90;
+            const levelY = y + level * verticalSpacing;
+            
+            if (parent) {
+                // --- FIX: Changed to orthogonal (elbow) lines ---
+                ctx.beginPath();
+                ctx.moveTo(parent.x, parent.y); // Start at parent center
+                
+                const midY = parent.y + (verticalSpacing / 2); // Halfway down
+                ctx.lineTo(parent.x, midY); // Draw straight down
+                ctx.lineTo(x, midY);        // Draw horizontally to child X coordinate
+                ctx.lineTo(x, levelY);      // Draw straight down to child center
+                // --------------------------------------------------
+
+                if (node.expected || node.modern || isDottedLine) {
+                    ctx.setLineDash([5, 5]);
+                    if (node.expected) {
+                        ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+                        ctx.lineWidth = 3;
+                    } else {
+                        ctx.strokeStyle = 'rgba(39, 174, 96, 0.6)';
+                        ctx.lineWidth = 2;
+                    }
+                } else if (highlightDavidicLine && node.davidicLine) {
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            const nodeInfo = drawNode(x, levelY, node, level === 0);
+            nodeInfo.level = level;
+            clickableNodes.push(nodeInfo);
+            
+            let allChildren = [];
+            if (node.children && !node.collapsed) {
+                allChildren = [...node.children];
+            }
+            
+            if (allChildren.length > 0) {
+                const totalWidth = (allChildren.length - 1) * horizontalSpacing;
+                const startX = x - totalWidth / 2;
+                
+                allChildren.forEach((child, i) => {
+                    const childX = startX + i * horizontalSpacing;
+                    drawTree(child, childX, y, level + 1, { x, y: levelY }, false);
+                });
+            }
+            
+            if (node.descendants && !node.collapsed) {
+                const descendantSpacing = 120;
+                const totalDescWidth = (node.descendants.length - 1) * descendantSpacing;
+                const startDescX = x - totalDescWidth / 2;
+                
+                node.descendants.forEach((desc, i) => {
+                    const descX = startDescX + i * descendantSpacing;
+                    drawTree(desc, descX, y, level + 2, { x, y: levelY }, true);
+                });
+            }
+        }
+        
+        let clickableNodes = [];
+        
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+            
+            clickableNodes = [];
+            drawTree(genealogyData, 0, 0);
+            
+            ctx.restore();
+        }
+        
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left - offsetX) / scale,
+                y: (e.clientY - rect.top - offsetY) / scale
+            };
+        }
+        
+        function findNodeAtPosition(x, y) {
+            for (let node of clickableNodes) {
+                const dx = x - node.x;
+                const dy = y - node.y;
+                if (Math.sqrt(dx * dx + dy * dy) <= node.radius * 2) {
+                    return node;
+                }
+            }
+            return null;
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            const node = findNodeAtPosition(pos.x, pos.y);
+            
+            if (node && (node.node.children || node.node.descendants)) {
+                node.node.collapsed = !node.node.collapsed;
+                render();
+            } else {
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                container.classList.add('grabbing');
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                offsetX += e.clientX - lastX;
+                offsetY += e.clientY - lastY;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                render();
+            } else {
+                const pos = getMousePos(e);
+                const node = findNodeAtPosition(pos.x, pos.y);
+                
+                if (node) {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.left = e.clientX + 15 + 'px';
+                    tooltip.style.top = e.clientY + 15 + 'px';
+                    tooltip.innerHTML = `<strong>${node.node.name}</strong>` + 
+                        (node.node.details ? `<br><em>${node.node.details}</em>` : '') +
+                        (node.node.davidicLine && highlightDavidicLine ? '<br>⭐ In Davidic lineage' : '') +
+                        (node.node.expected ? '<br>✡️ Expected Messiah - collective awakening' : '') +
+                        (node.node.modern ? '<br>🌍 Modern descendant peoples' : '') +
+                        ((node.node.children || node.node.descendants) ? `<br><small>Click to ${node.node.collapsed ? 'expand' : 'collapse'}</small>` : '');
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    tooltip.style.opacity = '0';
+                    canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+                }
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            container.classList.remove('grabbing');
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = scale * delta;
+            
+            if (newScale >= 0.2 && newScale <= 3) {
+                const mouseX = e.clientX - offsetX;
+                const mouseY = e.clientY - offsetY;
+                
+                offsetX -= mouseX * (delta - 1);
+                offsetY -= mouseY * (delta - 1);
+                scale = newScale;
+                render();
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            render();
+        });
+        
+        function resetView() {
+            scale = 0.4;
+            offsetX = width / 2;
+            offsetY = 50;
+            render();
+        }
+        
+        function expandAll() {
+            function expand(node) {
+                node.collapsed = false;
+                if (node.children) node.children.forEach(expand);
+                if (node.descendants) node.descendants.forEach(expand);
+            }
+            expand(genealogyData);
+            render();
+        }
+        
+        function collapseAll() {
+            function collapse(node) {
+                node.collapsed = true;
+                if (node.children) node.children.forEach(collapse);
+                if (node.descendants) node.descendants.forEach(collapse);
+            }
+            collapse(genealogyData);
+            render();
+        }
+        
+        function toggleHighlight() {
+            highlightDavidicLine = !highlightDavidicLine;
+            document.getElementById('highlightBtn').classList.toggle('active');
+            render();
+        }
+        
+        function toggleNames() {
+            showDetails = !showDetails;
+            render();
+        }
+        
+        render();
     </script>
 </body>
 </html>

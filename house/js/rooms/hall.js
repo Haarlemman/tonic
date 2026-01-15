@@ -61,7 +61,6 @@ function createHallInterior() {
     interiorGroup.add(cozySpot.target);
 
     // -- SHADOW UNDER R2D2 --
-    // Fake contact shadow for grounding
     const shadowCanvas = document.createElement('canvas');
     shadowCanvas.width = 128; shadowCanvas.height = 128;
     const sCtx = shadowCanvas.getContext('2d');
@@ -92,9 +91,6 @@ function createHologram() {
     const group = new THREE.Group();
     group.position.set(0, 2.5, 0); // Center of room
 
-    // Ring REMOVED per V209
-
-    // V208: Circular Internal Text (Mesh instead of Sprite)
     // Moving along with the 3D environment (Rotation)
     const canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 512;
@@ -124,25 +120,16 @@ function createHologram() {
 
     // Vertical Plane inside the ring
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 2.5), mat);
-    mesh.position.y = 0.5; // Slightly above ring
-    // V209: NO ROTATION -> Make sure it faces the entrance (-Z direction) or +Z?
-    // Room Camera enters from +Z looking -Z.
-    // So Plane should face +Z.
-    // Default plane faces +Z. So default rotation is fine.
+    mesh.position.y = 0.5; 
     group.add(mesh);
 
-    // V209: NO ROTATION userData
-    // group.userData = { type: 'atticDust' }; 
     interiorGroup.add(group);
 }
 
 function createR2D2ForHall() {
     const r2d2Group = new THREE.Group();
-    // V1: Scale 0.4 (Slightly larger than studio to be visible)
     r2d2Group.scale.set(0.4, 0.4, 0.4);
-    // Position: Center of room, on floor
     r2d2Group.position.set(0, 0, 0);
-    // Rotate to face entrance (Entrance is at +Z usually, looking -Z. If R2 faces +Z, he looks at us)
     r2d2Group.rotation.y = 0;
     interiorGroup.add(r2d2Group);
 

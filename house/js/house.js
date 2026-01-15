@@ -53,7 +53,7 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 function init() {
     // V516: Fixed Step Glitch & Removing Mist Shader
-    console.log("--- HOUSE.JS V516 LOADED ---");
+    console.log("--- HOUSE.JS V800 (DEBUG) LOADED ---");
     scene = new THREE.Scene();
 
     // Opening mist
@@ -255,7 +255,7 @@ window.enterExperience = function () {
     // if (headerEl) headerEl.style.display = 'none';
 
     // 3. Play Sound
-    const audio = new Audio('/assets/audio/Tension_Short_07.wav');
+    const audio = new Audio('/assets/audio/Tension_Short_07.mp3');
     audio.volume = 0.8;
     audio.currentTime = 1;
 
@@ -1918,6 +1918,10 @@ function onPointerUp(event) {
 function performClick(event) {
     updateMousePosition(event);
     raycaster.setFromCamera(mouse, camera);
+
+    if (state === 'ROOM') {
+        // console.log("Click Debug...");
+    }
     if (state === 'HOUSE') {
         const intersects = raycaster.intersectObjects(worldGroup.children, true);
         if (intersects.length > 0) {
@@ -1952,7 +1956,10 @@ function performClick(event) {
             }
             else if (target.userData.type === 'musicSwitch') toggleMusic();
             else if (target.userData.type === 'musicPanel') nextTrack();
-            else if (target.userData.type === 'songItem') playTrack(target.userData.index);
+            else if (target.userData.type === 'songItem') {
+                // alert("DEBUG: Clicked Song Index " + target.userData.index); 
+                playTrack(target.userData.index);
+            }
             else if (target.userData.type === 'videoItem') playVideo(target.userData.index);
             else if (target.userData.type === 'videoPlayButton') toggleVideo();
             else if (target.userData.type === 'atticAudioToggle') {
@@ -2102,6 +2109,13 @@ function animate(time) {
 
     // Interior Interactions (Sprite Grow / Arrow Bob)
     if (interiorGroup.visible) {
+        // V800: Generic Update Loop for Interior Objects (Lava Lamp, etc)
+        interiorGroup.traverse(child => {
+            if (child.userData && typeof child.userData.update === 'function') {
+                child.userData.update(t);
+            }
+        });
+
         // Topics Grow
         if (window.topicsSprite) {
             const targetS = 3.0; // Target X Scale

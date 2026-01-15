@@ -2,8 +2,14 @@
 
 - [ ] **Fix Asset Paths in Subdirectories**
   - [x] Verify `house/index.html` and other sub-projects.
-  - [ ] Create script to correct paths (e.g., `assets/` -> `../assets/`).
+  - [x] Create script to correct paths (e.g., `assets/` -> `../assets/`).
   - [x] Run script and verify.
+  - [x] **Consolidate Assets**
+    - [x] Move `audio/*` to `assets/audio/`.
+    - [x] Move `video/*.mp4` to `assets/video/`.
+    - [x] Check `music/` folder for missing tracks.
+      - *Note: Confirmed as placeholders.*
+- [ ] **Refine "Little Room" (Toilet)**
 - [ ] **Refine "Little Room" (Toilet)**
   - [x] Apply Black Toilet Seat change.
   - [x] Move Shelf Up (3.2).
@@ -28,6 +34,13 @@
     - [x] Update `house.js`, `data.js` cache busters.
   - [x] **Toilet Room V5**
     - [x] Even Darker/Warmer Lighting (0.35).
+- [ ] **Debug Hall Music**
+  - [ ] Investigate why tracks 2 & 3 don't play.
+  - [ ] Check `music.js` logic.
 - [ ] **Verification**
-  - [ ] Commit changes.
-  - [ ] Push to GitHub.
+  - [x] Commit changes.
+  - [x] Push to GitHub.
+  - [/] Verify Live Site (Debugging 404s).
+
+- [ ] **Repository Maintenance**
+  - [ ] Cleanup archive files (Git Commit)

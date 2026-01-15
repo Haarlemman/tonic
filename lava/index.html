@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Luminous Lava Bottle</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #002b2b; cursor: grab; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body:active { cursor: grabbing; }
+        canvas { display: block; }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            pointer-events: none;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instructions">
+        Drag to Rotate<br>
+        Right Click / Shift + Drag to Pan<br>
+        Scroll to Zoom
+    </div>
+
+    <script>
+        let scene, camera, renderer, lampGroup, glass, liquidCore;
+        let blobs = [];
+        let lavaMaterial, coreMaterial, baseLight, internalPointLight;
+        
+        // Interaction state
+        let isMouseDown = false;
+        let isPanning = false;
+        let mouseX = 0, mouseY = 0;
+        let targetRotationX = 0.2;
+        let targetRotationY = 0;
+        let targetZoom = 22;
+        let targetPanX = 0;
+        let targetPanY = 0.5; 
+        
+        let initialPinchDistance = null;
+        let initialZoom = 22;
+        let colorHue = 0.05;
+
+        function init() {
+            scene = new THREE.Scene();
+            const wallColor = 0x004d4d; // Deep Teal-Blue Living Room Walls
+            scene.background = new THREE.Color(wallColor);
+            scene.fog = new THREE.Fog(wallColor, 10, 65);
+
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4, targetZoom);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // --- STUDIO LIGHTING ---
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3); 
+            scene.add(ambientLight);
+
+            // Reflection light for glass definition
+            const windowLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            windowLight.position.set(10, 10, 15);
+            scene.add(windowLight);
+
+            const rimLight = new THREE.PointLight(0xffffff, 0.8);
+            rimLight.position.set(-15, 5, -10);
+            scene.add(rimLight);
+
+            // --- ENVIRONMENT ---
+            // Wooden Floor
+            const floorGeo = new THREE.PlaneGeometry(100, 100);
+            const floorMat = new THREE.MeshStandardMaterial({ 
+                color: 0x1a0a00, 
+                roughness: 0.3, 
+                metalness: 0.2 
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -6.5;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Room Box
+            const roomGeo = new THREE.BoxGeometry(100, 60, 100);
+            const roomMat = new THREE.MeshStandardMaterial({
+                color: wallColor,
+                side: THREE.BackSide,
+                roughness: 1.0
+            });
+            const room = new THREE.Mesh(roomGeo, roomMat);
+            room.position.y = 20;
+            scene.add(room);
+
+            // --- THE BOTTLE ---
+            lampGroup = new THREE.Group();
+            scene.add(lampGroup);
+
+            const metalMat = new THREE.MeshStandardMaterial({ 
+                color: 0x080808, 
+                metalness: 1.0, 
+                roughness: 0.05 
+            });
+
+            // Base
+            const baseGeo = new THREE.CylinderGeometry(1.5, 2.2, 4.2, 64);
+            const base = new THREE.Mesh(baseGeo, metalMat);
+            base.position.y = -4.5;
+            base.castShadow = true;
+            lampGroup.add(base);
+
+            // Cap (Lid) - Adjusted position to sit "on the top"
+            const topGeo = new THREE.CylinderGeometry(0.6, 1.2, 2, 64);
+            const topCap = new THREE.Mesh(topGeo, metalMat);
+            // Glass top is at y = 6.0 (pos 1.0 + half-height 5). 
+            // Setting position to 7.0 makes the bottom of the cap (height 2) rest exactly at 6.0.
+            topCap.position.y = 7.0; 
+            topCap.castShadow = true;
+            lampGroup.add(topCap);
+
+            // Glass Bottle Cylinder
+            const glassGeo = new THREE.CylinderGeometry(1.1, 1.5, 10, 64, 1, true);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff,
+                metalness: 0.2,
+                roughness: 0.0,
+                transmission: 0.96,
+                thickness: 4.5,
+                transparent: true,
+                opacity: 0.7,
+                ior: 1.6,
+                reflectivity: 1.0,
+                clearcoat: 1.0
+            });
+            glass = new THREE.Mesh(glassGeo, glassMat);
+            glass.position.y = 1.0;
+            lampGroup.add(glass);
+
+            // THE CONTENT (20% Inner Glow Volume)
+            const coreGeo = new THREE.CylinderGeometry(0.98, 1.38, 9.8, 64);
+            coreMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff4d00,
+                transparent: true,
+                opacity: 0.2,
+                emissive: 0xff2200,
+                emissiveIntensity: 1.2
+            });
+            liquidCore = new THREE.Mesh(coreGeo, coreMaterial);
+            liquidCore.position.y = 1.0;
+            lampGroup.add(liquidCore);
+
+            // Glow Lights
+            internalPointLight = new THREE.PointLight(0xff4d00, 18, 20);
+            internalPointLight.position.set(0, 0, 0);
+            lampGroup.add(internalPointLight);
+
+            baseLight = new THREE.PointLight(0xff4d00, 10, 12);
+            baseLight.position.set(0, -4.5, 0);
+            lampGroup.add(baseLight);
+
+            // LAVA WAX BLOBS
+            lavaMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff4d00,
+                emissive: 0xff4d00,
+                emissiveIntensity: 12.0,
+                roughness: 0.0
+            });
+
+            const blobCount = 5; 
+            for(let i = 0; i < blobCount; i++) {
+                const size = 0.6 + Math.random() * 0.7;
+                const geo = new THREE.SphereGeometry(size, 48, 48);
+                const blob = new THREE.Mesh(geo, lavaMaterial);
+                
+                blob.userData = {
+                    yOffset: Math.random() * 10,
+                    speed: 0.003 + Math.random() * 0.005,
+                    rotationPhase: Math.random() * Math.PI * 2,
+                    baseSize: size,
+                    driftSpeed: 0.2 + Math.random() * 0.3
+                };
+                
+                blobs.push(blob);
+                lampGroup.add(blob);
+            }
+
+            // --- INTERACTIVITY ---
+            window.addEventListener('resize', onWindowResize, false);
+            
+            document.addEventListener('mousedown', (e) => { 
+                isMouseDown = true; 
+                isPanning = (e.button === 2 || e.shiftKey);
+                updateMouseCoords(e); 
+            });
+            document.addEventListener('contextmenu', (e) => e.preventDefault());
+            document.addEventListener('mouseup', () => { isMouseDown = false; isPanning = false; });
+            document.addEventListener('mousemove', onMouseMove);
+            
+            document.addEventListener('wheel', (e) => {
+                targetZoom += e.deltaY * 0.02;
+                targetZoom = Math.max(8, Math.min(50, targetZoom));
+            });
+
+            // Touch support for gestures
+            document.addEventListener('touchstart', (e) => {
+                isMouseDown = true;
+                if (e.touches.length === 2) {
+                    isPanning = true;
+                    initialPinchDistance = getTouchDistance(e.touches);
+                    initialZoom = targetZoom;
+                } else {
+                    isPanning = false;
+                    updateMouseCoords(e.touches[0]);
+                }
+            }, {passive: false});
+
+            document.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    initialPinchDistance = null;
+                    isPanning = false;
+                }
+                if (e.touches.length === 0) isMouseDown = false;
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 2) {
+                    const distance = getTouchDistance(e.touches);
+                    if (initialPinchDistance) {
+                        const factor = initialPinchDistance / distance;
+                        targetZoom = initialZoom * factor;
+                        targetZoom = Math.max(8, Math.min(50, targetZoom));
+                    }
+                    const avgX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const avgY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    handlePan(avgX, avgY);
+                } else if (e.touches.length === 1 && !isPanning) {
+                    onMouseMove(e.touches[0]);
+                }
+            }, {passive: false});
+
+            animate();
+        }
+
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function updateMouseCoords(e) {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function handlePan(x, y) {
+            const currentX = (x / window.innerWidth) * 2 - 1;
+            const currentY = -(y / window.innerHeight) * 2 + 1;
+            const dx = currentX - mouseX;
+            const dy = currentY - mouseY;
+            targetPanX += dx * 10;
+            targetPanY += dy * 10;
+            mouseX = currentX;
+            mouseY = currentY;
+        }
+
+        function onMouseMove(event) {
+            if (!isMouseDown) return;
+            const currentX = (event.clientX / window.innerWidth) * 2 - 1;
+            const currentY = -(event.clientY / window.innerHeight) * 2 + 1;
+            const dx = currentX - mouseX;
+            const dy = currentY - mouseY;
+
+            if (isPanning) {
+                targetPanX += dx * 15;
+                targetPanY += dy * 15;
+            } else {
+                targetRotationY += dx * 1.5;
+                targetRotationX += dy * 1.5;
+            }
+            mouseX = currentX;
+            mouseY = currentY;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+
+            // Shift Hue for automated animation
+            colorHue += 0.0002;
+            if (colorHue > 1) colorHue = 0;
+            const newColor = new THREE.Color();
+            newColor.setHSL(colorHue, 1.0, 0.5);
+            
+            lavaMaterial.color.copy(newColor);
+            lavaMaterial.emissive.copy(newColor);
+            coreMaterial.color.copy(newColor);
+            coreMaterial.emissive.copy(newColor);
+            baseLight.color.copy(newColor);
+            internalPointLight.color.copy(newColor);
+
+            // Smooth Movement Lerping
+            lampGroup.rotation.y += (targetRotationY - lampGroup.rotation.y) * 0.08;
+            lampGroup.rotation.x += (targetRotationX - lampGroup.rotation.x) * 0.08;
+            lampGroup.position.x += (targetPanX - lampGroup.position.x) * 0.1;
+            lampGroup.position.y += (targetPanY - lampGroup.position.y) * 0.1;
+            camera.position.z += (targetZoom - camera.position.z) * 0.1;
+
+            // FLUID PHYSICS
+            blobs.forEach((blob) => {
+                const data = blob.userData;
+                const yAmplitude = 4.3;
+                const yBase = 0.5;
+                
+                const yPos = yBase + Math.sin(time * data.speed * 100 + data.yOffset) * yAmplitude;
+                const normalizedY = (yPos - (yBase - yAmplitude)) / (yAmplitude * 2); 
+                
+                const currentBottleRadius = 1.5 - (normalizedY * 0.4);
+                const heightScaleFactor = 1.0 - (normalizedY * 0.5);
+                const safeRadius = (currentBottleRadius - (data.baseSize * heightScaleFactor)) * 0.8;
+
+                blob.position.y = yPos;
+                blob.position.x = Math.sin(time * data.driftSpeed + data.rotationPhase) * safeRadius;
+                blob.position.z = Math.cos(time * data.driftSpeed + data.rotationPhase) * safeRadius;
+
+                const pulse = 1 + Math.sin(time * 1.5 + data.yOffset) * 0.1;
+                const finalScale = heightScaleFactor * pulse;
+                blob.scale.set(finalScale, finalScale, finalScale);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

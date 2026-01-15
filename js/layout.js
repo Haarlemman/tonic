@@ -61,18 +61,18 @@
                     <div class="md:hidden group relative">
                          <button id="mobile-menu-btn" class="p-0.5 bg-tonicRed text-white border border-black hover:bg-tonicDarkRed transition-colors focus:outline-none"><i data-lucide="menu" class="w-4 h-4"></i></button>
                         <div id="mobile-menu" class="absolute right-0 mt-0 w-32 bg-white border border-black py-0 hidden shadow-xl z-50">
-                            <a href="https://tonic.davidenker.com/tftb/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">BOOK</a>
-                            <a href="https://tonic.davidenker.com/folio/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">DIGITAL EXPERIENCES</a>
-                            <a href="https://tonic.davidenker.com/about/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-stone-800 hover:text-white border-b border-black">ABOUT</a>
+                            <a href="/tftb/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">BOOK</a>
+                            <a href="/folio/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">DIGITAL EXPERIENCES</a>
+                            <a href="/about/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-stone-800 hover:text-white border-b border-black">ABOUT</a>
                         </div>
                     </div>
                     <ul class="hidden md:flex space-x-4 items-center text-[10px] font-bold tracking-widest uppercase text-stone-600">
                         <li class="relative dropdown group h-full cursor-pointer">
                             <span class="bg-tonicRed text-white border border-black px-2 py-0.5 hover:bg-tonicDarkRed transition-colors flex items-center gap-1">Menu <i data-lucide="chevron-down" class="w-3 h-3"></i></span>
                             <div class="dropdown-menu absolute right-0 top-full mt-0 w-32 bg-white border border-black py-0 hidden group-hover:block z-50 shadow-xl">
-                                <a href="https://tonic.davidenker.com/tftb/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">BOOK</a>
-                                <a href="https://tonic.davidenker.com/folio/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">DIGITAL EXPERIENCE</a>
-                                <a href="https://tonic.davidenker.com/about/" class="block px-3 py-2 text-black hover:bg-stone-800 hover:text-white transition-colors border-b border-black">ABOUT</a>
+                                <a href="/tftb/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">BOOK</a>
+                                <a href="/folio/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">DIGITAL EXPERIENCE</a>
+                                <a href="/about/" class="block px-3 py-2 text-black hover:bg-stone-800 hover:text-white transition-colors border-b border-black">ABOUT</a>
                             </div>
                         </li>
                     </ul>

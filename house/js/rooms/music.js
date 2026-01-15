@@ -1,64 +1,84 @@
 function playTrack(index) {
-    const playlist = roomContent[currentRoom].playlist;
-    if (!playlist || !playlist[index]) return;
+    try {
+        // alert("DEBUG: playTrack START. Index: " + index);
+        const playlist = roomContent[currentRoom].playlist;
+        if (!playlist || !playlist[index]) return;
 
-    currentTrackIndex = index;
-    audioPlayer.src = playlist[currentTrackIndex].src;
-    // V78: Per-track volume support
-    audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
+        currentTrackIndex = index;
 
-    initAudioAnalyser();
-    if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        // User Requested Fix: Enable CORS for Analyser
+        audioPlayer.crossOrigin = "anonymous";
+        audioPlayer.src = playlist[currentTrackIndex].src;
+        audioPlayer.load();
+        // V78: Per-track volume support
+        audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
 
-    audioPlayer.play().then(() => {
-        isMusicPlaying = true;
-        if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
+        initAudioAnalyser(); // Re-enabled for Visualizer
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
 
-        // V14: Turn Video Button RED if music starts
-        const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton');
-        if (btn) {
-            btn.userData.state = 'paused';
-            btn.material.color.setHex(0xff0000);
-            btn.material.emissive.setHex(0x440000);
+        console.log("Attempting to play track:", playlist[currentTrackIndex]);
+        console.log("Source:", audioPlayer.src);
+
+        audioPlayer.play().then(() => {
+            isMusicPlaying = true;
+            console.log("Audio Play Success");
+            if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
+
+            // V14: Turn Video Button RED if music starts
+            const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton');
+            if (btn) {
+                btn.userData.state = 'paused';
+                btn.material.color.setHex(0xff0000);
+                btn.material.emissive.setHex(0x440000);
+            }
+
+        }).catch(e => {
+            console.error("Play failed", e);
+            // alert("Audio Fail: " + e.message);
+        });
+
+        // ... rest of logic ...
+
+
+
+        // Only pause video if we are NOT in rooms with persistent background videos (Studio, Hall, Basement)
+        // Living Room and Bedroom videos are "active" content with sound potential, so they pause when music starts.
+        if (['hall', 'studio', 'basement'].indexOf(currentRoom) === -1 && videoElement && !videoElement.paused) {
+            videoElement.pause();
         }
 
-    }).catch(e => console.error("Play failed", e));
-
-    // Only pause video if we are NOT in rooms with persistent background videos (Studio, Hall, Basement)
-    // Living Room and Bedroom videos are "active" content with sound potential, so they pause when music starts.
-    if (['hall', 'studio', 'basement'].indexOf(currentRoom) === -1 && videoElement && !videoElement.paused) {
-        videoElement.pause();
-    }
-
-    // V210: Attic Audio Precedence for "Click Song"
-    // V210: Attic Audio Precedence for "Click Song"
-    if (currentRoom === 'attic') {
-        const atticVideo = document.getElementById('attic-video');
-        if (atticVideo) {
-            console.log("Music PlayTrack: Muting Attic Video");
-            atticVideo.muted = true;
-            const knobGroup = interiorGroup.children.find(c => c.userData.type === 'atticAudioToggle');
-            if (knobGroup) {
-                knobGroup.userData.state = 'off';
-                if (knobGroup.children[1]) knobGroup.children[1].material.color.setHex(0xff0000);
+        // V210: Attic Audio Precedence for "Click Song"
+        if (currentRoom === 'attic') {
+            const atticVideo = document.getElementById('attic-video');
+            if (atticVideo) {
+                console.log("Music PlayTrack: Muting Attic Video");
+                atticVideo.muted = true;
+                const knobGroup = interiorGroup.children.find(c => c.userData.type === 'atticAudioToggle');
+                if (knobGroup) {
+                    knobGroup.userData.state = 'off';
+                    if (knobGroup.children[1]) knobGroup.children[1].material.color.setHex(0xff0000);
+                }
             }
         }
+
+        // Clear old music panel items and rebuild
+        const toRemove = [];
+        interiorGroup.traverse(child => {
+            if (child.userData && (child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
+                toRemove.push(child);
+            }
+        });
+        toRemove.forEach(child => {
+            interiorGroup.remove(child);
+            const idx = interiorClickables.indexOf(child);
+            if (idx > -1) interiorClickables.splice(idx, 1);
+        });
+
+        createMusicPanel(playlist);
+    } catch (criticalErr) {
+        console.error("Critical PlayTrack Error:", criticalErr);
+        alert("System Error in playTrack: " + criticalErr.message);
     }
-
-    // Clear old music panel items and rebuild
-    const toRemove = [];
-    interiorGroup.traverse(child => {
-        if (child.userData && (child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
-            toRemove.push(child);
-        }
-    });
-    toRemove.forEach(child => {
-        interiorGroup.remove(child);
-        const idx = interiorClickables.indexOf(child);
-        if (idx > -1) interiorClickables.splice(idx, 1);
-    });
-
-    createMusicPanel(playlist);
 }
 
 function createMusicPanel(playlist) {
@@ -75,10 +95,8 @@ function createMusicPanel(playlist) {
     const canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 256;
     const ctx = canvas.getContext('2d');
-    // V60: Transparent Black Background for "Now Playing" section
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fillRect(0, 0, 512, 256);
-    // ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.strokeRect(10, 10, 492, 236);
 
     ctx.fillStyle = '#4ade80'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.fillText("NOW PLAYING", 256, 60);
     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 45px Arial'; ctx.fillText(currentTrack.artist, 256, 130);
@@ -87,7 +105,7 @@ function createMusicPanel(playlist) {
     const tex = new THREE.CanvasTexture(canvas);
     const npMesh = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
     npMesh.rotation.y = Math.PI / 2;
-    npMesh.position.set(wallX, 5.5, 0); // Centered on Left Wall
+    npMesh.position.set(wallX, 5.5, 0);
     npMesh.userData = { type: 'musicPanel' };
     interiorGroup.add(npMesh);
 
@@ -113,14 +131,13 @@ function createMusicPanel(playlist) {
         const sctx = sCanvas.getContext('2d');
 
         if (isCurrent) {
-            // V60: Active Item -> Transparent Black Background
             sctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             sctx.fillRect(0, 0, 512, 120);
             sctx.fillStyle = '#4ade80';
         } else {
             sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
             sctx.fillRect(0, 0, 512, 120);
-            sctx.fillStyle = '#ffffff'; // V77: White text for unselected
+            sctx.fillStyle = '#ffffff';
         }
 
         // LINE 1: Track Name
@@ -182,7 +199,6 @@ function toggleMusic() {
     const playlist = roomContent[currentRoom].playlist;
     if (!playlist) return;
 
-    // V211: Fix "First Click" not playing if src is empty
     if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === window.location.href) {
         audioPlayer.src = playlist[currentTrackIndex].src;
         audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
@@ -194,7 +210,6 @@ function toggleMusic() {
         if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
     } else {
         // If a video is playing, stop it (UNLESS it's a background video)
-        // ATTIC SPECIAL PRECEDENCE:
         // ATTIC SPECIAL PRECEDENCE:
         if (currentRoom === 'attic') {
             const atticVideo = document.getElementById('attic-video');

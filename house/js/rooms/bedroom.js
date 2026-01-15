@@ -104,6 +104,189 @@ function createBedroomInterior() {
     if (roomContent.bedroom.videoPlaylist) {
         createVideoPlaylistPanel(roomContent.bedroom.videoPlaylist);
     }
+
+    // V803: Mounted Shelf on Left Wall (Left of Audio Playlist)
+    // Audio Playlist is Center Left Wall (Z=0).
+    // "Left" of that is towards +Z (Front).
+    // Position at X = -4.6, Z = 3.0.
+    const shelfGeo = new THREE.BoxGeometry(0.8, 0.1, 1.2);
+    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
+    const shelf = new THREE.Mesh(shelfGeo, shelfMat);
+    shelf.position.set(-4.6, 3.5, 3.0);
+    interiorGroup.add(shelf);
+
+    // V801: Lava Lamp (On Shelf)
+    createLavaLamp(0.108, shelf.position);
+}
+
+
+function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
+    const lampGroup = new THREE.Group();
+    // Position: Right side of desk (Desk is at -2.5, 0.6, -3)
+    // Existing lamp is at -3.8, 1.2, -3.5 (Left Back)
+    // Desk Width is 3.5 (X: -4.25 to -0.75)
+    // We want Right Back.
+    // X: Around -1.2
+    // Y: Desk Height 0.6 + 0.6 (Base height * scale?) wait.
+    // Base Y in original code was -4.5.
+    // We need to normalize it.
+
+    // Let's implement the lamp logic first, then position the group.
+
+    // Original Code Constants adapted
+    const metalMat = new THREE.MeshStandardMaterial({
+        color: 0x080808,
+        metalness: 1.0,
+        roughness: 0.05
+    });
+
+    // Base
+    const baseGeo = new THREE.CylinderGeometry(1.5, 2.2, 4.2, 32);
+    const base = new THREE.Mesh(baseGeo, metalMat);
+    base.position.y = -4.5;
+    lampGroup.add(base);
+
+    // Cap
+    const topGeo = new THREE.CylinderGeometry(0.6, 1.2, 2, 32);
+    const topCap = new THREE.Mesh(topGeo, metalMat);
+    topCap.position.y = 7.0;
+    lampGroup.add(topCap);
+
+    // Glass
+    const glassGeo = new THREE.CylinderGeometry(1.1, 1.5, 10, 32, 1, true);
+    const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        metalness: 0.2,
+        roughness: 0.0,
+        transmission: 0.96,
+        thickness: 0.5, // Reduced drastically
+        transparent: true,
+        opacity: 0.7,
+        ior: 1.5,
+        reflectivity: 1.0,
+        clearcoat: 1.0
+    });
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.y = 1.0;
+    lampGroup.add(glass);
+
+    // Liquid Core
+    const coreGeo = new THREE.CylinderGeometry(0.98, 1.38, 9.8, 32);
+    const coreMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff4d00,
+        transparent: true,
+        opacity: 0.5,
+        emissive: 0xff2200,
+        emissiveIntensity: 1.6 // Reduced to 80% (was 2.0)
+    });
+    const liquidCore = new THREE.Mesh(coreGeo, coreMaterial);
+    liquidCore.position.y = 1.0;
+    lampGroup.add(liquidCore);
+
+    // Lights
+    const internalPointLight = new THREE.PointLight(0xff4d00, 8, 5); // Reduced 80% (was 10)
+    internalPointLight.position.set(0, 0, 0);
+    lampGroup.add(internalPointLight);
+
+    const baseLight = new THREE.PointLight(0xff4d00, 4, 3); // Reduced 80% (was 5)
+    baseLight.position.set(0, -4.5, 0);
+    lampGroup.add(baseLight);
+
+    // Blobs
+    const lavaMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff4d00,
+        emissive: 0xff4d00,
+        emissiveIntensity: 6.4, // Reduced 80% (was 8.0)
+        roughness: 0.0
+    });
+
+    const blobs = [];
+    const blobCount = 5;
+    for (let i = 0; i < blobCount; i++) {
+        const size = 0.6 + Math.random() * 0.7;
+        const geo = new THREE.SphereGeometry(size, 16, 16);
+        const blob = new THREE.Mesh(geo, lavaMaterial);
+
+        blob.userData = {
+            yOffset: Math.random() * 10,
+            speed: 0.5 + Math.random() * 0.5, // Faster relative speed for small cleanup
+            rotationPhase: Math.random() * Math.PI * 2,
+            baseSize: size,
+            driftSpeed: 1.0 + Math.random() * 1.0
+        };
+
+        blobs.push(blob);
+        lampGroup.add(blob);
+    }
+
+    // Animation Logic attached to Group
+    let colorHue = 0.05;
+
+    lampGroup.scale.set(scale, scale, scale);
+
+    // Position: On Top of the Shelf
+    let yPos = 1.2; // Fallback
+    if (anchorPos) {
+        // Shelf Top is anchorPos.y + 0.05
+        // Lamp Bottom Offset is 6.6 * scale
+        yPos = anchorPos.y + 0.05 + (6.6 * scale);
+    }
+
+    let xPos = -1.2;
+    let zPos = -3.5;
+    if (anchorPos) {
+        xPos = anchorPos.x;
+        zPos = anchorPos.z;
+    }
+
+    lampGroup.position.set(xPos, yPos, zPos);
+
+    lampGroup.userData.update = function (t) {
+        // Color Shift
+        colorHue += 0.001; // Slower
+        if (colorHue > 1) colorHue = 0;
+        const newColor = new THREE.Color();
+        newColor.setHSL(colorHue, 1.0, 0.5);
+
+        lavaMaterial.color.copy(newColor);
+        lavaMaterial.emissive.copy(newColor);
+        coreMaterial.color.copy(newColor);
+        coreMaterial.emissive.copy(newColor);
+        baseLight.color.copy(newColor);
+        internalPointLight.color.copy(newColor);
+
+        // Blobs
+        blobs.forEach((blob) => {
+            const data = blob.userData;
+            // Original code used `time` in ms * 0.001. `t` passed from update is likely seconds.
+            // But let's check `t` in house.js... animate(time). 
+            // `t = time * 0.001` (seconds).
+
+            // Re-tuning physics for 't' (seconds)
+            const yAmplitude = 4.3;
+            const yBase = 0.5;
+
+            const timeVal = t;
+
+            const yPos = yBase + Math.sin(timeVal * data.speed + data.yOffset) * yAmplitude;
+            const normalizedY = (yPos - (yBase - yAmplitude)) / (yAmplitude * 2);
+
+            const currentBottleRadius = 1.5 - (normalizedY * 0.4);
+            const heightScaleFactor = 1.0 - (normalizedY * 0.5);
+            // safeRadius adjusted to keep blobs inside
+            const safeRadius = (currentBottleRadius - (data.baseSize * heightScaleFactor)) * 0.7;
+
+            blob.position.y = yPos;
+            blob.position.x = Math.sin(timeVal * data.driftSpeed + data.rotationPhase) * safeRadius;
+            blob.position.z = Math.cos(timeVal * data.driftSpeed + data.rotationPhase) * safeRadius;
+
+            const pulse = 1 + Math.sin(timeVal * 1.5 + data.yOffset) * 0.1;
+            const finalScale = heightScaleFactor * pulse;
+            blob.scale.set(finalScale, finalScale, finalScale);
+        });
+    };
+
+    interiorGroup.add(lampGroup);
 }
 
 function nextBedroomVideo() {
