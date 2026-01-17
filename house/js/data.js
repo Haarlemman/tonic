@@ -70,6 +70,9 @@ const roomContent = {
         description: "The mirror reflects the physical reality. In the quiet of the morning, thoughts are most audible.",
         playlist: [
             { artist: "Thom Yourke", track: "Dawn Chorus", src: "../assets/audio/RH-DawnChorus.mp3" },
+        ],
+        videoPlaylist: [
+            { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" }
         ]
     },
     toilet: {
@@ -80,6 +83,7 @@ const roomContent = {
         description: "The Think Tank. A quiet place for politics, religion, and rough drafts. Click the notepad to write.",
         playlist: [
             { artist: "Chrysalis", track: "Chrysalis", src: "../assets/audio/chrysalis.mp3" },
+			{ artist: "John Lurie", track: "The Lamposts Are Mine", src: "../assets/audio/JohnLurieTheLampostsAreMine.mp3" }
         ]
     },
     basement: {

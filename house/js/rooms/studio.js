@@ -23,6 +23,12 @@ window.createStudioInterior = function () {
 
     // Laptop (Interactive)
     const laptopGroup = new THREE.Group();
+    // V921: Scaled up 33% 
+    // Was default 1.0. New scale 1.33.
+    // Note: Furniture group is already 1.25. 
+    // This scales it further relative to the desk.
+    laptopGroup.scale.set(1.33, 1.33, 1.33);
+
     const lapBase = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.4), new THREE.MeshStandardMaterial({ color: 0x333333 }));
     const lapScreen = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.02), new THREE.MeshStandardMaterial({ color: 0x111111 }));
     lapScreen.position.set(0, 0.2, -0.2);
@@ -39,6 +45,50 @@ window.createStudioInterior = function () {
     hitBox.position.y = 0.3;
     laptopGroup.add(hitBox);
     interiorClickables.push(hitBox);
+
+    // V921: "EXPAND YOUR MIND" Hologram (Replacing "Reality is Relative" popup)
+    // Create new Hologram visible in 3D space permanently (or looping)
+    const holoCanvas = document.createElement('canvas');
+    holoCanvas.width = 512; holoCanvas.height = 256;
+    const hctx = holoCanvas.getContext('2d');
+
+    // Gradient Glow
+    const grd = hctx.createRadialGradient(256, 128, 20, 256, 128, 200);
+    grd.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    hctx.fillStyle = grd;
+    hctx.fillRect(0, 0, 512, 256);
+
+    // Text
+    hctx.font = 'bold 40px "Courier New"';
+    hctx.textAlign = 'center';
+    hctx.textBaseline = 'middle';
+    hctx.shadowColor = 'cyan';
+    hctx.shadowBlur = 10;
+
+    // Animation loop handled via texture update? 
+    // For static canvas, just draw once. 
+    hctx.fillStyle = '#ccffff';
+    hctx.fillText("EXPAND", 256, 80);
+    hctx.fillText("YOUR MIND", 256, 150);
+
+    const deskHoloTex = new THREE.CanvasTexture(holoCanvas);
+    const deskHoloMat = new THREE.MeshBasicMaterial({
+        map: deskHoloTex,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    });
+
+    const deskHoloMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.75), deskHoloMat);
+    deskHoloMesh.position.set(0, 0.8, 0); // Above laptop
+    deskHoloMesh.userData = { type: 'studioHologram' }; // Clickable
+    laptopGroup.add(deskHoloMesh);
+
+    // Add to clickables so the raycaster hits it
+    interiorClickables.push(deskHoloMesh);
 
     // Chair
     const chairMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
@@ -158,7 +208,7 @@ window.createStudioInterior = function () {
 
     createOrbit(0, 0, 0, 0xff0000);
     createOrbit(Math.PI / 2, 0, 0, 0xffff00);
-    createOrbit(0, Math.PI / 2, Math.PI / 4, 0x0000ff);
+    createOrbit(0, Math.PI / 2, Math.PI / 4, 0x00ccff);
 
     // 4. R2-D2 IN RIGHT CORNER
     createR2D2InCorner();
@@ -449,7 +499,26 @@ window.createR2D2InCorner = function () {
 
     hologramGroup.position.set(0, 0.35, 1.3);
     hologramGroup.rotation.x = 0.7;
+    hologramGroup.scale.set(1.5, 1.5, 1.5); // Bigger (was 1.0)
     domeGroup.add(hologramGroup);
+
+    // 50% Faster Animation
+    hologramGroup.userData.update = function (t) {
+        // Fast time
+        const fastTime = t * 1.5;
+        if (beamMat.uniforms) beamMat.uniforms.time.value = fastTime;
+        if (holoPlane.material.uniforms) holoPlane.material.uniforms.time.value = fastTime;
+    };
+
+    // DARKER LIGHTING
+    // Remove default bulb
+    const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
+    if (defaultBulb) interiorGroup.remove(defaultBulb);
+
+    // Add darker custom light
+    const studioLight = new THREE.PointLight(0xffffff, 0.4, 20);
+    studioLight.position.set(0, 6, 0);
+    interiorGroup.add(studioLight);
 
     if (!window.r2d2Elements) window.r2d2Elements = [];
     window.r2d2Elements.push({

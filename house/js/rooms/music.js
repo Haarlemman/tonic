@@ -25,11 +25,11 @@ function playTrack(index) {
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
 
             // V14: Turn Video Button RED if music starts
-            const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton');
+            const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton' || c.userData.type === 'bathroomMirrorButton');
             if (btn) {
                 btn.userData.state = 'paused';
                 btn.material.color.setHex(0xff0000);
-                btn.material.emissive.setHex(0x440000);
+                if (btn.material.emissive) btn.material.emissive.setHex(0x440000);
             }
 
         }).catch(e => {

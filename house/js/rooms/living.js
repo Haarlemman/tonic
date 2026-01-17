@@ -284,7 +284,7 @@ function createLivingRoomInterior() {
     aL.position.set(-1.6, 0.7, 0); couchGroup.add(aL);
     const aR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 1.3), couchMat);
     aR.position.set(1.6, 0.7, 0); couchGroup.add(aR);
-    couchGroup.position.set(0, 0, 2.5);
+    couchGroup.position.set(0, -0.3, 2.5); // Lowered to touch floor
     interiorGroup.add(couchGroup);
 
     const chairGroup = new THREE.Group();
@@ -296,7 +296,7 @@ function createLivingRoomInterior() {
     cAL.position.set(-0.7, 0.7, 0); chairGroup.add(cAL);
     const cAR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 1.3), couchMat);
     cAR.position.set(0.7, 0.7, 0); chairGroup.add(cAR);
-    chairGroup.position.set(3.5, 0, -1.0);
+    chairGroup.position.set(3.5, -0.3, -1.0); // Lowered
     chairGroup.rotation.y = Math.PI / 2;
     interiorGroup.add(chairGroup);
 

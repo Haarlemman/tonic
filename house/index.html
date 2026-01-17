@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The House of Awe</title>
+    <!-- SEO & Social Media -->
     <meta name="description"
         content="Explore The House of Awe, an interactive 3D environment and digital experience by David Enker.">
     <meta name="keywords" content="Interactive 3D, WebGL, Three.js, David Enker, Digital Art, Virtual Environment">
@@ -24,20 +25,58 @@
     <meta property="twitter:description" content="Interactive 3D Environment">
     <meta property="twitter:image" content="https://tonic.davidenker.com/assets/images/house.jpg">
 
-    <link rel="icon" type="image/x-icon" href="../assets/images/fav-infinity.ico">
+    <link rel="icon" type="image/x-icon" href="/assets/images/fav-infinity.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=52">
+    <script>
+        // 1. Global Error Handler
+        window.addEventListener('error', function (e) {
+            const errorBox = document.getElementById('loading');
+            if (errorBox) {
+                errorBox.innerHTML = `<div style="color:red; background:black; padding:20px; z-index:9999;">ERROR: ${e.message}<br>File: ${e.filename}<br>Line: ${e.lineno}</div>`;
+                errorBox.style.display = 'flex';
+                errorBox.style.opacity = 1;
+            }
+        });
+
+        // 2. Safety Timeout (Immediate Scope)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Start timer as soon as DOM is ready. Don't wait for all assets (window.load).
+            setTimeout(() => {
+                const loader = document.getElementById('loading');
+                if (loader && getComputedStyle(loader).opacity !== '0') {
+                    console.warn("Forcing Loader Off (Timeout)");
+                    if (!loader.innerHTML.includes("ERROR:")) {
+                        loader.style.opacity = 0;
+                        setTimeout(() => { loader.style.display = 'none'; }, 500);
+
+                        // Optional: Show a subtle warning
+                        const err = document.getElementById('loading-error');
+                        if (err) {
+                            err.classList.remove('hidden');
+                            err.innerHTML = "<span style='color:orange'>Loading took too long. Forcing start.</span>";
+                        }
+                    }
+                }
+            }, 8000);
+        });
+    </script>
+    <link rel="stylesheet" href="css/style.css?v=20260117-4">
 </head>
 
 <body>
 
     <div id="app-header" data-theme="yellow"></div>
     <div id="loading">
-        <div class="text-center">
-            <h2 class="text-2xl mb-1">Loading...</h2>
+        <div class="battery-loader">
+            <div class="battery-icon">
+                <div class="battery-level"></div>
+            </div>
+            <div class="loading-text">LOADING</div>
+        </div>
+        <div id="loading-error" class="hidden text-red-500 mt-4 text-xs font-mono bg-black/80 p-2 rounded max-w-md">
         </div>
     </div>
 
@@ -74,9 +113,31 @@
     <div id="tooltip">Room Name</div>
     <div id="instructions">Click a room to enter it • Drag to rotate</div>
     <button id="back-btn" onclick="exitRoom()">← Exit Room</button>
+    <!-- Room Info Panel (REMOVED REQUEST) -->
+    <!-- 
+    <div id="room-info"
+        class="absolute top-0 right-0 w-80 h-full bg-black/80 backdrop-blur-md border-l border-white/10 text-white p-6 transition-transform z-[100] overflow-y-auto"
+        style="transform: translateX(100%); pointer-events: none;">
+        <div class="room-header-flex flex justify-between items-center mb-6 cursor-pointer pointer-events-auto">
+            <h2 id="info-title" class="text-2xl font-light tracking-widest text-purple-300">ROOM</h2>
+            <button onclick="toggleInfo(event)" class="text-gray-400 hover:text-white transition-colors">
+                <span class="text-xl">✕</span>
+            </button>
+        </div>
+        <div id="info-content" class="space-y-4 text-gray-300 font-light leading-relaxed text-sm"></div>
+    </div>
+    
+    <button id="min-btn" onclick="toggleInfo(event)"
+        class="fixed top-6 right-6 z-[100] w-10 h-10 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white/10 transition-all shadow-lg"
+        style="pointer-events: auto !important;">
+        <span id="min-icon" class="text-lg font-serif italic">i</span>
+    </button>
+    -->
 
+    <!-- Video Playlist UI (Hidden by default) -->
     <div id="video-playlist-ui"
         class="hidden absolute top-4 right-4 w-64 bg-black/80 backdrop-blur-md rounded-lg p-4 border border-white/10 z-50">
+        <!-- JS will populate this -->
     </div>
 
     <!-- Notepad Overlay -->
@@ -98,36 +159,41 @@
 
     <div id="curtain"></div>
 
+    <!-- V201: Attic Projection Video (History Trailer) -->
     <video id="attic-video" loop playsinline crossOrigin="anonymous" style="display: none;">
-        <source src="../assets/video/historytrailer.mp4" type="video/mp4">
+        <source src="../video/historytrailer.mp4" type="video/mp4">
     </video>
 
+    <!-- Enhanced Video Support -->
     <video id="generic-video" loop crossOrigin="anonymous" playsinline style="display:none;">
-        <source src="../assets/video/spirit.mp4" type="video/mp4">
+        <source src="video/spirit.mp4" type="video/mp4">
     </video>
 
     <audio id="room-audio" loop>
-        <source src="../assets/audio/green.mp3" type="audio/mpeg">
+        <source src="" type="audio/mpeg">
     </audio>
 
     <div id="canvas-container" class="w-full h-screen block outline-none cursor-move"></div>
 
-    <script src="js/data.js?v=900&cb=2000"></script>
-    <script src="../js/layout.js?v=531&cb=2"></script>
+
+    <script src="js/data.js?v=20260117-1"></script>
+    <script src="../js/layout.js?v=20260117-1"></script>
 
     <!-- Room Scripts -->
-    <script src="js/rooms/music.js?v=901&cb=1006"></script>
-    <script src="js/rooms/hall.js?v=608&cb=2"></script>
-    <script src="js/rooms/basement.js?v=502&cb=2"></script>
-    <script src="js/rooms/bathroom.js?v=502&cb=2"></script>
-    <script src="js/rooms/attic.js?v=618&cb=2"></script>
-    <script src="js/rooms/toilet.js?v=507&cb=6"></script>
-    <script src="js/rooms/living.js?v=502&cb=2"></script>
-    <script src="js/rooms/bedroom.js?v=508&cb=2"></script>
-    <script src="js/rooms/studio.js?v=510&cb=2"></script>
-    <script src="js/rooms/generic.js?v=501&cb=2"></script>
+    <script src="js/rooms/music.js?v=20260117-3"></script>
+    <script src="js/rooms/hall.js?v=20260117-3"></script>
+    <script src="js/rooms/bathroom.js?v=20260117-54"></script>
+    <script src="js/rooms/attic.js?v=20260117-3"></script>
+    <script src="js/rooms/toilet.js?v=20260117-3"></script>
+    <script src="js/rooms/living.js?v=20260117-3"></script>
+    <script src="js/rooms/bedroom.js?v=20260117-3"></script>
+    <script src="js/rooms/studio.js?v=20260117-3"></script>
+    <script src="js/rooms/intro_corridor.js?v=20260117-3"></script>
+    <script src="js/rooms/generic.js?v=20260117-3"></script>
+    <script src="js/rooms/mm_animation.js?v=20260117-3"></script>
+    <script src="js/rooms/basement.js?v=20260117-3"></script>
 
-    <script src="js/house.js?v=901&cb=2000"></script>
+    <script src="js/house.js?v=20260117-50"></script>
 </body>
 
 </html>

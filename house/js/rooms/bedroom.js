@@ -62,8 +62,8 @@ function createBedroomInterior() {
     // Shade
     const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xffaa00, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     shade.position.y = 0.7; lampGroup.add(shade);
-    // Light - Dimmer (Night Bed Lamp)
-    const bulb = new THREE.PointLight(0xffaa00, 1.5, 8); // Intensity 1.5 (Was 5.0)
+    // Light - Dimmer (Night Bed Lamp) - Darker
+    const bulb = new THREE.PointLight(0xffaa00, 0.5, 8); // Reduced to 0.5 (was 1.5)
     bulb.position.y = 0.6;
     lampGroup.add(bulb);
 
@@ -74,7 +74,6 @@ function createBedroomInterior() {
     interiorGroup.add(lampGroup);
 
     // WALL MOUNTED VIDEO PLAYER (BIGGER, BACK WALL)
-    // User wants it bigger. Box 2.2 x 3.8
     const phone = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }));
     phone.position.set(0, 4.5, -4.95);
     phone.userData = { type: 'videoPhone', state: 'stopped' };
@@ -93,47 +92,22 @@ function createBedroomInterior() {
     phoneScreenMesh.name = 'screen';
     phone.add(phoneScreenMesh);
 
-    // V14: Removed Indicator Light
-    // const playBtn = new THREE.Mesh(new THREE.CircleGeometry(0.1, 16), new THREE.MeshBasicMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8 }));
-    // playBtn.position.set(0.9, -1.7, 0.07);
-    // playBtn.name = "indicatorLight";
-    // phone.add(playBtn);
-    // interiorClickables.push(playBtn);
-
-    // V7 FIX: Call createVideoPlaylistPanel !!
     if (roomContent.bedroom.videoPlaylist) {
         createVideoPlaylistPanel(roomContent.bedroom.videoPlaylist);
     }
 
-    // V803: Mounted Shelf on Left Wall (Left of Audio Playlist)
-    // Audio Playlist is Center Left Wall (Z=0).
-    // "Left" of that is towards +Z (Front).
-    // Position at X = -4.6, Z = 3.0.
     const shelfGeo = new THREE.BoxGeometry(0.8, 0.1, 1.2);
     const shelfMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
     const shelf = new THREE.Mesh(shelfGeo, shelfMat);
     shelf.position.set(-4.6, 3.5, 3.0);
     interiorGroup.add(shelf);
 
-    // V801: Lava Lamp (On Shelf)
+    // Lava Lamp
     createLavaLamp(0.108, shelf.position);
 }
 
-
 function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
     const lampGroup = new THREE.Group();
-    // Position: Right side of desk (Desk is at -2.5, 0.6, -3)
-    // Existing lamp is at -3.8, 1.2, -3.5 (Left Back)
-    // Desk Width is 3.5 (X: -4.25 to -0.75)
-    // We want Right Back.
-    // X: Around -1.2
-    // Y: Desk Height 0.6 + 0.6 (Base height * scale?) wait.
-    // Base Y in original code was -4.5.
-    // We need to normalize it.
-
-    // Let's implement the lamp logic first, then position the group.
-
-    // Original Code Constants adapted
     const metalMat = new THREE.MeshStandardMaterial({
         color: 0x080808,
         metalness: 1.0,
@@ -159,7 +133,7 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
         metalness: 0.2,
         roughness: 0.0,
         transmission: 0.96,
-        thickness: 0.5, // Reduced drastically
+        thickness: 0.5,
         transparent: true,
         opacity: 0.7,
         ior: 1.5,
@@ -184,7 +158,7 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
     lampGroup.add(liquidCore);
 
     // Lights
-    const internalPointLight = new THREE.PointLight(0xff4d00, 8, 5); // Reduced 80% (was 10)
+    const internalPointLight = new THREE.PointLight(0xff4d00, 4, 5); // Reduced 80% (was 10)
     internalPointLight.position.set(0, 0, 0);
     lampGroup.add(internalPointLight);
 

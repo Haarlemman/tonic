@@ -26,9 +26,9 @@ function createAtticInterior() {
         labelMesh.position.set(0, 0, 0.76); box.add(labelMesh);
         interiorGroup.add(box); interiorClickables.push(box);
     };
-    createLabeledBox("", -2.5, -2, 0x8d6e63);
-    createLabeledBox("The History|of Mankind", 0, -2, 0xa1887f);
-    createLabeledBox("", 2.5, -2, 0x6d4c41);
+    createLabeledBox("", -2.5, -2, 0xd7ccc8); // Very Light Brown / Beige
+    createLabeledBox("The History|of Mankind", 0, -2, 0xeefebe); // Almost Cream/White-ish
+    createLabeledBox("", 2.5, -2, 0xcfcfc4); // Light Grey/Beige
     const particlesGeo = new THREE.BufferGeometry();
     const particleCount = 200;
     const posArray = new Float32Array(particleCount * 3);

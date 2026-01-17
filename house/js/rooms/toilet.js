@@ -14,14 +14,30 @@ function createToiletInterior() {
     const tank = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.25), ceramicMat);
     tank.position.set(0, 0.85, -0.3); toiletGroup.add(tank);
 
-    // Black Toilet Seat (The "WC Bril") - Torus - SMOOTHED & ROTATED
+    // Water in Bowl
+    const waterGeo = new THREE.CircleGeometry(0.3, 32);
+    const waterMat = new THREE.MeshPhongMaterial({
+        color: 0x00aaff,
+        transparent: true,
+        opacity: 0.8,
+        shininess: 100
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = 0.4;
+    toiletGroup.add(water);
+
+    // Black Toilet Seat - LARGER TO COVER RIM
+    // Bowl top radius is 0.5.
+    // Seat should match.
+    // TorusGeometry(radius, tube, radial, tubular)
+    // radius = 0.5, tube = 0.1
     const blackWoodMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.1 });
-    // Segments: 24 tubular, 64 radial
-    const seat = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.08, 24, 64), blackWoodMat);
+    const seat = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.1, 24, 64), blackWoodMat);
     seat.rotation.x = -Math.PI / 2;
-    seat.rotation.z = Math.PI; // Rotate 180 deg to hide seam at the back (under tank)
-    seat.position.y = 0.62;
-    seat.scale.set(1, 1.2, 1);
+    // seat.rotation.z = Math.PI; 
+    seat.position.y = 0.6; // Sit nicely on rim
+    // seat.scale.set(1, 1.2, 1); // Oval? Bowl is cylinder (circle).
     toiletGroup.add(seat);
 
     // Scale 2.0 per archive
@@ -113,21 +129,41 @@ function createToiletInterior() {
 
     // Fixture
     const fixtureGeo = new THREE.CylinderGeometry(0.1, 0.15, 0.1, 16);
-    const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+    const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x336699, metalness: 0.8, roughness: 0.2 });
     const fixture = new THREE.Mesh(fixtureGeo, fixtureMat);
     fixture.rotation.x = Math.PI / 2;
     lampGroup.add(fixture);
 
-    // Bulb/Glass
+    // Bulb/Glass (Warm Yellow)
     const bulbGeo = new THREE.SphereGeometry(0.15, 32, 32);
-    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xff6600 }); // Deeper orange glow
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffaa33 });
     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
     bulb.position.z = 0.1;
     lampGroup.add(bulb);
 
-    // COZY DIM LIGHT - Even Darker (V5)
-    // Reduce intensity 0.6 -> 0.35
-    // Color warmer/redder
-    const backLight = new THREE.PointLight(0xff5500, 0.35, 12);
+    // COZY WARM LIGHT (Brighter)
+    const backLight = new THREE.PointLight(0xffaa33, 0.6, 15);
     lampGroup.add(backLight);
+
+    // V: FLICKER ANIMATION (Stronger)
+    lampGroup.userData = {
+        baseIntensity: 0.6,
+        update: function (t) {
+            // Frequent Flicker (15% chance)
+            if (Math.random() > 0.85) {
+                // Stronger flicker range
+                const flicker = (Math.random() - 0.5) * 0.4;
+                backLight.intensity = Math.max(0.1, this.baseIntensity + flicker);
+
+                // Visible Bulb Dimming
+                // 0.1 Hue = Orange/Yellow. 0.5 * dim controls lightness.
+                const dim = 1 + flicker * 2;
+                bulb.material.color.setHSL(0.08, 0.9, 0.5 * dim);
+            } else {
+                // Restore stability
+                backLight.intensity += (this.baseIntensity - backLight.intensity) * 0.2;
+                bulb.material.color.setHex(0xffaa33);
+            }
+        }
+    };
 }
