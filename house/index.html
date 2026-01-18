@@ -64,19 +64,106 @@
         });
     </script>
     <link rel="stylesheet" href="css/style.css?v=20260117-4">
+    <style>
+        /* V136: CSS-BASED ANIMATION (Robust Fallback) */
+        .header-move-up {
+            /* V141: Further reduced to -35vh. 9XL font needs more headroom. */
+            transform: translateY(-35vh) scale(1.0) !important;
+            transition: transform 6s cubic-bezier(0.25, 0.1, 0.25, 1), scale 6s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+            opacity: 1 !important;
+        }
+
+        /* V-REFINE: SVG Loader Styles (User Request: House Outline) */
+        .house-svg {
+            width: 30vw;
+            max-width: 150px;
+            height: auto;
+            /* Invert for white lines on black bg */
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+        }
+
+        .house-path {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            animation: drawOnce 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards infinite alternate;
+        }
+
+        @keyframes drawOnce {
+            0% {
+                stroke-dashoffset: 1;
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+        }
+
+        .intro-text {
+            margin-top: 20px;
+            letter-spacing: 0.5em;
+            font-size: 12px;
+            color: #888;
+            font-family: monospace;
+            text-transform: uppercase;
+            animation: pulseText 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseText {
+            from {
+                opacity: 0.3;
+            }
+
+            to {
+                opacity: 1.0;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
     <div id="app-header" data-theme="yellow"></div>
     <div id="loading">
-        <div class="battery-loader">
-            <div class="battery-icon">
-                <div class="battery-level"></div>
-            </div>
-            <div class="loading-text">LOADING</div>
-        </div>
-        <div id="loading-error" class="hidden text-red-500 mt-4 text-xs font-mono bg-black/80 p-2 rounded max-w-md">
+        <div class="flex flex-col items-center justify-center w-full h-full">
+            <svg viewBox="0 0 200 200" class="house-svg" style="overflow:visible">
+                <path class="house-path" pathLength="1" d="
+                    M 80 170 
+                    L 160 145 
+                    L 125 120 
+                    L 45 145 
+                    L 80 170
+                    L 80 100
+                    L 160 75
+                    L 160 145
+                    L 160 75
+                    L 125 50
+                    L 125 120
+                    L 125 50
+                    L 45 75
+                    L 45 145
+                    L 45 75
+                    L 80 100
+                    L 62 60
+                    L 45 75
+                    L 62 60
+                    L 142 35
+                    L 160 75
+                    L 142 35
+                    L 125 50
+                " />
+            </svg>
+            <div class="intro-text">LOADING...</div>
         </div>
     </div>
 
@@ -93,28 +180,76 @@
 
 
 
-    <header id="main-header"
-        class="fixed inset-0 z-30 flex flex-col items-center justify-center pointer-events-none transition-all duration-700"
-        style="opacity: 1;">
+    <!-- UI Wrapper: Handles Centering & Layout -->
+    <div id="ui-wrapper" class="fixed inset-0 z-30 flex flex-col items-center justify-center pointer-events-none">
 
-        <div class="text-center">
-            <h1 class="glass-font text-4xl md:text-8xl text-gray-100 tracking-wide drop-shadow-lg leading-tight"
+        <!-- HEADER (Text Only) - ID Preserved for JS targeting -->
+        <!-- Removed fixed/inset classes as wrapper handles positioning -->
+        <div id="main-header" class="text-center transition-opacity duration-1000" style="opacity: 1;">
+            <h1 class="glass-font text-5xl md:text-9xl text-gray-100 tracking-wide drop-shadow-lg leading-tight"
                 style="text-shadow: 0 4px 25px rgba(0,0,0,0.9);">The House of Awe</h1>
             <p
-                class="text-purple-200 text-[8px] md:text-sm mt-1 font-mono tracking-[0.3em] uppercase opacity-70 whitespace-nowrap">
+                class="text-purple-200 text-xs md:text-xl mt-2 font-mono tracking-[0.3em] uppercase opacity-70 whitespace-nowrap">
                 Interactive 3D Environment
             </p>
         </div>
-    </header>
 
-    <div id="start-btn-container" class="absolute left-0 w-full text-center z-40 top-[83%] md:top-[75%]"
-        style="transform: translateY(-50%);">
-        <button id="start-btn" onclick="enterExperience()"
-            class="px-5 py-2 bg-white/10 hover:bg-white/20 border border-white/40 text-white font-bold tracking-widest uppercase backdrop-blur-sm transition-all text-xs rounded-sm">
-            Enter Experience
+        <!-- START BUTTON CONTAINER -->
+        <!-- Sibling to header (Not scaled by header animation) -->
+        <!-- Mobile: mt-16 (Closer) | Desktop: mt-12 -->
+        <div id="start-btn-container"
+            class="mt-16 md:mt-12 text-center pointer-events-auto transition-opacity duration-500 relative z-50">
+            <button id="start-btn" onclick="enterExperience()"
+                class="px-5 py-2 bg-white/10 hover:bg-white/20 border border-white/40 text-white font-bold tracking-widest uppercase backdrop-blur-sm transition-all text-xs rounded-sm cursor-pointer shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                Enter Experience
+            </button>
+        </div>
+
+    </div>
+
+    <!-- TOP RIGHT CONTROLS -->
+    <div id="top-controls"
+        class="fixed top-6 right-6 z-[100] flex gap-4 text-white mix-blend-difference pointer-events-auto">
+        <button id="sound-btn" onclick="toggleGlobalSound()"
+            class="opacity-70 hover:opacity-100 transition-opacity p-2">
+            <!-- Speaker Icon -->
+            <svg id="icon-sound-on" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                viewBox="0 0 16 16">
+                <path
+                    d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z" />
+                <path
+                    d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z" />
+                <path
+                    d="M10.025 8a4.486 4.486 0 0 1-1.318 3.182L8 10.475A3.489 3.489 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.486 4.486 0 0 1 10.025 8zM7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12V4zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z" />
+            </svg>
+            <!-- Mute Icon (Hidden) -->
+            <svg id="icon-sound-off" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                fill="currentColor" viewBox="0 0 16 16">
+                <path
+                    d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 0 1 11v-2a.5.5 0 0 0 .5-.5h2.325l2.363 1.89A.5.5 0 0 0 7 9.5V4a.5.5 0 0 1-.283-.45z" />
+                <path d="M4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z" />
+                <path
+                    d="M9.663 5.337a.5.5 0 0 1 .792-.015l1.64 1.933a2.5 2.5 0 1 1-3.265 0 1.64-1.933 0 0 0 .792.015z" />
+            </svg>
+        </button>
+        <button id="fullscreen-btn" onclick="toggleGlobalFullscreen()"
+            class="opacity-70 hover:opacity-100 transition-opacity p-2">
+            <!-- Fullscreen Icon -->
+            <svg id="icon-fullscreen-on" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                viewBox="0 0 16 16">
+                <path
+                    d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zM10 15.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 1 0v4A1.5 1.5 0 0 1 14.5 16h-4a.5.5 0 0 1-.5-.5z" />
+            </svg>
+            <!-- Exit Fullscreen Icon (Hidden) -->
+            <svg id="icon-fullscreen-off" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                fill="currentColor" viewBox="0 0 16 16">
+                <path
+                    d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z" />
+            </svg>
         </button>
     </div>
 
+    <!-- Original container removed -->
     <div id="tooltip">Room Name</div>
     <div id="instructions">Click a room to enter it • Drag to rotate</div>
     <button id="back-btn" onclick="exitRoom()">← Exit Room</button>
@@ -193,12 +328,11 @@
     <script src="js/rooms/living.js?v=20260117-4"></script>
     <script src="js/rooms/bedroom.js?v=20260117-4"></script>
     <script src="js/rooms/studio.js?v=20260117-3"></script>
-    <script src="js/rooms/intro_corridor.js?v=20260117-3"></script>
     <script src="js/rooms/generic.js?v=20260117-3"></script>
     <script src="js/rooms/mm_animation.js?v=20260117-3"></script>
     <script src="js/rooms/basement.js?v=20260117-3"></script>
 
-    <script src="js/house.js?v=20260117-124"></script>
+    <script src="js/house.js?v=CONTROLS-1"></script>
 </body>
 
 </html>

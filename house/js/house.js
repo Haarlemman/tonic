@@ -13,6 +13,11 @@ let textureLoader;
 let worldGroup, interiorGroup;
 let raycaster, mouse;
 let animationId;
+// HOUSE MUSIC STATE
+let houseMusicTime = 0;
+const HOUSE_TRACK = "/assets/audio/NightDrive-RobSimonsen.mp3";
+
+// -- LIGHTS --
 let dirLight, rimLight, ambientLight, hemiLight;
 
 let noteTextSprite = null;
@@ -195,15 +200,22 @@ function init() {
         header.dataset.naturalWidth = naturalWidth;
 
         const isMobile = window.innerWidth < 768;
-        const startTop = isMobile ? 30 : 50;
+        // const startTop = isMobile ? 30 : 50; 
 
         // Start Percent Target
-        const startPct = isMobile ? 0.9 : 0.8;
+        // V139: Adjusted for Larger Native Font (to avoid upscaling blur)
+        // Since font is bigger, the start scale must be smaller to fit width.
+        const startPct = isMobile ? 0.8 : 0.7; // Slightly less than full width
         const startScale = (window.innerWidth * startPct) / naturalWidth;
 
         // Set Initial Visually
-        header.style.transform = `translateY(-50%) scale(${startScale})`;
-        header.style.top = startTop + '%';
+        // V138: FIXED-TO-FLEX ADAPTATION
+        // Since we are now in a Flex container, we DO NOT position with top/transform-translate.
+        // We ONLY apply the scale.
+        // header.style.transform = `translateY(-50%) scale(${startScale})`; <-- OLD
+        // header.style.top = startTop + '%'; <-- OLD
+
+        header.style.transform = `scale(${startScale})`;
         header.style.opacity = '1';
     }
 
@@ -249,24 +261,21 @@ window.exitExperience = function () {
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
 
     // 2. Show Header
-    // 2. Show Header
-    const headerEl = document.querySelector('header');
-    // REMOVE: headerEl.style.display = 'flex'; 
-    // This line was likely overriding the 'max-h-0' logic from layout.js
+    // 2. Show Header (Reset Intro State)
+    const headerEl = document.getElementById('main-header');
+    if (headerEl) {
+        headerEl.style.display = 'flex'; // Restore visibility
+        headerEl.style.opacity = '1';
+        headerEl.classList.remove('header-move-up'); // Reset position
+        // Force reflow?
+        void headerEl.offsetWidth;
+    }
 
     // 3. Hide Exit Button
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) exitBtn.classList.add('hidden');
 
-    // 4. Show Start Button again (Optional - if user wants to re-enter)
-    // Note: We are just exiting fullscreen view. The 3D scene continues.
-    // To "Reset" fully, reloading might be better, but for now we just toggle view.
-    const startBtnContainer = document.getElementById('start-btn-container');
-    if (startBtnContainer) startBtnContainer.style.display = 'block'; // Container was never hidden, but button was.
-
-    // Actually we hid the BUTTON, not the container? Let's check logic.
-    // "const btn = document.getElementById('start-btn'); if (btn) btn.style.display = 'none';"
-    // So we show the button:
+    // 4. Show Start Button again
     const startBtn = document.getElementById('start-btn');
     if (startBtn) startBtn.style.display = 'inline-block';
 };
@@ -451,14 +460,8 @@ function buildHouse() {
     ]);
 
     // -- ENLARGED CLICK AREA FOR LIVING ROOM --
-    // REFINED: Tighter fit to avoid misclicks
-    const liveHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 2.2, 5.2),
-        new THREE.MeshBasicMaterial({ visible: false })
-    );
-    liveHitBox.position.set(-1.0, 1.8, 0);
-    liveHitBox.userData = { name: 'living', type: 'room' };
-    worldGroup.add(liveHitBox);
+    // REMOVED for Precision: Users must click the visible building.
+    // const liveHitBox = ... (removed)
 
     createRoomBlock('studio', 1.0, 1.8, 0, 2.0, 2, 5, roomContent.studio.hex, [
         { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: 0.2 },
@@ -512,14 +515,8 @@ function buildHouse() {
     worldGroup.add(plate); // Add to world, not door
 
     // -- CLICK AREA FOR HALL --
-    // Precise fit (User requested smaller)
-    const hallHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(1.0, 2.2, 0.5),
-        new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
-    );
-    hallHitBox.position.set(0, 1.8, 3.0);
-    hallHitBox.userData = { name: 'hall', type: 'room' };
-    worldGroup.add(hallHitBox);
+    // REMOVED for Precision.
+    // const hallHitBox = ... (removed)
     // --- STAIRS SETUP (V230: User Geometry Fix) ---
     const stepMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
     const stepW = 1.4; // Width
@@ -599,13 +596,8 @@ function buildHouse() {
     worldGroup.add(roof);
 
     // -- ATTIC HITBOX --
-    const atticHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(5.0, 4.0, 5.0),
-        new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
-    );
-    atticHitBox.position.set(0, 6.0, 0);
-    atticHitBox.userData = { name: 'attic', type: 'room' };
-    worldGroup.add(atticHitBox);
+    // REMOVED for Precision
+    // const atticHitBox = ... (removed)
 }
 function createRoofTexture() {
     const canvas = document.createElement('canvas');
@@ -888,7 +880,7 @@ function buildStreetlight(x, z, rotationY = 0) {
     // Keeping original code structure but verifying the insertion point for Mist Layer.
     // The Mist Layer logic will be added inside buildEnvironment().
 
-    const signTex = createSignTexture();
+    const signTex = createNewSignTexture();
     const signWidth = 1.4; const signHeight = 0.7;
     const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.05);
     const signMat = new THREE.MeshStandardMaterial({ map: signTex });
@@ -904,8 +896,8 @@ function buildStreetlight(x, z, rotationY = 0) {
     bracket.position.z = Math.abs(rotationY) > 0.1 ? 0.05 : -0.05;
     sign.add(bracket);
 
-    // V97: Make Sign Interactive
-    sign.userData = { type: 'enterSign', name: 'EnterSign' };
+    // V97: Make Sign Interactive -> REMOVED per user request
+    // sign.userData = { type: 'enterSign', name: 'EnterSign' };
 
     poleGroup.add(sign);
     worldGroup.add(poleGroup);
@@ -1317,41 +1309,28 @@ function startOpeningAnimation() {
         })
         .start();
 
-    startHeaderAnimation(); // Separated Function
+    // startHeaderAnimation(); // REMOVED DUPLICATE - Called in enterExperience
 }
 
 function startHeaderAnimation() {
-    const wrapper = document.getElementById('ui-wrapper');
     const header = document.getElementById('main-header');
 
-    // V124: DEBUG LOGS - ANIMATION RESTORED
-    console.log("--- startHeaderAnimation V124 CALLED (Padding Tween) ---");
+    // V136: CSS-BASED ANIMATION TRIGGER
+    // We simply add the class. CSS does the heavy lifting (transform + transition).
+    console.log("--- startHeaderAnimation V136 CALLED (CSS CLASS) ---");
 
-    if (wrapper && header) {
-        // 1. Switch alignment to Top so padding works
-        wrapper.style.justifyContent = 'flex-start';
+    if (header) {
+        // Force Reflow ensures the browser acknowledges the 'before' state
+        void header.offsetWidth;
 
-        // 2. Set Start State (Visual Center)
-        // 45vh is roughly center
-        const startPadding = 45;
-        const endPadding = 5; // Top of screen
-
-        wrapper.style.paddingTop = startPadding + 'vh';
-
-        const isMobile = window.innerWidth < 768;
-        const endScale = isMobile ? 0.6 : 0.4;
-
-        // 3. Animate Padding (Move) and Scale (Shrink)
-        new TWEEN.Tween({ padding: startPadding, scale: 1, opacity: 1 })
-            .to({ padding: endPadding, scale: endScale, opacity: 0.8 }, 4000)
-            .onUpdate((obj) => {
-                wrapper.style.paddingTop = obj.padding + 'vh';
-                header.style.transform = `scale(${obj.scale})`;
-                header.style.opacity = obj.opacity;
-            })
-            .easing(TWEEN.Easing.Cubic.Out)
-            .start();
+        // Add the class defined in index.html
+        header.classList.add('header-move-up');
     }
+
+    // Also fade out the button container explicitly (though it should be hidden by enterExperience)
+    // Just ensuring smooth transition if concurrent
+    const btnContainer = document.getElementById('start-btn-container');
+    if (btnContainer) btnContainer.style.opacity = '0';
 }
 
 // V92: Ensure Header Fades In ON LOAD (Before Click)
@@ -1779,6 +1758,10 @@ function enterRoom(roomName) {
     // Usually entering a room resets the state unless it's a seamless transition.
     // In this app, entering a room sets up new audio or video.
     // So stopping everything first is safe and cleaner.
+    // V2026: Save House Music Time
+    if (audioPlayer && audioPlayer.src && audioPlayer.src.includes("NightDrive")) {
+        houseMusicTime = audioPlayer.currentTime;
+    }
     stopAllAudio();
 
     window.isZoomingToRoom = true; // V119 Loop Lock
@@ -1804,12 +1787,14 @@ function enterRoom(roomName) {
             // V201: Dark Mode for Attic (Projection)
             // V136: Dark Mode / Mood Lighting
             // User requested: Studio, Hall, Bathroom, Toilet (plus existing Bedroom/Living/Attic)
-            if (['bedroom', 'living', 'attic', 'studio', 'hall', 'bathroom', 'toilet'].includes(roomName)) {
-                if (dirLight) dirLight.intensity = 0.5;
-                if (rimLight) rimLight.intensity = 0.5;
-                if (ambientLight) ambientLight.intensity = 0.5;
+            // V142: Dark Mode for ALL rooms except Hall (Bright entryway)
+            if (roomName !== 'hall') {
+                // User requested darker (0.3)
+                if (dirLight) dirLight.intensity = 0.3;
+                if (rimLight) rimLight.intensity = 0.3;
+                if (ambientLight) ambientLight.intensity = 0.3;
             } else {
-                // Reset to defaults
+                // Hall uses defaults (Bright)
                 if (dirLight) dirLight.intensity = 1.2;
                 if (rimLight) rimLight.intensity = 0.6;
                 if (ambientLight) ambientLight.intensity = 0.6;
@@ -1817,7 +1802,7 @@ function enterRoom(roomName) {
 
             const data = roomContent[roomName];
             // V201: Attic Audio Default = Video Audio (Not Playlist)
-            if (data.playlist && data.playlist[0].src && roomName !== 'attic') {
+            if (data && data.playlist && data.playlist[0].src && roomName !== 'attic') {
                 audioPlayer.src = data.playlist[0].src;
                 // V78: Per-track volume support
                 audioPlayer.volume = data.playlist[0].volume || 0.5;
@@ -1849,7 +1834,7 @@ function enterRoom(roomName) {
                 console.warn("Info Panel not found (Intentional removal?)");
             }
 
-            document.getElementById('main-header').style.opacity = 0;
+            document.getElementById('main-header').style.display = 'none'; // V136: Force Hide (Overrides CSS Opacity)
             document.getElementById('back-btn').style.display = 'block';
             document.getElementById('tooltip').style.opacity = 0;
             document.getElementById('instructions').textContent = "Click music board to cycle tracks • Drag to rotate";
@@ -1880,7 +1865,18 @@ function exitRoom() {
     if (curtain) curtain.classList.add('active');
 
     stopAllAudio(); // Replaces manual pausing
+    stopAllAudio(); // Replaces manual pausing
     isMusicPlaying = false; // Redundant but safe
+
+    // V2026: Resume House Music (Continuity)
+    if (audioPlayer) {
+        audioPlayer.src = "/assets/audio/NightDrive-RobSimonsen.mp3";
+        audioPlayer.currentTime = houseMusicTime || 0;
+        audioPlayer.loop = true;
+        audioPlayer.volume = 0.5; // Default volume
+        audioPlayer.play().catch(e => console.warn("Resume House Music Fail", e));
+        isMusicPlaying = true;
+    }
 
     // Clear any pending info panel minimize timeout
     if (infoTimeout) clearTimeout(infoTimeout);
@@ -2500,3 +2496,75 @@ setTimeout(() => {
         }
     }
 }, 100);
+
+// V-REFINE: New Sign Texture (User Request)
+function createNewSignTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Background: Metallic/Wood Sign
+    ctx.fillStyle = '#eaddcf'; // Light wood/parchment
+    ctx.fillRect(0, 0, 512, 256);
+
+    // Border
+    ctx.strokeStyle = '#5d4037';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, 502, 246);
+
+    // Text
+    ctx.fillStyle = '#3e2723';
+    ctx.textAlign = 'center';
+
+    // Line 1: ENTER (Larger & Lower)
+    ctx.font = 'bold 110px Courier Prime, monospace';
+    ctx.fillText("ENTER", 256, 120);
+
+    // Line 2: Click on the front door
+    ctx.font = 'bold 30px Courier Prime, monospace';
+    ctx.fillText("Click on the front door", 256, 200);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    return tex;
+}
+
+// V-REFINE: Global Controls
+function toggleGlobalSound() {
+    const iconOn = document.getElementById('icon-sound-on');
+    const iconOff = document.getElementById('icon-sound-off');
+
+    // Toggle Mute Logic
+    if (window.audioPlayer) {
+        window.audioPlayer.muted = !window.audioPlayer.muted;
+        // Update Video too if active
+        if (window.videoElement) window.videoElement.muted = window.audioPlayer.muted;
+
+        // Update Icons
+        if (window.audioPlayer.muted) {
+            iconOn.classList.add('hidden');
+            iconOff.classList.remove('hidden');
+        } else {
+            iconOn.classList.remove('hidden');
+            iconOff.classList.add('hidden');
+        }
+    }
+}
+
+function toggleGlobalFullscreen() {
+    const iconOn = document.getElementById('icon-fullscreen-on');
+    const iconOff = document.getElementById('icon-fullscreen-off');
+
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.warn(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+        iconOn.classList.add('hidden');
+        iconOff.classList.remove('hidden');
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        iconOn.classList.remove('hidden');
+        iconOff.classList.add('hidden');
+    }
+}
