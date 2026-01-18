@@ -15,7 +15,8 @@ function createBedroomInterior() {
     greenBtn.material.emissive.setHex(0x440000);
 
     // -- DARKER FLOOR FOR BEDROOM --
-    const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+    // V4: Much darker floor (User request)
+    const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
     darkFloor.rotation.x = -Math.PI / 2; darkFloor.position.y = 0.01;
     interiorGroup.add(darkFloor);
 
@@ -63,7 +64,8 @@ function createBedroomInterior() {
     const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xffaa00, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     shade.position.y = 0.7; lampGroup.add(shade);
     // Light - Dimmer (Night Bed Lamp) - Darker
-    const bulb = new THREE.PointLight(0xffaa00, 0.5, 8); // Reduced to 0.5 (was 1.5)
+    // V4: Updated to emit light as requested
+    const bulb = new THREE.PointLight(0xffaa00, 1.5, 8); // Boosted back to 1.5
     bulb.position.y = 0.6;
     lampGroup.add(bulb);
 

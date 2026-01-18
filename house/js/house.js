@@ -47,8 +47,8 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 
 function init() {
-    // V516: Fixed Step Glitch & Removing Mist Shader
-    console.log("--- HOUSE.JS V628 LOADED - CLEAN FINAL ---");
+    // V115: Updated Log to match recent edits & Cleaned Header Logic
+    console.log("--- HOUSE.JS V115 LOADED - MOBILE FIX ---");
     scene = new THREE.Scene();
 
     scene.fog = new THREE.Fog(0x220044, 1, 500);
@@ -56,10 +56,15 @@ function init() {
     scene.background = new THREE.Color(0x050010); // Deep midnight blue
 
 
+    // V73: FIX Critical Error (Missing Camera Instantiation)
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 5, 120);
-    camera.lookAt(0, -2, 0);
-    window.camera = camera; // V43: Expose for Bathroom Parallax
+
+    // V75: User Tuned Camera (Telemetry Dump)
+    // POS: -0.71, 24.76, 87.74
+    // TGT: -0.01, -19.92, -9.05
+    camera.position.set(-0.71, 24.76, 87.74);
+    camera.lookAt(-0.01, -19.92, -9.05);
+    window.camera = camera;
 
     scene.add(camera);
 
@@ -68,6 +73,9 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
+
+    // V120: DPI Fix (Capped at 2)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
     textureLoader = new THREE.TextureLoader();
@@ -114,10 +122,11 @@ function init() {
     controls.panSpeed = 1.0;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    // V113: Fix Invisible Floor - Clamp Rotation (Just below horizon)
-    controls.maxPolarAngle = Math.PI / 2 + 0.1;
-    // V51: Set target IMMEDIATELY to match the camera's lookAt.
-    controls.target.set(0, -2, 0); // V83: Lower target (Street Level)
+    // V56: Prevent Tipping Over Horizon (Clipping under ground)
+    // Limit vertical angle to just above 90 degrees (Math.PI / 2)
+    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+    // V75: Sync Target with User Telemetry
+    controls.target.set(-0.01, -19.92, -9.05);
 
     worldGroup = new THREE.Group();
     scene.add(worldGroup);
@@ -894,6 +903,10 @@ function buildStreetlight(x, z, rotationY = 0) {
     bracket.position.y = signHeight / 2 - 0.05;
     bracket.position.z = Math.abs(rotationY) > 0.1 ? 0.05 : -0.05;
     sign.add(bracket);
+
+    // V97: Make Sign Interactive
+    sign.userData = { type: 'enterSign', name: 'EnterSign' };
+
     poleGroup.add(sign);
     worldGroup.add(poleGroup);
 
@@ -1176,6 +1189,28 @@ function buildEnvironment() {
         addTree(xVal, zVal, 1.0 + Math.random() * 0.3);
     });
 
+    // V69: HOUSE ENTRANCE "PILLARS" (Ultra Sparse & Immediate)
+    // "Still too dense" -> Reduced to 4 trees per side.
+    // "Not close enough" -> Z range -5 to 15 (Touching the start).
+    // X range 13 to 14 (Hugging the road).
+    // V95: Trees "Touching the House"
+    // User said "Still no trees". Previous X=13 was effectively a highway width away.
+    // New X = 5 to 7. This is TIGHT against the house/path.
+    // V99: SCATTERED TREES (Natural Distribution)
+    // 1. House Huggers (Keeping these close but slightly looser)
+    for (let i = 0; i < 4; i++) {
+        addTree(-6 - Math.random() * 3, (Math.random() * 20) - 5, 0.9 + Math.random() * 0.4);
+        addTree(6 + Math.random() * 3, (Math.random() * 20) - 5, 0.9 + Math.random() * 0.4);
+    }
+
+    // 2. Mid-Range Scatter (Bridging the gap)
+    // Fills the space between Z=10 and Z=50, keeping off the road (X > 8)
+    for (let i = 0; i < 12; i++) {
+        let z = 10 + Math.random() * 40;
+        addTree(-10 - Math.random() * 10, z, 1.0 + Math.random() * 0.5); // Left
+        addTree(10 + Math.random() * 10, z, 1.0 + Math.random() * 0.5);  // Right
+    }
+
     // V102: Distant Sprite Glow
     const glowTex = createGlowTexture();
     const glowMat = new THREE.SpriteMaterial({
@@ -1231,35 +1266,50 @@ function buildEnvironment() {
 
 
 // --- ANIMATION & NAVIGATION REPAIR ---
+// --- ANIMATION & NAVIGATION REPAIR ---
 function startOpeningAnimation() {
-    const animState = { px: 0, py: 5, pz: 120, ly: -2, fogFar: 300 };
-    const targetState = { px: 8, py: 2, pz: 20, ly: 4, fogFar: 150 };
+    // V99/V100: SMOOTH CAMERA (No Bump)
+    // The "Bump" is fixed by starting the Target Y at House Level (2.0) instead of Underground (-20).
+    const animState = {
+        px: -1.06, py: 47.1, pz: 136.13,
+        tx: -0.01, ty: 2.0, tz: -9.05, // Start Y=2 (Looking at House)
+        fogFar: 300
+    };
+
+    // V99: End State (Eye Level, Looking Slightly Up)
+    const targetState = {
+        px: -0.2, py: 2.0, pz: 25.0,
+        tx: -0.01, ty: 4.0, tz: -9.05,
+        fogFar: 150
+    };
 
     // 1. Purple Mist Sphere Animation
     if (mistLayer) {
-        console.log("Starting Mist Animation");
         new TWEEN.Tween(mistLayer.scale)
             .to({ x: 2, y: 2, z: 2 }, 10000)
             .start();
     }
 
-    // Hide Start Button Container Explicitly
+    // Hide Start Button
     const startBtnContainer = document.getElementById('start-btn-container');
     if (startBtnContainer) {
         startBtnContainer.style.opacity = '0';
         setTimeout(() => { startBtnContainer.style.display = 'none'; }, 1000);
     }
 
-    // 2. Camera and Global Fog Animation (Unbroken Chain)
+    // 2. Camera Tween
+    window.isZoomingToRoom = true;
+    controls.enabled = false;
+
     new TWEEN.Tween(animState)
         .to(targetState, 6000)
         .onUpdate(() => {
             camera.position.set(animState.px, animState.py, animState.pz);
-            controls.target.set(0, animState.ly, 0);
-            if (scene.fog) scene.fog.far = animState.fogFar;
+            controls.target.set(animState.tx, animState.ty, animState.tz);
             controls.update();
+            if (scene.fog) scene.fog.far = animState.fogFar;
         })
-        .easing(TWEEN.Easing.Cubic.InOut)
+        .easing(TWEEN.Easing.Quadratic.InOut)
         .onComplete(() => {
             controls.enabled = true;
             window.introFinished = true;
@@ -1267,49 +1317,56 @@ function startOpeningAnimation() {
         })
         .start();
 
-    const header = document.getElementById('main-header');
-    // Header logic moved to startHeaderAnimation
+    startHeaderAnimation(); // Separated Function
 }
 
 function startHeaderAnimation() {
+    const wrapper = document.getElementById('ui-wrapper');
     const header = document.getElementById('main-header');
-    if (header) {
-        // Force opacity and disable any CSS transitions that might fight JS
-        header.style.opacity = '1';
-        header.style.transition = 'none';
 
-        let naturalWidth = 300;
-        if (header.dataset.naturalWidth) {
-            naturalWidth = parseFloat(header.dataset.naturalWidth);
-        } else {
-            const h1 = header.querySelector('h1');
-            if (h1) {
-                const range = document.createRange();
-                range.selectNodeContents(h1);
-                naturalWidth = range.getBoundingClientRect().width;
-            }
-        }
+    // V124: DEBUG LOGS - ANIMATION RESTORED
+    console.log("--- startHeaderAnimation V124 CALLED (Padding Tween) ---");
+
+    if (wrapper && header) {
+        // 1. Switch alignment to Top so padding works
+        wrapper.style.justifyContent = 'flex-start';
+
+        // 2. Set Start State (Visual Center)
+        // 45vh is roughly center
+        const startPadding = 45;
+        const endPadding = 5; // Top of screen
+
+        wrapper.style.paddingTop = startPadding + 'vh';
 
         const isMobile = window.innerWidth < 768;
-        // Re-calculate start values to ensure exact match with current window state
-        const startTop = isMobile ? 30 : 50;
-        const startScale = (window.innerWidth * (isMobile ? 0.9 : 0.8)) / naturalWidth;
-        const endScale = (window.innerWidth * (isMobile ? 0.8 : 0.6)) / naturalWidth;
+        const endScale = isMobile ? 0.6 : 0.4;
 
-        // CRITICAL: Hard-set the start styles immediately to prevent any "jump" frame
-        header.style.top = startTop + '%';
-        header.style.transform = `translateY(-50%) scale(${startScale})`;
-
-        new TWEEN.Tween({ top: startTop, scale: startScale })
-            .to({ top: 15, scale: endScale }, 5000)
+        // 3. Animate Padding (Move) and Scale (Shrink)
+        new TWEEN.Tween({ padding: startPadding, scale: 1, opacity: 1 })
+            .to({ padding: endPadding, scale: endScale, opacity: 0.8 }, 4000)
             .onUpdate((obj) => {
-                header.style.top = obj.top + '%';
-                header.style.transform = `translateY(-50%) scale(${obj.scale})`;
+                wrapper.style.paddingTop = obj.padding + 'vh';
+                header.style.transform = `scale(${obj.scale})`;
+                header.style.opacity = obj.opacity;
             })
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
     }
 }
+
+// V92: Ensure Header Fades In ON LOAD (Before Click)
+// This was missing, causing "Initial view not showing"
+function revealHeader() {
+    const header = document.getElementById('main-header');
+    if (header) {
+        setTimeout(() => {
+            header.style.opacity = '1';
+        }, 500);
+    }
+}
+// Call it immediately if script loaded late, or wait for DOM
+if (document.readyState === 'complete') revealHeader();
+else window.addEventListener('load', revealHeader);
 
 window.enterExperience = function () {
     // 1. Fullscreen
@@ -1349,14 +1406,19 @@ window.enterExperience = function () {
 
     // Removed fixed timeout for NightDrive (handled by onended above)
 
-    // 6. Force Header Collapse
-    const pixelBand = document.getElementById('pixel-band');
+    // 6. Force Header Collapse (Manually & Completely)
     const headerContent = document.getElementById('header-content');
-    if (pixelBand && headerContent) {
-        const isCollapsed = headerContent.classList.contains('max-h-0') || headerContent.style.maxHeight === '0px';
-        if (!isCollapsed) {
-            pixelBand.click();
-        }
+    if (headerContent) {
+        // V80: FULL COLLAPSE (Remove padding/borders too)
+        // Matches layout.js collapse logic perfectly
+        headerContent.classList.remove('max-h-40', 'overflow-visible', 'py-1', 'border-b-2');
+        headerContent.classList.add('max-h-0', 'overflow-hidden', 'py-0', 'border-b-0');
+        headerContent.style.maxHeight = '0px';
+        localStorage.setItem('headerCollapsed', 'true');
+
+        // Update arrow rotation if it exists
+        const arrow = document.getElementById('collapse-arrow');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
     }
 };
 
@@ -1386,9 +1448,16 @@ function buildInterior(roomKey) {
     animatedShaderMaterials = [];
 
     const data = roomContent[roomKey];
+
+    // V101: Crash Fix - Safeguard against invalid room keys
+    if (!data) {
+        console.error(`buildInterior: Room data not found for key '${roomKey}'`);
+        return;
+    }
+
     // V128: Darker Floor (Was 0xdddddd -> 0x2c2c2c)
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x2c2c2c });
-    const wallMat = new THREE.MeshStandardMaterial({ color: data.hex, side: THREE.DoubleSide });
+    const wallMat = new THREE.MeshStandardMaterial({ color: data.hex || 0xffffff, side: THREE.DoubleSide });
 
 
 
@@ -1966,14 +2035,29 @@ function checkIntersectionExternal() {
         let target = intersects[0].object;
         while (target && (!target.userData || !target.userData.name)) target = target.parent;
         if (target && target.userData && target.userData.name) {
-            if (hoveredObject !== target) {
-                hoveredObject = target;
-                document.body.style.cursor = 'pointer';
-                const tooltip = document.getElementById('tooltip');
-                tooltip.textContent = roomContent[hoveredObject.userData.name].title;
-                tooltip.style.opacity = 1;
+            const name = target.userData.name;
+
+            // Safety Check: Only show tooltip if we have content for this object
+            if (roomContent[name]) {
+                if (hoveredObject !== target) {
+                    hoveredObject = target;
+                    document.body.style.cursor = 'pointer';
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.textContent = roomContent[name].title;
+                    tooltip.style.opacity = 1;
+                }
+                return;
+            } else if (name === 'EnterSign') {
+                // V98: Handle Enter Sign Tooltip manually
+                if (hoveredObject !== target) {
+                    hoveredObject = target;
+                    document.body.style.cursor = 'pointer';
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.textContent = "ENTER EXPERIENCE";
+                    tooltip.style.opacity = 1;
+                }
+                return;
             }
-            return;
         }
         // Hover Intro Sign
         if (target && target.userData && target.userData.type === 'introSign') {

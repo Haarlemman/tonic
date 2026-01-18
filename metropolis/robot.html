@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Metropolis: Standing Copper Sculpture</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #d4af37;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1a1208 0%, #000 100%);
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 0.9rem;
+            letter-spacing: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 200;
+            color: #ffb31a;
+            text-shadow: 0 0 20px rgba(255, 179, 26, 0.6);
+        }
+
+        .subtitle {
+            font-size: 0.45rem; 
+            color: #776655; 
+            margin-top: 10px; 
+            letter-spacing: 0.3rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-overlay">
+        <h1>METROPOLIS</h1>
+        <div class="subtitle">Standing Sculpture • Overlapping Scan Framework</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let hel, groundDisc, rings = [], ringLights = [];
+        let copperGoldMat, eyeMat;
+        let eyeBlinkTimer = 0, isEyeOff = false;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.4, 4.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            renderer.toneMappingExposure = 1.4; 
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.4;
+            controls.target.set(0, 0.8, 0);
+
+            // --- RADIANT LIGHTING ---
+            const hemiLight = new THREE.HemisphereLight(0xffccaa, 0x080820, 1.8);
+            scene.add(hemiLight);
+
+            const sun = new THREE.DirectionalLight(0xfff5cc, 4.0);
+            sun.position.set(5, 10, 7.5);
+            scene.add(sun);
+            
+            const rimLight = new THREE.PointLight(0xffffff, 4.5, 15);
+            rimLight.position.set(-5, 5, -5);
+            scene.add(rimLight);
+
+            // --- HIGH-LUSTER COPPER GOLD ---
+            copperGoldMat = new THREE.MeshPhysicalMaterial({ 
+                color: 0xffa500,        
+                metalness: 1.0, 
+                roughness: 0.04,        
+                emissive: 0x663300,     
+                emissiveIntensity: 0.5, 
+                clearcoat: 1.0, 
+                clearcoatRoughness: 0.01,
+                reflectivity: 1.0
+            });
+            
+            eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+
+            // --- SCULPTURE CONSTRUCTION ---
+            hel = new THREE.Group();
+            scene.add(hel);
+
+            // Head (Hairband removed)
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), copperGoldMat);
+            head.scale.set(0.9, 1.2, 1); head.position.y = 1.75; hel.add(head);
+            
+            const neckRing = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.015, 16, 32), copperGoldMat);
+            neckRing.rotation.x = Math.PI/2; neckRing.position.y = 1.55; hel.add(neckRing);
+
+            const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.003, 0.015), new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: 0.8}));
+            mouth.position.set(0, 1.66, 0.17); hel.add(mouth);
+
+            const eyeG = new THREE.SphereGeometry(0.045, 16, 16);
+            const eL = new THREE.Mesh(eyeG, eyeMat); eL.position.set(-0.08, 1.78, 0.16);
+            const eR = new THREE.Mesh(eyeG, eyeMat); eR.position.set(0.08, 1.78, 0.16);
+            hel.add(eL, eR);
+
+            // Torso
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.14, 0.8, 24), copperGoldMat);
+            torso.position.y = 1.1; hel.add(torso);
+            
+            for(let i=0; i<6; i++) {
+                const rib = new THREE.Mesh(new THREE.TorusGeometry(0.22 - (i*0.02), 0.012, 8, 32), copperGoldMat);
+                rib.rotation.x = Math.PI/2; rib.position.y = 0.75 + (i * 0.12);
+                hel.add(rib);
+            }
+
+            // Arms & Hands
+            const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), copperGoldMat); shoulderL.position.set(-0.3, 1.4, 0); hel.add(shoulderL);
+            const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.7), copperGoldMat); armL.position.set(-0.35, 1.0, 0); hel.add(armL);
+            const handL = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 12), copperGoldMat); handL.position.set(-0.35, 0.65, 0); hel.add(handL);
+
+            const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), copperGoldMat); shoulderR.position.set(0.3, 1.4, 0); hel.add(shoulderR);
+            const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.7), copperGoldMat); armR.position.set(0.35, 1.0, 0); hel.add(armR);
+            const handR = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 12), copperGoldMat); handR.position.set(0.35, 0.65, 0); hel.add(handR);
+
+            // Legs & Feet
+            const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.8), copperGoldMat); legL.position.set(-0.12, 0.4, 0); hel.add(legL);
+            const footL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.18), copperGoldMat); footL.position.set(-0.12, 0.025, 0.05); hel.add(footL);
+            const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.8), copperGoldMat); legR.position.set(0.12, 0.4, 0); hel.add(legR);
+            const footR = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.18), copperGoldMat); footR.position.set(0.12, 0.025, 0.05); hel.add(footR);
+
+            // Ground Disc
+            groundDisc = new THREE.Mesh(
+                new THREE.CircleGeometry(1.2, 64),
+                new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.12, side: THREE.DoubleSide })
+            );
+            groundDisc.rotation.x = Math.PI / 2;
+            groundDisc.position.y = 0.002;
+            scene.add(groundDisc);
+
+            // --- COMPOSITE SCAN RINGS (OVERLAPPING PAIRS) ---
+            const ringCount = 6; 
+            const baseRadius = 0.425; 
+            
+            for (let i = 0; i < ringCount; i++) {
+                const ringGroup = new THREE.Group();
+                
+                // Bold Primary Ring
+                const r1 = new THREE.Mesh(
+                    new THREE.TorusGeometry(baseRadius, 0.028, 16, 100), 
+                    new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+                );
+                r1.rotation.x = Math.PI/2;
+                
+                // Overlapping Echo Ring
+                const r2 = new THREE.Mesh(
+                    new THREE.TorusGeometry(baseRadius * 1.12, 0.014, 16, 100), 
+                    new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+                );
+                r2.rotation.x = Math.PI/2;
+
+                ringGroup.add(r1, r2);
+                scene.add(ringGroup);
+                rings.push(ringGroup);
+
+                const light = new THREE.PointLight(0x00ffff, 0, 1.8);
+                scene.add(light);
+                ringLights.push(light);
+            }
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+            if (controls) controls.update();
+
+            // Blinking Eye Logic
+            eyeBlinkTimer -= 0.016;
+            if (eyeBlinkTimer <= 0) {
+                isEyeOff = !isEyeOff;
+                eyeBlinkTimer = isEyeOff ? 0.08 : 3 + Math.random() * 5;
+            }
+            eyeMat.opacity = isEyeOff ? 0.1 : 1.0;
+
+            const rangeY = 2.4; 
+            const topY = 2.4; 
+            const botY = 0.0;
+
+            rings.forEach((group, idx) => {
+                group.position.y = topY - ((time * 0.4 + idx * (rangeY/rings.length)) % rangeY);
+                
+                let p = Math.min(Math.max((group.position.y - botY) / rangeY, 0), 1);
+                const curve = Math.sin(p * Math.PI);
+                const opacity = Math.pow(curve, 1.2) * 0.95;
+
+                group.children.forEach((r, rIdx) => {
+                    r.material.opacity = rIdx === 0 ? opacity : opacity * 0.4;
+                    const pulse = 1.0 + Math.sin(time * 2 + idx) * 0.05;
+                    r.scale.set(
+                        (0.8 + (curve * 0.5)) * pulse, 
+                        (0.8 + (curve * 0.5)) * pulse, 
+                        1
+                    );
+                });
+
+                const l = ringLights[idx];
+                l.position.set(0, group.position.y, 0.3);
+                l.intensity = opacity * 7.0; 
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

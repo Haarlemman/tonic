@@ -118,19 +118,19 @@ function createBathroomInterior() {
              float streak = smoothstep(glareWidth, 0.0, abs(vUv.x - glarePos));
              gloss += streak * 0.4; // Strong glare add
 
-             // V47: HORIZON VOID (Darken Top)
-             float voidFactor = smoothstep(0.6, 0.98, vUv.y);
+             // V56: SHARP HORIZON (Abrupt End)
+             float voidFactor = step(0.65, vUv.y);
              
              vec3 finalColor;
 
              if (uUseVideo > 0.5) {
                  vec4 vid = texture2D(uMap, vUv);
-                 // V54: Add Glare to Video (Screen Effect)
-                 // We add the gloss/streak on top of the video pixels
-                 finalColor = vid.rgb + vec3(gloss * 0.5); // Slightly reduced intensity for video readability
+                 // V54: Glare over Video
+                 finalColor = vid.rgb + vec3(gloss * 0.5); 
              } else {
                  // Checkboard Reflection
                  vec3 finalReflect = tileColor + vec3(gloss);
+                 // Mix to Black abruptly
                  finalColor = mix(finalReflect, vec3(0.0), voidFactor);
              }
 

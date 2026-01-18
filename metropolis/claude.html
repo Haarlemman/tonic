@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Metropolis</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #d4af37;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #CC0000 0%, #050000 100%);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let hel, rings = [], ringLights = [];
+        let goldMat, eyeMat, pupilMat;
+        let eyeBlinkTimer = 0, isEyeOff = false;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.4, 4.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.7; 
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotate = false; 
+            controls.target.set(0, 0.8, 0);
+
+            // --- RADIANT LIGHTING ---
+            const hemiLight = new THREE.HemisphereLight(0xfff5cc, 0x000000, 1.0);
+            scene.add(hemiLight);
+
+            const sun = new THREE.DirectionalLight(0xffdd00, 4.5);
+            sun.position.set(5, 10, 7.5);
+            scene.add(sun);
+            
+            const rimLight = new THREE.PointLight(0xffffff, 5.0, 15);
+            rimLight.position.set(-5, 5, -5);
+            scene.add(rimLight);
+
+            // --- VIBRANT YELLOW GOLD ---
+            goldMat = new THREE.MeshPhysicalMaterial({ 
+                color: 0xffcc00,        
+                metalness: 1.0, 
+                roughness: 0.1, 
+                emissive: 0x331100,     
+                emissiveIntensity: 0.3, 
+                clearcoat: 1.0, 
+                clearcoatRoughness: 0.02,
+                reflectivity: 1.0
+            });
+            
+            eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+            pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true });
+
+            // --- SCULPTURE CONSTRUCTION ---
+            hel = new THREE.Group();
+            scene.add(hel);
+
+            // Torso
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.14, 0.8, 24), goldMat);
+            torso.position.y = 1.1; hel.add(torso);
+
+            // Attached Neck
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.2), goldMat);
+            neck.position.y = 1.55; hel.add(neck);
+
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), goldMat);
+            head.scale.set(0.9, 1.2, 1); head.position.y = 1.75; hel.add(head);
+            
+            // SMALL ROUND EYES (Positioned on head surface)
+            const eyeG = new THREE.SphereGeometry(0.032, 16, 16);
+            const pupilG = new THREE.SphereGeometry(0.016, 16, 16);
+
+            [-0.08, 0.08].forEach(x => {
+                const socket = new THREE.Mesh(new THREE.CircleGeometry(0.045, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
+                socket.position.set(x, 1.78, 0.16); hel.add(socket);
+
+                const e = new THREE.Mesh(eyeG, eyeMat); 
+                e.position.set(x, 1.78, 0.175); // Closer to head surface
+                e.scale.set(1, 1, 0.3); 
+                hel.add(e);
+                
+                const p = new THREE.Mesh(pupilG, pupilMat); 
+                p.position.set(x, 1.78, 0.19); // Pupil just slightly forward
+                p.scale.set(1, 1, 0.1);
+                hel.add(p);
+            });
+            
+            const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.003, 0.015), new THREE.MeshBasicMaterial({color: 0x000000}));
+            mouth.position.set(0, 1.66, 0.17); hel.add(mouth);
+
+            // Attached Limbs
+            const jointG = new THREE.SphereGeometry(0.08, 24, 24);
+            [ -1, 1 ].forEach(side => {
+                const sh = new THREE.Mesh(jointG, goldMat); sh.position.set(0.26 * side, 1.4, 0); hel.add(sh);
+                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.7), goldMat);
+                arm.position.set(0.32 * side, 1.05, 0); hel.add(arm);
+                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), goldMat);
+                hand.position.set(0.32 * side, 0.7, 0); hel.add(hand);
+
+                const hip = new THREE.Mesh(jointG, goldMat); hip.position.set(0.12 * side, 0.72, 0); hel.add(hip);
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.8), goldMat);
+                leg.position.set(0.12 * side, 0.4, 0); hel.add(leg);
+                const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.18), goldMat);
+                foot.position.set(0.12 * side, 0.02, 0.05); hel.add(foot);
+            });
+
+            // Torso Ribbing
+            for(let i=0; i<6; i++) {
+                const rib = new THREE.Mesh(new THREE.TorusGeometry(0.22 - (i*0.02), 0.012, 8, 32), goldMat);
+                rib.rotation.x = Math.PI/2; rib.position.y = 0.75 + (i * 0.12);
+                hel.add(rib);
+            }
+
+            // --- SMOOTH GRADIENT GLOW RINGS ---
+            const ringCount = 6; 
+            const baseRadius = 0.6; 
+            
+            for (let i = 0; i < ringCount; i++) {
+                const ringGroup = new THREE.Group();
+                
+                // Create smooth gradient by stacking progressively larger, more transparent layers
+                const glowLayers = 12; // More layers = smoother gradient
+                
+                for (let layer = 0; layer < glowLayers; layer++) {
+                    const t = layer / (glowLayers - 1); // 0 to 1
+                    const thickness = 0.008 + (t * 0.12); // Thinner overall
+                    const layerOpacity = Math.pow(1 - t, 2.8); // Tighter falloff
+                    
+                    const glowRing = new THREE.Mesh(
+                        new THREE.TorusGeometry(baseRadius, thickness, 16, 100), 
+                        new THREE.MeshBasicMaterial({ 
+                            color: 0x00ffff,
+                            transparent: true, 
+                            opacity: 0,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false,
+                            side: THREE.DoubleSide
+                        })
+                    );
+                    glowRing.rotation.x = Math.PI/2;
+                    glowRing.userData.baseOpacity = layerOpacity;
+                    ringGroup.add(glowRing);
+                }
+
+                scene.add(ringGroup);
+                rings.push(ringGroup);
+
+                // Enhanced body reflection light
+                const light = new THREE.PointLight(0x00ffff, 0, 4.5);
+                scene.add(light);
+                ringLights.push(light);
+            }
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+            if (controls) controls.update();
+
+            // Blink logic
+            eyeBlinkTimer -= 0.016;
+            if (eyeBlinkTimer <= 0) {
+                isEyeOff = !isEyeOff;
+                eyeBlinkTimer = isEyeOff ? 0.08 : 3 + Math.random() * 5;
+            }
+            eyeMat.opacity = isEyeOff ? 0.2 : 1.0;
+            pupilMat.opacity = isEyeOff ? 0.1 : 1.0;
+
+            const rangeY = 2.2, topY = 2.2, botY = 0.0; // Start at ground, no extension below
+            const footLevel = 0.05; // Rings visible right at foot level
+
+            rings.forEach((group, idx) => {
+                group.position.y = topY - ((time * 0.4 + idx * (rangeY/rings.length)) % rangeY);
+                let p = Math.min(Math.max((group.position.y - botY) / rangeY, 0), 1);
+                
+                // Smooth fade using sine curve across full range
+                const curve = Math.sin(p * Math.PI);
+                let opacity = Math.pow(curve, 1.1) * 0.9;
+
+                // Apply smooth gradient across all layers
+                group.children.forEach(ring => {
+                    ring.material.opacity = opacity * ring.userData.baseOpacity;
+                });
+                
+                const pulse = 1.0 + Math.sin(time * 2 + idx) * 0.05;
+                group.scale.set((0.8 + (p * 0.5)) * pulse, (0.8 + (p * 0.5)) * pulse, 1);
+
+                const l = ringLights[idx];
+                l.position.set(0, group.position.y, 0.45);
+                l.intensity = opacity * 50.0; 
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

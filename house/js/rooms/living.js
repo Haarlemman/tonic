@@ -144,12 +144,23 @@ function createLivingRoomInterior() {
     interiorClickables.push(tvMesh);
 
     // --- COFFEE TABLE & DECK OF CARDS ---
+    // V4: Table 50% Higher (0.4 -> 0.6) and with Shadow
     const table = new THREE.Mesh(
-        new THREE.BoxGeometry(2.25, 0.4, 2.25),
+        new THREE.BoxGeometry(2.25, 0.6, 2.25),
         new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.9 })
     );
-    table.position.set(0, 0.2, -1.0);
+    table.position.set(0, 0.3, -1.0); // Y = 0.3 (Half of 0.6)
+    table.castShadow = true; table.receiveShadow = true;
     interiorGroup.add(table);
+
+    // V4: BLACK BOOK
+    const bookGeo = new THREE.BoxGeometry(0.5, 0.08, 0.8);
+    const bookMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const book = new THREE.Mesh(bookGeo, bookMat);
+    // On top of table (Y=0.6). Book center Y = 0.6 + 0.04 = 0.64
+    book.position.set(-0.6, 0.64, -1.2);
+    book.rotation.y = 0.2;
+    interiorGroup.add(book);
 
     const cardGeo = new THREE.BoxGeometry(0.6, 0.15, 0.9);
     const cardCanvas = document.createElement('canvas');
@@ -270,7 +281,7 @@ function createLivingRoomInterior() {
         cardMesh.userData.topicIndex = (index + 1) % topics.length;
     };
 
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 32), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 32), new THREE.MeshStandardMaterial({ color: 0x7f1d1d })); // Darker Red (900)
     rug.rotation.x = -Math.PI / 2; rug.position.y = 0.02;
     interiorGroup.add(rug);
 
@@ -300,9 +311,10 @@ function createLivingRoomInterior() {
     chairGroup.rotation.y = Math.PI / 2;
     interiorGroup.add(chairGroup);
 
-    const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 16), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-    arrow.rotation.x = Math.PI;
-    arrow.position.set(0, 1.2, -1.2);
-    arrow.userData = { type: 'arrow', baseY: 1.2 };
-    interiorGroup.add(arrow);
+    // V4: Removed Arrow (User Request)
+    // const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 16), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+    // arrow.rotation.x = Math.PI;
+    // arrow.position.set(0, 1.2, -1.2);
+    // arrow.userData = { type: 'arrow', baseY: 1.2 };
+    // interiorGroup.add(arrow);
 }
