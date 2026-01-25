@@ -1,8 +1,10 @@
 function createBathroomInterior() {
-    // V128: Cabinet Wood
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.1 });
-    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.1 });
+    // V135: Cabinet Wood
+    // V140: Darker Wood (0x8d6e63 -> 0x463732)
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x463732 });
+    // V140: Darker White (0xeeeeee -> 0x888888)
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.1 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.8, roughness: 0.1 });
 
     // SINK & VANITY (Center)
     const vanity = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.5), woodMat);
@@ -15,7 +17,7 @@ function createBathroomInterior() {
     // MIRROR FRAME
     // V35: Aspect Ratio 9:16 (1.75 x 3.0)
     // V49: Thicker Border (1.95 x 3.20) -> Gap ~0.1 on sides
-    const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.95, 3.20, 0.1), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+    const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.95, 3.20, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111 })); // 0x222222 -> 0x111111
     mirrorFrame.position.set(0, 3.8, -4.9);
     mirrorFrame.castShadow = true;
     interiorGroup.add(mirrorFrame);
@@ -68,7 +70,8 @@ function createBathroomInterior() {
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
     // 2. Add Darker Ambience
-    const darkAmb = new THREE.PointLight(0x223344, 0.5, 15);
+    // V140: Dimmed (0.5 -> 0.2)
+    const darkAmb = new THREE.PointLight(0x223344, 0.2, 15);
     darkAmb.position.set(0, 6, 0);
     interiorGroup.add(darkAmb);
 
@@ -259,7 +262,7 @@ function createBathroomInterior() {
     const checkCanvas = document.createElement('canvas');
     checkCanvas.width = 512; checkCanvas.height = 512;
     const cctx = checkCanvas.getContext('2d');
-    cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 512, 512);
+    cctx.fillStyle = '#888888'; cctx.fillRect(0, 0, 512, 512); // V140: Darker White
     cctx.fillStyle = '#111111'; // Not pure black, but very dark
     const checkSize = 128; // Large Squares
     for (let y = 0; y < 512; y += checkSize) {

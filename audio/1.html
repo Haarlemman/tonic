@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Detroit Model φ | Acid Techno & Sampler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body { font-family: 'Share Tech Mono', monospace; background-color: #050505; color: #ccc; overflow: hidden; user-select: none; -webkit-user-select: none; }
+        input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; height: 24px; }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #1f2937; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 8px; background: #9ca3af; margin-top: -5px; border: 1px solid #000; }
+        .accent-orange::-webkit-slider-thumb { background: #f97316; }
+        .accent-red::-webkit-slider-thumb { background: #ef4444; }
+        .panel { background: rgba(17, 24, 39, 0.6); border: 1px solid rgba(55, 65, 81, 0.5); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .scanlines { background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05)); background-size: 100% 4px; position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+        .led-off { color: #4b5563; }
+        .led-on { color: #ef4444; text-shadow: 0 0 5px #ef4444; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .recording-pulse { animation: recPulse 1s infinite; background: #ef4444 !important; color: white; }
+        @keyframes recPulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0a0a0a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body class="h-[100dvh] w-full flex flex-col items-center bg-black">
+    <div class="scanlines"></div>
+
+    <div id="main-interface" class="w-full h-full md:max-w-4xl bg-neutral-950 md:border-x border-gray-800 shadow-2xl overflow-hidden relative z-10 flex flex-col">
+        
+        <!-- Header -->
+        <div class="p-3 border-b border-gray-800 flex justify-between items-center shrink-0 bg-gray-900/80 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
+                <h1 class="text-xl font-bold tracking-widest text-gray-200 uppercase">DETROIT φ <span class="text-[10px] text-orange-500 font-normal ml-2">SAMPLER EDITION</span></h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 bg-black/50 p-1 rounded border border-gray-800">
+                    <button id="bpm-minus" class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-sm">-</button>
+                    <span id="tempo-display" class="text-sm font-bold w-8 text-center text-orange-400">128</span>
+                    <button id="bpm-plus" class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-sm">+</button>
+                </div>
+                <button id="play-btn" class="w-10 h-10 rounded-full border border-green-500 text-green-500 flex items-center justify-center bg-gray-900">
+                    <svg id="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="stop-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect x="6" y="6" width="12" height="12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable content -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 space-y-3 pb-20">
+            
+            <!-- Sampler Panel -->
+            <div class="panel border-red-900/30 bg-red-900/5">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-[10px] font-bold text-red-500 uppercase flex items-center gap-2">
+                        <span id="mic-led" class="text-lg led-off">•</span> Voice / Noise Sampler
+                    </h2>
+                    <button id="init-mic" class="px-2 py-1 text-[9px] border border-red-800 rounded text-red-400 uppercase hover:bg-red-900/20">Wake Mic</button>
+                </div>
+                <div class="flex gap-4 items-center">
+                    <button id="record-btn" class="flex-1 h-12 bg-gray-800 border border-gray-700 rounded text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-20" disabled>
+                        Hold to Capture Noise
+                    </button>
+                    <div class="flex flex-col gap-1 w-32">
+                        <label class="text-[8px] text-red-600 uppercase">Pitch / Rate</label>
+                        <input id="sample-pitch" type="range" min="0.2" max="2.0" step="0.01" value="1.0" class="accent-red h-2">
+                    </div>
+                </div>
+                <div id="sample-status" class="text-[8px] mt-2 text-gray-600 italic">Microphone inactive. Click 'Wake Mic' to begin.</div>
+            </div>
+
+            <!-- TB-303 Panel -->
+            <div class="panel">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase">TB-303 Acid</h2>
+                    <button id="wave-btn" class="px-2 py-0.5 text-[9px] border border-gray-700 rounded text-gray-400">Saw</button>
+                </div>
+                <div class="grid grid-cols-4 gap-3 px-1">
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Cutoff</label><input id="cutoff-slider" type="range" min="50" max="1500" value="400" class="accent-orange"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Res</label><input id="res-slider" type="range" min="0" max="30" value="15" class="accent-orange"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Env</label><input id="env-slider" type="range" min="0" max="4000" value="2500" class="accent-orange"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[8px] text-gray-500 uppercase">Decay</label><input id="decay-slider" type="range" min="0.1" max="0.8" step="0.05" value="0.2" class="accent-orange"></div>
+                </div>
+            </div>
+
+            <!-- Sequencer Panel -->
+            <div class="panel">
+                <div class="w-full overflow-x-auto no-scrollbar">
+                    <div class="min-w-[500px] space-y-1" id="sequencer-grid"></div>
+                </div>
+                <div class="mt-2 flex gap-2 text-[9px]">
+                    <button id="clear-btn" class="px-2 py-1 border border-gray-700 rounded text-gray-500 uppercase hover:text-red-400">Clear</button>
+                    <button id="random-btn" class="px-2 py-1 border border-gray-700 rounded text-gray-500 uppercase hover:text-blue-400">Random</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const STEPS = 16;
+        const TRACKS = [
+            { name: "BD 909", color: "#ff5555" },
+            { name: "SD 808", color: "#ffaa55" },
+            { name: "CH 808", color: "#ffff55" },
+            { name: "OH 909", color: "#55ff55" },
+            { name: "ACID", color: "#ff55ff" },
+            { name: "DRONE", color: "#a855f7" },
+            { name: "SAMPLE", color: "#ef4444" } // The new Sampler track
+        ];
+
+        class AudioEngine {
+            constructor() {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.7;
+                this.comp = this.ctx.createDynamicsCompressor();
+                this.comp.threshold.value = -15;
+                this.masterGain.connect(this.comp);
+                this.comp.connect(this.ctx.destination);
+
+                this.tempo = 128;
+                this.params303 = { cutoff: 400, res: 15, env: 2500, decay: 0.2, wave: 'sawtooth' };
+                this.sampleBuffer = null;
+                this.samplePitch = 1.0;
+                
+                // Mic Recording properties
+                this.mediaRecorder = null;
+                this.chunks = [];
+            }
+
+            async initSampler() {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this.mediaRecorder = new MediaRecorder(stream);
+                this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
+                this.mediaRecorder.onstop = async () => {
+                    const blob = new Blob(this.chunks, { type: 'audio/ogg; codecs=opus' });
+                    const arrayBuffer = await blob.arrayBuffer();
+                    this.sampleBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                    document.getElementById('sample-status').innerText = "Sample Ready. Program track 7 to play it.";
+                    this.chunks = [];
+                };
+            }
+
+            playDrum(type, time) {
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.connect(g); g.connect(this.masterGain);
+                
+                if (type === 0) { // Kick
+                    osc.frequency.setValueAtTime(150, time);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    g.gain.setValueAtTime(1, time);
+                    g.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    osc.start(time); osc.stop(time + 0.5);
+                } else if (type === 1) { // Snare
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(250, time);
+                    g.gain.setValueAtTime(0.4, time); g.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                    osc.start(time); osc.stop(time + 0.1);
+                    this.noise(time, 0.1, 1000);
+                } else if (type === 2) { // Closed Hat
+                    this.noise(time, 0.05, 8000, 0.2);
+                } else if (type === 3) { // Open Hat
+                    this.noise(time, 0.3, 7000, 0.3);
+                }
+            }
+
+            noise(time, dur, freq, vol = 0.3) {
+                const bSize = this.ctx.sampleRate * dur;
+                const buff = this.ctx.createBuffer(1, bSize, this.ctx.sampleRate);
+                const d = buff.getChannelData(0);
+                for(let i=0; i<bSize; i++) d[i] = Math.random() * 2 - 1;
+                const src = this.ctx.createBufferSource(); src.buffer = buff;
+                const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = freq;
+                const g = this.ctx.createGain();
+                src.connect(f); f.connect(g); g.connect(this.masterGain);
+                g.gain.setValueAtTime(vol, time); g.gain.exponentialRampToValueAtTime(0.01, time + dur);
+                src.start(time);
+            }
+
+            play303(time, accent) {
+                const osc = this.ctx.createOscillator();
+                const f = this.ctx.createBiquadFilter();
+                const g = this.ctx.createGain();
+                osc.type = this.params303.wave; osc.frequency.value = 65.41; // C2
+                f.type = 'lowpass'; f.Q.value = this.params303.res;
+                const cut = this.params303.cutoff;
+                f.frequency.setValueAtTime(cut, time);
+                f.frequency.exponentialRampToValueAtTime(cut + this.params303.env, time + 0.05);
+                f.frequency.exponentialRampToValueAtTime(cut, time + this.params303.decay);
+                g.gain.setValueAtTime(0, time);
+                g.gain.linearRampToValueAtTime(accent ? 0.6 : 0.4, time + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.01, time + this.params303.decay);
+                osc.connect(f); f.connect(g); g.connect(this.masterGain);
+                osc.start(time); osc.stop(time + 0.5);
+            }
+
+            playSample(time) {
+                if (!this.sampleBuffer) return;
+                const src = this.ctx.createBufferSource();
+                src.buffer = this.sampleBuffer;
+                src.playbackRate.value = this.samplePitch;
+                src.connect(this.masterGain);
+                src.start(time);
+            }
+        }
+
+        let engine = null;
+        let isPlaying = false;
+        let currentStep = 0;
+        let nextNoteTime = 0.0;
+        let grid = TRACKS.map(() => Array(STEPS).fill(false));
+
+        // UI Logic
+        function initUI() {
+            const container = document.getElementById('sequencer-grid');
+            container.innerHTML = '';
+            
+            TRACKS.forEach((track, rIdx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 h-7';
+                row.innerHTML = `<div class="w-16 text-[8px] font-bold text-gray-500 uppercase text-right">${track.name}</div>`;
+                
+                const stepsCont = document.createElement('div');
+                stepsCont.className = 'flex-1 flex gap-1 h-full';
+                
+                grid[rIdx].forEach((on, cIdx) => {
+                    const btn = document.createElement('button');
+                    btn.className = `flex-1 rounded-sm border border-gray-800 transition-all ${cIdx % 4 === 0 ? 'border-l-gray-600' : ''}`;
+                    if (on) btn.style.backgroundColor = track.color;
+                    
+                    btn.onclick = () => {
+                        grid[rIdx][cIdx] = !grid[rIdx][cIdx];
+                        btn.style.backgroundColor = grid[rIdx][cIdx] ? track.color : 'transparent';
+                        btn.style.boxShadow = grid[rIdx][cIdx] ? `0 0 8px ${track.color}44` : 'none';
+                    };
+                    stepsCont.appendChild(btn);
+                });
+                row.appendChild(stepsCont);
+                container.appendChild(row);
+            });
+        }
+
+        function schedule() {
+            while (nextNoteTime < engine.ctx.currentTime + 0.1) {
+                if (grid[0][currentStep]) engine.playDrum(0, nextNoteTime);
+                if (grid[1][currentStep]) engine.playDrum(1, nextNoteTime);
+                if (grid[2][currentStep]) engine.playDrum(2, nextNoteTime);
+                if (grid[3][currentStep]) engine.playDrum(3, nextNoteTime);
+                if (grid[4][currentStep]) engine.play303(nextNoteTime, true);
+                if (grid[6][currentStep]) engine.playSample(nextNoteTime);
+
+                const secondsPerBeat = 60.0 / engine.tempo;
+                nextNoteTime += 0.25 * secondsPerBeat;
+                currentStep = (currentStep + 1) % STEPS;
+            }
+            if (isPlaying) requestAnimationFrame(schedule);
+        }
+
+        // Event Listeners
+        document.getElementById('init-mic').onclick = async (e) => {
+            if (!engine) engine = new AudioEngine();
+            await engine.initSampler();
+            e.target.innerText = "Mic Active";
+            e.target.classList.add('opacity-30');
+            document.getElementById('mic-led').className = 'text-lg led-on';
+            document.getElementById('record-btn').disabled = false;
+            document.getElementById('sample-status').innerText = "Hold the button below to record a sound.";
+        };
+
+        const recBtn = document.getElementById('record-btn');
+        recBtn.onmousedown = () => {
+            if (!engine || !engine.mediaRecorder) return;
+            engine.mediaRecorder.start();
+            recBtn.classList.add('recording-pulse');
+            document.getElementById('sample-status').innerText = "Recording...";
+        };
+        recBtn.onmouseup = () => {
+            if (!engine || !engine.mediaRecorder) return;
+            engine.mediaRecorder.stop();
+            recBtn.classList.remove('recording-pulse');
+            document.getElementById('sample-status').innerText = "Processing...";
+        };
+
+        document.getElementById('sample-pitch').oninput = (e) => {
+            if (engine) engine.samplePitch = parseFloat(e.target.value);
+        };
+
+        document.getElementById('play-btn').onclick = () => {
+            if (!engine) engine = new AudioEngine();
+            if (engine.ctx.state === 'suspended') engine.ctx.resume();
+            
+            isPlaying = !isPlaying;
+            document.getElementById('play-icon').classList.toggle('hidden');
+            document.getElementById('stop-icon').classList.toggle('hidden');
+            
+            if (isPlaying) {
+                nextNoteTime = engine.ctx.currentTime + 0.1;
+                schedule();
+            }
+        };
+
+        document.getElementById('bpm-plus').onclick = () => { if(engine) { engine.tempo++; document.getElementById('tempo-display').innerText = engine.tempo; } };
+        document.getElementById('bpm-minus').onclick = () => { if(engine) { engine.tempo--; document.getElementById('tempo-display').innerText = engine.tempo; } };
+
+        document.getElementById('clear-btn').onclick = () => { grid = TRACKS.map(() => Array(STEPS).fill(false)); initUI(); };
+        document.getElementById('random-btn').onclick = () => { grid = TRACKS.map(() => Array(STEPS).fill(0).map(() => Math.random() > 0.8)); initUI(); };
+
+        document.getElementById('wave-btn').onclick = (e) => {
+            if (!engine) return;
+            engine.params303.wave = engine.params303.wave === 'sawtooth' ? 'square' : 'sawtooth';
+            e.target.innerText = engine.params303.wave === 'sawtooth' ? 'Saw' : 'Sqr';
+        };
+
+        initUI();
+    </script>
+</body>
+</html>

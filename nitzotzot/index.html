@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tonic & Bone - The Unleashed Ray</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #010101; color: #fff;
+            overflow: hidden; touch-action: none; position: fixed;
+            font-family: -apple-system, system-ui, sans-serif;
+        }
+        #ui {
+            position: absolute; top: 30px; left: 20px; right: 20px;
+            z-index: 100; pointer-events: none;
+        }
+        h1 { font-size: 0.9rem; color: #d4af37; margin: 0; font-weight: 300; text-transform: uppercase; letter-spacing: 2.3px; }
+        p { font-size: 0.7rem; opacity: 0.5; margin: 5px 0 0 0; line-height: 1.5; max-width: 280px; }
+        
+        #status {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: #010101; z-index: 1000; color: #d4af37; font-size: 0.7rem; letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status">UNLEASHING THE RAY...</div>
+
+    <div id="ui">
+        <h1>Nitzotzot (The Ray)</h1>
+        <p>The tonic bursts through the skeletal frame. A concentrated, shimmering beam converges at the fracture and spills into the annex.</p>
+    </div>
+
+    <script>
+        let scene, camera, renderer, clock;
+        
+        // Navigation: Start looking directly into the high-intensity fracture
+        let targetRotX = 0.1, targetRotY = 0.0; 
+        let curRotX = 0.1, curRotY = 0.0;
+        let targetDist = 4.0, curDist = 10;
+        let lastX = 0, lastY = 0;
+        const updatables = [];
+
+        function init() {
+            if (typeof THREE === 'undefined') return;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x010101);
+            clock = new THREE.Clock();
+
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            // Enable shadows to ground the ray pool
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // -- LIGHTING --
+            scene.add(new THREE.AmbientLight(0xffffff, 0.04));
+            
+            const rimLight = new THREE.DirectionalLight(0xfff5e6, 0.3);
+            rimLight.position.set(5, 5, 5);
+            scene.add(rimLight);
+
+            // -- THE BOOKCASE --
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x110d0a, roughness: 0.9 });
+            const shelfY = 1.8; 
+            
+            const shelf = new THREE.Mesh(new THREE.BoxGeometry(4, 0.1, 2.5), woodMat);
+            shelf.position.y = shelfY;
+            shelf.receiveShadow = true;
+            scene.add(shelf);
+
+            const back = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 0.1), woodMat);
+            back.position.set(0, 3, -1.2); 
+            back.receiveShadow = true;
+            scene.add(back);
+
+            // -- THE ARTIFACT --
+            const artifact = createIntenseRayArtifact();
+            artifact.position.set(0, 2.3, 0.5); 
+            scene.add(artifact);
+
+            setupControls();
+            document.getElementById('status').style.display = 'none';
+            animate();
+        }
+
+        function createIntenseRayArtifact() {
+            const group = new THREE.Group();
+            
+            // 1. THE TONIC CORE (Spark)
+            const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const spark = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), sparkMat);
+            group.add(spark);
+
+            // THE PRIMARY LIGHT SOURCE (High Intensity for Shadow Projection)
+            const spotLight = new THREE.SpotLight(0xffaa22, 60, 12); // Doubled Intensity
+            spotLight.position.set(0, 0, 0);
+            spotLight.target.position.set(0, 0, 5);
+            spotLight.angle = Math.PI / 4;
+            spotLight.penumbra = 0.7;
+            spotLight.castShadow = true;
+            group.add(spotLight);
+            group.add(spotLight.target);
+
+            // 2. THE VOLUMETRIC "PORTAL" RAY (Custom Shader)
+            const rayGroup = new THREE.Group();
+            const rayMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    color: { value: new THREE.Color(0xff8822) },
+                    intensity: { value: 0.8 } // Increased baseline bloom
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform vec3 color;
+                    uniform float intensity;
+                    varying vec2 vUv;
+                    void main() {
+                        // vUv.y is length (0 source, 1 end)
+                        // vUv.x is width (0.5 center)
+
+                        // SHARPER GRADIENT: pow() makes it converge much more intensely at source
+                        float lengthFade = pow(1.0 - vUv.y, 1.8); 
+                        
+                        // WIDTH GRADIENT: Blurs edges
+                        float widthFade = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+                        
+                        // INNER HOT CORE: Adds a secondary, tighter beam in the center
+                        float innerCore = smoothstep(0.3, 0.5, vUv.x) * smoothstep(0.7, 0.5, vUv.x);
+                        innerCore = pow(innerCore, 2.0) * lengthFade * 0.5;
+
+                        float alpha = (lengthFade * widthFade * 0.5) + innerCore;
+                        
+                        // VIBRANT PULSE
+                        alpha *= (intensity + sin(time * 12.0) * 0.15);
+                        
+                        gl_FragColor = vec4(color, alpha);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
+
+            // Tapered plane geometry (Converges at 0, widens at 4)
+            const rayPlaneGeo = new THREE.PlaneGeometry(0.05, 4.5); 
+            const pos = rayPlaneGeo.attributes.position;
+            for(let i=0; i<pos.count; i++) {
+                let yVal = pos.getY(i);
+                let xVal = pos.getX(i);
+                let normalizedY = (yVal + 2.25) / 4.5;
+                // Wider fan: 20x multiplier at end
+                pos.setX(i, xVal * (0.2 + normalizedY * 20.0)); 
+            }
+            rayPlaneGeo.translate(0, 2.25, 0);
+            rayPlaneGeo.rotateX(Math.PI / 2);
+
+            // Add 4 intersecting planes for a denser "volume"
+            for(let i=0; i<4; i++) {
+                const ray = new THREE.Mesh(rayPlaneGeo, rayMat);
+                ray.rotation.z = (i / 4) * Math.PI;
+                rayGroup.add(ray);
+            }
+            group.add(rayGroup);
+
+            // 3. THE BONES (Heavy, weathered, fractured shell)
+            const shellGroup = new THREE.Group();
+            const boneMat = new THREE.MeshStandardMaterial({ 
+                color: 0xeee8d5, 
+                roughness: 1.0,
+                side: THREE.DoubleSide,
+                flatShading: true
+            });
+
+
+            const shardCount = 150; 
+            for(let i = 0; i < shardCount; i++) {
+                const phi = Math.acos(-1 + (2 * i) / shardCount);
+                const theta = Math.sqrt(shardCount * Math.PI) * phi;
+                const x = Math.sin(phi) * Math.sin(theta);
+                const y = Math.cos(phi);
+                const z = Math.sin(phi) * Math.cos(theta);
+
+                // MASSIVE JAGGED FISSURE
+                const crackCenter = Math.sin(y * 4.0) * 0.18; 
+                const crackWidth = 0.3 + Math.abs(Math.sin(y * 2.0)) * 0.2;
+                
+                if (z > 0.08 && Math.abs(x - crackCenter) < crackWidth) {
+                    continue; 
+                }
+
+                const sGeo = new THREE.IcosahedronGeometry(0.48, 0);
+                sGeo.scale(0.3 + Math.random()*0.2, 0.5 + Math.random()*0.8, 0.3 + Math.random()*0.2);
+                
+                const shard = new THREE.Mesh(sGeo, boneMat);
+                shard.position.set(x * 0.18, y * 0.18, z * 0.18);
+                shard.rotation.set(Math.random(), Math.random(), Math.random());
+                shard.castShadow = true;
+                shard.receiveShadow = true;
+                shellGroup.add(shard);
+            }
+            group.add(shellGroup);
+
+            updatables.push((t) => {
+                rayMat.uniforms.time.value = t;
+                const pulse = 40 + Math.sin(t * 5) * 20;
+                spotLight.intensity = pulse;
+                
+                // Keep the opening forward
+                shellGroup.rotation.y = Math.sin(t * 0.3) * 0.05; 
+            });
+
+            return group;
+        }
+
+        function setupControls() {
+            const el = document.body;
+            let isDragging = false;
+            el.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mousemove', (e) => {
+                if(!isDragging) return;
+                targetRotY -= (e.clientX - lastX) * 0.005; 
+                targetRotX += (e.clientY - lastY) * 0.005;
+                lastX = e.clientX; lastY = e.clientY;
+            });
+            window.addEventListener('wheel', (e) => {
+                targetDist = Math.max(2.5, Math.min(10, targetDist + e.deltaY * 0.005));
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+            updatables.forEach(f => f(t));
+
+            const damping = 0.08;
+            curRotX += (targetRotX - curRotX) * damping;
+            curRotY += (targetRotY - curRotY) * damping;
+            curDist += (targetDist - curDist) * damping;
+
+            curRotX = Math.max(-0.2, Math.min(1.2, curRotX));
+
+            camera.position.set(
+                curDist * Math.sin(curRotY) * Math.cos(curRotX),
+                curDist * Math.sin(curRotX) + 2.5,
+                curDist * Math.cos(curRotY) * Math.cos(curRotX)
+            );
+            camera.lookAt(0, 2.5, 0);
+            renderer.render(scene, camera);
+        }
+
+        init();
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

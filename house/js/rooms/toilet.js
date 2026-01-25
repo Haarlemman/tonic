@@ -7,12 +7,13 @@ function createToiletInterior() {
     const toiletZ = backZ + 1.0;
     const shelfZ = backZ + 0.5;
 
-    const ceramicMat = new THREE.MeshStandardMaterial({ color: 0xeeeeff, roughness: 0.2 });
+    // V140: Darker Ceramic (0xeeeeff -> 0x8888aa)
+    const ceramicMat = new THREE.MeshStandardMaterial({ color: 0x8888aa, roughness: 0.2 });
     const toiletGroup = new THREE.Group();
     const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.35, 0.6, 32), ceramicMat);
-    bowl.position.y = 0.3; toiletGroup.add(bowl);
+    bowl.position.y = 0.3; bowl.castShadow = true; toiletGroup.add(bowl);
     const tank = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.25), ceramicMat);
-    tank.position.set(0, 0.85, -0.3); toiletGroup.add(tank);
+    tank.position.set(0, 0.85, -0.3); tank.castShadow = true; toiletGroup.add(tank);
 
     // Water in Bowl
     const waterGeo = new THREE.CircleGeometry(0.3, 32);
@@ -28,16 +29,18 @@ function createToiletInterior() {
     toiletGroup.add(water);
 
     // Black Toilet Seat - LARGER TO COVER RIM
+    // V140: Darker Seat (0x111111 -> 0x050505)
     // Bowl top radius is 0.5.
     // Seat should match.
     // TorusGeometry(radius, tube, radial, tubular)
     // radius = 0.5, tube = 0.1
-    const blackWoodMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.1 });
+    const blackWoodMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.1 });
     const seat = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.1, 24, 64), blackWoodMat);
     seat.rotation.x = -Math.PI / 2;
     // seat.rotation.z = Math.PI; 
     seat.position.y = 0.6; // Sit nicely on rim
     // seat.scale.set(1, 1.2, 1); // Oval? Bowl is cylinder (circle).
+    seat.castShadow = true;
     toiletGroup.add(seat);
 
     // Scale 2.0 per archive
@@ -45,10 +48,12 @@ function createToiletInterior() {
     toiletGroup.position.set(0, 0, toiletZ);
     interiorGroup.add(toiletGroup);
 
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
+    // V140: Darker Shelf (0x5D4037 -> 0x2e201b)
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x2e201b });
     // Narrow Shelf
     const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.05, 0.6), woodMat);
     shelf.position.set(0, 3.2, shelfZ);
+    shelf.castShadow = true;
     interiorGroup.add(shelf);
 
     // Enlarged Notepad with BOLDER CENTERED TEXT
@@ -56,6 +61,7 @@ function createToiletInterior() {
     const padMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });
     const notepad = new THREE.Mesh(padGeo, padMat);
     notepad.position.set(0.3, 0.045, 0.05);
+    notepad.castShadow = true;
 
     const lineCanvas = document.createElement('canvas');
     lineCanvas.width = 512; lineCanvas.height = 512; // Higher res for clear text
@@ -142,7 +148,12 @@ function createToiletInterior() {
     lampGroup.add(bulb);
 
     // COZY WARM LIGHT (Brighter)
-    const backLight = new THREE.PointLight(0xffaa33, 0.6, 15);
+    // V140: Dimmed (0.6 -> 0.3)
+    const backLight = new THREE.PointLight(0xffaa33, 0.3, 15);
+    backLight.castShadow = true;
+    backLight.shadow.mapSize.width = 1024; // V-REFINE: Sharp Shadows
+    backLight.shadow.mapSize.height = 1024;
+    backLight.shadow.bias = -0.0001;
     lampGroup.add(backLight);
 
     // V: FLICKER ANIMATION (Stronger)

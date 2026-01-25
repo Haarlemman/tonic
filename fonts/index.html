@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Typography Studio - THE PREMONITION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Opentype.js is used to access the actual vector paths of the font -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #f1f5f9;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        .control-panel {
+            background: rgba(17, 17, 17, 0.95);
+            backdrop-filter: blur(12px);
+            border-right: 2px solid #333;
+        }
+        input[type="range"] {
+            accent-color: #facc15;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1em;
+        }
+    </style>
+</head>
+<body class="flex h-screen">
+
+    <!-- Sidebar Controls -->
+    <div class="control-panel w-80 h-full p-6 flex flex-col gap-4 z-10 shadow-2xl overflow-y-auto">
+        <div class="border-b border-zinc-800 pb-4">
+            <h1 class="text-xl font-bold tracking-tighter text-white uppercase italic">3D Studio v19.7</h1>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">True Vector Projection</p>
+        </div>
+
+        <div class="space-y-4">
+            <label class="block">
+                <span class="slider-label">Text Content</span>
+                <input type="text" id="textInput" value="THE PREMONITION" 
+                    class="mt-1 block w-full bg-zinc-900 border border-zinc-700 rounded-none px-3 py-2 text-white focus:outline-none focus:border-amber-500 font-sans font-black tracking-tighter">
+            </label>
+
+            <label class="block">
+                <span class="slider-label">Font Style</span>
+                <select id="fontInput" class="mt-1 block w-full bg-zinc-900 border border-zinc-700 rounded-none px-3 py-2 text-white outline-none focus:border-amber-500 text-xs">
+                    <option value="sans-serif">Sans Serif - Bold</option>
+                    <option value="serif">Classic Serif</option>
+                    <option value="monospace">Typewriter Mono</option>
+                </select>
+                <p id="fontStatus" class="text-[9px] text-zinc-600 mt-1 italic">Loading vector font...</p>
+            </label>
+
+            <div class="space-y-4">
+                <label class="block">
+                    <span class="slider-label">Warp Taper <span id="taperVal" class="text-amber-500">0.0</span></span>
+                    <input type="range" id="taperInput" min="-0.95" max="0.95" step="0.01" value="0" class="w-full">
+                </label>
+
+                <label class="block">
+                    <span class="slider-label">Letter Spacing <span id="kerningVal" class="text-amber-500">0</span></span>
+                    <input type="range" id="kerningInput" min="-20" max="100" value="0" class="w-full">
+                </label>
+
+                <label class="block">
+                    <span class="slider-label">Width Stretch <span id="widthVal" class="text-amber-500">1.0</span></span>
+                    <input type="range" id="widthInput" min="0.1" max="4" step="0.1" value="1" class="w-full">
+                </label>
+
+                <label class="block">
+                    <span class="slider-label">Height Stretch <span id="heightVal" class="text-amber-500">1.0</span></span>
+                    <input type="range" id="heightInput" min="0.1" max="4" step="0.1" value="1" class="w-full">
+                </label>
+                
+                <label class="block">
+                    <span class="slider-label">Field of View <span id="fovVal" class="text-amber-500">75</span></span>
+                    <input type="range" id="fovInput" min="10" max="150" value="75" class="w-full">
+                </label>
+
+                <button id="resetView" class="w-full border border-zinc-700 hover:bg-zinc-800 text-zinc-400 py-2 text-[10px] uppercase font-bold tracking-widest transition-colors mt-2">
+                    Reset Camera View
+                </button>
+            </div>
+
+            <label class="block border-t border-zinc-800 pt-4">
+                <span class="slider-label">Preview Atmosphere</span>
+                <select id="colorScheme" class="mt-1 block w-full bg-zinc-900 border border-zinc-700 rounded-none px-3 py-2 text-white outline-none">
+                    <option value="gold" selected>Oxidized Gold</option>
+                    <option value="monochrome">Stark Paper / Ink</option>
+                    <option value="classic">Bass Red / Black</option>
+                    <option value="electric">Electric Cyan</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="mt-auto pt-4 border-t border-zinc-800 space-y-2">
+            <button id="downloadBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-none transition-all active:scale-95 uppercase text-[10px] tracking-[0.2em]">
+                Capture PNG
+            </button>
+            <button id="exportSvgBtn" class="w-full border border-amber-600 text-amber-500 hover:bg-amber-600 hover:text-white font-bold py-3 px-4 rounded-none transition-all active:scale-95 uppercase text-[10px] tracking-[0.2em]">
+                True Vector SVG
+            </button>
+        </div>
+    </div>
+
+    <!-- 3D Canvas Container -->
+    <div id="threeContainer" class="flex-1 cursor-move" style="background-color: #0a0a0a;"></div>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const fontInput = document.getElementById('fontInput');
+        const taperInput = document.getElementById('taperInput');
+        const kerningInput = document.getElementById('kerningInput');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const fovInput = document.getElementById('fovInput');
+        const colorScheme = document.getElementById('colorScheme');
+        const resetBtn = document.getElementById('resetView');
+        const threeContainer = document.getElementById('threeContainer');
+        const fontStatus = document.getElementById('fontStatus');
+        
+        const themes = {
+            gold: { bg: '#0a0a0a', text: '#facc15' },
+            classic: { bg: '#b91c1c', text: '#000000' },
+            monochrome: { bg: '#e5e5e5', text: '#111111' },
+            electric: { bg: '#083344', text: '#22d3ee' }
+        };
+
+        let scene, camera, renderer, textPlane, textTexture, textCanvas, tctx, controls;
+        const buffer = document.createElement('canvas');
+        const bctx = buffer.getContext('2d');
+
+        // Font data for Vector Export
+        let vectorFont;
+        
+        function draw() {
+            if (!renderer || !textPlane) return;
+
+            const text = textInput.value.toUpperCase() || "TEXT";
+            const theme = themes[colorScheme.value];
+            const kerning = parseInt(kerningInput.value);
+            const taper = parseFloat(taperInput.value);
+            
+            const fontMap = {
+                'sans-serif': '900 240px "Arial Black", sans-serif',
+                'serif': '900 240px "Times New Roman", serif',
+                'monospace': '900 240px "Courier New", monospace'
+            };
+            
+            const fontSize = 240;
+            bctx.font = fontMap[fontInput.value];
+            if ('letterSpacing' in bctx) bctx.letterSpacing = `${kerning}px`;
+            
+            const textWidth = bctx.measureText(text).width;
+            
+            buffer.width = textWidth + 120;
+            buffer.height = fontSize * 1.8;
+            bctx.clearRect(0, 0, buffer.width, buffer.height);
+            bctx.font = fontMap[fontInput.value];
+            if ('letterSpacing' in bctx) bctx.letterSpacing = `${kerning}px`;
+            bctx.textAlign = 'center';
+            bctx.textBaseline = 'middle';
+            bctx.fillStyle = theme.text;
+            bctx.fillText(text, buffer.width / 2, buffer.height / 2);
+
+            textCanvas.width = buffer.width;
+            textCanvas.height = buffer.height;
+            tctx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+
+            for (let x = 0; x < textCanvas.width; x++) {
+                const p = x / textCanvas.width;
+                let scale = taper >= 0 ? (1 - (p * taper)) : (1 - (Math.abs(taper) * (1 - p)));
+                const h = textCanvas.height * scale;
+                const dy = (textCanvas.height - h) / 2;
+                tctx.drawImage(buffer, x, 0, 1, buffer.height, x, dy, 1, h);
+            }
+
+            textTexture.needsUpdate = true;
+            const aspect = textCanvas.width / textCanvas.height;
+            textPlane.geometry.dispose();
+            textPlane.geometry = new THREE.PlaneGeometry(aspect * 2, 2);
+            threeContainer.style.backgroundColor = theme.bg;
+        }
+
+        const FONT_URL = 'https://cdn.jsdelivr.net/npm/@fontsource/roboto/files/roboto-latin-900-normal.woff';
+
+        opentype.load(FONT_URL, function(err, font) {
+            if (err) {
+                console.error('Font could not be loaded: ' + err);
+                fontStatus.innerText = "Error loading vector font. Retrying...";
+                fontStatus.classList.add('text-red-500');
+                
+                opentype.load('https://cdn.jsdelivr.net/npm/roboto-font-face@0.10.0/fonts/roboto/Roboto-Black.ttf', (err2, font2) => {
+                    if (err2) {
+                        fontStatus.innerText = "Vector font disabled.";
+                    } else {
+                        vectorFont = font2;
+                        fontStatus.innerText = "Vector font ready.";
+                        fontStatus.classList.remove('text-red-500');
+                        fontStatus.classList.add('text-green-500');
+                    }
+                });
+            } else {
+                vectorFont = font;
+                fontStatus.innerText = "Vector font ready.";
+                fontStatus.classList.remove('text-zinc-600');
+                fontStatus.classList.add('text-green-500');
+            }
+        });
+
+        window.onload = function() {
+            init();
+            animate();
+        };
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, (window.innerWidth - 320) / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.5, 6);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                preserveDrawingBuffer: true, 
+                alpha: true 
+            });
+            renderer.setSize(window.innerWidth - 320, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0x000000, 0);
+            threeContainer.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            textCanvas = document.createElement('canvas');
+            tctx = textCanvas.getContext('2d');
+            textTexture = new THREE.CanvasTexture(textCanvas);
+            textTexture.minFilter = THREE.LinearFilter;
+            textTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+            const material = new THREE.MeshBasicMaterial({ 
+                map: textTexture, 
+                transparent: true, 
+                side: THREE.DoubleSide
+            });
+            
+            textPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+            scene.add(textPlane);
+
+            draw();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            camera.aspect = (window.innerWidth - 320) / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth - 320, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!renderer || !textPlane) return;
+
+            document.getElementById('fovVal').innerText = fovInput.value;
+            document.getElementById('widthVal').innerText = widthInput.value;
+            document.getElementById('heightVal').innerText = heightInput.value;
+            document.getElementById('kerningVal').innerText = kerningInput.value;
+            document.getElementById('taperVal').innerText = taperInput.value;
+
+            camera.fov = parseFloat(fovInput.value);
+            camera.updateProjectionMatrix();
+
+            textPlane.scale.x = parseFloat(widthInput.value);
+            textPlane.scale.y = parseFloat(heightInput.value);
+
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+
+        resetBtn.onclick = () => {
+            camera.position.set(0, 1.5, 6);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        };
+
+        [textInput, fontInput, taperInput, kerningInput, widthInput, heightInput, fovInput, colorScheme].forEach(el => {
+            el.addEventListener('input', draw);
+        });
+
+        document.getElementById('downloadBtn').onclick = () => {
+            renderer.render(scene, camera);
+            const link = document.createElement('a');
+            link.download = `3d-typography.png`;
+            link.href = renderer.domElement.toDataURL('image/png');
+            link.click();
+        };
+
+        // --- TRUE VECTOR SVG EXPORT LOGIC ---
+        document.getElementById('exportSvgBtn').onclick = () => {
+            if (!vectorFont) {
+                alert("Vector font still loading or failed to load. Please check your connection.");
+                return;
+            }
+
+            const text = textInput.value.toUpperCase() || "TEXT";
+            const taper = parseFloat(taperInput.value);
+            const stretchX = parseFloat(widthInput.value);
+            const stretchY = parseFloat(heightInput.value);
+            const theme = themes[colorScheme.value];
+
+            const fontSize = 240;
+            const pathData = vectorFont.getPath(text, 0, 0, fontSize);
+            
+            // Calculate total bounding box in font units
+            const bbox = pathData.getBoundingBox();
+            const textWidth = bbox.x2 - bbox.x1;
+            const textHeight = bbox.y2 - bbox.y1;
+            
+            // The canvas logic centers the text on a buffer.
+            // buffer.width = textWidth + 120; buffer.height = fontSize * 1.8;
+            const bufferWidth = textWidth + 120;
+            const bufferHeight = fontSize * 1.8;
+            
+            // Replicate the centering logic of bctx.fillText(text, buffer.width / 2, buffer.height / 2);
+            // In opentype.js, the path is relative to the baseline.
+            // We need to offset the raw points to match the "center" used in the texture draw.
+            const centerOffsetX = bufferWidth / 2 - (bbox.x1 + bbox.x2) / 2;
+            const centerOffsetY = bufferHeight / 2; // Approximate baseline center
+
+            // Three.js Plane is 2 units high. The text in texture is bufferHeight high.
+            // We need to map pixel coordinates on the buffer (0 to bufferWidth, 0 to bufferHeight)
+            // to Three.js world coordinates (-planeWidth/2 to planeWidth/2, -1 to 1)
+            const aspect = bufferWidth / bufferHeight;
+            const planeWidth = aspect * 2;
+
+            function transformPoint(rawX, rawY) {
+                // 1. Move point to buffer coordinate space (matching the canvas render)
+                const xOnBuffer = rawX + centerOffsetX;
+                const yOnBuffer = -rawY + centerOffsetY; // opentype.js Y is up, canvas Y is down
+
+                // 2. Apply Taper (matching the draw() loop)
+                const p = xOnBuffer / bufferWidth;
+                let taperScale = taper >= 0 ? (1 - (p * taper)) : (1 - (Math.abs(taper) * (1 - p)));
+                
+                // Warped position on the buffer
+                const warpedY = (yOnBuffer - bufferHeight / 2) * taperScale + bufferHeight / 2;
+                
+                // 3. Map Buffer pixels to Three.js Local Plane Coordinates
+                // xOnBuffer [0, bufferWidth] -> [-planeWidth/2, planeWidth/2]
+                // warpedY [0, bufferHeight] -> [1, -1] (Three.js Y is up)
+                const localX = (xOnBuffer / bufferWidth - 0.5) * planeWidth;
+                const localY = (0.5 - warpedY / bufferHeight) * 2;
+
+                // 4. Project into 3D Space
+                // Apply stretch and plane world matrix
+                const worldPos = new THREE.Vector3(localX * stretchX, localY * stretchY, 0);
+                worldPos.applyMatrix4(textPlane.matrixWorld);
+                
+                // Project to NDC
+                const ndc = worldPos.project(camera);
+                
+                // 5. Map NDC to SVG Space
+                const svgX = (ndc.x + 1) / 2 * renderer.domElement.width;
+                const svgY = (-ndc.y + 1) / 2 * renderer.domElement.height;
+                
+                return { x: svgX, y: svgY };
+            }
+
+            let d = "";
+            pathData.commands.forEach(cmd => {
+                if (cmd.type === 'M') {
+                    const p = transformPoint(cmd.x, cmd.y);
+                    d += `M ${p.x.toFixed(2)} ${p.y.toFixed(2)} `;
+                } else if (cmd.type === 'L') {
+                    const p = transformPoint(cmd.x, cmd.y);
+                    d += `L ${p.x.toFixed(2)} ${p.y.toFixed(2)} `;
+                } else if (cmd.type === 'C') {
+                    const p1 = transformPoint(cmd.x1, cmd.y1);
+                    const p2 = transformPoint(cmd.x2, cmd.y2);
+                    const p = transformPoint(cmd.x, cmd.y);
+                    d += `C ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} ${p.x.toFixed(2)} ${p.y.toFixed(2)} `;
+                } else if (cmd.type === 'Q') {
+                    const p1 = transformPoint(cmd.x1, cmd.y1);
+                    const p = transformPoint(cmd.x, cmd.y);
+                    d += `Q ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} ${p.x.toFixed(2)} ${p.y.toFixed(2)} `;
+                } else if (cmd.type === 'Z') {
+                    d += "Z ";
+                }
+            });
+
+            const canvasW = renderer.domElement.width;
+            const canvasH = renderer.domElement.height;
+            const svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}">
+    <path d="${d}" fill="${theme.text}" />
+</svg>`;
+
+            const blob = new Blob([svgContent], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `3d-vector-premonition.svg`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        };
+    </script>
+</body>
+</html>

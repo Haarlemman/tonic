@@ -9,7 +9,9 @@ window.createStudioInterior = function () {
     interiorGroup.add(furnGroup);
 
     // Desk
-    const deskMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
+    // Desk
+    // V140: Darker Desk (0x8d6e63 -> 0x463732)
+    const deskMat = new THREE.MeshStandardMaterial({ color: 0x463732 });
     const desk = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.2, 1.5), deskMat);
     desk.position.set(0, 1.0, -1.5);
     furnGroup.add(desk);
@@ -91,7 +93,8 @@ window.createStudioInterior = function () {
     interiorClickables.push(deskHoloMesh);
 
     // Chair
-    const chairMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    // V140: Darker Chair (0x333333 -> 0x111111)
+    const chairMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
     const seat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.8), chairMat);
     seat.position.set(0, 0.8, 0.5);
     furnGroup.add(seat);
@@ -103,7 +106,8 @@ window.createStudioInterior = function () {
     seat.add(stem);
 
     // Rug
-    const rug = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.02, 32), new THREE.MeshStandardMaterial({ color: 0xe91e63 }));
+    // V140: Darker Rug (0xe91e63 -> 0x750f31)
+    const rug = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.02, 32), new THREE.MeshStandardMaterial({ color: 0x750f31 }));
     rug.position.set(0, 0.02, 0);
     furnGroup.add(rug);
 
@@ -516,7 +520,9 @@ window.createR2D2InCorner = function () {
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
     // Add darker custom light
-    const studioLight = new THREE.PointLight(0xffffff, 0.4, 20);
+    // Add darker custom light
+    // V140: Dimmed (0.4 -> 0.2)
+    const studioLight = new THREE.PointLight(0xffffff, 0.2, 20);
     studioLight.position.set(0, 6, 0);
     interiorGroup.add(studioLight);
 

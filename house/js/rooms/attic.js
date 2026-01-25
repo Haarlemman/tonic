@@ -26,15 +26,16 @@ function createAtticInterior() {
         labelMesh.position.set(0, 0, 0.76); box.add(labelMesh);
         interiorGroup.add(box); interiorClickables.push(box);
     };
-    createLabeledBox("", -2.5, -2, 0xd7ccc8); // Very Light Brown / Beige
-    createLabeledBox("The History|of Mankind", 0, -2, 0xeefebe); // Almost Cream/White-ish
-    createLabeledBox("", 2.5, -2, 0xcfcfc4); // Light Grey/Beige
+    createLabeledBox("", -2.5, -2, 0x2b2520); // V142: Very Dark Brown
+    createLabeledBox("The History|of Mankind", 0, -2, 0x2e2e1e); // V142: Very Dark Cream
+    createLabeledBox("", 2.5, -2, 0x2f2f24); // V142: Very Dark Grey
     const particlesGeo = new THREE.BufferGeometry();
     const particleCount = 200;
     const posArray = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i++) { posArray[i] = (Math.random() - 0.5) * 10; }
     particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.4 });
+    // V142: Even Lower Opacity (0.2 -> 0.1)
+    const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.1 });
     const particles = new THREE.Points(particlesGeo, particlesMat);
     particles.position.y = 3;
     particles.userData = { type: 'atticDust' };
@@ -64,7 +65,7 @@ function createAtticInterior() {
         map: videoTex,
         alphaMap: vignetteTex,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.7, // V142: Reduced Video Brightness (0.9 -> 0.7)
         blending: THREE.AdditiveBlending, // Optional: for 'light projection' feel
         side: THREE.DoubleSide
     });
@@ -164,8 +165,10 @@ function createAtticInterior() {
 function createProjector() {
     const projGroup = new THREE.Group();
     // Material
-    const iron = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.4 });
-    const chrome = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1.0, roughness: 0.2 });
+    // V140: Even Darker Iron (0x111111)
+    const iron = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.4 });
+    // V140: Darker Chrome (0xaaaaaa -> 0x666666)
+    const chrome = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 1.0, roughness: 0.2 });
 
     // Base Box
     const base = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.6), iron);

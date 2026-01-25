@@ -83,7 +83,7 @@ const roomContent = {
         description: "The Think Tank. A quiet place for politics, religion, and rough drafts. Click the notepad to write.",
         playlist: [
             { artist: "Chrysalis", track: "Chrysalis", src: "../assets/audio/chrysalis.mp3" },
-			{ artist: "John Lurie", track: "The Lamposts Are Mine", src: "../assets/audio/JohnLurieTheLampostsAreMine.mp3" }
+            { artist: "John Lurie", track: "The Lamposts Are Mine", src: "../assets/audio/JohnLurieTheLampostsAreMine.mp3" }
         ]
     },
     basement: {
@@ -94,6 +94,16 @@ const roomContent = {
             { artist: "I-F", track: "Spiegelbeeld", src: "../assets/audio/IF-Spiegelbeeld.mp3" },
             { artist: "Model 500", track: "I See The Light", src: "../assets/audio/Model500-ISeeTheLight.mp3" },
             { artist: "Vlinder Vos", track: "Reality", src: "../assets/audio/Reality-VlinderVos.mp3" }
+        ]
+    },
+    annex: {
+        title: "The Annex",
+        hex: 0x1a1a1a,
+        interiorWidth: 4,
+        interiorDepth: 4,
+        description: "A small, quiet space at the edge of the property. For contemplation and solitary rest.",
+        playlist: [
+            { artist: "David Enker", track: "The Annex Theme", src: "../assets/audio/annex_theme.mp3" }
         ]
     }
 };

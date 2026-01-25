@@ -41,6 +41,27 @@
             }
         });
 
+
+        // 3. Monitor Loader for Fade (Icon Sync)
+        document.addEventListener('DOMContentLoaded', () => {
+            const loader = document.getElementById('loading');
+            const topControls = document.getElementById('top-controls');
+
+            if (loader && topControls) {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                            if (loader.style.opacity === '0' || loader.style.display === 'none') {
+                                topControls.style.opacity = '1';
+                                observer.disconnect();
+                            }
+                        }
+                    });
+                });
+                observer.observe(loader, { attributes: true, attributeFilter: ['style'] });
+            }
+        });
+
         // 2. Safety Timeout (Immediate Scope)
         document.addEventListener('DOMContentLoaded', () => {
             // Start timer as soon as DOM is ready. Don't wait for all assets (window.load).
@@ -50,6 +71,11 @@
                     console.warn("Forcing Loader Off (Timeout)");
                     if (!loader.innerHTML.includes("ERROR:")) {
                         loader.style.opacity = 0;
+
+                        // Force Icons Show
+                        const topControls = document.getElementById('top-controls');
+                        if (topControls) topControls.style.opacity = '1';
+
                         setTimeout(() => { loader.style.display = 'none'; }, 500);
 
                         // Optional: Show a subtle warning
@@ -208,8 +234,8 @@
     </div>
 
     <!-- TOP RIGHT CONTROLS -->
-    <div id="top-controls"
-        class="fixed top-6 right-6 z-[100] flex gap-4 text-white mix-blend-difference pointer-events-auto">
+    <div id="top-controls" style="top: 3.5rem; opacity: 0; transition: opacity 1.5s ease;"
+        class="fixed right-6 z-[100] flex gap-4 text-white mix-blend-difference pointer-events-auto">
         <button id="sound-btn" onclick="toggleGlobalSound()"
             class="opacity-70 hover:opacity-100 transition-opacity p-2">
             <!-- Speaker Icon -->
@@ -252,7 +278,16 @@
     <!-- Original container removed -->
     <div id="tooltip">Room Name</div>
     <div id="instructions">Click a room to enter it • Drag to rotate</div>
-    <button id="back-btn" onclick="exitRoom()">← Exit Room</button>
+    <button id="back-btn" onclick="exitRoom()"
+        style="display:none; top: 3.5rem; background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; padding: 0 !important;"
+        class="fixed left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor"
+            stroke-width="1.2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 8 8 12 12 16" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+        </svg>
+    </button>
     <!-- Room Info Panel (REMOVED REQUEST) -->
     <!-- 
     <div id="room-info"
@@ -316,23 +351,25 @@
     <div id="canvas-container" class="w-full h-screen block outline-none cursor-move"></div>
 
 
-    <script src="js/data.js?v=20260117-1"></script>
-    <script src="../js/layout.js?v=20260117-1"></script>
+    <script src="js/data.js?v=20260124-1"></script>
+    <script src="../js/layout.js?v=ROBOT-MOV-1"></script>
+    <script src="js/instruments/TechnoEngine.js?v=20260124-7"></script>
 
     <!-- Room Scripts -->
-    <script src="js/rooms/music.js?v=20260117-3"></script>
-    <script src="js/rooms/hall.js?v=20260117-3"></script>
-    <script src="js/rooms/bathroom.js?v=20260117-58"></script>
-    <script src="js/rooms/attic.js?v=20260117-3"></script>
-    <script src="js/rooms/toilet.js?v=20260117-3"></script>
-    <script src="js/rooms/living.js?v=20260117-4"></script>
-    <script src="js/rooms/bedroom.js?v=20260117-4"></script>
-    <script src="js/rooms/studio.js?v=20260117-3"></script>
-    <script src="js/rooms/generic.js?v=20260117-3"></script>
-    <script src="js/rooms/mm_animation.js?v=20260117-3"></script>
-    <script src="js/rooms/basement.js?v=20260117-3"></script>
-
-    <script src="js/house.js?v=CONTROLS-1"></script>
+    <script src="js/rooms/music.js?v=20260123-10"></script>
+    <script src="js/rooms/hall.js?v=V140"></script>
+    <script src="js/rooms/bathroom.js?v=V140"></script>
+    <script src="js/rooms/attic.js?v=V142"></script>
+    <script src="js/rooms/annex.js?v=V148"></script>
+    <script src="js/rooms/toilet.js?v=V140"></script>
+    <script src="js/rooms/living.js?v=V148"></script>
+    <script src="js/rooms/bedroom.js?v=V142"></script>
+    <script src="js/rooms/studio.js?v=V140"></script>
+    <script src="js/rooms/generic.js?v=V140"></script>
+    <script src="js/rooms/mm_animation.js?v=V140"></script>
+    <script src="js/rooms/basement.js?v=V141"></script>
+    <!-- Main Logic Script (High Fidelity) -->
+    <script src="js/house.v135.js?v=V155"></script>
 </body>
 
 </html>

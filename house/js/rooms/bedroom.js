@@ -16,11 +16,14 @@ function createBedroomInterior() {
 
     // -- DARKER FLOOR FOR BEDROOM --
     // V4: Much darker floor (User request)
-    const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
+    // -- DARKER FLOOR FOR BEDROOM --
+    // V140: Even Darker (0x222222 -> 0x111111)
+    const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }));
     darkFloor.rotation.x = -Math.PI / 2; darkFloor.position.y = 0.01;
     interiorGroup.add(darkFloor);
 
-    const mattressColor = 0xfafafa;
+    // V142: Dark Grey Mattress (0xaaaaaa -> 0x555555)
+    const mattressColor = 0x555555;
     const matMat = new THREE.MeshStandardMaterial({ color: mattressColor });
     const cornerGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 16);
 
@@ -31,16 +34,18 @@ function createBedroomInterior() {
     const c4 = new THREE.Mesh(cornerGeo, matMat); c4.position.set(-2.0, 0.5, -2.5); bedGroup.add(c4);
 
     // Fillers (Cross Shape)
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 5.8), new THREE.MeshStandardMaterial({ color: 0x4a3728 }));
+    // V142: Black/Brown Frame (0x251b14 -> 0x150b04)
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 5.8), new THREE.MeshStandardMaterial({ color: 0x150b04 }));
     frame.position.y = 0.2; bedGroup.add(frame);
     const mainMattress = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.6, 6.0), matMat); mainMattress.position.y = 0.5; bedGroup.add(mainMattress);
     const crossMattress = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.6, 5.0), matMat); crossMattress.position.y = 0.5; bedGroup.add(crossMattress);
 
-    const duvet = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.1, 4.5), new THREE.MeshStandardMaterial({ color: 0xf43f5e }));
+    // V142: Dark Maroon Duvet (0x7a1f2f -> 0x3d0f17)
+    const duvet = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.1, 4.5), new THREE.MeshStandardMaterial({ color: 0x3d0f17 }));
     duvet.position.set(0, 0.8, -0.5); bedGroup.add(duvet);
     // PILLOW (Rounded - Horizontal Cylinder)
     const pillowGeo = new THREE.CylinderGeometry(0.35, 0.35, 3.5, 16);
-    const pillow = new THREE.Mesh(pillowGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    const pillow = new THREE.Mesh(pillowGeo, new THREE.MeshStandardMaterial({ color: 0x666666 })); // V142: Dark Grey
     pillow.rotation.z = Math.PI / 2; // Lie horizontal
     pillow.scale.set(0.6, 1, 1); // Flatten height (local X)
     pillow.position.set(0, 0.85, 2.2);
@@ -50,22 +55,23 @@ function createBedroomInterior() {
     interiorGroup.add(bedGroup);
 
     // DESK (Without Phone)
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 2), new THREE.MeshStandardMaterial({ color: 0x5D4037 }));
+    // V142: Darkest Wood Desk (0x2e201b -> 0x1e100b)
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 2), new THREE.MeshStandardMaterial({ color: 0x1e100b }));
     desk.position.set(-2.5, 0.6, -3); interiorGroup.add(desk);
 
     // V135: Lamp on Table (Corner) - Bigger & Brighter
     const lampGroup = new THREE.Group();
     // Base
-    lampGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0x222222 })));
+    lampGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0x111111 })));
     // Pole
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
     pole.position.y = 0.4; lampGroup.add(pole);
     // Shade
-    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xffaa00, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xcc8800, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     shade.position.y = 0.7; lampGroup.add(shade);
     // Light - Dimmer (Night Bed Lamp) - Darker
-    // V4: Updated to emit light as requested
-    const bulb = new THREE.PointLight(0xffaa00, 1.5, 8); // Boosted back to 1.5
+    // V142: Reduced Intensity (0.8 -> 0.4)
+    const bulb = new THREE.PointLight(0xffaa00, 0.4, 8);
     bulb.position.y = 0.6;
     lampGroup.add(bulb);
 
@@ -153,18 +159,20 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
         transparent: true,
         opacity: 0.5,
         emissive: 0xff2200,
-        emissiveIntensity: 1.6 // Reduced to 80% (was 2.0)
+        // V142: Duller Glow (1.6 -> 0.8)
+        emissiveIntensity: 0.8
     });
     const liquidCore = new THREE.Mesh(coreGeo, coreMaterial);
     liquidCore.position.y = 1.0;
     lampGroup.add(liquidCore);
 
     // Lights
-    const internalPointLight = new THREE.PointLight(0xff4d00, 4, 5); // Reduced 80% (was 10)
+    // V142: Dimmer Lights (4 -> 2)
+    const internalPointLight = new THREE.PointLight(0xff4d00, 2, 5);
     internalPointLight.position.set(0, 0, 0);
     lampGroup.add(internalPointLight);
 
-    const baseLight = new THREE.PointLight(0xff4d00, 4, 3); // Reduced 80% (was 5)
+    const baseLight = new THREE.PointLight(0xff4d00, 2, 3);
     baseLight.position.set(0, -4.5, 0);
     lampGroup.add(baseLight);
 
@@ -172,7 +180,8 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
     const lavaMaterial = new THREE.MeshStandardMaterial({
         color: 0xff4d00,
         emissive: 0xff4d00,
-        emissiveIntensity: 6.4, // Reduced 80% (was 8.0)
+        // V142: Duller Blobs (6.4 -> 3.2)
+        emissiveIntensity: 3.2,
         roughness: 0.0
     });
 

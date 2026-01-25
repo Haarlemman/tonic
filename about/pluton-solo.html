@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pluton</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #152f48;
+            --cyan: #00f7ff;
+            --magenta: #ff00ff;
+            --purple: #bf00ff;
+            --amber: #ffcc00;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-deep);
+            /* Radial Gradient Background for more depth */
+            background: radial-gradient(circle at 50% 120%, #2a1a4a 0%, #152f48 60%, #050a10 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- BACKGROUND STYLES (Curves) --- */
+        .scenery {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .orbit {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 247, 255, 0.1);
+            transform: translate(-50%, -50%);
+            left: 50%;
+            top: 50%;
+        }
+
+        .orbit.one {
+            width: 80vw;
+            height: 30vh;
+            border-color: rgba(0, 247, 255, 0.2);
+            transform: translate(-50%, 80%) rotate(-10deg);
+        }
+
+        .orbit.two {
+            width: 120vw;
+            height: 60vh;
+            border-color: rgba(191, 0, 255, 0.15);
+            transform: translate(-50%, 60%) rotate(5deg);
+        }
+
+        .orbit.three {
+            width: 150vw;
+            height: 150vw;
+            border: 1px dashed rgba(255, 204, 0, 0.1);
+            top: 120%;
+            animation: spin 120s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Stars (CSS) */
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+        }
+
+        /* NEON TEXT */
+        #pluton-title {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'DM Serif Display', serif;
+            font-size: 25vw;
+            /* Massive */
+            font-weight: 400;
+            line-height: 1;
+            z-index: 1;
+            /* Behind canvas (Canvas is z-10) */
+            /* Gradient Text */
+            background: linear-gradient(to bottom, #00f7ff, #bf00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            opacity: 0.15;
+            /* Subtle back layer */
+            white-space: nowrap;
+            letter-spacing: -2vw;
+            pointer-events: none;
+        }
+
+        /* Canvas Full Screen */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: move;
+        }
+
+        #interaction-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            pointer-events: none;
+            color: var(--cyan);
+            text-shadow: 0 0 8px var(--cyan);
+            z-index: 20;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- BACKGROUND -->
+    <div class="scenery">
+        <div id="pluton-title">PLUTON</div>
+        <div class="orbit one"></div>
+        <div class="orbit two"></div>
+        <div class="orbit three"></div>
+        <!-- Generated stars via JS -->
+    </div>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container">
+        <div id="interaction-hint">Pan &bull; Orbit &bull; Zoom</div>
+    </div>
+
+    <script>
+        // Generate CSS Stars
+        const scenery = document.querySelector('.scenery');
+        for (let i = 0; i < 50; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.style.left = Math.random() * 100 + '%';
+            s.style.top = Math.random() * 100 + '%';
+            s.style.animationDelay = Math.random() * 3 + 's';
+            if (Math.random() > 0.8) { s.style.width = '3px'; s.style.height = '3px'; s.style.background = '#00f7ff'; }
+            scenery.appendChild(s);
+        }
+    </script>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Removed Fog to let the background gradient show through cleanly, or make it very light
+        scene.fog = new THREE.FogExp2(0x152f48, 0.01);
+
+        const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+        // MOD: Lowered Y (from 3.0 to 1.5) to tilt UP at him. Kept Z close.
+        camera.position.set(0, 1.5, 6.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 3;
+        controls.maxDistance = 15;
+        // MOD: Enable Pan
+        controls.enablePan = true;
+        // Target his chest/head center
+        controls.target.set(0, 2.0, 0);
+
+        const mouse = new THREE.Vector2(0, 0);
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // --- Lighting ---
+        scene.add(new THREE.HemisphereLight(0xddeeff, 0x222233, 1.2));
+        const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+        keyLight.position.set(5, 8, 8);
+        keyLight.target.position.set(0, 2, 0);
+        keyLight.castShadow = true;
+        scene.add(keyLight);
+        scene.add(keyLight.target);
+
+        const purpleGlow = new THREE.PointLight(0x6824a8, 10, 20);
+        purpleGlow.position.set(0, 2, 2);
+        scene.add(purpleGlow);
+        const rimLight = new THREE.SpotLight(0x00ffff, 5.0);
+        rimLight.position.set(-6, 4, -5);
+        scene.add(rimLight);
+
+        // --- Materials & Models (Same as before) ---
+        const skinMat = new THREE.MeshPhysicalMaterial({ color: 0x6655aa, roughness: 0.4, clearcoat: 0.5 });
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xe5b80b, roughness: 0.8 });
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x44aa44, roughness: 0.9 });
+        const collarMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const bellyMat = new THREE.MeshStandardMaterial({ color: 0xaa88cc });
+        const glowMat = new THREE.MeshStandardMaterial({ color: 0x55ffff, emissive: 0x00ffff, emissiveIntensity: 2 });
+        const spikeMat = new THREE.MeshPhysicalMaterial({ color: 0xff00aa, emissive: 0x550022, transmission: 0.5, opacity: 0.9, thickness: 1 });
+        const noseMat = new THREE.MeshStandardMaterial({ color: 0xcc4444, roughness: 0.3, emissive: 0x331111, emissiveIntensity: 0.5 });
+
+        const creatureGroup = new THREE.Group();
+        creatureGroup.position.y = 2.55;
+        creatureGroup.scale.setScalar(0.42);
+        scene.add(creatureGroup);
+
+        const headGroup = new THREE.Group();
+        creatureGroup.add(headGroup);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), skinMat);
+        head.scale.set(1.15, 0.95, 1);
+        head.castShadow = true;
+        headGroup.add(head);
+
+        const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), bellyMat);
+        muzzle.position.set(0, -0.25, 1.1);
+        muzzle.scale.set(1.2, 0.8, 0.8);
+        headGroup.add(muzzle);
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), noseMat);
+        nose.position.set(0, 0.1, 0.4);
+        muzzle.add(nose);
+
+        // Eyes
+        const upperLids = [], lowerLids = [];
+        const eyeRadius = 0.44, eyelidRadius = 0.52;
+        function createDetailedEye(isLeft) {
+            const group = new THREE.Group();
+            const sclera = new THREE.Mesh(new THREE.SphereGeometry(eyeRadius, 32, 32), new THREE.MeshBasicMaterial({ color: 0xe4f0ef }));
+            sclera.position.z = -0.02; group.add(sclera);
+            const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.22, 32), new THREE.MeshBasicMaterial({ color: 0x051b2a }));
+            pupil.position.z = eyeRadius - 0.02 + 0.001; group.add(pupil);
+            const glint = new THREE.Mesh(new THREE.CircleGeometry(0.06, 16), new THREE.MeshBasicMaterial({ color: 0xeeeeff }));
+            glint.position.set(isLeft ? -0.12 : 0.12, 0.12, eyeRadius - 0.02 + 0.002); group.add(glint);
+            const lidTop = new THREE.Mesh(new THREE.SphereGeometry(eyelidRadius, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.5), skinMat);
+            lidTop.rotation.x = -Math.PI * 0.3; lidTop.position.z = 0.03; group.add(lidTop); upperLids.push(lidTop);
+            const lidBot = new THREE.Mesh(new THREE.SphereGeometry(eyelidRadius, 32, 32, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), skinMat);
+            lidBot.rotation.x = Math.PI * 0.3; lidBot.position.z = 0.03; group.add(lidBot); lowerLids.push(lidBot);
+            return group;
+        }
+        const eL = createDetailedEye(true); eL.position.set(-0.5, 0.15, 0.95); eL.rotation.y = 0.15; headGroup.add(eL);
+        const eR = createDetailedEye(false); eR.position.set(0.5, 0.15, 0.95); eR.rotation.y = -0.15; headGroup.add(eR);
+
+        // Body Elements
+        const bodyGroup = new THREE.Group(); bodyGroup.position.y = -1.3; creatureGroup.add(bodyGroup);
+        const bodyBase = new THREE.Mesh(new THREE.SphereGeometry(0.85, 64, 64), skinMat); bodyBase.scale.set(0.9, 1.1, 0.9); bodyBase.castShadow = true; bodyGroup.add(bodyBase);
+        for (let i = 0; i < 5; i++) {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), spikeMat);
+            spike.position.set(0, 0.5 - (i * 0.25), -0.75 - (i * 0.1)); spike.rotation.x = -Math.PI / 4; bodyBase.add(spike);
+        }
+        const shirt = new THREE.Mesh(new THREE.SphereGeometry(0.87, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), shirtMat); shirt.scale.set(0.91, 1.11, 0.91); bodyGroup.add(shirt);
+        const collar = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.08, 16, 64), collarMat); collar.rotation.x = Math.PI / 2; collar.position.y = 1.0; collar.scale.set(1.1, 1, 0.5); bodyGroup.add(collar);
+        const pants = new THREE.Mesh(new THREE.SphereGeometry(0.88, 64, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), pantsMat); pants.scale.set(0.92, 1.12, 0.92); pants.position.y = 0.1; bodyGroup.add(pants);
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 32), bellyMat); belly.position.set(0, 0.3, 0.6); belly.scale.set(1, 0.8, 0.5); bodyBase.add(belly);
+
+        // Limbs
+        const legGeo = new THREE.CapsuleGeometry(0.18, 0.4, 4, 16); const armGeo = new THREE.CapsuleGeometry(0.18, 0.75, 4, 16); const toeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+        function createLimb(x, y, z, rotZ, isLeg) {
+            const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.z = rotZ;
+            const m = new THREE.Mesh(isLeg ? legGeo : armGeo, isLeg ? skinMat : shirtMat); g.add(m);
+            const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.2, 16), pantsMat); cuff.position.y = isLeg ? 0.2 : -0.35; g.add(cuff);
+            for (let t = -1; t <= 1; t++) { const toe = new THREE.Mesh(toeGeo, isLeg ? bellyMat : pantsMat); toe.position.set(t * 0.08, isLeg ? -0.3 : -0.45, 0.12); g.add(toe); }
+            return g;
+        }
+        const lArm = createLimb(-0.85, 0.3, 0.2, -0.7, false); bodyGroup.add(lArm);
+        const rArm = createLimb(0.85, 0.3, 0.2, 0.7, false); bodyGroup.add(rArm);
+        const lLeg = createLimb(-0.45, -0.75, 0.3, 0, true); bodyGroup.add(lLeg);
+        const rLeg = createLimb(0.45, -0.75, 0.3, 0, true); bodyGroup.add(rLeg);
+
+        const tailGroup = new THREE.Group(); tailGroup.position.set(0, -0.7, -0.7); bodyGroup.add(tailGroup);
+        for (let i = 0; i < 8; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.14 - (i * 0.015), 16, 16), skinMat); s.position.set(0, i * 0.15, -(i * 0.25)); tailGroup.add(s); }
+
+        const stalkGeo = new THREE.CylinderGeometry(0.04, 0.02, 0.8, 16);
+        const lStalk = new THREE.Mesh(stalkGeo, skinMat); lStalk.position.set(-0.6, 0.8, 0); lStalk.rotation.z = 0.5; headGroup.add(lStalk);
+        const rStalk = new THREE.Mesh(stalkGeo, skinMat); rStalk.position.set(0.6, 0.8, 0); rStalk.rotation.z = -0.5; headGroup.add(rStalk);
+        const drone = new THREE.Group(); drone.position.y = 1.8; headGroup.add(drone);
+        drone.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0x8899aa, metalness: 0.8, roughness: 0.2 })));
+        const prop = new THREE.Group(); drone.add(prop);
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.01, 0.8), glowMat); const p2 = p1.clone(); p2.rotation.y = Math.PI / 2; prop.add(p1, p2);
+
+        // --- Planet ---
+        const plutoGeo = new THREE.SphereGeometry(1.8, 64, 64);
+        const plutoMat = new THREE.MeshStandardMaterial({ color: 0x7b3612, roughness: 0.9, flatShading: false });
+        const platform = new THREE.Mesh(plutoGeo, plutoMat); platform.position.y = 0.0; platform.receiveShadow = true; scene.add(platform);
+        for (let i = 0; i < 40; i++) {
+            const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(Math.random() * 0.2 + 0.05), new THREE.MeshStandardMaterial({ color: 0x5a2a0d, roughness: 1.0 }));
+            const u = Math.random(), v = Math.random();
+            const theta = 2 * Math.PI * u, phi = Math.acos(2 * v - 1);
+            const r = 1.8, x = r * Math.sin(phi) * Math.cos(theta), y = r * Math.sin(phi) * Math.sin(theta), z = r * Math.cos(phi);
+            rock.position.set(x, y, z); rock.lookAt(0, 0.0, 0); platform.add(rock);
+        }
+
+        // --- Animation ---
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            const time = clock.getElapsedTime();
+
+            // Interactive Gaze
+            const mx = mouse.x * 1.0; const my = -mouse.y * 0.6;
+            headGroup.rotation.y += (mx + Math.sin(time * 0.3) * 0.05 - headGroup.rotation.y) * 0.2;
+            headGroup.rotation.x += (my + Math.cos(time * 0.25) * 0.03 - headGroup.rotation.x) * 0.2;
+
+            // Idle
+            const sway = Math.sin(time * 0.8) * 0.12;
+            lArm.rotation.z = -0.75 + sway; rArm.rotation.z = 0.75 - sway;
+            lArm.rotation.x = 0.5 + Math.cos(time * 0.6) * 0.1;
+            rArm.rotation.x = 0.5 + Math.sin(time * 0.6) * 0.1;
+            tailGroup.rotation.z = Math.sin(time * 1.5) * 0.15;
+            lStalk.rotation.z = 0.5 + Math.sin(time * 2.5) * 0.05;
+            rStalk.rotation.z = -0.5 + Math.cos(time * 2.5) * 0.05;
+            prop.rotation.y += 0.3;
+            drone.position.y = 1.8 + Math.sin(time * 5) * 0.05;
+
+            // Blink
+            if (Math.sin(time * 2) > 0.85) {
+                const bf = (Math.sin(time * 2) - 0.85) / 0.15;
+                upperLids.forEach(l => l.rotation.x = -Math.PI * 0.3 * (1 - bf));
+                lowerLids.forEach(l => l.rotation.x = Math.PI * 0.3 * (1 - bf));
+            } else {
+                upperLids.forEach(l => l.rotation.x = -Math.PI * 0.3);
+                lowerLids.forEach(l => l.rotation.x = Math.PI * 0.3);
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+</body>
+
+</html>

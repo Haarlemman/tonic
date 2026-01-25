@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/layout.js?v=306"></script>
+    <!-- Add DM Serif Display Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #152f48;
+            --accent-yellow: #e5b80b;
+            /* Restored brighter amber */
+            --accent-blue: #88ccff;
+            /* Restored brighter blue */
+            --text-main: #e0e0e0;
+            /* Brighter text */
+            --glass: rgba(0, 0, 0, 0.2);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-deep);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+            overflow-x: hidden;
+            /* background: radial-gradient(circle at 70% 50%, #421f51 0%, #071424 85%); */
+            /* background-attachment: fixed; */
+            transition: background 1.5s ease;
+        }
+
+        .page-wrapper {
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        .content-side {
+            flex: 1;
+            padding: 80px 60px;
+            z-index: 10;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.0);
+            /* Fully transparent now to ensure just 1 background */
+            /* backdrop-filter: blur(8px); Removed */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--accent-yellow);
+            text-shadow: 0 0 20px rgba(229, 184, 11, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.7;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .bio-text {
+            line-height: 1.8;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .bio-text p {
+            margin-bottom: 20px;
+        }
+
+        .tagline {
+            font-style: italic;
+            border-left: 3px solid var(--accent-yellow);
+            padding-left: 20px;
+            margin: 40px 0;
+            opacity: 0.9;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100vh;
+            cursor: move;
+        }
+
+        #interaction-hint {
+            position: absolute;
+            top: 75%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.5;
+            pointer-events: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Updated content side for 2-col layout */
+        .content-side {
+            flex: 1;
+            padding: 80px 60px;
+            max-width: 600px;
+            /* Background restored to transparent as requested in previous steps */
+            background: transparent;
+        }
+
+        @media (max-width: 900px) {
+            .page-wrapper {
+                flex-direction: column-reverse;
+            }
+
+            .content-side {
+                max-width: 100%;
+                padding: 40px;
+            }
+
+            #canvas-container {
+                height: 50vh;
+                flex: none;
+            }
+        }
+
+        /* --- TRON GRID & NEW STYLES --- */
+
+        /* --- TRON GRID & NEW STYLES --- */
+        :root {
+            --cyan: #00f7ff;
+            --magenta: #ff00ff;
+            --amber: #ffcc00;
+        }
+
+        .bg-line-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-line {
+            position: absolute;
+            background-color: transparent;
+            opacity: 0.3;
+        }
+
+        /* Horizontal Lines */
+        .bg-line.horz {
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-image: linear-gradient(to right, var(--cyan) 33%, rgba(0, 0, 0, 0) 0%);
+            background-size: 8px 1px;
+            background-repeat: repeat-x;
+        }
+
+        /* Vertical Lines */
+        .bg-line.vert {
+            top: 0;
+            height: 100%;
+            width: 1px;
+            background-image: linear-gradient(to bottom, var(--cyan) 33%, rgba(0, 0, 0, 0) 0%);
+            background-size: 1px 8px;
+            background-repeat: repeat-y;
+        }
+
+        .bg-spark {
+            position: absolute;
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan), 0 0 3px white;
+            border-radius: 1px;
+            opacity: 0;
+        }
+
+        .bg-line.horz .bg-spark {
+            top: 0;
+            height: 1px;
+            width: 40px;
+        }
+
+        .bg-line.vert .bg-spark {
+            left: 0;
+            width: 1px;
+            height: 40px;
+        }
+
+        @keyframes bg-scan-x {
+            0% {
+                left: -10%;
+                opacity: 0;
+            }
+
+            5% {
+                opacity: 1;
+            }
+
+            95% {
+                opacity: 1;
+            }
+
+            100% {
+                left: 110%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes bg-scan-y {
+            0% {
+                top: -10%;
+                opacity: 0;
+            }
+
+            5% {
+                opacity: 1;
+            }
+
+            95% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 110%;
+                opacity: 0;
+            }
+        }
+
+        .bg-line.h1 {
+            top: 25%;
+        }
+
+        .bg-line.h1 .bg-spark {
+            animation: bg-scan-x 5s linear infinite;
+        }
+
+        .bg-line.h2 {
+            top: 65%;
+            opacity: 0.15;
+        }
+
+        .bg-line.h2 .bg-spark {
+            animation: bg-scan-x 9s linear infinite 2s;
+            width: 20px;
+        }
+
+        .bg-line.h3 {
+            top: 85%;
+        }
+
+        .bg-line.h3 .bg-spark {
+            animation: bg-scan-x 3s linear infinite 1s;
+            background: var(--magenta);
+            box-shadow: 0 0 8px var(--magenta);
+        }
+
+        .bg-line.v1 {
+            left: 8%;
+        }
+
+        .bg-line.v1 .bg-spark {
+            animation: bg-scan-y 7s linear infinite;
+        }
+
+        .bg-line.v2 {
+            left: 92%;
+            opacity: 0.15;
+        }
+
+        .bg-line.v2 .bg-spark {
+            animation: bg-scan-y 11s linear infinite 3s;
+        }
+
+        .bg-line.v3 {
+            left: 50%;
+            opacity: 0.1;
+        }
+
+        .bg-line.v3 .bg-spark {
+            animation: bg-scan-y 4s linear infinite 0.5s;
+            background: var(--amber);
+        }
+
+        /* HEADER & CONTACT */
+        .big-header {
+            font-size: 12rem;
+            font-weight: 400;
+            /* Regular weight for Serif */
+            color: var(--cyan);
+            opacity: 0.1;
+            line-height: 0.8;
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            z-index: 1;
+            pointer-events: none;
+            font-family: 'DM Serif Display', serif;
+            /* Updated Font */
+            white-space: nowrap;
+        }
+
+        .content-side {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Ensure text is readable over grid */
+        .bio-text,
+        .tagline,
+        h1,
+        .subtitle {
+            position: relative;
+            z-index: 20;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .contact-section {
+            margin-top: 50px;
+            border-top: 1px solid rgba(0, 247, 255, 0.3);
+            padding-top: 30px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .contact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .contact-link {
+            font-size: 1.2rem;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .contact-link:hover {
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan);
+            transform: translateX(10px);
+        }
+
+        .contact-label {
+            width: 120px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 900px) {
+            .big-header {
+                font-size: 6rem;
+                top: 0;
+                left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app-header"></div>
+
+    <div class="page-wrapper">
+        <!-- TRON GRID -->
+        <div class="bg-line-container">
+            <div class="bg-line horz h1">
+                <div class="bg-spark"></div>
+            </div>
+            <div class="bg-line horz h2">
+                <div class="bg-spark"></div>
+            </div>
+            <div class="bg-line horz h3">
+                <div class="bg-spark"></div>
+            </div>
+            <div class="bg-line vert v1">
+                <div class="bg-spark"></div>
+            </div>
+            <div class="bg-line vert v2">
+                <div class="bg-spark"></div>
+            </div>
+            <div class="bg-line vert v3">
+                <div class="bg-spark"></div>
+            </div>
+        </div>
+
+        <main class="content-side">
+            <div class="big-header">ABOUT</div>
+            <h1>David Enker</h1>
+            <p class="subtitle">Creative Designer & Writer</p>
+
+            <div class="bio-text">
+                <p>Life is a complex architecture of surprises, twists, and turns. Within this swirling framework, I
+                    seek the points of control—the moments where art, music, and philosophy intersect to create meaning.
+                </p>
+
+                <p>Currently, I am immersed in the creation of my second book, <strong>"Tonic for the Bones"</strong>.
+                    My work explores the paradox of free will and the humbling realization that the more we learn, the
+                    more we discover the vastness of what remains unknown.</p>
+
+                <p>Based in the Netherlands, I balance the precision of graphic design with the expansive world-building
+                    of literature, often accompanied by the curious gaze of Commander Star-Whisker.</p>
+            </div>
+
+            <div class="tagline">
+                "Within a framework, there is still control."
+            </div>
+
+            <div class="contact-section">
+                <div class="contact-list">
+                    <a href="mailto:hello@davidenker.com" class="contact-link">
+                        <span class="contact-label">Email</span>
+                        <span>hello@davidenker.com</span>
+                    </a>
+                    <a href="https://instagram.com/davidje" target="_blank" class="contact-link">
+                        <span class="contact-label">Instagram</span>
+                        <span>@davidje</span>
+                    </a>
+                    <a href="https://youtube.com/@davidenker" target="_blank" class="contact-link">
+                        <span class="contact-label">YouTube</span>
+                        <span>@davidenker</span>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <div id="canvas-container">
+            <div id="interaction-hint">Interaction Enabled • Tracking Cursor</div>
+        </div>
+    </div>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 1. Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x152f48, 0.02); // Matched solid background color
+
+        const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 4.0, 9); // Even higher to tilt view "forward" (top-down effect)
+        camera.lookAt(0, 1.0, 0); // Focus lower (center of scene)
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 4;
+        controls.maxDistance = 15;
+        controls.enablePan = false;
+
+        const mouse = new THREE.Vector2(0, 0);
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // --- 2. Lighting ---
+        scene.add(new THREE.HemisphereLight(0xddeeff, 0x222233, 1.2));
+        const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+        keyLight.position.set(5, 8, 8);
+        keyLight.target.position.set(0, 2, 0); // Point light higher
+        keyLight.castShadow = true;
+        scene.add(keyLight);
+        scene.add(keyLight.target);
+
+        // Requested Purple Glow
+        const purpleGlow = new THREE.PointLight(0x6824a8, 10, 20); // Strong purple light
+        purpleGlow.position.set(0, 2, 2);
+        scene.add(purpleGlow);
+
+        const rimLight = new THREE.SpotLight(0x00ffff, 5.0);
+        rimLight.position.set(-6, 4, -5);
+        scene.add(rimLight);
+
+        // --- 3. Materials ---
+        const skinMat = new THREE.MeshPhysicalMaterial({ color: 0x6655aa, roughness: 0.4, clearcoat: 0.5 });
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xe5b80b, roughness: 0.8 }); // COMMAND YELLOW
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x44aa44, roughness: 0.9 });
+        const collarMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const bellyMat = new THREE.MeshStandardMaterial({ color: 0xaa88cc });
+        const glowMat = new THREE.MeshStandardMaterial({ color: 0x55ffff, emissive: 0x00ffff, emissiveIntensity: 2 });
+        const spikeMat = new THREE.MeshPhysicalMaterial({ color: 0xff00aa, emissive: 0x550022, transmission: 0.5, opacity: 0.9, thickness: 1 });
+        const noseMat = new THREE.MeshStandardMaterial({ color: 0xcc4444, roughness: 0.3, emissive: 0x331111, emissiveIntensity: 0.5 });
+
+        // --- 4. Creature Construction ---
+        const creatureGroup = new THREE.Group();
+        creatureGroup.position.y = 2.55; // Lowered by 0.5
+        creatureGroup.scale.setScalar(0.42); // 20% Bigger
+        scene.add(creatureGroup);
+
+        const headGroup = new THREE.Group();
+        creatureGroup.add(headGroup);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), skinMat);
+        head.scale.set(1.15, 0.95, 1);
+        head.castShadow = true;
+        headGroup.add(head);
+
+        const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), bellyMat);
+        muzzle.position.set(0, -0.25, 1.1);
+        muzzle.scale.set(1.2, 0.8, 0.8);
+        headGroup.add(muzzle);
+
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), noseMat);
+        nose.position.set(0, 0.1, 0.4);
+        muzzle.add(nose);
+
+        // Eyes (Restored original glints and offsets)
+        const upperLids = [];
+        const lowerLids = [];
+        const eyeRadius = 0.44;
+        const eyelidRadius = 0.52;
+
+        function createDetailedEye(isLeft) {
+            const group = new THREE.Group();
+            // Sclera
+            const sclera = new THREE.Mesh(new THREE.SphereGeometry(eyeRadius, 32, 32), new THREE.MeshBasicMaterial({ color: 0xe4f0ef }));
+            sclera.position.z = -0.02;
+            group.add(sclera);
+            // Pupil
+            const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.22, 32), new THREE.MeshBasicMaterial({ color: 0x051b2a }));
+            pupil.position.z = eyeRadius - 0.02 + 0.001;
+            group.add(pupil);
+            // Glint
+            const glint = new THREE.Mesh(new THREE.CircleGeometry(0.06, 16), new THREE.MeshBasicMaterial({ color: 0xeeeeff }));
+            glint.position.set(isLeft ? -0.12 : 0.12, 0.12, eyeRadius - 0.02 + 0.002);
+            group.add(glint);
+            // Eyelids
+            const lidTop = new THREE.Mesh(new THREE.SphereGeometry(eyelidRadius, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.5), skinMat);
+            lidTop.rotation.x = -Math.PI * 0.3; lidTop.position.z = 0.03;
+            group.add(lidTop); upperLids.push(lidTop);
+            const lidBot = new THREE.Mesh(new THREE.SphereGeometry(eyelidRadius, 32, 32, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), skinMat);
+            lidBot.rotation.x = Math.PI * 0.3; lidBot.position.z = 0.03;
+            group.add(lidBot); lowerLids.push(lidBot);
+            return group;
+        }
+        const eL = createDetailedEye(true); eL.position.set(-0.5, 0.15, 0.95); eL.rotation.y = 0.15; headGroup.add(eL);
+        const eR = createDetailedEye(false); eR.position.set(0.5, 0.15, 0.95); eR.rotation.y = -0.15; headGroup.add(eR);
+
+        // Body with Trek Uniform
+        const bodyGroup = new THREE.Group();
+        bodyGroup.position.y = -1.3;
+        creatureGroup.add(bodyGroup);
+
+        const bodyBase = new THREE.Mesh(new THREE.SphereGeometry(0.85, 64, 64), skinMat);
+        bodyBase.scale.set(0.9, 1.1, 0.9);
+        bodyBase.castShadow = true;
+        bodyGroup.add(bodyBase);
+
+        // Back Spikes
+        for (let i = 0; i < 5; i++) {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), spikeMat);
+            spike.position.set(0, 0.5 - (i * 0.25), -0.75 - (i * 0.1));
+            spike.rotation.x = -Math.PI / 4;
+            bodyBase.add(spike);
+        }
+
+        // Shirt (Command Yellow)
+        const shirt = new THREE.Mesh(new THREE.SphereGeometry(0.87, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), shirtMat);
+        shirt.scale.set(0.91, 1.11, 0.91);
+        bodyGroup.add(shirt);
+
+        const collar = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.08, 16, 64), collarMat);
+        collar.rotation.x = Math.PI / 2; collar.position.y = 1.0; collar.scale.set(1.1, 1, 0.5);
+        bodyGroup.add(collar);
+
+        const pants = new THREE.Mesh(new THREE.SphereGeometry(0.88, 64, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), pantsMat);
+        pants.scale.set(0.92, 1.12, 0.92); pants.position.y = 0.1;
+        bodyGroup.add(pants);
+
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 32), bellyMat);
+        belly.position.set(0, 0.3, 0.6); belly.scale.set(1, 0.8, 0.5);
+        bodyBase.add(belly);
+
+        // Limbs with fingers and toes
+        const legGeo = new THREE.CapsuleGeometry(0.18, 0.4, 4, 16);
+        const armGeo = new THREE.CapsuleGeometry(0.18, 0.75, 4, 16);
+        const toeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+
+        function createLimb(x, y, z, rotZ, isLeg) {
+            const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.z = rotZ;
+            const m = new THREE.Mesh(isLeg ? legGeo : armGeo, isLeg ? skinMat : shirtMat); g.add(m);
+            const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.2, 16), pantsMat);
+            cuff.position.y = isLeg ? 0.2 : -0.35; g.add(cuff);
+            // Fingers/Toes
+            const offset = isLeg ? -0.3 : -0.45;
+            const digitMat = isLeg ? bellyMat : pantsMat;
+            for (let t = -1; t <= 1; t++) {
+                const toe = new THREE.Mesh(toeGeo, digitMat);
+                toe.position.set(t * 0.08, offset, 0.12);
+                g.add(toe);
+            }
+            return g;
+        }
+        const lArm = createLimb(-0.85, 0.3, 0.2, -0.7, false); bodyGroup.add(lArm);
+        const rArm = createLimb(0.85, 0.3, 0.2, 0.7, false); bodyGroup.add(rArm);
+        const lLeg = createLimb(-0.45, -0.75, 0.3, 0, true); bodyGroup.add(lLeg);
+        const rLeg = createLimb(0.45, -0.75, 0.3, 0, true); bodyGroup.add(rLeg);
+
+        // Tail (Restored segmented spheres)
+        const tailGroup = new THREE.Group();
+        tailGroup.position.set(0, -0.7, -0.7);
+        bodyGroup.add(tailGroup);
+        for (let i = 0; i < 8; i++) {
+            const s = new THREE.Mesh(new THREE.SphereGeometry(0.14 - (i * 0.015), 16, 16), skinMat);
+            s.position.set(0, i * 0.15, -(i * 0.25));
+            tailGroup.add(s);
+        }
+
+        // Antennae
+        const stalkGeo = new THREE.CylinderGeometry(0.04, 0.02, 0.8, 16);
+        const lStalk = new THREE.Mesh(stalkGeo, skinMat); lStalk.position.set(-0.6, 0.8, 0); lStalk.rotation.z = 0.5; headGroup.add(lStalk);
+        const rStalk = new THREE.Mesh(stalkGeo, skinMat); rStalk.position.set(0.6, 0.8, 0); rStalk.rotation.z = -0.5; headGroup.add(rStalk);
+
+        // Drone Hat
+        const drone = new THREE.Group(); drone.position.y = 1.8; headGroup.add(drone);
+        drone.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0x8899aa, metalness: 0.8, roughness: 0.2 })));
+        const prop = new THREE.Group(); drone.add(prop);
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.01, 0.8), glowMat);
+        const p2 = p1.clone(); p2.rotation.y = Math.PI / 2; prop.add(p1, p2);
+
+        // --- 5. Environment ---
+        // --- 5. Environment (Pluto) ---
+        // Mini-planet sphere
+        const plutoGeo = new THREE.SphereGeometry(1.8, 64, 64); // 20% Bigger (1.5 * 1.2)
+        const plutoMat = new THREE.MeshStandardMaterial({
+            color: 0x7b3612, // User's requested brown
+            roughness: 0.9,
+            flatShading: false
+        });
+        const platform = new THREE.Mesh(plutoGeo, plutoMat);
+        platform.position.y = 0.0; // Lowered by 0.5
+        platform.receiveShadow = true;
+        scene.add(platform);
+
+        // Craters / Rocks properties
+        for (let i = 0; i < 40; i++) {
+            const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(Math.random() * 0.2 + 0.05), new THREE.MeshStandardMaterial({ color: 0x5a2a0d, roughness: 1.0 }));
+
+            // Random point on sphere surface
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+
+            const r = 1.8; // Radius (Updated)
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
+
+            rock.position.set(x, y, z);
+            rock.lookAt(0, 0.0, 0); // Look at new center (y=0.0)
+            platform.add(rock);
+        }
+        const starsGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(2000 * 3);
+        for (let i = 0; i < 2000; i++) { starPos[i * 3] = (Math.random() - 0.5) * 180; starPos[i * 3 + 1] = (Math.random() - 0.5) * 180; starPos[i * 3 + 2] = (Math.random() - 0.5) * 180; }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 })));
+
+        // --- 6. Animation ---
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            const time = clock.getElapsedTime();
+
+            // Interactive Gaze Blend
+            const mx = mouse.x * 1.0; const my = -mouse.y * 0.6;
+            headGroup.rotation.y += (mx + Math.sin(time * 0.3) * 0.05 - headGroup.rotation.y) * 0.2;
+            headGroup.rotation.x += (my + Math.cos(time * 0.25) * 0.03 - headGroup.rotation.x) * 0.2;
+
+            // Movement Cycles
+            const sway = Math.sin(time * 0.8) * 0.12;
+            lArm.rotation.z = -0.75 + sway; rArm.rotation.z = 0.75 - sway;
+            lArm.rotation.x = 0.5 + Math.cos(time * 0.6) * 0.1;
+            rArm.rotation.x = 0.5 + Math.sin(time * 0.6) * 0.1;
+
+            tailGroup.rotation.z = Math.sin(time * 1.5) * 0.15;
+            lStalk.rotation.z = 0.5 + Math.sin(time * 2.5) * 0.05;
+            rStalk.rotation.z = -0.5 + Math.cos(time * 2.5) * 0.05;
+
+            prop.rotation.y += 0.3;
+            drone.position.y = 1.8 + Math.sin(time * 5) * 0.05;
+
+            // Sky Cycle
+            const skyCycle = (Math.sin(time * 0.15) + 1) / 2;
+            const r = Math.floor(11 + skyCycle * 10);
+            const g = Math.floor(26 + skyCycle * 10);
+            const b = Math.floor(58 + skyCycle * 15);
+            // document.body.style.background = `linear-gradient(to top, rgb(${r}, ${g}, ${b}) 0%, #000000 100%)`;
+
+            // Blink
+            if (Math.sin(time * 2) > 0.85) {
+                const bf = (Math.sin(time * 2) - 0.85) / 0.15;
+                upperLids.forEach(l => l.rotation.x = -Math.PI * 0.3 * (1 - bf));
+                lowerLids.forEach(l => l.rotation.x = Math.PI * 0.3 * (1 - bf));
+            } else {
+                upperLids.forEach(l => l.rotation.x = -Math.PI * 0.3);
+                lowerLids.forEach(l => l.rotation.x = Math.PI * 0.3);
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+    <div id="app-footer"></div>
+</body>
+
+</html>

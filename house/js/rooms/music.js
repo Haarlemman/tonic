@@ -47,6 +47,12 @@ function playTrack(index) {
             videoElement.pause();
         }
 
+        // V-FIX: Stop Living Room TV Video specifically (Robot/Cinema Mode)
+        if (currentRoom === 'living' && window.stopLivingVideo) {
+            console.log("Music Started: Stopping Living Room TV");
+            window.stopLivingVideo();
+        }
+
         // V210: Attic Audio Precedence for "Click Song"
         if (currentRoom === 'attic') {
             const atticVideo = document.getElementById('attic-video');
@@ -228,6 +234,11 @@ function toggleMusic() {
         else if (['hall', 'studio'].indexOf(currentRoom) === -1 && videoElement && !videoElement.paused) {
             // Standard behavior for other rooms (Living, Bedroom)
             videoElement.pause();
+        }
+
+        // V-FIX: Stop Living Room TV when toggling music ON
+        if (currentRoom === 'living' && window.stopLivingVideo) {
+            window.stopLivingVideo();
         }
 
         audioPlayer.play().catch(e => console.log("Audio play failed", e));
