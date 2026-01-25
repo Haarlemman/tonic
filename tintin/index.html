@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tintin Moon Rocket</title>
+    <style>
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: sans-serif; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+            z-index: 10;
+        }
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1 style="margin:0; font-size: 1.5rem;">Objectif Lune</h1>
+        <p style="margin:5px 0; opacity: 0.8;">Hergé's Moon Rocket • Deep Space</p>
+    </div>
+    <div id="controls-hint">Left-drag to rotate • Right-drag to pan • Scroll to zoom</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, rocket, starField;
+        const starCount = 1200;
+        const uniformStarSpeed = 1.5; 
+        
+        // Base position for the rocket to allow panning and idle movement to coexist
+        let targetPosition = new THREE.Vector3(0, 10, 0);
+
+        window.onload = function() {
+            init();
+            animate();
+        };
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); 
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+            camera.position.set(25, 25, 70);
+            camera.lookAt(0, 15, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+            keyLight.position.set(30, 50, 40);
+            scene.add(keyLight);
+
+            const rimLight = new THREE.PointLight(0xffffff, 1.2);
+            rimLight.position.set(-40, 20, -30);
+            scene.add(rimLight);
+
+            rocket = new THREE.Group();
+            scene.add(rocket);
+
+            createRocket();
+            createStars();
+
+            window.addEventListener('resize', onWindowResize, false);
+            setupControls();
+        }
+
+        function createStarTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.5)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createStars() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const offsets = []; 
+
+            for (let i = 0; i < starCount; i++) {
+                positions.push(
+                    (Math.random() - 0.5) * 1200, 
+                    (Math.random() - 0.5) * 1200, 
+                    -500 
+                );
+                offsets.push(Math.random() * 100.0); 
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('offset', new THREE.Float32BufferAttribute(offsets, 1));
+
+            const starMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uTexture: { value: createStarTexture() }
+                },
+                vertexShader: `
+                    uniform float uTime;
+                    attribute float offset;
+                    varying float vOpacity;
+                    void main() {
+                        vOpacity = 0.4 + 0.6 * sin(uTime * (1.5 + mod(offset, 2.0)) + offset);
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = 12.0 * (400.0 / -mvPosition.z);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D uTexture;
+                    varying float vOpacity;
+                    void main() {
+                        vec4 texColor = texture2D(uTexture, gl_PointCoord);
+                        gl_FragColor = texColor * vOpacity;
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            starField = new THREE.Points(geometry, starMaterial);
+            scene.add(starField);
+        }
+
+        function createRocket() {
+            const size = 1024;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            const RED = '#d40000';
+            const WHITE = '#fcfcfc';
+            
+            const bottomEdge = 0.32 * size;
+            const checkerHeight = 0.44 * size;
+            const rowH = checkerHeight / 5;
+            const cols = 10; 
+            const colW = size / cols;
+
+            ctx.fillStyle = RED;
+            ctx.fillRect(0, size - bottomEdge, size, bottomEdge);
+            for (let i = 0; i < 5; i++) {
+                const y = size - bottomEdge - (i + 1) * rowH;
+                for (let j = 0; j < cols; j++) {
+                    ctx.fillStyle = (i + j) % 2 === 0 ? RED : WHITE;
+                    ctx.fillRect(j * colW, y, colW, rowH);
+                }
+            }
+            ctx.fillStyle = RED;
+            ctx.fillRect(0, 0, size, size - bottomEdge - checkerHeight);
+
+            const rocketTexture = new THREE.CanvasTexture(canvas);
+            rocketTexture.wrapS = THREE.RepeatWrapping;
+            rocketTexture.wrapT = THREE.RepeatWrapping;
+
+            const rocketMat = new THREE.MeshStandardMaterial({ 
+                map: rocketTexture,
+                roughness: 0.2,
+                metalness: 0.1
+            });
+
+            const redMat = new THREE.MeshStandardMaterial({ color: 0xd40000, roughness: 0.32 });
+
+            const points = [];
+            const height = 30;
+            const bulgePoint = 0.58; 
+            const baseRadius = 1.1;  
+            const maxRadius = 2.6;
+
+            for (let i = 0; i <= 100; i++) {
+                const t = i / 100;
+                const y = t * height;
+                let x;
+                if (t < bulgePoint) {
+                    const localT = t / bulgePoint;
+                    x = baseRadius + (maxRadius - baseRadius) * Math.sin(localT * Math.PI / 2);
+                } else {
+                    const localT = (t - bulgePoint) / (1 - bulgePoint);
+                    x = maxRadius * Math.pow(Math.cos(localT * Math.PI / 2), 0.8);
+                }
+                points.push(new THREE.Vector2(x, y));
+            }
+            points.unshift(new THREE.Vector2(0, 0));
+
+            const bodyGeo = new THREE.LatheGeometry(points, 64);
+            const body = new THREE.Mesh(bodyGeo, rocketMat);
+            rocket.add(body);
+
+            const tipGeo = new THREE.CylinderGeometry(0.05, 0.2, 3, 12);
+            const tip = new THREE.Mesh(tipGeo, redMat);
+            tip.position.y = height + 1.5;
+            rocket.add(tip);
+
+            for (let i = 0; i < 3; i++) {
+                const legGroup = new THREE.Group();
+                const angle = (i * Math.PI * 2) / 3;
+                legGroup.rotation.y = angle;
+
+                const legShape = new THREE.Shape();
+                legShape.moveTo(1.2, 7.2); 
+                legShape.lineTo(2.2, 7.2); 
+                legShape.bezierCurveTo(9.0, 5.7, 10.5, -1.3, 10.5, -3.7); 
+                legShape.lineTo(8.0, -3.7); 
+                legShape.bezierCurveTo(8.0, -0.5, 4.0, 1.5, 1.2, 2.7); 
+                
+                const extrudeSettings = { depth: 1.6, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 5 };
+                const legGeo = new THREE.ExtrudeGeometry(legShape, extrudeSettings);
+                const leg = new THREE.Mesh(legGeo, redMat);
+                leg.position.set(0, 0, -0.8);
+                
+                const podGeo = new THREE.SphereGeometry(2.0, 32, 32);
+                const pod = new THREE.Mesh(podGeo, redMat);
+                pod.scale.set(1, 1.35, 1);
+                pod.position.set(9.2, -3.4, 0.8); 
+                leg.add(pod);
+
+                legGroup.add(leg);
+                rocket.add(legGroup);
+            }
+            
+            rocket.position.copy(targetPosition);
+        }
+
+        let isRotating = false;
+        let isPanning = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+
+        function setupControls() {
+            document.addEventListener('mousedown', (e) => {
+                if (e.button === 0) isRotating = true;
+                if (e.button === 2) isPanning = true;
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isRotating = false;
+                isPanning = false;
+            });
+
+            // Prevent context menu on right click for better panning experience
+            document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            document.addEventListener('mousemove', (e) => {
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+
+                if (isRotating) {
+                    rocket.rotation.y += deltaX * 0.01;
+                    rocket.rotation.x += deltaY * 0.01;
+                } else if (isPanning) {
+                    // Panning moves the target base position
+                    targetPosition.x += deltaX * 0.05;
+                    targetPosition.y -= deltaY * 0.05;
+                }
+                
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            });
+
+            document.addEventListener('wheel', (e) => {
+                camera.position.z += e.deltaY * 0.05;
+                camera.position.z = Math.max(10, Math.min(camera.position.z, 600));
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+
+            if (starField) {
+                starField.material.uniforms.uTime.value = time;
+                const positions = starField.geometry.attributes.position.array;
+                for (let i = 0; i < starCount; i++) {
+                    positions[i * 3 + 1] -= uniformStarSpeed; 
+                    if (positions[i * 3 + 1] < -600) positions[i * 3 + 1] = 600;
+                }
+                starField.geometry.attributes.position.needsUpdate = true;
+            }
+
+            if (rocket) {
+                if (!isRotating && !isPanning) {
+                    rocket.rotation.y += 0.002;
+                }
+                // Idle oscillation is added on top of the target panned position
+                rocket.position.x = targetPosition.x + Math.sin(time * 0.5) * 0.1;
+                rocket.position.y = targetPosition.y + Math.cos(time * 0.7) * 0.15;
+            }
+            
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

@@ -500,7 +500,7 @@ function buildHouse() {
         new THREE.BoxGeometry(1.4, 2.4, 2.2),
         new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
     );
-    toiletHitBox.position.set(0, 2.0, -3.5);
+    toiletHitBox.position.set(0, 1.1, -3.5); // Fixed: Aligned with visual mesh (was 2.0)
     toiletHitBox.userData = { name: 'toilet', type: 'room' };
     worldGroup.add(toiletHitBox);
 
@@ -962,14 +962,14 @@ function buildEnvironment() {
     worldGroup.add(road);
 
     // Capture the light object for animation
-    lamppostLight = buildStreetlight(-2.2, 8, Math.PI);
+    const lx_lamp = -2.2, lz_lamp = 8; // V157: Restored to proximity as requested
+    lamppostLight = buildStreetlight(lx_lamp, lz_lamp, Math.PI);
     if (lamppostLight) {
         let group = lamppostLight.parent.parent;
         if (group) {
-            const lx = -2.2, lz = 8;
-            const ly = getPlanetY(lx, lz);
-            group.position.set(lx, ly, lz);
-            const normal = new THREE.Vector3(lx, ly + PLANET_RADIUS, lz).normalize();
+            const ly = getPlanetY(lx_lamp, lz_lamp);
+            group.position.set(lx_lamp, ly, lz_lamp);
+            const normal = new THREE.Vector3(lx_lamp, ly + PLANET_RADIUS, lz_lamp).normalize();
             group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
             group.rotateY(Math.PI);
         }
@@ -1020,19 +1020,11 @@ function buildEnvironment() {
         const geo = new THREE.BoxGeometry(2.5, 1.0, 2.5);
         geo.translate(0, 0.5, 0); // Keep pivot
 
-        // V146: Random Palette (User Request)
-        // Dark/Pastel Browns, Greens, Metal, Dark Greys
+        // V146: Grey Scale Palette (Removing Browns / Greens as requested)
         const palette = [
-            // Dark Browns
-            0x3e2723, 0x4e342e, 0x5d4037,
-            // Pastel Browns
-            0xd7ccc8, 0xa1887f, 0x8d6e63,
-            // Greens (Dark/Olive/Forest)
-            0x2e7d32, 0x1b5e20, 0x558b2f, 0x33691e,
-            // Metal (Blue-Greys / Greys)
-            0x607d8b, 0x78909c, 0x90a4ae, 0xaaaaaa,
-            // Dark Greys
-            0x212121, 0x37474f, 0x263238, 0x1a1a1a
+            0x1a1a1a, 0x2c2c2c, 0x333333, 0x444444, 0x555555,
+            0x666666, 0x777777, 0x888888, 0x999999, 0xaaaaaa,
+            0x121212, 0x242424, 0x383838, 0x4a4a4a, 0x222233 // Subtle blue-grey
         ];
         const randomColor = palette[Math.floor(Math.random() * palette.length)];
 
@@ -1057,7 +1049,7 @@ function buildEnvironment() {
 
         return mesh;
     }
-    // V153: Extended Path Lights Range (Closer to Camera)
+    // V158: Perspective-Synced Path Lights (Hero Foreground + Scaling)
     function spawnPathLights() {
         const lampGroup = new THREE.Group();
         const postGeo = new THREE.CylinderGeometry(0.1, 0.15, 3.0);
@@ -1069,32 +1061,47 @@ function buildEnvironment() {
             emissiveIntensity: 2.0
         });
 
-        // Path is typically Z axis leading to (0,0,0) or door (Z=2.5?)
-        // Door is at Z=2.5, X=0 (approx). Stairs lead down Z.
-        // V153: Extended Z range from 90m (Was 30) for "Closer to viewer" feel
-        for (let z = 6; z < 90; z += 12) {
+        // Taper variables
+        const wSteps = 1.4, wHorizon = 30.0, zSteps = 2.7, zHorizon = 150.0;
+        const slope = (wHorizon - wSteps) / (zHorizon - zSteps);
+
+        // V158: Start from z=115 (Far foreground) down to z=35 (Near House)
+        // Range: 115m -> 35m. Distance from house is z.
+        for (let z = 115; z >= 35; z -= 20) {
+            const currentRoadWidth = wSteps + (z - zSteps) * slope;
+            const xPos = currentRoadWidth / 2 + 1.2;
+
+            // V158: Distance-based Scale (Hero factor)
+            // Near viewer (z=115) -> scale 2.0
+            // Near house (z=35) -> scale 1.0
+            const perspectiveScale = 1.0 + Math.max(0, (z - 35) / 80);
+
             // Left Post
             const pL = new THREE.Mesh(postGeo, postMat);
-            pL.position.set(-2, 1.5, z);
+            alignToPlanet(pL, -xPos, z);
+            pL.scale.setScalar(perspectiveScale);
+            pL.position.y += 1.5 * perspectiveScale; // Adjust pivot height for scale
             const bL = new THREE.Mesh(bulbGeo, bulbMat);
-            bL.position.set(0, 1.6, 0); // Top of post
+            bL.position.set(0, 1.6, 0);
             pL.add(bL);
             lampGroup.add(pL);
 
             // Right Post
             const pR = new THREE.Mesh(postGeo, postMat);
-            pR.position.set(2, 1.5, z);
+            alignToPlanet(pR, xPos, z);
+            pR.scale.setScalar(perspectiveScale);
+            pR.position.y += 1.5 * perspectiveScale;
             const bR = new THREE.Mesh(bulbGeo, bulbMat);
             bR.position.set(0, 1.6, 0);
             pR.add(bR);
             lampGroup.add(pR);
 
-            // Add PointLights for realism?
-            const light = new THREE.PointLight(0xffaa00, 0.5, 8);
-            light.position.set(-2, 3, z);
+            const lightIntensity = 0.5 * perspectiveScale;
+            const light = new THREE.PointLight(0xffaa00, lightIntensity, 12 * perspectiveScale);
+            light.position.set(-xPos, 4 * perspectiveScale, z);
             worldGroup.add(light);
-            const lightR = new THREE.PointLight(0xffaa00, 0.5, 8);
-            lightR.position.set(2, 3, z);
+            const lightR = new THREE.PointLight(0xffaa00, lightIntensity, 12 * perspectiveScale);
+            lightR.position.set(xPos, 4 * perspectiveScale, z);
             worldGroup.add(lightR);
         }
         worldGroup.add(lampGroup);
@@ -1104,22 +1111,26 @@ function buildEnvironment() {
 
 
     // V-NEW: Generate Global Skyscrapers (Replacing all tree loops)
-    // V133: DENSITY & HORIZON
-    console.log("--- V133: DENSITY, GLOWS, HORIZON ---");
+    // V157: CLEAR AREA BEHIND HOUSE & GRADUAL SCALING
+    console.log("--- V157: SPAWNING DENSE MEDIUM BLOCKS (DISTANCE GRADIENT) ---");
     const skyscraperCount = 500; // More density
     for (let i = 0; i < skyscraperCount; i++) {
-        // ... (Loop unchanged, just copying context to ensure match)
         const angle = Math.random() * Math.PI * 2;
-        const radius = 15 + Math.pow(Math.random(), 2) * 120;
+        // V149: Radius starts at 25 (was 15) to clear house back area
+        const radius = 25 + Math.pow(Math.random(), 2) * 120;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        // V133: Reduced Back Exclusion (-5 instead of -20)
-        // Filling the "empty behind house" area further
         if (z > -5 && z < 180 && Math.abs(x) < 20.0) continue;
 
         const mesh = createMegaBlock();
-        const h = 6.0 + Math.random() * 12.0;
+
+        // V157: Smoother Distance Scaling
+        const distFactor = (radius - 25) / 120;
+        const minH = 6.0 + distFactor * 6.0;  // 6m to 12m min
+        const maxH = 10.0 + distFactor * 15.0; // 10m to 25m max
+        const h = minH + Math.random() * (maxH - minH);
+
         mesh.userData.baseScaleY = h;
         mesh.scale.set(1, h, 1);
 
@@ -1154,11 +1165,36 @@ function buildEnvironment() {
         trunk.position.y = 0.75; group.add(trunk);
         const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.2, 3.0, 8), new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.8 }));
         leaves.position.y = 3.0; group.add(leaves);
+
+        // V166: Scale variation
+        const s = 0.7 + Math.random() * 0.8;
+        group.scale.set(s, s, s);
+
         worldGroup.add(group);
+        return group; // Added return for alignment (V166)
     }
     // V132: Manual Trees
-    createSimpleTree(5, 0); createSimpleTree(6, 2); createSimpleTree(6, -2);
-    createSimpleTree(-5, -4); createSimpleTree(0, -6);
+    alignToPlanet(createSimpleTree(5, 0), 5, 0);
+    alignToPlanet(createSimpleTree(6, 2), 6, 2);
+    alignToPlanet(createSimpleTree(6, -2), 6, -2);
+    alignToPlanet(createSimpleTree(-5, -4), -5, -4);
+    alignToPlanet(createSimpleTree(0, -6), 0, -6);
+
+    // V166: Procedural Forest (Denser Foliage)
+    for (let i = 0; i < 150; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 10 + Math.random() * 50;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+
+        // Culling: Avoid house (approx center) and road (z road)
+        if (Math.abs(x) < 8 && z > -20 && z < 100) continue;
+        if (radius < 12) continue; // Inner circle clear
+
+        // V166: Fix floating trees - call alignToPlanet
+        const treeInstance = createSimpleTree(x, z);
+        alignToPlanet(treeInstance, x, z);
+    }
 
     // V-CLEAN: Removed V64 Fringe Trees loop
 

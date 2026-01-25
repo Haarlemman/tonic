@@ -101,9 +101,6 @@ const roomContent = {
         hex: 0x1a1a1a,
         interiorWidth: 4,
         interiorDepth: 4,
-        description: "A small, quiet space at the edge of the property. For contemplation and solitary rest.",
-        playlist: [
-            { artist: "David Enker", track: "The Annex Theme", src: "../assets/audio/annex_theme.mp3" }
-        ]
+        description: "A small, quiet space at the edge of the property. For contemplation and solitary rest."
     }
 };

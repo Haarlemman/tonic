@@ -453,25 +453,16 @@ function createLivingRoomInterior() {
             }
 
             if (row === 1 && posZ < 0) {
-                // TINTIN ROCKET
-                const rocket = new THREE.Group();
-                const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.2), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
-                const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-                b2.position.y = 0.2;
-                const b3 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.1, 0.2), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
-                b3.position.y = 0.4;
-                const nose = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.25), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-                nose.position.y = 0.62;
-                rocket.add(b1, b2, b3, nose);
-
-                const finMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-                for (let i = 0; i < 3; i++) {
-                    const fg = new THREE.Group();
-                    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.35, 0.12), finMat);
-                    fin.position.y = -0.15; fin.position.z = 0.14; fin.rotation.x = 0.4;
-                    fg.add(fin); fg.rotation.y = (Math.PI * 2 / 3) * i; rocket.add(fg);
-                }
-                rocket.position.set(0.1, shelfY - 2.2, 0 + pivotOffsetZ);
+                // V166: RUBIK'S CUBE (Replaces old Tintin rocket)
+                const cubeGroup = createRubiksCubeArtifact();
+                cubeGroup.position.set(0.1, shelfY - 2.15, 0 + pivotOffsetZ);
+                bookcaseGroup.add(cubeGroup);
+            }
+            else if (row === 4 && posZ > 0) {
+                // V166: REALISTIC TINTIN ROCKET (on Top Left Shelf)
+                const rocket = createRealisticRocketArtifact();
+                rocket.scale.setScalar(0.022);
+                rocket.position.set(0.1, shelfY - 2.22, 0);
                 bookcaseGroup.add(rocket);
             }
             else if (row === 2 && posZ > 0) {
@@ -643,4 +634,111 @@ function createLivingRoomInterior() {
         console.warn("Living Room Robot Init Failed", e);
     }
 }
+// --- ARTIFACT HELPERS (V166) ---
+
+function createRubiksCubeArtifact() {
+    const group = new THREE.Group();
+    const cubeSize = 0.12;
+    const spacing = 0.13;
+    const colors = [0xffffff, 0xffff00, 0xff0000, 0xffa500, 0x0000ff, 0x00ff00]; // W, Y, R, O, B, G
+
+    for (let x = -1; x <= 1; x++) {
+        for (let y = -1; y <= 1; y++) {
+            for (let z = -1; z <= 1; z++) {
+                if (x === 0 && y === 0 && z === 0) continue; // Hollow core
+
+                const materials = [];
+                for (let i = 0; i < 6; i++) {
+                    // Random-ish rotation/scramble look
+                    materials.push(new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)], roughness: 0.1 }));
+                }
+
+                // Black frame/border effect
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), materials);
+                mesh.position.set(x * spacing, y * spacing, z * spacing);
+                group.add(mesh);
+
+                // Add dark edges
+                const edges = new THREE.EdgesGeometry(mesh.geometry);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+                mesh.add(line);
+            }
+        }
+    }
+    group.scale.setScalar(0.85); // Adjust for shelf fit
+    return group;
+}
+
+function createRealisticRocketArtifact() {
+    const rocket = new THREE.Group();
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const RED = '#d40000'; const WHITE = '#fcfcfc';
+    const bottomEdge = 0.32 * size;
+    const checkerHeight = 0.44 * size;
+    const rowH = checkerHeight / 5;
+    const cols = 10; const colW = size / cols;
+
+    ctx.fillStyle = RED; ctx.fillRect(0, size - bottomEdge, size, bottomEdge);
+    for (let i = 0; i < 5; i++) {
+        const y = size - bottomEdge - (i + 1) * rowH;
+        for (let j = 0; j < cols; j++) {
+            ctx.fillStyle = (i + j) % 2 === 0 ? RED : WHITE;
+            ctx.fillRect(j * colW, y, colW, rowH);
+        }
+    }
+    ctx.fillStyle = RED; ctx.fillRect(0, 0, size, size - bottomEdge - checkerHeight);
+
+    const rocketTexture = new THREE.CanvasTexture(canvas);
+    rocketTexture.wrapS = THREE.RepeatWrapping; rocketTexture.wrapT = THREE.RepeatWrapping;
+
+    const rocketMat = new THREE.MeshStandardMaterial({ map: rocketTexture, roughness: 0.2, metalness: 0.1 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xd40000, roughness: 0.32 });
+
+    const points = [];
+    const h = 30; const bulgePoint = 0.58; const baseRadius = 1.1; const maxRadius = 2.6;
+    for (let i = 0; i <= 100; i++) {
+        const t = i / 100; const y = t * h;
+        let x;
+        if (t < bulgePoint) {
+            const localT = t / bulgePoint;
+            x = baseRadius + (maxRadius - baseRadius) * Math.sin(localT * Math.PI / 2);
+        } else {
+            const localT = (t - bulgePoint) / (1 - bulgePoint);
+            x = maxRadius * Math.pow(Math.cos(localT * Math.PI / 2), 0.8);
+        }
+        points.push(new THREE.Vector2(x, y));
+    }
+    points.unshift(new THREE.Vector2(0, 0));
+
+    const body = new THREE.Mesh(new THREE.LatheGeometry(points, 32), rocketMat);
+    rocket.add(body);
+
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 3, 12), redMat);
+    tip.position.y = h + 1.5;
+    rocket.add(tip);
+
+    for (let i = 0; i < 3; i++) {
+        const legGroup = new THREE.Group();
+        legGroup.rotation.y = (i * Math.PI * 2) / 3;
+        const legShape = new THREE.Shape();
+        legShape.moveTo(1.2, 7.2); legShape.lineTo(2.2, 7.2);
+        legShape.bezierCurveTo(9.0, 5.7, 10.5, -1.3, 10.5, -3.7);
+        legShape.lineTo(8.0, -3.7);
+        legShape.bezierCurveTo(8.0, -0.5, 4.0, 1.5, 1.2, 2.7);
+        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(legShape, { depth: 1.6, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 3 }), redMat);
+        leg.position.set(0, 0, -0.8);
+        const pod = new THREE.Mesh(new THREE.SphereGeometry(2.0, 16, 16), redMat);
+        pod.scale.set(1, 1.35, 1); pod.position.set(9.2, -3.4, 0.8);
+        leg.add(pod);
+        legGroup.add(leg);
+        rocket.add(legGroup);
+    }
+    return rocket;
+}
+
+window.createRealisticRocketArtifact = createRealisticRocketArtifact;
+window.createRubiksCubeArtifact = createRubiksCubeArtifact;
 window.createLivingRoomInterior = createLivingRoomInterior;
