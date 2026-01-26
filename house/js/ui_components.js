@@ -70,9 +70,9 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
     const hctx = hCanvas.getContext('2d');
     hctx.fillStyle = 'rgba(0,0,0,0)';
     hctx.fillStyle = '#ffffff';
-    hctx.font = 'bold 80px "Courier New"';
+    hctx.font = 'bold 60px Arial'; // V-FIX: Match Audio Font
     hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
-    hctx.shadowColor = '#00ff00'; hctx.shadowBlur = 0; // Clean text
+    hctx.shadowColor = '#00ff00'; hctx.shadowBlur = 10; // Green Glow
     hctx.fillText("VIDEO", 256, 64);
 
     const hTex = new THREE.CanvasTexture(hCanvas);
