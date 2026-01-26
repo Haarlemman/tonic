@@ -172,7 +172,8 @@ function createMusicPanel(playlist) {
     });
 
     // -- 4. ON/OFF SWITCH --
-    const switchGeo = new THREE.BoxGeometry(0.2, 0.5, 0.5);
+    // V-CHANGE: Square Button (0.3x0.3) matching Video UI
+    const switchGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
     musicSwitchMesh.position.set(wallX + 0.02, 5.5, -1.45); // V-FIX: Nudge right to prevent overlap
@@ -247,5 +248,16 @@ function toggleMusic() {
         audioPlayer.play().catch(e => console.log("Audio play failed", e));
         isMusicPlaying = true;
         if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
+
+        // V-FIX: Sync Video Buttons (RED) when Music Toggled ON
+        if (window.interiorClickables) {
+            const btns = window.interiorClickables.filter(c => c.userData.type === 'videoControlSingle');
+            btns.forEach(b => {
+                if (b.material) {
+                    b.material.color.setHex(0xff0000);
+                    if (b.material.emissive) b.material.emissive.setHex(0x440000);
+                }
+            });
+        }
     }
 }
