@@ -42,6 +42,7 @@ let masterVideoIndex = 0;
 let isTVVideoMode = false;
 let hoveredObject = null;
 const interiorClickables = [];
+window.interiorClickables = interiorClickables; // V-FIX: Global Access for Room Scripts
 
 let tvMesh = null, currentSlideIndex = 0;
 let phoneScreenMesh = null;
