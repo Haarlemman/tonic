@@ -87,6 +87,7 @@ function playTrack(index) {
 }
 
 function createMusicPanel(playlist) {
+    console.log("v164: Creating Music Panel. Playlist length:", playlist ? playlist.length : 0);
     if (!playlist || playlist.length === 0) return;
     const currentTrack = playlist[currentTrackIndex];
 
