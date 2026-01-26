@@ -107,8 +107,10 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
                 onClick: () => {
                     console.log("Universal Video Click:", i);
                     if (window.videoElement) {
-                        // V-FIX: Load new source explicitly
+                        // V-FIX: Load new source explicitly & Unmute
                         window.videoElement.src = item.src;
+                        window.videoElement.muted = false;
+                        window.videoElement.volume = 1.0;
                         window.videoElement.load(); // Ensure load
                         window.videoElement.play().catch(e => console.error(e));
 
