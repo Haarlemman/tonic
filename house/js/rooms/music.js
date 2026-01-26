@@ -176,6 +176,7 @@ function createMusicPanel(playlist) {
     const switchGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
+    musicSwitchMesh.rotation.y = Math.PI / 2; // V-FIX: Match panel rotation
     musicSwitchMesh.position.set(wallX + 0.02, 5.5, -1.45); // V-FIX: Nudge right to prevent overlap
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
     interiorGroup.add(musicSwitchMesh);
