@@ -49,21 +49,7 @@ function createBathroomInterior() {
     shadowPlane.position.z = -0.08; // Safe distance
     mirrorFrame.add(shadowPlane);
 
-    // BUTTON (Left of Mirror)
-    // V49: Adjusted position for wider frame
-    const btnGeo = new THREE.BoxGeometry(0.5, 0.5, 0.2);
-    const btnMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 });
-    const videoBtn = new THREE.Mesh(btnGeo, btnMat);
-    videoBtn.position.set(-1.6, 3.5, -4.85); // Moved left (-1.4 -> -1.6)
-    videoBtn.userData = { type: 'bathroomMirrorButton' };
-
-    // Toggle Function
-    videoBtn.toggleMirror = function () {
-        if (window.toggleBathroomMirror) window.toggleBathroomMirror();
-    };
-
-    interiorGroup.add(videoBtn);
-    interiorClickables.push(videoBtn);
+    // Button removed (Replaced by Universal Video UI)
 
     // 1. Remove default bright bulb
     const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
@@ -201,7 +187,10 @@ function createBathroomInterior() {
     mirrorGlass.name = 'mirrorSurface';
     // V44: Make Mirror Surface Clickable Too
     mirrorGlass.userData = { type: 'bathroomMirrorButton' }; // Act like the button
-    mirrorGlass.toggleMirror = videoBtn.toggleMirror; // Share function
+    // V-FIX: Direct toggle (videoBtn removed)
+    mirrorGlass.toggleMirror = function () {
+        if (window.toggleBathroomMirror) window.toggleBathroomMirror();
+    };
     interiorClickables.push(mirrorGlass);
 
 
