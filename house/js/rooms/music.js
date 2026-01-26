@@ -95,54 +95,49 @@ function createMusicPanel(playlist) {
     const iW = rData.interiorWidth || 10;
     const wallX = -(iW / 2) + 0.01; // Tighter fit to wall
 
-    // -- 1. NOW PLAYING BOARD (CENTERED TOP) --
-    // Z=0 (Center of wall), Y=5.5
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(0, 0, 512, 256);
+    // -- 1. AUDIO BUTTON (TOP, SQUARE) --
+    // Y=5.5, Z=0 (Centered relative to group rotation)
+    // V-CHANGE: Square Button (0.3x0.3) matching Video UI
+    const switchGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
+    const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
+    musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
+    musicSwitchMesh.rotation.y = Math.PI / 2; // Flush with wall
+    musicSwitchMesh.position.set(wallX + 0.02, 5.5, 0); // Centered
+    musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
+    interiorGroup.add(musicSwitchMesh);
+    interiorClickables.push(musicSwitchMesh);
 
-    ctx.fillStyle = '#4ade80'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.fillText("NOW PLAYING", 256, 60);
-    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 45px Arial'; ctx.fillText(currentTrack.artist, 256, 130);
-    ctx.font = 'italic 35px Arial'; ctx.fillText(currentTrack.track, 256, 190);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    // V-REFINE: Scaling Down (3x1.5 -> 2.2x1.1)
-    const npMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    npMesh.rotation.y = Math.PI / 2;
-    npMesh.position.set(wallX, 5.5, 0);
-    npMesh.userData = { type: 'musicPanel' };
-    interiorGroup.add(npMesh);
-
-    // -- 2. PLAYLIST HEADER --
+    // -- 2. HEADER "AUDIO" (BELOW BUTTON) --
+    // Y=4.8
     const pHeadCanvas = document.createElement('canvas');
     pHeadCanvas.width = 512; pHeadCanvas.height = 64;
     const pctx = pHeadCanvas.getContext('2d');
     pctx.fillStyle = '#ffffff'; pctx.font = 'bold 60px Arial'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
-    // V-CHANGE: "AUDIO" instead of "PLAYLIST"
-    pctx.shadowColor = '#ffffff'; pctx.shadowBlur = 15; // V-FIX: Glow
+    pctx.shadowColor = '#ffffff'; pctx.shadowBlur = 15; // Glow
     pctx.fillText("AUDIO", 256, 32);
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
-    // V-REFINE: Scaling Down (2x0.4 -> 1.5x0.3)
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.3), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(wallX, 4.4, 0); // Adjusted Y
+    pHeadMesh.position.set(wallX, 4.8, 0);
     pHeadMesh.userData = { type: 'playlistHeader' };
     interiorGroup.add(pHeadMesh);
 
-    // -- 3. INTERACTIVE SONG LIST --
+    // -- 3. TRACK LIST (BOTTOM) --
     playlist.forEach((item, i) => {
         const isCurrent = i === currentTrackIndex;
-        // INCREASED HEIGHT FOR 2 LINES
+        // Start at 4.2 go down
+        const yPos = 4.2 - (i * 0.7);
+
         const sCanvas = document.createElement('canvas');
         sCanvas.width = 512; sCanvas.height = 120;
         const sctx = sCanvas.getContext('2d');
 
         if (isCurrent) {
-            sctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            // V-CHANGE: 50% Black Background
+            sctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             sctx.fillRect(0, 0, 512, 120);
-            sctx.fillStyle = '#4ade80';
+            // V-CHANGE: Bright Green Text
+            sctx.fillStyle = '#00ff00';
         } else {
             sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
             sctx.fillRect(0, 0, 512, 120);
@@ -156,31 +151,18 @@ function createMusicPanel(playlist) {
 
         // LINE 2: Artist Name
         sctx.font = 'italic 28px Arial'; sctx.textBaseline = 'top';
-        sctx.fillStyle = isCurrent ? '#86efac' : '#94a3b8'; // Slightly dimmer for artist
+        sctx.fillStyle = isCurrent ? '#86efac' : '#94a3b8';
         sctx.fillText(item.artist, 50, 65);
 
         const sTex = new THREE.CanvasTexture(sCanvas);
-        // V-REFINE: Scaling Down (3.5x0.8 -> 2.5x0.6)
         const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
         sMesh.rotation.y = Math.PI / 2;
-        // Position: Stack closer
-        sMesh.position.set(wallX, 3.8 - (i * 0.7), 0);
+        sMesh.position.set(wallX, yPos, 0); // Centered
         sMesh.userData = { type: 'songItem', index: i };
 
         interiorGroup.add(sMesh);
         interiorClickables.push(sMesh);
     });
-
-    // -- 4. ON/OFF SWITCH --
-    // V-CHANGE: Square Button (0.3x0.3) matching Video UI
-    const switchGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
-    const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
-    musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
-    musicSwitchMesh.rotation.y = Math.PI / 2; // V-FIX: Match panel rotation
-    musicSwitchMesh.position.set(wallX + 0.02, 5.5, -1.45); // V-FIX: Nudge right to prevent overlap
-    musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
-    interiorGroup.add(musicSwitchMesh);
-    interiorClickables.push(musicSwitchMesh);
 }
 
 // Define nextTrack globally so it can be referenced
