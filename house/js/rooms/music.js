@@ -25,11 +25,12 @@ function playTrack(index) {
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
 
             // V14: Turn Video Button RED if music starts
-            const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton' || c.userData.type === 'bathroomMirrorButton');
+            // V14: Turn Video Button RED if music starts
+            // Search traverse-safe via clickables
+            const btn = window.interiorClickables ? window.interiorClickables.find(c => c.userData.type === 'videoControlSingle') : null;
             if (btn) {
-                btn.userData.state = 'paused';
-                btn.material.color.setHex(0xff0000);
-                if (btn.material.emissive) btn.material.emissive.setHex(0x440000);
+                if (btn.material && btn.material.color) btn.material.color.setHex(0xff0000);
+                if (btn.material && btn.material.emissive) btn.material.emissive.setHex(0x440000);
             }
 
         }).catch(e => {

@@ -2432,9 +2432,22 @@ window.createUniversalVideoInterface = function (parentGroup, pos, playlist, opt
                     if (window.videoElement) {
                         window.videoElement.src = item.src;
                         window.videoElement.play();
-                        if (window.audioPlayer) window.audioPlayer.pause();
+
+                        // Sync Button State (Turn Green)
+                        if (window.interiorClickables) {
+                            const btn = window.interiorClickables.find(c => c.userData.type === 'videoControlSingle');
+                            if (btn) {
+                                btn.material.color.setHex(0x00ff00);
+                                btn.material.emissive.setHex(0x004400);
+                            }
+                        }
                     }
-                    // TODO: Update textures to show active state?
+                    // Stop Music
+                    if (window.audioPlayer) {
+                        window.audioPlayer.pause();
+                        window.isMusicPlaying = false;
+                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
+                    }
                 }
             };
 
