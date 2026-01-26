@@ -6,6 +6,7 @@ window.livingLibrarySpot = null;
 // masterVideoIndex is global (house.js)
 
 function initTVVideo() {
+    console.log("LIVING.JS v173: initTVVideo called.");
     if (tvVideo) return;
 
     // V-NEW: Init Screensaver

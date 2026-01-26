@@ -117,7 +117,7 @@ function createMusicPanel(playlist) {
     pctx.shadowColor = 'rgba(0,0,0,0.8)'; pctx.shadowBlur = 4; pctx.shadowOffsetX = 2; pctx.shadowOffsetY = 2; // V-FIX: Black Shadow
     pctx.fillText("AUDIO", 256, 32);
     // V-DEBUG: Visible Version
-    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v166", 480, 50);
+    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v173", 480, 50);
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.3), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
