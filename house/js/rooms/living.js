@@ -100,62 +100,21 @@ function createVideoPanel(playlist) {
     interiorGroup.add(hMesh);
 
     // -- ITEMS --
-    playlist.forEach((item, i) => {
-        const isCurrent = (tvVideo && !tvVideo.paused && item.src.endsWith(tvVideo.src.split('/').pop()));
-        const isselected = i === masterVideoIndex; // Index tracking
 
-        // Use isCurrent (Playing) for Green highlight? Or isSelected?
-        // Let's use isSelected for logic, but check playback for "Playing" status
-        const isActive = isCurrent;
 
-        const sCanvas = document.createElement('canvas');
-        sCanvas.width = 512; sCanvas.height = 120; // Match Universal aspect
-        const sctx = sCanvas.getContext('2d');
-
-        if (isActive) {
-            sctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; // Green tint
-            sctx.fillRect(0, 0, 512, 120);
-            sctx.lineWidth = 4; sctx.strokeStyle = '#4ade80'; sctx.strokeRect(0, 0, 512, 120);
+    // Click Logic
+    sMesh.userData.onClick = () => {
+        if (i === masterVideoIndex && tvVideo && !tvVideo.paused) {
+            tvVideo.pause();
+            createVideoPanel(playlist); // Refresh UI
         } else {
-            sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            sctx.fillRect(0, 0, 512, 120);
+            playTVVideo(i);
         }
+    };
 
-        // Title
-        sctx.fillStyle = isActive ? '#4ade80' : '#ffffff';
-        sctx.font = 'bold 38px Arial';
-        sctx.textAlign = 'left'; sctx.textBaseline = 'bottom';
-        sctx.fillText((i + 1) + ". " + item.title, 20, 55);
-
-        // Subtitle / Status
-        sctx.fillStyle = '#cccccc';
-        sctx.font = 'italic 28px Arial'; sctx.textBaseline = 'top';
-        const sub = isActive ? "Playing..." : (i === masterVideoIndex ? "Paused" : item.artist || "");
-        sctx.fillText(sub, 50, 65);
-
-        // Square Icon
-        sctx.fillStyle = isActive ? '#4ade80' : '#555';
-        sctx.fillRect(450, 40, 30, 30);
-
-        const sTex = new THREE.CanvasTexture(sCanvas);
-        // V-REFINE: Match Universal Width
-        const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
-        sMesh.position.set(panelX, 4.4 - (i * 0.7), panelZ);
-        sMesh.userData = { type: 'tvVideoItem', index: i };
-
-        // Click Logic
-        sMesh.userData.onClick = () => {
-            if (i === masterVideoIndex && tvVideo && !tvVideo.paused) {
-                tvVideo.pause();
-                createVideoPanel(playlist); // Refresh UI
-            } else {
-                playTVVideo(i);
-            }
-        };
-
-        interiorGroup.add(sMesh);
-        if (!interiorClickables.includes(sMesh)) interiorClickables.push(sMesh);
-    });
+    interiorGroup.add(sMesh);
+    if (!interiorClickables.includes(sMesh)) interiorClickables.push(sMesh);
+});
 }
 
 function nextTVContent() {

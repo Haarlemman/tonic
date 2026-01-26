@@ -2343,13 +2343,17 @@ window.createUniversalVideoInterface = function (parentGroup, pos, playlist, opt
     const plate = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.1), new THREE.MeshStandardMaterial({ color: 0x222222 }));
     trafficGroup.add(plate);
 
-    // Single Toggle Button
-    const btnGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 32);
-    btnGeo.rotateX(Math.PI / 2); // Face forward
+    // Single Toggle Button (RECTANGULAR as requested)
+    const btnGeo = new THREE.BoxGeometry(0.5, 0.3, 0.1);
+    // btnGeo.rotateX(Math.PI / 2); // No rotation needed for Box if we want flat facing Z
+
+    // Check orientation: 
+    // Cylinder was rotated X to face Z. 
+    // Box is naturally XYZ. So (0.5 width, 0.3 height, 0.1 depth) is correct for Z-facing.
 
     const btnMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x440000 }); // Default Red
     const btn = new THREE.Mesh(btnGeo, btnMat);
-    btn.position.set(0, 0, 0.06);
+    btn.position.set(0, 0, 0.06); // Sit on plate
 
     // Check initial state
     if (window.videoElement && !window.videoElement.paused) {
