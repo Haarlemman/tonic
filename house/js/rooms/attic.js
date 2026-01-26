@@ -10,10 +10,14 @@ function createAtticInterior() {
         });
         const box = new THREE.Mesh(boxGeo, boxMat);
         box.position.set(x, 0.75, z);
+        box.castShadow = true;
+        box.receiveShadow = true;
 
         // Lid (Slightly larger top)
         const lid = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 1.6), boxMat);
         lid.position.y = 0.8;
+        lid.castShadow = true;
+        lid.receiveShadow = true;
         box.add(lid);
 
         // Label (Text on Front)
@@ -62,6 +66,53 @@ function createAtticInterior() {
     interiorGroup.add(particles);
 
     // V-CLEAN: REMOVED Projector, Video Mesh, Toggle Knob, etc.
+
+    // V199: Old-Fashioned Corner Lamp (Left Corner)
+    // Position: Back Left Corner
+    const lampGroup = new THREE.Group();
+    lampGroup.position.set(-4.5, 5.5, -4.8); // Back Left Corner, Lowered slightly
+
+    // 1. Wall Mount (Brass Base)
+    const mountGeo = new THREE.CylinderGeometry(0.2, 0.3, 0.1, 16);
+    const brassMat = new THREE.MeshStandardMaterial({ color: 0xb5a642, metalness: 0.6, roughness: 0.3 });
+    const mount = new THREE.Mesh(mountGeo, brassMat);
+    mount.rotation.x = Math.PI / 2; // Flat against wall
+    mount.position.z = -0.1;
+    lampGroup.add(mount);
+
+    // 2. Arm (Curved Brass Tube)
+    const armGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 16, Math.PI);
+    const arm = new THREE.Mesh(armGeo, brassMat);
+    arm.rotation.y = Math.PI / 2; // Arcing out from wall
+    arm.position.set(0, 0.2, 0.3);
+    lampGroup.add(arm);
+
+    // 3. Shade (Old Fashioned Glass/Fabric Cone)
+    // Bigger: 0.8 radius
+    const shadeGeo = new THREE.ConeGeometry(0.8, 0.6, 32, 1, true);
+    const shadeMat = new THREE.MeshStandardMaterial({
+        color: 0xfdfbd3, // Creamy/Yellowish
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9,
+        roughness: 0.5
+    });
+    const shade = new THREE.Mesh(shadeGeo, shadeMat);
+    shade.position.set(0, -0.2, 0.7); // Hanging from arm end
+    lampGroup.add(shade);
+
+    // 4. Bulb (Inside)
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+    bulb.position.y = -0.2;
+    shade.add(bulb);
+
+    // 5. The Light (Stronger)
+    const light = new THREE.PointLight(0xffaa00, 2.5, 25); // Increased Intensity (1.5 -> 2.5) and Range
+    light.castShadow = true;
+    light.position.y = -0.5;
+    shade.add(light);
+
+    interiorGroup.add(lampGroup);
 }
 
 function createProjector() {

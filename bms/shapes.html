@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones: The Attic</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0a0a0f; font-family: 'Georgia', serif; }
+        #overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            color: #e0e0e0;
+            pointer-events: none;
+            max-width: 400px;
+        }
+        h1 { font-size: 1.5rem; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; margin: 0; color: #fff; }
+        .description { font-style: italic; opacity: 0.7; margin-top: 10px; line-height: 1.6; font-size: 0.9rem; }
+        #instructions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1>The Attic</h1>
+        <div class="description">
+            Within the framework, there is control. Three volumes of existence: 
+            the visceral Art of the Body, the sharp Logic of the Mind, and the weightless Essence of the Soul.
+        </div>
+    </div>
+
+    <div id="instructions">Drag to orbit • Scroll to zoom</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        window.onload = function () {
+            const scene = new THREE.Scene();
+            // Lightened background and fog
+            scene.background = new THREE.Color(0x0a0a0f);
+            scene.fog = new THREE.FogExp2(0x0a0a0f, 0.05);
+
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(8, 5, 12);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // --- THE ATTIC STRUCTURE ---
+            
+            // Floor - Lightened texture to catch more light
+            const floorGeo = new THREE.PlaneGeometry(30, 30);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.8 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -3;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Rafters / Beams - Made slightly thicker and lighter
+            const beamGroup = new THREE.Group();
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1e });
+            for(let i = -7.5; i <= 7.5; i += 2.5) {
+                const beam = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 15), beamMat);
+                beam.position.set(i, 2, 0);
+                beam.rotation.z = (i < 0) ? 0.6 : -0.6;
+                beam.position.y = 4 - Math.abs(i*0.6);
+                beam.castShadow = true;
+                beamGroup.add(beam);
+            }
+            scene.add(beamGroup);
+
+            // --- DUST MOTES ---
+            const dustGeo = new THREE.BufferGeometry();
+            const dustCoords = [];
+            for (let i = 0; i < 1200; i++) {
+                dustCoords.push(Math.random() * 25 - 12.5, Math.random() * 12 - 3, Math.random() * 25 - 12.5);
+            }
+            dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustCoords, 3));
+            const dustMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.025, transparent: true, opacity: 0.4 });
+            const dustParticles = new THREE.Points(dustGeo, dustMat);
+            scene.add(dustParticles);
+
+            // --- THE THREE VOLUMES ---
+
+            // 1. THE BODY (Red)
+            const bodyGroup = new THREE.Group();
+            for(let i = 0; i < 3; i++) {
+                const book = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.8, 0.45, 2.2),
+                    new THREE.MeshStandardMaterial({ color: 0xa00000, roughness: 0.6 })
+                );
+                book.position.y = i * 0.5;
+                book.rotation.y = Math.sin(i) * 0.25;
+                book.castShadow = true;
+                book.receiveShadow = true;
+                bodyGroup.add(book);
+            }
+            bodyGroup.position.set(-4, -2.75, 0);
+            scene.add(bodyGroup);
+
+            // 2. THE MIND (Yellow)
+            const mindGroup = new THREE.Group();
+            const outerMind = new THREE.Mesh(
+                new THREE.BoxGeometry(1.6, 1.6, 1.6),
+                new THREE.MeshStandardMaterial({ color: 0xffd700, wireframe: true, transparent: true, opacity: 0.4 })
+            );
+            const innerMind = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.9),
+                new THREE.MeshPhongMaterial({ color: 0xFBC02D, shininess: 120, flatShading: true })
+            );
+            mindGroup.add(outerMind, innerMind);
+            mindGroup.position.set(4, 0, 0);
+            scene.add(mindGroup);
+
+            // 3. THE SOUL (Blue)
+            const soulGroup = new THREE.Group();
+            const core = new THREE.Mesh(
+                new THREE.SphereGeometry(0.65, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0x81d4fa })
+            );
+            const ringGeo = new THREE.TorusGeometry(1.3, 0.015, 16, 100);
+            const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x29b6f6, transparent: true, opacity: 0.6 }));
+            ring.rotation.x = Math.PI / 2;
+            soulGroup.add(core, ring);
+            soulGroup.position.set(0, 3.5, 0);
+            scene.add(soulGroup);
+
+            // --- LIGHTING (Enhanced) ---
+            
+            // Increased Ambient light for visibility
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambient);
+
+            // Simulated Window/Moonlight from above
+            const skyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            skyLight.position.set(5, 10, 5);
+            skyLight.castShadow = true;
+            skyLight.shadow.mapSize.width = 1024;
+            skyLight.shadow.mapSize.height = 1024;
+            scene.add(skyLight);
+
+            // Soul Point Light (Stronger)
+            const soulLight = new THREE.PointLight(0x03a9f4, 40, 20);
+            soulLight.castShadow = true;
+            scene.add(soulLight);
+
+            // Body Spot Light
+            const redSpot = new THREE.SpotLight(0xff3333, 25);
+            redSpot.position.set(-6, 6, 6);
+            redSpot.angle = Math.PI / 6;
+            redSpot.target = bodyGroup;
+            scene.add(redSpot);
+
+            // --- ANIMATION ---
+            function animate() {
+                requestAnimationFrame(animate);
+                const time = Date.now() * 0.001;
+
+                const bScale = 1 + Math.sin(time * 1.2) * 0.025;
+                bodyGroup.scale.set(bScale, bScale, bScale);
+
+                outerMind.rotation.y += 0.006;
+                innerMind.rotation.y -= 0.012;
+                innerMind.rotation.z += 0.006;
+
+                soulGroup.position.y = 2.8 + Math.sin(time * 0.8) * 0.7;
+                soulGroup.rotation.y += 0.01;
+                ring.rotation.z += 0.025;
+                
+                soulLight.position.copy(soulGroup.position);
+                soulLight.intensity = 30 + Math.sin(time * 6) * 10;
+
+                dustParticles.rotation.y += 0.0008;
+                dustParticles.position.y = Math.sin(time * 0.3) * 0.15;
+
+                controls.update();
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        };
+    </script>
+</body>
+</html>

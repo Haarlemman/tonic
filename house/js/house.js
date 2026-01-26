@@ -37,8 +37,8 @@ let infoTimeout = null;
 
 let state = 'HOUSE';
 let currentRoom = null;
-let currentTrackIndex = 0;
-let masterVideoIndex = 0;
+window.currentTrackIndex = 0; // V-FIX: Global for Music Highlight
+window.masterVideoIndex = 0;  // V-FIX: Global for Video Highlight
 let isTVVideoMode = false;
 let hoveredObject = null;
 const interiorClickables = [];
@@ -86,6 +86,7 @@ renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.domElement.style.filter = 'blur(0px)';
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // V204: Soft Shadows
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
@@ -352,6 +353,8 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
                 new THREE.BoxGeometry(frameW, frameH, frameDepth),
                 new THREE.MeshStandardMaterial({ color: frameColor })
             );
+            // V-FIX: Ensure Frame is Clickable (Propagate Name)
+            frame.userData = { name: name, type: 'room' };
 
             const zOffset = d / 2 + 0.02;
             const xOffset = w / 2 + 0.02;
@@ -390,6 +393,9 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
                 hueOffset: Math.random(),
             };
             windowFlickerMaterials.push(glass.material);
+
+            // V-FIX: Ensure Glass is Clickable
+            glass.userData = { name: name, type: 'room' };
 
             frame.add(glass);
             mesh.add(frame);
@@ -572,13 +578,18 @@ function buildHouse() {
     roof.userData = { name: 'attic', type: 'room' };
     const atticWinFrameFront = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x3e2723 }));
     atticWinFrameFront.position.set(0, -0.6, 2.6);
+    atticWinFrameFront.userData = { name: 'attic', type: 'room' }; // V-FIX
     const atticWinGlassFront = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffaa00, emissiveIntensity: 0.6 }));
     atticWinGlassFront.position.z = 0.06;
+    atticWinGlassFront.userData = { name: 'attic', type: 'room' }; // V-FIX
     atticWinFrameFront.add(atticWinGlassFront);
     roof.add(atticWinFrameFront);
+
     const atticWinFrameBack = atticWinFrameFront.clone();
     atticWinFrameBack.position.set(0, -0.6, -2.6);
     atticWinFrameBack.rotation.y = Math.PI;
+    // Clone ensures userData (shallow copy) but let's be sure
+    atticWinFrameBack.userData = { name: 'attic', type: 'room' };
     roof.add(atticWinFrameBack);
     worldGroup.add(roof);
 
@@ -1132,58 +1143,76 @@ function buildEnvironment() {
         // V158: Start from z=115 (Far foreground) down to z=35 (Near House)
         // Range: 115m -> 35m. Distance from house is z.
         // V-FIX: Standard Density (Step -15) to reduce clutter
-        for (let z = 115; z >= 35; z -= 15) {
+        // V158: Start from z=115 (Far foreground) down to z=20 (Near House - Closer)
+        // Range: 115m -> 20m. Distance from house is z.
+        // V-FIX: Standard Density (Step -15) to reduce clutter
+        for (let z = 115; z >= 20; z -= 15) {
             const currentRoadWidth = wSteps + (z - zSteps) * slope;
-            const xPos = currentRoadWidth / 2 + 1.2;
+            // Move closer to the road (1.2 -> 0.8)
+            const xPos = currentRoadWidth / 2 + 0.8;
 
-            // V-FIX: REMOVED Forced Perspective Scale (Realism)
-            const perspectiveScale = 1.2; // Slight constant scale for visibility
+            // V-NEW: Perspective Cheat (Further = Bigger)
+            // Near (20m) = 1.0x
+            // Far (115m) = 2.0x
+            const distRatio = (z - 20) / (115 - 20);
+            const perspectiveScale = 1.0 + distRatio * 1.0;
+
+            // V-NEW: Graceful Geometry (Curved Neck)
+            // Use a Group for the whole post
+            const postGroup = new THREE.Group();
+
+            // 1. Base Pole (Thinner: 0.05)
+            const poleGeo = new THREE.CylinderGeometry(0.05, 0.06, 3.5);
+            const pole = new THREE.Mesh(poleGeo, postMat);
+            pole.position.y = 1.75;
+            postGroup.add(pole);
+
+            // 2. Curved Top (Torus Segment)
+            const curveGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 16, Math.PI);
+            const curve = new THREE.Mesh(curveGeo, postMat);
+            curve.rotation.z = Math.PI / 2; // Arcing over road
+            curve.position.set(-0.4, 3.5, 0); // Offset to hang inward
+            postGroup.add(curve);
+
+            // 3. Bulb (Hanging)
+            const bL = new THREE.Mesh(bulbGeo, bulbMat);
+            bL.position.set(-0.8, 3.3, 0); // End of arc
+            postGroup.add(bL);
 
             // Left Post
-            const pL = new THREE.Mesh(postGeo, postMat);
-            alignToPlanet(pL, -xPos, z);
-            pL.scale.setScalar(perspectiveScale);
-            pL.position.y += 1.5 * perspectiveScale; // Adjust pivot height
-            const bL = new THREE.Mesh(bulbGeo, bulbMat);
-            bL.position.set(0, 1.6, 0);
-            pL.add(bL);
+            alignToPlanet(postGroup, -xPos, z);
+            postGroup.scale.setScalar(perspectiveScale);
+            // Rotate to face inward? alignToPlanet handles up, but we need Y rotation relative to road
+            // Since it's Z-axis road, Left post needs to face Right (-X to +X)
+            // Curve offset logic (-0.4) assumes local coord. 
+            // We need to rotate the GROUP so the overhang faces the road.
+            // Vector to center (0,0,z) - (-xPos, 0, z) = (+x, 0, 0)
+            postGroup.lookAt(new THREE.Vector3(0, postGroup.position.y, z)); // Approximate facing center
 
-            // V-FIX: Parent Light to Post (Local Coords)
-            const lightL = new THREE.PointLight(0xffaa00, 0.3, 10);
-            lightL.position.set(0, 1.6, 0);
-            pL.add(lightL);
+            // Add Sprite Glow
+            const sL = new THREE.Sprite(spriteMat);
+            sL.scale.set(4 * perspectiveScale, 4 * perspectiveScale, 1);
+            bL.add(sL);
 
-            // Glow Sprite (Local)
-            // Scale: Parent 1.2 * 0.7 = ~0.84 World Scale
-            const glowL = new THREE.Sprite(spriteMat);
-            glowL.scale.set(0.7, 0.7, 1);
-            glowL.position.set(0, 1.6, 0);
-            pL.add(glowL);
+            lampGroup.add(postGroup);
+            streetLights.push(bL); // Pulse animation target
 
-            lampGroup.add(pL);
+            // Right Post (Mirror)
+            const postGroupR = postGroup.clone();
+            alignToPlanet(postGroupR, xPos, z);
+            postGroupR.scale.setScalar(perspectiveScale);
+            postGroupR.lookAt(new THREE.Vector3(0, postGroupR.position.y, z));
 
-            // Right Post
-            const pR = new THREE.Mesh(postGeo, postMat);
-            alignToPlanet(pR, xPos, z);
-            pR.scale.setScalar(perspectiveScale);
-            pR.position.y += 1.5 * perspectiveScale;
-            const bR = new THREE.Mesh(bulbGeo, bulbMat);
-            bR.position.set(0, 1.6, 0);
-            pR.add(bR);
+            // Clone doesn't clone material ref for pulsing? It does share material.
+            // But we need the mesh reference for the pulse array.
+            // Find the bulb in the clone.
+            const bR = postGroupR.children[2]; // Index 2 is bulb
+            streetLights.push(bR);
 
-            // Light R (Local)
-            const lightR = new THREE.PointLight(0xffaa00, 0.3, 10);
-            lightR.position.set(0, 1.6, 0);
-            pR.add(lightR);
-
-            // Glow R (Local)
-            const glowR = new THREE.Sprite(spriteMat);
-            glowR.scale.set(0.7, 0.7, 1);
-            glowR.position.set(0, 1.6, 0);
-            pR.add(glowR);
-
-            lampGroup.add(pR);
+            lampGroup.add(postGroupR);
         }
+
+
         worldGroup.add(lampGroup);
     }
     spawnPathLights();
@@ -1258,7 +1287,7 @@ function buildEnvironment() {
     alignToPlanet(createSimpleTree(6, 2), 6, 2);
     alignToPlanet(createSimpleTree(6, -2), 6, -2);
     alignToPlanet(createSimpleTree(-5, -4), -5, -4);
-    alignToPlanet(createSimpleTree(0, -6), 0, -6);
+    alignToPlanet(createSimpleTree(0, -12), 0, -12); // V-FIX: Moved further back (was -6)
 
     // V166: Procedural Forest (Denser Foliage)
     for (let i = 0; i < 150; i++) {
@@ -1339,8 +1368,9 @@ function buildEnvironment() {
     fireflies = new THREE.Points(ffGeo, ffMat); // Removed 'const' or 'let'
     fireflies.userData = { type: 'fireflies', speeds: ffSpeeds };
     worldGroup.add(fireflies);
-    // V150: Removed stray '}' causing syntax error
+    // V150: Re-added closing brace (was wrongfully removed)
 }
+
 
 
 // --- ANIMATION & NAVIGATION REPAIR ---
@@ -1348,9 +1378,10 @@ function buildEnvironment() {
 function startOpeningAnimation() {
     // V99/V100: SMOOTH CAMERA (No Bump)
     // The "Bump" is fixed by starting the Target Y at House Level (2.0) instead of Underground (-20).
+    // V-FIX: EXACT Match to Init Coordinates (lines 80 & 133) to prevent Jump
     const animState = {
-        px: -1.06, py: 47.1, pz: 136.13,
-        tx: -0.01, ty: 2.0, tz: -9.05, // Start Y=2 (Looking at House)
+        px: -0.71, py: 24.76, pz: 87.74,
+        tx: -0.01, ty: -19.92, tz: -9.05,
         fogFar: 300
     };
 
@@ -1439,8 +1470,20 @@ window.enterExperience = function () {
     // 2. Play Tension Audio 
     const audio = new Audio(houseConfig.audio.tension);
     audio.volume = 0.8;
-    audio.currentTime = 0; // Skip first 0 seconds
+    audio.currentTime = 0.5; // V-FIX: Start Offset (Skip first 0.5s silence)
     audio.play().catch(e => console.warn("Audio play error", e));
+
+    // V-FIX: End too late? Fade out/Stop when Animation completes (6s)
+    setTimeout(() => {
+        // Simple fade out attempt or just stop
+        const fadeOut = setInterval(() => {
+            if (audio.volume > 0.05) audio.volume -= 0.05;
+            else {
+                audio.pause();
+                clearInterval(fadeOut);
+            }
+        }, 100);
+    }, 6000); // Match Animation Duration
 
     // Chain Main Music: Wait for Tension to FINISH, then wait 2s, then start
     audio.onended = () => {
@@ -1503,7 +1546,7 @@ function buildInterior(roomKey) {
     basementNodes = [];
     basementLines = null;
     currentTrackIndex = 0;
-    masterVideoIndex = 0;
+    masterVideoIndex = -1; // V-FIX: Default to NO video selected (Screensaver/Paused frame)
     isTVVideoMode = false;
     musicPanelMesh = null;
     playlistPanelMesh = null;
@@ -1627,37 +1670,61 @@ function performClick(event) {
     } else if (state === 'ROOM') {
         const intersects = raycaster.intersectObjects(interiorClickables, true);
         if (intersects.length > 0) {
+            // V-FIX: Bubbling Click Logic
+            // Instead of just checking 'target' and its immediate parent if it lacks 'type',
+            // we should traverse UP until we find an object with 'userData.onClick' OR hit the root.
+
             let target = intersects[0].object;
-            // Handle Parent Group clicks (like TV or Deck)
-            while (target && (!target.userData || !target.userData.type) && target.parent) {
+            let handlerFound = false;
+
+            while (target && target !== interiorGroup) {
+                if (target.userData && target.userData.onClick) {
+                    // FOUND A CUSTOM HANDLER
+                    console.log("Custom Handler Found on:", target.userData.type || "Unnamed Object");
+                    target.userData.onClick(intersects[0]);
+                    handlerFound = true;
+                    break;
+                }
+
+                // Fallback for older type-based logic if no explicit onClick but has type
+                // (Only if we haven't standardized everything to onClick yet)
+                if (target.userData && target.userData.type) {
+                    if (target.userData.type === 'tv') {
+                        console.log("CLICK DETECTED: TV Mesh");
+                        if (window.nextTVContent) window.nextTVContent();
+                        else console.error("nextTVContent function not found!");
+                        handlerFound = true; break;
+                    }
+                    else if (target.userData.type === 'phone') { toggleVideo(); handlerFound = true; break; }
+                    else if (target.userData.type === 'videoPhone') { toggleVideo(); handlerFound = true; break; }
+                    else if (target.userData.type === 'musicSwitch') { toggleMusic(); handlerFound = true; break; }
+                    else if (target.userData.type === 'notepad') { openIdeaOverlay(); handlerFound = true; break; }
+                    else if (target.userData.type === 'deckOfCards') {
+                        if (window.drawConversationTopic) window.drawConversationTopic();
+                        handlerFound = true; break;
+                    }
+                    else if (target.userData.type === 'atticAudioToggle') {
+                        if (target.toggleAudio) target.toggleAudio();
+                        handlerFound = true; break;
+                    }
+                    else if (target.userData.type === 'bathroomMirrorButton') {
+                        if (target.toggleMirror) target.toggleMirror();
+                        else if (target.userData.toggleMirror) target.userData.toggleMirror();
+                        else if (window.toggleBathroomMirror) window.toggleBathroomMirror();
+                        handlerFound = true; break;
+                    }
+                    // If it has a type but no handler matched above, we might still want to bubble?
+                    // But usually type implies it's the interactive object. 
+                    // Let's assume if it has a type, it WAS the target, even if logic missing.
+                    // But for Menorah, it has `type: 'open_secret'` AND `onClick`.
+                    // The `onClick` check above covers it.
+                }
+
                 target = target.parent;
             }
 
-            if (target.userData.onClick) {
-                target.userData.onClick(intersects[0]);
-                return;
-            }
-
-            if (target.userData.type === 'tv') {
-                console.log("CLICK DETECTED: TV Mesh");
-                if (window.nextTVContent) window.nextTVContent();
-                else console.error("nextTVContent function not found!");
-            }
-            else if (target.userData.type === 'phone') toggleVideo(); // OLD logic kept for now
-            else if (target.userData.type === 'videoPhone') toggleVideo(); // NEW Logic
-            else if (target.userData.type === 'musicSwitch') toggleMusic();
-            else if (target.userData.type === 'notepad') openIdeaOverlay();
-            else if (target.userData.type === 'deckOfCards') {
-                if (window.drawConversationTopic) window.drawConversationTopic();
-            }
-            else if (target.userData.type === 'atticAudioToggle') {
-                if (target.toggleAudio) target.toggleAudio();
-            }
-            else if (target.userData.type === 'bathroomMirrorButton') {
-                // Check locally attached function first
-                if (target.toggleMirror) target.toggleMirror();
-                else if (target.userData.toggleMirror) target.userData.toggleMirror();
-                else if (window.toggleBathroomMirror) window.toggleBathroomMirror();
+            if (!handlerFound) {
+                console.log("Clicked object has no handler:", intersects[0].object);
             }
         }
     }
@@ -1929,12 +1996,12 @@ function stopAllAudio() {
 window.applyRoomLighting = function (roomName) {
     console.log("V123: Apply Dark Room Lighting for", roomName);
 
-    // DEFAULT DARK MOOD (User Request)
-    // Ambient 0.2, Dir 0.5, Rim 0.3 -> V-NEW: Much Darker
-    let targetAmbient = 0.05;
-    let targetDir = 0.1;
-    let targetRim = 0.1;
-    let targetHemi = 0.05;
+    // DEFAULT DARK MOOD (V188: User Request - "Too Low" -> Restoring brightness)
+    // Ambient 0.2 matches what exitRoom() was trying to do (approx 0.15)
+    let targetAmbient = 0.2;
+    let targetDir = 0.5;
+    let targetRim = 0.2; // Softer rim
+    let targetHemi = 0.1;
 
     // PER-ROOM OVERRIDES
     if (roomName === 'basement') {
@@ -1944,7 +2011,21 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.05; // Minimal
         targetHemi = 0.0;
     }
+    // V-FIX: Bathroom Brightness (User Request: "Entering bathroom and its really dark!")
+    else if (roomName === 'bathroom') {
+        targetAmbient = 0.5;
+        targetDir = 0.6;
+        targetRim = 0.4;
+        targetHemi = 0.3;
+    }
     // Living room uses default dark setting now
+    else if (roomName === 'attic') {
+        // V199: Attic "Sole Light Source" mode - Even Darker
+        targetAmbient = 0.01; // Pitch black almost
+        targetDir = 0.0;
+        targetRim = 0.0; // No rim
+        targetHemi = 0.02;
+    }
 
     // Apply
     if (window.ambientLight) window.ambientLight.intensity = targetAmbient;
@@ -2003,7 +2084,10 @@ function enterRoom(roomName) {
                 audioPlayer.play().then(() => {
                     isMusicPlaying = true;
                     if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
+                    // V204: Update Music Panel status on Auto-Play
+                    if (window.createMusicPanel) window.createMusicPanel(data.playlist);
                 }).catch(e => {
+                    console.error("Room Audio Play Error:", e); // V-FIX: Debugging
                     isMusicPlaying = false;
                     if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
                 });
@@ -2080,11 +2164,11 @@ function exitRoom() {
 
     setTimeout(() => {
         // V136: Reset Lights on Exit
-        // V-FIX: Sync with Global Init (Ambient 0.15, Dir 0.5)
+        // V-FIX: Sync with Global Init V188 (Ambient 0.2, Dir 0.5)
         if (dirLight) dirLight.intensity = 0.5;
-        if (rimLight) rimLight.intensity = 0.4;
-        if (ambientLight) ambientLight.intensity = 0.15;
-        if (hemiLight) hemiLight.intensity = 0.2; // Restore Global Fill
+        if (rimLight) rimLight.intensity = 0.2;
+        if (ambientLight) ambientLight.intensity = 0.2;
+        if (hemiLight) hemiLight.intensity = 0.1; // Restore Global Fill
 
         // Clear interior group to remove all room-specific objects
         if (interiorGroup) {
@@ -2194,7 +2278,20 @@ function performClick(event) {
             }
 
             if (target.userData.type === 'tv') nextTVContent();
-            else if (target.userData.type === 'phone') nextBedroomVideo(); // Keep legacy? User said "clicking the videophone .. plays". Maybe just use videoPhone type.
+            else if (target.userData.type === 'phone') nextBedroomVideo();
+            else if (target.userData.type === 'universalVideoItem') {
+                // alert("DEBUG: Clicked Universal Item Index " + target.userData.index);
+                console.log("V-FIX: Universal Item Clicked", target.userData.index);
+                if (target.userData.onClick) {
+                    try {
+                        target.userData.onClick();
+                    } catch (e) {
+                        alert("Click Error: " + e.message);
+                    }
+                } else {
+                    alert("Debug: No onClick handler found on this item!");
+                }
+            }
             // Actually, I setup the new phone mesh as `userData.type='videoPhone'`.
             // The old one was 'phone'.
             // I should probably remove the old logic if it conflicts, or just add the new one.
@@ -2210,6 +2307,14 @@ function performClick(event) {
                 if (typeof playTVVideo === 'function') playTVVideo(target.userData.index);
             }
             else if (target.userData.type === 'videoItem') playVideo(target.userData.index);
+            // V-FIX: Explicit Handler for Universal Video Items
+            else if (target.userData.type === 'universalVideoItem') {
+                console.log("V-FIX: Universal Item Clicked", target.userData.index);
+                if (target.userData.onClick) target.userData.onClick();
+            }
+            else if (target.userData.type === 'videoControlSingle') {
+                if (target.userData.onClick) target.userData.onClick();
+            }
             else if (target.userData.type === 'videoPlayButton') toggleVideo();
             else if (target.userData.type === 'bathroomMirrorButton') {
                 if (target.toggleMirror) target.toggleMirror();
@@ -2310,155 +2415,7 @@ function checkIntersectionInternal() {
     }
 }
 
-// V-NEW: Universal Video UI Helper
-window.__deprecated_createUniversalVideoInterface = function (parentGroup, pos, playlist, options = {}) {
-    const root = new THREE.Group();
-    root.position.copy(pos);
-    if (options.rotationY) root.rotation.y = options.rotationY;
-    parentGroup.add(root);
 
-    // 1. HEADER "VIDEO"
-    const hCanvas = document.createElement('canvas');
-    hCanvas.width = 512; hCanvas.height = 128;
-    const hctx = hCanvas.getContext('2d');
-    hctx.fillStyle = 'rgba(0,0,0,0)'; // Transparent
-    // hctx.fillRect(0,0,512,128); // Debug background
-    hctx.fillStyle = '#ffffff';
-    hctx.font = 'bold 80px "Courier New"'; // Tech style
-    hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
-    hctx.shadowColor = '#00ff00'; hctx.shadowBlur = 10;
-    hctx.fillText("VIDEO", 256, 64);
-
-    const hTex = new THREE.CanvasTexture(hCanvas);
-    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
-    hMesh.position.set(0, 1.8, 0); // Top
-    root.add(hMesh);
-
-    // 2. SINGLE BUTTON CONTROL (Traffic Light Logic)
-    // Green (Play) / Yellow (Pause) / Red (Stop - usually implies reset)
-    const trafficGroup = new THREE.Group();
-    trafficGroup.position.set(0, 1.3, 0); // Below Header
-    root.add(trafficGroup);
-
-    // Backing Plate (Smaller for single button)
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.1), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-    trafficGroup.add(plate);
-
-    // Single Toggle Button (RECTANGULAR as requested)
-    const btnGeo = new THREE.BoxGeometry(0.5, 0.3, 0.1);
-    // btnGeo.rotateX(Math.PI / 2); // No rotation needed for Box if we want flat facing Z
-
-    // Check orientation: 
-    // Cylinder was rotated X to face Z. 
-    // Box is naturally XYZ. So (0.5 width, 0.3 height, 0.1 depth) is correct for Z-facing.
-
-    const btnMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x440000 }); // Default Red
-    const btn = new THREE.Mesh(btnGeo, btnMat);
-    btn.position.set(0, 0, 0.06); // Sit on plate
-
-    // Check initial state
-    if (window.videoElement && !window.videoElement.paused) {
-        btn.material.color.setHex(0x00ff00); // Green
-        btn.material.emissive.setHex(0x004400);
-    }
-
-    btn.userData = {
-        type: 'videoControlSingle', // New type
-        onClick: () => {
-            if (window.videoElement) {
-                if (window.videoElement.paused) {
-                    // PLAY
-                    window.videoElement.play().catch(e => console.log(e));
-                    btn.material.color.setHex(0x00ff00); // Green
-                    btn.material.emissive.setHex(0x004400);
-                    // Stop music
-                    if (window.audioPlayer) window.audioPlayer.pause();
-                } else {
-                    // PAUSE
-                    window.videoElement.pause();
-                    btn.material.color.setHex(0xffff00); // Yellow
-                    btn.material.emissive.setHex(0x444400);
-                }
-            }
-        },
-        updateState: () => {
-            if (window.videoElement && !window.videoElement.paused) {
-                btn.material.color.setHex(0x00ff00);
-                btn.material.emissive.setHex(0x004400);
-            } else {
-                // If paused, Yellow. If stopped/empty, Red? 
-                // Simple toggle: Yellow for paused.
-                btn.material.color.setHex(0xffff00);
-                btn.material.emissive.setHex(0x444400);
-            }
-        }
-    };
-    trafficGroup.add(btn);
-
-    // Add to clickables
-    if (window.interiorClickables) {
-        window.interiorClickables.push(btn);
-    }
-
-    // 3. RECTANGULAR PLAYLIST
-    // Logic adapted from living.js but simplified
-    if (playlist && playlist.length > 0) {
-        playlist.forEach((item, i) => {
-            const yPos = 0.8 - (i * 0.5); // Stack downwards
-
-            const sCanvas = document.createElement('canvas');
-            sCanvas.width = 512; sCanvas.height = 100;
-            const sctx = sCanvas.getContext('2d');
-
-            // Initial Draw (Inactive)
-            // Just simple text for now, living.js does dynamic update which is better but complex to abstract quickly.
-            // Let's make static stylish ones.
-            sctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            sctx.fillRect(0, 0, 512, 100);
-            sctx.fillStyle = '#ffffff';
-            sctx.font = 'bold 40px Arial';
-            sctx.textAlign = 'left'; sctx.textBaseline = 'middle';
-            sctx.fillText((i + 1) + ". " + item.title, 20, 50);
-
-            const sTex = new THREE.CanvasTexture(sCanvas);
-            const itemMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.4), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
-            itemMesh.position.set(0, yPos, 0);
-
-            itemMesh.userData = {
-                type: 'universalVideoItem',
-                index: i,
-                onClick: () => {
-                    // Play this video
-                    console.log("Universal Video Click:", i);
-                    if (window.videoElement) {
-                        window.videoElement.src = item.src;
-                        window.videoElement.play();
-
-                        // Sync Button State (Turn Green)
-                        if (window.interiorClickables) {
-                            const btn = window.interiorClickables.find(c => c.userData.type === 'videoControlSingle');
-                            if (btn) {
-                                btn.material.color.setHex(0x00ff00);
-                                btn.material.emissive.setHex(0x004400);
-                            }
-                        }
-                    }
-                    // Stop Music
-                    if (window.audioPlayer) {
-                        window.audioPlayer.pause();
-                        window.isMusicPlaying = false;
-                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-                    }
-                }
-            };
-
-            root.add(itemMesh);
-            if (window.interiorClickables) window.interiorClickables.push(itemMesh);
-        });
-    }
-
-    return root;
-};
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -3093,10 +3050,14 @@ function createMetropolisRobot() {
 window.stopVideosForAudio = function () {
     console.log("Sync: Stopping all videos for Audio Playback");
 
-    // 1. Stop Main Helper
-    if (window.videoElement && !window.videoElement.paused) {
+    // 1. Stop Main Helper (Skip for Basement - Tron Video should persist)
+    if (currentRoom !== 'basement' && window.videoElement && !window.videoElement.paused) {
         window.videoElement.pause();
     }
+
+    // V-FIX: Clear Video UI Selection (User Request: "No active video")
+    window.masterVideoIndex = -1;
+    if (window.updateVideoUI) window.updateVideoUI();
 
     // 2. Room Specifics
     if (currentRoom === 'living' && window.stopLivingVideo) {

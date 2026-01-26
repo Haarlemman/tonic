@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tonic for the Bones: Infinite Spiral</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: #0ff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: crosshair;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+        #btn {
+            position: fixed;
+            z-index: 100;
+            background: transparent;
+            border: 1px solid #0ff;
+            color: #0ff;
+            padding: 15px 30px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 14px;
+            transition: all 0.4s;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        #btn:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        Framework: Fibonacci_001<br>
+        Iteration: <span id="count">1</span>
+    </div>
+
+    <button id="btn">Engage Path</button>
+    <canvas id="c"></canvas>
+
+    <script>
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const btn = document.getElementById('btn');
+        const countDisplay = document.getElementById('count');
+
+        let w, h, dpr;
+        let active = false;
+        
+        // Geometric State
+        let fib = [8, 8];
+        let segments = [];
+        let cx = 0, cy = 0;
+        let dir = 0; // 0:R, 1:D, 2:L, 3:U
+        let progress = 0;
+        let scale = 1.0;
+        let camX = 0, camY = 0;
+        let hue = 190;
+
+        function setup() {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+        }
+
+        function update() {
+            if (!active) return;
+
+            const target = fib[fib.length - 1];
+            // Speed logic
+            const moveSpeed = (2.5 / scale) + 2.2;
+            progress += moveSpeed;
+            hue = (hue + 0.25) % 360;
+
+            if (progress >= target) {
+                const vec = [[1,0], [0,1], [-1,0], [0,-1]][dir];
+                const ex = cx + vec[0] * target;
+                const ey = cy + vec[1] * target;
+
+                segments.push({ x1: cx, y1: cy, x2: ex, y2: ey, h: hue });
+
+                cx = ex; cy = ey;
+                fib.push(fib[fib.length - 1] + fib[fib.length - 2]);
+                dir = (dir + 1) % 4;
+                progress = 0;
+
+                if (segments.length > 200) segments.shift();
+                countDisplay.innerText = fib.length;
+            }
+
+            const vec = [[1,0], [0,1], [-1,0], [0,-1]][dir];
+            const headX = cx + vec[0] * progress;
+            const headY = cy + vec[1] * progress;
+
+            // Camera: Keep (0,0) as the emotional anchor initially
+            const dist = Math.max(Math.abs(headX), Math.abs(headY), 30);
+            const targetS = (Math.min(w, h) * 0.4) / dist;
+
+            // Damping logic
+            scale += (targetS - scale) * 0.04;
+            
+            // We use a softer follow at the beginning (fib.length < 5) to keep the center stable
+            const followEase = fib.length < 6 ? 0.02 : 0.08;
+            camX += (-headX * scale - camX) * followEase;
+            camY += (-headY * scale - camY) * followEase;
+        }
+
+        function draw() {
+            if (!active) return;
+
+            // Trail Fade
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Center coordinate system
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.translate(w/2 + camX, h/2 + camY);
+            ctx.scale(scale, scale);
+
+            // History
+            segments.forEach((s, i) => {
+                const alpha = (i + 1) / (segments.length + 1);
+                ctx.strokeStyle = `hsla(${s.h}, 90%, 60%, ${alpha})`;
+                ctx.lineWidth = 3 / scale;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(s.x1, s.y1);
+                ctx.lineTo(s.x2, s.y2);
+                ctx.stroke();
+            });
+
+            // Active head
+            const vec = [[1,0], [0,1], [-1,0], [0,-1]][dir];
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 5 / scale;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + vec[0] * progress, cy + vec[1] * progress);
+            ctx.stroke();
+
+            // Head Sparkle
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(cx + vec[0] * progress, cy + vec[1] * progress, 6/scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        btn.onclick = () => {
+            active = true;
+            btn.style.display = 'none';
+            setup();
+            loop();
+        };
+
+        window.addEventListener('resize', setup);
+        setup();
+    </script>
+</body>
+</html>

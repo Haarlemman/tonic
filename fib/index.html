@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Golden Ratio Tron</title>
+    <style>
+        /* Navy background to distinguish from a crashed black screen */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0a0e14;
+            color: #0ff;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #c {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 1;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            font-size: 10px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        #heartbeat {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            background: #0f0;
+            border-radius: 50%;
+            z-index: 100;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        #starter {
+            position: relative;
+            z-index: 50;
+            padding: 20px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #00f2ff;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="heartbeat"></div>
+
+    <div id="ui">
+        CORE_ACTIVE<br>
+        SEQ_VAL: <span id="node-val">0</span>
+    </div>
+
+    <button id="starter">START VISUAL</button>
+    <canvas id="c"></canvas>
+
+    <script>
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const starter = document.getElementById('starter');
+        const nodeVal = document.getElementById('node-val');
+
+        let w, h, dpr;
+        let active = false;
+        
+        // Fibonacci logic
+        let fib = [10, 10];
+        let segments = [];
+        let cx = 0, cy = 0;
+        let dir = 0; 
+        let progress = 0;
+        let scale = 1.0;
+        let camX = 0, camY = 0;
+        let hue = 180;
+
+        function setup() {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            // Cap DPR to 2.0 to save mobile memory
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+        }
+
+        function update() {
+            if (!active) return;
+
+            const target = fib[fib.length - 1];
+            const speed = (2.5 / scale) + 2.0;
+            progress += speed;
+            hue = (hue + 0.3) % 360;
+
+            if (progress >= target) {
+                const vectors = [[1,0], [0,1], [-1,0], [0,-1]];
+                const v = vectors[dir];
+                const endX = cx + v[0] * target;
+                const endY = cy + v[1] * target;
+
+                segments.push({ x1: cx, y1: cy, x2: endX, y2: endY, h: hue });
+
+                cx = endX;
+                cy = endY;
+                fib.push(fib[fib.length - 1] + fib[fib.length - 2]);
+                dir = (dir + 1) % 4;
+                progress = 0;
+
+                if (segments.length > 100) segments.shift();
+                nodeVal.innerText = fib.length;
+            }
+
+            const v = [[1,0], [0,1], [-1,0], [0,-1]][dir];
+            const hx = cx + v[0] * progress;
+            const hy = cy + v[1] * progress;
+
+            const dist = Math.max(Math.abs(hx), Math.abs(hy), 20);
+            const targetS = (Math.min(w, h) * 0.4) / dist;
+
+            scale += (targetS - scale) * 0.05;
+            camX += (-hx * scale - camX) * 0.1;
+            camY += (-hy * scale - camY) * 0.1;
+        }
+
+        function draw() {
+            if (!active) return;
+
+            // Simple clear
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Apply camera
+            ctx.scale(dpr, dpr);
+            ctx.translate(w/2 + camX, h/2 + camY);
+            ctx.scale(scale, scale);
+
+            // Trail
+            ctx.lineCap = "round";
+            segments.forEach((s, i) => {
+                const alpha = (i + 1) / (segments.length + 1);
+                ctx.strokeStyle = `hsla(${s.h}, 100%, 50%, ${alpha})`;
+                ctx.lineWidth = 3 / scale;
+                ctx.beginPath();
+                ctx.moveTo(s.x1, s.y1);
+                ctx.lineTo(s.x2, s.y2);
+                ctx.stroke();
+            });
+
+            // Lead
+            const v = [[1,0], [0,1], [-1,0], [0,-1]][dir];
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 5 / scale;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + v[0] * progress, cy + v[1] * progress);
+            ctx.stroke();
+
+            // Head
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(cx + v[0] * progress, cy + v[1] * progress, 6/scale, 0, 6.28);
+            ctx.fill();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        starter.onclick = () => {
+            active = true;
+            starter.style.display = 'none';
+            setup();
+            loop();
+        };
+
+        window.addEventListener('resize', setup);
+        setup();
+    </script>
+</body>
+</html>

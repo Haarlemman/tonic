@@ -4,7 +4,7 @@ function playTrack(index) {
         const playlist = roomContent[currentRoom].playlist;
         if (!playlist || !playlist[index]) return;
 
-        currentTrackIndex = index;
+        window.currentTrackIndex = index; // V-FIX: Explicit Global Sync
 
         // User Requested Fix: Enable CORS for Analyser
         audioPlayer.crossOrigin = "anonymous";
@@ -37,6 +37,9 @@ function playTrack(index) {
                     }
                 });
             }
+
+            // V204: Update UI AFTER state change confirmed
+            createMusicPanel(playlist);
 
         }).catch(e => {
             console.error("Play failed", e);
@@ -79,17 +82,70 @@ function playTrack(index) {
             if (idx > -1) interiorClickables.splice(idx, 1);
         });
 
-        createMusicPanel(playlist);
+        // V204: MOVED createMusicPanel inside .then() above to ensure isMusicPlaying is true
+        // But we must create it even if play fails? 
+        // No, if play fails, isMusicPlaying is false, so it draws unhighlighted.
+        // Wait, if we move it inside .then, and play FAILS, logic below for cleanup ran, so NO PANEL?
+        // Logic flaw!
+        // We removed panel items.
+        // We MUST recreate panel always.
+        // So we keep it here, but ALSO call it in .then()?
+        // Re-drawing twice is inefficient but safe.
+        // Better: Just call it here. Why did it fail before?
+        // Because here 'isMusicPlaying' is still false (async).
+        // So we draw it here (unhighlighted).
+        // AND THEN inside .then() we draw it again (highlighted).
+        // We need to clear previous items inside .then() as well? Or createMusicPanel handles clearing?
+        // createMusicPanel does NOT clear items (see line 89-.. it starts creating).
+        // Wait, the "Clear old music panel" block (lines 70-80) runs before.
+        // If we call createMusicPanel inside .then(), we get duplicate panels unless we clear again.
+        // REFACTOR:
+        // Update playTrack to:
+        // 1. Cleanup old panel (Synchronous).
+        // 2. Define helper to build panel.
+        // 3. Call helper immediately (Synchronous) -> Draws Unhighlighted.
+        // 4. Inside .then(): Cleanup old panel AGAIN (or update existing?), then Draw Highlighted.
+        // EASIER:
+        // Just call `createMusicPanel(playlist)` inside `.then()`.
+        // BUT `createMusicPanel` doesn't clear.
+        // So we need to call the "Clear" logic again inside `.then()`.
+        // OR make `createMusicPanel` robust to clear its own garbage?
+        // `createMusicPanel` in music.js DOES NOT clear.
+        // The cleanup logic is inline in `playTrack` (lines 70-80) and `createVideoPanel` (lines 88-99 in living.js).
+        // I should probably move cleanup into `createMusicPanel` to make it robust.
+        // Let's do that first.
+
     } catch (criticalErr) {
         console.error("Critical PlayTrack Error:", criticalErr);
         alert("System Error in playTrack: " + criticalErr.message);
     }
 }
 
-function createMusicPanel(playlist) {
-    console.log("v164: Creating Music Panel. Playlist length:", playlist ? playlist.length : 0);
+function createMusicPanel(playlist, skipCleanup = false) {
+    console.log("v179: Creating Music Panel. Playlist length:", playlist ? playlist.length : 0);
     if (!playlist || playlist.length === 0) return;
-    const currentTrack = playlist[currentTrackIndex];
+
+    // V204: Self-Cleanup Logic
+    if (!skipCleanup) {
+        const toRemove = [];
+        // Need to access interiorGroup, assuming it's global or passed (it's global in room scripts scope usually)
+        if (typeof interiorGroup !== 'undefined') {
+            interiorGroup.traverse(child => {
+                if (child.userData && (child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
+                    toRemove.push(child);
+                }
+            });
+            toRemove.forEach(child => {
+                if (child.parent) child.parent.remove(child); // V-FIX: Safe removal
+                if (window.interiorClickables) {
+                    const idx = window.interiorClickables.indexOf(child);
+                    if (idx > -1) window.interiorClickables.splice(idx, 1);
+                }
+            });
+        }
+    }
+
+    const currentTrack = (window.currentTrackIndex >= 0 && playlist[window.currentTrackIndex]) ? playlist[window.currentTrackIndex] : null;
 
     // Dynamic Wall Position
     const rData = roomContent[currentRoom];
@@ -135,7 +191,8 @@ function createMusicPanel(playlist) {
         sCanvas.width = 512; sCanvas.height = 120;
         const sctx = sCanvas.getContext('2d');
 
-        if (isCurrent) {
+        // V200: Only highlight if music is playing
+        if (isCurrent && isMusicPlaying) {
             // V-CHANGE: 50% Black Background
             sctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             sctx.fillRect(0, 0, 512, 120);
@@ -191,11 +248,23 @@ if (window.audioPlayer && !window.audioPlayer.hasNextTrackListener) {
     window.audioPlayer.hasNextTrackListener = true;
 }
 
+// V-NEW: Expose for external updates (e.g. from Video UI)
+window.createMusicPanel = createMusicPanel;
+window.updateMusicPanelHighlight = function () {
+    if (window.roomContent && window.currentRoom && window.roomContent[window.currentRoom]) {
+        const playlist = window.roomContent[window.currentRoom].playlist;
+        if (playlist) createMusicPanel(playlist);
+    }
+};
+
 function toggleMusic() {
     const playlist = roomContent[currentRoom].playlist;
     if (!playlist) return;
 
     if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === window.location.href) {
+        // V-FIX: Handle -1 index if starting fresh
+        if (currentTrackIndex < 0) currentTrackIndex = 0;
+
         audioPlayer.src = playlist[currentTrackIndex].src;
         audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
     }
@@ -204,6 +273,7 @@ function toggleMusic() {
     if (isMusicPlaying) {
         audioPlayer.pause(); isMusicPlaying = false;
         if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
+        createMusicPanel(playlist); // V200: Refresh UI to remove highlight
     } else {
         // If a video is playing, stop it (UNLESS it's a background video)
         // ATTIC SPECIAL PRECEDENCE:
@@ -231,9 +301,16 @@ function toggleMusic() {
             window.stopLivingVideo();
         }
 
+        // V-FIX: Clear Video Highlight logic if any
+        if (window.updateVideoUI) {
+            window.masterVideoIndex = -1;
+            window.updateVideoUI();
+        }
+
         audioPlayer.play().catch(e => console.log("Audio play failed", e));
         isMusicPlaying = true;
         if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
+        createMusicPanel(playlist); // V200: Refresh UI to show highlight (using currentTrackIndex)
 
         // V-FIX: Sync Video Buttons (RED) when Music Toggled ON
         if (window.interiorClickables) {
@@ -247,3 +324,4 @@ function toggleMusic() {
         }
     }
 }
+window.toggleMusic = toggleMusic; // Expose global

@@ -414,7 +414,42 @@ function createBathroomInterior() {
     // V180: VIDEO PLAYLIST (Left of Mirror)
     if (window.createUniversalVideoInterface && roomContent.bathroom.videoPlaylist) {
         // V-FIX: Universal Video UI - Positioned Left (-2.8) to avoid overlap, and Higher (2.8)
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 2.8, -4.5), roomContent.bathroom.videoPlaylist);
+        // V-FIX: Custom Handler for Bathroom Playback (Avoid Living Room clash)
+        const posData = roomContent['bathroom'].videoInterfacePos || { x: -2.8, y: 2.8, z: -4.5 };
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), roomContent.bathroom.videoPlaylist, {
+            onPlay: (index) => {
+                console.log("Bathroom Video Play:", index);
+                window.masterVideoIndex = index;
+                const clip = roomContent.bathroom.videoPlaylist[index];
+
+                // 1. Set Src & Play
+                if (window.videoElement) {
+                    window.videoElement.src = clip.src;
+                    window.videoElement.muted = false;
+                    window.videoElement.volume = 1.0;
+                    window.videoElement.play().catch(e => console.error("Bathroom play error", e));
+
+                    // 2. Mirror Mode -> Video
+                    if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 1.0;
+
+                    // 3. Stop Music
+                    if (window.audioPlayer) {
+                        window.audioPlayer.pause();
+                        window.isMusicPlaying = false;
+                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); // Music Button Red
+                    }
+
+                    // 4. Update UI
+                    if (window.updateVideoUI) window.updateVideoUI();
+
+                    // 5. Update Local Button (Green)
+                    const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
+                    if (btn) {
+                        btn.material.color.setHex(0x00ff00);
+                        btn.material.emissive.setHex(0x004400);
+                    }
+                }
+            }
+        });
     }
 }
-

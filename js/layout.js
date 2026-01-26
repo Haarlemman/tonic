@@ -8,7 +8,7 @@
     // 1. Inject Fonts & Icons
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Montserrat:wght@200;300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Glass+Antiqua&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Lato:wght@300;400;700&family=Courier+Prime&display=swap';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Montserrat:wght@200;300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Glass+Antiqua&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Lato:wght@300;400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&display=swap';
     document.head.appendChild(fontLink);
 
     // Lucide Icons (Check if already present)

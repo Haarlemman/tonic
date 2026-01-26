@@ -22,12 +22,13 @@ const roomContent = {
             { title: "The Premonition", src: "../assets/video/premonition.mp4" },
             { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" }
         ],
+        videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 }, // V197: Defined in Data
         tvImages: [
             { text: "PICTURE THIS", color: "#a533fc" },
             { text: "Bavo", image: "../assets/images/bavo1.jpg", color: "#000" },
             { text: "Hitchin, UK", image: "../assets/images/hitchin1.jpg", color: "#999" },
             { text: "Haarlem, Netherlands", color: "#f93a00" },
-            { text: "Tonic for the Bones", color: "#93c5fd" },
+            { text: "LIVE LIFE LOVE", color: "#93c5fd" },
         ]
     },
     studio: {
@@ -76,7 +77,8 @@ const roomContent = {
         videoPlaylist: [
             { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" },
             { title: "Walk In", src: "../assets/video/walkin1.mp4" }
-        ]
+        ],
+        videoInterfacePos: { x: -2.8, y: 2.8, z: -4.5 } // V197: Defined in Data
     },
     toilet: {
         title: "The Little Room",
@@ -112,7 +114,7 @@ const houseConfig = {
     audio: {
         tension: "/assets/audio/Tension_Short_07.mp3",
         intro: "/assets/audio/premonition.mp3",
-        nightDrive: "/assets/audio/NightDrive.mp3",
+        nightDrive: "/assets/audio/NightDrive-RobSimonsen.mp3",
         squeak: "/assets/audio/squeak.mp3"
     }
 };
