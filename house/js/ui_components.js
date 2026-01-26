@@ -2,6 +2,7 @@
 // Extracted from house.js to reduce complexity
 // V154: Refined Layout (Button Top, Header Middle, Tracks Bottom)
 
+console.log("--- UI COMPONENTS LOADED V156 ---");
 window.createUniversalVideoInterface = function (root, pos, playlist) {
     const trafficGroup = new THREE.Group();
     trafficGroup.position.copy(pos);
