@@ -168,7 +168,7 @@ function createMusicPanel(playlist) {
     const switchGeo = new THREE.BoxGeometry(0.2, 0.5, 0.5);
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
-    musicSwitchMesh.position.set(wallX + 0.02, 5.5, -2.0); // Slightly pop out
+    musicSwitchMesh.position.set(wallX + 0.02, 5.5, -1.3); // V-FIX: Closer to board (Immediate left)
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
     interiorGroup.add(musicSwitchMesh);
     interiorClickables.push(musicSwitchMesh);
