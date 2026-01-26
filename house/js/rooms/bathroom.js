@@ -175,8 +175,12 @@ function createBathroomInterior() {
         }
 
         // 3. Update Video Texture if playing
-        if (videoElement && !videoElement.paused && mirrorMat.uniforms.uMap.value) {
-            mirrorMat.uniforms.uMap.value.needsUpdate = true;
+        if (window.videoElement && mirrorMat.uniforms.uMap.value) {
+            if (!window.videoElement.paused) {
+                mirrorMat.uniforms.uMap.value.needsUpdate = true;
+                // V-FIX: Auto-Enter Screen Mode when playing (Fixes Universal Interface selection)
+                if (mirrorMat.uniforms.uUseVideo.value < 1.0) mirrorMat.uniforms.uUseVideo.value = 1.0;
+            }
         }
     };
 
