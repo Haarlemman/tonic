@@ -1,5 +1,5 @@
-// --- TV VIDEO SETUP ---
 let tvVideo, tvVideoTexture;
+let tvScreensaver, tvScreensaverTexture; // V-NEW: Screensaver vars
 // Need global access to lights for dimming (Cinema Mode)
 window.livingCozyLight = null;
 window.livingLibrarySpot = null;
@@ -7,6 +7,17 @@ window.livingLibrarySpot = null;
 
 function initTVVideo() {
     if (tvVideo) return;
+
+    // V-NEW: Init Screensaver
+    if (window.createFibonacciScreensaver) {
+        // High Res Canvas for TV
+        tvScreensaver = window.createFibonacciScreensaver(1024, 576);
+        tvScreensaverTexture = new THREE.CanvasTexture(tvScreensaver.canvas);
+        tvScreensaverTexture.colorSpace = THREE.SRGBColorSpace;
+        tvScreensaverTexture.minFilter = THREE.LinearFilter;
+        tvScreensaverTexture.magFilter = THREE.LinearFilter;
+    }
+
     tvVideo = document.createElement('video');
     // V-REFINE: Use Data.js source (Default to first in playlist)
     const livingData = roomContent['living'];
@@ -64,7 +75,11 @@ function playTVVideo(index) {
     }
 
     // Refresh Panel UI (Highlight selection)
+    // Refresh Panel UI (Highlight selection)
     createVideoPanel(playlist);
+
+    // V-NEW: Ensure TV Mesh uses Video Texture
+    if (tvMesh) tvMesh.material.map = tvVideoTexture;
 }
 
 function createVideoPanel(playlist) {
@@ -194,7 +209,20 @@ window.stopLivingVideo = () => {
     if (tvVideo) {
         tvVideo.pause();
         tvVideo.muted = true;
+        tvVideo.pause();
+        tvVideo.muted = true;
         console.log("Living Room Video Stopped & Muted (Cleanup)");
+
+        // V-NEW: Revert to Screensaver
+        // Need to find tvMesh. It is local to createLivingRoomInterior, but global 'tvMesh' variable might be used?
+        // Wait, 'tvMesh' is declared inside createLivingRoomInterior without 'let/const' in my view? 
+        // Line 639: 'tvMesh = ...' (Global assignment check). 
+        // If it is global, we can use it. If not, we should have assigned it to window.
+        if (window.livingTVMesh) {
+            if (tvScreensaverTexture) window.livingTVMesh.material.map = tvScreensaverTexture;
+        } else if (typeof tvMesh !== 'undefined') {
+            if (tvScreensaverTexture) tvMesh.material.map = tvScreensaverTexture;
+        }
     }
 };
 
@@ -636,8 +664,20 @@ function createLivingRoomInterior() {
     }
 
     const screenGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tvVideoTexture }));
+    // V-NEW: Default to Screensaver if available
+    const initialMap = tvScreensaverTexture || tvVideoTexture;
+    tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: initialMap }));
     tvMesh.position.set(0, 2.6, -4.39);
+
+    // V-NEW: Screensaver Animation Loop
+    tvMesh.userData.update = function (t) {
+        if (tvMesh.material.map === tvScreensaverTexture && tvScreensaver) {
+            tvScreensaver.update();
+            tvScreensaverTexture.needsUpdate = true;
+        }
+    };
+
+    interiorGroup.add(tvMesh); // Ensure added using Variable reference (implied context)
     tvMesh.userData = { type: 'tv', action: 'toggleVideo' };
     interiorGroup.add(tvMesh);
     interiorClickables.push(tvMesh);
