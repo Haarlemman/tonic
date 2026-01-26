@@ -22,6 +22,9 @@ function initTVVideo() {
     tvVideo.preload = 'auto';
     tvVideo.setAttribute('playsinline', '');
 
+    // V-FIX: Expose to Universal Interface
+    window.videoElement = tvVideo;
+
     tvVideoTexture = new THREE.VideoTexture(tvVideo);
     tvVideoTexture.minFilter = THREE.LinearFilter;
     tvVideoTexture.magFilter = THREE.LinearFilter;
