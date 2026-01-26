@@ -86,13 +86,25 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
             // Start at 1.0 and go down
             const yPos = 1.0 - (i * 0.5);
 
+            // V-FIX: Check Global Active Index
+            const isActive = (typeof window.masterVideoIndex !== 'undefined' && window.masterVideoIndex === i);
+
             const sCanvas = document.createElement('canvas');
             sCanvas.width = 512; sCanvas.height = 100;
             const sctx = sCanvas.getContext('2d');
 
-            sctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            sctx.fillRect(0, 0, 512, 100);
-            sctx.fillStyle = '#ffffff';
+            if (isActive) {
+                // Active: Dark BG, Green Text
+                sctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                sctx.fillRect(0, 0, 512, 100);
+                sctx.fillStyle = '#00ff00';
+            } else {
+                // Inactive: Faint BG, White Text
+                sctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                sctx.fillRect(0, 0, 512, 100);
+                sctx.fillStyle = '#ffffff';
+            }
+
             sctx.font = 'bold 40px Arial';
             sctx.textAlign = 'left'; sctx.textBaseline = 'middle';
             sctx.fillText((i + 1) + ". " + item.title, 20, 50);

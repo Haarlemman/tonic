@@ -681,6 +681,7 @@ function createLivingRoomInterior() {
     tvMesh.userData = { type: 'tv', action: 'toggleVideo' };
     interiorGroup.add(tvMesh);
     interiorClickables.push(tvMesh);
+    window.livingTVMesh = tvMesh; // V-FIX: Expose for screensaver revert
 
     const table = new THREE.Mesh(
         new THREE.BoxGeometry(2.25, 0.6, 2.25),
