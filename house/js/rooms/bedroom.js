@@ -98,7 +98,11 @@ function createBedroomInterior() {
     phone.add(phoneScreenMesh);
 
     if (roomContent.bedroom.videoPlaylist) {
-        createVideoPlaylistPanel(roomContent.bedroom.videoPlaylist);
+        // V-FIX: Universal Video UI
+        if (window.createUniversalVideoInterface) {
+            // Position adjusted to match previous header height (y=6.0 approx)
+            window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 4.2, -4.8), roomContent.bedroom.videoPlaylist);
+        }
     }
 
     const shelfGeo = new THREE.BoxGeometry(0.8, 0.1, 1.2);
@@ -308,78 +312,4 @@ function playVideo(index) {
     createVideoPlaylistPanel(playlist);
 }
 
-function createVideoPlaylistPanel(playlist) {
-    if (!playlist || playlist.length === 0) return;
-
-    // -- HEADER --
-    const headCanvas = document.createElement('canvas');
-    headCanvas.width = 256; headCanvas.height = 64;
-    const hctx = headCanvas.getContext('2d');
-    hctx.fillStyle = '#ffffff'; hctx.font = 'bold 36px Arial'; hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
-    hctx.fillText("VIDEOS", 128, 32);
-    const headTex = new THREE.CanvasTexture(headCanvas);
-    // Style update: 2.0 width
-    const headMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.4), new THREE.MeshBasicMaterial({ map: headTex, transparent: true }));
-    headMesh.position.set(-2.8, 6.0, -4.8);
-    headMesh.userData = { type: 'videoHeader' };
-    interiorGroup.add(headMesh);
-
-    // -- ITEMS --
-    playlist.forEach((item, i) => {
-        const isCurrent = (typeof masterVideoIndex !== 'undefined') ? (i === masterVideoIndex) : false; // Use global safe check
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 120; // Match Audio aspect
-        const ctx = canvas.getContext('2d');
-
-        // Styles matching Audio (Green Theme)
-        if (isCurrent) {
-            ctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; // Green tint bg
-            ctx.fillRect(0, 0, 512, 120);
-            ctx.lineWidth = 4; ctx.strokeStyle = '#4ade80'; ctx.strokeRect(0, 0, 512, 120); // Border highlight
-        } else {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(0, 0, 512, 120);
-        }
-
-        // Title
-        ctx.fillStyle = isCurrent ? '#4ade80' : '#ffffff';
-        ctx.font = 'bold 38px Arial';
-        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-        ctx.fillText((i + 1) + ". " + item.title, 20, 55);
-
-        // Artist / Subtitle / Status
-        ctx.fillStyle = '#cccccc';
-        ctx.font = 'italic 28px Arial'; ctx.textBaseline = 'top';
-        const sub = item.artist ? item.artist : (isCurrent ? "Playing..." : "Paused");
-        ctx.fillText(sub, 50, 65);
-
-        // "Squares" (Icon placeholder on right)
-        ctx.fillStyle = isCurrent ? '#4ade80' : '#555';
-        ctx.fillRect(450, 40, 30, 30); // Simple box icon
-
-        const tex = new THREE.CanvasTexture(canvas);
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-
-        mesh.position.set(-2.8, 5.4 - (i * 0.7), -4.8);
-        mesh.userData = { type: 'videoItem', index: i };
-
-        // Add PAUSE toggling logic (User requested "pause option")
-        mesh.userData.onClick = () => {
-            if (i === masterVideoIndex && videoElement && !videoElement.paused) {
-                videoElement.pause();
-                // Refresh panel to show "Paused" state?
-                // Simple re-render:
-                createVideoPlaylistPanel(playlist);
-            } else {
-                playVideo(i);
-            }
-        };
-
-        interiorGroup.add(mesh);
-        // Special manual push if not auto-handled by shared "videoItem" logic
-        // But living.js uses `tvVideoItem`. Bedroom uses `videoItem`.
-        // We need to ensure logic handles this.
-        if (!interiorClickables.includes(mesh)) interiorClickables.push(mesh);
-    });
-}
+// function createVideoPlaylistPanel removed (Replaced by Universal UI)

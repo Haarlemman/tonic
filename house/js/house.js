@@ -2309,6 +2309,139 @@ function checkIntersectionInternal() {
     }
 }
 
+// V-NEW: Universal Video UI Helper
+window.createUniversalVideoInterface = function (parentGroup, pos, playlist, options = {}) {
+    const root = new THREE.Group();
+    root.position.copy(pos);
+    if (options.rotationY) root.rotation.y = options.rotationY;
+    parentGroup.add(root);
+
+    // 1. HEADER "VIDEO"
+    const hCanvas = document.createElement('canvas');
+    hCanvas.width = 512; hCanvas.height = 128;
+    const hctx = hCanvas.getContext('2d');
+    hctx.fillStyle = 'rgba(0,0,0,0)'; // Transparent
+    // hctx.fillRect(0,0,512,128); // Debug background
+    hctx.fillStyle = '#ffffff';
+    hctx.font = 'bold 80px "Courier New"'; // Tech style
+    hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
+    hctx.shadowColor = '#00ff00'; hctx.shadowBlur = 10;
+    hctx.fillText("VIDEO", 256, 64);
+
+    const hTex = new THREE.CanvasTexture(hCanvas);
+    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
+    hMesh.position.set(0, 1.8, 0); // Top
+    root.add(hMesh);
+
+    // 2. SINGLE BUTTON CONTROL (Traffic Light Logic)
+    // Green (Play) / Yellow (Pause) / Red (Stop - usually implies reset)
+    const trafficGroup = new THREE.Group();
+    trafficGroup.position.set(0, 1.3, 0); // Below Header
+    root.add(trafficGroup);
+
+    // Backing Plate (Smaller for single button)
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.1), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+    trafficGroup.add(plate);
+
+    // Single Toggle Button
+    const btnGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 32);
+    btnGeo.rotateX(Math.PI / 2); // Face forward
+
+    const btnMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x440000 }); // Default Red
+    const btn = new THREE.Mesh(btnGeo, btnMat);
+    btn.position.set(0, 0, 0.06);
+
+    // Check initial state
+    if (window.videoElement && !window.videoElement.paused) {
+        btn.material.color.setHex(0x00ff00); // Green
+        btn.material.emissive.setHex(0x004400);
+    }
+
+    btn.userData = {
+        type: 'videoControlSingle', // New type
+        onClick: () => {
+            if (window.videoElement) {
+                if (window.videoElement.paused) {
+                    // PLAY
+                    window.videoElement.play().catch(e => console.log(e));
+                    btn.material.color.setHex(0x00ff00); // Green
+                    btn.material.emissive.setHex(0x004400);
+                    // Stop music
+                    if (window.audioPlayer) window.audioPlayer.pause();
+                } else {
+                    // PAUSE
+                    window.videoElement.pause();
+                    btn.material.color.setHex(0xffff00); // Yellow
+                    btn.material.emissive.setHex(0x444400);
+                }
+            }
+        },
+        updateState: () => {
+            if (window.videoElement && !window.videoElement.paused) {
+                btn.material.color.setHex(0x00ff00);
+                btn.material.emissive.setHex(0x004400);
+            } else {
+                // If paused, Yellow. If stopped/empty, Red? 
+                // Simple toggle: Yellow for paused.
+                btn.material.color.setHex(0xffff00);
+                btn.material.emissive.setHex(0x444400);
+            }
+        }
+    };
+    trafficGroup.add(btn);
+
+    // Add to clickables
+    if (window.interiorClickables) {
+        window.interiorClickables.push(btn);
+    }
+
+    // 3. RECTANGULAR PLAYLIST
+    // Logic adapted from living.js but simplified
+    if (playlist && playlist.length > 0) {
+        playlist.forEach((item, i) => {
+            const yPos = 0.8 - (i * 0.5); // Stack downwards
+
+            const sCanvas = document.createElement('canvas');
+            sCanvas.width = 512; sCanvas.height = 100;
+            const sctx = sCanvas.getContext('2d');
+
+            // Initial Draw (Inactive)
+            // Just simple text for now, living.js does dynamic update which is better but complex to abstract quickly.
+            // Let's make static stylish ones.
+            sctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            sctx.fillRect(0, 0, 512, 100);
+            sctx.fillStyle = '#ffffff';
+            sctx.font = 'bold 40px Arial';
+            sctx.textAlign = 'left'; sctx.textBaseline = 'middle';
+            sctx.fillText((i + 1) + ". " + item.title, 20, 50);
+
+            const sTex = new THREE.CanvasTexture(sCanvas);
+            const itemMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.4), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
+            itemMesh.position.set(0, yPos, 0);
+
+            itemMesh.userData = {
+                type: 'universalVideoItem',
+                index: i,
+                onClick: () => {
+                    // Play this video
+                    console.log("Universal Video Click:", i);
+                    if (window.videoElement) {
+                        window.videoElement.src = item.src;
+                        window.videoElement.play();
+                        if (window.audioPlayer) window.audioPlayer.pause();
+                    }
+                    // TODO: Update textures to show active state?
+                }
+            };
+
+            root.add(itemMesh);
+            if (window.interiorClickables) window.interiorClickables.push(itemMesh);
+        });
+    }
+
+    return root;
+};
+
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

@@ -113,13 +113,13 @@ function createBathroomInterior() {
             
             // Checkerboard pattern
             float check = mod(floor(x) + floor(y), 2.0);
-            // V-FIX: Brighter Tiles (0.02/0.15 -> 0.15/0.35)
-            vec3 tileColor = (check < 0.5) ? vec3(0.15) : vec3(0.35);
+            // V-FIX: Darker Tiles for Mirror (0.05/0.15)
+            vec3 tileColor = (check < 0.5) ? vec3(0.05) : vec3(0.15);
             
-            // Glare effect
+            // Glare effect (Reduced)
             float glarePos = 0.5 + (uViewRotation * 0.3) + (sin(uTime * 0.5) * 0.1);
             float streak = smoothstep(0.2, 0.0, abs(vUv.x - glarePos));
-            float gloss = (1.0 - vUv.y) * 0.1 + (streak * 0.3);
+            float gloss = (1.0 - vUv.y) * 0.05 + (streak * 0.1); // Much closer to matte
 
             // Sharp horizon transition
             float voidFactor = step(horizon, vUv.y);
@@ -129,13 +129,16 @@ function createBathroomInterior() {
             if (uUseVideo > 0.5) {
                 // Video mode
                 vec4 vid = texture2D(uMap, vUv);
-                finalColor = (vid.rgb * 0.8) + vec3(gloss * 0.4); 
+                finalColor = (vid.rgb * 0.8) + vec3(gloss * 0.2); 
             } else {
                 // Reflection mode
                 vec3 finalReflect = tileColor + vec3(gloss);
-                // Mix to tinted void
-                finalColor = mix(finalReflect, vec3(0.01, 0.02, 0.03), voidFactor);
+                // Mix to tinted void (Very Dark)
+                finalColor = mix(finalReflect, vec3(0.005, 0.01, 0.015), voidFactor);
             }
+
+            // V-TUNE: Extra Darkening for "Blurry/Dim" feel
+            finalColor *= 0.7; // Global dimmer
 
             gl_FragColor = vec4(finalColor, 1.0);
         }
@@ -416,114 +419,9 @@ function createBathroomInterior() {
     };
 
     // V180: VIDEO PLAYLIST (Left of Mirror)
-    createVideoPlaylist(mirrorMat);
+    if (window.createUniversalVideoInterface && roomContent.bathroom.videoPlaylist) {
+        // V-FIX: Universal Video UI - Positioned Left (-2.8) to avoid overlap, and Higher (2.8)
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 2.8, -4.5), roomContent.bathroom.videoPlaylist);
+    }
 }
 
-// V-NEW: Universal Playlist UI for Bathroom (Ported from Living Room)
-function createVideoPlaylist(mirrorMat) {
-    const playlist = roomContent.bathroom.videoPlaylist;
-    console.log("createVideoPlaylist: Found playlist:", playlist);
-    if (!playlist) return;
-
-    // Remove old items if any
-    // (Simplified: assuming fresh build or clearing manually if needed)
-
-    // Config
-    const startX = -1.6;
-    const startY = 3.0;
-    const startZ = -4.5;
-    const stepY = 0.5;
-
-    // -- HEADER --
-    const hCanvas = document.createElement('canvas');
-    hCanvas.width = 256; hCanvas.height = 64;
-    const hctx = hCanvas.getContext('2d');
-    hctx.fillStyle = '#ffffff'; hctx.font = 'bold 36px Arial'; hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
-    hctx.fillText("SELECT TRACK", 128, 32);
-
-    const hMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 0.3),
-        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(hCanvas), transparent: true })
-    );
-    hMesh.position.set(startX, startY + 0.4, startZ);
-    // Keep header static (no userData type that makes it clickable)
-    interiorGroup.add(hMesh);
-
-    // -- ITEMS --
-    playlist.forEach((video, index) => {
-        const itemGeo = new THREE.PlaneGeometry(1.5, 0.4);
-
-        // Dynamic Texture Generator
-        const updateTexture = (isActive) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 120;
-            const ctx = canvas.getContext('2d');
-
-            // BG
-            if (isActive) {
-                ctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; // Green
-                ctx.fillRect(0, 0, 512, 120);
-                ctx.lineWidth = 4; ctx.strokeStyle = '#4ade80'; ctx.strokeRect(0, 0, 512, 120);
-            } else {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; // Dark Grey
-                ctx.fillRect(0, 0, 512, 120);
-            }
-
-            // Text
-            ctx.fillStyle = isActive ? '#4ade80' : '#ffffff';
-            ctx.font = 'bold 40px Arial';
-            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-            ctx.fillText((index + 1) + ". " + video.title, 20, 60);
-
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.minFilter = THREE.LinearFilter;
-            return tex;
-        };
-
-        const itemMat = new THREE.MeshBasicMaterial({
-            map: updateTexture(false),
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-
-        const item = new THREE.Mesh(itemGeo, itemMat);
-        item.position.set(startX, startY - (index * stepY), startZ);
-
-        item.userData = {
-            type: 'bathroomPlaylistItem', // Must match house.js handler
-            index: index,
-            // Custom update function we can call safely
-            updateState: (playingIndex) => {
-                item.material.map = updateTexture(playingIndex === index);
-            },
-            onClick: () => {
-                console.log("Bathroom Playlist Click:", video.title);
-
-                // 1. Update Video
-                if (window.videoElement) {
-                    window.videoElement.src = video.src;
-                    window.videoElement.load();
-                    window.videoElement.play();
-
-                    // 2. Set Mirror Mode
-                    if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 1.0;
-
-                    // 3. Stop House Music
-                    if (window.audioPlayer) { window.audioPlayer.pause(); window.isMusicPlaying = false; }
-                    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-
-                    // 4. Update UI Visuals
-                    // We need to find all siblings. They are in interiorGroup.
-                    interiorGroup.children.forEach(c => {
-                        if (c.userData && c.userData.type === 'bathroomPlaylistItem' && c.userData.updateState) {
-                            c.userData.updateState(index);
-                        }
-                    });
-                }
-            }
-        };
-
-        interiorGroup.add(item);
-        interiorClickables.push(item);
-    });
-}
