@@ -80,14 +80,11 @@ function createVideoPanel(playlist) {
 
     if (!playlist || playlist.length === 0) return;
 
-    if (!playlist || playlist.length === 0) return;
-
     if (window.createUniversalVideoInterface) {
         // V-FIX: Universal Video UI (Rectangular Button)
         // Positioned at (3.0, 3.2, -4.9) to match previous location
         window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(3.0, 3.2, -4.9), playlist);
     }
-}
 }
 
 function nextTVContent() {
