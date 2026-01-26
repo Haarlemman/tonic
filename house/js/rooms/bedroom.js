@@ -14,10 +14,7 @@ function createBedroomInterior() {
     greenBtn.material.color.setHex(0xff0000);
     greenBtn.material.emissive.setHex(0x440000);
 
-    // -- DARKER FLOOR FOR BEDROOM --
-    // V4: Much darker floor (User request)
-    // -- DARKER FLOOR FOR BEDROOM --
-    // V140: Even Darker (0x222222 -> 0x111111)
+    // -- DARK FLOOR
     const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }));
     darkFloor.rotation.x = -Math.PI / 2; darkFloor.position.y = 0.01;
     interiorGroup.add(darkFloor);
@@ -70,8 +67,8 @@ function createBedroomInterior() {
     const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xcc8800, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     shade.position.y = 0.7; lampGroup.add(shade);
     // Light - Dimmer (Night Bed Lamp) - Darker
-    // V142: Reduced Intensity (0.8 -> 0.4)
-    const bulb = new THREE.PointLight(0xffaa00, 0.4, 8);
+    // V142: Reduced Intensity (0.8 -> 0.4) -> V-NEW (0.15)
+    const bulb = new THREE.PointLight(0xffaa00, 0.15, 8);
     bulb.position.y = 0.6;
     lampGroup.add(bulb);
 
@@ -167,12 +164,12 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
     lampGroup.add(liquidCore);
 
     // Lights
-    // V142: Dimmer Lights (4 -> 2)
-    const internalPointLight = new THREE.PointLight(0xff4d00, 2, 5);
+    // V142: Dimmer Lights (4 -> 2) -> V-NEW (0.5)
+    const internalPointLight = new THREE.PointLight(0xff4d00, 0.5, 5);
     internalPointLight.position.set(0, 0, 0);
     lampGroup.add(internalPointLight);
 
-    const baseLight = new THREE.PointLight(0xff4d00, 2, 3);
+    const baseLight = new THREE.PointLight(0xff4d00, 0.5, 3);
     baseLight.position.set(0, -4.5, 0);
     lampGroup.add(baseLight);
 
@@ -275,7 +272,7 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
 }
 
 function nextBedroomVideo() {
-    currentVideoIndex = (currentVideoIndex + 1) % roomContent.bedroom.videoPlaylist.length;
+    masterVideoIndex = (masterVideoIndex + 1) % roomContent.bedroom.videoPlaylist.length;
     startVideoClip('bedroom');
 }
 
@@ -283,7 +280,7 @@ function playVideo(index) {
     const playlist = roomContent.bedroom.videoPlaylist;
     if (!playlist || !playlist[index]) return;
 
-    currentVideoIndex = index;
+    masterVideoIndex = index;
     startVideoClip('bedroom');
 
     // Update Button State to Green (Playing)
@@ -314,62 +311,75 @@ function playVideo(index) {
 function createVideoPlaylistPanel(playlist) {
     if (!playlist || playlist.length === 0) return;
 
-    // Header
+    // -- HEADER --
     const headCanvas = document.createElement('canvas');
     headCanvas.width = 256; headCanvas.height = 64;
     const hctx = headCanvas.getContext('2d');
-    // V12: Removed Black Background (Transparent)
-    hctx.clearRect(0, 0, 256, 64);
-    // hctx.fillStyle = '#000000'; hctx.fillRect(0, 0, 256, 64); 
     hctx.fillStyle = '#ffffff'; hctx.font = 'bold 36px Arial'; hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
     hctx.fillText("VIDEOS", 128, 32);
     const headTex = new THREE.CanvasTexture(headCanvas);
-    // V13 FIX: Add transparent: true to Material!
-    const headMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.4), new THREE.MeshBasicMaterial({ map: headTex, transparent: true }));
-    // V6: Move slightly forward -4.8
+    // Style update: 2.0 width
+    const headMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.4), new THREE.MeshBasicMaterial({ map: headTex, transparent: true }));
     headMesh.position.set(-2.8, 6.0, -4.8);
     headMesh.userData = { type: 'videoHeader' };
     interiorGroup.add(headMesh);
 
+    // -- ITEMS --
     playlist.forEach((item, i) => {
-        const isCurrent = i === currentVideoIndex;
-        // INCREASED HEIGHT FOR 2 LINES (Artist Support)
+        const isCurrent = (typeof masterVideoIndex !== 'undefined') ? (i === masterVideoIndex) : false; // Use global safe check
+
         const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 128;
+        canvas.width = 512; canvas.height = 120; // Match Audio aspect
         const ctx = canvas.getContext('2d');
 
-        // V61: Revert Playlist to Green Tint
+        // Styles matching Audio (Green Theme)
         if (isCurrent) {
-            ctx.fillStyle = 'rgba(74, 222, 128, 0.2)';
-            ctx.fillRect(0, 0, 512, 128);
-            ctx.fillStyle = '#4ade80'; // Bright Green Text
+            ctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; // Green tint bg
+            ctx.fillRect(0, 0, 512, 120);
+            ctx.lineWidth = 4; ctx.strokeStyle = '#4ade80'; ctx.strokeRect(0, 0, 512, 120); // Border highlight
         } else {
-            // Transparent background (Very faint white for hit area logging?)
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(0, 0, 512, 128);
-            ctx.fillStyle = '#ffffff'; // White Text
+            ctx.fillRect(0, 0, 512, 120);
         }
 
-        // LINE 1: Title
-        ctx.font = 'bold 44px Arial'; // Bigger font
+        // Title
+        ctx.fillStyle = isCurrent ? '#4ade80' : '#ffffff';
+        ctx.font = 'bold 38px Arial';
         ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-        ctx.fillText((i + 1) + ". " + item.title, 20, 60);
+        ctx.fillText((i + 1) + ". " + item.title, 20, 55);
 
-        // LINE 2: Artist
-        if (item.artist) {
-            ctx.font = 'italic 32px Arial'; ctx.textBaseline = 'top';
-            // V14: Artist stays BRIGHT GREEN if current
-            ctx.fillStyle = isCurrent ? '#4ade80' : '#cccccc';
-            ctx.fillText(item.artist, 50, 70);
-        }
+        // Artist / Subtitle / Status
+        ctx.fillStyle = '#cccccc';
+        ctx.font = 'italic 28px Arial'; ctx.textBaseline = 'top';
+        const sub = item.artist ? item.artist : (isCurrent ? "Playing..." : "Paused");
+        ctx.fillText(sub, 50, 65);
+
+        // "Squares" (Icon placeholder on right)
+        ctx.fillStyle = isCurrent ? '#4ade80' : '#555';
+        ctx.fillRect(450, 40, 30, 30); // Simple box icon
 
         const tex = new THREE.CanvasTexture(canvas);
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 
-        // Position: V6 move to -4.8
-        mesh.position.set(-2.8, 5.5 - (i * 0.7), -4.8);
+        mesh.position.set(-2.8, 5.4 - (i * 0.7), -4.8);
         mesh.userData = { type: 'videoItem', index: i };
+
+        // Add PAUSE toggling logic (User requested "pause option")
+        mesh.userData.onClick = () => {
+            if (i === masterVideoIndex && videoElement && !videoElement.paused) {
+                videoElement.pause();
+                // Refresh panel to show "Paused" state?
+                // Simple re-render:
+                createVideoPlaylistPanel(playlist);
+            } else {
+                playVideo(i);
+            }
+        };
+
         interiorGroup.add(mesh);
-        interiorClickables.push(mesh);
+        // Special manual push if not auto-handled by shared "videoItem" logic
+        // But living.js uses `tvVideoItem`. Bedroom uses `videoItem`.
+        // We need to ensure logic handles this.
+        if (!interiorClickables.includes(mesh)) interiorClickables.push(mesh);
     });
 }

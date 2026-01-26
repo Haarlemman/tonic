@@ -51,7 +51,8 @@ function createHallInterior() {
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
     // Add Cozy Warm SpotLight
-    const cozySpot = new THREE.SpotLight(0xffaa00, 2.0);
+    // V-NEW: Reduced Intensity (2.0 -> 0.5)
+    const cozySpot = new THREE.SpotLight(0xffaa00, 0.5);
     cozySpot.position.set(2, 5, 2);
     cozySpot.target.position.set(0, 0, 0);
     cozySpot.angle = Math.PI / 4;

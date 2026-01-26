@@ -3,11 +3,18 @@ let tvVideo, tvVideoTexture;
 // Need global access to lights for dimming (Cinema Mode)
 window.livingCozyLight = null;
 window.livingLibrarySpot = null;
+// masterVideoIndex is global (house.js)
 
 function initTVVideo() {
     if (tvVideo) return;
     tvVideo = document.createElement('video');
-    tvVideo.src = '/assets/video/premonition.mp4';
+    // V-REFINE: Use Data.js source (Default to first in playlist)
+    const livingData = roomContent['living'];
+    if (livingData && livingData.videoPlaylist && livingData.videoPlaylist.length > 0) {
+        tvVideo.src = livingData.videoPlaylist[0].src;
+    } else {
+        tvVideo.src = '/assets/video/premonition.mp4'; // Fallback
+    }
     tvVideo.loop = true;
     tvVideo.muted = false; // User can unmute via global controls or logic?
     // User asked for "paused at opening shot". auto-play off.
@@ -19,6 +26,136 @@ function initTVVideo() {
     tvVideoTexture.minFilter = THREE.LinearFilter;
     tvVideoTexture.magFilter = THREE.LinearFilter;
     tvVideoTexture.colorSpace = THREE.SRGBColorSpace;
+}
+
+
+function playTVVideo(index) {
+    const playlist = roomContent['living'].videoPlaylist;
+    if (!playlist || !playlist[index]) return;
+
+    masterVideoIndex = index;
+    const clip = playlist[index];
+
+    console.log("Play TV Video:", clip.title);
+
+    // Stop Music if playing
+    if (window.audioPlayer && !window.audioPlayer.paused) {
+        window.audioPlayer.pause();
+        window.isMusicPlaying = false;
+        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
+    }
+
+    // Update Source
+    if (tvVideo) {
+        tvVideo.src = clip.src;
+        tvVideo.load();
+
+        // Ensure Cinema Mode is ACTIVE
+        if (tvVideo.paused) {
+            // Simulate "Next Content" trigger to enter Cinema Mode
+            nextTVContent();
+        } else {
+            // Already playing, just ensure it plays new src
+            tvVideo.play().catch(e => console.warn(e));
+        }
+    }
+
+    // Refresh Panel UI (Highlight selection)
+    createVideoPanel(playlist);
+}
+
+function createVideoPanel(playlist) {
+    // Remove existing if any
+    const toRemove = [];
+    interiorGroup.traverse(child => {
+        if (child.userData && (child.userData.type === 'videoPanel' || child.userData.type === 'videoItem' || child.userData.type === 'tvVideoItem' || child.userData.type === 'videoHeader')) {
+            toRemove.push(child);
+        }
+    });
+    toRemove.forEach(child => {
+        interiorGroup.remove(child);
+        const idx = interiorClickables.indexOf(child);
+        if (idx > -1) interiorClickables.splice(idx, 1);
+    });
+
+    if (!playlist || playlist.length === 0) return;
+
+    const panelX = 3.0;
+    const panelZ = -4.9;
+    const panelY = 4.0;
+
+    // -- HEADER --
+    const hCanvas = document.createElement('canvas');
+    hCanvas.width = 256; hCanvas.height = 64; // Smaller res for crisp text
+    const hctx = hCanvas.getContext('2d');
+    hctx.fillStyle = '#ffffff'; hctx.font = 'bold 36px Arial'; hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
+    // V-CHANGE: "VIDEO" instead of "VIDEO LIBRARY"
+    hctx.fillText("VIDEO", 128, 32);
+
+    const hTex = new THREE.CanvasTexture(hCanvas);
+    // V-REFINE: Reduced Width (match Universal)
+    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.4), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
+    hMesh.position.set(panelX, 5.0, panelZ);
+    hMesh.userData = { type: 'videoHeader' };
+    interiorGroup.add(hMesh);
+
+    // -- ITEMS --
+    playlist.forEach((item, i) => {
+        const isCurrent = (tvVideo && !tvVideo.paused && item.src.endsWith(tvVideo.src.split('/').pop()));
+        const isselected = i === masterVideoIndex; // Index tracking
+
+        // Use isCurrent (Playing) for Green highlight? Or isSelected?
+        // Let's use isSelected for logic, but check playback for "Playing" status
+        const isActive = isCurrent;
+
+        const sCanvas = document.createElement('canvas');
+        sCanvas.width = 512; sCanvas.height = 120; // Match Universal aspect
+        const sctx = sCanvas.getContext('2d');
+
+        if (isActive) {
+            sctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; // Green tint
+            sctx.fillRect(0, 0, 512, 120);
+            sctx.lineWidth = 4; sctx.strokeStyle = '#4ade80'; sctx.strokeRect(0, 0, 512, 120);
+        } else {
+            sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            sctx.fillRect(0, 0, 512, 120);
+        }
+
+        // Title
+        sctx.fillStyle = isActive ? '#4ade80' : '#ffffff';
+        sctx.font = 'bold 38px Arial';
+        sctx.textAlign = 'left'; sctx.textBaseline = 'bottom';
+        sctx.fillText((i + 1) + ". " + item.title, 20, 55);
+
+        // Subtitle / Status
+        sctx.fillStyle = '#cccccc';
+        sctx.font = 'italic 28px Arial'; sctx.textBaseline = 'top';
+        const sub = isActive ? "Playing..." : (i === masterVideoIndex ? "Paused" : item.artist || "");
+        sctx.fillText(sub, 50, 65);
+
+        // Square Icon
+        sctx.fillStyle = isActive ? '#4ade80' : '#555';
+        sctx.fillRect(450, 40, 30, 30);
+
+        const sTex = new THREE.CanvasTexture(sCanvas);
+        // V-REFINE: Match Universal Width
+        const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
+        sMesh.position.set(panelX, 4.4 - (i * 0.7), panelZ);
+        sMesh.userData = { type: 'tvVideoItem', index: i };
+
+        // Click Logic
+        sMesh.userData.onClick = () => {
+            if (i === masterVideoIndex && tvVideo && !tvVideo.paused) {
+                tvVideo.pause();
+                createVideoPanel(playlist); // Refresh UI
+            } else {
+                playTVVideo(i);
+            }
+        };
+
+        interiorGroup.add(sMesh);
+        if (!interiorClickables.includes(sMesh)) interiorClickables.push(sMesh);
+    });
 }
 
 function nextTVContent() {
@@ -76,44 +213,52 @@ function nextTVContent() {
             tvVideo.muted = false;
             tvVideo.volume = 1.0;
             tvVideo.play().catch(e => console.warn("TV Play Error", e));
+            tvVideo.play().catch(e => console.warn("TV Play Error", e));
         } else {
             // --- EXIT CINEMA MODE (PAUSE) ---
-            console.log("Cinema Mode: Restoring Lights (Reversing Action)");
-
-            // Default Fallbacks if capture failed
-            const restore = window.preCinemaState || {
-                cozy: 0.15, library: 0.2, spotL: 1.2, spotR: 1.2,
-                ambient: 0.6, dir: 1.2, rim: 0.4
-            };
-
-            try {
-                if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: restore.cozy }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: restore.library }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // Restore bookcase spots
-                if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: restore.spotL }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: restore.spotR }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // Restore Global Lights
-                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: restore.ambient }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: restore.dir }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: restore.rim }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.rimLight2) new TWEEN.Tween(window.rimLight2).to({ intensity: 0.6 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start(); // If exposed, restore default
-
-                // Restore robot glow
-                if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-            } catch (e) {
-                if (window.livingCozyLight) window.livingCozyLight.intensity = restore.cozy;
-            }
-
+            restoreCinemaLights();
             tvVideo.pause();
         }
     }
 }
 window.nextTVContent = nextTVContent;
+
+function restoreCinemaLights() {
+    console.log("Cinema Mode: Restoring Lights (Reversing Action)");
+
+    // Default Fallbacks if capture failed
+    const restore = window.preCinemaState || {
+        cozy: 0.15, library: 0.2, spotL: 1.2, spotR: 1.2,
+        // V-TUNE: Balanced Dark Settings
+        ambient: 0.15, dir: 0.4, rim: 0.2
+    };
+
+    try {
+        if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: restore.cozy }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: restore.library }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+
+        // Restore bookcase spots
+        if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: restore.spotL }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: restore.spotR }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+
+        // Restore Global Lights
+        if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: restore.ambient }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: restore.dir }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: restore.rim }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.rimLight2) new TWEEN.Tween(window.rimLight2).to({ intensity: 0.1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+
+        // Restore robot glow
+        if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+
+    } catch (e) {
+        if (window.livingCozyLight) window.livingCozyLight.intensity = restore.cozy;
+    }
+}
+// Export for global use
+window.restoreCinemaLights = restoreCinemaLights;
+
 window.stopLivingVideo = () => {
-    if (typeof restoreCinemaLights === 'function') restoreCinemaLights();
+    restoreCinemaLights();
     if (tvVideo) {
         tvVideo.pause();
         tvVideo.muted = true;
@@ -164,23 +309,23 @@ function createLivingRoomInterior() {
     interiorGroup.add(window.livingLibrarySpot);
     interiorGroup.add(window.livingLibrarySpot.target);
 
-    // Bookcase Specific Spots
-    const bookcaseSpotL = new THREE.SpotLight(0xffeedd, 0.6); // 1.2 -> 0.6
+    // V171: Soften Spotlights (pi/4 -> pi/2.2) & Increase Intensity (0.6 -> 0.8) -> V-NEW: 0.5
+    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.5);
     bookcaseSpotL.position.set(-2, 6, -3.5);
-    bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5); // Left Bookcase
-    bookcaseSpotL.angle = Math.PI / 4;
+    bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5);
+    bookcaseSpotL.angle = Math.PI / 2.2;
     bookcaseSpotL.penumbra = 1.0;
-    bookcaseSpotL.castShadow = true;
+    bookcaseSpotL.distance = 15;
     interiorGroup.add(bookcaseSpotL);
     interiorGroup.add(bookcaseSpotL.target);
     window.bookcaseSpotL = bookcaseSpotL;
 
-    const bookcaseSpotR = new THREE.SpotLight(0xffeedd, 0.6); // 1.2 -> 0.6
+    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.5);
     bookcaseSpotR.position.set(-2, 6, 3.5);
-    bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5); // Right Bookcase
-    bookcaseSpotR.angle = Math.PI / 4;
+    bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5);
+    bookcaseSpotR.angle = Math.PI / 2.2;
     bookcaseSpotR.penumbra = 1.0;
-    bookcaseSpotR.castShadow = true;
+    bookcaseSpotR.distance = 15;
     interiorGroup.add(bookcaseSpotR);
     interiorGroup.add(bookcaseSpotR.target);
     window.bookcaseSpotR = bookcaseSpotR;
@@ -265,8 +410,7 @@ function createLivingRoomInterior() {
         // 5. CENTRAL CANDLE
         const centerCup = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.02, 0.1, 8), goldMat);
         // V148: Lower Center Cup (1.2 -> 1.05) to match shorter stem (base+1.0 approx) or just above arms (0.8+r?)
-        // Top of stem is at y=0.05 + 1.0 = 1.05? Base is 0.1 high, y=0.05.
-        // Actually Base Center Y=0.05. Height 0.1. Top=0.1.
+        // Top of stem is at y=0.05 + 1.0 = 1.05? Base is 0.1 high, y=0.1.
         // Stem Center Y=0.6. Height 1.0. Range 0.1 -> 1.1.
         // So Cup at 1.1.
         centerCup.position.set(0, 1.1, 0); // Top of Stem
@@ -427,12 +571,23 @@ function createLivingRoomInterior() {
             if (row === 4 && posZ < 0) {
                 // V147: Create Menorah instead of Ray Artifact
                 const artifact = createMenorahArtifact(); // Was createIntenseRayArtifact
-                artifact.position.set(0, shelfY - 2.15, 0 + pivotOffsetZ); // Sit on shelf + Offset
+                // V-FIX: Lower Y position (-0.25 adjustment)
+                artifact.position.set(0, shelfY - 2.4, 0 + pivotOffsetZ); // Sit on shelf + Offset
                 // CLICK TRIGGER
                 artifact.userData = {
                     type: 'open_secret',
                     onClick: () => {
                         console.log("Artifact Clicked!");
+                        // V-FIX: Robust Audio Play (Annex/Secret Door)
+                        try {
+                            // V-FIX: Path relative to /house/index.html is ../assets
+                            const squeak = new Audio('../assets/audio/squeak.mp3');
+                            squeak.volume = 1.0;
+                            squeak.play().catch(e => console.error("Squeak Play Fail:", e));
+                        } catch (err) {
+                            console.error("Audio Init Fail:", err);
+                        }
+
                         // Toggle Secret Door
                         const target = window.secretDoorGroup;
                         if (!target) return;
@@ -462,7 +617,9 @@ function createLivingRoomInterior() {
                 // V166: REALISTIC TINTIN ROCKET (on Top Left Shelf)
                 const rocket = createRealisticRocketArtifact();
                 rocket.scale.setScalar(0.022);
-                rocket.position.set(0.1, shelfY - 2.22, 0);
+                // V-FIX: Adjust Y to sit on shelf (was shelfY - 2.47 sinking in)
+                // Corrected to shelfY - 2.32
+                rocket.position.set(0.1, shelfY - 2.32, 0);
                 bookcaseGroup.add(rocket);
             }
             else if (row === 2 && posZ > 0) {
@@ -510,6 +667,42 @@ function createLivingRoomInterior() {
     interiorGroup.add(tvFrame);
 
     initTVVideo();
+
+    // -- MILD GLOW BEHIND TV --
+    // V-REFINE: Soft Blue Glow (Texture based, not rectangle)
+    const tvGlow = new THREE.PointLight(0x88ccff, 1.0, 8);
+    tvGlow.position.set(0, 2.6, -4.8);
+    interiorGroup.add(tvGlow);
+
+    // Create Soft Gradient Texture for the backing
+    const glowCanvas = document.createElement('canvas');
+    glowCanvas.width = 128; glowCanvas.height = 128;
+    const gCtx = glowCanvas.getContext('2d');
+    const grd = gCtx.createRadialGradient(64, 64, 20, 64, 64, 60);
+    grd.addColorStop(0, 'rgba(0, 100, 255, 0.4)'); // Blue center
+    grd.addColorStop(0.5, 'rgba(0, 50, 150, 0.1)');
+    grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    gCtx.fillStyle = grd; gCtx.fillRect(0, 0, 128, 128);
+
+    const glowTex = new THREE.CanvasTexture(glowCanvas);
+    const glowGeo = new THREE.PlaneGeometry(6, 4); // Slightly larger
+    const glowMat = new THREE.MeshBasicMaterial({
+        map: glowTex,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false, // Prevent occlusion issues
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending // Glowy look
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.set(0, 2.6, -4.95); // Just off wall
+    interiorGroup.add(glowMesh);
+
+    // V-NEW: Create Video Menu Panel
+    if (roomContent['living'].videoPlaylist && roomContent['living'].videoPlaylist.length > 0) {
+        createVideoPanel(roomContent['living'].videoPlaylist);
+    }
+
     const screenGeo = new THREE.PlaneGeometry(3.3, 1.8);
     tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tvVideoTexture }));
     tvMesh.position.set(0, 2.6, -4.39);
@@ -524,6 +717,8 @@ function createLivingRoomInterior() {
     table.position.set(0, 0.3, -1.0);
     table.castShadow = true; table.receiveShadow = true;
     interiorGroup.add(table);
+
+    // 4. Console Table (Center)
 
     function createBook(title, color, x, z, rotY, imagePath) {
         const bGeo = new THREE.BoxGeometry(0.5, 0.08, 0.7);
@@ -585,8 +780,8 @@ function createLivingRoomInterior() {
     cardMesh.userData = { type: 'decoration' };
     interiorGroup.add(cardMesh); // Updated: Removed click logic/hologram
 
-    // V138: Darker Rug (0x450a0a -> 0x220505)
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 32), new THREE.MeshStandardMaterial({ color: 0x220505 }));
+    // V171: Dark Red Rug (0x220505 -> 0x6b0505)
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(4.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 }));
     rug.rotation.x = -Math.PI / 2; rug.position.y = 0.02;
     interiorGroup.add(rug);
 

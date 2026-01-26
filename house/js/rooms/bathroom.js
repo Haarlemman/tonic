@@ -70,8 +70,8 @@ function createBathroomInterior() {
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
     // 2. Add Darker Ambience
-    // V140: Dimmed (0.5 -> 0.2)
-    const darkAmb = new THREE.PointLight(0x223344, 0.2, 15);
+    // V140: Dimmed (0.5 -> 0.2) -> V-NEW: 0.05
+    const darkAmb = new THREE.PointLight(0x223344, 0.05, 15);
     darkAmb.position.set(0, 6, 0);
     interiorGroup.add(darkAmb);
 
@@ -86,58 +86,58 @@ function createBathroomInterior() {
 
     const mirrorFragmentShader = `
         uniform float uViewRotation; 
+        uniform float uViewPitch; // V-NEW: Vertical Tilt
         uniform float uTime;
         uniform sampler2D uMap;
-        uniform float uScale;   // 6.0
-        uniform float uUseVideo; // 0.0 = Reflection, 1.0 = Video
+        uniform float uScale;
+        uniform float uUseVideo;
         varying vec2 vUv;
         
         void main() {
-             // V45 Refinement: SUPER SENSITIVE
-             // The user says "Not responding".
-             // We will amplify uViewRotation massively (4.0) and use inverted Y for drift.
-             
-             float sensitiveAngle = uViewRotation * 4.0; 
-             
-             float angle = vUv.x * 1.0 + vUv.y * 0.1; 
-             float move = sensitiveAngle + (uTime * 0.1); 
-             float p = fract(angle - move);
-             
-             // Pseudo-3D Checkboard
-             float depth = 1.0 / max(0.01, (1.0 - vUv.y)); 
-             float x = vUv.x * depth * uScale + (sensitiveAngle * 2.0); // Add parallax to texture lookup directly
-             float y = depth * uScale;
-             
-             // Checkboard
-             float check = mod(floor(x) + floor(y), 2.0);
-             vec3 tileColor = (check < 0.5) ? vec3(0.1) : vec3(0.9);
-             
-             // Gloss (Animated) - V53 INTERACTIVE GLARE
-             // Reacts strongly to uViewRotation (Parallax) -> "Interactive"
-             float glarePos = 0.5 + (sensitiveAngle * 0.5) + (sin(uTime * 0.8) * 0.15);
-             float glareWidth = 0.15;
-             float gloss = (1.0 - vUv.y) * 0.2; // Base ambient gloss
-             // Bright interactive streak
-             float streak = smoothstep(glareWidth, 0.0, abs(vUv.x - glarePos));
-             gloss += streak * 0.4; // Strong glare add
+            // V180 Fix: Single horizon calculation
+            float sensitiveAngle = uViewRotation * 4.0; 
+            
+            // V-NEW: Added uViewPitch response (-0.5 to 0.5 usually)
+            // If camera looks DOWN (pitch < 0), Horizon should move UP? Or down?
+            // User feedback: "horizon should move 'up' when it goes down".
+            // If "it" refers to view/pitch going down, horizon must go UP.
+            // Pitch < 0 -> Horizon increases.
+            // So: - (uViewPitch * factor). 
+            // V-FIX: Adjusted Factor (0.8 -> 0.4) for Smoothness
+            float horizon = 0.45 + (uViewRotation * 0.05) - (uViewPitch * 0.4); 
+            float perspective = 1.0 / max(0.01, (horizon - vUv.y)); 
+            
+            // Checkerboard Reflection 
+            float x = (vUv.x - 0.5) * perspective * uScale + (sensitiveAngle * 3.0);
+            float y = perspective * uScale + (uTime * 0.2); 
+            
+            // Checkerboard pattern
+            float check = mod(floor(x) + floor(y), 2.0);
+            // V-FIX: Brighter Tiles (0.02/0.15 -> 0.15/0.35)
+            vec3 tileColor = (check < 0.5) ? vec3(0.15) : vec3(0.35);
+            
+            // Glare effect
+            float glarePos = 0.5 + (uViewRotation * 0.3) + (sin(uTime * 0.5) * 0.1);
+            float streak = smoothstep(0.2, 0.0, abs(vUv.x - glarePos));
+            float gloss = (1.0 - vUv.y) * 0.1 + (streak * 0.3);
 
-             // V56: SHARP HORIZON (Abrupt End)
-             float voidFactor = step(0.65, vUv.y);
-             
-             vec3 finalColor;
+            // Sharp horizon transition
+            float voidFactor = step(horizon, vUv.y);
+            
+            vec3 finalColor;
 
-             if (uUseVideo > 0.5) {
-                 vec4 vid = texture2D(uMap, vUv);
-                 // V54: Glare over Video
-                 finalColor = vid.rgb + vec3(gloss * 0.5); 
-             } else {
-                 // Checkboard Reflection
-                 vec3 finalReflect = tileColor + vec3(gloss);
-                 // Mix to Black abruptly
-                 finalColor = mix(finalReflect, vec3(0.0), voidFactor);
-             }
+            if (uUseVideo > 0.5) {
+                // Video mode
+                vec4 vid = texture2D(uMap, vUv);
+                finalColor = (vid.rgb * 0.8) + vec3(gloss * 0.4); 
+            } else {
+                // Reflection mode
+                vec3 finalReflect = tileColor + vec3(gloss);
+                // Mix to tinted void
+                finalColor = mix(finalReflect, vec3(0.01, 0.02, 0.03), voidFactor);
+            }
 
-             gl_FragColor = vec4(finalColor, 1.0);
+            gl_FragColor = vec4(finalColor, 1.0);
         }
     `;
 
@@ -146,9 +146,10 @@ function createBathroomInterior() {
         fragmentShader: mirrorFragmentShader,
         uniforms: {
             uViewRotation: { value: 0 },
+            uViewPitch: { value: 0 },
             uTime: { value: 0 },
             uMap: { value: null },
-            uScale: { value: 6.0 },
+            uScale: { value: 1.5 },
             uUseVideo: { value: 0.0 }
         }
     });
@@ -156,7 +157,7 @@ function createBathroomInterior() {
     // Register for animation updates
     // METHOD A: Global List
     if (typeof animatedShaderMaterials !== 'undefined') {
-        animatedShaderMaterials.push(mirrorMat);
+        if (!animatedShaderMaterials.includes(mirrorMat)) animatedShaderMaterials.push(mirrorMat);
     }
 
     // METHOD B: Direct Update (Robust)
@@ -164,12 +165,24 @@ function createBathroomInterior() {
         // 1. Update Time
         mirrorMat.uniforms.uTime.value = t;
 
-        // 2. Update Rotation (Parallax)
+        // 2. Update Rotation & Pitch (Parallax)
         const cam = window.camera || camera;
         if (cam) {
-            // V45: Debug Log Every 100 frames to prove it's working
+            // YAW
             const angle = Math.atan2(cam.position.x, cam.position.z);
             mirrorMat.uniforms.uViewRotation.value = angle;
+
+            // PITCH
+            // Get look direction
+            const dir = new THREE.Vector3();
+            cam.getWorldDirection(dir);
+            // dir.y is vertical component (-1 down, +1 up)
+            mirrorMat.uniforms.uViewPitch.value = dir.y;
+
+            // DEBUG: Log every ~60 frames
+            if (Math.floor(t * 60) % 60 === 0) {
+                console.log("Mirror Update: Yaw=", angle.toFixed(3), "Pitch=", dir.y.toFixed(3));
+            }
         }
 
         // 3. Update Video Texture if playing
@@ -303,32 +316,43 @@ function createBathroomInterior() {
 
     // --- VIDEO LOGIC (V41: Time-Is-Now.mp4) ---
     // START: Do NOT auto-play video. Start in Reflection Mode.
-    if (!videoElement) videoElement = document.getElementById('generic-video');
+    if (!window.videoElement) window.videoElement = document.getElementById('generic-video');
 
-    if (videoElement) {
+    if (window.videoElement) {
         // V41: Correct Video from data.js
-        videoElement.src = "/assets/video/Time-Is-Now.mp4";
-        videoElement.muted = true;
-        videoElement.loop = true;
-        videoElement.crossOrigin = "anonymous";
+        window.videoElement.src = "/assets/video/Time-Is-Now.mp4";
+        window.videoElement.muted = true;
+        window.videoElement.loop = true;
+        window.videoElement.crossOrigin = "anonymous";
 
         // Pre-load texture but don't show it (Pause immediately)
-        videoElement.play().then(() => {
-            videoElement.pause();
+        window.videoElement.play().then(() => {
+            window.videoElement.pause();
             // Create texture ONCE
             if (!mirrorMat.uniforms.uMap.value) {
-                const vTex = new THREE.VideoTexture(videoElement);
+                const vTex = new THREE.VideoTexture(window.videoElement);
                 mirrorMat.uniforms.uMap.value = vTex;
             }
         }).catch(e => console.warn("Mirror Video Init fail", e));
     }
 
+    // V-NEW: External Helper for Global Sync
+    window.stopBathroomVideo = function () {
+        if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 0.0;
+        if (window.videoElement) {
+            window.videoElement.pause();
+        }
+        // Reset Button Color (Red = Reflection Mode)
+        const btn = interiorClickables.find(c => c.userData.type === 'bathroomMirrorButton');
+        if (btn) btn.material.color.setHex(0xff0000);
+    };
+
     window.toggleBathroomMirror = function () {
         console.log("V46: toggleBathroomMirror CLICKED!");
 
         // Toggle Audio on Click
-        if (videoElement) {
-            videoElement.muted = !videoElement.muted;
+        if (window.videoElement) {
+            window.videoElement.muted = !window.videoElement.muted;
         }
 
         const btn = interiorClickables.find(c => c.userData.type === 'bathroomMirrorButton');
@@ -340,30 +364,31 @@ function createBathroomInterior() {
             if (currentMode < 0.5) {
                 // REFLECTION -> PLAY
                 mirrorMat.uniforms.uUseVideo.value = 1.0;
-                if (videoElement) {
-                    videoElement.play();
+                if (window.videoElement) {
+                    window.videoElement.play();
 
                     // V46: ROBUST AUDIO STOP
-                    if (window.audioPlayer && typeof window.audioPlayer.pause === 'function') {
-                        console.log("V46: Stopping Room Music...");
+                    if (window.stopVideosForAudio) {
+                        // This helper stops video too! Wait. We need to STOP MUSIC, not video.
+                        // We need the opposite of stopVideosForAudio.
+                        // We need "stopMusicForVideo".
+                        if (window.audioPlayer) {
+                            window.audioPlayer.pause();
+                            window.isMusicPlaying = false;
+                        }
+                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
+                    } else if (window.audioPlayer && typeof window.audioPlayer.pause === 'function') {
+                        // Legacy fallback
                         window.audioPlayer.pause();
                         window.isMusicPlaying = false;
-                    }
-                    // Kill the Music Switch LED (Turn RED)
-                    let ms = null;
-                    if (window.getMusicSwitch) ms = window.getMusicSwitch();
-                    if (!ms && window.musicSwitchMesh) ms = window.musicSwitchMesh;
-
-                    if (ms) {
-                        ms.material.color.setHex(0xff0000); // Red
-                        console.log("V46: Music Switch turned OFF (Red)");
+                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
                     }
                 }
                 if (btn) btn.material.color.setHex(0x00ff00); // Green
             } else {
                 // PLAY -> PAUSE
-                if (videoElement && !videoElement.paused) {
-                    videoElement.pause();
+                if (window.videoElement && !window.videoElement.paused) {
+                    window.videoElement.pause();
                     if (btn) btn.material.color.setHex(0xffff00); // Yellow
                 } else {
                     // PAUSE -> REFLECTION
@@ -373,4 +398,132 @@ function createBathroomInterior() {
             }
         }
     };
+
+    // V-NEW: Helper to Stop Video & Reset Lights
+    window.stopBathroomVideo = function () {
+        if (mirrorMat) {
+            mirrorMat.uniforms.uUseVideo.value = 0.0;
+            // Reset Button Color
+            const btn = interiorClickables.find(c => c.userData.type === 'bathroomMirrorButton');
+            if (btn) btn.material.color.setHex(0xff0000); // Red
+        }
+        if (videoElement && !videoElement.paused) videoElement.pause();
+
+        // Reset Lights
+        if (dirLight) dirLight.intensity = 1.0;
+        if (rimLight) rimLight.intensity = 0.5;
+        if (ambientLight) ambientLight.intensity = 0.5;
+    };
+
+    // V180: VIDEO PLAYLIST (Left of Mirror)
+    createVideoPlaylist(mirrorMat);
+}
+
+// V-NEW: Universal Playlist UI for Bathroom (Ported from Living Room)
+function createVideoPlaylist(mirrorMat) {
+    const playlist = roomContent.bathroom.videoPlaylist;
+    console.log("createVideoPlaylist: Found playlist:", playlist);
+    if (!playlist) return;
+
+    // Remove old items if any
+    // (Simplified: assuming fresh build or clearing manually if needed)
+
+    // Config
+    const startX = -1.6;
+    const startY = 3.0;
+    const startZ = -4.5;
+    const stepY = 0.5;
+
+    // -- HEADER --
+    const hCanvas = document.createElement('canvas');
+    hCanvas.width = 256; hCanvas.height = 64;
+    const hctx = hCanvas.getContext('2d');
+    hctx.fillStyle = '#ffffff'; hctx.font = 'bold 36px Arial'; hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
+    hctx.fillText("SELECT TRACK", 128, 32);
+
+    const hMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.5, 0.3),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(hCanvas), transparent: true })
+    );
+    hMesh.position.set(startX, startY + 0.4, startZ);
+    // Keep header static (no userData type that makes it clickable)
+    interiorGroup.add(hMesh);
+
+    // -- ITEMS --
+    playlist.forEach((video, index) => {
+        const itemGeo = new THREE.PlaneGeometry(1.5, 0.4);
+
+        // Dynamic Texture Generator
+        const updateTexture = (isActive) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 120;
+            const ctx = canvas.getContext('2d');
+
+            // BG
+            if (isActive) {
+                ctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; // Green
+                ctx.fillRect(0, 0, 512, 120);
+                ctx.lineWidth = 4; ctx.strokeStyle = '#4ade80'; ctx.strokeRect(0, 0, 512, 120);
+            } else {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; // Dark Grey
+                ctx.fillRect(0, 0, 512, 120);
+            }
+
+            // Text
+            ctx.fillStyle = isActive ? '#4ade80' : '#ffffff';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText((index + 1) + ". " + video.title, 20, 60);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.LinearFilter;
+            return tex;
+        };
+
+        const itemMat = new THREE.MeshBasicMaterial({
+            map: updateTexture(false),
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        const item = new THREE.Mesh(itemGeo, itemMat);
+        item.position.set(startX, startY - (index * stepY), startZ);
+
+        item.userData = {
+            type: 'bathroomPlaylistItem', // Must match house.js handler
+            index: index,
+            // Custom update function we can call safely
+            updateState: (playingIndex) => {
+                item.material.map = updateTexture(playingIndex === index);
+            },
+            onClick: () => {
+                console.log("Bathroom Playlist Click:", video.title);
+
+                // 1. Update Video
+                if (window.videoElement) {
+                    window.videoElement.src = video.src;
+                    window.videoElement.load();
+                    window.videoElement.play();
+
+                    // 2. Set Mirror Mode
+                    if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 1.0;
+
+                    // 3. Stop House Music
+                    if (window.audioPlayer) { window.audioPlayer.pause(); window.isMusicPlaying = false; }
+                    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
+
+                    // 4. Update UI Visuals
+                    // We need to find all siblings. They are in interiorGroup.
+                    interiorGroup.children.forEach(c => {
+                        if (c.userData && c.userData.type === 'bathroomPlaylistItem' && c.userData.updateState) {
+                            c.userData.updateState(index);
+                        }
+                    });
+                }
+            }
+        };
+
+        interiorGroup.add(item);
+        interiorClickables.push(item);
+    });
 }

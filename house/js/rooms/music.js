@@ -41,16 +41,9 @@ function playTrack(index) {
 
 
 
-        // Only pause video if we are NOT in rooms with persistent background videos (Studio, Hall, Basement)
-        // Living Room and Bedroom videos are "active" content with sound potential, so they pause when music starts.
-        if (['hall', 'studio', 'basement'].indexOf(currentRoom) === -1 && videoElement && !videoElement.paused) {
-            videoElement.pause();
-        }
-
-        // V-FIX: Stop Living Room TV Video specifically (Robot/Cinema Mode)
-        if (currentRoom === 'living' && window.stopLivingVideo) {
-            console.log("Music Started: Stopping Living Room TV");
-            window.stopLivingVideo();
+        // V-FIX: Global Sync - Stop Videos/Reset Lights when Audio starts
+        if (window.stopVideosForAudio) {
+            window.stopVideosForAudio();
         }
 
         // V210: Attic Audio Precedence for "Click Song"
@@ -109,7 +102,8 @@ function createMusicPanel(playlist) {
     ctx.font = 'italic 35px Arial'; ctx.fillText(currentTrack.track, 256, 190);
 
     const tex = new THREE.CanvasTexture(canvas);
-    const npMesh = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+    // V-REFINE: Scaling Down (3x1.5 -> 2.2x1.1)
+    const npMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
     npMesh.rotation.y = Math.PI / 2;
     npMesh.position.set(wallX, 5.5, 0);
     npMesh.userData = { type: 'musicPanel' };
@@ -120,11 +114,13 @@ function createMusicPanel(playlist) {
     pHeadCanvas.width = 512; pHeadCanvas.height = 64;
     const pctx = pHeadCanvas.getContext('2d');
     pctx.fillStyle = '#ffffff'; pctx.font = 'bold 40px Arial'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
-    pctx.fillText("PLAYLIST", 256, 32);
+    // V-CHANGE: "AUDIO" instead of "PLAYLIST"
+    pctx.fillText("AUDIO", 256, 32);
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
-    const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 0.4), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
+    // V-REFINE: Scaling Down (2x0.4 -> 1.5x0.3)
+    const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.3), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(wallX, 4.2, 0);
+    pHeadMesh.position.set(wallX, 4.4, 0); // Adjusted Y
     pHeadMesh.userData = { type: 'playlistHeader' };
     interiorGroup.add(pHeadMesh);
 
@@ -157,11 +153,11 @@ function createMusicPanel(playlist) {
         sctx.fillText(item.artist, 50, 65);
 
         const sTex = new THREE.CanvasTexture(sCanvas);
-        // Increased mesh height to match new aspect (3.5 width / 512 * 120 approx 0.8)
-        const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
+        // V-REFINE: Scaling Down (3.5x0.8 -> 2.5x0.6)
+        const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
         sMesh.rotation.y = Math.PI / 2;
-        // Position: stack downwards from 3.5, with larger gap
-        sMesh.position.set(wallX, 3.5 - (i * 0.9), 0);
+        // Position: Stack closer
+        sMesh.position.set(wallX, 3.8 - (i * 0.7), 0);
         sMesh.userData = { type: 'songItem', index: i };
 
         interiorGroup.add(sMesh);

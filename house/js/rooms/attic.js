@@ -1,165 +1,67 @@
 function createAtticInterior() {
-    const createLabeledBox = (labelText, x, z, color) => {
-        const boxGeo = new THREE.BoxGeometry(1.5, 1.2, 1.5);
-        const boxMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 });
+    // HELPER: Create Colored Box with Label
+    const createColoredBox = (labelText, labelColor, boxColor, x, z) => {
+        // Box
+        const boxGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const boxMat = new THREE.MeshStandardMaterial({
+            color: boxColor,
+            roughness: 0.6,
+            metalness: 0.1
+        });
         const box = new THREE.Mesh(boxGeo, boxMat);
-        box.position.set(x, 0.6, z);
-        const lid = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 1.6), new THREE.MeshStandardMaterial({ color: 0x3e2723 }));
-        lid.position.y = 0.6;
+        box.position.set(x, 0.75, z);
+
+        // Lid (Slightly larger top)
+        const lid = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 1.6), boxMat);
+        lid.position.y = 0.8;
         box.add(lid);
+
+        // Label (Text on Front)
         const canvas = document.createElement('canvas');
         canvas.width = 512; canvas.height = 256;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#f5f5dc'; ctx.fillRect(56, 56, 400, 144);
-        ctx.strokeStyle = '#8b4513'; ctx.lineWidth = 4; ctx.strokeRect(60, 60, 392, 136);
-        ctx.fillStyle = '#000000'; ctx.font = 'bold 40px "Courier Prime", monospace'; ctx.textAlign = 'center';
+
+        // Transparent BG? Or Box Color?
+        // Let's do simple white text on transparent, decal style
+        ctx.fillStyle = labelColor;
+        ctx.font = 'bold 60px "Courier Prime", monospace';
+        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const words = labelText.split('|');
-        if (words.length > 1) {
-            ctx.fillText(words[0], 256, 110); ctx.font = 'bold 30px "Courier Prime", monospace';
-            ctx.fillText(words[1], 256, 160);
-        } else {
-            ctx.fillText(labelText, 256, 128);
-        }
+        ctx.fillText(labelText, 256, 128);
+
         const tex = new THREE.CanvasTexture(canvas);
-        const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.6), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-        labelMesh.position.set(0, 0, 0.76); box.add(labelMesh);
-        interiorGroup.add(box); interiorClickables.push(box);
+        const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.65), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+        labelMesh.position.set(0, 0, 0.76); // Front face
+        box.add(labelMesh);
+
+        interiorGroup.add(box);
     };
-    createLabeledBox("", -2.5, -2, 0x2b2520); // V142: Very Dark Brown
-    createLabeledBox("The History|of Mankind", 0, -2, 0x2e2e1e); // V142: Very Dark Cream
-    createLabeledBox("", 2.5, -2, 0x2f2f24); // V142: Very Dark Grey
+
+    // 1. LEFT BOX: RED "BEAUTY"
+    // Red: 0xd32f2f
+    createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -3.0, -3.0);
+
+    // 2. MIDDLE BOX: YELLOW "KNOWLEDGE"
+    // Yellow: 0xfbc02d
+    createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -3.0);
+
+    // 3. RIGHT BOX: DEEP-BLUE "WISDOM"
+    // Deep Blue: 0x1a237e
+    createColoredBox("WISDOM", '#ffffff', 0x1a237e, 3.0, -3.0);
+
+    // Dust Particles (Keep for atmosphere)
     const particlesGeo = new THREE.BufferGeometry();
     const particleCount = 200;
     const posArray = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i++) { posArray[i] = (Math.random() - 0.5) * 10; }
     particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    // V142: Even Lower Opacity (0.2 -> 0.1)
     const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.1 });
     const particles = new THREE.Points(particlesGeo, particlesMat);
     particles.position.y = 3;
     particles.userData = { type: 'atticDust' };
     interiorGroup.add(particles);
 
-    // V201: Attic Video Projection (History Trailer)
-    // ------------------------------------------------
-    const atticVideo = document.getElementById('attic-video');
-
-    // Create Vignette Alpha Map for Blending
-    const vignetteCanvas = document.createElement('canvas');
-    vignetteCanvas.width = 512; vignetteCanvas.height = 512;
-    const vCtx = vignetteCanvas.getContext('2d');
-    // Create radial gradient (white center, black edges)
-    const gradient = vCtx.createRadialGradient(256, 256, 120, 256, 256, 256);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.8)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    vCtx.fillStyle = gradient;
-    vCtx.fillRect(0, 0, 512, 512);
-
-    const vignetteTex = new THREE.CanvasTexture(vignetteCanvas);
-    const videoTex = new THREE.VideoTexture(atticVideo);
-
-    // Material with Alpha Map for blending
-    const projMat = new THREE.MeshBasicMaterial({
-        map: videoTex,
-        alphaMap: vignetteTex,
-        transparent: true,
-        opacity: 0.7, // V142: Reduced Video Brightness (0.9 -> 0.7)
-        blending: THREE.AdditiveBlending, // Optional: for 'light projection' feel
-        side: THREE.DoubleSide
-    });
-
-    const projMesh = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.5), projMat);
-    // Position on back wall
-    projMesh.position.set(0, 3.9, -4.95);
-    interiorGroup.add(projMesh);
-
-    // Ensure video loops and plays sound initially
-    atticVideo.muted = false; // V210: Auto-play SOUND
-    atticVideo.volume = 1.0;
-    atticVideo.play().catch(e => console.warn("Attic video autoplay blocked", e));
-
-    // MUTE MAIN AUDIO IMMEDIATELY
-    if (window.audioPlayer) {
-        window.audioPlayer.pause();
-        window.isMusicPlaying = false;
-        // Turn Main Music Button RED
-        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-    }
-
-    // Audio Toggle Logic
-    // Create a physical toggle switch/model
-    const toggleGroup = new THREE.Group();
-    const baseGeo = new THREE.BoxGeometry(0.4, 0.4, 0.1);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const base = new THREE.Mesh(baseGeo, baseMat);
-
-    const knobGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.2, 16);
-    // V210: Start GREEN (On)
-    const knobMat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const knob = new THREE.Mesh(knobGeo, knobMat);
-    knob.rotation.x = Math.PI / 2;
-    knob.position.z = 0.1;
-
-    toggleGroup.add(base);
-    toggleGroup.add(knob);
-    toggleGroup.position.set(2, 1.5, -4.8); // Right side wall/floor area
-    toggleGroup.userData = { type: 'atticAudioToggle', state: 'on' }; // Start ON
-
-    interiorGroup.add(toggleGroup);
-    interiorClickables.push(toggleGroup);
-
-    // Add Label
-    const createToggleLabel = () => {
-        const c = document.createElement('canvas');
-        c.width = 256; c.height = 64;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 30px "Courier Prime", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText("PROJECTION AUDIO", 128, 32);
-        const t = new THREE.CanvasTexture(c);
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.2), new THREE.MeshBasicMaterial({ map: t, transparent: true }));
-        m.position.set(0, 0.4, 0);
-        toggleGroup.add(m);
-    };
-    createToggleLabel();
-
-    // Toggle Handler
-    toggleGroup.toggleAudio = () => {
-        const isOff = toggleGroup.userData.state === 'off';
-        if (isOff) {
-            // Turn ON
-            toggleGroup.userData.state = 'on';
-            knob.material.color.setHex(0x00ff00); // Green
-            atticVideo.muted = false;
-            atticVideo.volume = 1.0;
-
-            // Mute Main Audio
-            // Mute Main Audio
-            if (window.audioPlayer) {
-                console.log("Knob ON: Pausing Music");
-                window.audioPlayer.pause();
-                window.isMusicPlaying = false;
-
-                // Try window global or just global
-                if (typeof musicSwitchMesh !== 'undefined') {
-                    musicSwitchMesh.material.color.setHex(0xff0000);
-                } else if (window.musicSwitchMesh) {
-                    window.musicSwitchMesh.material.color.setHex(0xff0000);
-                }
-            }
-        } else {
-            // Turn OFF
-            toggleGroup.userData.state = 'off';
-            knob.material.color.setHex(0xff0000); // Red
-            atticVideo.muted = true;
-        }
-    };
-
-    createProjector();
+    // V-CLEAN: REMOVED Projector, Video Mesh, Toggle Knob, etc.
 }
 
 function createProjector() {

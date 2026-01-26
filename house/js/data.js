@@ -19,6 +19,8 @@ const roomContent = {
             { artist: "Fazerdaze", track: "Bigger", src: "../assets/audio/Fazerdaze-Bigger.mp3" }
         ],
         videoPlaylist: [
+            { title: "The Premonition", src: "../assets/video/premonition.mp4" },
+            { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" }
         ],
         tvImages: [
             { text: "PICTURE THIS", color: "#a533fc" },
@@ -57,7 +59,7 @@ const roomContent = {
     attic: {
         title: "Attic",
         hex: 0x5d4037,
-        description: "Dust & Echoes. The repository of the past. Three boxes lie here: History, Family, and the deeply Personal.",
+        description: "Beauty | Knowledge | Wisdom",
         playlist: [
             { artist: "Billie Holiday", track: "Gloomy Sunday", src: "../assets/audio/GloomySunday-BillieHoliday.mp3" },
             { artist: "Jóhann Jóhannssone", track: "The Theory of Everything", src: "../assets/audio/JóhannJóhannsson.mp3" },
@@ -72,7 +74,8 @@ const roomContent = {
             { artist: "Thom Yourke", track: "Dawn Chorus", src: "../assets/audio/RH-DawnChorus.mp3" },
         ],
         videoPlaylist: [
-            { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" }
+            { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" },
+            { title: "Walk In", src: "../assets/video/walkin1.mp4" }
         ]
     },
     toilet: {
@@ -102,5 +105,14 @@ const roomContent = {
         interiorWidth: 4,
         interiorDepth: 4,
         description: "A small, quiet space at the edge of the property. For contemplation and solitary rest."
+    }
+};
+
+const houseConfig = {
+    audio: {
+        tension: "/assets/audio/Tension_Short_07.mp3",
+        intro: "/assets/audio/premonition.mp3",
+        nightDrive: "/assets/audio/NightDrive.mp3",
+        squeak: "/assets/audio/squeak.mp3"
     }
 };

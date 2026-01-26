@@ -108,11 +108,15 @@ function createBasementInterior() {
         ctx.fillStyle = '#e5e7eb'; ctx.font = 'bold 40px monospace'; ctx.textAlign = 'left'; ctx.fillText("φ DETROIT MODEL", 60, 45);
 
         // CONTROLS (Play/Rec)
+        // CONTROLS (Play/Rec)
         // Play
+        // V-REFINE: Bigger Button (Radius 35)
         ctx.fillStyle = eng.isPlaying ? '#22c55e' : '#111827';
         ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(950, 30, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = eng.isPlaying ? '#000' : '#22c55e'; ctx.beginPath(); ctx.moveTo(945, 20); ctx.lineTo(960, 30); ctx.lineTo(945, 40); ctx.fill();
+        ctx.beginPath(); ctx.arc(950, 40, 35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Triangle Size increased
+        ctx.fillStyle = eng.isPlaying ? '#000' : '#22c55e';
+        ctx.beginPath(); ctx.moveTo(940, 25); ctx.lineTo(965, 40); ctx.lineTo(940, 55); ctx.fill();
 
         // 1. TB-303 PANEL (Top)
         // Sliders: Cutoff, Res, Env, Decay
@@ -202,15 +206,25 @@ function createBasementInterior() {
         updateDrumTexture();
     };
 
-    const consoleMat = new THREE.MeshBasicMaterial({ map: drumTexture });
-    const drumMachine = new THREE.Mesh(consoleGeo, consoleMat);
+    const blackMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const consoleMats = [
+        blackMat, // +x
+        blackMat, // -x
+        new THREE.MeshBasicMaterial({ map: drumTexture }), // +y (TOP)
+        blackMat, // -y (Bottom)
+        blackMat, // +z
+        blackMat  // -z
+    ];
+    // V112: FINAL FIX - Floating Board (No Legs) + Higher
+    const drumGroup = new THREE.Group();
+    // Position: Raised to 1.7 (Floating)
+    drumGroup.position.set(1.6, 1.7, 2.2);
+    drumGroup.rotation.y = 0;
+    interiorGroup.add(drumGroup);
 
-    // Position: Float High (but inside room)
-    console.log("--- V122: DRUM HIGHER ---");
-    // User requested "Higher again". Trying 0.9.
-    drumMachine.position.set(0, 0.9, 2.5);
-    drumMachine.rotation.x = Math.PI / 4; // Positive 45 deg (Face Camera)
-
+    // 1. BOARD (Tilted)
+    const drumMachine = new THREE.Mesh(consoleGeo, consoleMats);
+    drumMachine.rotation.x = 0.5; // Ergonomic Tilt
     drumMachine.userData = {
         type: 'drum_machine',
         update: animateDrum,
@@ -223,15 +237,15 @@ function createBasementInterior() {
             const uv = intersection.uv;
             if (!uv) return;
             const x = uv.x * 1024;
-            const y = (1 - uv.y) * 1024; // Canvas coords Y down
+            const y = (1 - uv.y) * 1024;
 
             // 1. Play Button
-            if (y < 60 && x > 920) {
+            if (y < 80 && x > 900) {
                 if (eng.isPlaying) {
                     eng.stop();
                 } else {
                     eng.start();
-                    // V-FIX: Stop House Music
+                    // Stop House Music
                     if (window.audioPlayer && !window.audioPlayer.paused) {
                         window.audioPlayer.pause();
                         window.isMusicPlaying = false;
@@ -242,27 +256,29 @@ function createBasementInterior() {
             }
 
             // 2. Grid Steps
-            // Grid Top: 350 + 20 = 370.
-            // Row Height: 45+2 = 47.
-            // Grid Left: 110. Pad w 58+2=60.
             if (y > 370 && y < 370 + (6 * 47) && x > 110 && x < 110 + (16 * 60)) {
                 const r = Math.floor((y - 370) / 47);
                 const c = Math.floor((x - 110) / 60);
                 if (r >= 0 && r < 6 && c >= 0 && c < 16) {
-                    eng.grid[r][c] = !eng.grid[r][c]; // Toggle
-                    // Optional: Trigger sound on enable?
+                    eng.grid[r][c] = !eng.grid[r][c];
                 }
             }
 
-            // 3. Chaos Pad (Simple Toggle Drone)
+            // 3. Chaos Pad
             if (y > 700 && x > 512) {
-                // Toggle Drone
                 eng.drone.toggle();
             }
         }
     };
+    drumGroup.add(drumMachine);
     interiorClickables.push(drumMachine);
-    interiorGroup.add(drumMachine); // V-FIX: Actually add to scene!
+
+    // LEGS REMOVED (Floating Look)
+
+    // V105: Expose for Interactive Debugging
+    window.drumMachineGroup = drumGroup;
+    console.log("V112: Use window.drumMachineGroup.rotation.y to tweak!");
+
     // Line 2240 in house.js (approx): "Interior Interactions (Sprite Grow...)"
     // It does traversal for Shader uniforms.
     // It does NOT call generic .update() method on all children.
@@ -279,19 +295,5 @@ function createBasementInterior() {
     // I will add a line in `house.js` `animate` loop to check `window.activeDrumMachine`.
 
     window.activeDrumMachine = drumMachine;
-
-    const labels = ["SUBCONSCIOUS", "FEARS", "TRUTHS", "MEMORIES"];
-    labels.forEach((txt, idx) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 128;
-        const ctx = canvas.getContext('2d');
-        // UPDATED: Use Share Tech Mono font
-        ctx.fillStyle = 'white'; ctx.font = 'bold 50px "Share Tech Mono", monospace';
-        ctx.textAlign = 'center'; ctx.fillText(txt, 256, 80);
-        const tex = new THREE.CanvasTexture(canvas);
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-        sprite.scale.set(3.5, 0.85, 1);
-        sprite.position.set((idx % 2 === 0 ? -3.5 : 3.5), 1.5 + (idx * 1.5), -4.5);
-        interiorGroup.add(sprite);
-    });
+    // V113: Removed "Words" (Fears, Truths, etc) per user request
 }

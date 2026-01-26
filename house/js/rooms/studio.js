@@ -521,8 +521,8 @@ window.createR2D2InCorner = function () {
 
     // Add darker custom light
     // Add darker custom light
-    // V140: Dimmed (0.4 -> 0.2)
-    const studioLight = new THREE.PointLight(0xffffff, 0.2, 20);
+    // V140: Dimmed (0.4 -> 0.2) -> V-NEW: 0.05
+    const studioLight = new THREE.PointLight(0xffffff, 0.05, 20);
     studioLight.position.set(0, 6, 0);
     interiorGroup.add(studioLight);
 
