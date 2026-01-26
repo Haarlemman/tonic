@@ -347,7 +347,7 @@ function createBathroomInterior() {
             window.videoElement.muted = !window.videoElement.muted;
         }
 
-        const btn = interiorClickables.find(c => c.userData.type === 'bathroomMirrorButton');
+        const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
 
         if (mirrorMat) {
             const currentMode = mirrorMat.uniforms.uUseVideo.value;
@@ -376,16 +376,16 @@ function createBathroomInterior() {
                         if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
                     }
                 }
-                if (btn) btn.material.color.setHex(0x00ff00); // Green
+                if (btn && btn.material.color) btn.material.color.setHex(0x00ff00); // Green
             } else {
                 // PLAY -> PAUSE
                 if (window.videoElement && !window.videoElement.paused) {
                     window.videoElement.pause();
-                    if (btn) btn.material.color.setHex(0xffff00); // Yellow
+                    if (btn && btn.material.color) btn.material.color.setHex(0xffff00); // Yellow
                 } else {
                     // PAUSE -> REFLECTION
                     mirrorMat.uniforms.uUseVideo.value = 0.0;
-                    if (btn) btn.material.color.setHex(0xff0000); // Red
+                    if (btn && btn.material.color) btn.material.color.setHex(0xff0000); // Red
                 }
             }
         }
@@ -396,8 +396,8 @@ function createBathroomInterior() {
         if (mirrorMat) {
             mirrorMat.uniforms.uUseVideo.value = 0.0;
             // Reset Button Color
-            const btn = interiorClickables.find(c => c.userData.type === 'bathroomMirrorButton');
-            if (btn) btn.material.color.setHex(0xff0000); // Red
+            const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
+            if (btn && btn.material.color) btn.material.color.setHex(0xff0000); // Red
         }
         if (videoElement && !videoElement.paused) videoElement.pause();
 
