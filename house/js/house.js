@@ -2311,7 +2311,7 @@ function checkIntersectionInternal() {
 }
 
 // V-NEW: Universal Video UI Helper
-window.createUniversalVideoInterface = function (parentGroup, pos, playlist, options = {}) {
+window.__deprecated_createUniversalVideoInterface = function (parentGroup, pos, playlist, options = {}) {
     const root = new THREE.Group();
     root.position.copy(pos);
     if (options.rotationY) root.rotation.y = options.rotationY;

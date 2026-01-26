@@ -1,25 +1,24 @@
 // --- UI COMPONENTS ---
 // Extracted from house.js to reduce complexity
-// V153: Separation of Concerns
+// V154: Refined Layout (Button Top, Header Middle, Tracks Bottom)
 
 window.createUniversalVideoInterface = function (root, pos, playlist) {
-    // 1. CONTAINER
-    // We attach primarily to 'root' (interiorGroup)
-    // Create a group for the controls to position them easily
     const trafficGroup = new THREE.Group();
     trafficGroup.position.copy(pos);
-    console.log("Creating Universal Video UI at", pos);
+    console.log("Creating Refined Video UI at", pos);
     root.add(trafficGroup);
 
-    // 2. SINGLE TOGGLE BUTTON (Rectangular)
-    // Geometry: Box (0.5 width, 0.3 height, 0.1 depth)
-    const btnGeo = new THREE.BoxGeometry(0.5, 0.3, 0.1);
+    // --- 1. SQUARE BUTTON (TOP) ---
+    // User requested: "Square and ABOVE everything"
+    // Geometry: Box (0.3 width, 0.3 height, 0.1 depth) -> Square
+    const btnGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
     const btnMat = new THREE.MeshStandardMaterial({
         color: 0xff0000,
         emissive: 0x440000
     });
     const btn = new THREE.Mesh(btnGeo, btnMat);
-    btn.position.set(0, 0, 0.06); // Sit on backing/plate if any. 
+    // Position High Up
+    btn.position.set(0, 2.0, 0);
 
     // Initial State Check
     if (window.videoElement && !window.videoElement.paused) {
@@ -30,55 +29,66 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
     btn.userData = {
         type: 'videoControlSingle',
         onClick: () => {
-            // Logic: If Playing -> Pause. If Paused -> Play.
             if (!window.videoElement) {
-                console.warn("No Window.VideoElement found for Universal Control");
+                console.warn("No Window.VideoElement found");
                 return;
             }
 
             if (window.videoElement.paused) {
                 // PLAY
-                // Stop Music First
                 if (window.audioPlayer && !window.audioPlayer.paused) {
                     window.audioPlayer.pause();
                     window.isMusicPlaying = false;
                     if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
                 }
 
-                // If no src, use first in playlist
+                // If no src, use first in playlist or fallback
                 if (!window.videoElement.src || window.videoElement.src === '' || window.videoElement.src === window.location.href) {
                     if (playlist && playlist.length > 0) window.videoElement.src = playlist[0].src;
                 }
 
-                window.videoElement.play().catch(e => console.error(e));
+                // V-FIX: Robust Play
+                window.videoElement.play().catch(e => console.error("Video Play Error:", e));
+
                 btn.material.color.setHex(0x00ff00); // Green
                 btn.material.emissive.setHex(0x004400);
             } else {
                 // PAUSE
                 window.videoElement.pause();
-                // Simple toggle: Yellow for paused.
-                btn.material.color.setHex(0xffff00);
+                btn.material.color.setHex(0xffff00); // Yellow
                 btn.material.emissive.setHex(0x444400);
             }
         }
     };
     trafficGroup.add(btn);
+    if (window.interiorClickables) window.interiorClickables.push(btn);
 
-    // Add to Global Clickables
-    if (window.interiorClickables) {
-        window.interiorClickables.push(btn);
-    }
+    // --- 2. HEADER "VIDEO" (MIDDLE) ---
+    const hCanvas = document.createElement('canvas');
+    hCanvas.width = 512; hCanvas.height = 128;
+    const hctx = hCanvas.getContext('2d');
+    hctx.fillStyle = 'rgba(0,0,0,0)';
+    hctx.fillStyle = '#ffffff';
+    hctx.font = 'bold 80px "Courier New"';
+    hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
+    hctx.shadowColor = '#00ff00'; hctx.shadowBlur = 0; // Clean text
+    hctx.fillText("VIDEO", 256, 64);
 
-    // 3. RECTANGULAR PLAYLIST
+    const hTex = new THREE.CanvasTexture(hCanvas);
+    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
+    hMesh.position.set(0, 1.5, 0); // Below Button (2.0)
+    trafficGroup.add(hMesh);
+
+    // --- 3. TRACKS (BOTTOM) ---
     if (playlist && playlist.length > 0) {
         playlist.forEach((item, i) => {
-            const yPos = 0.8 - (i * 0.5); // Stack downwards
+            // Start at 1.0 and go down
+            const yPos = 1.0 - (i * 0.5);
 
             const sCanvas = document.createElement('canvas');
             sCanvas.width = 512; sCanvas.height = 100;
             const sctx = sCanvas.getContext('2d');
 
-            // Initial Draw (Inactive)
             sctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
             sctx.fillRect(0, 0, 512, 100);
             sctx.fillStyle = '#ffffff';
@@ -94,13 +104,14 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
                 type: 'universalVideoItem',
                 index: i,
                 onClick: () => {
-                    // Play this video
                     console.log("Universal Video Click:", i);
                     if (window.videoElement) {
+                        // V-FIX: Load new source explicitly
                         window.videoElement.src = item.src;
-                        window.videoElement.play();
+                        window.videoElement.load(); // Ensure load
+                        window.videoElement.play().catch(e => console.error(e));
 
-                        // Sync Button State (Turn Green)
+                        // Sync Button State
                         if (window.interiorClickables) {
                             const btn = window.interiorClickables.find(c => c.userData.type === 'videoControlSingle');
                             if (btn) {
@@ -109,7 +120,6 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
                             }
                         }
                     }
-                    // Stop Music
                     if (window.audioPlayer) {
                         window.audioPlayer.pause();
                         window.isMusicPlaying = false;
@@ -118,7 +128,7 @@ window.createUniversalVideoInterface = function (root, pos, playlist) {
                 }
             };
 
-            trafficGroup.add(itemMesh); // Add to group, not root directly
+            trafficGroup.add(itemMesh);
             if (window.interiorClickables) window.interiorClickables.push(itemMesh);
         });
     }
