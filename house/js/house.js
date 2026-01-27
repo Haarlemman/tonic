@@ -57,7 +57,7 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 
 // Wrapped Init
-console.log("--- HOUSE.JS V298.1-FIX ---");
+console.log("--- HOUSE.JS V298.2-CLEAN ---");
 scene = new THREE.Scene();
 // V-REFINE: Much Lighter Purple Fog (Visibility Check)
 scene.fog = new THREE.Fog(0x2d1b4e, 10, 250); // V292: Extended for tall towers (was 150)
@@ -497,9 +497,6 @@ function buildHouse() {
     hallHitBox.userData = { name: 'hall', type: 'room' };
     worldGroup.add(hallHitBox);
 
-    // -- CLICK AREA FOR HALL --
-    // REMOVED for Precision.
-    // const hallHitBox = ... (removed)
     // --- STAIRS SETUP (V230: User Geometry Fix) ---
     const stepMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
     const stepW = 1.4; // Width
@@ -583,9 +580,6 @@ function buildHouse() {
     roof.add(atticWinFrameBack);
     worldGroup.add(roof);
 
-    // -- ATTIC HITBOX --
-    // REMOVED for Precision
-    // const atticHitBox = ... (removed)
 }
 function createRoofTexture() {
     const canvas = document.createElement('canvas');
@@ -1468,7 +1462,7 @@ function startOpeningAnimation() {
         })
         .start();
 
-    // startHeaderAnimation(); // REMOVED DUPLICATE - Called in enterExperience
+    // Header animation handled in enterExperience
 }
 
 function startHeaderAnimation() {
@@ -2688,21 +2682,7 @@ function animate(time) {
         window.activeDrumMachine.userData.update(time);
     }
 
-    // V-NEW: Global Audio/Video Sync Helper
-    // Called by music.js when starting a track
-    window.stopVideosForAudio = function () {
-        console.log("Global Sync: Stopping Videos for Audio...");
-
-        // 1. Living Room
-        if (window.stopLivingVideo) window.stopLivingVideo();
-
-        // 2. Bathroom
-        if (window.stopBathroomVideo) window.stopBathroomVideo();
-
-        // 3. Attic
-        const atticVideo = document.getElementById('attic-video');
-        if (atticVideo) atticVideo.muted = true;
-    };
+    // V-CLEAN: Removed duplicate stopVideosForAudio definition
 
     // --- RENDER ---
 
@@ -3118,10 +3098,10 @@ window.stopVideosForAudio = function () {
     }
 
     // 4. Reset Lights (Safety Fallback)
-    // If not handled by room helpers, force bright lights
+    // If not handled by room helpers, force V298 Moody Normal
     if (currentRoom === 'living') {
-        if (window.ambientLight) window.ambientLight.intensity = 0.45; // V-FIX 289: Brighter (was 0.2)
-        if (window.dirLight) window.dirLight.intensity = 1.0; // Room Default
+        if (window.ambientLight) window.ambientLight.intensity = 0.15; // V298: Moody Normal
+        if (window.dirLight) window.dirLight.intensity = 0.2; // V298: Moody Normal
     } else if (currentRoom === 'bathroom') {
         if (window.ambientLight) window.ambientLight.intensity = 0.45;
         if (window.dirLight) window.dirLight.intensity = 1.0;
