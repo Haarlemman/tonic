@@ -69,18 +69,8 @@ function playTrack(index) {
             }
         }
 
-        // Clear old music panel items and rebuild
-        const toRemove = [];
-        interiorGroup.traverse(child => {
-            if (child.userData && (child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
-                toRemove.push(child);
-            }
-        });
-        toRemove.forEach(child => {
-            interiorGroup.remove(child);
-            const idx = interiorClickables.indexOf(child);
-            if (idx > -1) interiorClickables.splice(idx, 1);
-        });
+        // V-FIX 251: Removed synchronous panel cleanup here to prevent UI flashing/disappearing.
+        // Cleanup is now handled solely by createMusicPanel logic.
 
         // V204: MOVED createMusicPanel inside .then() above to ensure isMusicPlaying is true
         // But we must create it even if play fails? 
@@ -152,20 +142,26 @@ function createMusicPanel(playlist, skipCleanup = false) {
     const iW = rData.interiorWidth || 10;
     const wallX = -(iW / 2) + 0.01; // Tighter fit to wall
 
+    // V-FIX 251: Height Adjustment for Annex (Tall space)
+    let yBase = 5.5; // Default (Living Room / Standard)
+    if (currentRoom === 'annex') {
+        yBase = 6.6; // High but visible
+    }
+
     // -- 1. AUDIO BUTTON (TOP, SQUARE) --
-    // Y=5.5, Z=0 (Centered relative to group rotation)
+    // Y=yBase
     // V-CHANGE: Square Button (0.3x0.3) matching Video UI
     const switchGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
     musicSwitchMesh.rotation.y = Math.PI / 2; // Flush with wall
-    musicSwitchMesh.position.set(wallX + 0.02, 5.5, 0); // Centered
+    musicSwitchMesh.position.set(wallX + 0.02, yBase, 0); // Centered
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
     interiorGroup.add(musicSwitchMesh);
     interiorClickables.push(musicSwitchMesh);
 
     // -- 2. HEADER "AUDIO" (BELOW BUTTON) --
-    // Y=4.8
+    // Y=yBase - 0.7
     const pHeadCanvas = document.createElement('canvas');
     pHeadCanvas.width = 512; pHeadCanvas.height = 64;
     const pctx = pHeadCanvas.getContext('2d');
@@ -173,19 +169,19 @@ function createMusicPanel(playlist, skipCleanup = false) {
     pctx.shadowColor = 'rgba(0,0,0,0.8)'; pctx.shadowBlur = 4; pctx.shadowOffsetX = 2; pctx.shadowOffsetY = 2; // V-FIX: Black Shadow
     pctx.fillText("AUDIO", 256, 32);
     // V-DEBUG: Visible Version
-    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v173", 480, 50);
+    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v254", 480, 50);
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.3), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(wallX, 4.8, 0);
+    pHeadMesh.position.set(wallX, yBase - 0.7, 0);
     pHeadMesh.userData = { type: 'playlistHeader' };
     interiorGroup.add(pHeadMesh);
 
     // -- 3. TRACK LIST (BOTTOM) --
     playlist.forEach((item, i) => {
         const isCurrent = i === currentTrackIndex;
-        // Start at 4.2 go down
-        const yPos = 4.2 - (i * 0.7);
+        // Start at yBase - 1.3 go down
+        const yPos = (yBase - 1.3) - (i * 0.7);
 
         const sCanvas = document.createElement('canvas');
         sCanvas.width = 512; sCanvas.height = 120;

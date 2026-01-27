@@ -1,9 +1,4 @@
-
-
-// --- HOUSE.JS V99 SUPER CHECK ---
-console.log("--- HOUSE.JS V99 LOADED ---");
-console.log("--- HOUSE.JS V99 LOADED ---");
-console.log("--- HOUSE.JS V99 LOADED ---");
+console.log("--- HOUSE.JS LOADED ---");
 
 let openingFog;
 let openingAnimationDone = false;
@@ -62,23 +57,17 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 
 // Wrapped Init
-// V-FIX: Debug Overlay Removed
-// Wrapped Init (Removed for stability)
-// function init() { try {
-// V119: Final Fix for Floating Buildings
-// V155: Hidden Annex Fix (Interior Only)
-console.log("--- HOUSE.JS V155 ---");
+console.log("--- HOUSE.JS V298.1-FIX ---");
 scene = new THREE.Scene();
 // V-REFINE: Much Lighter Purple Fog (Visibility Check)
-scene.fog = new THREE.Fog(0x2d1b4e, 10, 150); // Lighter & Further
+scene.fog = new THREE.Fog(0x2d1b4e, 10, 250); // V292: Extended for tall towers (was 150)
 openingFog = scene.fog;
 // V-TEST: Red Background Removed
 scene.background = new THREE.Color(0x2d1b4e);
 
-// V73: FIX Critical Error (Missing Camera Instantiation)
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(-0.71, 24.76, 87.74);
-camera.lookAt(-0.01, -19.92, -9.05);
+camera.lookAt(-0.01, 1.6, -9.05);
 window.camera = camera;
 scene.add(camera);
 
@@ -93,18 +82,17 @@ document.getElementById('canvas-container').appendChild(renderer.domElement);
 textureLoader = new THREE.TextureLoader();
 
 // LIGHTS
-ambientLight = new THREE.AmbientLight(0xffffff, 0.15); // V141: Much Darker (0.3 -> 0.15)
+ambientLight = new THREE.AmbientLight(0xffffff, 0.35); // V297: Darker (was 0.45)
 window.ambientLight = ambientLight;
 scene.add(ambientLight);
 
-// V141: Very Dim Global Fill (0.4 -> 0.2)
-hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.2);
+// Dim Global Fill
+hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.35); // V297: Darker (was 0.45)
 window.hemiLight = hemiLight;
 hemiLight.position.set(0, 50, 0);
 scene.add(hemiLight);
 
-// V114: Restored Darker Global Lighting (User Request)
-dirLight = new THREE.DirectionalLight(0xfffaed, 0.5); // 1.2 -> 0.5
+dirLight = new THREE.DirectionalLight(0xfffaed, 1.0); // V297: Darker Moon (1.2 -> 1.0)
 window.dirLight = dirLight;
 dirLight.position.set(50, 80, 30);
 dirLight.castShadow = true;
@@ -131,7 +119,7 @@ controls.panSpeed = 1.0;
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2;
-controls.target.set(-0.01, -19.92, -9.05);
+controls.target.set(-0.01, 1.6, -9.05);
 
 worldGroup = new THREE.Group();
 scene.add(worldGroup);
@@ -161,7 +149,9 @@ window.videoElement = videoElement;
 window.musicSwitchMesh = null;
 window.getMusicSwitch = () => musicSwitchMesh;
 
-setTimeout(() => {
+// V290: Robust Loader Logic (Wait for Build)
+window.hideLoader = function () {
+    console.log("--- Hiding 3D Loader ---");
     const loader = document.getElementById('loading');
     if (loader) {
         loader.style.transition = 'opacity 0.8s ease';
@@ -170,10 +160,10 @@ setTimeout(() => {
         if (topControls) topControls.style.opacity = '1';
         setTimeout(() => {
             loader.style.display = 'none';
-            window.introFinished = true;
         }, 800);
     }
-}, 1500);
+    window.introFinished = true;
+};
 
 const header = document.getElementById('main-header');
 if (header) {
@@ -216,7 +206,11 @@ if (headerContent) {
 
 animate();
 
-// function window.enterExperience removed (Duplicate)
+// V290: Trigger hide after build is complete
+setTimeout(() => {
+    if (window.hideLoader) window.hideLoader();
+}, 2500); // 2.5s safe minimum (was 1.5s)
+
 
 window.exitExperience = function () {
     // 1. Exit Fullscreen
@@ -224,7 +218,6 @@ window.exitExperience = function () {
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
 
     // 2. Show Header
-    // 2. Show Header (Reset Intro State)
     const headerEl = document.getElementById('main-header');
     if (headerEl) {
         headerEl.style.display = 'flex'; // Restore visibility
@@ -260,7 +253,6 @@ function initAudioAnalyser() {
 }
 
 // --- EXTERIOR BUILDER ---
-// V79: Procedural Noise Texture for Grits
 function createNoiseTexture() {
     const size = 512;
     const canvas = document.createElement('canvas');
@@ -412,6 +404,8 @@ function buildWorld() {
     buildEnvironment();
 }
 
+
+
 function buildHouse() {
     createRoomBlock('basement', 0, 0.4, 0, 4.4, 0.8, 6.0, roomContent.basement.hex, { type: 'dark', scale: 0.5, shift: 1.2 });
     const baseWinGeo = new THREE.PlaneGeometry(1.5, 0.4);
@@ -429,22 +423,18 @@ function buildHouse() {
         { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: -0.2 },
         { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: -0.2 }
     ]);
-    // V179: Added generous Living Room Hitbox
-    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: false }));
+    // V179/V289: Hitbox must be VISIBLE but TRANSPARENT for Raycaster to work
+    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
     liveHitBox.position.set(-1.0, 1.8, 0);
     liveHitBox.userData = { name: 'living', type: 'room' };
     worldGroup.add(liveHitBox);
-
-    // -- ENLARGED CLICK AREA FOR LIVING ROOM --
-    // REMOVED for Precision: Users must click the visible building.
-    // const liveHitBox = ... (removed)
 
     createRoomBlock('studio', 1.0, 1.8, 0, 2.0, 2, 5, roomContent.studio.hex, [
         { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: 0.2 },
         { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: 0.2 }
     ]);
-    // V179: Added generous Studio Hitbox
-    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: false }));
+    // V179/V289: Hitbox must be VISIBLE but TRANSPARENT for Raycaster to work
+    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
     studioHitBox.position.set(1.0, 1.8, 0);
     studioHitBox.userData = { name: 'studio', type: 'room' };
     worldGroup.add(studioHitBox);
@@ -857,10 +847,13 @@ function buildStreetlight(x, z, rotationY = 0) {
     const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.15, 0.6, 6), glassMat);
     glass.position.y = -0.4;
     lanternGroup.add(glass);
-    const spotLight = new THREE.SpotLight(0xffaa00, 2.0);
+    const spotLight = new THREE.SpotLight(0xffaa00, 3.0); // V-FIX: Brighter but tighter
     spotLight.position.set(0, -0.2, 0);
     spotLight.target.position.set(0, -5, 0);
-    spotLight.angle = Math.PI / 3; spotLight.penumbra = 0.4; spotLight.castShadow = true; spotLight.distance = 15;
+    spotLight.angle = Math.PI / 4; // V-FIX: Tighter Angle (PI/3 -> PI/4)
+    spotLight.penumbra = 0.6; // Softer edges
+    spotLight.castShadow = true;
+    spotLight.distance = 12; // V-FIX: Tighter reach (15 -> 12)
     lanternGroup.add(spotLight); lanternGroup.add(spotLight.target);
     const glowLight = new THREE.PointLight(0xffaa00, 1, 3);
     glowLight.position.y = -0.4;
@@ -916,6 +909,7 @@ function buildEnvironment() {
     planetGroup.position.set(0, -PLANET_RADIUS, 0);
 
     const sphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS, 128, 128), planeMat);
+    sphere.receiveShadow = true; // V288: Enable Lamppost Shadows on ground
     planetGroup.add(sphere);
 
     worldGroup.add(planetGroup);
@@ -1113,132 +1107,182 @@ function buildEnvironment() {
     // V158: Perspective-Synced Path Lights (Hero Foreground + Scaling)
     function spawnPathLights() {
         const lampGroup = new THREE.Group();
-        const postGeo = new THREE.CylinderGeometry(0.1, 0.15, 3.0);
-        // V-REFINE: Lighter Grey Post (0x222222 -> 0x808080) per user request
-        const postMat = new THREE.MeshStandardMaterial({ color: 0x808080 });
 
-        // V-FIX: Smaller Bulb (0.3 -> 0.15)
-        const bulbGeo = new THREE.SphereGeometry(0.15);
+        // V-REFINE 270: Classic Victorian / Gaslight Design (Robust Vertical Stack)
+        const ironMat = new THREE.MeshStandardMaterial({
+            color: 0x111111, // Dark Iron
+            roughness: 0.7,
+            metalness: 0.4
+        });
+
         const bulbMat = new THREE.MeshStandardMaterial({
             color: 0xffaa00,
             emissive: 0xffaa00,
-            emissiveIntensity: 1.5 // Reduced Emission (2.0 -> 1.5)
+            emissiveIntensity: 2.0
+        });
+
+        // GEOMETRY REUSE
+        const baseGeo = new THREE.CylinderGeometry(0.14, 0.18, 0.6, 8);
+        const shaftGeo = new THREE.CylinderGeometry(0.05, 0.07, 2.8, 8); // Thick & Sturdy
+        const capGeo = new THREE.ConeGeometry(0.25, 0.3, 6);
+        // V-FIX 272: Replace solid frame with struts
+        const strutGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.6, 6);
+
+        // Glass
+        const glassMat = new THREE.MeshPhysicalMaterial({
+            color: 0xfffaee, transmission: 0.8, opacity: 0.3, roughness: 0.1, transparent: true
+        });
+        const glassGeo = new THREE.CylinderGeometry(0.12, 0.10, 0.55, 6);
+
+        // V-FIX: One material for Glow
+        const glowTex = createGlowTexture();
+        const spriteMat = new THREE.SpriteMaterial({
+            map: glowTex, color: 0xffaa00, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false
         });
 
         // Taper variables
         const wSteps = 1.4, wHorizon = 30.0, zSteps = 2.7, zHorizon = 150.0;
         const slope = (wHorizon - wSteps) / (zHorizon - zSteps);
 
-        // V-FIX: Create Material ONCE
-        const glowTex = createGlowTexture();
-        const spriteMat = new THREE.SpriteMaterial({
-            map: glowTex,
-            color: 0xffaa00,
-            transparent: true,
-            opacity: 0.5, // Reduced from 0.6
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        // V158: Start from z=115 (Far foreground) down to z=35 (Near House)
-        // Range: 115m -> 35m. Distance from house is z.
-        // V-FIX: Standard Density (Step -15) to reduce clutter
-        // V158: Start from z=115 (Far foreground) down to z=20 (Near House - Closer)
-        // Range: 115m -> 20m. Distance from house is z.
-        // V-FIX: Standard Density (Step -15) to reduce clutter
-        for (let z = 115; z >= 20; z -= 15) {
+        // V-FIX 275: Brighter Lamps, Removed Close Lamp, Visible Usher
+        // 1. Loop stops earlier (z >= 35) to avoid lamp at z=20 clipping camera
+        for (let z = 115; z >= 35; z -= 15) {
             const currentRoadWidth = wSteps + (z - zSteps) * slope;
-            // Move closer to the road (1.2 -> 0.8)
             const xPos = currentRoadWidth / 2 + 0.8;
-
-            // V-NEW: Perspective Cheat (Further = Bigger)
-            // Near (20m) = 1.0x
-            // Far (115m) = 2.0x
             const distRatio = (z - 20) / (115 - 20);
             const perspectiveScale = 1.0 + distRatio * 1.0;
 
-            // V-NEW: Graceful Geometry (Curved Neck)
-            // Use a Group for the whole post
             const postGroup = new THREE.Group();
 
-            // 1. Base Pole (Thinner: 0.05)
-            const poleGeo = new THREE.CylinderGeometry(0.05, 0.06, 3.5);
-            const pole = new THREE.Mesh(poleGeo, postMat);
-            pole.position.y = 1.75;
-            postGroup.add(pole);
+            // 1. Base (Y: 0.3)
+            const base = new THREE.Mesh(baseGeo, ironMat);
+            base.position.y = 0.3;
+            postGroup.add(base);
 
-            // 2. Curved Top (Torus Segment)
-            const curveGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 16, Math.PI);
-            const curve = new THREE.Mesh(curveGeo, postMat);
-            curve.rotation.z = Math.PI / 2; // Arcing over road
-            curve.position.set(-0.4, 3.5, 0); // Offset to hang inward
-            postGroup.add(curve);
+            // 2. Shaft (Y: 0.6 + 1.4 = 2.0)
+            const shaft = new THREE.Mesh(shaftGeo, ironMat);
+            shaft.position.y = 2.0;
+            postGroup.add(shaft);
 
-            // 3. Bulb (Hanging)
-            const bL = new THREE.Mesh(bulbGeo, bulbMat);
-            bL.position.set(-0.8, 3.3, 0); // End of arc
-            postGroup.add(bL);
+            // 3. Capital / Joint (Y: 3.4)
+            const capItal = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.15), ironMat);
+            capItal.position.y = 3.42;
+            postGroup.add(capItal);
 
-            // Left Post
+            // 4. Lantern (Y: 3.75)
+            const lantern = new THREE.Group();
+            lantern.position.y = 3.75;
+
+            // Frame: 4 Thin Struts
+            const strutR = 0.11;
+            for (let i = 0; i < 4; i++) {
+                const strut = new THREE.Mesh(strutGeo, ironMat);
+                const angle = (i / 4) * Math.PI * 2 + (Math.PI / 4);
+                strut.position.x = Math.cos(angle) * strutR;
+                strut.position.z = Math.sin(angle) * strutR;
+                lantern.add(strut);
+            }
+
+            // Glass (slightly smaller)
+            const glass = new THREE.Mesh(glassGeo, glassMat);
+            lantern.add(glass);
+
+            // Cap
+            const roof = new THREE.Mesh(capGeo, ironMat);
+            roof.position.y = 0.45;
+            lantern.add(roof);
+
+            // Bulb
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.08), bulbMat);
+            lantern.add(bulb);
+
+            postGroup.add(lantern);
+
+            // Light & Glow (Reverted to Normal V277)
+            const pLight = new THREE.PointLight(0xffaa00, 2.5, 12); // V-FIX: Brighter center, shorter reach (1.6, 22 -> 2.5, 12)
+            pLight.position.set(0, 3.75, 0);
+            postGroup.add(pLight);
+            streetLights.push(pLight);
+
+            const spriteL = new THREE.Sprite(spriteMat);
+            spriteL.scale.set(1.6, 1.6, 1.0); // Reverted scale
+            spriteL.position.set(0, 3.75, 0);
+            postGroup.add(spriteL);
+
+
+            // Left
             alignToPlanet(postGroup, -xPos, z);
             postGroup.scale.setScalar(perspectiveScale);
-            // Rotate to face inward? alignToPlanet handles up, but we need Y rotation relative to road
-            // Since it's Z-axis road, Left post needs to face Right (-X to +X)
-            // Curve offset logic (-0.4) assumes local coord. 
-            // We need to rotate the GROUP so the overhang faces the road.
-            // Vector to center (0,0,z) - (-xPos, 0, z) = (+x, 0, 0)
-            postGroup.lookAt(new THREE.Vector3(0, postGroup.position.y, z)); // Approximate facing center
-
-            // Add Sprite Glow
-            const sL = new THREE.Sprite(spriteMat);
-            sL.scale.set(4 * perspectiveScale, 4 * perspectiveScale, 1);
-            bL.add(sL);
-
+            // Look at road center, slightly
+            postGroup.lookAt(new THREE.Vector3(0, postGroup.position.y, z));
             lampGroup.add(postGroup);
-            streetLights.push(bL); // Pulse animation target
 
-            // Right Post (Mirror)
+            // Right
             const postGroupR = postGroup.clone();
             alignToPlanet(postGroupR, xPos, z);
             postGroupR.scale.setScalar(perspectiveScale);
             postGroupR.lookAt(new THREE.Vector3(0, postGroupR.position.y, z));
-
-            // Clone doesn't clone material ref for pulsing? It does share material.
-            // But we need the mesh reference for the pulse array.
-            // Find the bulb in the clone.
-            const bR = postGroupR.children[2]; // Index 2 is bulb
-            streetLights.push(bR);
-
+            // Extract Light
+            postGroupR.traverse(c => { if (c.isPointLight) streetLights.push(c); });
             lampGroup.add(postGroupR);
         }
-
-
         worldGroup.add(lampGroup);
+
+        // V-NEW: Spawn Pluto Usher!
+        if (typeof createPlutoUsher === 'function') {
+            // V-FIX 280: Singleton Check (Prevent "Double" glitches)
+            if (window.usherCharacter) {
+                if (window.usherCharacter.parent) window.usherCharacter.parent.remove(window.usherCharacter);
+                window.usherCharacter = null;
+            }
+
+            console.log("--- FOUND createPlutoUsher... Spawning REFINED V286 ---");
+            const usher = createPlutoUsher();
+            usher.scale.set(0.36, 0.36, 0.36); // V286: 2x the size (User req)
+
+            // V-FIX 283: Opposite the ENTER sign (lx_lamp=-2.2, lz_lamp=8) -> Right Side Z=8
+            alignToPlanet(usher, 2.8, 8);
+
+            // V-FIX 284: Proper Upright Angle & Height
+            // 1. Up vector must point away from planet center (0, -500, 0)
+            const normal = new THREE.Vector3(usher.position.x, usher.position.y + 500, usher.position.z).normalize();
+            usher.up.copy(normal);
+            // 2. Look across the road (towards center) THEN rotate 90deg left to face user
+            usher.lookAt(new THREE.Vector3(0, usher.position.y, 8));
+            usher.rotateY(Math.PI / 2);
+            // 3. Grounding (V288: Exact model alignment)
+            usher.translateY(0.02);
+
+            worldGroup.add(usher);
+            window.usherCharacter = usher;
+
+            console.log("--- PLUTO USHER SPAWNED V283 (Right side, Z=8) ---");
+        } else {
+            console.error("CRITICAL: createPlutoUsher function not found! Check pluton.js loading.");
+        }
     }
+
+
     spawnPathLights();
     // V148: Removed spawnStreetLights call
 
 
-    // V-NEW: Generate Global Skyscrapers (Replacing all tree loops)
-    // V157: CLEAR AREA BEHIND HOUSE & GRADUAL SCALING
-    console.log("--- V157: SPAWNING DENSE MEDIUM BLOCKS (DISTANCE GRADIENT) ---");
-    const skyscraperCount = 500; // More density
-    for (let i = 0; i < skyscraperCount; i++) {
+    // V295: REFINED SKYLINE GRADIENT (Shorter near house, taller at distance)
+    console.log("--- V295: REFINED CITY HEIGHT GRADIENT ---");
+    for (let i = 0; i < 800; i++) {
         const angle = Math.random() * Math.PI * 2;
-        // V149: Radius starts at 25 (was 15) to clear house back area
-        const radius = 25 + Math.pow(Math.random(), 2) * 120;
+        const radius = 25 + Math.pow(Math.random(), 2) * 140;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        if (z > -5 && z < 180 && Math.abs(x) < 20.0) continue;
+        if (z > -5 && z < 200 && Math.abs(x) < 25.0) continue;
 
         const mesh = createMegaBlock();
-
-        // V157: Smoother Distance Scaling
-        const distFactor = (radius - 25) / 120;
-        const minH = 6.0 + distFactor * 6.0;  // 6m to 12m min
-        const maxH = 10.0 + distFactor * 15.0; // 10m to 25m max
-        const h = minH + Math.random() * (maxH - minH);
+        const distFactor = (radius - 25) / 140;
+        // V297: Less extreme gradient - Start at ~7m near house, scale up to ~45m
+        const baseH = 7.0 + (distFactor * 23.0);
+        const variance = 4.0 + (distFactor * 11.0);
+        const h = baseH + Math.random() * variance;
 
         mesh.userData.baseScaleY = h;
         mesh.scale.set(1, h, 1);
@@ -1248,19 +1292,20 @@ function buildEnvironment() {
         animatedTrees.push(mesh);
     }
 
-    // V133: Horizon Blocks (Far Distance)
+    // V292: Horizon Mega-Blocks (Far Distance) - Truly Epic Scale
     for (let i = 0; i < 300; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const radius = 120 + Math.random() * 130; // 120m to 250m
+        const radius = 140 + Math.random() * 110; // 140m to 250m
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        if (z > -10 && z < 250 && Math.abs(x) < 30.0) continue;
+        if (z > -10 && z < 280 && Math.abs(x) < 40.0) continue;
 
         const mesh = createMegaBlock();
-        const h = 20.0 + Math.random() * 30.0; // Taller at horizon
+        // V292: Epic heights for the horizon city (up to 70m)
+        const h = 25.0 + Math.random() * 45.0;
         mesh.userData.baseScaleY = h;
-        mesh.scale.set(1, h, 1);
+        mesh.scale.set(1.5, h, 1.5); // Slightly wider base for stability
         alignToPlanet(mesh, x, z);
         worldGroup.add(mesh);
         animatedTrees.push(mesh);
@@ -1312,19 +1357,19 @@ function buildEnvironment() {
     // V-CLEAN: Removed duplicate legacy landscape logic
 
 
-    // V102: Distant Sprite Glow
+    // V292: Purple Sky Glow (V102 Restoration)
     const glowTex = createGlowTexture();
     const glowMat = new THREE.SpriteMaterial({
         map: glowTex,
-        color: 0x8800ff,
+        color: 0x8800ff, // V292: Vivid Purple
         transparent: true,
         opacity: 0.6,
         blending: THREE.AdditiveBlending,
         fog: false
     });
     const glowSprite = new THREE.Sprite(glowMat);
-    glowSprite.position.set(0, -20, -150);
-    glowSprite.scale.set(800, 800, 1);
+    glowSprite.position.set(0, -20, -180); // V292: Further back for better backdrop
+    glowSprite.scale.set(1000, 800, 1); // V292: Epic Scale
     worldGroup.add(glowSprite);
 
     // V-REFINE: METROPOLIS ROBOT (Moved to Living Room)
@@ -1377,17 +1422,17 @@ function buildEnvironment() {
 // --- ANIMATION & NAVIGATION REPAIR ---
 function startOpeningAnimation() {
     // V99/V100: SMOOTH CAMERA (No Bump)
-    // The "Bump" is fixed by starting the Target Y at House Level (2.0) instead of Underground (-20).
-    // V-FIX: EXACT Match to Init Coordinates (lines 80 & 133) to prevent Jump
+    // The "Bump" is fixed by starting the Target Y at House Level (1.6) instead of Underground (-20).
+    // V-FIX 289: EXACT Match to House Elevation to prevent "Upside Down" orbit perspective
     const animState = {
         px: -0.71, py: 24.76, pz: 87.74,
-        tx: -0.01, ty: -19.92, tz: -9.05,
+        tx: -0.01, ty: 1.6, tz: -9.05,
         fogFar: 300
     };
 
     // V99: End State (Eye Level, Looking Slightly Up)
     const targetState = {
-        px: -0.2, py: 2.0, pz: 25.0,
+        px: -0.2, py: 2.0, pz: 18.0, // V288: Moved closer (was 25.0)
         tx: -0.01, ty: 1.6, tz: -9.05,
         fogFar: 300 // V130: Epic Visibility (Was 120 override)
     };
@@ -1670,9 +1715,7 @@ function performClick(event) {
     } else if (state === 'ROOM') {
         const intersects = raycaster.intersectObjects(interiorClickables, true);
         if (intersects.length > 0) {
-            // V-FIX: Bubbling Click Logic
-            // Instead of just checking 'target' and its immediate parent if it lacks 'type',
-            // we should traverse UP until we find an object with 'userData.onClick' OR hit the root.
+
 
             let target = intersects[0].object;
             let handlerFound = false;
@@ -1713,11 +1756,6 @@ function performClick(event) {
                         else if (window.toggleBathroomMirror) window.toggleBathroomMirror();
                         handlerFound = true; break;
                     }
-                    // If it has a type but no handler matched above, we might still want to bubble?
-                    // But usually type implies it's the interactive object. 
-                    // Let's assume if it has a type, it WAS the target, even if logic missing.
-                    // But for Menorah, it has `type: 'open_secret'` AND `onClick`.
-                    // The `onClick` check above covers it.
                 }
 
                 target = target.parent;
@@ -1731,32 +1769,9 @@ function performClick(event) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // --- HELPERS & LOGIC ---
 
 
-
-// START VIDEO CLIP
 // START VIDEO CLIP
 function startVideoClip(room) {
     const playlist = roomContent[room].videoPlaylist;
@@ -1765,7 +1780,8 @@ function startVideoClip(room) {
     videoElement.src = clip.src;
     // V55: Ensure Unmuted
     videoElement.muted = false;
-    videoElement.volume = 0.8;
+    // V-FIX 259: Per-clip volume (Default lowered to 0.6 from 0.8)
+    videoElement.volume = (typeof clip.volume !== 'undefined') ? clip.volume : 0.6;
     videoElement.play().catch(e => console.warn("Video Play Error", e));
 
     // Stop room music when video starts
@@ -1779,6 +1795,11 @@ function startVideoClip(room) {
         videoTexture = new THREE.VideoTexture(videoElement);
         tvMesh.material = new THREE.MeshBasicMaterial({ map: videoTexture });
         tvMesh.material.needsUpdate = true;
+
+        // V-FIX 265: Darker Environment for Video (But keep a base glow V289)
+        console.log("Video Mode: Darkening Living Room");
+        if (window.ambientLight) window.ambientLight.intensity = 0.0; // V298: BLACKOUT
+        if (window.dirLight) window.dirLight.intensity = 0.0; // V298: BLACKOUT
     } else if (room === 'bedroom') {
         // Find screen on phone
         const phone = interiorGroup.children.find(c => c.userData.type === 'videoPhone');
@@ -1817,12 +1838,25 @@ function toggleVideo() {
             isMusicPlaying = false;
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
         }
+
+        // V-FIX 265: Darken if Living Room (V289: Brighter Video Shadows)
+        if (typeof currentRoom !== 'undefined' && currentRoom === 'living') {
+            if (window.ambientLight) window.ambientLight.intensity = 0.0;
+            if (window.dirLight) window.dirLight.intensity = 0.0;
+        }
+
     } else {
         // PAUSE
         videoElement.pause();
         btn.userData.state = 'paused';
         btn.material.color.setHex(0xff0000); // Red
         btn.material.emissive.setHex(0x440000);
+
+        // V-FIX 265: Restore Light if Living Room (V289: Brighter Room Defaults)
+        if (typeof currentRoom !== 'undefined' && currentRoom === 'living') {
+            if (window.ambientLight) window.ambientLight.intensity = 0.15; // V298: Moody Normal (Visible)
+            if (window.dirLight) window.dirLight.intensity = 0.2; // V298: Moody Normal
+        }
     }
 }
 
@@ -1996,12 +2030,11 @@ function stopAllAudio() {
 window.applyRoomLighting = function (roomName) {
     console.log("V123: Apply Dark Room Lighting for", roomName);
 
-    // DEFAULT DARK MOOD (V188: User Request - "Too Low" -> Restoring brightness)
-    // Ambient 0.2 matches what exitRoom() was trying to do (approx 0.15)
-    let targetAmbient = 0.2;
-    let targetDir = 0.5;
-    let targetRim = 0.2; // Softer rim
-    let targetHemi = 0.1;
+    // Ambient 0.45 matches what exitRoom() uses
+    let targetAmbient = 0.45;
+    let targetDir = 1.0; // Slightly dimmer than exterior (1.2) for mood
+    let targetRim = 0.4; // Brighter rim
+    let targetHemi = 0.45;
 
     // PER-ROOM OVERRIDES
     if (roomName === 'basement') {
@@ -2011,19 +2044,30 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.05; // Minimal
         targetHemi = 0.0;
     }
-    // V-FIX: Bathroom Brightness (User Request: "Entering bathroom and its really dark!")
+    // V-FIX: Bathroom Brightness 
     else if (roomName === 'bathroom') {
         targetAmbient = 0.5;
         targetDir = 0.6;
         targetRim = 0.4;
         targetHemi = 0.3;
     }
-    // Living room uses default dark setting now
+    // V-FIX 298: Balanced Moody Atmosphere
+    else if (roomName === 'living') {
+        targetAmbient = 0.15; // Visible but dim
+        targetDir = 0.2;
+        targetRim = 0.1;
+        targetHemi = 0.15;
+    }
     else if (roomName === 'attic') {
-        // V199: Attic "Sole Light Source" mode - Even Darker
         targetAmbient = 0.01; // Pitch black almost
         targetDir = 0.0;
         targetRim = 0.0; // No rim
+        targetHemi = 0.02;
+    }
+    else if (roomName === 'bedroom') {
+        targetAmbient = 0.02; // V-FIX 261: Even Darker
+        targetDir = 0.05;
+        targetRim = 0.05;
         targetHemi = 0.02;
     }
 
@@ -2043,13 +2087,12 @@ function enterRoom(roomName) {
     masterVideoIndex = 0;
 
     // Stop previous room's audio before building new one
-    // V2026: Save House Music Time
     if (audioPlayer && audioPlayer.src && audioPlayer.src.includes("NightDrive")) {
         houseMusicTime = audioPlayer.currentTime;
     }
     stopAllAudio();
 
-    window.isZoomingToRoom = true; // V119 Loop Lock
+    window.isZoomingToRoom = true;
     const curtain = document.getElementById('curtain');
     curtain.classList.add('active');
     setTimeout(() => {
@@ -2147,7 +2190,6 @@ function exitRoom() {
     stopAllAudio(); // Replaces manual pausing
     isMusicPlaying = false; // Redundant but safe
 
-    // V2026: Resume House Music (Continuity)
     if (audioPlayer) {
         audioPlayer.src = houseConfig.audio.intro;
         audioPlayer.currentTime = houseMusicTime || 0;
@@ -2163,12 +2205,10 @@ function exitRoom() {
     if (infoTimeout) clearTimeout(infoTimeout);
 
     setTimeout(() => {
-        // V136: Reset Lights on Exit
-        // V-FIX: Sync with Global Init V188 (Ambient 0.2, Dir 0.5)
-        if (dirLight) dirLight.intensity = 0.5;
-        if (rimLight) rimLight.intensity = 0.2;
-        if (ambientLight) ambientLight.intensity = 0.2;
-        if (hemiLight) hemiLight.intensity = 0.1; // Restore Global Fill
+        if (dirLight) dirLight.intensity = 1.2;
+        if (rimLight) rimLight.intensity = 0.4;
+        if (ambientLight) ambientLight.intensity = 0.45;
+        if (hemiLight) hemiLight.intensity = 0.45; // Restore Global Fill
 
         // Clear interior group to remove all room-specific objects
         if (interiorGroup) {
@@ -2292,12 +2332,8 @@ function performClick(event) {
                     alert("Debug: No onClick handler found on this item!");
                 }
             }
-            // Actually, I setup the new phone mesh as `userData.type='videoPhone'`.
-            // The old one was 'phone'.
-            // I should probably remove the old logic if it conflicts, or just add the new one.
 
             else if (target.userData.type === 'videoPhone') {
-                // V14: Screen Click = Toggle (Just like button)
                 toggleVideo();
             }
             else if (target.userData.type === 'musicSwitch') toggleMusic();
@@ -2307,7 +2343,6 @@ function performClick(event) {
                 if (typeof playTVVideo === 'function') playTVVideo(target.userData.index);
             }
             else if (target.userData.type === 'videoItem') playVideo(target.userData.index);
-            // V-FIX: Explicit Handler for Universal Video Items
             else if (target.userData.type === 'universalVideoItem') {
                 console.log("V-FIX: Universal Item Clicked", target.userData.index);
                 if (target.userData.onClick) target.userData.onClick();
@@ -2335,7 +2370,6 @@ function performClick(event) {
             else if (target.userData.type === 'laptop') {
                 startGoldenRatioAnimation();
             }
-            // V-FIX: Generic OnClick Handler for artifacts/drum machine
             else if (target.userData.onClick) {
                 target.userData.onClick(intersects[0]);
             }
@@ -2351,7 +2385,6 @@ function checkIntersectionExternal() {
         if (target && target.userData && target.userData.name) {
             const name = target.userData.name;
 
-            // Safety Check: Only show tooltip if we have content for this object
             if (roomContent[name]) {
                 if (hoveredObject !== target) {
                     hoveredObject = target;
@@ -2362,7 +2395,6 @@ function checkIntersectionExternal() {
                 }
                 return;
             } else if (name === 'EnterSign') {
-                // V98: Handle Enter Sign Tooltip manually
                 if (hoveredObject !== target) {
                     hoveredObject = target;
                     document.body.style.cursor = 'pointer';
@@ -2373,7 +2405,6 @@ function checkIntersectionExternal() {
                 return;
             }
         }
-        // Hover Intro Sign
         if (target && target.userData && target.userData.type === 'introSign') {
             document.body.style.cursor = 'pointer';
             return;
@@ -2403,8 +2434,7 @@ function checkIntersectionInternal() {
         }
 
         if (target && target.userData && target.userData.type === 'deckOfCards') {
-            // V-REFINE: Removed Topics Tooltip Logic completely
-            // isHoveringTopics = true; 
+            ;
         }
     } else {
         document.body.style.cursor = 'default';
@@ -2467,9 +2497,20 @@ function animate(time) {
         window.streetLights.forEach(glow => {
             const u = glow.userData;
             // Similar pulse logic
-            const val = Math.sin(t * u.speed + u.phase);
+            const speed = u && u.speed ? u.speed : 1.5;
+            const phase = u && u.phase ? u.phase : 0;
+
+            const val = Math.sin(t * speed + phase);
             const pulse = Math.pow(Math.max(0, val), 4.0); // Softer pulse
-            glow.material.opacity = 0.3 + (pulse * 0.7); // 0.3 to 1.0
+
+            // V-FIX 263: Differentiate Types (Sprite vs PointLight)
+            if (glow.material) {
+                // Sprite / Mesh
+                glow.material.opacity = 0.3 + (pulse * 0.7);
+            } else if (glow.isPointLight) {
+                // Light Intensity (Base 0.8 + Pulse)
+                glow.intensity = 0.8 + (pulse * 0.8);
+            }
         });
     }
 
@@ -2495,6 +2536,11 @@ function animate(time) {
     // Metropolis Robot Animation
     if (metropolisRobot && metropolisRobot.userData.update) {
         metropolisRobot.userData.update(t);
+    }
+
+    // V-FIX 278: Pluto Usher Animation (Explicit)
+    if (window.usherCharacter && window.usherCharacter.userData.update) {
+        window.usherCharacter.userData.update(t);
     }
 
     // Interior Interactions (Sprite Grow / Arrow Bob)
@@ -2624,7 +2670,6 @@ function animate(time) {
 
     if (atomGroup) {
         atomGroup.rotation.y += 0.005;
-        // V53: 3-Axis Rotation
         atomGroup.rotation.x += 0.002;
         atomGroup.rotation.z += 0.003;
         atomGroup.children.forEach(orbit => {
@@ -2935,6 +2980,9 @@ function toggleGlobalFullscreen() {
     }
 }
 
+// V-NEW: Pluto Usher (Ported from Pluto Project)
+// Moved to js/pluton.js
+
 // V-INTEGRATION: Metropolis Robot (Ported from metropolis/claude.html)
 function createMetropolisRobot() {
     const group = new THREE.Group();
@@ -3071,9 +3119,12 @@ window.stopVideosForAudio = function () {
 
     // 4. Reset Lights (Safety Fallback)
     // If not handled by room helpers, force bright lights
-    if (currentRoom === 'living' || currentRoom === 'bathroom') {
-        if (dirLight) dirLight.intensity = 1.0; // Restored Brightness
-        if (rimLight) rimLight.intensity = 0.5;
+    if (currentRoom === 'living') {
+        if (window.ambientLight) window.ambientLight.intensity = 0.45; // V-FIX 289: Brighter (was 0.2)
+        if (window.dirLight) window.dirLight.intensity = 1.0; // Room Default
+    } else if (currentRoom === 'bathroom') {
+        if (window.ambientLight) window.ambientLight.intensity = 0.45;
+        if (window.dirLight) window.dirLight.intensity = 1.0;
     }
 };
 

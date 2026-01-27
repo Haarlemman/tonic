@@ -3,16 +3,7 @@ function createBedroomInterior() {
     const bedGroup = new THREE.Group();
 
     // -- VIDEO PLAYLIST PANEL --
-    const buttonGeo = new THREE.BoxGeometry(0.5, 0.5, 0.2);
-    const buttonMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x004400 });
-    const greenBtn = new THREE.Mesh(buttonGeo, buttonMat);
-    greenBtn.position.set(1.8, 4.5, -4.9);
-    greenBtn.userData = { type: 'videoPlayButton', state: 'paused' }; // Initial state might need sync? Defaults to paused/ready.
-    interiorGroup.add(greenBtn);
-    interiorClickables.push(greenBtn);
-
-    greenBtn.material.color.setHex(0xff0000);
-    greenBtn.material.emissive.setHex(0x440000);
+    // V-FIX 257: Removed redundant manual button (Universal UI handles it)
 
     // -- DARK FLOOR
     const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }));
@@ -67,8 +58,8 @@ function createBedroomInterior() {
     const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xcc8800, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     shade.position.y = 0.7; lampGroup.add(shade);
     // Light - Dimmer (Night Bed Lamp) - Darker
-    // V142: Reduced Intensity (0.8 -> 0.4) -> V-NEW (0.15)
-    const bulb = new THREE.PointLight(0xffaa00, 0.15, 8);
+    // V142: Reduced Intensity (0.8 -> 0.4) -> V-NEW (0.15) -> V257 (1.2) -> V261 (2.5)
+    const bulb = new THREE.PointLight(0xffaa00, 2.5, 8);
     bulb.position.y = 0.6;
     lampGroup.add(bulb);
 
@@ -101,7 +92,9 @@ function createBedroomInterior() {
         // V-FIX: Universal Video UI
         if (window.createUniversalVideoInterface) {
             // Position adjusted to match previous header height (y=6.0 approx)
-            window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 4.2, -4.8), roomContent.bedroom.videoPlaylist);
+            window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 4.2, -4.8), roomContent.bedroom.videoPlaylist, {
+                onPlay: playVideo // V-FIX 257: Pass correct handler
+            });
         }
     }
 
@@ -110,6 +103,14 @@ function createBedroomInterior() {
     const shelf = new THREE.Mesh(shelfGeo, shelfMat);
     shelf.position.set(-4.6, 3.5, 3.0);
     interiorGroup.add(shelf);
+
+    // V-FIX 264: Drop Shadow for Shelf
+    const shadowGeo = new THREE.PlaneGeometry(0.8, 1.2);
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(-4.6, 3.45, 3.0); // Slightly below
+    interiorGroup.add(shadow);
 
     // Lava Lamp
     createLavaLamp(0.108, shelf.position);
@@ -160,20 +161,20 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
         transparent: true,
         opacity: 0.5,
         emissive: 0xff2200,
-        // V142: Duller Glow (1.6 -> 0.8)
-        emissiveIntensity: 0.8
+        // V142: Duller Glow (1.6 -> 0.8) -> V261 (1.2)
+        emissiveIntensity: 1.2
     });
     const liquidCore = new THREE.Mesh(coreGeo, coreMaterial);
     liquidCore.position.y = 1.0;
     lampGroup.add(liquidCore);
 
     // Lights
-    // V142: Dimmer Lights (4 -> 2) -> V-NEW (0.5)
-    const internalPointLight = new THREE.PointLight(0xff4d00, 0.5, 5);
+    // V142: Dimmer Lights (4 -> 2) -> V-NEW (0.5) -> V261 (1.5)
+    const internalPointLight = new THREE.PointLight(0xff4d00, 1.5, 5);
     internalPointLight.position.set(0, 0, 0);
     lampGroup.add(internalPointLight);
 
-    const baseLight = new THREE.PointLight(0xff4d00, 0.5, 3);
+    const baseLight = new THREE.PointLight(0xff4d00, 1.5, 3);
     baseLight.position.set(0, -4.5, 0);
     lampGroup.add(baseLight);
 
@@ -181,8 +182,8 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
     const lavaMaterial = new THREE.MeshStandardMaterial({
         color: 0xff4d00,
         emissive: 0xff4d00,
-        // V142: Duller Blobs (6.4 -> 3.2)
-        emissiveIntensity: 3.2,
+        // V142: Duller Blobs (6.4 -> 3.2) -> V261 (4.0)
+        emissiveIntensity: 4.0,
         roughness: 0.0
     });
 
@@ -278,6 +279,8 @@ function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
 function nextBedroomVideo() {
     masterVideoIndex = (masterVideoIndex + 1) % roomContent.bedroom.videoPlaylist.length;
     startVideoClip('bedroom');
+    // V-FIX 257: Update UI
+    if (window.updateVideoUI) window.updateVideoUI();
 }
 
 function playVideo(index) {
@@ -285,31 +288,9 @@ function playVideo(index) {
     if (!playlist || !playlist[index]) return;
 
     masterVideoIndex = index;
+    // V-FIX 257: Direct Play & UI Update
     startVideoClip('bedroom');
 
-    // Update Button State to Green (Playing)
-    const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton');
-    if (btn) {
-        btn.userData.state = 'playing';
-        btn.material.color.setHex(0x00ff00);
-        btn.material.emissive.setHex(0x004400);
-    }
-
-    // Clear video items
-    const toRemove = [];
-    interiorGroup.traverse(child => {
-        if (child.userData && (child.userData.type === 'videoItem' || child.userData.type === 'videoHeader')) {
-            toRemove.push(child);
-        }
-    });
-
-    toRemove.forEach(child => {
-        interiorGroup.remove(child);
-        const idx = interiorClickables.indexOf(child);
-        if (idx > -1) interiorClickables.splice(idx, 1);
-    });
-
-    createVideoPlaylistPanel(playlist);
+    // Sync UI if available
+    if (window.updateVideoUI) window.updateVideoUI();
 }
-
-// function createVideoPlaylistPanel removed (Replaced by Universal UI)

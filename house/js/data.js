@@ -20,7 +20,8 @@ const roomContent = {
         ],
         videoPlaylist: [
             { title: "The Premonition", src: "../assets/video/premonition.mp4" },
-            { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" }
+            { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" },
+    	    { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
         ],
         videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 }, // V197: Defined in Data
         tvImages: [
@@ -51,7 +52,7 @@ const roomContent = {
             { artist: "Miles Davis", track: "Ascenseur pour l'échafaud", src: "../assets/audio/miles-lift.mp3" }
         ],
         videoPlaylist: [
-            { title: "Night After Night", artist: "Paradox Prime", src: "../assets/video/nain.mp4" },
+            { title: "Night After Night", artist: "Paradox Prime", src: "../assets/video/nain.mp4", volume: 0.4 },
             { title: "The Spirit", artist: "David Enker", src: "../assets/video/spirit.mp4" },
             { title: "Dreaming", artist: "Paradox Prime", src: "../assets/video/dreaming.mp4" },
 
@@ -106,7 +107,10 @@ const roomContent = {
         hex: 0x1a1a1a,
         interiorWidth: 4,
         interiorDepth: 4,
-        description: "A small, quiet space at the edge of the property. For contemplation and solitary rest."
+        description: "A small, quiet space at the edge of the property. For contemplation and solitary rest.",
+        playlist: [
+            { artist: "Mica Levi", track: "Lonely Void", src: "../assets/audio/mica-levi-lonely-void.mp3" }
+        ]
     }
 };
 

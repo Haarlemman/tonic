@@ -117,7 +117,8 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
                     sctx.fillRect(0, 0, 512, 100);
                     sctx.fillStyle = '#00ff00'; // Green Text
                 } else {
-                    sctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; // Default faint white
+                    // V-FIX 260: Match Audio Playlist Opacity (0.05)
+                    sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
                     sctx.fillRect(0, 0, 512, 100);
                     sctx.fillStyle = '#ffffff'; // White Text
                 }

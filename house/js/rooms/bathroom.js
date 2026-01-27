@@ -55,9 +55,8 @@ function createBathroomInterior() {
     const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
-    // 2. Add Darker Ambience
-    // V140: Dimmed (0.5 -> 0.2) -> V-NEW: 0.05
-    const darkAmb = new THREE.PointLight(0x223344, 0.05, 15);
+    // 2. Add Darker Ambience (V289: Boosted 0.05 -> 0.15)
+    const darkAmb = new THREE.PointLight(0x223344, 0.15, 15);
     darkAmb.position.set(0, 6, 0);
     interiorGroup.add(darkAmb);
 
@@ -405,10 +404,10 @@ function createBathroomInterior() {
         }
         if (videoElement && !videoElement.paused) videoElement.pause();
 
-        // Reset Lights
-        if (dirLight) dirLight.intensity = 1.0;
-        if (rimLight) rimLight.intensity = 0.5;
-        if (ambientLight) ambientLight.intensity = 0.5;
+        // Reset Lights (V289: Sync with Brighter World)
+        if (dirLight) dirLight.intensity = 1.2;
+        if (rimLight) rimLight.intensity = 0.4;
+        if (ambientLight) ambientLight.intensity = 0.45;
     };
 
     // V180: VIDEO PLAYLIST (Left of Mirror)

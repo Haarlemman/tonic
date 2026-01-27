@@ -114,8 +114,8 @@ function createAnnexInterior() {
         shelfGroup.position.set(x, y, z); shelfGroup.rotation.y = rotY;
         interiorGroup.add(shelfGroup);
     }
-    createWallShelf(-1.95, 1.8, 0, Math.PI / 2);
-    createWallShelf(-1.95, 3.2, 0, Math.PI / 2);
+    createWallShelf(-1.95, 2.0, 0, Math.PI / 2);
+    createWallShelf(-1.95, 2.8, 0, Math.PI / 2);
 
     // 3. Narrow Suitcase
     const suitcase = createSuitcase();
