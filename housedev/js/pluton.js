@@ -113,13 +113,13 @@ function createPlutoUsher() {
     // const shadow = createUsherShadow(); ...
 
     const halo = createGlitchyHalo();
-    // V311: Impact Positioning (Lowered & Forward)
+    // V314: Offset left (0 -> -1.5) to clear the '42' plate on the right facade
     const baseH = 1.5;
-    halo.position.set(0, baseH, 3.0);
+    halo.position.set(-1.5, baseH, 3.5);
     group.add(halo);
 
     const text = createUsherText();
-    text.position.set(0, baseH, 3.1);
+    text.position.set(-1.5, baseH, 3.6);
     group.add(text);
 
     // Update Function

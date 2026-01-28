@@ -1692,9 +1692,10 @@ function buildInterior(roomKey) {
         interiorGroup.add(bulb);
     }
 
-    // V311: Per-room Audio UI Scale (Reverted to 0.75 per user request)
+    // V315: Firmly set scale to 0.75 per user request
     let musicScale = 1.0;
     if (roomKey === 'annex' || roomKey === 'toilet') musicScale = 0.75;
+    window.currentMusicScale = musicScale; // PERSIST FOR music.js
     createMusicPanel(data.playlist, musicScale);
 
     if (roomKey === 'living') createLivingRoomInterior();

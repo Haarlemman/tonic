@@ -29,7 +29,7 @@ function playTrack(index) {
                 });
             }
 
-            createMusicPanel(playlist);
+            createMusicPanel(playlist, window.currentMusicScale || 1.0);
 
         }).catch(e => {
             console.error("Play failed", e);
@@ -174,7 +174,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         if (wasPlaying) {
             audioPlayer.play();
         }
-        createMusicPanel(playlist);
+        createMusicPanel(playlist, window.currentMusicScale || 1.0);
     }
 
     // Global Auto-Next Listener (Idempotent)
@@ -188,7 +188,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
     window.updateMusicPanelHighlight = function () {
         if (window.roomContent && window.currentRoom && window.roomContent[window.currentRoom]) {
             const playlist = window.roomContent[window.currentRoom].playlist;
-            if (playlist) createMusicPanel(playlist);
+            if (playlist) createMusicPanel(playlist, window.currentMusicScale || 1.0);
         }
     };
 
@@ -206,7 +206,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         if (isMusicPlaying) {
             audioPlayer.pause(); isMusicPlaying = false;
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
-            createMusicPanel(playlist);
+            createMusicPanel(playlist, window.currentMusicScale || 1.0);
         } else {
             if (currentRoom === 'attic') {
                 const atticVideo = document.getElementById('attic-video');
@@ -236,7 +236,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
             audioPlayer.play().catch(e => console.log("Audio play failed", e));
             isMusicPlaying = true;
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
-            createMusicPanel(playlist);
+            createMusicPanel(playlist, window.currentMusicScale || 1.0);
 
             if (window.interiorClickables) {
                 const btns = window.interiorClickables.filter(c => c.userData.type === 'videoControlSingle');
