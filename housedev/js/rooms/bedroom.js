@@ -95,7 +95,8 @@ function createBedroomInterior() {
             // V-FIX: Moved Right (-2.8 -> -1.5) per User Request
             // V306: Move screen "more to the right" (User Request)
             // Was -2.8 -> Moved to -1.5 (Closer to center/desk)
-            const videoPos = new THREE.Vector3(-1.5, 4.2, -4.8);
+            // V317: Moved significantly further Right (x=2.0) to clear playlist
+            const videoPos = new THREE.Vector3(2.0, 4.2, -4.8);
             window.createUniversalVideoInterface(interiorGroup, videoPos, roomContent.bedroom.videoPlaylist, {
                 onPlay: playVideo // V-FIX 257: Pass correct handler
             });

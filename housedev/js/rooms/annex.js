@@ -93,10 +93,10 @@ function createAnnexInterior() {
     blanket.position.set(-1.0, 0.41, -0.1);
     interiorGroup.add(blanket);
 
-    // V311: Positioned under the desk (Nudged right from 1.2 -> 1.4 per user "nudge")
+    // V317: Positioned under the desk (Nudged further right to clear bed x=-1.0)
     const chair = createAnnexChair();
-    chair.position.set(1.4, 0, -1.0); // Deeper under desk (was -1.2)
-    chair.rotation.y = -0.5; // Original-ish rotation
+    chair.position.set(0.7, 0, -1.2);
+    chair.rotation.y = -0.4; // Facing desk
     interiorGroup.add(chair);
 
     // 2. Wall mounted Bookshelves

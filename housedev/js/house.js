@@ -1692,10 +1692,10 @@ function buildInterior(roomKey) {
         interiorGroup.add(bulb);
     }
 
-    // V315: Firmly set scale to 0.75 per user request
+    // V317: Firmly set scale to 0.75 for specific rooms
     let musicScale = 1.0;
     if (roomKey === 'annex' || roomKey === 'toilet') musicScale = 0.75;
-    window.currentMusicScale = musicScale; // PERSIST FOR music.js
+    window.currentMusicScale = musicScale;
     createMusicPanel(data.playlist, musicScale);
 
     if (roomKey === 'living') createLivingRoomInterior();
@@ -2072,9 +2072,14 @@ window.applyRoomLighting = function (roomName) {
         targetHemi = 0.3;
     }
     // V-AESTHETIC-SYNC: Force Correct Atmosphere Overrides
-    else if (roomName === 'hall' || roomName === 'toilet') {
-        targetAmbient = 0.22; // V311: More light (was 0.12)
-        targetDir = 0.5;      // V311: More light (was 0.35)
+    else if (roomName === 'toilet') {
+        targetAmbient = 0.05; // V317: Darker (was 0.22 via shared hall logic)
+        targetDir = 0.2;
+        targetRim = 0.1;
+        targetHemi = 0.05;
+    } else if (roomName === 'hall') {
+        targetAmbient = 0.22; // V311: Keep Hall bright
+        targetDir = 0.5;
         targetRim = 0.2;
         targetHemi = 0.1;
     } else if (roomName === 'studio' || roomName === 'annex') {

@@ -539,43 +539,12 @@ function createLivingRoomInterior() {
         return group;
     }
 
-    // V240: Annex Candle Helper for the Void
+    // V317: Void Candle Removed per user request
+    /*
     function createVoidCandle() {
-        const candleGroup = new THREE.Group();
-        const waxGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2);
-        const waxMat = new THREE.MeshStandardMaterial({
-            color: 0xfffff0,
-            roughness: 0.3,
-            transparent: true,
-            opacity: 0.6
-        });
-        const wax = new THREE.Mesh(waxGeo, waxMat);
-        wax.position.y = 0.1;
-        candleGroup.add(wax);
-
-        const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-        wick.position.y = 0.22;
-        candleGroup.add(wick);
-
-        const flameGeo = new THREE.SphereGeometry(0.02, 8, 8);
-        const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-        const flame = new THREE.Mesh(flameGeo, flameMat);
-        flame.position.y = 0.25;
-        candleGroup.add(flame);
-
-        const candleLight = new THREE.PointLight(0xffaa00, 1.2, 5);
-        candleLight.position.set(0, 0.35, 0);
-        candleLight.castShadow = true;
-        candleGroup.add(candleLight);
-
-        candleGroup.userData.update = (t) => {
-            const flicker = 1.2 + Math.sin(t * 15) * 0.15 + Math.cos(t * 33) * 0.15;
-            candleLight.intensity = flicker;
-            flame.scale.setScalar(0.8 + (flicker - 1.2) * 2);
-        };
-
-        return candleGroup;
+        ...
     }
+    */
 
     function createBookcase(posZ) {
         const bookcaseGroup = new THREE.Group();
@@ -675,25 +644,15 @@ function createLivingRoomInterior() {
                 interiorClickables.push(portalHitBox);
 
 
-                // 4. Candle Decoration (Visual Only now)
+                // 4. Candle Decoration REMOVED (V317)
+                /*
                 const candle = createVoidCandle();
-                candle.position.set(-0.3, -1.0, 0.2);
-                candle.scale.setScalar(1.5);
-                portal.add(candle);
+                ...
+                */
 
-                // Visibility Logic
+                // Visibility Logic (Minimal)
                 portal.userData.update = (t) => {
-                    if (candle.userData.update) candle.userData.update(t);
-
-                    // Default Visible
-                    let shouldBeVisible = true;
-                    const door = window.secretDoorGroup;
-                    if (door) {
-                        // If door is strictly closed, hide candle (so it doesn't clip)
-                        const isClosed = !door.userData.isOpen && (door.rotation.y < 0.1);
-                        if (isClosed) shouldBeVisible = false;
-                    }
-                    candle.visible = shouldBeVisible;
+                    // console.log("Void interaction active");
                 };
             }
 

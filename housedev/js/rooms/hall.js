@@ -152,7 +152,7 @@ function createR2D2ForHall() {
     const instructions = createHologram();
     // V311: Scale BACK UP (Since R2 is 0.4x, we need 2.5x to get back to 1.0 world scale)
     instructions.scale.set(2.5, 2.5, 2.5);
-    instructions.position.set(0, 4.0, 1.5); // Floating above and forward of R2
+    instructions.position.set(0, 5.5, 1.5); // Floating higher above R2 (V317)
     r2d2Group.add(instructions);
 
     const white = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, roughness: 0.4 });
