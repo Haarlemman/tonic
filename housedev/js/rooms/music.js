@@ -89,9 +89,9 @@ window.createMusicPanel = function (playlist) {
         yBase = 5.0; // Lowered from 6.6 for better view when scaled
     }
 
-    // V326: Bedroom-specific alignment
+    // V326: Bedroom-specific alignment (Centered on wall)
     let zOffset = 0;
-    if (currentRoom === 'bedroom') zOffset = -4.5;
+    if (currentRoom === 'bedroom') zOffset = 0;
 
     const panelGroup = new THREE.Group();
     panelGroup.userData = { type: 'musicPanelGroup' };
@@ -123,7 +123,7 @@ window.createMusicPanel = function (playlist) {
     pctx.fillStyle = '#ffffff'; pctx.font = 'bold 60px Arial'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
     pctx.shadowColor = 'rgba(0,0,0,0.8)'; pctx.shadowBlur = 4; pctx.shadowOffsetX = 2; pctx.shadowOffsetY = 2;
     pctx.fillText("AUDIO", 256, 32);
-    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v315-FIXED", 460, 50);
+    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v315-RELOADED-2", 460, 50);
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.6), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;

@@ -166,7 +166,7 @@ function createAnnexChair() {
             leg.position.set(x, 0.25, z); chair.add(leg);
         }
     }
-    chair.scale.setScalar(0.75); return chair;
+    chair.scale.setScalar(1.1); return chair;
 }
 
 function createSuitcase() {
@@ -201,6 +201,7 @@ function addDeskItems(deskGroup) {
     nctx.fillStyle = '#cccccc'; nctx.fillRect(0, 0, 256, 256);
     nctx.fillStyle = '#333333'; nctx.font = 'bold 20px serif';
     nctx.fillText("DAILY GAZETTE", 40, 50);
+    nctx.font = '12px Arial'; nctx.shadowBlur = 0; nctx.fillText("v315-RELOADED-3", 460, 50);
     nctx.fillRect(40, 60, 180, 2);
     for (let i = 0; i < 10; i++) nctx.fillRect(40, 80 + i * 15, 180, 8);
     const newsTex = new THREE.CanvasTexture(newsCanvas);
