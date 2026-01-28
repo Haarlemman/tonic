@@ -71,7 +71,7 @@ function createBedroomInterior() {
 
     // WALL MOUNTED VIDEO PLAYER (BIGGER, BACK WALL)
     const phone = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }));
-    phone.position.set(0, 4.5, -4.95);
+    phone.position.set(1.8, 4.5, -4.95); // V321: Moved physical screen to Right
     phone.userData = { type: 'videoPhone', state: 'stopped' };
     interiorGroup.add(phone);
     interiorClickables.push(phone);
@@ -95,8 +95,8 @@ function createBedroomInterior() {
             // V-FIX: Moved Right (-2.8 -> -1.5) per User Request
             // V306: Move screen "more to the right" (User Request)
             // Was -2.8 -> Moved to -1.5 (Closer to center/desk)
-            // V317: Moved significantly further Right (x=2.0) to clear playlist
-            const videoPos = new THREE.Vector3(2.0, 4.2, -4.8);
+            // V321: Moved UI to match physical screen at x=1.8
+            const videoPos = new THREE.Vector3(1.8, 4.2, -4.8);
             window.createUniversalVideoInterface(interiorGroup, videoPos, roomContent.bedroom.videoPlaylist, {
                 onPlay: playVideo // V-FIX 257: Pass correct handler
             });

@@ -1692,9 +1692,9 @@ function buildInterior(roomKey) {
         interiorGroup.add(bulb);
     }
 
-    // V317: Firmly set scale to 0.75 for specific rooms
+    // V318: Significantly reduced scale to 0.6 per user request
     let musicScale = 1.0;
-    if (roomKey === 'annex' || roomKey === 'toilet') musicScale = 0.75;
+    if (roomKey === 'annex' || roomKey === 'toilet') musicScale = 0.6;
     window.currentMusicScale = musicScale;
     createMusicPanel(data.playlist, musicScale);
 

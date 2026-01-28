@@ -113,13 +113,13 @@ function createPlutoUsher() {
     // const shadow = createUsherShadow(); ...
 
     const halo = createGlitchyHalo();
-    // V317: Foreground Impact (Lowered & Much Further Forward)
-    const baseH = 1.0;
-    halo.position.set(-1.5, baseH, 4.5);
+    // V319: Centered on path, slightly higher, and further forward (foreground pop)
+    const baseH = 1.3;
+    halo.position.set(-0.3, baseH, 5.5);
     group.add(halo);
 
     const text = createUsherText();
-    text.position.set(-1.5, baseH, 4.6);
+    text.position.set(-0.3, baseH, 5.6);
     group.add(text);
 
     // Update Function

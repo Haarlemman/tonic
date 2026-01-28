@@ -81,6 +81,8 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
 
     // 2. Initialize Root Group
     const rootGroup = new THREE.Group();
+    // V321: Position Group at WallX and scale relative to origin
+    rootGroup.position.set(wallX, 0, 0);
     rootGroup.scale.set(scale, scale, scale);
     musicPanelMesh = rootGroup;
     interiorGroup.add(rootGroup);
@@ -101,7 +103,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
     musicSwitchMesh.rotation.y = Math.PI / 2;
-    musicSwitchMesh.position.set(wallX + 0.02, yBase + 0.5, 0);
+    musicSwitchMesh.position.set(0.02, yBase + 0.5, 0); // Relative to rootGroup (WallX)
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
     rootGroup.add(musicSwitchMesh);
     if (window.interiorClickables) window.interiorClickables.push(musicSwitchMesh);
@@ -117,7 +119,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.6), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(wallX, yBase - 0.5, 0);
+    pHeadMesh.position.set(0, yBase - 0.5, 0); // Relative to rootGroup (WallX)
     pHeadMesh.userData = { type: 'playlistHeader' };
     rootGroup.add(pHeadMesh);
 
@@ -152,7 +154,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         const sTex = new THREE.CanvasTexture(sCanvas);
         const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
         sMesh.rotation.y = Math.PI / 2;
-        sMesh.position.set(wallX, yPos, 0);
+        sMesh.position.set(0, yPos, 0); // Relative to rootGroup (WallX)
 
         // V311: Fix Cleanup bug (Required for createMusicPanel traversal)
         sMesh.userData = { type: 'songItem' };
