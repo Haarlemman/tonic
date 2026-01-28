@@ -1,13 +1,6 @@
-/**
- * PLUTON.JS
- * 
- * Logic for the "Plutonian Star-Whisker" character (Usher).
- * Refactored V282 for High-Fidelity (Reference: pluton/index.html).
- */
-console.log("--- PLUTON.JS LOADED V282 (REFINED) ---");
+console.log("--- PLUTON.JS LOADED ---");
 
 // --- Holographic Text Helper ---
-// --- Holographic Text Helper (Light Plane V287) ---
 function createUsherText() {
     const canvas = document.createElement('canvas');
     canvas.width = 1024; canvas.height = 512;
@@ -101,25 +94,16 @@ function createGlitchyHalo() {
 }
 
 // --- Main Character Creator ---
-// --- Main Character Creator ---
 function createPlutoUsher() {
     const group = new THREE.Group();
 
-    // V302: Removing Pluton Body (User Request: "Little friend has got to go")
-    // Keeping Hologram Only.
-
-    // --- Accessories (Refined V287) ---
-    // Remove Shadow (Body is gone)
-    // const shadow = createUsherShadow(); ...
-
     const halo = createGlitchyHalo();
-    // V319: Centered on path, slightly higher, and further forward (foreground pop)
-    const baseH = 1.3;
-    halo.position.set(-0.3, baseH, 5.5);
+    const baseH = 1.8;
+    halo.position.set(-0.3, baseH, 7.5);
     group.add(halo);
 
     const text = createUsherText();
-    text.position.set(-0.3, baseH, 5.6);
+    text.position.set(-0.3, baseH, 7.6);
     group.add(text);
 
     // Update Function

@@ -373,9 +373,6 @@ function createLivingRoomInterior() {
     interiorGroup.add(wallsGroup);
 
     // --- LIGHTING ---
-    // V298: Balanced Local Light Intensities
-    // V303: Darker Interior (0.25 -> 0.15) -> V-FIX: Brighten (0.25)
-    // 5. Lighting (Brighter V315-RELOADED-5: 0.5)
     window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.5, 15);
     window.livingCozyLight.position.set(0, 5, 0);
     window.livingCozyLight.castShadow = true;
