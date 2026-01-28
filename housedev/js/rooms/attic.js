@@ -101,8 +101,12 @@ function createAtticInterior() {
     shade.add(bulb);
 
     // 5. The Light (Stronger)
-    const light = new THREE.PointLight(0xffaa00, 2.5, 25); // Increased Intensity (1.5 -> 2.5) and Range
+    const light = new THREE.PointLight(0xffaa00, 2.5, 25);
     light.castShadow = true;
+    // V315: Soften Shadows
+    light.shadow.radius = 4;
+    light.shadow.mapSize.width = 1024;
+    light.shadow.mapSize.height = 1024;
     light.position.y = -0.5;
     shade.add(light);
 

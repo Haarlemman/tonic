@@ -2083,9 +2083,9 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.0; // No rim
         targetHemi = 0.02;
     } else if (roomName === 'attic') {
-        targetAmbient = 0.06; // V-FIX: Increased from 0.01 to see walls
-        targetDir = 0.3;
-        targetRim = 0.0; // No rim
+        targetAmbient = 0.03; // V315: Darker (was 0.06)
+        targetDir = 0.2;     // V315: Less direct light
+        targetRim = 0.05;
         targetHemi = 0.02;
     }
     // V-FIX 298: Balanced Moody Atmosphere
