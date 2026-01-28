@@ -95,7 +95,7 @@ function createAnnexInterior() {
 
     // V-FIX: Chair closer to desk (-0.8) and scaled (0.75)
     const chair = createAnnexChair();
-    chair.position.set(0.2, 0, -0.8);
+    chair.position.set(0.5, 0, -0.8);
     chair.rotation.y = -0.3;
     interiorGroup.add(chair);
 
