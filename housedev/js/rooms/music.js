@@ -58,15 +58,15 @@ function playTrack(index) {
 }
 
 // Consolidated createMusicPanel with Cleanup and Scaling
-window.createMusicPanel = function (playlist, scale = 1.0) {
-    console.log("v309: Creating Music Panel. Playlist length:", playlist ? playlist.length : 0);
+window.createMusicPanel = function (playlist) {
+    console.log("v315-FIXED: Creating Music Panel. Playlist length:", playlist ? playlist.length : 0);
     if (!playlist || playlist.length === 0) return;
 
-    // 1. Cleanup Old UI
+    // 1. Cleanup Old UI (Self-contained within createMusicPanel)
     if (typeof interiorGroup !== 'undefined') {
         const toRemove = [];
         interiorGroup.traverse(child => {
-            if (child.userData && (child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
+            if (child.userData && (child.userData.type === 'musicPanelGroup' || child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
                 toRemove.push(child);
             }
         });
@@ -79,33 +79,41 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         });
     }
 
-    // 2. Initialize Root Group
-    const rootGroup = new THREE.Group();
-    // V321: Position Group at WallX and scale relative to origin
-    rootGroup.position.set(wallX, 0, 0);
-    rootGroup.scale.set(scale, scale, scale);
-    musicPanelMesh = rootGroup;
-    interiorGroup.add(rootGroup);
-
-    // 3. Initialize Variables
+    // 2. Setup Anchor and Group
     const rData = roomContent[currentRoom];
     const iW = rData.interiorWidth || 10;
     const wallX = -(iW / 2) + 0.01;
 
     let yBase = 5.5;
     if (currentRoom === 'annex') {
-        yBase = 6.6;
+        yBase = 5.0; // Lowered from 6.6 for better view when scaled
     }
 
-    // 4. Create Static UI Elements
+    // V326: Bedroom-specific alignment
+    let zOffset = 0;
+    if (currentRoom === 'bedroom') zOffset = -4.5;
+
+    const panelGroup = new THREE.Group();
+    panelGroup.userData = { type: 'musicPanelGroup' };
+    panelGroup.position.set(wallX, yBase, zOffset);
+    interiorGroup.add(panelGroup);
+
+    // Apply Scaling Factor
+    if (currentRoom === 'annex' || currentRoom === 'toilet') {
+        panelGroup.scale.setScalar(0.75);
+    }
+    musicPanelMesh = panelGroup;
+
+    // 3. Create Static UI Elements (Relative to panelGroup)
+
     // Audio Button
     const switchGeo = new THREE.BoxGeometry(0.6, 0.6, 0.1);
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
     musicSwitchMesh.rotation.y = Math.PI / 2;
-    musicSwitchMesh.position.set(0.02, yBase + 0.5, 0); // Relative to rootGroup (WallX)
+    musicSwitchMesh.position.set(0.02, 0.5, 0); // 0.5 above anchor
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
-    rootGroup.add(musicSwitchMesh);
+    panelGroup.add(musicSwitchMesh);
     if (window.interiorClickables) window.interiorClickables.push(musicSwitchMesh);
 
     // Header
@@ -115,19 +123,18 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
     pctx.fillStyle = '#ffffff'; pctx.font = 'bold 60px Arial'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
     pctx.shadowColor = 'rgba(0,0,0,0.8)'; pctx.shadowBlur = 4; pctx.shadowOffsetX = 2; pctx.shadowOffsetY = 2;
     pctx.fillText("AUDIO", 256, 32);
-    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v309", 480, 50);
+    pctx.font = '12px Arial'; pctx.shadowBlur = 0; pctx.fillText("v315-FIXED", 460, 50);
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.6), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(0, yBase - 0.5, 0); // Relative to rootGroup (WallX)
+    pHeadMesh.position.set(0, -0.5, 0); // 0.5 below anchor
     pHeadMesh.userData = { type: 'playlistHeader' };
-    rootGroup.add(pHeadMesh);
+    panelGroup.add(pHeadMesh);
 
-    // 5. Create Dynamic Playlist Items
+    // 4. Create Dynamic Playlist Items
     playlist.forEach((item, i) => {
-        const isCurrent = i === currentTrackIndex;
-        // Start at yBase - 1.3 go down
-        const yPos = (yBase - 1.3) - (i * 1.0); // Explicit calculation base
+        const isCurrent = (typeof currentTrackIndex !== 'undefined' && i === currentTrackIndex);
+        const yPos = -1.3 - (i * 0.9); // Relative to anchor
 
         const sCanvas = document.createElement('canvas');
         sCanvas.width = 512; sCanvas.height = 120;
@@ -154,12 +161,10 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         const sTex = new THREE.CanvasTexture(sCanvas);
         const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
         sMesh.rotation.y = Math.PI / 2;
-        sMesh.position.set(0, yPos, 0); // Relative to rootGroup (WallX)
+        sMesh.position.set(0, yPos, 0);
 
-        // V311: Fix Cleanup bug (Required for createMusicPanel traversal)
-        sMesh.userData = { type: 'songItem' };
-
-        rootGroup.add(sMesh);
+        sMesh.userData = { type: 'songItem', index: i };
+        panelGroup.add(sMesh);
         if (window.interiorClickables) window.interiorClickables.push(sMesh);
     });
 
@@ -176,7 +181,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         if (wasPlaying) {
             audioPlayer.play();
         }
-        createMusicPanel(playlist, window.currentMusicScale || 1.0);
+        window.createMusicPanel(playlist);
     }
 
     // Global Auto-Next Listener (Idempotent)
@@ -186,11 +191,10 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
     }
 
     // Expose for external updates (e.g. from Video UI)
-    window.createMusicPanel = createMusicPanel;
     window.updateMusicPanelHighlight = function () {
         if (window.roomContent && window.currentRoom && window.roomContent[window.currentRoom]) {
             const playlist = window.roomContent[window.currentRoom].playlist;
-            if (playlist) createMusicPanel(playlist, window.currentMusicScale || 1.0);
+            if (playlist) window.createMusicPanel(playlist);
         }
     };
 
@@ -208,7 +212,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
         if (isMusicPlaying) {
             audioPlayer.pause(); isMusicPlaying = false;
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
-            createMusicPanel(playlist, window.currentMusicScale || 1.0);
+            window.createMusicPanel(playlist);
         } else {
             if (currentRoom === 'attic') {
                 const atticVideo = document.getElementById('attic-video');
@@ -238,7 +242,7 @@ window.createMusicPanel = function (playlist, scale = 1.0) {
             audioPlayer.play().catch(e => console.log("Audio play failed", e));
             isMusicPlaying = true;
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
-            createMusicPanel(playlist, window.currentMusicScale || 1.0);
+            window.createMusicPanel(playlist);
 
             if (window.interiorClickables) {
                 const btns = window.interiorClickables.filter(c => c.userData.type === 'videoControlSingle');

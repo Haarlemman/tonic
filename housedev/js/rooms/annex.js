@@ -93,10 +93,10 @@ function createAnnexInterior() {
     blanket.position.set(-1.0, 0.41, -0.1);
     interiorGroup.add(blanket);
 
-    // V318: Restored rotation to "First Time" (Math.PI) and nudged X slightly right (0.4 -> 0.65)
+    // V-FIX: Chair closer to desk (-0.8) and scaled (0.75)
     const chair = createAnnexChair();
-    chair.position.set(0.65, 0, -1.2);
-    chair.rotation.y = Math.PI; // "First time" rotation
+    chair.position.set(0.2, 0, -0.8);
+    chair.rotation.y = -0.3;
     interiorGroup.add(chair);
 
     // 2. Wall mounted Bookshelves
@@ -166,7 +166,7 @@ function createAnnexChair() {
             leg.position.set(x, 0.25, z); chair.add(leg);
         }
     }
-    chair.scale.setScalar(1.1); return chair;
+    chair.scale.setScalar(0.75); return chair;
 }
 
 function createSuitcase() {

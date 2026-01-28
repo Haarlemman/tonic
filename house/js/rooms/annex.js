@@ -94,7 +94,8 @@ function createAnnexInterior() {
 
     // Chair
     const chair = createAnnexChair();
-    chair.position.set(0.2, 0, -0.6);
+    chair.position.set(0.2, 0, -0.8);
+    chair.rotation.y = -0.3;
     interiorGroup.add(chair);
 
     // 2. Wall mounted Bookshelves
@@ -163,7 +164,7 @@ function createAnnexChair() {
             leg.position.set(x, 0.25, z); chair.add(leg);
         }
     }
-    chair.scale.setScalar(1.1); return chair;
+    chair.scale.setScalar(0.75); return chair;
 }
 
 function createSuitcase() {

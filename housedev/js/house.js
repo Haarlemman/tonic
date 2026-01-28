@@ -58,6 +58,7 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 // Wrapped Init
 console.log("--- HOUSE.JS V305-HOLOGRAM-RESTORED ---");
+console.log("%c V500 - UNBREAKABLE SYNC LOADED ", "background: #222; color: #bada55; font-size: 20px;");
 scene = new THREE.Scene();
 // V-REFINE: Much Lighter Purple Fog (Visibility Check)
 scene.fog = new THREE.Fog(0x2d1b4e, 10, 250); // V292: Extended for tall towers (was 150)
@@ -1692,11 +1693,8 @@ function buildInterior(roomKey) {
         interiorGroup.add(bulb);
     }
 
-    // V318: Significantly reduced scale to 0.6 per user request
-    let musicScale = 1.0;
-    if (roomKey === 'annex' || roomKey === 'toilet') musicScale = 0.6;
-    window.currentMusicScale = musicScale;
-    createMusicPanel(data.playlist, musicScale);
+    // V325-v326: Scale and zOffset now handled internally by music.js
+    createMusicPanel(data.playlist);
 
     if (roomKey === 'living') createLivingRoomInterior();
     else if (roomKey === 'bedroom') createBedroomInterior();

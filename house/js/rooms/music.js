@@ -121,7 +121,7 @@ function createMusicPanel(playlist, skipCleanup = false) {
         // Need to access interiorGroup, assuming it's global or passed (it's global in room scripts scope usually)
         if (typeof interiorGroup !== 'undefined') {
             interiorGroup.traverse(child => {
-                if (child.userData && (child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
+                if (child.userData && (child.userData.type === 'musicPanelGroup' || child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
                     toRemove.push(child);
                 }
             });
@@ -148,20 +148,29 @@ function createMusicPanel(playlist, skipCleanup = false) {
         yBase = 6.6; // High but visible
     }
 
+    const panelGroup = new THREE.Group();
+    panelGroup.userData = { type: 'musicPanelGroup' };
+    panelGroup.position.set(wallX, yBase, 0); // Anchor point
+    interiorGroup.add(panelGroup);
+
+    // Scaling Logic: 0.75 for Annex/Toilet
+    if (currentRoom === 'annex' || currentRoom === 'toilet') {
+        panelGroup.scale.setScalar(0.75);
+    }
+
     // -- 1. AUDIO BUTTON (TOP, SQUARE) --
-    // Y=yBase
-    // V-CHANGE: Square Button (0.3x0.3) matching Video UI
+    // Y=0 (Relative to anchor)
     const switchGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
     const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
     musicSwitchMesh.rotation.y = Math.PI / 2; // Flush with wall
-    musicSwitchMesh.position.set(wallX + 0.02, yBase, 0); // Centered
+    musicSwitchMesh.position.set(0.02, 0, 0); // Centered relative to anchor
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
-    interiorGroup.add(musicSwitchMesh);
+    panelGroup.add(musicSwitchMesh);
     interiorClickables.push(musicSwitchMesh);
 
     // -- 2. HEADER "AUDIO" (BELOW BUTTON) --
-    // Y=yBase - 0.7
+    // Y=-0.7 (Relative to anchor)
     const pHeadCanvas = document.createElement('canvas');
     pHeadCanvas.width = 512; pHeadCanvas.height = 64;
     const pctx = pHeadCanvas.getContext('2d');
@@ -173,15 +182,15 @@ function createMusicPanel(playlist, skipCleanup = false) {
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
     const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.3), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
     pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(wallX, yBase - 0.7, 0);
+    pHeadMesh.position.set(0, -0.7, 0);
     pHeadMesh.userData = { type: 'playlistHeader' };
-    interiorGroup.add(pHeadMesh);
+    panelGroup.add(pHeadMesh);
 
     // -- 3. TRACK LIST (BOTTOM) --
     playlist.forEach((item, i) => {
         const isCurrent = i === currentTrackIndex;
-        // Start at yBase - 1.3 go down
-        const yPos = (yBase - 1.3) - (i * 0.7);
+        // Start at -1.3 go down (Relative to anchor)
+        const yOffset = -1.3 - (i * 0.7);
 
         const sCanvas = document.createElement('canvas');
         sCanvas.width = 512; sCanvas.height = 120;
@@ -213,10 +222,10 @@ function createMusicPanel(playlist, skipCleanup = false) {
         const sTex = new THREE.CanvasTexture(sCanvas);
         const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.6), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
         sMesh.rotation.y = Math.PI / 2;
-        sMesh.position.set(wallX, yPos, 0); // Centered
+        sMesh.position.set(0, yOffset, 0); // Centered relative to anchor
         sMesh.userData = { type: 'songItem', index: i };
 
-        interiorGroup.add(sMesh);
+        panelGroup.add(sMesh);
         interiorClickables.push(sMesh);
     });
 }
