@@ -57,7 +57,7 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 
 
 // Wrapped Init
-console.log("--- HOUSE.JS V298.2-CLEAN ---");
+console.log("--- HOUSE.JS V305-HOLOGRAM-RESTORED ---");
 scene = new THREE.Scene();
 // V-REFINE: Much Lighter Purple Fog (Visibility Check)
 scene.fog = new THREE.Fog(0x2d1b4e, 10, 250); // V292: Extended for tall towers (was 150)
@@ -83,19 +83,20 @@ textureLoader = new THREE.TextureLoader();
 
 // LIGHTS
 // V303: Lighter Exterior (0.35 -> 0.45)
-ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+// V303: Lighter Exterior (0.35 -> 0.45)
+ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
 window.ambientLight = ambientLight;
 scene.add(ambientLight);
 
 // Dim Global Fill
 // V303: Lighter Fill (0.35 -> 0.45)
-hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.45);
+hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.2);
 window.hemiLight = hemiLight;
 hemiLight.position.set(0, 50, 0);
 scene.add(hemiLight);
 
 // V303: Brighter Moon (1.0 -> 1.2)
-dirLight = new THREE.DirectionalLight(0xfffaed, 1.2);
+dirLight = new THREE.DirectionalLight(0xfffaed, 0.5);
 window.dirLight = dirLight;
 dirLight.position.set(50, 80, 30);
 dirLight.castShadow = true;
@@ -430,8 +431,9 @@ function buildHouse() {
     ]);
     // V179/V289: Hitbox must be VISIBLE but TRANSPARENT for Raycaster to work
     // V300: Shrink width (2.5 -> 2.0) and move left (-1.0 -> -1.5) to clear Hall
-    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
-    liveHitBox.position.set(-1.5, 1.8, 0);
+    // V306: Widening for user "Hit-area" request (2.0 -> 2.5), shift to -1.6
+    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
+    liveHitBox.position.set(-1.6, 1.8, 0);
     liveHitBox.userData = { name: 'living', type: 'room' };
     worldGroup.add(liveHitBox);
 
@@ -469,28 +471,26 @@ function buildHouse() {
     door.add(doorWin);
 
     // -- HOUSE NUMBER PLATE (42) --
-    // Resized and moved to "Studio" wall front, right next to door
-    const plateGeo = new THREE.BoxGeometry(0.25, 0.2, 0.02);
+    // V311: Resized (0.25->0.4) and moved to Ochre Facade for max visibility
+    const plateGeo = new THREE.BoxGeometry(0.4, 0.3, 0.02);
     const plateMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
     const plate = new THREE.Mesh(plateGeo, plateMat);
 
-    // Door is at x=0, Studio starts approx x=0.2 (overlapping) to x=2.0
-    // Studio front face z is 2.5
-    // Position plate just to the right of the door frame
-    plate.position.set(0.75, 1.8, 2.52);
+    // Positioned on the yellow door facade
+    plate.position.set(0.45, 1.8, 2.52);
 
     const numCanvas = document.createElement('canvas');
-    numCanvas.width = 64; numCanvas.height = 64;
+    numCanvas.width = 128; numCanvas.height = 128; // Increased res
     const nctx = numCanvas.getContext('2d');
-    nctx.fillStyle = '#eeeeee'; nctx.fillRect(0, 0, 64, 64);
-    nctx.fillStyle = '#111111'; nctx.font = 'bold 40px "Courier New"';
+    nctx.fillStyle = '#eeeeee'; nctx.fillRect(0, 0, 128, 128);
+    nctx.fillStyle = '#000000'; nctx.font = 'bold 80px "Courier New"';
     nctx.textAlign = 'center'; nctx.textBaseline = 'middle';
-    nctx.fillText("42", 32, 34);
+    nctx.fillText("42", 64, 68);
     const numTex = new THREE.CanvasTexture(numCanvas);
-    const numMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.16), new THREE.MeshBasicMaterial({ map: numTex, transparent: true }));
+    const numMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.28), new THREE.MeshBasicMaterial({ map: numTex, transparent: true }));
     numMesh.position.z = 0.011;
     plate.add(numMesh);
-    worldGroup.add(plate); // Add to world, not door
+    worldGroup.add(plate);
 
     // -- CLICK AREA FOR HALL --
     // V300: Much larger and forward-projecting hitbox
@@ -1247,7 +1247,8 @@ function buildEnvironment() {
             usher.scale.set(0.36, 0.36, 0.36); // V286: 2x the size (User req)
 
             // V-FIX 283: Opposite the ENTER sign (lx_lamp=-2.2, lz_lamp=8) -> Right Side Z=8
-            alignToPlanet(usher, 2.8, 8);
+            // V305: Centered on Path (x=0)
+            alignToPlanet(usher, 0, 8);
 
             // V-FIX 284: Proper Upright Angle & Height
             // 1. Up vector must point away from planet center (0, -500, 0)
@@ -1255,14 +1256,20 @@ function buildEnvironment() {
             usher.up.copy(normal);
             // 2. Look across the road (towards center) THEN rotate 90deg left to face user
             usher.lookAt(new THREE.Vector3(0, usher.position.y, 8));
-            usher.rotateY(Math.PI / 2);
+            // usher.rotateY(Math.PI / 2); // No rotation needed if looking at 0,0,8 (itself?)
+            // Wait, lookAt(0,y,8) means look at center of path.
+            // If x=0, looking at 0 means... looking nowhere?
+            // Try looking at camera start: (0, 20, 85)
+            // Or look at (0, y, 9) (slightly forward)
+            usher.lookAt(new THREE.Vector3(0, usher.position.y, 80)); // Look towards entrance/camera
+
             // 3. Grounding (V288: Exact model alignment)
             usher.translateY(0.02);
 
             worldGroup.add(usher);
             window.usherCharacter = usher;
 
-            console.log("--- PLUTO USHER SPAWNED V283 (Right side, Z=8) ---");
+            console.log("--- PLUTO USHER SPAWNED V305 (Centered, Z=8) ---");
         } else {
             console.error("CRITICAL: createPlutoUsher function not found! Check pluton.js loading.");
         }
@@ -1274,21 +1281,23 @@ function buildEnvironment() {
 
 
     // V295: REFINED SKYLINE GRADIENT (Shorter near house, taller at distance)
+    // V295: REFINED SKYLINE GRADIENT (Shorter near house, taller at distance)
     console.log("--- V295: REFINED CITY HEIGHT GRADIENT ---");
     for (let i = 0; i < 800; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const radius = 25 + Math.pow(Math.random(), 2) * 140;
+        const radius = 25 + Math.pow(Math.random(), 2) * 120;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        if (z > -5 && z < 200 && Math.abs(x) < 25.0) continue;
+        if (z > -5 && z < 180 && Math.abs(x) < 20.0) continue;
 
         const mesh = createMegaBlock();
-        const distFactor = (radius - 25) / 140;
-        // V297: Less extreme gradient - Start at ~7m near house, scale up to ~45m
-        const baseH = 7.0 + (distFactor * 23.0);
-        const variance = 4.0 + (distFactor * 11.0);
-        const h = baseH + Math.random() * variance;
+
+        // V157: Smoother Distance Scaling
+        const distFactor = (radius - 25) / 120;
+        const minH = 6.0 + distFactor * 6.0;  // 6m to 12m min
+        const maxH = 10.0 + distFactor * 15.0; // 10m to 25m max
+        const h = minH + Math.random() * (maxH - minH);
 
         mesh.userData.baseScaleY = h;
         mesh.scale.set(1, h, 1);
@@ -1301,17 +1310,16 @@ function buildEnvironment() {
     // V292: Horizon Mega-Blocks (Far Distance) - Truly Epic Scale
     for (let i = 0; i < 300; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const radius = 140 + Math.random() * 110; // 140m to 250m
+        const radius = 120 + Math.random() * 130; // 120m to 250m
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        if (z > -10 && z < 280 && Math.abs(x) < 40.0) continue;
+        if (z > -10 && z < 250 && Math.abs(x) < 30.0) continue;
 
         const mesh = createMegaBlock();
-        // V292: Epic heights for the horizon city (up to 70m)
-        const h = 25.0 + Math.random() * 45.0;
+        const h = 20.0 + Math.random() * 30.0; // Taller at horizon
         mesh.userData.baseScaleY = h;
-        mesh.scale.set(1.5, h, 1.5); // Slightly wider base for stability
+        mesh.scale.set(1, h, 1);
         alignToPlanet(mesh, x, z);
         worldGroup.add(mesh);
         animatedTrees.push(mesh);
@@ -1684,7 +1692,10 @@ function buildInterior(roomKey) {
         interiorGroup.add(bulb);
     }
 
-    createMusicPanel(data.playlist);
+    // V311: Per-room Audio UI Scale (Reverted to 0.75 per user request)
+    let musicScale = 1.0;
+    if (roomKey === 'annex' || roomKey === 'toilet') musicScale = 0.75;
+    createMusicPanel(data.playlist, musicScale);
 
     if (roomKey === 'living') createLivingRoomInterior();
     else if (roomKey === 'bedroom') createBedroomInterior();
@@ -2059,18 +2070,29 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.4;
         targetHemi = 0.3;
     }
+    // V-AESTHETIC-SYNC: Force Correct Atmosphere Overrides
+    else if (roomName === 'hall' || roomName === 'toilet') {
+        targetAmbient = 0.22; // V311: More light (was 0.12)
+        targetDir = 0.5;      // V311: More light (was 0.35)
+        targetRim = 0.2;
+        targetHemi = 0.1;
+    } else if (roomName === 'studio' || roomName === 'annex') {
+        targetAmbient = 0.15; // Dark
+        targetDir = 0.4;
+        targetRim = 0.0; // No rim
+        targetHemi = 0.02;
+    } else if (roomName === 'attic') {
+        targetAmbient = 0.06; // V-FIX: Increased from 0.01 to see walls
+        targetDir = 0.3;
+        targetRim = 0.0; // No rim
+        targetHemi = 0.02;
+    }
     // V-FIX 298: Balanced Moody Atmosphere
     else if (roomName === 'living') {
         targetAmbient = 0.15; // Visible but dim
         targetDir = 0.2;
         targetRim = 0.1;
         targetHemi = 0.15;
-    }
-    else if (roomName === 'attic') {
-        targetAmbient = 0.01; // Pitch black almost
-        targetDir = 0.0;
-        targetRim = 0.0; // No rim
-        targetHemi = 0.02;
     }
     else if (roomName === 'bedroom') {
         targetAmbient = 0.02; // V-FIX 261: Even Darker

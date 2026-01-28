@@ -1,4 +1,5 @@
 function createAtticInterior() {
+    // HELPER: Create Colored Box with Label
     const createColoredBox = (labelText, labelColor, boxColor, x, z) => {
         // Box
         const boxGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
@@ -9,13 +10,10 @@ function createAtticInterior() {
         });
         const box = new THREE.Mesh(boxGeo, boxMat);
         box.position.set(x, 0.75, z);
-        box.castShadow = true;
-        box.receiveShadow = true;
 
+        // Lid (Slightly larger top)
         const lid = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 1.6), boxMat);
         lid.position.y = 0.8;
-        lid.castShadow = true;
-        lid.receiveShadow = true;
         box.add(lid);
 
         // Label (Text on Front)
@@ -23,6 +21,8 @@ function createAtticInterior() {
         canvas.width = 512; canvas.height = 256;
         const ctx = canvas.getContext('2d');
 
+        // Transparent BG? Or Box Color?
+        // Let's do simple white text on transparent, decal style
         ctx.fillStyle = labelColor;
         ctx.font = 'bold 60px "Courier Prime", monospace';
         ctx.textAlign = 'center';
@@ -38,12 +38,15 @@ function createAtticInterior() {
     };
 
     // 1. LEFT BOX: RED "BEAUTY"
+    // Red: 0xd32f2f
     createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -3.0, -3.0);
 
     // 2. MIDDLE BOX: YELLOW "KNOWLEDGE"
+    // Yellow: 0xfbc02d
     createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -3.0);
 
     // 3. RIGHT BOX: DEEP-BLUE "WISDOM"
+    // Deep Blue: 0x1a237e
     createColoredBox("WISDOM", '#ffffff', 0x1a237e, 3.0, -3.0);
 
     // Dust Particles (Keep for atmosphere)
@@ -58,55 +61,15 @@ function createAtticInterior() {
     particles.userData = { type: 'atticDust' };
     interiorGroup.add(particles);
 
-    const lampGroup = new THREE.Group();
-    lampGroup.position.set(-4.5, 5.5, -4.8); // Back Left Corner, Lowered slightly
-
-    // 1. Wall Mount (Brass Base)
-    const mountGeo = new THREE.CylinderGeometry(0.2, 0.3, 0.1, 16);
-    const brassMat = new THREE.MeshStandardMaterial({ color: 0xb5a642, metalness: 0.6, roughness: 0.3 });
-    const mount = new THREE.Mesh(mountGeo, brassMat);
-    mount.rotation.x = Math.PI / 2; // Flat against wall
-    mount.position.z = -0.1;
-    lampGroup.add(mount);
-
-    // 2. Arm (Curved Brass Tube)
-    const armGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 16, Math.PI);
-    const arm = new THREE.Mesh(armGeo, brassMat);
-    arm.rotation.y = Math.PI / 2; // Arcing out from wall
-    arm.position.set(0, 0.2, 0.3);
-    lampGroup.add(arm);
-
-    // 3. Shade (Old Fashioned Glass/Fabric Cone)
-    const shadeGeo = new THREE.ConeGeometry(0.8, 0.6, 32, 1, true);
-    const shadeMat = new THREE.MeshStandardMaterial({
-        color: 0xfdfbd3, // Creamy/Yellowish
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.9,
-        roughness: 0.5
-    });
-    const shade = new THREE.Mesh(shadeGeo, shadeMat);
-    shade.position.set(0, -0.2, 0.7); // Hanging from arm end
-    lampGroup.add(shade);
-
-    // 4. Bulb (Inside)
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
-    bulb.position.y = -0.2;
-    shade.add(bulb);
-
-    // 5. The Light (Stronger)
-    const light = new THREE.PointLight(0xffaa00, 2.5, 25); // Increased Intensity (1.5 -> 2.5) and Range
-    light.castShadow = true;
-    light.position.y = -0.5;
-    shade.add(light);
-
-    interiorGroup.add(lampGroup);
+    // V-CLEAN: REMOVED Projector, Video Mesh, Toggle Knob, etc.
 }
 
 function createProjector() {
     const projGroup = new THREE.Group();
     // Material
+    // V140: Even Darker Iron (0x111111)
     const iron = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.4 });
+    // V140: Darker Chrome (0xaaaaaa -> 0x666666)
     const chrome = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 1.0, roughness: 0.2 });
 
     // Base Box
@@ -122,9 +85,19 @@ function createProjector() {
     // Lens
     const lenscyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.2), chrome);
     lenscyl.rotation.x = Math.PI / 2;
-    lenscyl.position.set(0, 0.45, -0.35); 
+    lenscyl.position.set(0, 0.45, -0.35); // Pointing Back (-Z) or Front?
     projGroup.add(lenscyl);
 
+    // -- LIGHT BEAM --
+    // Goal: Narrow at Lens, Very Wide at Wall (Video), Pointing UP at Video.
+    // Lens Global: (0, 1.25, -2.35) [Group (0,0.8,-2) + Lens (0,0.45,-0.35)]
+    // Target Global (Video Center): (0, 3.0, -4.95)
+
+    // Calculate Vector from Lens to Target relative to Projector Group
+    // Lens Local: (0, 0.45, -0.35)
+    // Target Local: Target Global - Group Pos
+    // Target Global = (0, 3.0, -4.95). Group Pos = (0, 0.8, -2).
+    // Target Local = (0, 2.2, -2.95).
 
     const lensLocal = new THREE.Vector3(0, 0.45, -0.35);
     const targetLocal = new THREE.Vector3(0, 2.2, -2.95);
@@ -176,6 +149,15 @@ function createProjector() {
     const mid = new THREE.Vector3().addVectors(lensLocal, targetLocal).multiplyScalar(0.5);
     beam.position.copy(mid);
 
+    // Orientation:
+    // Cylinder Y axis is (0, 1, 0).
+    // We want +Y (Top/Narrow) to point to Lens (from Midpoint? No, Lens is Top).
+    // Vector Top->Bottom is (0, -1, 0).
+    // Vector Lens->Target is `vec`.
+    // So we want (0, -1, 0) to align with `vec` direction.
+    // Or (0, 1, 0) to align with `lensLocal - targetLocal` (which is -vec).
+    // Let's align UP (0,1,0) to Vector(Target -> Lens).
+    // Target->Lens is -vec.
     const axis = new THREE.Vector3(0, 1, 0);
     const targetDir = vec.clone().negate().normalize();
     beam.quaternion.setFromUnitVectors(axis, targetDir);

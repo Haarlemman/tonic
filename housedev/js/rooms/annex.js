@@ -22,18 +22,19 @@ function createAnnexInterior() {
     candleGroup.add(flame);
 
     // 4. Light Source
-    const candleLight = new THREE.PointLight(0xffaa00, 1.2, 5); // Reduced range from 12 to 5 for intimacy
-    candleLight.position.set(0, 0.35, 0); // Local to group
-    candleLight.castShadow = true;
-    candleLight.userData = {
+    // V306: Darker (0.5 -> 0.3)
+    const annexLight = new THREE.PointLight(0xffaa00, 0.3, 15); // Reduced range from 12 to 5 for intimacy
+    annexLight.position.set(0, 0.35, 0); // Local to group
+    annexLight.castShadow = true;
+    annexLight.userData = {
         baseIntensity: 1.2,
         update: (t) => {
             const flicker = 1.2 + Math.sin(t * 15) * 0.15 + Math.cos(t * 33) * 0.15;
-            candleLight.intensity = flicker;
+            annexLight.intensity = flicker;
             flame.scale.setScalar(0.8 + (flicker - 1.2) * 2); // Pulse visual flame too
         }
     };
-    candleGroup.add(candleLight);
+    candleGroup.add(annexLight);
 
     // Position Group on Desk
     // Desk Top Surface: y=1.0 + 0.075 = 1.075
@@ -42,7 +43,7 @@ function createAnnexInterior() {
 
     // Helper to run updates
     const animator = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.001, 0.001), new THREE.MeshBasicMaterial({ visible: false }));
-    animator.userData = { update: (t) => { candleLight.userData.update(t); } };
+    animator.userData = { update: (t) => { annexLight.userData.update(t); } };
     interiorGroup.add(animator);
 
     // --- CONTENT ---
@@ -92,9 +93,10 @@ function createAnnexInterior() {
     blanket.position.set(-1.0, 0.41, -0.1);
     interiorGroup.add(blanket);
 
-    // Chair
+    // V311: Positioned under the desk (Not piercing bed at x=-1.0)
     const chair = createAnnexChair();
-    chair.position.set(0.2, 0, -0.6);
+    chair.position.set(0.4, 0, -1.2);
+    chair.rotation.y = Math.PI; // Facing away from wall
     interiorGroup.add(chair);
 
     // 2. Wall mounted Bookshelves
@@ -114,8 +116,9 @@ function createAnnexInterior() {
         shelfGroup.position.set(x, y, z); shelfGroup.rotation.y = rotY;
         interiorGroup.add(shelfGroup);
     }
-    createWallShelf(-1.95, 2.0, 0, Math.PI / 2);
-    createWallShelf(-1.95, 2.8, 0, Math.PI / 2);
+    // V311: Moved from -1.95 to -1.7 to prevent wall piercing
+    createWallShelf(-1.7, 2.0, 0, Math.PI / 2);
+    createWallShelf(-1.7, 2.8, 0, Math.PI / 2);
 
     // 3. Narrow Suitcase
     const suitcase = createSuitcase();

@@ -1,216 +1,94 @@
+// --- TV VIDEO SETUP ---
 let tvVideo, tvVideoTexture;
-let tvScreensaver, tvScreensaverTexture; // V-NEW: Screensaver vars
 // Need global access to lights for dimming (Cinema Mode)
 window.livingCozyLight = null;
 window.livingLibrarySpot = null;
 // masterVideoIndex is global (house.js)
 
-// V-NEW: TV Screensaver
-// V-NEW: Image Slideshow Screensaver (v222)
-function createTVScreensaver() {
-    // 1. Setup Canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 576; // Higher resolution for images
-    const ctx = canvas.getContext('2d');
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.minFilter = THREE.LinearFilter;
-
-    // 2. Logic Data
-    const slides = roomContent['living'].tvImages || [];
-    if (slides.length === 0) return null; // Fallback to video if no slides
-
-    const duration = 5000; // 5 seconds per slide
-    let currentIndex = -1; // Start at -1 to force first draw
-
-    // Preload Images
-    const images = {};
-    slides.forEach(slide => {
-        if (slide.image) {
-            const img = new Image();
-            img.src = slide.image;
-            images[slide.image] = img;
-        }
-    });
-
-    tex.userData = {
-        update: (time) => {
-            const nowMs = time * 1000;
-            const index = Math.floor(nowMs / duration) % slides.length;
-
-            if (index !== currentIndex || currentIndex === -1) {
-                currentIndex = index;
-                const slide = slides[currentIndex];
-
-                // Draw Background
-                ctx.fillStyle = slide.color || '#000000';
-                ctx.fillRect(0, 0, 1024, 576);
-
-                // Draw Image if available and loaded
-                if (slide.image && images[slide.image] && images[slide.image].complete) {
-                    // Scale to fit "contain"
-                    const img = images[slide.image];
-                    const scale = Math.min(1024 / img.width, 576 / img.height);
-                    const w = img.width * scale;
-                    const h = img.height * scale;
-                    const x = (1024 - w) / 2;
-                    const y = (576 - h) / 2;
-                    ctx.drawImage(img, x, y, w, h);
-                }
-
-                // Draw Text
-                if (slide.text) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 40px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    // Add text shadow
-                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 2;
-                    ctx.shadowOffsetY = 2;
-                    ctx.fillText(slide.text, 512, 500); // Bottom center
-                    ctx.shadowColor = 'transparent';
-                }
-
-                tex.needsUpdate = true;
-            } else {
-                // Check if image loaded late
-                const slide = slides[currentIndex];
-                if (slide.image && images[slide.image] && images[slide.image].complete && !tex.frameDrawn) {
-                    // Redraw to capture loaded image
-                    // Optimized: Set a flag or just force redraw if not sure?
-                    // We'll just rely on the next tick or force it in a simpler way if needed.
-                    // For now, let's just force redraw every frame if image is loading? No, expensive.
-                    // Let's assume preloading works fast enough or it catches next cycle.
-                }
-            }
-        }
-    };
-
-    return tex;
-}
-
 function initTVVideo() {
-    console.log("LIVING.JS v179-FIX: initTVVideo called.");
     if (tvVideo) return;
-
-    tvScreensaverTexture = createTVScreensaver();
-
     tvVideo = document.createElement('video');
+    // V-REFINE: Use Data.js source (Default to first in playlist)
     const livingData = roomContent['living'];
     if (livingData && livingData.videoPlaylist && livingData.videoPlaylist.length > 0) {
         tvVideo.src = livingData.videoPlaylist[0].src;
     } else {
-        tvVideo.src = '/assets/video/premonition.mp4';
+        tvVideo.src = '/assets/video/premonition.mp4'; // Fallback
     }
-    tvVideo.loop = true; tvVideo.muted = false; tvVideo.autoplay = false;
-    tvVideo.preload = 'auto'; tvVideo.setAttribute('playsinline', '');
+    tvVideo.loop = true;
+    tvVideo.muted = false; // User can unmute via global controls or logic?
+    // User asked for "paused at opening shot". auto-play off.
+    tvVideo.autoplay = false;
+    tvVideo.preload = 'auto';
+    tvVideo.setAttribute('playsinline', '');
+
+    // V-FIX: Expose to Universal Interface
     window.videoElement = tvVideo;
+
     tvVideoTexture = new THREE.VideoTexture(tvVideo);
     tvVideoTexture.minFilter = THREE.LinearFilter;
     tvVideoTexture.magFilter = THREE.LinearFilter;
     tvVideoTexture.colorSpace = THREE.SRGBColorSpace;
 }
 
+
 function playTVVideo(index) {
     const playlist = roomContent['living'].videoPlaylist;
     if (!playlist || !playlist[index]) return;
-    window.masterVideoIndex = index;
+
+    masterVideoIndex = index;
     const clip = playlist[index];
+
     console.log("Play TV Video:", clip.title);
+
+    // Stop Music if playing
     if (window.audioPlayer && !window.audioPlayer.paused) {
         window.audioPlayer.pause();
         window.isMusicPlaying = false;
         if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
     }
-    // Unhighlight Audio
-    window.currentTrackIndex = -1;
-    if (window.updateMusicPanelHighlight) window.updateMusicPanelHighlight();
-    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
 
+    // Update Source
     if (tvVideo) {
-        tvVideo.src = clip.src; tvVideo.load();
-        if (tvVideo.paused) nextTVContent();
-        else tvVideo.play().catch(e => console.warn(e));
+        tvVideo.src = clip.src;
+        tvVideo.load();
+
+        // Ensure Cinema Mode is ACTIVE
+        if (tvVideo.paused) {
+            // Simulate "Next Content" trigger to enter Cinema Mode
+            nextTVContent();
+        } else {
+            // Already playing, just ensure it plays new src
+            tvVideo.play().catch(e => console.warn(e));
+        }
     }
-    if (window.updateVideoUI) window.updateVideoUI();
-    if (window.livingTVMesh) {
-        window.livingTVMesh.material.map = tvVideoTexture;
-        window.livingTVMesh.material.needsUpdate = true;
-        window.livingTVMesh.userData.update = null;
-    }
+
+    // Refresh Panel UI (Highlight selection)
+    createVideoPanel(playlist);
 }
 
 function createVideoPanel(playlist) {
     // Remove existing if any
     const toRemove = [];
-    const clickablesToRemove = [];
-
-    // 1. Identify Groups and Items
     interiorGroup.traverse(child => {
-        // Remove Main Group
-        if (child.userData && child.userData.type === 'videoInterfaceGroup') {
+        if (child.userData && (child.userData.type === 'videoPanel' || child.userData.type === 'videoItem' || child.userData.type === 'tvVideoItem' || child.userData.type === 'videoHeader')) {
             toRemove.push(child);
         }
-        // Remove known items (just in case they are orphaned or we need to clear clickables)
-        if (child.userData && (child.userData.type === 'videoPanel' || child.userData.type === 'videoItem' || child.userData.type === 'tvVideoItem' || child.userData.type === 'videoHeader' || child.userData.type === 'videoControlSingle' || child.userData.type === 'universalVideoItem')) {
-            // Note: If we remove the Group, children go with it from Scene, but we MUST remove from interiorClickables
-            clickablesToRemove.push(child);
-            // If it's a legacy item (direct child), add to toRemove
-            if (child.parent === interiorGroup) toRemove.push(child);
-        }
     });
-
-    // 2. Clear Clickables
-    clickablesToRemove.forEach(child => {
+    toRemove.forEach(child => {
+        interiorGroup.remove(child);
         const idx = interiorClickables.indexOf(child);
         if (idx > -1) interiorClickables.splice(idx, 1);
-    });
-
-    // 3. Remove Objects from Scene
-    toRemove.forEach(child => {
-        if (child.parent) child.parent.remove(child);
     });
 
     if (!playlist || playlist.length === 0) return;
 
     if (window.createUniversalVideoInterface) {
-        // Position from Data or Fallback
-        const posData = roomContent['living'].videoInterfacePos || { x: 3.0, y: 3.2, z: -4.9 };
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist);
+        // V-FIX: Universal Video UI (Rectangular Button)
+        // Positioned at (3.0, 3.2, -4.9) to match previous location
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(3.0, 3.2, -4.9), playlist);
     }
 }
-
-window.stopLivingVideo = () => {
-    restoreCinemaLights();
-    if (tvVideo) {
-        tvVideo.pause(); tvVideo.muted = true;
-        console.log("Living Room Video Stopped & Muted (Cleanup)");
-        /*
-        const applyScreensaver = (mesh) => {
-             if (tvScreensaverTexture) {
-                 mesh.material.map = tvScreensaverTexture;
-                 mesh.userData.update = tvScreensaverTexture.userData.update; 
-             }
-        };
-        if (window.livingTVMesh) applyScreensaver(window.livingTVMesh);
-        else if (typeof tvMesh !== 'undefined') applyScreensaver(tvMesh);
-        */
-        // Revert to paused video texture (Premonition frame)
-        if (window.livingTVMesh) {
-            window.livingTVMesh.material.map = tvVideoTexture;
-            window.livingTVMesh.userData.update = null;
-        }
-        else if (typeof tvMesh !== 'undefined') {
-            tvMesh.material.map = tvVideoTexture;
-            tvMesh.userData.update = null;
-        }
-    }
-    window.masterVideoIndex = -1;
-    if (window.updateVideoUI) window.updateVideoUI();
-};
 
 function nextTVContent() {
     // V-REFINE: Click toggles Play/Pause
@@ -223,44 +101,38 @@ function nextTVContent() {
                 window.isMusicPlaying = false;
                 if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); // Red = Off
             }
-            // V-FIX: Ensure Button Is Red even if music was already off
-            if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
 
-
-            console.log("Cinema Mode: Capturing & Dimming Lights (LOCAL ONLY V-FIX)");
+            console.log("Cinema Mode: Capturing & Dimming Lights");
 
             // 1. CAPTURE CURRENT STATE (Dynamic "Reverse" capability)
-            // V-FIX: Only capture if we haven't already (prevents capturing dimmed state when switching videos)
-            if (!window.preCinemaState) {
-                window.preCinemaState = {
-                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.15,
-                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.2,
-                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 1.2,
-                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 1.2,
-                };
-            }
+            window.preCinemaState = {
+                cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.15,
+                library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.2,
+                spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 1.2,
+                spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 1.2,
+                ambient: window.ambientLight ? window.ambientLight.intensity : 0.6,
+                dir: window.dirLight ? window.dirLight.intensity : 1.2,
+                rim: window.rimLight ? window.rimLight.intensity : 0.4
+            };
 
             const dimTime = 1000;
-            const dimLevel = 0.0; // PITCH BLACK (Local)
+            const dimLevel = 0.0; // PITCH BLACK
 
             try {
-                // Dim Room Lights (LOCAL ONLY)
+                // Dim Room Lights
                 if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
                 if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
                 if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
                 if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
 
-                // V294: Bloom TV Glow behind set
-                if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 3.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // V-FIX: Re-enable Ambient Dimming (Address "Too Bright" feedback)
-                // But Keep DirLight (Moon) ACTIVE for Outside visibility
+                // Dim Global Lights
                 if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
+                if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.1 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start(); // Low moonlight
+                if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
+                // Helper for duplicates if any
+                if (window.rimLight2) new TWEEN.Tween(window.rimLight2).to({ intensity: 0.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
 
                 // Robot Glow - Keep it BRIGHT! (Do NOT dim)
-                if (window.metropolisRobot) {
-                    // Ensure robot is visible?
-                }
                 if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
 
             } catch (e) {
@@ -277,20 +149,20 @@ function nextTVContent() {
         } else {
             // --- EXIT CINEMA MODE (PAUSE) ---
             restoreCinemaLights();
-            if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 500).easing(TWEEN.Easing.Quadratic.Out).start();
             tvVideo.pause();
         }
     }
 }
 window.nextTVContent = nextTVContent;
-window.playTVVideo = playTVVideo;
 
 function restoreCinemaLights() {
-    console.log("Cinema Mode: Restoring Lights (LOCAL ONLY)");
+    console.log("Cinema Mode: Restoring Lights (Reversing Action)");
 
-    // Default Fallbacks if capture failed (V298: Moody Normal State)
+    // Default Fallbacks if capture failed
     const restore = window.preCinemaState || {
-        cozy: 0.2, library: 0.2, spotL: 1.2, spotR: 1.2, ambient: 0.15,
+        cozy: 0.15, library: 0.2, spotL: 1.2, spotR: 1.2,
+        // V-TUNE: Balanced Dark Settings
+        ambient: 0.15, dir: 0.4, rim: 0.2
     };
 
     try {
@@ -301,11 +173,11 @@ function restoreCinemaLights() {
         if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: restore.spotL }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
         if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: restore.spotR }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
 
-        // Restore Ambient (V298: Moody Normal Default)
-        if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: restore.ambient || 0.15 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // V294: Restore TV Glow
-        if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        // Restore Global Lights
+        if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: restore.ambient }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: restore.dir }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: restore.rim }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (window.rimLight2) new TWEEN.Tween(window.rimLight2).to({ intensity: 0.1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
 
         // Restore robot glow
         if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
@@ -313,9 +185,6 @@ function restoreCinemaLights() {
     } catch (e) {
         if (window.livingCozyLight) window.livingCozyLight.intensity = restore.cozy;
     }
-
-    // V-FIX: Allow re-capture next time
-    window.preCinemaState = null;
 }
 // Export for global use
 window.restoreCinemaLights = restoreCinemaLights;
@@ -325,20 +194,7 @@ window.stopLivingVideo = () => {
     if (tvVideo) {
         tvVideo.pause();
         tvVideo.muted = true;
-        tvVideo.pause();
-        tvVideo.muted = true;
         console.log("Living Room Video Stopped & Muted (Cleanup)");
-
-        // V-NEW: Revert to Screensaver
-        // Need to find tvMesh. It is local to createLivingRoomInterior, but global 'tvMesh' variable might be used?
-        // Wait, 'tvMesh' is declared inside createLivingRoomInterior without 'let/const' in my view? 
-        // Line 639: 'tvMesh = ...' (Global assignment check). 
-        // If it is global, we can use it. If not, we should have assigned it to window.
-        if (window.livingTVMesh) {
-            if (tvScreensaverTexture) window.livingTVMesh.material.map = tvScreensaverTexture;
-        } else if (typeof tvMesh !== 'undefined') {
-            if (tvScreensaverTexture) tvMesh.material.map = tvScreensaverTexture;
-        }
     }
 };
 
@@ -369,101 +225,45 @@ function createLivingRoomInterior() {
     interiorGroup.add(wallsGroup);
 
     // --- LIGHTING ---
-    // V298: Balanced Local Light Intensities
-    // V303: Darker Interior (0.25 -> 0.15)
-    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.15, 15);
+    // V138: Reduced Local Light Intensities
+    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.1, 15); // 0.15 -> 0.1
     window.livingCozyLight.position.set(-3.0, 4.0, -2.0);
     window.livingCozyLight.castShadow = true;
     window.livingCozyLight.shadow.bias = -0.0001;
-    window.livingCozyLight.shadow.radius = 4; // V204: Blurry Shadows
     interiorGroup.add(window.livingCozyLight);
 
-    // V303: Darker Library Spot (0.2 -> 0.15)
-    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.15);
+    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.1); // 0.2 -> 0.1
     window.livingLibrarySpot.position.set(-2, 7.5, 0);
     window.livingLibrarySpot.target.position.set(-5, 3, 0);
     window.livingLibrarySpot.castShadow = true;
-    window.livingLibrarySpot.shadow.radius = 4; // V204: Blurry Shadows
     window.livingLibrarySpot.angle = Math.PI / 3;
     window.livingLibrarySpot.penumbra = 0.5;
     interiorGroup.add(window.livingLibrarySpot);
     interiorGroup.add(window.livingLibrarySpot.target);
 
-    // V298: Moody Shelf lighting
-    // V303: Darker Spots (0.2 -> 0.15)
-    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.15);
+    // V171: Soften Spotlights (pi/4 -> pi/2.2) & Increase Intensity (0.6 -> 0.8) -> V-NEW: 0.5
+    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.5);
     bookcaseSpotL.position.set(-2, 6, -3.5);
     bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5);
     bookcaseSpotL.angle = Math.PI / 2.2;
     bookcaseSpotL.penumbra = 1.0;
     bookcaseSpotL.distance = 15;
-    bookcaseSpotL.castShadow = true;
-    bookcaseSpotL.shadow.radius = 4; // V204
     interiorGroup.add(bookcaseSpotL);
     interiorGroup.add(bookcaseSpotL.target);
     window.bookcaseSpotL = bookcaseSpotL;
 
-    // V303: Darker Spots (0.2 -> 0.15)
-    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.15);
+    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.5);
     bookcaseSpotR.position.set(-2, 6, 3.5);
     bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5);
     bookcaseSpotR.angle = Math.PI / 2.2;
     bookcaseSpotR.penumbra = 1.0;
     bookcaseSpotR.distance = 15;
-    bookcaseSpotR.castShadow = true;
-    bookcaseSpotR.shadow.radius = 4; // V204
     interiorGroup.add(bookcaseSpotR);
     interiorGroup.add(bookcaseSpotR.target);
     window.bookcaseSpotR = bookcaseSpotR;
 
-    // V201: Procedural Wood Texture Helper
-    const createWoodMaterial = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-
-        // Base Color (Light Brown / Oak)
-        ctx.fillStyle = '#d2b48c'; // Tan/Burlywood
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Wood Grain Pattern
-        ctx.fillStyle = 'rgba(101, 67, 33, 0.1)'; // Dark Brown, low opacity
-        for (let i = 0; i < 200; i++) {
-            const x = Math.random() * 512;
-            const y = Math.random() * 512;
-            const w = 512; // Long horizontal streaks? vertical?
-            // Let's do vertical grain for furniture usually, but texture mapping varies.
-            // Irregular wavy lines.
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.bezierCurveTo(x + Math.random() * 20 - 10, 170, x + Math.random() * 20 - 10, 340, x + Math.random() * 20 - 10, 512);
-            ctx.lineWidth = 1 + Math.random() * 2;
-            ctx.strokeStyle = 'rgba(139, 69, 19, 0.15)'; // SaddleBrown
-            ctx.stroke();
-        }
-
-        // Noise
-        for (let i = 0; i < 20000; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)';
-            ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
-        }
-
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.colorSpace = THREE.SRGBColorSpace;
-
-        const mat = new THREE.MeshStandardMaterial({
-            map: tex,
-            color: 0xddccaa, // tint
-            roughness: 0.8,
-            metalness: 0.1
-        });
-        return mat;
-    };
-
-    const woodMat = createWoodMaterial();
-
     // --- BOOKCASES ---
-    // V202: Reverted to Dark Shelf (User Request: "Only coffeetable and TV cupboard wood")
+    // V138: Darker Shelf (0x2b1d14 -> 0x150e0a)
     const shelfMat = new THREE.MeshStandardMaterial({ color: 0x150e0a, roughness: 1.0 });
     const bookColors = [0x991b1b, 0x1e40af, 0x166534, 0x854d0e, 0x3730a3, 0xfacc15];
 
@@ -482,97 +282,120 @@ function createLivingRoomInterior() {
 
     // V147: Menorah Artifact (User Request)
     // Traditional 7-branched Menorah. Middle candle lit.
-    // V224: Floating 7 Lights (User Request)
-    // V225: Floating Orb Artifact (User Request)
-    // V235: Ruin Artifact (User Request: Dark ruin, broad base, container for orb)
-    // V242: Refined Ruin (Volcano-like)
-    // V243: Refined Ruin (Yellow Orb, Higher, Clickable)
-    function createRuinArtifact() {
+    function createMenorahArtifact() {
         const group = new THREE.Group();
-
-        // 1. The Volcano Base
-        const baseGeo = new THREE.CylinderGeometry(0.15, 0.4, 0.4, 8);
-        const baseMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 1.0,
-            flatShading: true
+        // Gold Material
+        const goldMat = new THREE.MeshStandardMaterial({
+            color: 0xffd700,
+            metalness: 1.0,
+            roughness: 0.2, // Shiny
         });
-        const base = new THREE.Mesh(baseGeo, baseMat);
-        base.position.y = 0.2;
-        base.castShadow = true;
+        const candleMat = new THREE.MeshStandardMaterial({ color: 0xffffee, roughness: 0.9 });
+        const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+
+        // 1. BASE
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 0.1, 8), goldMat);
+        base.position.y = 0.05;
         group.add(base);
 
-        // 2. The Orb (Yellow & Higher)
-        const orbGeo = new THREE.SphereGeometry(0.12, 16, 16); // Slightly bigger
-        const orbMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 }); // Yellow/Gold
-        const orb = new THREE.Mesh(orbGeo, orbMat);
-        // V-REFINE: Higher placement (0.35 -> 0.55) to float/sit prominently
-        orb.position.y = 0.55;
-        group.add(orb);
+        // 2. CENTRAL STEM
+        // V148: Shorter Stem (1.2 -> 1.0)
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 8), goldMat);
+        stem.position.set(0, 0.6, 0);
+        group.add(stem);
 
-        // 3. Pulsating Light (Yellow)
-        const light = new THREE.PointLight(0xffaa00, 2.0, 7);
-        light.position.copy(orb.position);
+        // 3. ARMS (3 U-Shapes)
+        // We use Torus segments cut in half (arc = Math.PI)
+        // Rotated to stand up.
+        // Radii: 0.15, 0.30, 0.45
+        for (let i = 1; i <= 3; i++) {
+            const radius = 0.15 * i;
+            // TorusGeometry(radius, tube, radialSegments, tubularSegments, arc)
+            const armGeo = new THREE.TorusGeometry(radius, 0.03, 8, 16, Math.PI);
+            const arm = new THREE.Mesh(armGeo, goldMat);
+            arm.position.y = 0.8;
+            arm.rotation.z = Math.PI; // Invert U to be U shape (default Torus arc is top half?)
+            group.add(arm);
+
+            // 4. CANDLES (Left and Right for this Arm)
+            // Ends of Torus are at x = +/- radius, y = center.
+            // We need cups and candles there.
+            const cupGeo = new THREE.CylinderGeometry(0.05, 0.02, 0.1, 8);
+
+            // Left Side
+            const cupL = new THREE.Mesh(cupGeo, goldMat);
+            cupL.position.set(-radius, 0.8, 0);
+            group.add(cupL);
+            const candL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), candleMat);
+            candL.position.set(-radius, 0.95, 0);
+            group.add(candL);
+
+            // Right Side
+            const cupR = new THREE.Mesh(cupGeo, goldMat);
+            cupR.position.set(radius, 0.8, 0);
+            group.add(cupR);
+            const candR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), candleMat);
+            candR.position.set(radius, 0.95, 0);
+            group.add(candR);
+        }
+
+        // 5. CENTRAL CANDLE
+        const centerCup = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.02, 0.1, 8), goldMat);
+        // V148: Lower Center Cup (1.2 -> 1.05) to match shorter stem (base+1.0 approx) or just above arms (0.8+r?)
+        // Top of stem is at y=0.05 + 1.0 = 1.05? Base is 0.1 high, y=0.1.
+        // Stem Center Y=0.6. Height 1.0. Range 0.1 -> 1.1.
+        // So Cup at 1.1.
+        centerCup.position.set(0, 1.1, 0); // Top of Stem
+        group.add(centerCup);
+
+        const centerCandle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.25), candleMat);
+        centerCandle.position.set(0, 1.25, 0);
+        group.add(centerCandle);
+
+        // 6. FLAME (Middle Only)
+        const flame = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), flameMat);
+        flame.position.set(0, 1.45, 0);
+        group.add(flame);
+
+        const light = new THREE.PointLight(0xffaa00, 1.0, 3);
+        light.position.set(0, 1.5, 0);
+        // V147: Gentle flicker logic will be added to update
         group.add(light);
 
-        // 4. BIG HITBOX (Covers Base + Orb + Surroundings)
-        // Make it easy to click!
-        const hitBox = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.45, 0.45, 0.9, 8), // Big cylinder
-            new THREE.MeshBasicMaterial({ visible: false })
-        );
-        hitBox.position.y = 0.45; // Center it
+
+        // HIT BOX (Inclusive)
+        const hitBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.5), new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true }));
+        hitBox.position.y = 0.8;
         group.add(hitBox);
 
-        // Expose hitBox as the target
-        group.userData.hitTarget = hitBox;
-
+        // Animation
         group.userData = {
             update: (t) => {
-                const pulse = 1.0 + Math.sin(t * 2) * 0.3;
-                light.intensity = 2.0 + pulse;
-                orb.scale.setScalar(1.0 + Math.sin(t * 4) * 0.05);
+                // Gentle Flame Flicker
+                const flicker = 0.8 + Math.sin(t * 10) * 0.1 + Math.cos(t * 23) * 0.1;
+                light.intensity = flicker;
+                flame.scale.setScalar(0.8 + flicker * 0.2);
+
+                // V147: Remove Rotation? User didn't ask for spin, just "pointing".
+                // Menorah should be static usually, maybe slight wobble if "magical".
+                // Let's remove the wobble to be safe (Traditional = Stable).
             }
         };
 
+        // Scale/Rotate
+        group.scale.setScalar(0.7);
+        // Default Rotation? Bookcase is facing +Z (Right case).
+        // Artifact is usually placed on shelf.
+        // We probably want the Menorah Flat against the back? Or Perpendicular?
+        // Usually flat (XY plane visible).
+        // If shelf is along Z axis (Side walls of bookcase are Z), backing is X.
+        // We want it facing into the room (-X direction).
+        // Geometry is built in XY plane.
+        // So rotate Y = -Math.PI / 2 to face -X?
+        group.rotation.y = -Math.PI / 2;
+
+        window.livingArtifact = group;
         return group;
-    }
-
-    // V240: Annex Candle Helper
-    function createVoidCandle() {
-        const group = new THREE.Group();
-        // Wax
-        const wax = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.05, 0.2, 16),
-            new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.2 })
-        );
-        wax.position.y = 0.1;
-        group.add(wax);
-        // Wick/Flame
-        const flame = new THREE.Mesh(
-            new THREE.SphereGeometry(0.04, 8, 8),
-            new THREE.MeshBasicMaterial({ color: 0xffaa00 })
-        );
-        flame.position.y = 0.22;
-        group.add(flame);
-        // Light
-        const light = new THREE.PointLight(0xffaa00, 1.5, 4);
-        light.position.y = 0.25;
-        group.add(light);
-
-        // Flame Animation
-        group.userData.update = (t) => {
-            flame.scale.setScalar(1.0 + Math.sin(t * 10) * 0.2);
-            light.intensity = 1.5 + Math.sin(t * 8) * 0.3;
-        };
-
-        return group;
-    }
-
-    // V147: Menorah Artifact (User Request)
-    // Traditional 7-branched Menorah. Middle candle lit.
-    function createMenorahArtifact() {
-        return createRuinArtifact();
     }
 
     const createBookcase = (posZ) => {
@@ -611,26 +434,26 @@ function createLivingRoomInterior() {
 
         let pivotOffsetZ = 0;
         if (posZ < 0) {
-            pivotOffsetZ = 1.2;
-            // V-FIX: Explicitly assign Global Ref for Secret Door
-            window.secretDoorGroup = bookcaseGroup;
-            bookcaseGroup.userData.isSecretDoor = true; // Marker
+            pivotOffsetZ = 1.2; // Move children Positive (Left in Room Frame) so Pivot is Negative (Right in Room Frame)?
+            // Wait.
+            // Desired Pivot World Z: `posZ - 1.2` (-3.5 - 1.2 = -4.7).
+            // Current Group Z: `posZ` (-3.5).
+            // Change Group Z to `-4.7`.
+            // To keep Visuals at same place, move children `+1.2` (relative).
+            // Visual Z = Group Z + Child Z.
+            // -3.5 = -4.7 + 1.2. Correct.
         }
 
         const backing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5.2, 2.4), shelfMat);
         backing.position.x = -0.4;
         backing.position.z = pivotOffsetZ; // Offset
-        backing.castShadow = true; backing.receiveShadow = true;
         bookcaseGroup.add(backing);
 
         const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat);
         sideL.position.z = -1.2 + pivotOffsetZ;
-        sideL.castShadow = true; sideL.receiveShadow = true;
         bookcaseGroup.add(sideL);
-
         const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat);
         sideR.position.z = 1.2 + pivotOffsetZ;
-        sideR.castShadow = true; sideR.receiveShadow = true;
         bookcaseGroup.add(sideR);
 
         for (let row = 0; row < 5; row++) {
@@ -638,108 +461,81 @@ function createLivingRoomInterior() {
             const plank = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 2.4), shelfMat);
             plank.position.y = shelfY - 2.5;
             plank.position.z = pivotOffsetZ;
-            plank.castShadow = true; plank.receiveShadow = true;
             bookcaseGroup.add(plank);
 
             // V-NEW: Black Portal behind Right Bookcase
             if (row === 0 && posZ < 0) {
-                // 1. The Visual Portal (Black Void)
                 const portalMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
                 const portal = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 5.2), portalMat);
+                // V148: Make Portal Clickable to Enter Annex
                 portal.position.set(-4.95, 2.6, posZ);
                 portal.rotation.y = Math.PI / 2;
-                portal.userData = { name: 'void', type: 'decoration' };
+                portal.userData = { name: 'annex', type: 'room' };
+                // Add to clickables? Wait, createLivingRoomInterior adds interiorGroup children to what?
+                // No, we must push to `interiorClickables` manually if it's special.
+                // Standard 'type: room' logic in house.js traverses `worldGroup`.
+                // BUT this portal is in `interiorGroup`.
+                // house.js `performClick` checks `interiorClickables`.
+                // Does `performClick` handle `userData.name` (switch room) for interior objects?
+                // Let's check house.js...
+                // It has specific handlers for tv, phone...
+                // line 1439: checks `interiorClickables`.
+                // line 1445: Target found.
+                // Checks TV, Phone, etc.
+                // Does it handle Generic Room Switch?
+                // Looking at house.js again...
+                // It has specific handlers for tv, phone...
+                // line 1991: `else if (target.userData.onClick)`.
+                // It DOES NOT seem to have a generic "enter room" handler for INTERIOR objects.
+                // `startInteractiveIntro` checks `worldGroup`.
+                // So I need a custom onClick or add generic support.
+                // I will add custom onClick to Portal.
+                portal.userData.onClick = () => {
+                    console.log("Portal Clicked -> Enter Annex");
+                    enterRoom('annex');
+                };
+
+                interiorClickables.push(portal); // IMPORTANT!
                 interiorGroup.add(portal);
-
-                // 2. Interaction: Make the WHOLE VOID clickable (User Request)
-                portal.userData = {
-                    type: 'enter_annex', // Tag for debugging
-                    onClick: () => {
-                        console.log("Black Void Clicked -> Enter Annex");
-                        enterRoom('annex');
-                    }
-                };
-                interiorClickables.push(portal);
-
-                // 3. Backup Hitbox (Invisible, In Front)
-                // Catches clicks if the wall obscures the edges
-                const portalHitBox = new THREE.Mesh(
-                    new THREE.PlaneGeometry(2.0, 5.0),
-                    new THREE.MeshBasicMaterial({ visible: false })
-                );
-                portalHitBox.position.z = 0.1; // Slightly in front of black plane
-                portalHitBox.userData = { onClick: portal.userData.onClick };
-                portal.add(portalHitBox);
-                interiorClickables.push(portalHitBox);
-
-
-                // 4. Candle Decoration (Visual Only now)
-                const candle = createVoidCandle();
-                candle.position.set(-0.3, -1.0, 0.2);
-                candle.scale.setScalar(1.5);
-                portal.add(candle);
-
-                // Visibility Logic
-                portal.userData.update = (t) => {
-                    if (candle.userData.update) candle.userData.update(t);
-
-                    // Default Visible
-                    let shouldBeVisible = true;
-                    const door = window.secretDoorGroup;
-                    if (door) {
-                        // If door is strictly closed, hide candle (so it doesn't clip)
-                        const isClosed = !door.userData.isOpen && (door.rotation.y < 0.1);
-                        if (isClosed) shouldBeVisible = false;
-                    }
-                    candle.visible = shouldBeVisible;
-                };
             }
 
             // V-NEW: Artifact on Top Shelf of Right Bookcase (posZ < 0)
             if (row === 4 && posZ < 0) {
-                // V235: Ruin Artifact
-                const artifact = createRuinArtifact();
-                // Sith on shelf. Base height ~0.4. Scaled 1.5 -> 0.6.
-                // Origin y=0.2 -> 0.3. Bottom at 0.
-                // Shelf Y is `shelfY`. Plank top `shelfY - 2.45`.
-                artifact.scale.setScalar(1.5);
-                artifact.position.set(0, shelfY - 2.45, 0 + pivotOffsetZ);
-
-                // CLICK TRIGGER - Attach to hitTarget (The Base Mesh)
-                const hitTarget = artifact.userData.hitTarget || artifact; // Fallback
-
-                // Define the Handler
-                const toggleDoor = () => {
-                    console.log("Ruin Clicked! Toggle Secret Door...");
-                    try {
-                        const squeak = new Audio('../assets/audio/squeak.mp3');
-                        squeak.volume = 1.0;
-                        squeak.play().catch(e => console.error("Squeak Play Fail:", e));
-                    } catch (err) {
-                        console.error("Audio Init Fail:", err);
-                    }
-
-                    const target = window.secretDoorGroup;
-                    if (!target) return;
-
-                    if (!target.userData.isOpen) {
-                        new TWEEN.Tween(target.rotation).to({ y: Math.PI / 2.5 }, 4000).easing(TWEEN.Easing.Quadratic.InOut).start();
-                        target.userData.isOpen = true;
-                    } else {
-                        new TWEEN.Tween(target.rotation).to({ y: 0 }, 2000).easing(TWEEN.Easing.Quadratic.InOut).start();
-                        target.userData.isOpen = false;
-                    }
-                };
-
-                // Attach handler to the mesh userData
-                hitTarget.userData = {
+                // V147: Create Menorah instead of Ray Artifact
+                const artifact = createMenorahArtifact(); // Was createIntenseRayArtifact
+                // V-FIX: Lower Y position (-0.25 adjustment)
+                artifact.position.set(0, shelfY - 2.4, 0 + pivotOffsetZ); // Sit on shelf + Offset
+                // CLICK TRIGGER
+                artifact.userData = {
                     type: 'open_secret',
-                    onClick: toggleDoor
+                    onClick: () => {
+                        console.log("Artifact Clicked!");
+                        // V-FIX: Robust Audio Play (Annex/Secret Door)
+                        try {
+                            // V-FIX: Path relative to /house/index.html is ../assets
+                            const squeak = new Audio('../assets/audio/squeak.mp3');
+                            squeak.volume = 1.0;
+                            squeak.play().catch(e => console.error("Squeak Play Fail:", e));
+                        } catch (err) {
+                            console.error("Audio Init Fail:", err);
+                        }
+
+                        // Toggle Secret Door
+                        const target = window.secretDoorGroup;
+                        if (!target) return;
+
+                        if (!target.userData.isOpen) {
+                            // To open out (into room +X) from Right Pivot (-Z), we need POSITIVE Y Rotation (CCW).
+                            new TWEEN.Tween(target.rotation).to({ y: Math.PI / 2.5 }, 2000).easing(TWEEN.Easing.Quadratic.InOut).start();
+                            // No position tween needed if pivot logic is correct!
+                            target.userData.isOpen = true;
+                        } else {
+                            new TWEEN.Tween(target.rotation).to({ y: 0 }, 2000).easing(TWEEN.Easing.Quadratic.InOut).start();
+                            target.userData.isOpen = false;
+                        }
+                    }
                 };
-
-                // IMPORTANT: Push the Mesh (hitTarget) to interiorClickables
-                interiorClickables.push(hitTarget);
-
+                interiorClickables.push(artifact);
                 bookcaseGroup.add(artifact);
             }
 
@@ -794,9 +590,8 @@ function createLivingRoomInterior() {
 
     createBookcase(-3.5); createBookcase(3.5);
 
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 1), woodMat); // V202: Wood Texture
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 1), new THREE.MeshStandardMaterial({ color: 0x4a4a4a }));
     stand.position.set(0, 0.75, -4);
-    stand.castShadow = true; stand.receiveShadow = true;
     interiorGroup.add(stand);
 
     const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 0.2), new THREE.MeshStandardMaterial({ color: 0x111111 }));
@@ -807,11 +602,9 @@ function createLivingRoomInterior() {
 
     // -- MILD GLOW BEHIND TV --
     // V-REFINE: Soft Blue Glow (Texture based, not rectangle)
-    // V294: Atmospheric TV Glow (Pulsates in Cinema Mode)
-    const tvGlow = new THREE.PointLight(0x88ccff, 1.5, 8);
+    const tvGlow = new THREE.PointLight(0x88ccff, 1.0, 8);
     tvGlow.position.set(0, 2.6, -4.8);
     interiorGroup.add(tvGlow);
-    window.livingTVGlow = tvGlow;
 
     // Create Soft Gradient Texture for the backing
     const glowCanvas = document.createElement('canvas');
@@ -843,39 +636,15 @@ function createLivingRoomInterior() {
     }
 
     const screenGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    // V-FIX: Start with Screensaver (Slideshow) if available
-    tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tvScreensaverTexture || tvVideoTexture }));
+    tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tvVideoTexture }));
     tvMesh.position.set(0, 2.6, -4.39);
-
-    interiorGroup.add(tvMesh); // Ensure added using Variable reference (implied context)
     tvMesh.userData = { type: 'tv', action: 'toggleVideo' };
-
-    // V294: TV Gloss Overlay (Glass Reflection)
-    const glassGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    const glassMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        transparent: true,
-        opacity: 0.1,
-        metalness: 0.9,
-        roughness: 0.1,
-        depthWrite: false
-    });
-    const tvGlass = new THREE.Mesh(glassGeo, glassMat);
-    tvGlass.position.set(0, 2.6, -4.37); // Just in front of screen
-    interiorGroup.add(tvGlass);
-
-    // Attach Screensaver Update if active
-    if (tvScreensaverTexture && tvScreensaverTexture.userData.update) {
-        tvMesh.userData.update = tvScreensaverTexture.userData.update;
-    }
-
     interiorGroup.add(tvMesh);
     interiorClickables.push(tvMesh);
-    window.livingTVMesh = tvMesh; // V-FIX: Expose for screensaver revert
 
     const table = new THREE.Mesh(
         new THREE.BoxGeometry(2.25, 0.6, 2.25),
-        woodMat // V201: Use Shared Wood Material
+        new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.9 })
     );
     table.position.set(0, 0.3, -1.0);
     table.castShadow = true; table.receiveShadow = true;
@@ -944,9 +713,8 @@ function createLivingRoomInterior() {
     interiorGroup.add(cardMesh); // Updated: Removed click logic/hologram
 
     // V171: Dark Red Rug (0x220505 -> 0x6b0505)
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 }));
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(4.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 }));
     rug.rotation.x = -Math.PI / 2; rug.position.y = 0.02;
-    rug.receiveShadow = true; // V204: Receive Shadows
     interiorGroup.add(rug);
 
     // V138: Darker Couch (0x5d4037 -> 0x2e201b)

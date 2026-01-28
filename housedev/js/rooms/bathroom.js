@@ -400,7 +400,12 @@ function createBathroomInterior() {
     if (window.createUniversalVideoInterface && roomContent.bathroom.videoPlaylist) {
         const posData = roomContent['bathroom'].videoInterfacePos || { x: -2.8, y: 2.8, z: -4.5 };
         window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), roomContent.bathroom.videoPlaylist, {
+            scale: 0.75, // V306: Scale 0.75x
             onPlay: (index) => {
+                // V115: Darken room for video
+                if (window.applyRoomLighting) {
+                    window.applyRoomLighting('basement'); // Borrow dark settings
+                }
                 console.log("Bathroom Video Play:", index);
                 window.masterVideoIndex = index;
                 const clip = roomContent.bathroom.videoPlaylist[index];

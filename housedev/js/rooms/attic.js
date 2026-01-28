@@ -38,13 +38,16 @@ function createAtticInterior() {
     };
 
     // 1. LEFT BOX: RED "BEAUTY"
-    createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -3.0, -3.0);
+    // V306: Moved from -3.0 to -1.8 (Inside walls)
+    createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -1.8, -1.8);
 
     // 2. MIDDLE BOX: YELLOW "KNOWLEDGE"
-    createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -3.0);
+    // V306: Moved from (0, -3.0) to (0, -1.8)
+    createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -1.8);
 
     // 3. RIGHT BOX: DEEP-BLUE "WISDOM"
-    createColoredBox("WISDOM", '#ffffff', 0x1a237e, 3.0, -3.0);
+    // V306: Moved from 3.0 to 1.8 (Inside walls) and Z -1.8
+    createColoredBox("WISDOM", '#ffffff', 0x1a237e, 1.8, -1.8);
 
     // Dust Particles (Keep for atmosphere)
     const particlesGeo = new THREE.BufferGeometry();
@@ -59,7 +62,10 @@ function createAtticInterior() {
     interiorGroup.add(particles);
 
     const lampGroup = new THREE.Group();
-    lampGroup.position.set(-4.5, 5.5, -4.8); // Back Left Corner, Lowered slightly
+    // V310: Restore to Wall-Mounted position.
+    // Wall is at z = -5.0. Move to -4.8. 
+    // Was floating at (-1.5, 2.5, -2.0)
+    lampGroup.position.set(-4.0, 5.0, -4.8);
 
     // 1. Wall Mount (Brass Base)
     const mountGeo = new THREE.CylinderGeometry(0.2, 0.3, 0.1, 16);
@@ -122,7 +128,7 @@ function createProjector() {
     // Lens
     const lenscyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.2), chrome);
     lenscyl.rotation.x = Math.PI / 2;
-    lenscyl.position.set(0, 0.45, -0.35); 
+    lenscyl.position.set(0, 0.45, -0.35);
     projGroup.add(lenscyl);
 
 

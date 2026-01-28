@@ -179,7 +179,10 @@ function createVideoPanel(playlist) {
     if (window.createUniversalVideoInterface) {
         // Position from Data or Fallback
         const posData = roomContent['living'].videoInterfacePos || { x: 3.0, y: 3.2, z: -4.9 };
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist);
+        // V306: Scale 0.5x
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist, {
+            scale: 0.5
+        });
     }
 }
 
@@ -233,10 +236,10 @@ function nextTVContent() {
             // V-FIX: Only capture if we haven't already (prevents capturing dimmed state when switching videos)
             if (!window.preCinemaState) {
                 window.preCinemaState = {
-                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.15,
-                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.2,
-                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 1.2,
-                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 1.2,
+                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.25, // Updated default
+                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.25,
+                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 0.25,
+                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 0.25,
                 };
             }
 
@@ -290,7 +293,7 @@ function restoreCinemaLights() {
 
     // Default Fallbacks if capture failed (V298: Moody Normal State)
     const restore = window.preCinemaState || {
-        cozy: 0.2, library: 0.2, spotL: 1.2, spotR: 1.2, ambient: 0.15,
+        cozy: 0.25, library: 0.25, spotL: 0.25, spotR: 0.25, ambient: 0.15,
     };
 
     try {
@@ -370,22 +373,20 @@ function createLivingRoomInterior() {
 
     // --- LIGHTING ---
     // V298: Balanced Local Light Intensities
-    // V303: Darker Interior (0.25 -> 0.15)
-    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.15, 15);
-    window.livingCozyLight.position.set(-3.0, 4.0, -2.0);
+    // V303: Darker Interior (0.25 -> 0.15) -> V-FIX: Brighten (0.25)
+    // 5. Lighting (Brighter V306: 0.25)
+    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.25, 15);
+    window.livingCozyLight.position.set(0, 5, 0);
     window.livingCozyLight.castShadow = true;
-    window.livingCozyLight.shadow.bias = -0.0001;
-    window.livingCozyLight.shadow.radius = 4; // V204: Blurry Shadows
+    // window.livingCozyLight.shadow.bias = -0.0001; // Reduce artifacts
     interiorGroup.add(window.livingCozyLight);
 
-    // V303: Darker Library Spot (0.2 -> 0.15)
-    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.15);
-    window.livingLibrarySpot.position.set(-2, 7.5, 0);
-    window.livingLibrarySpot.target.position.set(-5, 3, 0);
-    window.livingLibrarySpot.castShadow = true;
-    window.livingLibrarySpot.shadow.radius = 4; // V204: Blurry Shadows
-    window.livingLibrarySpot.angle = Math.PI / 3;
+    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.25);
+    window.livingLibrarySpot.position.set(3, 7, 3);
+    window.livingLibrarySpot.angle = Math.PI / 4;
     window.livingLibrarySpot.penumbra = 0.5;
+    window.livingLibrarySpot.castShadow = true;
+    window.livingLibrarySpot.target.position.set(3, 2, -4.9);
     interiorGroup.add(window.livingLibrarySpot);
     interiorGroup.add(window.livingLibrarySpot.target);
 
@@ -538,44 +539,45 @@ function createLivingRoomInterior() {
         return group;
     }
 
-    // V240: Annex Candle Helper
+    // V240: Annex Candle Helper for the Void
     function createVoidCandle() {
-        const group = new THREE.Group();
-        // Wax
-        const wax = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.05, 0.2, 16),
-            new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.2 })
-        );
+        const candleGroup = new THREE.Group();
+        const waxGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2);
+        const waxMat = new THREE.MeshStandardMaterial({
+            color: 0xfffff0,
+            roughness: 0.3,
+            transparent: true,
+            opacity: 0.6
+        });
+        const wax = new THREE.Mesh(waxGeo, waxMat);
         wax.position.y = 0.1;
-        group.add(wax);
-        // Wick/Flame
-        const flame = new THREE.Mesh(
-            new THREE.SphereGeometry(0.04, 8, 8),
-            new THREE.MeshBasicMaterial({ color: 0xffaa00 })
-        );
-        flame.position.y = 0.22;
-        group.add(flame);
-        // Light
-        const light = new THREE.PointLight(0xffaa00, 1.5, 4);
-        light.position.y = 0.25;
-        group.add(light);
+        candleGroup.add(wax);
 
-        // Flame Animation
-        group.userData.update = (t) => {
-            flame.scale.setScalar(1.0 + Math.sin(t * 10) * 0.2);
-            light.intensity = 1.5 + Math.sin(t * 8) * 0.3;
+        const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+        wick.position.y = 0.22;
+        candleGroup.add(wick);
+
+        const flameGeo = new THREE.SphereGeometry(0.02, 8, 8);
+        const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        const flame = new THREE.Mesh(flameGeo, flameMat);
+        flame.position.y = 0.25;
+        candleGroup.add(flame);
+
+        const candleLight = new THREE.PointLight(0xffaa00, 1.2, 5);
+        candleLight.position.set(0, 0.35, 0);
+        candleLight.castShadow = true;
+        candleGroup.add(candleLight);
+
+        candleGroup.userData.update = (t) => {
+            const flicker = 1.2 + Math.sin(t * 15) * 0.15 + Math.cos(t * 33) * 0.15;
+            candleLight.intensity = flicker;
+            flame.scale.setScalar(0.8 + (flicker - 1.2) * 2);
         };
 
-        return group;
+        return candleGroup;
     }
 
-    // V147: Menorah Artifact (User Request)
-    // Traditional 7-branched Menorah. Middle candle lit.
-    function createMenorahArtifact() {
-        return createRuinArtifact();
-    }
-
-    const createBookcase = (posZ) => {
+    function createBookcase(posZ) {
         const bookcaseGroup = new THREE.Group();
 
         // V-REFINE: Right Hinge Offset Logic

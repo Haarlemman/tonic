@@ -1,5 +1,8 @@
 function createBathroomInterior() {
+    // V135: Cabinet Wood
+    // V140: Darker Wood (0x8d6e63 -> 0x463732)
     const woodMat = new THREE.MeshStandardMaterial({ color: 0x463732 });
+    // V140: Darker White (0xeeeeee -> 0x888888)
     const whiteMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.1 });
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.8, roughness: 0.1 });
 
@@ -12,11 +15,15 @@ function createBathroomInterior() {
     faucet.position.set(0, 1.6, -4.7); faucet.rotation.x = Math.PI / 4; interiorGroup.add(faucet);
 
     // MIRROR FRAME
+    // V35: Aspect Ratio 9:16 (1.75 x 3.0)
+    // V49: Thicker Border (1.95 x 3.20) -> Gap ~0.1 on sides
     const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.95, 3.20, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111 })); // 0x222222 -> 0x111111
     mirrorFrame.position.set(0, 3.8, -4.9);
     mirrorFrame.castShadow = true;
     interiorGroup.add(mirrorFrame);
 
+    // V52: User requested "More Blurry" shadow.
+    // We create a soft shadow texture via Canvas.
     const shadowCanvas = document.createElement('canvas');
     shadowCanvas.width = 128; shadowCanvas.height = 128; // Low res is fine for blur
     const sCtx = shadowCanvas.getContext('2d');
@@ -48,8 +55,9 @@ function createBathroomInterior() {
     const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
-    // 2. Add Darker Ambience (V289: Boosted 0.05 -> 0.15)
-    const darkAmb = new THREE.PointLight(0x223344, 0.15, 15);
+    // 2. Add Darker Ambience
+    // V140: Dimmed (0.5 -> 0.2) -> V-NEW: 0.05
+    const darkAmb = new THREE.PointLight(0x223344, 0.05, 15);
     darkAmb.position.set(0, 6, 0);
     interiorGroup.add(darkAmb);
 
@@ -167,12 +175,8 @@ function createBathroomInterior() {
         }
 
         // 3. Update Video Texture if playing
-        if (window.videoElement && mirrorMat.uniforms.uMap.value) {
-            if (!window.videoElement.paused) {
-                mirrorMat.uniforms.uMap.value.needsUpdate = true;
-                // V-FIX: Auto-Enter Screen Mode when playing (Fixes Universal Interface selection)
-                if (mirrorMat.uniforms.uUseVideo.value < 1.0) mirrorMat.uniforms.uUseVideo.value = 1.0;
-            }
+        if (videoElement && !videoElement.paused && mirrorMat.uniforms.uMap.value) {
+            mirrorMat.uniforms.uMap.value.needsUpdate = true;
         }
     };
 
@@ -190,8 +194,10 @@ function createBathroomInterior() {
     interiorClickables.push(mirrorGlass);
 
 
+    // --- RESTORED TUB GEOMETRY (FROM BACKUP) ---
     const tubGroup = new THREE.Group();
 
+    // V135: Rounded Hollow Tub
     const tubLength = 6.0; const tubWidth = 2.2; const radius = 0.5;
     const shape = new THREE.Shape();
     shape.absarc(tubLength / 2 - radius, tubWidth / 2 - radius, radius, 0, Math.PI / 2, false);
@@ -257,6 +263,7 @@ function createBathroomInterior() {
 
 
     // FLOOR - Checkered (High Contrast, Large)
+    // V43: RESTORED CHECKERED FLOOR (From V42 Blue Debug)
     const checkCanvas = document.createElement('canvas');
     checkCanvas.width = 512; checkCanvas.height = 512;
     const cctx = checkCanvas.getContext('2d');
@@ -287,6 +294,7 @@ function createBathroomInterior() {
     floor.rotation.x = -Math.PI / 2; floor.position.y = 0.01; interiorGroup.add(floor);
 
 
+    // V136: Beige Mat (Instead of Puddles) - Red as per previous request
     const matMat = new THREE.MeshStandardMaterial({
         color: 0xff0000, // Red
         roughness: 0.9,
@@ -298,7 +306,7 @@ function createBathroomInterior() {
     interiorGroup.add(bathMat);
 
 
-    // --- VIDEO LOGIC ---
+    // --- VIDEO LOGIC (V41: Time-Is-Now.mp4) ---
     // START: Do NOT auto-play video. Start in Reflection Mode.
     if (!window.videoElement) window.videoElement = document.getElementById('generic-video');
 
@@ -351,8 +359,11 @@ function createBathroomInterior() {
                 if (window.videoElement) {
                     window.videoElement.play();
 
-                    // ROBUST AUDIO STOP
+                    // V46: ROBUST AUDIO STOP
                     if (window.stopVideosForAudio) {
+                        // This helper stops video too! Wait. We need to STOP MUSIC, not video.
+                        // We need the opposite of stopVideosForAudio.
+                        // We need "stopMusicForVideo".
                         if (window.audioPlayer) {
                             window.audioPlayer.pause();
                             window.isMusicPlaying = false;
@@ -390,49 +401,16 @@ function createBathroomInterior() {
         }
         if (videoElement && !videoElement.paused) videoElement.pause();
 
-        // Reset Lights (V289: Sync with Brighter World)
-        if (dirLight) dirLight.intensity = 1.2;
-        if (rimLight) rimLight.intensity = 0.4;
-        if (ambientLight) ambientLight.intensity = 0.45;
+        // Reset Lights
+        if (dirLight) dirLight.intensity = 1.0;
+        if (rimLight) rimLight.intensity = 0.5;
+        if (ambientLight) ambientLight.intensity = 0.5;
     };
 
-    // VIDEO PLAYLIST (Left of Mirror)
+    // V180: VIDEO PLAYLIST (Left of Mirror)
     if (window.createUniversalVideoInterface && roomContent.bathroom.videoPlaylist) {
-        const posData = roomContent['bathroom'].videoInterfacePos || { x: -2.8, y: 2.8, z: -4.5 };
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), roomContent.bathroom.videoPlaylist, {
-            onPlay: (index) => {
-                console.log("Bathroom Video Play:", index);
-                window.masterVideoIndex = index;
-                const clip = roomContent.bathroom.videoPlaylist[index];
-
-                // 1. Set Src & Play
-                if (window.videoElement) {
-                    window.videoElement.src = clip.src;
-                    window.videoElement.muted = false;
-                    window.videoElement.volume = 1.0;
-                    window.videoElement.play().catch(e => console.error("Bathroom play error", e));
-
-                    // 2. Mirror Mode -> Video
-                    if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 1.0;
-
-                    // 3. Stop Music
-                    if (window.audioPlayer) {
-                        window.audioPlayer.pause();
-                        window.isMusicPlaying = false;
-                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); // Music Button Red
-                    }
-
-                    // 4. Update UI
-                    if (window.updateVideoUI) window.updateVideoUI();
-
-                    // 5. Update Local Button (Green)
-                    const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
-                    if (btn) {
-                        btn.material.color.setHex(0x00ff00);
-                        btn.material.emissive.setHex(0x004400);
-                    }
-                }
-            }
-        });
+        // V-FIX: Universal Video UI - Positioned Left (-2.8) to avoid overlap, and Higher (2.8)
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 2.8, -4.5), roomContent.bathroom.videoPlaylist);
     }
 }
+

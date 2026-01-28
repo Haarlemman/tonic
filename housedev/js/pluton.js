@@ -113,22 +113,21 @@ function createPlutoUsher() {
     // const shadow = createUsherShadow(); ...
 
     const halo = createGlitchyHalo();
-    // Position at original Head Height (approx 4.3 world units? Body 1.23 + Head 1.1 + Offset 3.2 = ~5.5)
-    // Actually, originally halo was at y=3.2 inside HeadGroup (which was at y=1.1 inside BodyGroup y=1.23)
-    // Total Y = 1.23 + 1.1 + 3.2 = 5.53
-    halo.position.set(0, 5.5, 0.05);
+    // V311: Impact Positioning (Lowered & Forward)
+    const baseH = 1.5;
+    halo.position.set(0, baseH, 3.0);
     group.add(halo);
 
     const text = createUsherText();
-    text.position.set(0, 5.5, 0.1);
+    text.position.set(0, baseH, 3.1);
     group.add(text);
 
     // Update Function
     group.userData.update = function (t) {
         // Simple Bobbing for Hologram
         const bob = Math.sin(t * 1.5) * 0.1;
-        halo.position.y = 5.5 + bob;
-        text.position.y = 5.5 + bob;
+        halo.position.y = baseH + bob;
+        text.position.y = baseH + bob;
 
         if (halo.userData.update) halo.userData.update(t);
     };
