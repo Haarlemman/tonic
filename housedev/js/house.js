@@ -3006,6 +3006,9 @@ function toggleGlobalFullscreen() {
 // V-INTEGRATION: Metropolis Robot (Ported from metropolis/claude.html)
 function createMetropolisRobot() {
     const group = new THREE.Group();
+    // V315-RELOADED-5: Enable Dynamic Shadows
+    group.castShadow = true;
+    group.receiveShadow = true;
     // 1. Materials
     const goldMat = new THREE.MeshStandardMaterial({
         color: 0xffcc00, metalness: 0.9, roughness: 0.3,
@@ -3110,6 +3113,14 @@ function createMetropolisRobot() {
             ring.scale.set(finalScale, finalScale, 1);
         });
     };
+
+    // V315-RELOADED-5: Ensure every mesh casts shadow
+    group.traverse(child => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    });
 
     return group;
 }

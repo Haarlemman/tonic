@@ -292,8 +292,9 @@ function restoreCinemaLights() {
     console.log("Cinema Mode: Restoring Lights (LOCAL ONLY)");
 
     // Default Fallbacks if capture failed (V298: Moody Normal State)
+    // Updated V315-RELOADED-5: Brighter Defaults
     const restore = window.preCinemaState || {
-        cozy: 0.25, library: 0.25, spotL: 0.25, spotR: 0.25, ambient: 0.15,
+        cozy: 0.5, library: 0.5, spotL: 0.3, spotR: 0.3, ambient: 0.15,
     };
 
     try {
@@ -374,14 +375,14 @@ function createLivingRoomInterior() {
     // --- LIGHTING ---
     // V298: Balanced Local Light Intensities
     // V303: Darker Interior (0.25 -> 0.15) -> V-FIX: Brighten (0.25)
-    // 5. Lighting (Brighter V306: 0.25)
-    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.25, 15);
+    // 5. Lighting (Brighter V315-RELOADED-5: 0.5)
+    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.5, 15);
     window.livingCozyLight.position.set(0, 5, 0);
     window.livingCozyLight.castShadow = true;
     // window.livingCozyLight.shadow.bias = -0.0001; // Reduce artifacts
     interiorGroup.add(window.livingCozyLight);
 
-    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.25);
+    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.5);
     window.livingLibrarySpot.position.set(3, 7, 3);
     window.livingLibrarySpot.angle = Math.PI / 4;
     window.livingLibrarySpot.penumbra = 0.5;
@@ -391,8 +392,8 @@ function createLivingRoomInterior() {
     interiorGroup.add(window.livingLibrarySpot.target);
 
     // V298: Moody Shelf lighting
-    // V303: Darker Spots (0.2 -> 0.15)
-    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.15);
+    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
+    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.3);
     bookcaseSpotL.position.set(-2, 6, -3.5);
     bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5);
     bookcaseSpotL.angle = Math.PI / 2.2;
@@ -404,8 +405,8 @@ function createLivingRoomInterior() {
     interiorGroup.add(bookcaseSpotL.target);
     window.bookcaseSpotL = bookcaseSpotL;
 
-    // V303: Darker Spots (0.2 -> 0.15)
-    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.15);
+    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
+    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.3);
     bookcaseSpotR.position.set(-2, 6, 3.5);
     bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5);
     bookcaseSpotR.angle = Math.PI / 2.2;
