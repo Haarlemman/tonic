@@ -67,7 +67,7 @@ openingFog = scene.fog;
 scene.background = new THREE.Color(0x2d1b4e);
 
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(-0.71, 24.76, 87.74);
+camera.position.set(0, 15.0, 150.0); // V-FIX: Match Flight Start to prevent Jump
 camera.lookAt(-0.01, 1.6, -9.05);
 window.camera = camera;
 scene.add(camera);
@@ -1440,9 +1440,9 @@ function startOpeningAnimation() {
     // The "Bump" is fixed by starting the Target Y at House Level (1.6) instead of Underground (-20).
     // V-FIX: Start Animation State (Matches Camera Start)
     const animState = {
-        px: 0, py: 8.0, pz: 60.0, // V-FIX: Start VERY High and Far (60.0)
+        px: 0, py: 15.0, pz: 150.0, // V-FIX: Epic Scale (150.0)
         tx: -0.01, ty: 1.6, tz: -9.05,
-        fogFar: 300
+        fogFar: 500
     };
 
     // Force Camera there immediately
@@ -1455,7 +1455,7 @@ function startOpeningAnimation() {
 
     // V99: End State (Eye Level, Looking Slightly Up)
     const targetState = {
-        px: -0.2, py: 2.0, pz: 9.0, // V-FIX: Revert to 9.0 (Close Landing)
+        px: -0.2, py: 2.0, pz: 18.0, // V-FIX: Optimised Landing (18.0)
         tx: -0.01, ty: 1.6, tz: -9.05,
         fogFar: 300
     };
@@ -2054,6 +2054,12 @@ function stopAllAudio() {
     // 2. Main Video (Living/Bedroom)
     if (window.videoElement && !window.videoElement.paused) {
         window.videoElement.pause();
+
+        // V-FIX 9: Reset Lights if in Bedroom/Living
+        if (typeof currentRoom !== 'undefined') {
+            if (currentRoom === 'bedroom' && window.stopBedroomVideo) window.stopBedroomVideo();
+            if (currentRoom === 'living' && window.stopLivingVideo) window.stopLivingVideo();
+        }
     }
     // 3. Attic Video (Specific)
     const atticVideo = document.getElementById('attic-video');
@@ -2081,12 +2087,13 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.05; // Minimal
         targetHemi = 0.0;
     }
-    // V-FIX: Bathroom Brightness 
+    // V-FIX 22: Bathroom Brightness - Goldilocks (Average)
+    // 0.5 was too bright. 0.25 was likely too dark. Trying 0.35.
     else if (roomName === 'bathroom') {
-        targetAmbient = 0.5;
-        targetDir = 0.6;
-        targetRim = 0.4;
-        targetHemi = 0.3;
+        targetAmbient = 0.35;
+        targetDir = 0.45;
+        targetRim = 0.3;
+        targetHemi = 0.25;
     }
     // V-AESTHETIC-SYNC: Force Correct Atmosphere Overrides
     else if (roomName === 'toilet') {
@@ -2478,6 +2485,11 @@ function checkIntersectionInternal() {
 
     if (intersects.length > 0) {
         document.body.style.cursor = 'pointer';
+
+        // V-FIX 15: DEBUG CLICK HIT
+        // Logging what we hit to debug Attic issues
+        // console.log("Raycast Hit:", intersects[0].object.name || intersects[0].object.uuid, intersects[0].object);
+
         // V-FIX: Bubble up to find clickable parent
         let target = intersects[0].object;
         while (target && (!target.userData || !target.userData.onClick)) {
@@ -3183,8 +3195,12 @@ window.stopVideosForAudio = function () {
         if (window.ambientLight) window.ambientLight.intensity = 0.15; // V298: Moody Normal
         if (window.dirLight) window.dirLight.intensity = 0.2; // V298: Moody Normal
     } else if (currentRoom === 'bathroom') {
-        if (window.ambientLight) window.ambientLight.intensity = 0.45;
-        if (window.dirLight) window.dirLight.intensity = 1.0;
+        // V-FIX 25: Don't clobber stopBathroomVideo!
+        // Only apply fallback if the helper didn't run.
+        if (!window.stopBathroomVideo) {
+            if (window.ambientLight) window.ambientLight.intensity = 0.35; // Goldilocks
+            if (window.dirLight) window.dirLight.intensity = 0.45;
+        }
     }
 };
 

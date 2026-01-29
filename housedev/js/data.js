@@ -2,7 +2,7 @@ const roomContent = {
     hall: {
         title: "Welcome Hall",
         hex: 0x2c3e50,
-        description: "Welcome to The House of Awe. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
+        description: "Welcome to Meaning House. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
         playlist: [
             { artist: "Hofesh Shechter", track: "Sun", src: "../assets/audio/Sun.mp3" },
             { artist: "Hugo Kant", track: "Entering the Black Hole", src: "../assets/audio/HugoKant-EnteringtheBlackHole.mp3" },
@@ -21,7 +21,7 @@ const roomContent = {
         videoPlaylist: [
             { title: "The Premonition", src: "../assets/video/premonition.mp4" },
             { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" },
-    	    { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
+            { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
         ],
         videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 }, // V197: Defined in Data
         tvImages: [

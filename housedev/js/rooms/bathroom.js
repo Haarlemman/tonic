@@ -11,6 +11,18 @@ function createBathroomInterior() {
     const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.6), chromeMat);
     faucet.position.set(0, 1.6, -4.7); faucet.rotation.x = Math.PI / 4; interiorGroup.add(faucet);
 
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('bathroom');
+        if (item) {
+            // V-FIX: Move to Sink/Vanity Area (Better visibility)
+            // Was: (3.5, 0.5, -2.0) (Bathtub)
+            item.position.set(0, 1.5, -4.2);
+            item.scale.set(0.8, 0.8, 0.8); // Slightly smaller to fit vanity
+            interiorGroup.add(item);
+        }
+    }
+
     // MIRROR FRAME
     const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.95, 3.20, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111 })); // 0x222222 -> 0x111111
     mirrorFrame.position.set(0, 3.8, -4.9);
@@ -81,8 +93,10 @@ function createBathroomInterior() {
             // If "it" refers to view/pitch going down, horizon must go UP.
             // Pitch < 0 -> Horizon increases.
             // So: - (uViewPitch * factor). 
-            // V-FIX: Adjusted Factor (0.8 -> 0.4) for Smoothness
-            float horizon = 0.45 + (uViewRotation * 0.05) - (uViewPitch * 0.4); 
+            // V-FIX: Increased Pitch Sensitivity (0.4 -> 1.5) and Range
+            // When looking DOWN (pitch < 0), we want horizon to go UP significantly to show "floor" reflection.
+            // When looking UP, horizon goes DOWN to show ceiling.
+            float horizon = 0.5 - (uViewPitch * 1.5); // Much stronger response
             float perspective = 1.0 / max(0.01, (horizon - vUv.y)); 
             
             // Checkerboard Reflection 
@@ -108,15 +122,18 @@ function createBathroomInterior() {
                 // Video mode
                 vec4 vid = texture2D(uMap, vUv);
                 finalColor = (vid.rgb * 0.8) + vec3(gloss * 0.2); 
+                // V-FIX: Do NOT darken video globally (Keep it reasonably bright)
             } else {
                 // Reflection mode
                 vec3 finalReflect = tileColor + vec3(gloss);
                 // Mix to tinted void (Very Dark)
                 finalColor = mix(finalReflect, vec3(0.005, 0.01, 0.015), voidFactor);
+                // V-TUNE: Extra Darkening for "Blurry/Dim" feel ONLY in reflection mode?
+                // Or apply dimmer? Legacy code had global dimmer.
+                finalColor *= 0.7; // Global dimmer for reflection
             }
-
-            // V-TUNE: Extra Darkening for "Blurry/Dim" feel
-            finalColor *= 0.7; // Global dimmer
+            
+            // Note: Removed global finalColor *= 0.7 outside if/else so video stays bright
 
             gl_FragColor = vec4(finalColor, 1.0);
         }
@@ -280,8 +297,8 @@ function createBathroomInterior() {
 
     const floorMat = new THREE.MeshStandardMaterial({
         map: checkTex,
-        roughness: 0.2,
-        metalness: 0.1
+        roughness: 0.8, // V-FIX: Less intense reflection (was 0.2)
+        metalness: 0.05 // Reduced metalness (was 0.1)
     });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
     floor.rotation.x = -Math.PI / 2; floor.position.y = 0.01; interiorGroup.add(floor);
@@ -390,10 +407,14 @@ function createBathroomInterior() {
         }
         if (videoElement && !videoElement.paused) videoElement.pause();
 
-        // Reset Lights (V289: Sync with Brighter World)
-        if (dirLight) dirLight.intensity = 1.2;
-        if (rimLight) rimLight.intensity = 0.4;
-        if (ambientLight) ambientLight.intensity = 0.45;
+        // V-FIX 22: Tween Safety & Goldilocks Reset
+        // 1. Kill any active dimming tweens so they don't overwrite our reset
+        TWEEN.getAll().forEach(t => t.stop());
+
+        // 2. Reset Lights to Goldilocks Profile (0.35/0.45)
+        if (dirLight) dirLight.intensity = 0.45;
+        if (rimLight) rimLight.intensity = 0.3;
+        if (ambientLight) ambientLight.intensity = 0.35;
     };
 
     // VIDEO PLAYLIST (Left of Mirror)
@@ -402,11 +423,12 @@ function createBathroomInterior() {
         window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), roomContent.bathroom.videoPlaylist, {
             scale: 0.75, // V306: Scale 0.75x
             onPlay: (index) => {
-                // V115: Darken room for video
-                if (window.applyRoomLighting) {
-                    window.applyRoomLighting('basement'); // Borrow dark settings
-                }
-                console.log("Bathroom Video Play:", index);
+                // V-FIX 6: Soft Darkening (Tween) - Restored
+                if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.2 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+                if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
+
+                console.log("Bathroom Video Play: Darkening Room (Soft)");
                 window.masterVideoIndex = index;
                 const clip = roomContent.bathroom.videoPlaylist[index];
 

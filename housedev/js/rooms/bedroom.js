@@ -117,6 +117,15 @@ function createBedroomInterior() {
     shadow.position.set(-4.6, 3.45, 3.0); // Slightly below
     interiorGroup.add(shadow);
 
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('bedroom');
+        if (item) {
+            item.position.set(0, 3, 0); // Above bed/center
+            interiorGroup.add(item);
+        }
+    }
+
     // Lava Lamp
     createLavaLamp(0.108, shelf.position);
 }
@@ -288,6 +297,19 @@ function nextBedroomVideo() {
     if (window.updateVideoUI) window.updateVideoUI();
 }
 
+// V-FIX 9: Helper to Stop Video & Reset Lights (Bedroom specific)
+window.stopBedroomVideo = function () {
+    if (window.videoElement && !window.videoElement.paused) window.videoElement.pause();
+
+    // Restore Bedroom Defaults (Matches house.js ApplyRoomLighting)
+    // Dark/Moody
+    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.02 }, 1000).start();
+    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.05 }, 1000).start();
+    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.05 }, 1000).start();
+
+    console.log("Bedroom Video Stopped: Restoring Lights");
+};
+
 function playVideo(index) {
     const playlist = roomContent.bedroom.videoPlaylist;
     if (!playlist || !playlist[index]) return;
@@ -295,6 +317,11 @@ function playVideo(index) {
     masterVideoIndex = index;
     // V-FIX 257: Direct Play & UI Update
     startVideoClip('bedroom');
+
+    // V-FIX: User reported room SHOULD get dark (like cinema)
+    if (window.applyRoomLighting) {
+        window.applyRoomLighting('basement'); // Use 'basement' profile for darkness
+    }
 
     // Sync UI if available
     if (window.updateVideoUI) window.updateVideoUI();

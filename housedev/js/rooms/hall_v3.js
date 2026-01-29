@@ -329,11 +329,20 @@ function createR2D2ForHall() {
     // Make him clickable? Optional.
     r2d2Group.userData = { type: 'r2d2', name: 'R2D2' };
 
-    // V-FIX: Explicit Hitbox for easier clicking
+    // V-FIX 22: Explicit Hitbox for easier clicking (Visible but transparent)
     const hitGeo = new THREE.CylinderGeometry(2.5, 2.5, 7.0, 16);
-    const hitMat = new THREE.MeshBasicMaterial({ visible: true, opacity: 0.5, transparent: true, color: 0xffff00, wireframe: true });
+    const hitMat = new THREE.MeshBasicMaterial({
+        visible: true,
+        color: 0xffff00,
+        wireframe: false,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false
+    });
     const hitBox = new THREE.Mesh(hitGeo, hitMat);
     hitBox.position.y = 2.0;
+    // Name it for debug
+    hitBox.userData = { name: "R2D2_HitBox", type: "r2d2" };
     r2d2Group.add(hitBox);
 
     // V-WORDHUNT: Hidden Orb in R2D2
@@ -347,8 +356,22 @@ function createR2D2ForHall() {
             item.visible = false;
             r2d2Group.add(item);
 
+            // V-FIX 19: SUPER HITBOX FOR ORB
+            // The default one might be too small or bubbling fails.
+            // Let's add a massive explicit HitBox to the Orb Item Group.
+            const orbHitGeo = new THREE.SphereGeometry(1.0, 16, 16); // Radius 1.0 * Scale 3.0 = HUGE
+            const orbHitMat = new THREE.MeshBasicMaterial({ visible: false }); // Invisible Material
+            const orbHitBox = new THREE.Mesh(orbHitGeo, orbHitMat);
+            orbHitBox.userData.onClick = () => {
+                console.log("R2D2 Orb HitBox Clicked!");
+                // Call the original handler on the group if it exists
+                if (item.userData.onClick) item.userData.onClick();
+            };
+            orbHitBox.userData.isOrbHitBox = true;
+            item.add(orbHitBox);
+
             // Click Handler for R2D2
-            r2d2Group.userData.onClick = () => {
+            const r2ClickHandler = () => {
                 // If orb is already revealed, do nothing (orb itself handles the collection click)
                 if (item.userData.revealed) return;
 
@@ -358,20 +381,29 @@ function createR2D2ForHall() {
 
                 // Animate Pop Out (Up and Scale Up)
                 new TWEEN.Tween(item.position)
-                    .to({ y: 3.5 }, 1500) // Float high above head
+                    .to({ y: 12.5 }, 1500) // V-FIX: Even Higher (12.5)
                     .easing(TWEEN.Easing.Elastic.Out)
+                    .onUpdate(() => console.log("Orb Y:", item.position.y)) // Debug
                     .start();
 
                 new TWEEN.Tween(item.scale)
-                    .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
+                    .to({ x: 3.0, y: 3.0, z: 3.0 }, 1500) // V-FIX: SUPER BIG (3.0)
                     .easing(TWEEN.Easing.Elastic.Out)
                     .start();
             };
 
+            r2d2Group.userData.onClick = r2ClickHandler;
+            hitBox.userData.onClick = r2ClickHandler; // Double bind
+
             // Register R2D2 as clickable
             if (window.interiorClickables) {
                 window.interiorClickables.push(r2d2Group);
-                console.log("R2D2 added to interiorClickables", r2d2Group);
+                window.interiorClickables.push(hitBox); // Push hitbox too
+                // V-FIX: Push the Orb Item so it can be clicked when revealed!
+                window.interiorClickables.push(item);
+                // Also push our new Super HitBox
+                window.interiorClickables.push(orbHitBox);
+                console.log("R2D2, Hitbox, Orb, and SuperOrbHitBox added to interiorClickables");
             }
         } else {
             console.error("WordHunt.createInteractable returned null for 'hall'");

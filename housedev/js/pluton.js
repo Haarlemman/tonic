@@ -18,31 +18,32 @@ function createUsherText() {
     // 2. Text with Glow
     ctx.shadowColor = '#00ffff';
     ctx.shadowBlur = 15;
-    ctx.fillStyle = '#ffffff'; // Pure white text like Annex
+    ctx.fillStyle = '#ffffff'; // Pure white text
     ctx.textAlign = 'center';
 
     // Line 1: Welcome
     ctx.font = 'bold 90px "Courier Prime", monospace';
-    ctx.fillText("Welcome!", 512, 180);
+    ctx.fillText("Welcome!", 512, 150);
 
     // Line 2: Subtext
     ctx.font = '45px "Courier Prime", monospace';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 10;
-    ctx.fillText("Explore the 9 Rooms of Life", 512, 280);
-    ctx.fillText("by navigation in and around the house.", 512, 350);
+    ctx.shadowBlur = 1;
+    ctx.fillText("Explore the 9 rooms", 512, 250);
+    ctx.fillText("Collect the 9 words", 512, 320);
+    ctx.fillText("And win a surprise!", 512, 390);
 
     const tex = new THREE.CanvasTexture(canvas);
     const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.8,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false
     });
 
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(7, 3.5), mat);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), mat);
     return mesh;
 }
 
@@ -61,7 +62,7 @@ function createUsherShadow() {
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.8, depthWrite: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), mat);
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.y = 0.02; // Just above ground
+    mesh.position.y = 0.05; // Just above ground
     return mesh;
 }
 
@@ -82,7 +83,7 @@ function createGlitchyHalo() {
     const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.0,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide

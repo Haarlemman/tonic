@@ -86,7 +86,7 @@ window.createMusicPanel = function (playlist) {
 
     let yBase = 5.5;
     if (currentRoom === 'annex') {
-        yBase = 5.0; // Lowered from 6.6 for better view when scaled
+        yBase = 6.0; // V-FIX: Moved up for visibility (was 5.0)
     }
 
     // V326: Bedroom-specific alignment (Centered on wall)
@@ -232,6 +232,10 @@ window.createMusicPanel = function (playlist) {
 
             if (currentRoom === 'living' && window.stopLivingVideo) {
                 window.stopLivingVideo();
+            }
+            // V-FIX 24: Ensure Bathroom Video Stop (Reset Lights) is called too!
+            if (currentRoom === 'bathroom' && window.stopBathroomVideo) {
+                window.stopBathroomVideo();
             }
 
             if (window.updateVideoUI) {

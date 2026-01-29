@@ -40,6 +40,15 @@ function createBasementInterior() {
     bgMesh.position.set(0, 4, -4.9);
     interiorGroup.add(bgMesh);
 
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('basement');
+        if (item) {
+            item.position.set(-2, 2, -2); // Near nodes
+            interiorGroup.add(item);
+        }
+    }
+
     // -- DETROIT MODEL PHI (Replica) --
     if (typeof TechnoEngine !== 'undefined' && !window.technoEngine) {
         window.technoEngine = new TechnoEngine();

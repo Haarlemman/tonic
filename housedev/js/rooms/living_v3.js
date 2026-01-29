@@ -950,6 +950,23 @@ function createLivingRoomInterior() {
             window.metropolisRobot.add(robotGlow);
             window.robotGlowLight = robotGlow;
 
+            // V-FIX: Explicit Hitbox for Maria (Easier Clicking)
+            // V-FIX 19: Enable depthWrite: false to preventing occluding the Glow/Rings!
+            // V-FIX 21: Invisible again (User verified)
+            const hitGeo = new THREE.CylinderGeometry(0.8, 0.8, 3.5, 16);
+            const hitMat = new THREE.MeshBasicMaterial({
+                visible: true,
+                color: 0xffff00,
+                wireframe: false, // Hidden
+                transparent: true,
+                opacity: 0.0, // Hidden
+                depthWrite: false // CRITICAL: Stop blocking the glow/rings behind it
+            });
+            const hitBox = new THREE.Mesh(hitGeo, hitMat);
+            hitBox.position.y = 1.0;
+            hitBox.userData = { type: 'MariaHitbox', parentRobot: true };
+            window.metropolisRobot.add(hitBox);
+
             // V-WORDHUNT: Hidden Orb in Maria
             if (typeof WordHunt !== 'undefined') {
                 const item = WordHunt.createInteractable('living');
@@ -981,7 +998,15 @@ function createLivingRoomInterior() {
                             .start();
                     };
 
-                    if (window.interiorClickables) window.interiorClickables.push(window.metropolisRobot);
+                    // V-FIX: Double-Bind! Attach ONE handler to the Hitbox too
+                    hitBox.userData.onClick = window.metropolisRobot.userData.onClick;
+
+                    if (window.interiorClickables) {
+                        window.interiorClickables.push(window.metropolisRobot);
+                        // Push hitbox too just in case raycaster hits it first and stops?
+                        // (intersectObjects true handles children, but pushing explicit is safer if hierarchy logic is strict)
+                        // Actually, pushing the GROUP (robot) is usually enough.
+                    }
                 }
             }
         }

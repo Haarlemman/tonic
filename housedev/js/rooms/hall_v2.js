@@ -331,7 +331,7 @@ function createR2D2ForHall() {
 
     // V-FIX: Explicit Hitbox for easier clicking
     const hitGeo = new THREE.CylinderGeometry(2.5, 2.5, 7.0, 16);
-    const hitMat = new THREE.MeshBasicMaterial({ visible: true, opacity: 0.5, transparent: true, color: 0xffff00, wireframe: true });
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false, color: 0xffff00, wireframe: true });
     const hitBox = new THREE.Mesh(hitGeo, hitMat);
     hitBox.position.y = 2.0;
     r2d2Group.add(hitBox);
@@ -358,12 +358,13 @@ function createR2D2ForHall() {
 
                 // Animate Pop Out (Up and Scale Up)
                 new TWEEN.Tween(item.position)
-                    .to({ y: 3.5 }, 1500) // Float high above head
+                    .to({ y: 15.0 }, 1500) // V-FIX: EXTREME HEIGHT (15.0) to counteract scale
                     .easing(TWEEN.Easing.Elastic.Out)
+                    .onUpdate(() => console.log("Orb Y:", item.position.y)) // Debug
                     .start();
 
                 new TWEEN.Tween(item.scale)
-                    .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
+                    .to({ x: 3.0, y: 3.0, z: 3.0 }, 1500) // V-FIX: SUPER BIG (3.0)
                     .easing(TWEEN.Easing.Elastic.Out)
                     .start();
             };

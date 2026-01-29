@@ -178,5 +178,14 @@ function createToiletInterior() {
         }
     };
 
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('toilet');
+        if (item) {
+            item.position.set(0, 1.5, 1); // Floating inside room, away from shelf
+            interiorGroup.add(item);
+        }
+    }
+
     // Bathroom code removed.
 }

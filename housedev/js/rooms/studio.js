@@ -215,6 +215,49 @@ window.createStudioInterior = function () {
     createOrbit(Math.PI / 2, 0, 0, 0xffff00);
     createOrbit(0, Math.PI / 2, Math.PI / 4, 0x00ccff);
 
+    // V-WORDHUNT: Hidden Orb in Molecule
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('studio');
+        if (item) {
+            // Hide inside Nucleus initially
+            item.position.set(0, 0, 0);
+            item.scale.set(0.1, 0.1, 0.1);
+            item.visible = false;
+            atomGroup.add(item); // Add to atomGroup so it moves with it
+
+            // Make Nucleus Clickable
+            // Nucleus is the first child of atomGroup usually, or we can add a hitbox
+            nucleus.userData = {
+                type: 'atom_nucleus',
+                onClick: () => {
+                    if (item.userData.revealed) return;
+                    console.log("Atom Nucleus Clicked! Finding Word...");
+
+                    item.visible = true;
+                    item.userData.revealed = true;
+
+                    // Animate Pop Out (Explode out)
+                    new TWEEN.Tween(item.position)
+                        .to({ y: 1.5, x: 0.5, z: 0.5 }, 1500)
+                        .easing(TWEEN.Easing.Elastic.Out)
+                        .start();
+
+                    new TWEEN.Tween(item.scale)
+                        .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
+                        .easing(TWEEN.Easing.Elastic.Out)
+                        .start();
+                }
+            };
+            interiorClickables.push(nucleus);
+
+            // Hitbox for easier clicking (Nucleus is small 0.4)
+            const nHit = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
+            nHit.userData = nucleus.userData;
+            atomGroup.add(nHit);
+            interiorClickables.push(nHit);
+        }
+    }
+
     // 4. R2-D2 IN RIGHT CORNER
     createR2D2InCorner();
 }
