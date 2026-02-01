@@ -2,7 +2,7 @@ const roomContent = {
     hall: {
         title: "Welcome Hall",
         hex: 0x2c3e50,
-        description: "Welcome to Meaning House. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
+        description: "Welcome to The House of Meaning. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
         playlist: [
             { artist: "Hofesh Shechter", track: "Sun", src: "../assets/audio/Sun.mp3" },
             { artist: "Hugo Kant", track: "Entering the Black Hole", src: "../assets/audio/HugoKant-EnteringtheBlackHole.mp3" },
@@ -23,13 +23,14 @@ const roomContent = {
             { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" },
             { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
         ],
-        videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 }, // V197: Defined in Data
+        videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 },
         tvImages: [
-            { text: "PICTURE THIS", color: "#a533fc" },
-            { text: "Bavo", image: "../assets/images/bavo1.jpg", color: "#000" },
-            { text: "Hitchin, UK", image: "../assets/images/hitchin1.jpg", color: "#999" },
-            { text: "Haarlem, Netherlands", color: "#f93a00" },
-            { text: "LIVE LIFE LOVE", color: "#93c5fd" },
+            { image: "../assets/images/tv.jpg", color: "#000", text: "" },
+            { image: "../assets/images/brug.jpg", color: "#990000", text: "" },
+            { image: "../assets/images/bavo1.jpg", color: "#000099", text: "" },
+            { image: "../assets/images/spaarne1.jpg", color: "#009900", text: "" },
+            { image: "../assets/images/spaarne2.jpg", color: "#330066", text: "" },
+            { image: "../assets/images/sea.jpg", color: "#0000aa", text: "" }
         ]
     },
     studio: {
@@ -73,7 +74,7 @@ const roomContent = {
         hex: 0x0696a4,
         description: "The mirror reflects the physical reality. In the quiet of the morning, thoughts are most audible.",
         playlist: [
-            { artist: "Thom Yourke", track: "Dawn Chorus", src: "../assets/audio/RH-DawnChorus.mp3" },
+            { artist: "Little Dragon", track: "Lover Chanting", src: "../assets/audio/LittleDragon-LoverChanting.mp3" },
         ],
         videoPlaylist: [
             { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" },
@@ -111,14 +112,25 @@ const roomContent = {
         playlist: [
             { artist: "Mica Levi", track: "Lonely Void", src: "../assets/audio/mica-levi-lonely-void.mp3" }
         ]
+    },
+    aispace: {
+        title: "AI Space",
+        hex: 0x000022,
+        interiorWidth: 20,
+        interiorDepth: 20,
+        description: "A void in space where AI thoughts drift. Floating objects rotate slowly in the darkness. The word 'ALGORITHM' glows softly.",
+        playlist: [
+            { artist: "Kraftwerk", track: "Spacelab", src: "../assets/audio/KraftwerkSpacelab.mp3", volume: 0.8 },
+            { artist: "Mica Levi", track: "Lonely Void", src: "../assets/audio/mica-levi-lonely-void.mp3" }
+        ]
     }
 };
 
 const houseConfig = {
     audio: {
-        tension: "/assets/audio/Tension_Short_07.mp3",
-        intro: "/assets/audio/premonition.mp3",
-        nightDrive: "/assets/audio/NightDrive-RobSimonsen.mp3",
-        squeak: "/assets/audio/squeak.mp3"
+        tension: "../assets/audio/Tension_Short_07.mp3",
+        intro: "../assets/audio/premonition.mp3",
+        nightDrive: "../assets/audio/NightDrive-RobSimonsen.mp3",
+        squeak: "../assets/audio/squeak.mp3"
     }
 };

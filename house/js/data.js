@@ -2,7 +2,7 @@ const roomContent = {
     hall: {
         title: "Welcome Hall",
         hex: 0x2c3e50,
-        description: "Welcome to The House of Awe. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
+        description: "Welcome to The House of Meaning. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
         playlist: [
             { artist: "Hofesh Shechter", track: "Sun", src: "../assets/audio/Sun.mp3" },
             { artist: "Hugo Kant", track: "Entering the Black Hole", src: "../assets/audio/HugoKant-EnteringtheBlackHole.mp3" },
@@ -21,7 +21,7 @@ const roomContent = {
         videoPlaylist: [
             { title: "The Premonition", src: "../assets/video/premonition.mp4" },
             { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" },
-    	    { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
+            { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
         ],
         videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 }, // V197: Defined in Data
         tvImages: [
@@ -73,20 +73,21 @@ const roomContent = {
         hex: 0x0696a4,
         description: "The mirror reflects the physical reality. In the quiet of the morning, thoughts are most audible.",
         playlist: [
+			{ artist: "Little Dragon", track: "Lover Chanting", src: "../assets/audio/LittleDragon-LoverChanting.mp3" },
             { artist: "Thom Yourke", track: "Dawn Chorus", src: "../assets/audio/RH-DawnChorus.mp3" },
         ],
         videoPlaylist: [
             { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" },
             { title: "Walk In", src: "../assets/video/walkin1.mp4" }
         ],
-        videoInterfacePos: { x: -2.8, y: 2.8, z: -4.5 } // V197: Defined in Data
+        videoInterfacePos: { x: -2.8, y: 2.8, z: -4.5 } 
     },
     toilet: {
         title: "The Little Room",
         hex: 0x046896,
         interiorWidth: 3.0,
         interiorDepth: 5.0,
-        description: "The Think Tank. A quiet place for politics, religion, and rough drafts. Click the notepad to write.",
+        description: "A place for contemplation",
         playlist: [
             { artist: "Chrysalis", track: "Chrysalis", src: "../assets/audio/chrysalis.mp3" },
             { artist: "John Lurie", track: "The Lamposts Are Mine", src: "../assets/audio/JohnLurieTheLampostsAreMine.mp3" }

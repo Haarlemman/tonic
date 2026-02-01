@@ -1,55 +1,48 @@
-/**
- * PLUTON.JS
- * 
- * Logic for the "Plutonian Star-Whisker" character (Usher).
- * Refactored V282 for High-Fidelity (Reference: pluton/index.html).
- */
-console.log("--- PLUTON.JS LOADED V282 (REFINED) ---");
+console.log("--- PLUTON.JS LOADED ---");
 
 // --- Holographic Text Helper ---
-// --- Holographic Text Helper (Light Plane V287) ---
 function createUsherText() {
     const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 512;
+    canvas.width = 1024; canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
-    // 1. Glowing Background (Matching Annex style)
-    const grad = ctx.createRadialGradient(512, 256, 0, 512, 256, 512);
+    // 1. Glowing Background (Perfectly Circular)
+    const grad = ctx.createRadialGradient(512, 512, 100, 512, 512, 510);
     grad.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    grad.addColorStop(0.3, 'rgba(0, 255, 255, 0.2)');
-    grad.addColorStop(0.6, 'rgba(0, 255, 255, 0.05)');
+    grad.addColorStop(0.5, 'rgba(0, 255, 255, 0.1)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
 
     // 2. Text with Glow
     ctx.shadowColor = '#00ffff';
     ctx.shadowBlur = 15;
-    ctx.fillStyle = '#ffffff'; // Pure white text like Annex
+    ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
 
     // Line 1: Welcome
-    ctx.font = 'bold 90px "Courier Prime", monospace';
-    ctx.fillText("Welcome!", 512, 180);
+    ctx.font = 'bold 90px "Glass Antiqua", cursive';
+    ctx.fillText("Welcome!", 512, 400);
 
     // Line 2: Subtext
-    ctx.font = '45px "Courier Prime", monospace';
+    ctx.font = '45px Arial, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 10;
-    ctx.fillText("Explore the 9 Rooms of Life", 512, 280);
-    ctx.fillText("by navigation in and around the house.", 512, 350);
+    ctx.shadowBlur = 1;
+    ctx.fillText("Explore the 9 rooms", 512, 500);
+    ctx.fillText("Collect the 9 words", 512, 570);
+    ctx.fillText("And win a surprise!", 512, 640);
 
     const tex = new THREE.CanvasTexture(canvas);
     const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.8,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false
     });
 
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(7, 3.5), mat);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), mat);
     return mesh;
 }
 
@@ -68,7 +61,7 @@ function createUsherShadow() {
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.8, depthWrite: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), mat);
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.y = 0.02; // Just above ground
+    mesh.position.y = 0.05; // Just above ground
     return mesh;
 }
 
@@ -89,7 +82,7 @@ function createGlitchyHalo() {
     const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.0,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
@@ -101,34 +94,24 @@ function createGlitchyHalo() {
 }
 
 // --- Main Character Creator ---
-// --- Main Character Creator ---
 function createPlutoUsher() {
     const group = new THREE.Group();
 
-    // V302: Removing Pluton Body (User Request: "Little friend has got to go")
-    // Keeping Hologram Only.
-
-    // --- Accessories (Refined V287) ---
-    // Remove Shadow (Body is gone)
-    // const shadow = createUsherShadow(); ...
-
     const halo = createGlitchyHalo();
-    // Position at original Head Height (approx 4.3 world units? Body 1.23 + Head 1.1 + Offset 3.2 = ~5.5)
-    // Actually, originally halo was at y=3.2 inside HeadGroup (which was at y=1.1 inside BodyGroup y=1.23)
-    // Total Y = 1.23 + 1.1 + 3.2 = 5.53
-    halo.position.set(0, 5.5, 0.05);
+    const baseH = 1.8;
+    halo.position.set(-0.3, baseH, 7.5);
     group.add(halo);
 
     const text = createUsherText();
-    text.position.set(0, 5.5, 0.1);
+    text.position.set(-0.3, baseH, 7.6);
     group.add(text);
 
     // Update Function
     group.userData.update = function (t) {
         // Simple Bobbing for Hologram
         const bob = Math.sin(t * 1.5) * 0.1;
-        halo.position.y = 5.5 + bob;
-        text.position.y = 5.5 + bob;
+        halo.position.y = baseH + bob;
+        text.position.y = baseH + bob;
 
         if (halo.userData.update) halo.userData.update(t);
     };

@@ -148,8 +148,8 @@ function createToiletInterior() {
     lampGroup.add(bulb);
 
     // COZY WARM LIGHT (Brighter)
-    // V140: Dimmed (0.6 -> 0.3)
-    const backLight = new THREE.PointLight(0xffaa33, 0.3, 15);
+    // V140: Dimmed (0.6 -> 0.3) -> V-FIX: Darker (0.15)
+    const backLight = new THREE.PointLight(0xffaa33, 0.15, 15);
     backLight.castShadow = true;
     backLight.shadow.mapSize.width = 1024; // V-REFINE: Sharp Shadows
     backLight.shadow.mapSize.height = 1024;
@@ -158,7 +158,7 @@ function createToiletInterior() {
 
     // V: FLICKER ANIMATION (Stronger)
     lampGroup.userData = {
-        baseIntensity: 0.6,
+        baseIntensity: 0.15, // V-FIX: Match new base
         update: function (t) {
             // Frequent Flicker (15% chance)
             if (Math.random() > 0.85) {
@@ -177,4 +177,15 @@ function createToiletInterior() {
             }
         }
     };
+
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('toilet');
+        if (item) {
+            item.position.set(0, 1.5, 1); // Floating inside room, away from shelf
+            interiorGroup.add(item);
+        }
+    }
+
+    // Bathroom code removed.
 }

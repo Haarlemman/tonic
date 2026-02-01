@@ -22,18 +22,25 @@ function createAnnexInterior() {
     candleGroup.add(flame);
 
     // 4. Light Source
-    const candleLight = new THREE.PointLight(0xffaa00, 1.2, 5); // Reduced range from 12 to 5 for intimacy
-    candleLight.position.set(0, 0.35, 0); // Local to group
-    candleLight.castShadow = true;
-    candleLight.userData = {
+    // V306: Darker (0.5 -> 0.3)
+    const annexLight = new THREE.PointLight(0xffaa00, 0.3, 15); // Reduced range from 12 to 5 for intimacy
+    annexLight.position.set(0, 0.35, 0); // Local to group
+    annexLight.castShadow = true;
+    // V-FIX: Soft/Blurry Shadows
+    annexLight.shadow.radius = 4;
+    annexLight.shadow.mapSize.width = 512;
+    annexLight.shadow.mapSize.height = 512;
+    // V-FIX: Shadow Bias to prevent self-shadowing artifacts (the "mysterious dark shadow")
+    annexLight.shadow.bias = -0.001;
+    annexLight.userData = {
         baseIntensity: 1.2,
         update: (t) => {
             const flicker = 1.2 + Math.sin(t * 15) * 0.15 + Math.cos(t * 33) * 0.15;
-            candleLight.intensity = flicker;
+            annexLight.intensity = flicker;
             flame.scale.setScalar(0.8 + (flicker - 1.2) * 2); // Pulse visual flame too
         }
     };
-    candleGroup.add(candleLight);
+    candleGroup.add(annexLight);
 
     // Position Group on Desk
     // Desk Top Surface: y=1.0 + 0.075 = 1.075
@@ -42,7 +49,8 @@ function createAnnexInterior() {
 
     // Helper to run updates
     const animator = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.001, 0.001), new THREE.MeshBasicMaterial({ visible: false }));
-    animator.userData = { update: (t) => { candleLight.userData.update(t); } };
+    animator.castShadow = false; // V-FIX: Ensure hidden helper doesn't cast shadow
+    animator.userData = { update: (t) => { annexLight.userData.update(t); } };
     interiorGroup.add(animator);
 
     // --- CONTENT ---
@@ -64,8 +72,9 @@ function createAnnexInterior() {
     bedGeo.rotateX(Math.PI / 2);
     const bedMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 1.0 });
     const bed = new THREE.Mesh(bedGeo, bedMat);
-    // V-FIX: Raise from 0.2 to 0.4 to sit on floor
-    bed.position.set(-1.0, 0.4, 0);
+    // V-FIX: Move away from wall (-1.0 -> -0.9) to fix shadow artifact
+    bed.position.set(-0.9, 0.4, 0);
+    bed.castShadow = true; bed.receiveShadow = true;
     interiorGroup.add(bed);
 
     // Rounded Rectangle Pillow
@@ -84,17 +93,21 @@ function createAnnexInterior() {
     const pillowGeo = new THREE.ExtrudeGeometry(pShape, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3 });
     pillowGeo.rotateX(Math.PI / 2);
     const pillow = new THREE.Mesh(pillowGeo, new THREE.MeshStandardMaterial({ color: 0x555555 }));
-    pillow.position.set(-1.0, 0.45, 1.4);
+    // V-FIX: Move together with bed (-0.9)
+    pillow.position.set(-0.9, 0.45, 1.4);
+    pillow.castShadow = true; pillow.receiveShadow = true;
     interiorGroup.add(pillow);
 
     // Blanket (Thin & Flush)
-    const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.02, 2.2), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1.0 }));
-    blanket.position.set(-1.0, 0.41, -0.1);
+    // V-FIX: Reduced width (1.82 -> 1.75) to prevent clipping into wall
+    const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.02, 2.2), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1.0 }));
+    // V-FIX: Move with bed (-0.9)
+    blanket.position.set(-0.9, 0.41, -0.1);
     interiorGroup.add(blanket);
 
-    // Chair
+    // V-FIX: Chair closer to desk (-0.8) and scaled (0.75)
     const chair = createAnnexChair();
-    chair.position.set(0.2, 0, -0.8);
+    chair.position.set(0.5, 0, -0.8);
     chair.rotation.y = -0.3;
     interiorGroup.add(chair);
 
@@ -105,23 +118,27 @@ function createAnnexInterior() {
     function createWallShelf(x, y, z, rotY = 0) {
         const shelfGroup = new THREE.Group();
         const plank = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 0.6), shelfMat);
+        plank.castShadow = true; plank.receiveShadow = true;
         shelfGroup.add(plank);
         for (let i = 0; i < 10; i++) {
             const bH = 0.4 + Math.random() * 0.2, bW = 0.15 + Math.random() * 0.1;
             const book = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, 0.4), new THREE.MeshStandardMaterial({ color: darkBooks[Math.floor(Math.random() * darkBooks.length)] }));
             book.position.set(-1.0 + (i * 0.22), 0.05 + bH / 2, 0);
+            book.castShadow = true; book.receiveShadow = true;
             shelfGroup.add(book);
         }
         shelfGroup.position.set(x, y, z); shelfGroup.rotation.y = rotY;
         interiorGroup.add(shelfGroup);
     }
-    createWallShelf(-1.95, 2.0, 0, Math.PI / 2);
-    createWallShelf(-1.95, 2.8, 0, Math.PI / 2);
+    // V311: Moved from -1.95 to -1.7 to prevent wall piercing
+    createWallShelf(-1.7, 2.0, 0, Math.PI / 2);
+    createWallShelf(-1.7, 2.8, 0, Math.PI / 2);
 
     // 3. Narrow Suitcase
     const suitcase = createSuitcase();
     suitcase.scale.set(1.0, 1.0, 1.4);
-    suitcase.position.set(1.4, 0.2, 1.6);
+    // V-FIX: On the Floor (y=0.0) - Was y=0.2 (floating)
+    suitcase.position.set(1.4, 0.0, 1.6);
     suitcase.rotation.y = 0.4;
     interiorGroup.add(suitcase);
 
@@ -130,11 +147,14 @@ function createAnnexInterior() {
     const deskGroup = new THREE.Group();
     const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.15, 1.2), woodMat);
     deskTop.position.y = 1.0;
+    deskTop.castShadow = true; deskTop.receiveShadow = true;
     deskGroup.add(deskTop);
     const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.0);
     // V173: Removed left legs (mounted to wall)
     const legBR = new THREE.Mesh(legGeo, woodMat); legBR.position.set(1.4, 0.5, -0.45);
+    legBR.castShadow = true; legBR.receiveShadow = true;
     const legFR = new THREE.Mesh(legGeo, woodMat); legFR.position.set(1.4, 0.5, 0.45);
+    legFR.castShadow = true; legFR.receiveShadow = true;
     deskGroup.add(legBR, legFR);
     // V173: Mounted to Left Wall (X=-2), so group shifts by -0.4 (Center at -0.4, Width 3.2)
     deskGroup.position.set(-0.4, 0, -1.3);
@@ -149,35 +169,133 @@ function createAnnexInterior() {
 
     // V-NEW: Moving Rothko Painting (High up on Wall)
     createRothkoPainting();
+
+    // V-WORDHUNT: Handled in Suitcase creation (Lines 230+)
+    /*
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('annex');
+        if (item) {
+            item.position.set(0, 1.5, 0); // Near Chair
+            interiorGroup.add(item);
+        }
+    }
+    */
 }
 
 function createAnnexChair() {
     const chair = new THREE.Group();
     const woodMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 });
     const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.6), woodMat);
-    seat.position.y = 0.5; chair.add(seat);
+    seat.position.y = 0.5; seat.castShadow = true; seat.receiveShadow = true; chair.add(seat);
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.1), woodMat);
-    back.position.set(0, 0.9, 0.25); chair.add(back);
+    back.position.set(0, 0.9, 0.25); back.castShadow = true; back.receiveShadow = true; chair.add(back);
     for (let x of [-0.25, 0.25]) {
         for (let z of [-0.25, 0.25]) {
             const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), woodMat);
-            leg.position.set(x, 0.25, z); chair.add(leg);
+            leg.position.set(x, 0.25, z); leg.castShadow = true; leg.receiveShadow = true; chair.add(leg);
         }
     }
-    chair.scale.setScalar(0.75); return chair;
+    chair.scale.setScalar(1.1); return chair;
 }
 
 function createSuitcase() {
     const group = new THREE.Group();
     const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 0.8 });
     const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.5), bodyMat); group.add(body);
-    const strapGeo = new THREE.BoxGeometry(0.05, 0.42, 0.52);
+
+    // 1. Bottom Part (Half Height)
+    const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), bodyMat);
+    bottom.castShadow = true; bottom.receiveShadow = true;
+    bottom.position.y = 0.1; // 0 to 0.2
+    group.add(bottom);
+
+    // 2. Lid Group (Pivots at back Z edge)
+    const lidGroup = new THREE.Group();
+    // Pivot Point: Top of bottom part (y=0.2), Back edge (z=-0.25)
+    lidGroup.position.set(0, 0.2, -0.25);
+
+    // Lid Mesh (Offset so pivot is at corner)
+    // Lid is 0.2 high. Center should be at z=0.25 relative to pivot?
+    // Geometry center is 0. 
+    // We want the mesh to sit from Z=0 to Z=0.5 relative to pivot Group?
+    // Let's align it.
+    const lidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), bodyMat);
+    lidMesh.position.set(0, 0.1, 0.25); // Move up 0.1 and forward 0.25
+    lidMesh.castShadow = true; lidMesh.receiveShadow = true;
+    lidGroup.add(lidMesh);
+
+    // Straps (Attached to Lid and Bottom)
+    // Simplified: Just put straps on Lid for visual continuity when opening?
+    // Or split straps. Let's put visual straps on Lid.
+    const strapGeo = new THREE.BoxGeometry(0.05, 0.22, 0.52);
     const s1 = new THREE.Mesh(strapGeo, new THREE.MeshStandardMaterial({ color: 0x2b1d14 }));
-    s1.position.x = -0.25; group.add(s1);
-    const s2 = s1.clone(); s2.position.x = 0.25; group.add(s2);
-    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 8, 16, Math.PI), metalMat);
-    handle.position.y = 0.2; handle.rotation.z = Math.PI / 2; group.add(handle);
+    s1.position.set(-0.25, 0.1, 0.25);
+    lidGroup.add(s1);
+    const s2 = s1.clone();
+    s2.position.set(0.25, 0.1, 0.25);
+    lidGroup.add(s2);
+
+    // Handle (On Lid)
+    // V-FIX: Full Torus (Math.PI -> Math.PI * 2) to look complete
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 8, 16, Math.PI * 2), metalMat);
+    handle.rotation.z = Math.PI / 2;
+    handle.rotation.x = -Math.PI / 2; // Flat on top
+    handle.position.set(0, 0.2, 0.25); // On top of lid
+    lidGroup.add(handle);
+
+    group.add(lidGroup);
+
+    // V-WORDHUNT Integration (Directly here to couple with Suitcase logic)
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('annex');
+        if (item) {
+            // Hide "Inside" (Sitting on bottom)
+            item.position.set(0, 0.3, 0);
+            item.scale.set(0.1, 0.1, 0.1);
+            item.visible = false;
+            group.add(item); // Add to Suitcase Group
+
+            // Click Handler
+            const openSuitcase = () => {
+                if (lidGroup.userData.isOpen) return;
+
+                console.log("Suitcase Clicked! Opening...");
+                lidGroup.userData.isOpen = true;
+
+                // 1. Open Lid Animation
+                new TWEEN.Tween(lidGroup.rotation)
+                    .to({ x: -Math.PI / 2.5 }, 1500) // Open back
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .start();
+
+                // 2. Reveal and Pop Orb
+                item.visible = true;
+                item.userData.revealed = true;
+
+                // Slight delay to let lid open bit first?
+                setTimeout(() => {
+                    new TWEEN.Tween(item.position)
+                        .to({ y: 1.5 }, 2000)
+                        .easing(TWEEN.Easing.Elastic.Out)
+                        .start();
+                    new TWEEN.Tween(item.scale)
+                        .to({ x: 1.0, y: 1.0, z: 1.0 }, 2000)
+                        .easing(TWEEN.Easing.Elastic.Out)
+                        .start();
+                }, 200);
+            };
+
+            // Hitbox for clicking
+            const hitBox = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.6, 0.8), new THREE.MeshBasicMaterial({ visible: false }));
+            hitBox.position.y = 0.3;
+            hitBox.castShadow = false; // V-FIX: No shadow for hitbox
+            hitBox.userData = { onClick: openSuitcase, type: 'suitcase' };
+            group.add(hitBox);
+
+            if (window.interiorClickables) interiorClickables.push(hitBox);
+        }
+    }
+
     return group;
 }
 function addDeskItems(deskGroup) {
@@ -267,7 +385,7 @@ function createDiaryHologram(parent) {
         'prepared to',
         'pack your',
         'bags and',
-        'move West..."'
+        'move west..."'
     ];
 
     const startY = 320;
@@ -339,6 +457,7 @@ function createRothkoPainting() {
     const frame = new THREE.Mesh(frameGeo, frameMat);
     frame.position.set(-0.4, 3.5, -2.0);
     frame.rotation.y = 0;
+    frame.castShadow = true; frame.receiveShadow = true;
     interiorGroup.add(frame);
 
     // --- ROTHKO LOGIC ---

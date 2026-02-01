@@ -1,328 +1,57 @@
-function createBedroomInterior() {
-    // BED (Rounded Corners)
+
+// --- BEDROOM.JS ---
+console.log("Loading Bedroom (V-Modular-Elite)...");
+
+window.createBedroomInterior = function () {
+
     const bedGroup = new THREE.Group();
+    const matMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const cGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 16);
+    [[2, 2.5], [-2, 2.5], [2, -2.5], [-2, -2.5]].forEach(p => { const c = new THREE.Mesh(cGeo, matMat); c.position.set(p[0], 0.3, p[1]); bedGroup.add(c); });
 
-    // -- VIDEO PLAYLIST PANEL --
-    // V-FIX 257: Removed redundant manual button (Universal UI handles it)
+    const frame = new THREE.Mesh(window.createRoundedBox(4.8, 5.8, 0.4, 0.3), new THREE.MeshStandardMaterial({ color: 0x150b04 }));
+    frame.rotation.x = Math.PI / 2; frame.position.y = 0.2; bedGroup.add(frame);
+    const m1 = new THREE.Mesh(window.createRoundedBox(4, 6, 0.6, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    m1.rotation.x = Math.PI / 2; m1.position.y = 0.5; bedGroup.add(m1);
+    const duvet = new THREE.Mesh(window.createRoundedBox(4.3, 4.5, 0.1, 0.4), new THREE.MeshStandardMaterial({ color: 0x1a070a }));
+    duvet.rotation.x = Math.PI / 2; duvet.position.set(0, 0.8, -0.5); bedGroup.add(duvet);
+    const pillow = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 3.5, 16), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+    pillow.rotation.z = Math.PI / 2; pillow.scale.set(0.6, 1, 1); pillow.position.set(0, 0.85, 2.2); bedGroup.add(pillow);
+    bedGroup.position.set(2.5, 0, -1); interiorGroup.add(bedGroup);
 
-    // -- DARK FLOOR
-    const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }));
-    darkFloor.rotation.x = -Math.PI / 2; darkFloor.position.y = 0.01;
-    interiorGroup.add(darkFloor);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 2), new THREE.MeshStandardMaterial({ color: 0x111111 })); desk.position.set(-2.5, 0.6, -3); interiorGroup.add(desk);
 
-    // V142: Dark Grey Mattress (0xaaaaaa -> 0x555555)
-    const mattressColor = 0x555555;
-    const matMat = new THREE.MeshStandardMaterial({ color: mattressColor });
-    const cornerGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 16);
+    const lamp = new THREE.Group();
+    lamp.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.1, 16), matMat));
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), matMat); pole.position.y = 0.4; lamp.add(pole);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xcc8800, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })); shade.position.y = 0.7; lamp.add(shade);
+    const bLight = new THREE.PointLight(0xffaa00, 2.5, 8); bLight.position.y = 0.6; bLight.castShadow = true; lamp.add(bLight);
+    lamp.scale.setScalar(2); lamp.position.set(-3.8, 1.2, -3.5); interiorGroup.add(lamp);
 
-    // 4 Corners
-    const c1 = new THREE.Mesh(cornerGeo, matMat); c1.position.set(2.0, 0.5, 2.5); bedGroup.add(c1);
-    const c2 = new THREE.Mesh(cornerGeo, matMat); c2.position.set(-2.0, 0.5, 2.5); bedGroup.add(c2);
-    const c3 = new THREE.Mesh(cornerGeo, matMat); c3.position.set(2.0, 0.5, -2.5); bedGroup.add(c3);
-    const c4 = new THREE.Mesh(cornerGeo, matMat); c4.position.set(-2.0, 0.5, -2.5); bedGroup.add(c4);
+    const phone = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x010101, roughness: 0.2 }));
+    phone.position.set(3.2, 4.5, -4.95); interiorGroup.add(phone); interiorClickables.push(phone);
+    if (!window.videoElement) { window.videoElement = document.createElement('video'); }
+    window.videoTexture = new THREE.VideoTexture(window.videoElement);
+    if (roomContent.bedroom.videoPlaylist) { window.videoElement.src = roomContent.bedroom.videoPlaylist[0].src; window.videoElement.pause(); }
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.6), new THREE.MeshBasicMaterial({ map: window.videoTexture })); screen.position.z = 0.06; phone.add(screen);
+    phone.userData = { onClick: () => { if (window.videoElement.paused) window.videoElement.play(); else window.videoElement.pause(); } };
 
-    // Fillers (Cross Shape)
-    // V142: Black/Brown Frame (0x251b14 -> 0x150b04)
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 5.8), new THREE.MeshStandardMaterial({ color: 0x150b04 }));
-    frame.position.y = 0.2; bedGroup.add(frame);
-    const mainMattress = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.6, 6.0), matMat); mainMattress.position.y = 0.5; bedGroup.add(mainMattress);
-    const crossMattress = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.6, 5.0), matMat); crossMattress.position.y = 0.5; bedGroup.add(crossMattress);
-
-    // V142: Dark Maroon Duvet (0x7a1f2f -> 0x3d0f17)
-    const duvet = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.1, 4.5), new THREE.MeshStandardMaterial({ color: 0x3d0f17 }));
-    duvet.position.set(0, 0.8, -0.5); bedGroup.add(duvet);
-    // PILLOW (Rounded - Horizontal Cylinder)
-    const pillowGeo = new THREE.CylinderGeometry(0.35, 0.35, 3.5, 16);
-    const pillow = new THREE.Mesh(pillowGeo, new THREE.MeshStandardMaterial({ color: 0x666666 })); // V142: Dark Grey
-    pillow.rotation.z = Math.PI / 2; // Lie horizontal
-    pillow.scale.set(0.6, 1, 1); // Flatten height (local X)
-    pillow.position.set(0, 0.85, 2.2);
-    bedGroup.add(pillow);
-
-    bedGroup.position.set(2.5, 0, -1);
-    interiorGroup.add(bedGroup);
-
-    // DESK (Without Phone)
-    // V142: Darkest Wood Desk (0x2e201b -> 0x1e100b)
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 2), new THREE.MeshStandardMaterial({ color: 0x1e100b }));
-    desk.position.set(-2.5, 0.6, -3); interiorGroup.add(desk);
-
-    // V135: Lamp on Table (Corner) - Bigger & Brighter
-    const lampGroup = new THREE.Group();
-    // Base
-    lampGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0x111111 })));
-    // Pole
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-    pole.position.y = 0.4; lampGroup.add(pole);
-    // Shade
-    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xcc8800, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
-    shade.position.y = 0.7; lampGroup.add(shade);
-    // Light - Dimmer (Night Bed Lamp) - Darker
-    // V142: Reduced Intensity (0.8 -> 0.4) -> V-NEW (0.15) -> V257 (1.2) -> V261 (2.5)
-    const bulb = new THREE.PointLight(0xffaa00, 2.5, 8);
-    bulb.position.y = 0.6;
-    lampGroup.add(bulb);
-
-    // Position on Desk (Left Back Corner)
-    // Scale Up 2x
-    lampGroup.scale.set(2, 2, 2);
-    lampGroup.position.set(-3.8, 1.2, -3.5);
-    interiorGroup.add(lampGroup);
-
-    // WALL MOUNTED VIDEO PLAYER (BIGGER, BACK WALL)
-    const phone = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }));
-    phone.position.set(3.2, 4.5, -4.95); // V501: Extreme right for NO overlap
-    phone.userData = { type: 'videoPhone', state: 'stopped' };
-    interiorGroup.add(phone);
-    interiorClickables.push(phone);
-
-    videoTexture = new THREE.VideoTexture(videoElement);
-    // Force src to Bedroom Playlist (Fixes "wrong video" if coming from other room)
-    if (roomContent.bedroom.videoPlaylist && roomContent.bedroom.videoPlaylist.length > 0) {
-        videoElement.src = roomContent.bedroom.videoPlaylist[0].src;
-        videoElement.pause(); // Start Paused
+    if (roomContent.bedroom.videoPlaylist && window.createUniversalVideoInterface) {
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-1.8, 4.2, -4.8), roomContent.bedroom.videoPlaylist, { scale: 0.5 });
     }
 
-    const phoneScreenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.6), new THREE.MeshBasicMaterial({ map: videoTexture }));
-    phoneScreenMesh.position.set(0, 0, 0.06);
-    phoneScreenMesh.name = 'screen';
-    phone.add(phoneScreenMesh);
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 1.2), new THREE.MeshStandardMaterial({ color: 0x111111 })); shelf.position.set(-4.6, 3.5, 3.0); interiorGroup.add(shelf);
+    const lavaLamp = window.createLavaLamp(0.108, shelf.position); shelf.add(lavaLamp);
+    const lavaTicker = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.001, 0.001), new THREE.MeshBasicMaterial({ visible: false })); lavaTicker.userData.update = (t) => lavaLamp.userData.update(t); interiorGroup.add(lavaTicker);
 
-    if (roomContent.bedroom.videoPlaylist) {
-        // V-FIX: Universal Video UI
-        if (window.createUniversalVideoInterface) {
-            // Position adjusted to match previous header height (y=6.0 approx)
-            // V-FIX: Moved Right (-2.8 -> -1.5) per User Request
-            // V306: Move screen "more to the right" (User Request)
-            // Was -2.8 -> Moved to -1.5 (Closer to center/desk)
-            // V501: Extreme left for NO overlap with screen
-            const videoPos = new THREE.Vector3(-1.8, 4.2, -4.8);
-            window.createUniversalVideoInterface(interiorGroup, videoPos, roomContent.bedroom.videoPlaylist, {
-                onPlay: playVideo // V-FIX 257: Pass correct handler
-            });
-        }
-    }
-
-    const shelfGeo = new THREE.BoxGeometry(0.8, 0.1, 1.2);
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
-    const shelf = new THREE.Mesh(shelfGeo, shelfMat);
-    shelf.position.set(-4.6, 3.5, 3.0);
-    interiorGroup.add(shelf);
-
-    // V-FIX 264: Drop Shadow for Shelf
-    const shadowGeo = new THREE.PlaneGeometry(0.8, 1.2);
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
-    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(-4.6, 3.45, 3.0); // Slightly below
-    interiorGroup.add(shadow);
-
-    // V-WORDHUNT
     if (typeof WordHunt !== 'undefined') {
         const item = WordHunt.createInteractable('bedroom');
-        if (item) {
-            item.position.set(0, 3, 0); // Above bed/center
-            interiorGroup.add(item);
-        }
+        if (item) { item.position.set(0, 3, 0); interiorGroup.add(item); }
     }
-
-    // Lava Lamp
-    createLavaLamp(0.108, shelf.position);
-}
-
-function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
-    const lampGroup = new THREE.Group();
-    const metalMat = new THREE.MeshStandardMaterial({
-        color: 0x080808,
-        metalness: 1.0,
-        roughness: 0.05
-    });
-
-    // Base
-    const baseGeo = new THREE.CylinderGeometry(1.5, 2.2, 4.2, 32);
-    const base = new THREE.Mesh(baseGeo, metalMat);
-    base.position.y = -4.5;
-    lampGroup.add(base);
-
-    // Cap
-    const topGeo = new THREE.CylinderGeometry(0.6, 1.2, 2, 32);
-    const topCap = new THREE.Mesh(topGeo, metalMat);
-    topCap.position.y = 7.0;
-    lampGroup.add(topCap);
-
-    // Glass
-    const glassGeo = new THREE.CylinderGeometry(1.1, 1.5, 10, 32, 1, true);
-    const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        metalness: 0.2,
-        roughness: 0.0,
-        transmission: 0.96,
-        thickness: 0.5,
-        transparent: true,
-        opacity: 0.7,
-        ior: 1.5,
-        reflectivity: 1.0,
-        clearcoat: 1.0
-    });
-    const glass = new THREE.Mesh(glassGeo, glassMat);
-    glass.position.y = 1.0;
-    lampGroup.add(glass);
-
-    // Liquid Core
-    const coreGeo = new THREE.CylinderGeometry(0.98, 1.38, 9.8, 32);
-    const coreMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff4d00,
-        transparent: true,
-        opacity: 0.5,
-        emissive: 0xff2200,
-        // V142: Duller Glow (1.6 -> 0.8) -> V261 (1.2)
-        emissiveIntensity: 1.2
-    });
-    const liquidCore = new THREE.Mesh(coreGeo, coreMaterial);
-    liquidCore.position.y = 1.0;
-    lampGroup.add(liquidCore);
-
-    // Lights
-    // V142: Dimmer Lights (4 -> 2) -> V-NEW (0.5) -> V261 (1.5)
-    const internalPointLight = new THREE.PointLight(0xff4d00, 1.5, 5);
-    internalPointLight.position.set(0, 0, 0);
-    lampGroup.add(internalPointLight);
-
-    const baseLight = new THREE.PointLight(0xff4d00, 1.5, 3);
-    baseLight.position.set(0, -4.5, 0);
-    lampGroup.add(baseLight);
-
-    // Blobs
-    const lavaMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff4d00,
-        emissive: 0xff4d00,
-        // V142: Duller Blobs (6.4 -> 3.2) -> V261 (4.0)
-        emissiveIntensity: 4.0,
-        roughness: 0.0
-    });
-
-    const blobs = [];
-    const blobCount = 5;
-    for (let i = 0; i < blobCount; i++) {
-        const size = 0.6 + Math.random() * 0.7;
-        const geo = new THREE.SphereGeometry(size, 16, 16);
-        const blob = new THREE.Mesh(geo, lavaMaterial);
-
-        blob.userData = {
-            yOffset: Math.random() * 10,
-            speed: 0.5 + Math.random() * 0.5, // Faster relative speed for small cleanup
-            rotationPhase: Math.random() * Math.PI * 2,
-            baseSize: size,
-            driftSpeed: 1.0 + Math.random() * 1.0
-        };
-
-        blobs.push(blob);
-        lampGroup.add(blob);
-    }
-
-    // Animation Logic attached to Group
-    let colorHue = 0.05;
-
-    lampGroup.scale.set(scale, scale, scale);
-
-    // Position: On Top of the Shelf
-    let yPos = 1.2; // Fallback
-    if (anchorPos) {
-        // Shelf Top is anchorPos.y + 0.05
-        // Lamp Bottom Offset is 6.6 * scale
-        yPos = anchorPos.y + 0.05 + (6.6 * scale);
-    }
-
-    let xPos = -1.2;
-    let zPos = -3.5;
-    if (anchorPos) {
-        xPos = anchorPos.x;
-        zPos = anchorPos.z;
-    }
-
-    lampGroup.position.set(xPos, yPos, zPos);
-
-    lampGroup.userData.update = function (t) {
-        // Color Shift
-        colorHue += 0.001; // Slower
-        if (colorHue > 1) colorHue = 0;
-        const newColor = new THREE.Color();
-        newColor.setHSL(colorHue, 1.0, 0.5);
-
-        lavaMaterial.color.copy(newColor);
-        lavaMaterial.emissive.copy(newColor);
-        coreMaterial.color.copy(newColor);
-        coreMaterial.emissive.copy(newColor);
-        baseLight.color.copy(newColor);
-        internalPointLight.color.copy(newColor);
-
-        // Blobs
-        blobs.forEach((blob) => {
-            const data = blob.userData;
-            // Original code used `time` in ms * 0.001. `t` passed from update is likely seconds.
-            // But let's check `t` in house.js... animate(time). 
-            // `t = time * 0.001` (seconds).
-
-            // Re-tuning physics for 't' (seconds)
-            const yAmplitude = 4.3;
-            const yBase = 0.5;
-
-            const timeVal = t;
-
-            const yPos = yBase + Math.sin(timeVal * data.speed + data.yOffset) * yAmplitude;
-            const normalizedY = (yPos - (yBase - yAmplitude)) / (yAmplitude * 2);
-
-            const currentBottleRadius = 1.5 - (normalizedY * 0.4);
-            const heightScaleFactor = 1.0 - (normalizedY * 0.5);
-            // safeRadius adjusted to keep blobs inside
-            const safeRadius = (currentBottleRadius - (data.baseSize * heightScaleFactor)) * 0.7;
-
-            blob.position.y = yPos;
-            blob.position.x = Math.sin(timeVal * data.driftSpeed + data.rotationPhase) * safeRadius;
-            blob.position.z = Math.cos(timeVal * data.driftSpeed + data.rotationPhase) * safeRadius;
-
-            const pulse = 1 + Math.sin(timeVal * 1.5 + data.yOffset) * 0.1;
-            const finalScale = heightScaleFactor * pulse;
-            blob.scale.set(finalScale, finalScale, finalScale);
-        });
-    };
-
-    interiorGroup.add(lampGroup);
-}
-
-function nextBedroomVideo() {
-    masterVideoIndex = (masterVideoIndex + 1) % roomContent.bedroom.videoPlaylist.length;
-    startVideoClip('bedroom');
-    // V-FIX 257: Update UI
-    if (window.updateVideoUI) window.updateVideoUI();
-}
-
-// V-FIX 9: Helper to Stop Video & Reset Lights (Bedroom specific)
-window.stopBedroomVideo = function () {
-    if (window.videoElement && !window.videoElement.paused) window.videoElement.pause();
-
-    // Restore Bedroom Defaults (Matches house.js ApplyRoomLighting)
-    // Dark/Moody
-    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.02 }, 1000).start();
-    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.05 }, 1000).start();
-    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.05 }, 1000).start();
-
-    console.log("Bedroom Video Stopped: Restoring Lights");
 };
 
-function playVideo(index) {
-    const playlist = roomContent.bedroom.videoPlaylist;
-    if (!playlist || !playlist[index]) return;
-
-    masterVideoIndex = index;
-    // V-FIX 257: Direct Play & UI Update
-    startVideoClip('bedroom');
-
-    // V-FIX: User reported room SHOULD get dark (like cinema)
-    if (window.applyRoomLighting) {
-        window.applyRoomLighting('basement'); // Use 'basement' profile for darkness
-    }
-
-    // Sync UI if available
-    if (window.updateVideoUI) window.updateVideoUI();
-}
+window.playBedroomVideo = function (index) {
+    const pl = roomContent.bedroom.videoPlaylist;
+    if (!pl || !pl[index]) return;
+    window.videoElement.src = pl[index].src; window.videoElement.load(); window.videoElement.play();
+};

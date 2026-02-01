@@ -179,7 +179,10 @@ function createVideoPanel(playlist) {
     if (window.createUniversalVideoInterface) {
         // Position from Data or Fallback
         const posData = roomContent['living'].videoInterfacePos || { x: 3.0, y: 3.2, z: -4.9 };
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist);
+        // V306: Scale 0.5x
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist, {
+            scale: 0.5
+        });
     }
 }
 
@@ -233,10 +236,10 @@ function nextTVContent() {
             // V-FIX: Only capture if we haven't already (prevents capturing dimmed state when switching videos)
             if (!window.preCinemaState) {
                 window.preCinemaState = {
-                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.15,
-                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.2,
-                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 1.2,
-                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 1.2,
+                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.25, // Updated default
+                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.25,
+                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 0.25,
+                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 0.25,
                 };
             }
 
@@ -289,8 +292,9 @@ function restoreCinemaLights() {
     console.log("Cinema Mode: Restoring Lights (LOCAL ONLY)");
 
     // Default Fallbacks if capture failed (V298: Moody Normal State)
+    // Updated V315-RELOADED-5: Brighter Defaults
     const restore = window.preCinemaState || {
-        cozy: 0.2, library: 0.2, spotL: 1.2, spotR: 1.2, ambient: 0.15,
+        cozy: 0.5, library: 0.5, spotL: 0.3, spotR: 0.3, ambient: 0.15,
     };
 
     try {
@@ -369,29 +373,24 @@ function createLivingRoomInterior() {
     interiorGroup.add(wallsGroup);
 
     // --- LIGHTING ---
-    // V298: Balanced Local Light Intensities
-    // V303: Darker Interior (0.25 -> 0.15)
-    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.15, 15);
-    window.livingCozyLight.position.set(-3.0, 4.0, -2.0);
+    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.5, 15);
+    window.livingCozyLight.position.set(0, 5, 0);
     window.livingCozyLight.castShadow = true;
-    window.livingCozyLight.shadow.bias = -0.0001;
-    window.livingCozyLight.shadow.radius = 4; // V204: Blurry Shadows
+    // window.livingCozyLight.shadow.bias = -0.0001; // Reduce artifacts
     interiorGroup.add(window.livingCozyLight);
 
-    // V303: Darker Library Spot (0.2 -> 0.15)
-    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.15);
-    window.livingLibrarySpot.position.set(-2, 7.5, 0);
-    window.livingLibrarySpot.target.position.set(-5, 3, 0);
-    window.livingLibrarySpot.castShadow = true;
-    window.livingLibrarySpot.shadow.radius = 4; // V204: Blurry Shadows
-    window.livingLibrarySpot.angle = Math.PI / 3;
+    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.5);
+    window.livingLibrarySpot.position.set(3, 7, 3);
+    window.livingLibrarySpot.angle = Math.PI / 4;
     window.livingLibrarySpot.penumbra = 0.5;
+    window.livingLibrarySpot.castShadow = true;
+    window.livingLibrarySpot.target.position.set(3, 2, -4.9);
     interiorGroup.add(window.livingLibrarySpot);
     interiorGroup.add(window.livingLibrarySpot.target);
 
     // V298: Moody Shelf lighting
-    // V303: Darker Spots (0.2 -> 0.15)
-    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.15);
+    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
+    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.3);
     bookcaseSpotL.position.set(-2, 6, -3.5);
     bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5);
     bookcaseSpotL.angle = Math.PI / 2.2;
@@ -403,8 +402,8 @@ function createLivingRoomInterior() {
     interiorGroup.add(bookcaseSpotL.target);
     window.bookcaseSpotL = bookcaseSpotL;
 
-    // V303: Darker Spots (0.2 -> 0.15)
-    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.15);
+    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
+    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.3);
     bookcaseSpotR.position.set(-2, 6, 3.5);
     bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5);
     bookcaseSpotR.angle = Math.PI / 2.2;
@@ -422,29 +421,27 @@ function createLivingRoomInterior() {
         canvas.width = 512; canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        // Base Color (Light Brown / Oak)
-        ctx.fillStyle = '#d2b48c'; // Tan/Burlywood
+        // Base Color (Dark Wood)
+        ctx.fillStyle = '#5d4037'; // SaddleBrown family, dark
         ctx.fillRect(0, 0, 512, 512);
 
         // Wood Grain Pattern
-        ctx.fillStyle = 'rgba(101, 67, 33, 0.1)'; // Dark Brown, low opacity
+        ctx.fillStyle = 'rgba(40, 20, 10, 0.3)'; // Very dark brown
         for (let i = 0; i < 200; i++) {
             const x = Math.random() * 512;
             const y = Math.random() * 512;
-            const w = 512; // Long horizontal streaks? vertical?
-            // Let's do vertical grain for furniture usually, but texture mapping varies.
-            // Irregular wavy lines.
+            const w = 512;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.bezierCurveTo(x + Math.random() * 20 - 10, 170, x + Math.random() * 20 - 10, 340, x + Math.random() * 20 - 10, 512);
             ctx.lineWidth = 1 + Math.random() * 2;
-            ctx.strokeStyle = 'rgba(139, 69, 19, 0.15)'; // SaddleBrown
+            ctx.strokeStyle = 'rgba(20, 10, 5, 0.4)'; // Almost black
             ctx.stroke();
         }
 
         // Noise
         for (let i = 0; i < 20000; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)';
+            ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.02)';
             ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
         }
 
@@ -453,7 +450,7 @@ function createLivingRoomInterior() {
 
         const mat = new THREE.MeshStandardMaterial({
             map: tex,
-            color: 0xddccaa, // tint
+            color: 0x8b5a2b, // Darker tint (SaddleBrown)
             roughness: 0.8,
             metalness: 0.1
         });
@@ -538,44 +535,14 @@ function createLivingRoomInterior() {
         return group;
     }
 
-    // V240: Annex Candle Helper
+    // V317: Void Candle Removed per user request
+    /*
     function createVoidCandle() {
-        const group = new THREE.Group();
-        // Wax
-        const wax = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.05, 0.2, 16),
-            new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.2 })
-        );
-        wax.position.y = 0.1;
-        group.add(wax);
-        // Wick/Flame
-        const flame = new THREE.Mesh(
-            new THREE.SphereGeometry(0.04, 8, 8),
-            new THREE.MeshBasicMaterial({ color: 0xffaa00 })
-        );
-        flame.position.y = 0.22;
-        group.add(flame);
-        // Light
-        const light = new THREE.PointLight(0xffaa00, 1.5, 4);
-        light.position.y = 0.25;
-        group.add(light);
-
-        // Flame Animation
-        group.userData.update = (t) => {
-            flame.scale.setScalar(1.0 + Math.sin(t * 10) * 0.2);
-            light.intensity = 1.5 + Math.sin(t * 8) * 0.3;
-        };
-
-        return group;
+        ...
     }
+    */
 
-    // V147: Menorah Artifact (User Request)
-    // Traditional 7-branched Menorah. Middle candle lit.
-    function createMenorahArtifact() {
-        return createRuinArtifact();
-    }
-
-    const createBookcase = (posZ) => {
+    function createBookcase(posZ) {
         const bookcaseGroup = new THREE.Group();
 
         // V-REFINE: Right Hinge Offset Logic
@@ -673,25 +640,15 @@ function createLivingRoomInterior() {
                 interiorClickables.push(portalHitBox);
 
 
-                // 4. Candle Decoration (Visual Only now)
+                // 4. Candle Decoration REMOVED (V317)
+                /*
                 const candle = createVoidCandle();
-                candle.position.set(-0.3, -1.0, 0.2);
-                candle.scale.setScalar(1.5);
-                portal.add(candle);
+                ...
+                */
 
-                // Visibility Logic
+                // Visibility Logic (Minimal)
                 portal.userData.update = (t) => {
-                    if (candle.userData.update) candle.userData.update(t);
-
-                    // Default Visible
-                    let shouldBeVisible = true;
-                    const door = window.secretDoorGroup;
-                    if (door) {
-                        // If door is strictly closed, hide candle (so it doesn't clip)
-                        const isClosed = !door.userData.isOpen && (door.rotation.y < 0.1);
-                        if (isClosed) shouldBeVisible = false;
-                    }
-                    candle.visible = shouldBeVisible;
+                    // console.log("Void interaction active");
                 };
             }
 
@@ -836,6 +793,8 @@ function createLivingRoomInterior() {
     const glowMesh = new THREE.Mesh(glowGeo, glowMat);
     glowMesh.position.set(0, 2.6, -4.95); // Just off wall
     interiorGroup.add(glowMesh);
+
+    // V-WORDHUNT: Moved to Maria Interaction
 
     // V-NEW: Create Video Menu Panel
     if (roomContent['living'].videoPlaylist && roomContent['living'].videoPlaylist.length > 0) {
@@ -988,6 +947,66 @@ function createLivingRoomInterior() {
             robotGlow.position.set(0, 1.5, 0.5);
             window.metropolisRobot.add(robotGlow);
             window.robotGlowLight = robotGlow;
+
+            // V-FIX: Explicit Hitbox for Maria (Easier Clicking)
+            // V-FIX 19: Enable depthWrite: false to preventing occluding the Glow/Rings!
+            // V-FIX 21: Invisible again (User verified)
+            const hitGeo = new THREE.CylinderGeometry(0.8, 0.8, 3.5, 16);
+            const hitMat = new THREE.MeshBasicMaterial({
+                visible: true,
+                color: 0xffff00,
+                wireframe: false, // Hidden
+                transparent: true,
+                opacity: 0.0, // Hidden
+                depthWrite: false // CRITICAL: Stop blocking the glow/rings behind it
+            });
+            const hitBox = new THREE.Mesh(hitGeo, hitMat);
+            hitBox.position.y = 1.0;
+            hitBox.userData = { type: 'MariaHitbox', parentRobot: true };
+            window.metropolisRobot.add(hitBox);
+
+            // V-WORDHUNT: Hidden Orb in Maria
+            if (typeof WordHunt !== 'undefined') {
+                const item = WordHunt.createInteractable('living');
+                if (item) {
+                    item.position.set(0, 1.5, 0);
+                    item.scale.set(0.1, 0.1, 0.1);
+                    item.visible = false;
+                    window.metropolisRobot.add(item);
+
+                    // Click Handler for Robot
+                    // We need to ensure the robot mesh itself is clickable or we add a hitbox
+                    window.metropolisRobot.userData.type = 'MariaRobot';
+                    window.metropolisRobot.userData.onClick = () => {
+                        if (item.userData.revealed) return;
+
+                        console.log("Maria Clicked! Popping out orb...");
+                        item.visible = true;
+                        item.userData.revealed = true;
+
+                        // Animate Pop Out
+                        new TWEEN.Tween(item.position)
+                            .to({ y: 3.0 }, 1500)
+                            .easing(TWEEN.Easing.Elastic.Out)
+                            .start();
+
+                        new TWEEN.Tween(item.scale)
+                            .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
+                            .easing(TWEEN.Easing.Elastic.Out)
+                            .start();
+                    };
+
+                    // V-FIX: Double-Bind! Attach ONE handler to the Hitbox too
+                    hitBox.userData.onClick = window.metropolisRobot.userData.onClick;
+
+                    if (window.interiorClickables) {
+                        window.interiorClickables.push(window.metropolisRobot);
+                        // Push hitbox too just in case raycaster hits it first and stops?
+                        // (intersectObjects true handles children, but pushing explicit is safer if hierarchy logic is strict)
+                        // Actually, pushing the GROUP (robot) is usually enough.
+                    }
+                }
+            }
         }
     } catch (e) {
         console.warn("Living Room Robot Init Failed", e);

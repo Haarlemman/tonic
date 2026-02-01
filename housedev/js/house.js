@@ -1,3 +1,493 @@
+function createGenericInterior(text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white'; ctx.font = 'bold 40px "Glass Antiqua", cursive'; ctx.textAlign = 'center';
+    ctx.shadowColor = "black"; ctx.shadowBlur = 4; ctx.fillText(text, 256, 128);
+    const tex = new THREE.CanvasTexture(canvas);
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+    plane.position.set(0, 4, -4.9);
+    interiorGroup.add(plane);
+}
+class MMAnimation {
+    constructor(width, height) {
+        this.width = width || 1024;
+        this.height = height || 1024;
+        this.canvas = document.createElement('canvas');
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.ctx = this.canvas.getContext('2d', { alpha: true }); // Enable Alpha
+
+        this.cx = this.width / 2;
+        this.cy = this.height / 2;
+
+        this.scrollPos = 0;
+        this.targetScroll = 0;
+        this.time = 0;
+
+        this.universeStarted = false;
+        this.lastInteraction = Date.now();
+        this.isAutoPlaying = true; // Default auto-play
+
+        // CONFIG (Adapted from mm/index.html)
+        this.UNIVERSE_CONFIG = {
+            // General Settings
+            background: 'transparent', // Transparent background! 
+            textGlow: '#00FFFF',
+
+            palette: {
+                stars: '#eeeeff',
+                singularity: '#ffee99',
+                bangLines: '#eeddaa',
+                quantum: '#0000ff',
+                atomOrbits: '#990000',
+                electrons: '#00FFFF',
+                dna: '#ffeeaa',
+                neural: '#6699FF',
+                fibonacci: '#ffee00',
+                geometry: '#FF9900',
+                tesseract: '#00CCFF',
+                solar: '#FF5555',
+                web: '#eedd00',
+                horizon: '#ff0000'
+            },
+            physics: {
+                baseSpeed: 15, // Speed up slightly since no scroll interaction?
+                brakeStart: 11500,
+                idleDelay: 3000
+            }
+        };
+
+        this.FL = 500;
+        this.WORLD_END = 15500;
+        this.objects = [];
+        this.stars = [];
+
+        this.initWorld();
+
+        // Auto-start immediately
+        this.launchUniverse();
+    }
+
+    getCanvas() {
+        return this.canvas;
+    }
+
+    initWorld() {
+        this.objects = [];
+        this.stars = [];
+        // Stars
+        for (let i = 0; i < 300; i++) {
+            this.stars.push({
+                x: (Math.random() - 0.5) * 5000,
+                y: (Math.random() - 0.5) * 5000,
+                z: Math.random() * 2000,
+                zOffset: Math.random() * this.WORLD_END
+            });
+        }
+        // Objects
+        this.objects.push({ type: 'singularity', z: 600, x: 0, y: 0 });
+        for (let i = 0; i < 60; i++) {
+            this.objects.push({
+                type: 'bang', z: 1200,
+                x: 0, y: 0, angle: Math.random() * Math.PI * 2,
+                speed: 2 + Math.random() * 8, len: 50 + Math.random() * 200
+            });
+        }
+        for (let i = 0; i < 80; i++) {
+            this.objects.push({
+                type: 'quantum', z: 2400 + (Math.random() - 0.5) * 500,
+                x: (Math.random() - 0.5) * 400, y: (Math.random() - 0.5) * 400,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+        this.objects.push({ type: 'atom', z: 3400, x: 0, y: 0, r: 180 });
+        for (let i = 0; i < 60; i++) {
+            this.objects.push({
+                type: 'dna', z: 4400 + (i * 12),
+                x: 0, y: 0, index: i, width: 100
+            });
+        }
+        for (let i = 0; i < 15; i++) {
+            this.objects.push({
+                type: 'node', z: 5400 + (Math.random() - 0.5) * 600,
+                x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 600,
+                size: 2 + Math.random() * 4
+            });
+        }
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+        for (let i = 0; i < 150; i++) {
+            let r = Math.sqrt(i) * 35;
+            let theta = i * goldenAngle;
+            this.objects.push({
+                type: 'fib', z: 6400, x: r * Math.cos(theta), y: r * Math.sin(theta), idx: i
+            });
+        }
+        this.objects.push({ type: 'geo', z: 7400, x: 0, y: 0, r: 250 });
+        this.objects.push({ type: 'tesseract', z: 8400, x: 0, y: 0, s: 300 });
+        this.objects.push({ type: 'solar', z: 9400, x: 0, y: 0, r: 400 });
+        for (let i = 0; i < 25; i++) {
+            this.objects.push({
+                type: 'web', z: 10800 + (Math.random() - 0.5) * 1000,
+                x: (Math.random() - 0.5) * 1000, y: (Math.random() - 0.5) * 1000,
+                size: 10 + Math.random() * 20
+            });
+        }
+        this.objects.push({ type: 'horizon', z: 15500, x: 0, y: 0, r: 150 });
+    }
+
+    launchUniverse() {
+        this.universeStarted = true;
+        this.isAutoPlaying = true;
+        // Audio would go here if we ported it, but for 3D mesh focus we might skip audio first
+        // or hook it up later. User focused on visuals "lines coming out".
+    }
+
+    lerp(start, end, amt) {
+        return (1 - amt) * start + amt * end;
+    }
+
+    update() {
+        if (!this.universeStarted) return;
+
+        // Auto Scroll Logic
+        let speed = this.UNIVERSE_CONFIG.physics.baseSpeed;
+        if (this.targetScroll > this.UNIVERSE_CONFIG.physics.brakeStart) {
+            let endDist = this.WORLD_END - this.UNIVERSE_CONFIG.physics.brakeStart;
+            let endProgress = (this.targetScroll - this.UNIVERSE_CONFIG.physics.brakeStart) / endDist;
+            if (endProgress > 1) endProgress = 1;
+            speed = this.UNIVERSE_CONFIG.physics.baseSpeed - (endProgress * (this.UNIVERSE_CONFIG.physics.baseSpeed - 2));
+        }
+        this.targetScroll += speed;
+        if (this.targetScroll >= this.WORLD_END) {
+            this.targetScroll = 0;
+            this.scrollPos = 0;
+        }
+
+        this.scrollPos = this.lerp(this.scrollPos, this.targetScroll, 0.1);
+        this.time += 0.02;
+
+        this.draw();
+    }
+
+    draw() {
+        const ctx = this.ctx;
+        const width = this.width;
+        const height = this.height;
+        const cx = this.cx;
+        const cy = this.cy;
+        const scrollPos = this.scrollPos;
+        const time = this.time;
+        const FL = this.FL;
+        const WORLD_END = this.WORLD_END;
+        const UNIVERSE_CONFIG = this.UNIVERSE_CONFIG;
+
+        // CLEAR with Transparent
+        ctx.clearRect(0, 0, width, height);
+
+        let globalOpacity = 1;
+        if (scrollPos > 14500) globalOpacity = Math.max(0, (15500 - scrollPos) / 1000);
+        if (globalOpacity <= 0.01) return;
+
+        // DRAW STARS
+        if (scrollPos > 1200) this.drawStars(globalOpacity);
+
+        this.objects.forEach(obj => {
+            let relZ = obj.z - scrollPos;
+            if (scrollPos < 800) { if (obj.type !== 'singularity' && obj.type !== 'bang') return; }
+            if (obj.type === 'horizon' && scrollPos > 15300) return;
+            if (relZ < 10 || relZ > 3500) return;
+
+            let scale = FL / relZ;
+            if (scale > 20) return;
+            let x2d = cx + obj.x * scale;
+            let y2d = cy + obj.y * scale;
+            let alpha = Math.min(1, (3500 - relZ) / 1000) * globalOpacity;
+
+            // Suck Logic (End tunnel)
+            if (scrollPos > 11000 && obj.type !== 'horizon') {
+                let suck = Math.min(1.0, (scrollPos - 11000) / 4500);
+                x2d = this.lerp(x2d, cx, suck);
+                y2d = this.lerp(y2d, cy, suck);
+                let ang = Math.atan2(y2d - cy, x2d - cx) + suck * 3;
+                let dist = Math.sqrt((x2d - cx) ** 2 + (y2d - cy) ** 2);
+                x2d = cx + Math.cos(ang) * dist;
+                y2d = cy + Math.sin(ang) * dist;
+            }
+
+            ctx.globalAlpha = alpha;
+
+            if (obj.type === 'singularity') {
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.singularity;
+                let pulse = 2 * scale;
+                if (scrollPos > 100) pulse += Math.sin(time * 20) * 2;
+                ctx.beginPath(); ctx.arc(x2d, y2d, pulse, 0, Math.PI * 2); ctx.fill();
+            }
+            else if (obj.type === 'bang') {
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.bangLines;
+                ctx.lineWidth = 3.0; // Bolder
+                let progress = (scrollPos - 600) / 800;
+                if (progress < 0) progress = 0;
+                let burst = Math.pow(progress, 2) * 2000;
+                if (burst > 0) {
+                    let ex = x2d + Math.cos(obj.angle) * burst * scale;
+                    let ey = y2d + Math.sin(obj.angle) * burst * scale;
+                    let tx = x2d + Math.cos(obj.angle) * (burst - obj.len) * scale;
+                    let ty = y2d + Math.sin(obj.angle) * (burst - obj.len) * scale;
+                    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(ex, ey); ctx.stroke();
+                }
+            }
+            else if (obj.type === 'quantum') {
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.quantum;
+                let jx = x2d + (Math.sin(time * 5 + obj.phase) * 10 * scale);
+                let jy = y2d + (Math.cos(time * 5 + obj.phase) * 10 * scale);
+                ctx.beginPath(); ctx.arc(jx, jy, 1.5 * scale, 0, Math.PI * 2); ctx.fill();
+            }
+            else if (obj.type === 'atom') {
+                let r = obj.r * scale;
+                let minorR = r * 0.5;
+                for (let i = 0; i < 3; i++) {
+                    ctx.strokeStyle = UNIVERSE_CONFIG.palette.atomOrbits;
+                    ctx.lineWidth = 2.0;
+                    ctx.beginPath();
+                    let angleTilt = (Math.PI / 3) * i;
+                    ctx.ellipse(x2d, y2d, r, minorR, angleTilt + time * 0.5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    if (i < 2) {
+                        let speed = (i === 0) ? time * 3 : time * 4 + 2;
+                        let ex_local = r * Math.cos(speed);
+                        let ey_local = minorR * Math.sin(speed);
+                        let rotation = angleTilt + time * 0.5;
+                        let ex_rot = ex_local * Math.cos(rotation) - ey_local * Math.sin(rotation);
+                        let ey_rot = ex_local * Math.sin(rotation) + ey_local * Math.cos(rotation);
+                        let electronX = x2d + ex_rot;
+                        let electronY = y2d + ey_rot;
+                        ctx.fillStyle = UNIVERSE_CONFIG.palette.electrons;
+                        ctx.beginPath(); ctx.arc(electronX, electronY, 4 * scale, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.atomOrbits;
+                ctx.beginPath(); ctx.arc(x2d, y2d, 5 * scale, 0, Math.PI * 2); ctx.fill();
+            }
+            else if (obj.type === 'dna') {
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.dna;
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.dna;
+                ctx.lineWidth = 3.0;
+                let w = obj.width * scale;
+                let twistSpeed = time * 2;
+                let strandTwist = obj.index * 0.3;
+                let tumbleAngle = time * 0.5;
+                let phase = strandTwist + twistSpeed;
+                let localX = Math.sin(phase) * w;
+                let rx1 = localX * Math.cos(tumbleAngle);
+                let ry1 = localX * Math.sin(tumbleAngle);
+                let rx2 = -localX * Math.cos(tumbleAngle);
+                let ry2 = -localX * Math.sin(tumbleAngle);
+                let px1 = x2d + rx1;
+                let py1 = y2d + ry1;
+                let px2 = x2d + rx2;
+                let py2 = y2d + ry2;
+                ctx.fillRect(px1 - scale, py1 - scale, 2 * scale, 2 * scale);
+                ctx.fillRect(px2 - scale, py2 - scale, 2 * scale, 2 * scale);
+                if (obj.index % 2 === 0) {
+                    ctx.beginPath(); ctx.moveTo(px1, py1); ctx.lineTo(px2, py2); ctx.stroke();
+                }
+            }
+            else if (obj.type === 'node') {
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.neural;
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.neural;
+                ctx.lineWidth = 3.0;
+                for (let k = 0; k < 3; k++) {
+                    let a = (Math.PI * 2 / 3) * k + time * 0.2;
+                    let len = 30 * scale;
+                    ctx.beginPath(); ctx.moveTo(x2d, y2d); ctx.lineTo(x2d + Math.cos(a) * len, y2d + Math.sin(a) * len); ctx.stroke();
+                }
+                ctx.beginPath(); ctx.arc(x2d, y2d, 4 * scale, 0, Math.PI * 2); ctx.fill();
+            }
+            else if (obj.type === 'fib') {
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.fibonacci;
+                let r = Math.sqrt(obj.x * obj.x + obj.y * obj.y);
+                let baseAng = Math.atan2(obj.y, obj.x);
+                let finalAng = baseAng + time * 0.5;
+                let rotX = r * Math.cos(finalAng);
+                let rotY = r * Math.sin(finalAng);
+                let finalX = cx + rotX * scale;
+                let finalY = cy + rotY * scale;
+                let dotSize = (1.5 + (obj.idx / 50)) * scale;
+                ctx.beginPath(); ctx.arc(finalX, finalY, dotSize, 0, Math.PI * 2); ctx.fill();
+            }
+            else if (obj.type === 'geo') {
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.geometry;
+                ctx.lineWidth = 3.0;
+                let r = obj.r * scale;
+                ctx.save();
+                ctx.translate(x2d, y2d); ctx.rotate(time * 0.5);
+                ctx.beginPath();
+                ctx.moveTo(0, -r); ctx.lineTo(r * 0.866, r * 0.5); ctx.lineTo(-r * 0.866, r * 0.5);
+                ctx.closePath(); ctx.stroke();
+                ctx.rotate(time * 0.2);
+                ctx.strokeRect(-r * 0.7, -r * 0.7, r * 1.4, r * 1.4);
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+            }
+            else if (obj.type === 'tesseract') {
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.tesseract;
+                ctx.lineWidth = 3.0;
+                let s = obj.s * scale;
+                ctx.save();
+                ctx.translate(x2d, y2d);
+                ctx.rotate(time);
+                ctx.strokeRect(-s / 2, -s / 2, s, s);
+                ctx.rotate(time);
+                let is = s * 0.5;
+                ctx.strokeRect(-is / 2, -is / 2, is, is);
+                ctx.beginPath();
+                ctx.moveTo(-s / 2, -s / 2); ctx.lineTo(-is / 2, -is / 2);
+                ctx.moveTo(s / 2, -s / 2); ctx.lineTo(is / 2, -is / 2);
+                ctx.moveTo(s / 2, s / 2); ctx.lineTo(is / 2, is / 2);
+                ctx.moveTo(-s / 2, s / 2); ctx.lineTo(-is / 2, is / 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+            else if (obj.type === 'solar') {
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.solar;
+                ctx.lineWidth = 3.0;
+                let r = obj.r * scale;
+                ctx.beginPath(); ctx.arc(x2d, y2d, 10 * scale, 0, Math.PI * 2); ctx.stroke();
+                for (let i = 1; i < 5; i++) {
+                    let or = (r / 5) * i;
+                    ctx.beginPath(); ctx.ellipse(x2d, y2d, or, or * 0.4, time * 0.1, 0, Math.PI * 2); ctx.stroke();
+                }
+            }
+            else if (obj.type === 'web') {
+                ctx.fillStyle = UNIVERSE_CONFIG.palette.web;
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.web;
+                let r = obj.size * scale;
+                ctx.beginPath(); ctx.arc(x2d, y2d, r, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(x2d, y2d); ctx.lineTo(cx, cy);
+                ctx.globalAlpha = alpha * 0.2; ctx.stroke();
+            }
+            else if (obj.type === 'horizon') {
+                // Keep center transparent if possible? Original code drew black.
+                // ctx.fillStyle = '#000'; // Void center stays black
+                // Let's use transparent for the void to see through!
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath(); ctx.arc(x2d, y2d, obj.r * scale, 0, Math.PI * 2); ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+
+                ctx.strokeStyle = UNIVERSE_CONFIG.palette.horizon;
+                ctx.lineWidth = 4.0;
+                let r = obj.r * scale;
+                ctx.beginPath(); ctx.arc(x2d, y2d, r, 0, Math.PI * 2); ctx.stroke();
+                ctx.save();
+                ctx.translate(x2d, y2d);
+                ctx.scale(1, 0.1);
+                ctx.rotate(time * 0.2 + Math.sin(time) * 0.1);
+                ctx.beginPath(); ctx.arc(0, 0, r * 2.0, 0, Math.PI * 2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, r * 2.8, 0, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+            }
+        });
+
+        ctx.globalAlpha = 1;
+    }
+
+    drawStars(opacity) {
+        const ctx = this.ctx;
+        const UNIVERSE_CONFIG = this.UNIVERSE_CONFIG;
+        const scrollPos = this.scrollPos;
+        const WORLD_END = this.WORLD_END;
+        const FL = this.FL;
+        const cx = this.cx;
+        const cy = this.cy;
+
+        ctx.fillStyle = UNIVERSE_CONFIG.palette.stars;
+        ctx.strokeStyle = UNIVERSE_CONFIG.palette.stars;
+        this.stars.forEach(s => {
+            let relativeZ = (s.z + s.zOffset - scrollPos);
+            while (relativeZ < 0) relativeZ += WORLD_END;
+            while (relativeZ > 2000) relativeZ -= 2000;
+            if (relativeZ < 10) return;
+            let scale = FL / relativeZ;
+            if (scale > 20) return;
+            let x2d = cx + s.x * scale;
+            let y2d = cy + s.y * scale;
+            let size = (scale > 3) ? 3 : scale;
+
+            if (scrollPos > 11000) {
+                let suck = (scrollPos - 11000) / 4500;
+                let dx = x2d - cx;
+                let dy = y2d - cy;
+                let factor = Math.max(0, 1 - suck * 0.8);
+                let sx = cx + dx * factor;
+                let sy = cy + dy * factor;
+                ctx.globalAlpha = opacity;
+                ctx.lineWidth = size;
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                let streakLen = suck * 0.3;
+                ctx.lineTo(sx - dx * streakLen, sy - dy * streakLen);
+                ctx.stroke();
+            } else {
+                ctx.globalAlpha = Math.min(1, relativeZ / 1500) * opacity;
+                ctx.fillRect(x2d, y2d, size, size);
+            }
+        });
+    }
+}
+function createBasementInterior() {
+    // -- METROPOLIS --
+    // V140: Darker Floor (0x111111 -> 0x050505)
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.8 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    interiorGroup.add(floor);
+
+    const gridHelper = new THREE.GridHelper(10, 10, 0x00ffcc, 0x222222);
+    gridHelper.position.y = 0.05;
+    interiorGroup.add(gridHelper);
+
+    // Floating Nodes
+    const nodeCount = 60;
+    const nodeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+    for (let i = 0; i < nodeCount; i++) {
+        const isTruth = i % 2 === 0;
+        const nodeMat = new THREE.MeshBasicMaterial({ color: isTruth ? 0x00ffcc : 0xff00ff });
+        const node = new THREE.Mesh(nodeGeo, nodeMat);
+        node.position.set((Math.random() - 0.5) * 8, Math.random() * 6 + 0.5, (Math.random() - 0.5) * 8);
+        node.userData = {
+            velocity: new THREE.Vector3((Math.random() - 0.5) * 0.01, (Math.random() - 0.5) * 0.01, (Math.random() - 0.5) * 0.01),
+            originalY: node.position.y,
+            isTruth: isTruth
+        };
+        basementNodes.push(node);
+        interiorGroup.add(node);
+    }
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
+    const lineGeo = new THREE.BufferGeometry();
+    basementLines = new THREE.LineSegments(lineGeo, lineMat);
+    interiorGroup.add(basementLines);
+
+    // TRON VIDEO
+    videoElement.src = "../assets/video/tron-space.mp4";
+    videoElement.muted = true; videoElement.loop = true;
+    videoElement.play().catch(e => console.warn("Video play failed", e));
+    videoTexture = new THREE.VideoTexture(videoElement);
+    const bgMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), new THREE.MeshBasicMaterial({ map: videoTexture, opacity: 0.5, transparent: true, blending: THREE.AdditiveBlending }));
+    bgMesh.position.set(0, 4, -4.9);
+    interiorGroup.add(bgMesh);
+
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('basement');
+        if (item) {
+            item.position.set(-2, 2, -2); // Near nodes
+            interiorGroup.add(item);
+        }
+    }
+
+
+}
 console.log("--- HOUSE.JS LOADED ---");
 
 let openingFog;
@@ -19,7 +509,7 @@ let raycaster, mouse;
 let animationId;
 // HOUSE MUSIC STATE
 let houseMusicTime = 0;
-const HOUSE_TRACK = "/assets/audio/premonition.mp3";
+const HOUSE_TRACK = "../assets/audio/premonition.mp3";
 
 // -- LIGHTS --
 let dirLight, rimLight, ambientLight, hemiLight;
@@ -41,11 +531,6 @@ window.interiorClickables = interiorClickables; // V-FIX: Global Access for Room
 
 let tvMesh = null, currentSlideIndex = 0;
 let phoneScreenMesh = null;
-var videoElement = null, videoTexture = null;
-var audioPlayer = null;
-var musicSwitchMesh = null;
-var musicPanelMesh = null;
-var playlistPanelMesh = null;
 var isMusicPlaying = false;
 
 let atomGroup = null;
@@ -60,15 +545,15 @@ let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
 console.log("--- HOUSE.JS V305-HOLOGRAM-RESTORED ---");
 console.log("%c V500 - UNBREAKABLE SYNC LOADED ", "background: #222; color: #bada55; font-size: 20px;");
 scene = new THREE.Scene();
-// V-REFINE: Much Lighter Purple Fog (Visibility Check)
-scene.fog = new THREE.Fog(0x2d1b4e, 10, 250); // V292: Extended for tall towers (was 150)
+// V-REFINE: Clarity Boost (Lighter and Less Foggy per User Request)
+scene.fog = new THREE.Fog(0x2d1b4e, 30, 600); // Lighter (Was 10, 250)
 openingFog = scene.fog;
 // V-TEST: Red Background Removed
 scene.background = new THREE.Color(0x2d1b4e);
 
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(-0.71, 24.76, 87.74);
-camera.lookAt(-0.01, 1.6, -9.05);
+camera.position.set(-2.8, 51.9, 175.9); // V-FIX: Match Flight Start to prevent Jump
+camera.lookAt(-1.94, -20.5, -0.94);
 window.camera = camera;
 scene.add(camera);
 
@@ -83,21 +568,20 @@ document.getElementById('canvas-container').appendChild(renderer.domElement);
 textureLoader = new THREE.TextureLoader();
 
 // LIGHTS
-// V303: Lighter Exterior (0.35 -> 0.45)
-// V303: Lighter Exterior (0.35 -> 0.45)
-ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+// V-REFINE: Lighter Exterior Atmosphere (0.25 -> 0.45)
+ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
 window.ambientLight = ambientLight;
 scene.add(ambientLight);
 
 // Dim Global Fill
-// V303: Lighter Fill (0.35 -> 0.45)
-hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.3);
+// V-REFINE: Lighter Fill (0.3 -> 0.45)
+hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.45);
 window.hemiLight = hemiLight;
 hemiLight.position.set(0, 50, 0);
 scene.add(hemiLight);
 
-// V303: Brighter Moon (1.0 -> 1.2)
-dirLight = new THREE.DirectionalLight(0xfffaed, 0.7);
+// V-REFINE: Brighter Moon (0.7 -> 1.1)
+dirLight = new THREE.DirectionalLight(0xfffaed, 1.1);
 window.dirLight = dirLight;
 dirLight.position.set(50, 80, 30);
 dirLight.castShadow = true;
@@ -124,7 +608,7 @@ controls.panSpeed = 1.0;
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2;
-controls.target.set(-0.01, 1.6, -9.05);
+controls.target.set(-1.94, -20.5, -0.94);
 
 worldGroup = new THREE.Group();
 scene.add(worldGroup);
@@ -148,18 +632,75 @@ raycaster = new THREE.Raycaster();
 
 mouse = new THREE.Vector2();
 
-window.addEventListener('resize', onWindowResize);
-const canvas = renderer.domElement;
-canvas.addEventListener('pointerdown', onPointerDown);
-canvas.addEventListener('pointermove', onPointerMove);
-canvas.addEventListener('pointerup', onPointerUp);
+// Interaction Safety Guard (Audit Item 1)
+if (!window.interactionsSet) {
+    window.addEventListener('resize', onWindowResize);
+    const canvas = renderer.domElement;
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
 
-videoElement = document.getElementById('generic-video');
-audioPlayer = document.getElementById('room-audio');
+    // Centralised Document Click Handler (Audit Item 5)
+    document.addEventListener('click', handleGlobalClick);
+
+    window.interactionsSet = true;
+    console.log("Global Interaction Listeners Initialized");
+}
+
+// V-AUDIT: Consolidated Media Manager (Audit Item 2, 3, 4)
+class GlobalMediaManager {
+    constructor() {
+        this.audio = document.getElementById('room-audio');
+        this.video = document.getElementById('generic-video');
+        console.log("GlobalMediaManager Initialized");
+    }
+
+    playAudio(src, options = {}) {
+        if (!this.audio) return;
+        this.audio.src = src;
+        if (options.volume !== undefined) this.audio.volume = options.volume;
+        if (options.loop !== undefined) this.audio.loop = options.loop;
+        return this.audio.play();
+    }
+
+    pauseAudio() {
+        if (this.audio) this.audio.pause();
+    }
+
+    playVideo(src, options = {}) {
+        if (!this.video) return;
+        this.video.src = src;
+        if (options.volume !== undefined) this.video.volume = options.volume;
+        if (options.loop !== undefined) this.video.loop = options.loop;
+        if (options.muted !== undefined) this.video.muted = options.muted;
+        return this.video.play();
+    }
+
+    pauseVideo() {
+        if (this.video) this.video.pause();
+    }
+}
+
+window.mediaManager = new GlobalMediaManager();
+videoElement = window.mediaManager.video;
+audioPlayer = window.mediaManager.audio;
 window.audioPlayer = audioPlayer;
 window.videoElement = videoElement;
 window.musicSwitchMesh = null;
 window.getMusicSwitch = () => musicSwitchMesh;
+
+function handleGlobalClick(event) {
+    // 1. Pixel Band Exit Logic
+    if (event.target && event.target.closest('#pixel-band')) {
+        if (document.fullscreenElement || document.getElementById('start-btn').style.display === 'none') {
+            exitExperience();
+        }
+    }
+
+    // 2. Room State Logic (Audit Recommendation)
+    // if (state === 'HOUSE') handleHouseClick(event);
+    // if (state === 'ROOM') handleRoomClick(event);
+}
 
 // V290: Robust Loader Logic (Wait for Build)
 window.hideLoader = function () {
@@ -195,6 +736,8 @@ if (header) {
     header.style.opacity = '1';
 }
 
+// Redundant click listener commented out (Audit Item 5)
+/*
 document.addEventListener('click', function (e) {
     if (e.target && e.target.closest('#pixel-band')) {
         if (document.fullscreenElement || document.getElementById('start-btn').style.display === 'none') {
@@ -202,6 +745,7 @@ document.addEventListener('click', function (e) {
         }
     }
 });
+*/
 
 const minBtn = document.getElementById('min-btn');
 if (minBtn) minBtn.addEventListener('click', toggleInfo);
@@ -219,9 +763,12 @@ if (headerContent) {
 animate();
 
 // V290: Trigger hide after build is complete
+// Redundant fallback timeout removed (Audit Item 7)
+/*
 setTimeout(() => {
     if (window.hideLoader) window.hideLoader();
 }, 2500); // 2.5s safe minimum (was 1.5s)
+*/
 
 
 window.exitExperience = function () {
@@ -437,10 +984,8 @@ function buildHouse() {
         { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: -0.2 },
         { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: -0.2 }
     ]);
-    // V179/V289: Hitbox must be VISIBLE but TRANSPARENT for Raycaster to work
-    // V300: Shrink width (2.5 -> 2.0) and move left (-1.0 -> -1.5) to clear Hall
-    // V306: Widening for user "Hit-area" request (2.0 -> 2.5), shift to -1.6
-    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
+    // V326: Shrink hitboxes (was 2.5/2.0) to prevent Living Room selection issues
+    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 5.0), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
     liveHitBox.position.set(-1.6, 1.8, 0);
     liveHitBox.userData = { name: 'living', type: 'room' };
     worldGroup.add(liveHitBox);
@@ -449,9 +994,7 @@ function buildHouse() {
         { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: 0.2 },
         { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: 0.2 }
     ]);
-    // V179/V289: Hitbox must be VISIBLE but TRANSPARENT for Raycaster to work
-    // V300: Shrink width (2.5 -> 2.0) and move right (1.0 -> 1.5) to clear Hall
-    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.0, 5.5), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
+    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 5.0), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
     studioHitBox.position.set(1.5, 1.8, 0);
     studioHitBox.userData = { name: 'studio', type: 'room' };
     worldGroup.add(studioHitBox);
@@ -498,7 +1041,7 @@ function buildHouse() {
 
     // Black Text (Arial)
     nctx.fillStyle = '#000000';
-    nctx.font = 'bold 160px Arial';
+    nctx.font = 'bold 160px Arial, sans-serif';
     nctx.textAlign = 'center';
     nctx.textBaseline = 'middle';
     nctx.fillText("42", 128, 138);
@@ -517,14 +1060,11 @@ function buildHouse() {
     plate.add(numMesh);
     worldGroup.add(plate);
 
-    // -- CLICK AREA FOR HALL --
-    // V300: Much larger and forward-projecting hitbox
-    // Width: 1.6 (Fits between gap), Depth: 1.0 (Projects out), Z: 3.0 (Forward of others)
     const hallHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(1.6, 2.5, 1.0),
+        new THREE.BoxGeometry(1.2, 2.4, 1.0), // V326: Slightly narrowed
         new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
     );
-    hallHitBox.position.set(0, 1.3, 3.0); // Moved forward to Z=3.0 (was 2.55)
+    hallHitBox.position.set(0, 1.3, 3.0);
     hallHitBox.userData = { name: 'hall', type: 'room' };
     worldGroup.add(hallHitBox);
 
@@ -713,7 +1253,7 @@ function createIntroSignTexture() {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
     // V7: Just "ENTER"
-    ctx.fillStyle = '#cc0000'; ctx.font = 'bold 80px "Courier New", monospace';
+    ctx.fillStyle = '#cc0000'; ctx.font = 'bold 80px "Glass Antiqua", cursive';
     ctx.fillText("ENTER", 256, 100); // Centered vertically in 200
 
     const tex = new THREE.CanvasTexture(canvas);
@@ -734,8 +1274,8 @@ function createSignTexture(line1 = "ENTER", line2 = "at your own risk") {
     ctx.strokeStyle = '#2c1810'; ctx.lineWidth = 12; ctx.strokeRect(6, 6, 500, 244);
     ctx.lineWidth = 4; ctx.strokeRect(18, 18, 476, 220);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 90px "Courier New", monospace'; ctx.fillText(line1, 256, 100);
-    ctx.fillStyle = '#000000'; ctx.font = 'bold 40px "Courier New", monospace'; ctx.fillText(line2, 256, 180);
+    ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 90px "Glass Antiqua", cursive'; ctx.fillText(line1, 256, 100);
+    ctx.fillStyle = '#000000'; ctx.font = 'bold 40px Arial, sans-serif'; ctx.fillText(line2, 256, 180);
     const tex = new THREE.CanvasTexture(canvas);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     return tex;
@@ -974,10 +1514,11 @@ function buildEnvironment() {
     const horizonZ = 150.0; // V44: Far Horizon
     const widthSlope = (widthAtHorizon - widthAtSteps) / (horizonZ - stepZ);
 
-    const roadSegments = 200;
-    const roadStartZ = 2.7; // Start exactly at steps
-    const roadEndZ = 150.0;
-    console.log("Road Config V44: Epic Scale (150m). Start:", roadStartZ, "End:", roadEndZ);
+    // V-FIX: Road from distance toward house (ends at roundabout)
+    const roadSegments = 100; // More segments for longer road
+    const roadStartZ = 150; // Start far away
+    const roadEndZ = 20; // End at roundabout position
+    console.log("Road Config: From distance. Start:", roadStartZ, "End:", roadEndZ);
 
     const rVertices = [];
     const rIndices = [];
@@ -988,8 +1529,8 @@ function buildEnvironment() {
         const ratio = i / roadSegments;
         const z = roadStartZ + (roadEndZ - roadStartZ) * ratio;
 
-        // V23: Precise Formula relative to Steps
-        const currentWidth = widthAtSteps + (z - stepZ) * widthSlope;
+        // V-FIX: Constant Width Road (No taper, follows curvature)
+        const currentWidth = 8.0; // Wider constant width
 
         const yTop = getPlanetY(0, z) + 0.1;
         const yBottom = yTop - roadThickness;
@@ -1032,6 +1573,306 @@ function buildEnvironment() {
         polygonOffsetUnits: 1
     }));
     worldGroup.add(road);
+
+    // V-NEW: Roundabout at road end (z=20)
+    const roundaboutRadius = 6;
+    const roundaboutSegments = 32;
+    const roundaboutVertices = [];
+    const roundaboutIndices = [];
+    const roundaboutZ = 20;
+
+    for (let i = 0; i <= roundaboutSegments; i++) {
+        const angle = (i / roundaboutSegments) * Math.PI * 2;
+        const x = Math.cos(angle) * roundaboutRadius;
+        const z = roundaboutZ + Math.sin(angle) * roundaboutRadius;
+        const yTop = getPlanetY(x, z) + 0.1;
+        const yBottom = yTop - roadThickness;
+
+        roundaboutVertices.push(x, yTop, z);
+        roundaboutVertices.push(x, yBottom, z);
+
+        if (i < roundaboutSegments) {
+            const base = i * 2;
+            roundaboutIndices.push(base, base + 1, base + 2);
+            roundaboutIndices.push(base + 2, base + 1, base + 3);
+        }
+    }
+
+    const roundaboutGeo = new THREE.BufferGeometry();
+    roundaboutGeo.setAttribute('position', new THREE.Float32BufferAttribute(roundaboutVertices, 3));
+    roundaboutGeo.setIndex(roundaboutIndices);
+    roundaboutGeo.computeVertexNormals();
+
+    const roundabout = new THREE.Mesh(roundaboutGeo, new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 0.9,
+        side: THREE.DoubleSide
+    }));
+    worldGroup.add(roundabout);
+
+    // V-NEW: Gravel driveway in front of house
+    // V-FIX: Black/white noise pattern for footpath
+    // V-FIX: Realistic Gravel (Noise + Color) + Driveway
+    function createGravelTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#7a7a6a'; ctx.fillRect(0, 0, 512, 512); // Base Earthy Grey
+
+        for (let i = 0; i < 20000; i++) {
+            const shade = Math.random();
+            // Mix of grey, brown, white stones
+            if (shade > 0.8) ctx.fillStyle = '#9a9a8a';
+            else if (shade > 0.5) ctx.fillStyle = '#5a5a4a';
+            else if (shade > 0.2) ctx.fillStyle = '#8a7a6a'; // Brownish
+            else ctx.fillStyle = '#3a3a3a';
+
+            const size = Math.random() * 2 + 1;
+            ctx.fillRect(Math.random() * 512, Math.random() * 512, size, size);
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(8, 8);
+        return tex;
+    }
+
+
+    const gravelTex = createGravelTexture();
+
+    // Circle around house
+    const footpathShape = new THREE.Shape();
+    const radius = 7; // Slightly larger
+    const segments = 32;
+    for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        footpathShape.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+
+    const gravelGeo1 = new THREE.ShapeGeometry(footpathShape);
+
+    // Driveway to Road (Z=6 to Z=16, Width 6)
+    const drivewayGeo = new THREE.PlaneGeometry(6, 12); // 12m long (4 to 16)
+    // Offset to connect circle (Z=4) to Roundabout (Z=~16)
+    drivewayGeo.translate(0, 0, 10); // Center at 10 (spans 4 to 16)
+
+    // Merge
+    // Note: Merging geometries simpler by just adding second mesh for now to avoid complexity
+
+    const gravelMat = new THREE.MeshStandardMaterial({ map: gravelTex, roughness: 1.0 });
+    const gravelArea = new THREE.Mesh(gravelGeo1, gravelMat);
+    const gravelY = getPlanetY(0, 0) + 0.04;
+    gravelArea.position.set(0, gravelY, 0);
+    gravelArea.rotation.x = -Math.PI / 2;
+    gravelArea.receiveShadow = true;
+    worldGroup.add(gravelArea);
+
+    const driveway = new THREE.Mesh(drivewayGeo, gravelMat);
+    driveway.position.set(0, gravelY, 0); // Already translated geo
+    driveway.rotation.x = -Math.PI / 2;
+    driveway.receiveShadow = true;
+    worldGroup.add(driveway);
+
+
+    // V-NEW: Garage building with split-off road
+    function buildGarage() {
+        const garageGroup = new THREE.Group();
+
+        // Garage structure (4m wide × 3m deep × 2.5m tall)
+
+        // V-FIX: Resize Garage (Smaller) & Tiled Roof
+        // Garage body: 3.2m wide, 2.2m tall, 2.6m deep
+        const garageWidth = 3.2;
+        const garageHeight = 2.2;
+        const garageDepth = 2.6;
+
+        const garageMat = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.8 });
+        const garageBody = new THREE.Mesh(new THREE.BoxGeometry(garageWidth, garageHeight, garageDepth), garageMat);
+        garageBody.position.y = garageHeight / 2;
+        garageBody.castShadow = true;
+        garageBody.receiveShadow = true;
+        garageGroup.add(garageBody);
+
+        // V-NEW: Tiled Roof Texture
+        function createTiledRoofTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#8a3324'; ctx.fillRect(0, 0, 512, 512);
+
+            // Draw Tiles
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            const tilesX = 10; const tilesY = 10;
+            const tw = 512 / tilesX; const th = 512 / tilesY;
+
+            for (let y = 0; y < tilesY; y++) {
+                for (let x = 0; x < tilesX; x++) {
+                    // Shading gradient for each tile
+                    const g = ctx.createLinearGradient(x * tw, y * th, x * tw, y * th + th);
+                    g.addColorStop(0, 'rgba(255,255,255,0.1)');
+                    g.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = g;
+                    ctx.fillRect(x * tw + 2, y * th + 2, tw - 4, th - 4);
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 2);
+            return tex;
+        }
+
+        // V-NEW: Interactive garage door with starry parallax
+        const doorMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.6 });
+        const door = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 0.1), doorMat);
+        door.position.set(0, 1, 1.5);
+        door.userData = { type: 'garageDoor', isOpen: false };
+        garageGroup.add(door);
+
+        // Starry parallax plane (visible when door opens)
+        function createStarTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000011'; ctx.fillRect(0, 0, 512, 512);
+            // Add stars
+            for (let i = 0; i < 200; i++) {
+                ctx.fillStyle = Math.random() > 0.9 ? '#ffffff' : '#aaaaff';
+                const size = Math.random() * 2 + 0.5;
+                ctx.fillRect(Math.random() * 512, Math.random() * 512, size, size);
+            }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const starTex = createStarTexture();
+        const starPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(3.5, 2.5),
+            new THREE.MeshBasicMaterial({ map: starTex })
+        );
+        starPlane.position.set(0, 1, 1.4); // Behind door
+        starPlane.visible = false;
+        garageGroup.add(starPlane);
+
+        // Door click handler
+        // V-FIX: 2-Stage Interaction (Open -> Wait -> Enter)
+        door.userData.state = 'closed'; // closed, opening, open
+
+        door.userData.onClick = () => {
+            const state = door.userData.state;
+
+            if (state === 'closed') {
+                // Slower animation: Rotate open to reveal parallax
+                door.userData.state = 'opening';
+                starPlane.visible = true;
+
+                // Rotates up 90 degrees
+                new TWEEN.Tween(door.rotation)
+                    .to({ x: -Math.PI / 2 }, 3000) // Slow reveal (3s)
+                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .onComplete(() => {
+                        door.userData.state = 'open';
+                        door.userData.isOpen = true; // Legacy flag
+                    })
+                    .start();
+
+                // Subtle star drift
+                new TWEEN.Tween(starPlane.position)
+                    .to({ z: 1.3 }, 2000)
+                    .easing(TWEEN.Easing.Sinusoidal.InOut)
+                    .repeat(Infinity)
+                    .yoyo(true)
+                    .start();
+
+            } else if (state === 'open') {
+                // Already open - transition to AI Space
+                if (typeof enterRoom === 'function') {
+                    enterRoom('aispace');
+                }
+            }
+            // If 'opening', ignore clicks
+        };
+
+        // Make door clickable
+        if (typeof worldClickables !== 'undefined') {
+            worldClickables.push(door);
+        }
+
+        // Small window
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, emissive: 0x444444, emissiveIntensity: 0.3 });
+        const window = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.4), windowMat);
+        window.position.set(1.5, 1.8, 0.05);
+        garageGroup.add(window);
+
+
+        // V-FIX: Fitted Gable Roof (Scaled down)
+        const roofWidth = 3.8;
+        const roofHeight = 1.4;
+        const roofDepth = 3.2;
+
+        const roofShape = new THREE.Shape();
+        roofShape.moveTo(-roofWidth / 2, 0);
+        roofShape.lineTo(0, roofHeight);
+        roofShape.lineTo(roofWidth / 2, 0);
+        roofShape.lineTo(-roofWidth / 2, 0);
+
+        const extrudeSettings = { steps: 1, depth: roofDepth, bevelEnabled: false };
+        const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
+        roofGeo.translate(0, 0, -roofDepth / 2); // Center Z
+
+        const roofTexture = createTiledRoofTexture();
+        const roofMat = new THREE.MeshStandardMaterial({ map: roofTexture, roughness: 0.9, color: 0xcc6655 });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.set(0, garageHeight, 0); // Sit exactly on top box
+        roof.castShadow = true;
+        garageGroup.add(roof);
+
+        // Position garage to right of house
+        const garageX = 10, garageZ = 5;
+        alignToPlanet(garageGroup, garageX, garageZ);
+        garageGroup.userData = { type: 'room', name: 'garage' };
+        worldGroup.add(garageGroup);
+
+        // V-FIX: Curvy split-off road to garage (bezier-like curve)
+        const garageRoadVertices = [];
+        const garageRoadIndices = [];
+        const garageRoadWidth = 4.0;
+        const garageRoadSegments = 20; // More segments for smooth curve
+
+        for (let i = 0; i <= garageRoadSegments; i++) {
+            const t = i / garageRoadSegments;
+            // V-FIX: Stronger S-curve - control point (8, 12) for more pronounced curve
+            const t2 = t * t;
+            const t3 = 1 - t;
+            const t4 = t3 * t3;
+            const x = t4 * 0 + 2 * t3 * t * 8 + t2 * garageX; // Stronger curve
+            const z = t4 * roundaboutZ + 2 * t3 * t * 12 + t2 * garageZ;
+            const yTop = getPlanetY(x, z) + 0.1;
+            const yBottom = yTop - roadThickness;
+
+            garageRoadVertices.push(x - garageRoadWidth / 2, yTop, z);
+            garageRoadVertices.push(x + garageRoadWidth / 2, yTop, z);
+            garageRoadVertices.push(x - garageRoadWidth / 2, yBottom, z);
+            garageRoadVertices.push(x + garageRoadWidth / 2, yBottom, z);
+
+            if (i < garageRoadSegments) {
+                const base = i * 4;
+                garageRoadIndices.push(base, base + 1, base + 4);
+                garageRoadIndices.push(base + 4, base + 1, base + 5);
+            }
+        }
+
+        const garageRoadGeo = new THREE.BufferGeometry();
+        garageRoadGeo.setAttribute('position', new THREE.Float32BufferAttribute(garageRoadVertices, 3));
+        garageRoadGeo.setIndex(garageRoadIndices);
+        garageRoadGeo.computeVertexNormals();
+
+        const garageRoad = new THREE.Mesh(garageRoadGeo, new THREE.MeshStandardMaterial({
+            color: 0x222222,
+            roughness: 0.9,
+            side: THREE.DoubleSide
+        }));
+        worldGroup.add(garageRoad);
+    }
+
+    buildGarage();
 
     // Capture the light object for animation
     const lx_lamp = -2.2, lz_lamp = 8; // V157: Restored to proximity as requested
@@ -1080,24 +1921,32 @@ function buildEnvironment() {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, 32, 64);
 
-        // Simpler LED Logic for speed
-        for (let i = 0; i < 3; i++) {
+        // V-PERF: Minimal LED Logic for old devices (3->2 LEDs)
+        for (let i = 0; i < 2; i++) {
             ctx.fillStyle = Math.random() > 0.5 ? '#ff0000' : '#00ff00';
             ctx.fillRect(Math.random() * 30, Math.random() * 10, 2, 2);
         }
         const tex = new THREE.CanvasTexture(canvas);
         tex.magFilter = THREE.NearestFilter;
 
-        // V125: Base Height 1.0, Width 2.5 (Medium/Short)
-        const geo = new THREE.BoxGeometry(2.5, 1.0, 2.5);
+        // V-FIX: Wider & Shorter Base (3.5 x 0.8) - Less thin/tall appearance
+        const geo = new THREE.BoxGeometry(3.5, 0.8, 3.5);
         geo.translate(0, 0.5, 0); // Keep pivot
 
-        // V146: Grey Scale Palette + V-NEW: Added Brown-ish shades
+        // V-FIX: Balanced Palette with Purple Tints Throughout
         const palette = [
-            0x1a1a1a, 0x2c2c2c, 0x333333, 0x444444, 0x555555,
-            0x666666, 0x777777, 0x888888, 0x999999, 0xaaaaaa,
-            0x121212, 0x242424, 0x383838, 0x4a4a4a, 0x222233, // Subtle blue-grey
-            0x3e2723, 0x4e342e, 0x5d4037, 0x6d4c41, 0x795548  // V-NEW: Brown-ish shades
+            // Dark purple-greys (base)
+            0x2a1a2a, 0x3a2a3a, 0x4a3a4a, 0x5a4a5a,
+            // Medium purple-greys
+            0x4a4a5a, 0x5a5a6a, 0x6a6a7a, 0x7a7a8a,
+            // Deep purples (accent)
+            0x332244, 0x442255, 0x553366, 0x664477,
+            // Purple-browns (warmth)
+            0x3e2744, 0x4e3755, 0x5e4766,
+            // Blue-purples (cool)
+            0x3a3a55, 0x4a4a66, 0x5a5a77,
+            // Lighter purple-greys (highlights)
+            0x6a5a7a, 0x7a6a8a, 0x8a7a9a
         ];
         const randomColor = palette[Math.floor(Math.random() * palette.length)];
 
@@ -1178,10 +2027,11 @@ function buildEnvironment() {
         // V-FIX 275: Brighter Lamps, Removed Close Lamp, Visible Usher
         // 1. Loop stops earlier (z >= 35)
         for (let z = 115; z >= 35; z -= 15) {
-            const currentRoadWidth = wSteps + (z - zSteps) * slope;
-            const xPos = currentRoadWidth / 2 + 0.8;
-            const distRatio = (z - 20) / (115 - 20);
-            const perspectiveScale = 1.0 + distRatio * 1.0;
+            // V-FIX: Parallel Alignment (Constant Width)
+            const currentRoadWidth = 8.0; // Matches road
+            const xPos = currentRoadWidth / 2 + 1.2; // 4 + 1.2 = 5.2m from center
+            // V-FIX: Remove perspective scaling overshoot
+            const perspectiveScale = 1.0; // Keep uniform scale
 
             const postGroup = new THREE.Group();
 
@@ -1204,7 +2054,9 @@ function buildEnvironment() {
             postGroup.add(bulb);
 
             // Light & Glow (Brighter V315)
-            const pLight = new THREE.PointLight(0xffaa00, 4.0, 18); // V-FIX: Much Brighter (Massive intensity)
+            // V-PERF: Shadow disabled for performance
+            const pLight = new THREE.PointLight(0xffaa00, 3.0, 15);
+            pLight.castShadow = false; // V-PERF
             pLight.position.set(0.4, 3.2, 0);
             postGroup.add(pLight);
             streetLights.push(pLight);
@@ -1279,23 +2131,24 @@ function buildEnvironment() {
     // V148: Removed spawnStreetLights call
 
 
-    // V295: REFINED SKYLINE GRADIENT (Shorter near house, taller at distance)
-    // V295: REFINED SKYLINE GRADIENT (Shorter near house, taller at distance)
-    console.log("--- V295: REFINED CITY HEIGHT GRADIENT ---");
+    // V326: Restored MESSY CITY OF CUBES (User: "Without the clean up")
+    // V326: BIT-PERFECT RESTORATION FROM ORIGINAL FILE
+    console.log("--- V326: RESTORING ORIGINAL MESSY SKYLINE ---");
     for (let i = 0; i < 800; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = 25 + Math.pow(Math.random(), 2) * 120;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        if (z > -5 && z < 180 && Math.abs(x) < 20.0) continue;
+        // V-FIX: Updated road culling for main road + roundabout
+        if (Math.abs(x) < 10 && z > 15 && z < 155) continue; // Main road path
+        if (Math.sqrt(x * x + (z - 20) * (z - 20)) < 10) continue; // Roundabout circle
 
         const mesh = createMegaBlock();
-
-        // V157: Smoother Distance Scaling
         const distFactor = (radius - 25) / 120;
-        const minH = 6.0 + distFactor * 6.0;  // 6m to 12m min
-        const maxH = 10.0 + distFactor * 15.0; // 10m to 25m max
+        // V-FIX: Restored variety with taller buildings (4-12)
+        const minH = 4.0 + distFactor * 4.0;
+        const maxH = 8.0 + distFactor * 4.0;
         const h = minH + Math.random() * (maxH - minH);
 
         mesh.userData.baseScaleY = h;
@@ -1303,20 +2156,69 @@ function buildEnvironment() {
 
         alignToPlanet(mesh, x, z);
         worldGroup.add(mesh);
-        animatedTrees.push(mesh);
+        animatedTrees.push(mesh); // City blocks participate in float animation
     }
 
-    // V292: Horizon Mega-Blocks (Far Distance) - Truly Epic Scale
+    // V-NEW: Scatter simple lampposts between buildings
+    function createSimpleLamppost() {
+        const lampGroup = new THREE.Group();
+
+        // Simple pole
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.3 });
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.5, 8), poleMat);
+        pole.position.y = 1.25;
+        pole.castShadow = true;
+        lampGroup.add(pole);
+
+        // Bulb
+        const bulbMat = new THREE.MeshStandardMaterial({
+            color: 0xffaa00,
+            emissive: 0xffaa00,
+            emissiveIntensity: 2.0
+        });
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), bulbMat);
+        bulb.position.y = 2.5;
+        lampGroup.add(bulb);
+
+        // V-FIX: Add back point light with reduced intensity for performance
+        // V-PERF: Reduce range and intensity further, NO SHADOWS
+        const light = new THREE.PointLight(0xffaa00, 0.5, 5);
+        light.castShadow = false;
+        light.position.y = 2.5;
+        lampGroup.add(light);
+
+        return lampGroup;
+    }
+
+    // V-PERF: Reduced from 100 to 30 lampposts to prevent crash
+    for (let i = 0; i < 20; i++) { // V-PERF: Even fewer (20)
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 30 + Math.random() * 110;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+
+        // Same culling as buildings
+        if (Math.abs(x) < 10 && z > 15 && z < 155) continue;
+        if (Math.sqrt(x * x + (z - 20) * (z - 20)) < 10) continue;
+        if (radius < 15) continue;
+
+        const lamp = createSimpleLamppost();
+        alignToPlanet(lamp, x, z);
+        worldGroup.add(lamp);
+    }
+
+    // V326: Horizon Mega-Blocks (Far Distance)
     for (let i = 0; i < 300; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const radius = 120 + Math.random() * 130; // 120m to 250m
+        const radius = 120 + Math.random() * 130;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
         if (z > -10 && z < 250 && Math.abs(x) < 30.0) continue;
 
         const mesh = createMegaBlock();
-        const h = 20.0 + Math.random() * 30.0; // Taller at horizon
+        // V-FIX: Restored tall horizon skyscrapers (10-25)
+        const h = 10.0 + Math.random() * 15.0;
         mesh.userData.baseScaleY = h;
         mesh.scale.set(1, h, 1);
         alignToPlanet(mesh, x, z);
@@ -1356,8 +2258,10 @@ function buildEnvironment() {
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        // Culling: Avoid house (approx center) and road (z road)
-        if (Math.abs(x) < 8 && z > -20 && z < 100) continue;
+        // V-FIX: Culling for new road layout (avoid main road z=20-150, roundabout, garage area)
+        if (Math.abs(x) < 10 && z > 15 && z < 155) continue; // Main road
+        if (Math.sqrt(x * x + (z - 20) * (z - 20)) < 10) continue; // Roundabout area
+        if (x > 5 && x < 15 && z > 0 && z < 25) continue; // Garage area
         if (radius < 12) continue; // Inner circle clear
 
         // V166: Fix floating trees - call alignToPlanet
@@ -1436,29 +2340,53 @@ function buildEnvironment() {
 // --- ANIMATION & NAVIGATION REPAIR ---
 // --- ANIMATION & NAVIGATION REPAIR ---
 function startOpeningAnimation() {
-    // V99/V100: SMOOTH CAMERA (No Bump)
-    // The "Bump" is fixed by starting the Target Y at House Level (1.6) instead of Underground (-20).
-    // V-FIX: Start Animation State (Matches Camera Start)
-    const animState = {
-        px: 0, py: 8.0, pz: 60.0, // V-FIX: Start VERY High and Far (60.0)
-        tx: -0.01, ty: 1.6, tz: -9.05,
-        fogFar: 300
+    // V-NEW: FLIGHT TWEAKER READ INPUTS
+    const getVal = (id, def) => {
+        const el = document.getElementById(id);
+        if (!el) {
+            console.warn(`Flight Tweaker: Input #${id} not found. Using default: ${def}`);
+            return def;
+        }
+        const val = parseFloat(el.value);
+        if (isNaN(val)) {
+            console.warn(`Flight Tweaker: Input #${id} is NaN. Using default: ${def}`);
+            return def;
+        }
+        return val;
     };
+
+    // V99/V100: SMOOTH CAMERA (No Bump)
+    const animState = {
+        px: getVal('fc-sx', -2.8),
+        py: getVal('fc-sy', 51.9),
+        pz: getVal('fc-sz', 175.9),
+        tx: getVal('fc-slx', -1.94),
+        ty: getVal('fc-sly', -20.5),
+        tz: getVal('fc-slz', -0.94),
+        fogFar: 500
+    };
+
+    console.log("--- START OPENING ANIMATION ---");
+    console.log("Start State:", animState);
 
     // Force Camera there immediately
     camera.position.set(animState.px, animState.py, animState.pz);
+    controls.target.set(animState.tx, animState.ty, animState.tz);
+    controls.update(); // V-FIX: Force update immediately to snap camera
 
-    // V-FIX: Camera START Position (Far away)
-    // This is set in startOpeningAnimation's caller or just before tween?
-    // The previous code had camera.position.set in line 1398 (approx).
-    // Let's ensure the tween starts from FAR (30) to CLOSE (9).
-
-    // V99: End State (Eye Level, Looking Slightly Up)
     const targetState = {
-        px: -0.2, py: 2.0, pz: 9.0, // V-FIX: Revert to 9.0 (Close Landing)
-        tx: -0.01, ty: 1.6, tz: -9.05,
+        px: getVal('fc-ex', 0.2),
+        py: getVal('fc-ey', 2.6),
+        pz: getVal('fc-ez', 16.8),
+        tx: getVal('fc-elx', -0.01),
+        ty: getVal('fc-ely', 1.6),
+        tz: getVal('fc-elz', -9.05),
         fogFar: 300
     };
+
+    console.log("Target State:", targetState);
+
+    const duration = getVal('fc-dur', 6000);
 
     // 1. Mist Animation REMOVED (V130)
 
@@ -1474,7 +2402,7 @@ function startOpeningAnimation() {
     controls.enabled = false;
 
     new TWEEN.Tween(animState)
-        .to(targetState, 6000)
+        .to(targetState, duration)
         .onUpdate(() => {
             camera.position.set(animState.px, animState.py, animState.pz);
             controls.target.set(animState.tx, animState.ty, animState.tz);
@@ -1498,6 +2426,72 @@ function startOpeningAnimation() {
 
     // Header animation handled in enterExperience
 }
+
+// V-NEW: Global Test Function
+window.testFlightPath = function () {
+    console.log("--- TESTING FLIGHT PATH v2 ---");
+
+    // 1. Force Disable Free Roam (to prevent conflicts)
+    if (window.isFreeRoam) {
+        window.toggleFreeRoam();
+    }
+
+    // 2. Kill existing tweens to prevent fighting
+    TWEEN.removeAll();
+
+    // 3. Reset State
+    window.introFinished = false;
+
+    // 4. Re-run animation
+    startOpeningAnimation();
+};
+
+window.isFreeRoam = false;
+window.toggleFreeRoam = function () {
+    window.isFreeRoam = !window.isFreeRoam;
+    const btn = document.getElementById('btn-freeroam');
+    if (window.isFreeRoam) {
+        controls.enabled = true;
+        window.isZoomingToRoom = false; // unlock
+        if (btn) {
+            btn.innerText = "DISABLE FREE ROAM";
+            btn.style.background = "#0f0";
+            btn.style.color = "#000";
+        }
+    } else {
+        controls.enabled = false; // Default during intro/house view
+        if (btn) {
+            btn.innerText = "ENABLE FREE ROAM";
+            btn.style.background = "#444";
+            btn.style.color = "#fff";
+        }
+    }
+};
+
+window.capturePosition = function (type) {
+    const p = camera.position;
+    const prefix = type === 's' ? 'fc-s' : 'fc-e';
+    document.getElementById(prefix + 'x').value = p.x.toFixed(1);
+    document.getElementById(prefix + 'y').value = p.y.toFixed(1);
+    document.getElementById(prefix + 'z').value = p.z.toFixed(1);
+};
+
+window.captureTarget = function (type) {
+    const t = controls.target;
+    // Default to 's' if undefined (legacy safety) but UI passes 's' or 'e' now
+    const kind = type || 's';
+    const prefix = kind === 's' ? 'fc-sl' : 'fc-el';
+
+    // Check if element exists before setting (robustness)
+    const elX = document.getElementById(prefix + 'x');
+    if (elX) elX.value = t.x.toFixed(2);
+
+    const elY = document.getElementById(prefix + 'y');
+    if (elY) elY.value = t.y.toFixed(2);
+
+    const elZ = document.getElementById(prefix + 'z');
+    if (elZ) elZ.value = t.z.toFixed(2);
+};
 
 function startHeaderAnimation() {
     const header = document.getElementById('main-header');
@@ -1571,8 +2565,11 @@ window.enterExperience = function () {
 
     const sBtn = document.getElementById('start-btn');
     if (sBtn) {
-        sBtn.style.display = 'none';
-        sBtn.classList.add('hidden'); // Ensure it stays hidden
+        sBtn.classList.add('btn-out');
+        setTimeout(() => {
+            sBtn.style.display = 'none';
+            sBtn.classList.add('hidden');
+        }, 1000);
     }
 
     // 3. Start Header Animation Immediately
@@ -1598,9 +2595,6 @@ window.enterExperience = function () {
         if (arrow) arrow.style.transform = 'rotate(0deg)';
     }
 };
-
-
-
 
 
 
@@ -1639,36 +2633,79 @@ function buildInterior(roomKey) {
     // V113: Even Darker for Basement
     const floorColor = roomKey === 'basement' ? 0x050505 : 0x2c2c2c;
     const floorMat = new THREE.MeshStandardMaterial({ color: floorColor });
-    const wallMat = new THREE.MeshStandardMaterial({ color: data.hex || 0xffffff, side: THREE.DoubleSide });
+    let wallMat = new THREE.MeshStandardMaterial({ color: data.hex || 0xffffff, side: THREE.DoubleSide });
+
+    // V326: Hall Floor Pattern (Checkered like Bathroom)
+    if (roomKey === 'hall') {
+        const checkCanvas = document.createElement('canvas');
+        // V-NEW: Twin Peaks Chevron Floor (Hall Only)
+        if (roomKey === 'hall') {
+            const checkCanvas = document.createElement('canvas');
+            checkCanvas.width = 512; checkCanvas.height = 512;
+            const cctx = checkCanvas.getContext('2d');
+            cctx.fillStyle = '#ffffff';
+            cctx.fillRect(0, 0, 512, 512);
+            cctx.fillStyle = '#111111';
+            const w = 512, h = 512;
+            const stepX = 128, stepY = 128;
+            for (let y = -stepY; y < h + stepY; y += stepY) {
+                cctx.beginPath();
+                cctx.moveTo(0, y);
+                for (let x = 0; x <= w; x += stepX / 2) {
+                    const alt = (x / (stepX / 2)) % 2 === 0 ? 0 : stepY / 2;
+                    cctx.lineTo(x, y + alt);
+                }
+                cctx.lineTo(w, y + stepY);
+                for (let x = w; x >= 0; x -= stepX / 2) {
+                    const alt = (x / (stepX / 2)) % 2 === 0 ? stepY / 2 : stepY;
+                    cctx.lineTo(x, y + alt);
+                }
+                cctx.closePath();
+                cctx.fill();
+            }
+            const tex = new THREE.CanvasTexture(checkCanvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 2);
+            floorMat.map = tex;
+            floorMat.color.set(0xffffff);
+            floorMat.roughness = 0.4;
+        } else {
+            const checkCanvas = document.createElement('canvas');
+            checkCanvas.width = 512; checkCanvas.height = 512;
+            const cctx = checkCanvas.getContext('2d');
+            const size = 64;
+            for (let y = 0; y < 512; y += size) {
+                for (let x = 0; x < 512; x += size) {
+                    cctx.fillStyle = ((x / size + y / size) % 2 === 0) ? '#111111' : '#333333';
+                    cctx.fillRect(x, y, size, size);
+                    cctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                    cctx.strokeRect(x, y, size, size);
+                }
+            }
+            const tex = new THREE.CanvasTexture(checkCanvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 2);
+            floorMat.map = tex;
+            floorMat.color.set(0xffffff);
+            floorMat.roughness = 0.2;
+        }
+    }
 
     // V-FIX 113: Audio Analyser Initialization
-    // Add this to ensure music.js can visualize
     if (!window.initAudioAnalyser) {
         window.initAudioAnalyser = function () {
             if (window.audioAnalyser) return;
-            if (!window.audioContext) {
-                window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!window.audioContext) { window.audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
             if (!window.audioPlayer) return;
-
-            // Connect
             const source = window.audioContext.createMediaElementSource(window.audioPlayer);
             window.audioAnalyser = window.audioContext.createAnalyser();
             window.audioAnalyser.fftSize = 256;
             source.connect(window.audioAnalyser);
             window.audioAnalyser.connect(window.audioContext.destination);
-
             window.audioDataArray = new Uint8Array(window.audioAnalyser.frequencyBinCount);
-            console.log("Audio Analyser Initialized (V113 Fix)");
         };
     }
-
-    // Call it immediately if needed
-    if (roomKey === 'basement' || roomKey === 'music') {
-        if (window.initAudioAnalyser) window.initAudioAnalyser();
-    }
-
-
+    if ((roomKey === 'basement' || roomKey === 'music') && window.initAudioAnalyser) window.initAudioAnalyser();
 
     // Walls logic parameterized by room data
     const iW = data.interiorWidth || 10;
@@ -1679,7 +2716,7 @@ function buildInterior(roomKey) {
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(iW, iD), floorMat);
     floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true; // V-REFINE: Shadows
+    floor.receiveShadow = true;
     interiorGroup.add(floor);
 
     // Walls
@@ -1689,7 +2726,13 @@ function buildInterior(roomKey) {
     backWall.receiveShadow = true; // V-REFINE: Shadows
     interiorGroup.add(backWall);
 
-    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(iD, iH), wallMat); // Side walls length = iD
+    // V327: Hall Left Wall (Music Wall) Deep Green Texture
+    let finalLeftWallMat = wallMat;
+    if (roomKey === 'hall' && typeof createHallGreenMaterial === 'function') {
+        finalLeftWallMat = createHallGreenMaterial();
+    }
+
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(iD, iH), finalLeftWallMat);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.position.set(-halfW, iH / 2, 0);
     leftWall.receiveShadow = true; // V-REFINE: Shadows
@@ -2054,6 +3097,12 @@ function stopAllAudio() {
     // 2. Main Video (Living/Bedroom)
     if (window.videoElement && !window.videoElement.paused) {
         window.videoElement.pause();
+
+        // V-FIX 9: Reset Lights if in Bedroom/Living
+        if (typeof currentRoom !== 'undefined') {
+            if (currentRoom === 'bedroom' && window.stopBedroomVideo) window.stopBedroomVideo();
+            if (currentRoom === 'living' && window.stopLivingVideo) window.stopLivingVideo();
+        }
     }
     // 3. Attic Video (Specific)
     const atticVideo = document.getElementById('attic-video');
@@ -2068,60 +3117,56 @@ window.applyRoomLighting = function (roomName) {
     console.log("V123: Apply Dark Room Lighting for", roomName);
 
     // Ambient 0.45 matches what exitRoom() uses
-    let targetAmbient = 0.45;
-    let targetDir = 1.0; // Slightly dimmer than exterior (1.2) for mood
-    let targetRim = 0.4; // Brighter rim
-    let targetHemi = 0.45;
+    let targetAmbient = 0.6; // V-FIX: Brighter default
+    let targetDir = 1.2;
+    let targetRim = 0.6;
+    let targetHemi = 0.6;
 
     // PER-ROOM OVERRIDES
     if (roomName === 'basement') {
-        // PITCH DARK
-        targetAmbient = 0.02;
-        targetDir = 0.0; // Off
-        targetRim = 0.05; // Minimal
-        targetHemi = 0.0;
-    }
-    // V-FIX: Bathroom Brightness 
-    else if (roomName === 'bathroom') {
-        targetAmbient = 0.5;
-        targetDir = 0.6;
-        targetRim = 0.4;
-        targetHemi = 0.3;
-    }
-    // V-AESTHETIC-SYNC: Force Correct Atmosphere Overrides
-    else if (roomName === 'toilet') {
-        targetAmbient = 0.05; // V317: Darker (was 0.22 via shared hall logic)
+        targetAmbient = 0.15; // Visible dark
         targetDir = 0.2;
-        targetRim = 0.1;
-        targetHemi = 0.05;
-    } else if (roomName === 'hall') {
-        targetAmbient = 0.22; // V311: Keep Hall bright
-        targetDir = 0.5;
         targetRim = 0.2;
         targetHemi = 0.1;
-    } else if (roomName === 'studio' || roomName === 'annex') {
-        targetAmbient = 0.15; // Dark
-        targetDir = 0.4;
-        targetRim = 0.0; // No rim
-        targetHemi = 0.02;
-    } else if (roomName === 'attic') {
-        targetAmbient = 0.03; // V315: Darker (was 0.06)
-        targetDir = 0.2;     // V315: Less direct light
-        targetRim = 0.05;
-        targetHemi = 0.02;
     }
-    // V-FIX 298: Balanced Moody Atmosphere
+    else if (roomName === 'bathroom') {
+        targetAmbient = 0.6;
+        targetDir = 0.8;
+        targetRim = 0.5;
+        targetHemi = 0.4;
+    }
+    else if (roomName === 'toilet') {
+        targetAmbient = 0.25;
+        targetDir = 0.4;
+        targetRim = 0.25;
+        targetHemi = 0.2;
+    } else if (roomName === 'hall') {
+        targetAmbient = 0.5;
+        targetDir = 0.8;
+        targetRim = 0.4;
+        targetHemi = 0.3;
+    } else if (roomName === 'studio' || roomName === 'annex') {
+        targetAmbient = 0.4;
+        targetDir = 0.6;
+        targetRim = 0.3;
+        targetHemi = 0.2;
+    } else if (roomName === 'attic') {
+        targetAmbient = 0.3;
+        targetDir = 0.5;
+        targetRim = 0.3;
+        targetHemi = 0.2;
+    }
     else if (roomName === 'living') {
-        targetAmbient = 0.15; // Visible but dim
-        targetDir = 0.2;
-        targetRim = 0.1;
-        targetHemi = 0.15;
+        targetAmbient = 0.4;
+        targetDir = 0.5;
+        targetRim = 0.3;
+        targetHemi = 0.3;
     }
     else if (roomName === 'bedroom') {
-        targetAmbient = 0.02; // V-FIX 261: Even Darker
-        targetDir = 0.05;
-        targetRim = 0.05;
-        targetHemi = 0.02;
+        targetAmbient = 0.25;
+        targetDir = 0.3;
+        targetRim = 0.3;
+        targetHemi = 0.2;
     }
 
     // Apply
@@ -2478,6 +3523,11 @@ function checkIntersectionInternal() {
 
     if (intersects.length > 0) {
         document.body.style.cursor = 'pointer';
+
+        // V-FIX 15: DEBUG CLICK HIT
+        // Logging what we hit to debug Attic issues
+        // console.log("Raycast Hit:", intersects[0].object.name || intersects[0].object.uuid, intersects[0].object);
+
         // V-FIX: Bubble up to find clickable parent
         let target = intersects[0].object;
         while (target && (!target.userData || !target.userData.onClick)) {
@@ -2689,24 +3739,26 @@ function animate(time) {
     // 3. Animated Shaders (e.g. Mirror)
     // V128: Add Camera Rotation for Parallax
     // Angle from 0 to 2PI approx
-    const camAngle = Math.atan2(camera.position.x, camera.position.z);
-    // V-NEW: Add Pitch for Vertical Parallax
-    const camDir = new THREE.Vector3();
-    camera.getWorldDirection(camDir);
-    const camPitch = camDir.y;
+    if (state === 'ROOM' && currentRoom === 'bathroom') {
+        const camAngle = Math.atan2(camera.position.x, camera.position.z);
+        // V-NEW: Add Pitch for Vertical Parallax
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        const camPitch = camDir.y;
 
-    animatedShaderMaterials.forEach(mat => {
-        if (mat.uniforms && mat.uniforms.uTime) {
-            mat.uniforms.uTime.value = t;
-        }
-        if (mat.uniforms && mat.uniforms.uViewRotation) {
-            mat.uniforms.uViewRotation.value = camAngle;
-        }
-        // Enable Global Pitch Update
-        if (mat.uniforms && mat.uniforms.uViewPitch) {
-            mat.uniforms.uViewPitch.value = camPitch;
-        }
-    });
+        animatedShaderMaterials.forEach(mat => {
+            if (mat.uniforms && mat.uniforms.uTime) {
+                mat.uniforms.uTime.value = t;
+            }
+            if (mat.uniforms && mat.uniforms.uViewRotation) {
+                mat.uniforms.uViewRotation.value = camAngle;
+            }
+            // Enable Global Pitch Update
+            if (mat.uniforms && mat.uniforms.uViewPitch) {
+                mat.uniforms.uViewPitch.value = camPitch;
+            }
+        });
+    }
 
     // V-Refine: Update Interior Objects (Lamps, Holograms)
     updateInteriorObjects(t);
@@ -3183,8 +4235,12 @@ window.stopVideosForAudio = function () {
         if (window.ambientLight) window.ambientLight.intensity = 0.15; // V298: Moody Normal
         if (window.dirLight) window.dirLight.intensity = 0.2; // V298: Moody Normal
     } else if (currentRoom === 'bathroom') {
-        if (window.ambientLight) window.ambientLight.intensity = 0.45;
-        if (window.dirLight) window.dirLight.intensity = 1.0;
+        // V-FIX 25: Don't clobber stopBathroomVideo!
+        // Only apply fallback if the helper didn't run.
+        if (!window.stopBathroomVideo) {
+            if (window.ambientLight) window.ambientLight.intensity = 0.35; // Goldilocks
+            if (window.dirLight) window.dirLight.intensity = 0.45;
+        }
     }
 };
 

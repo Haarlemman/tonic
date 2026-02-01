@@ -71,7 +71,7 @@ function createBedroomInterior() {
 
     // WALL MOUNTED VIDEO PLAYER (BIGGER, BACK WALL)
     const phone = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }));
-    phone.position.set(0, 4.5, -4.95);
+    phone.position.set(3.2, 4.5, -4.95); // V501: Extreme right for NO overlap
     phone.userData = { type: 'videoPhone', state: 'stopped' };
     interiorGroup.add(phone);
     interiorClickables.push(phone);
@@ -92,7 +92,12 @@ function createBedroomInterior() {
         // V-FIX: Universal Video UI
         if (window.createUniversalVideoInterface) {
             // Position adjusted to match previous header height (y=6.0 approx)
-            window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(-2.8, 4.2, -4.8), roomContent.bedroom.videoPlaylist, {
+            // V-FIX: Moved Right (-2.8 -> -1.5) per User Request
+            // V306: Move screen "more to the right" (User Request)
+            // Was -2.8 -> Moved to -1.5 (Closer to center/desk)
+            // V501: Extreme left for NO overlap with screen
+            const videoPos = new THREE.Vector3(-1.8, 4.2, -4.8);
+            window.createUniversalVideoInterface(interiorGroup, videoPos, roomContent.bedroom.videoPlaylist, {
                 onPlay: playVideo // V-FIX 257: Pass correct handler
             });
         }
@@ -111,6 +116,15 @@ function createBedroomInterior() {
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(-4.6, 3.45, 3.0); // Slightly below
     interiorGroup.add(shadow);
+
+    // V-WORDHUNT
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('bedroom');
+        if (item) {
+            item.position.set(0, 3, 0); // Above bed/center
+            interiorGroup.add(item);
+        }
+    }
 
     // Lava Lamp
     createLavaLamp(0.108, shelf.position);
@@ -283,6 +297,19 @@ function nextBedroomVideo() {
     if (window.updateVideoUI) window.updateVideoUI();
 }
 
+// V-FIX 9: Helper to Stop Video & Reset Lights (Bedroom specific)
+window.stopBedroomVideo = function () {
+    if (window.videoElement && !window.videoElement.paused) window.videoElement.pause();
+
+    // Restore Bedroom Defaults (Matches house.js ApplyRoomLighting)
+    // Dark/Moody
+    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.02 }, 1000).start();
+    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.05 }, 1000).start();
+    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.05 }, 1000).start();
+
+    console.log("Bedroom Video Stopped: Restoring Lights");
+};
+
 function playVideo(index) {
     const playlist = roomContent.bedroom.videoPlaylist;
     if (!playlist || !playlist[index]) return;
@@ -290,6 +317,11 @@ function playVideo(index) {
     masterVideoIndex = index;
     // V-FIX 257: Direct Play & UI Update
     startVideoClip('bedroom');
+
+    // V-FIX: User reported room SHOULD get dark (like cinema)
+    if (window.applyRoomLighting) {
+        window.applyRoomLighting('basement'); // Use 'basement' profile for darkness
+    }
 
     // Sync UI if available
     if (window.updateVideoUI) window.updateVideoUI();

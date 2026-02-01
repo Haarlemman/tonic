@@ -18,8 +18,6 @@ function createHallInterior() {
     bgMesh.position.set(0, 4.0, -4.95);
     interiorGroup.add(bgMesh);
 
-    // -- COAT HANGER REMOVED --
-
     // -- TEXT ON BACK WALL (CENTERED) --
     const canvas = document.createElement('canvas');
     canvas.width = 1024; canvas.height = 512;
@@ -32,7 +30,7 @@ function createHallInterior() {
     ctx.fillText("Welcome to", 512, 130);
 
     ctx.font = 'bold 120px "Glass Antiqua", cursive';
-    ctx.fillText("The House of Awe", 512, 250);
+    ctx.fillText("The House of Meaning", 512, 250);
 
     ctx.font = '40px "Lato"';
     ctx.fillText("Explore // Wonder // Dream", 512, 330);
@@ -42,20 +40,20 @@ function createHallInterior() {
 
     const tex = new THREE.CanvasTexture(canvas);
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    plane.position.set(0, 4.0, -4.8);
+    plane.position.set(0, 4.0, -4.7);
     interiorGroup.add(plane);
 
     // -- LIGHTING ADJUSTMENT --
-    // Remove the default bright bulb added by house.js
     const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
     if (defaultBulb) interiorGroup.remove(defaultBulb);
 
     // Add Cozy Warm SpotLight
     // V-NEW: Reduced Intensity (2.0 -> 0.5)
-    const cozySpot = new THREE.SpotLight(0xffaa00, 0.5);
+    // V311: Significantly brighter (0.25 -> 2.5)
+    const cozySpot = new THREE.SpotLight(0xffaa00, 1.5);
     cozySpot.position.set(2, 5, 2);
     cozySpot.target.position.set(0, 0, 0);
-    cozySpot.angle = Math.PI / 4;
+    cozySpot.angle = Math.PI / 3; // Wider angle (PI/4 -> PI/3)
     cozySpot.penumbra = 0.5;
     cozySpot.castShadow = true;
     interiorGroup.add(cozySpot);
@@ -85,17 +83,111 @@ function createHallInterior() {
     interiorGroup.add(shadowMesh);
 
     createHologram();
+    createHologram();
     createR2D2ForHall();
+
+    // V-WORDHUNT: Moved to R2D2
+
+    // --- PURPLE VELVET CURTAINS (User Request) ---
+    // Left side of Left Wall (-X wall, so z position along it? Or covering it?)
+    // "Left side of left wall" implies near the front or back?
+    // Let's assume framing the "entrance" or "exit"?
+    // Or perhaps draping the wall itself.
+    // "Left side of the left wall" -> If wall is at X=-5, running Z -5 to +5.
+    // Left side relative to camera looking -Z? That would be -X (Left Wall).
+    // "Left side of IT"? Maybe the nearer part (positive Z)?
+    // "Right side of right wall" -> Right side (X=5), nearer part?
+    // Let's place them symmetrically at Z=3.5 (Entrance side) or Z=-4 (Back side)?
+    // Usually curtains are at windows or stages.
+    // Let's try Z=-4.5 (Back wall frame) first?
+    // Wait, "Left side of left wall" -> X=-4.9, Z=-??
+    // Let's create a visual "column" of draped fabric.
+
+    function createCurtain(x, z, rotY) {
+        const group = new THREE.Group();
+
+        // Procedural Velvet Texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Deep Purple Base
+        ctx.fillStyle = '#2e003e'; ctx.fillRect(0, 0, 256, 512);
+
+        // Vertical Folds (Highlights/Shadows)
+        for (let i = 0; i < 512; i++) {
+            // Gradient per line
+            const brightness = Math.sin((i / 256) * Math.PI * 2) * 0.2; // Wavy
+            ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.02})`;
+            // Draw vertical streaks
+            if (Math.random() > 0.5) ctx.fillRect(Math.random() * 256, i, 2, 20);
+        }
+
+        // Big Folds
+        const grd = ctx.createLinearGradient(0, 0, 256, 0);
+        grd.addColorStop(0, 'rgba(0,0,0,0.6)');
+        grd.addColorStop(0.3, 'rgba(255,255,255,0.1)'); // Highlight
+        grd.addColorStop(0.5, 'rgba(0,0,0,0.4)');
+        grd.addColorStop(0.8, 'rgba(255,255,255,0.1)'); // Highlight
+        grd.addColorStop(1, 'rgba(0,0,0,0.6)');
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, 256, 512);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshStandardMaterial({
+            map: tex,
+            color: 0x4b0082, // Indigo/Purple
+            roughness: 0.9,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+
+        // Geometry: Vertical Plane with waviness? 
+        // Simple scale box for "Shut/Draped" look?
+        // Let's make a Cylinder segment or scaled Box
+        // "Shut/Draped" -> Maybe a pillar shape.
+        const geo = new THREE.CylinderGeometry(0.5, 0.8, 7, 16, 1, true, 0, Math.PI);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 3.5; // Top anchor
+        group.add(mesh);
+
+        group.position.set(x, 0, z);
+        group.rotation.y = rotY;
+        interiorGroup.add(group);
+    }
+
+    // Left Wall Curtain (X=-5)
+    // "Left side of left wall" -> Likely Z=+3? (Near viewer) OR Z=-4 (Near screen)?
+    // Let's place at Z=-2 to test visibility.
+    // Try framing the "Big Screen" at the back?
+    // Screen is at Z=-4.95.
+    // So distinct columns at X=-4.5 and X=4.5?
+    // User said "Left side of LEFT WALL" and "Right side of RIGHT WALL".
+    // This implies along the side walls.
+    // "Left side" of x=-5 wall (facing it?) -> Z positive?
+    // Or "Left side" relative to room center?
+    // Let's place them at Z=0 (Center of walls) but wide?
+    // Or maybe "Shut" means covering the wall?
+    // "Purple/velvet curtains (shut/draped)"
+    // Let's guess: Decorative drapes at the center of the side walls?
+    // Or framing the back video?
+    // "on the left side of the left wall" -> maybe -X, +Z (Entrance end)?
+    // "on the right side of the right wall" -> +X, +Z (Entrance end)?
+    // Let's try placing them at Z=2.0 (Near entrance/R2D2).
+
+    // Left Wall Curtain
+    createCurtain(-4.9, 0, Math.PI / 2);
+
+    // Right Wall Curtain (Even if right wall is missing, curtain creates boundary)
+    createCurtain(4.9, 0, -Math.PI / 2);
+
 }
 
 function createHologram() {
     // HOLOGRAM: Control Instructions
     const group = new THREE.Group();
-    group.position.set(0, 2.5, 0); // Center of room
+    group.position.set(0, 1.5, 2.0);
 
-    // Ring REMOVED per V209
 
-    // V208: Circular Internal Text (Mesh instead of Sprite)
     // Moving along with the 3D environment (Rotation)
     const canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 512;
@@ -113,11 +205,11 @@ function createHologram() {
     ctx.shadowColor = "#00ffff"; ctx.shadowBlur = 10;
     // V209: "INSTRUCTIONS"
     ctx.font = "bold 50px Courier New"; ctx.textAlign = "center";
-    ctx.fillText("INSTRUCTIONS", 256, 230);
+    ctx.fillText("FREE WILL", 256, 230);
 
     ctx.font = "30px Courier New";
-    ctx.fillText("DRAG TO ROTATE", 256, 280);
-    ctx.fillText("CLICK TO INTERACT", 256, 320);
+    ctx.fillText("DOES NOT EXIST", 256, 280);
+    ctx.fillText("CLICK FOR MORE", 256, 320);
 
     const tex = new THREE.CanvasTexture(canvas);
     // DoubleSide so it's visible from all angles as it rotates
@@ -126,26 +218,30 @@ function createHologram() {
     // Vertical Plane inside the ring
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 2.5), mat);
     mesh.position.y = 0.5; // Slightly above ring
-    // V209: NO ROTATION -> Make sure it faces the entrance (-Z direction) or +Z?
+    // NO ROTATION -> Make sure it faces the entrance (-Z direction) or +Z?
     // Room Camera enters from +Z looking -Z.
     // So Plane should face +Z.
     // Default plane faces +Z. So default rotation is fine.
     group.add(mesh);
 
-    // V209: NO ROTATION userData
-    // group.userData = { type: 'atticDust' }; 
-    interiorGroup.add(group);
+    return group;
 }
 
 function createR2D2ForHall() {
     const r2d2Group = new THREE.Group();
     // V1: Scale 0.4 (Slightly larger than studio to be visible)
     r2d2Group.scale.set(0.4, 0.4, 0.4);
-    // Position: Center of room, on floor
-    r2d2Group.position.set(0, 0, 0);
-    // Rotate to face entrance (Entrance is at +Z usually, looking -Z. If R2 faces +Z, he looks at us)
+    // V311: R2D2 starting pos shifted
+    r2d2Group.position.set(0, 0, 1.0);
     r2d2Group.rotation.y = 0;
     interiorGroup.add(r2d2Group);
+
+    // Parent Instructions to R2D2 so they move together
+    const instructions = createHologram();
+    // Scale BACK UP (Since R2 is 0.4x, we need 2.5x to get back to 1.0 world scale)
+    instructions.scale.set(2.5, 2.5, 2.5);
+    instructions.position.set(0, 7.0, 1.5); // Floating even higher above R2 (V318)
+    r2d2Group.add(instructions);
 
     const white = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, roughness: 0.4 });
     const silver = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
@@ -284,12 +380,128 @@ function createR2D2ForHall() {
     // Chain them
     tweenRight.chain(tweenLeft);
     tweenLeft.chain(tweenRight);
+    tweenRight.start();
 
-    // Random start delay
-    setTimeout(() => {
-        tweenRight.start();
-    }, Math.random() * 1000);
+
+    // Complex Patrol Animation
+    const p1 = { x: -2.0, z: 1.0, ry: 0.5 };
+    const p2 = { x: 2.0, z: -1.0, ry: -0.5 };
+    const pHome = { x: 0, z: 1.0, ry: 0 };
+
+    const patrol1 = new TWEEN.Tween(r2d2Group.position)
+        .to({ x: p1.x, z: p1.z }, 4000)
+        .easing(TWEEN.Easing.Sinusoidal.InOut);
+
+    const rotate1 = new TWEEN.Tween(r2d2Group.rotation)
+        .to({ y: p1.ry }, 1000);
+
+    const patrol2 = new TWEEN.Tween(r2d2Group.position)
+        .to({ x: p2.x, z: p2.z }, 5000)
+        .easing(TWEEN.Easing.Sinusoidal.InOut);
+
+    const rotate2 = new TWEEN.Tween(r2d2Group.rotation)
+        .to({ y: p2.ry }, 1000);
+
+    const patrolHome = new TWEEN.Tween(r2d2Group.position)
+        .to({ x: pHome.x, z: pHome.z }, 3000)
+        .easing(TWEEN.Easing.Sinusoidal.InOut);
+
+    const rotateHome = new TWEEN.Tween(r2d2Group.rotation)
+        .to({ y: pHome.ry }, 1000);
+
+    // Chain Patrol
+    patrol1.chain(rotate1);
+    rotate1.chain(patrol2);
+    patrol2.chain(rotate2);
+    rotate2.chain(patrolHome);
+    patrolHome.chain(rotateHome);
+    rotateHome.chain(patrol1);
+
+    patrol1.start();
 
     // Make him clickable? Optional.
     r2d2Group.userData = { type: 'r2d2', name: 'R2D2' };
+
+    // V-FIX 22: Explicit Hitbox for easier clicking (Visible but transparent)
+    const hitGeo = new THREE.CylinderGeometry(2.5, 2.5, 7.0, 16);
+    const hitMat = new THREE.MeshBasicMaterial({
+        visible: true,
+        color: 0xffff00,
+        wireframe: false,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false
+    });
+    const hitBox = new THREE.Mesh(hitGeo, hitMat);
+    hitBox.position.y = 2.0;
+    // Name it for debug
+    hitBox.userData = { name: "R2D2_HitBox", type: "r2d2" };
+    r2d2Group.add(hitBox);
+
+    // V-WORDHUNT: Hidden Orb in R2D2
+    if (typeof WordHunt !== 'undefined') {
+        console.log("WordHunt Found in Hall. Initializing R2D2 Orb...");
+        const item = WordHunt.createInteractable('hall');
+        if (item) {
+            // Hide inside R2 initially
+            item.position.set(0, 1.0, 0);
+            item.scale.set(0.1, 0.1, 0.1); // Tiny initially
+            item.visible = false;
+            r2d2Group.add(item);
+
+            // V-FIX 19: SUPER HITBOX FOR ORB
+            // The default one might be too small or bubbling fails.
+            // Let's add a massive explicit HitBox to the Orb Item Group.
+            const orbHitGeo = new THREE.SphereGeometry(1.0, 16, 16); // Radius 1.0 * Scale 3.0 = HUGE
+            const orbHitMat = new THREE.MeshBasicMaterial({ visible: false }); // Invisible Material
+            const orbHitBox = new THREE.Mesh(orbHitGeo, orbHitMat);
+            orbHitBox.userData.onClick = () => {
+                console.log("R2D2 Orb HitBox Clicked!");
+                // Call the original handler on the group if it exists
+                if (item.userData.onClick) item.userData.onClick();
+            };
+            orbHitBox.userData.isOrbHitBox = true;
+            item.add(orbHitBox);
+
+            // Click Handler for R2D2
+            const r2ClickHandler = () => {
+                // If orb is already revealed, do nothing (orb itself handles the collection click)
+                if (item.userData.revealed) return;
+
+                console.log("R2D2 Clicked! Popping out orb...");
+                item.visible = true;
+                item.userData.revealed = true;
+
+                // Animate Pop Out (Up and Scale Up)
+                new TWEEN.Tween(item.position)
+                    .to({ y: 12.5 }, 1500) // V-FIX: Even Higher (12.5)
+                    .easing(TWEEN.Easing.Elastic.Out)
+                    .onUpdate(() => console.log("Orb Y:", item.position.y)) // Debug
+                    .start();
+
+                new TWEEN.Tween(item.scale)
+                    .to({ x: 3.0, y: 3.0, z: 3.0 }, 1500) // V-FIX: SUPER BIG (3.0)
+                    .easing(TWEEN.Easing.Elastic.Out)
+                    .start();
+            };
+
+            r2d2Group.userData.onClick = r2ClickHandler;
+            hitBox.userData.onClick = r2ClickHandler; // Double bind
+
+            // Register R2D2 as clickable
+            if (window.interiorClickables) {
+                window.interiorClickables.push(r2d2Group);
+                window.interiorClickables.push(hitBox); // Push hitbox too
+                // V-FIX: Push the Orb Item so it can be clicked when revealed!
+                window.interiorClickables.push(item);
+                // Also push our new Super HitBox
+                window.interiorClickables.push(orbHitBox);
+                console.log("R2D2, Hitbox, Orb, and SuperOrbHitBox added to interiorClickables");
+            }
+        } else {
+            console.error("WordHunt.createInteractable returned null for 'hall'");
+        }
+    } else {
+        console.error("WordHunt is undefined in hall.js");
+    }
 }

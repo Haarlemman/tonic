@@ -1,26 +1,29 @@
 // --- UI COMPONENTS ---
 // Extracted from house.js to reduce complexity
-// V154: Refined Layout (Button Top, Header Middle, Tracks Bottom)
+// V308: REWRITE to fix syntax errors
 
-console.log("--- UI COMPONENTS LOADED V184-FIX ---");
-window.createUniversalVideoInterface = function (root, pos, playlist, options = {}) {
+console.log("--- UI COMPONENTS LOADED V308-REWRITE ---");
+
+window.createUniversalVideoInterface = function (parentGroup, position, playlist, options) {
+    if (!options) options = {};
+    const scale = options.scale || 1.0;
+
     const trafficGroup = new THREE.Group();
-    trafficGroup.position.copy(pos);
-    trafficGroup.userData = { type: 'videoInterfaceGroup' }; // V-FIX: Tag for cleanup
-    console.log("Creating Refined Video UI at", pos);
-    root.add(trafficGroup);
+    trafficGroup.position.copy(position);
+    trafficGroup.scale.set(scale, scale, scale);
+
+    trafficGroup.userData = { type: 'videoInterfaceGroup' };
+    console.log("Creating Refined Video UI at", position, "Scale:", scale);
+    parentGroup.add(trafficGroup);
 
     // --- 1. SQUARE BUTTON (TOP) ---
-    // User requested: "Square and ABOVE everything"
-    // Geometry: Box (0.3 width, 0.3 height, 0.1 depth) -> Square
-    const btnGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
+    const btnGeo = new THREE.BoxGeometry(0.6, 0.6, 0.1);
     const btnMat = new THREE.MeshStandardMaterial({
         color: 0xff0000,
         emissive: 0x440000
     });
     const btn = new THREE.Mesh(btnGeo, btnMat);
-    // Position High Up
-    btn.position.set(0, 2.0, 0);
+    btn.position.set(0, 2.5, 0);
 
     // Initial State Check
     if (window.videoElement && !window.videoElement.paused) {
@@ -49,7 +52,6 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
                     if (playlist && playlist.length > 0) window.videoElement.src = playlist[0].src;
                 }
 
-                // V-FIX: Robust Play
                 window.videoElement.play().catch(e => console.error("Video Play Error:", e));
 
                 btn.material.color.setHex(0x00ff00); // Green
@@ -71,20 +73,17 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
     const hctx = hCanvas.getContext('2d');
     hctx.fillStyle = 'rgba(0,0,0,0)';
     hctx.fillStyle = '#ffffff';
-    hctx.font = 'bold 60px Arial'; // V-FIX: Match Audio Font
+    hctx.font = 'bold 60px Arial';
     hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
-    // V-FIX: Black Shadow (No Green Glow)
     hctx.shadowColor = 'rgba(0,0,0,0.8)'; hctx.shadowBlur = 4; hctx.shadowOffsetX = 2; hctx.shadowOffsetY = 2;
     hctx.fillText("VIDEO", 256, 64);
 
     const hTex = new THREE.CanvasTexture(hCanvas);
-    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
-    hMesh.position.set(0, 1.5, 0); // Below Button (2.0)
+    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
+    hMesh.position.set(0, 1.6, 0);
     trafficGroup.add(hMesh);
 
     // --- 3. TRACKS (BOTTOM) ---
-
-    // Helper to refresh all items
     const updateAllItems = () => {
         if (window.interiorClickables) {
             window.interiorClickables.forEach(c => {
@@ -94,33 +93,31 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
             });
         }
     };
-    window.updateVideoUI = updateAllItems; // V-FIX: Expose for external syncing (living.js)
+    window.updateVideoUI = updateAllItems;
 
     if (playlist && playlist.length > 0) {
         playlist.forEach((item, i) => {
-            // Start at 1.0 and go down
-            const yPos = 1.0 - (i * 0.6); // V-FIX: Increased spacing (0.5 -> 0.6) to avoid overlap
+            const yPos = 1.0 - (i * 0.9);
 
             const sCanvas = document.createElement('canvas');
             sCanvas.width = 512; sCanvas.height = 100;
             const sctx = sCanvas.getContext('2d');
 
             const sTex = new THREE.CanvasTexture(sCanvas);
-            const itemMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.4), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
+            const itemMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
             itemMesh.position.set(0, yPos, 0);
 
             // Dynamic Update Function
             itemMesh.userData.updateState = () => {
                 const isActive = (typeof window.masterVideoIndex !== 'undefined' && window.masterVideoIndex === i);
                 if (isActive) {
-                    sctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 50% Transparent Black
+                    sctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                     sctx.fillRect(0, 0, 512, 100);
-                    sctx.fillStyle = '#00ff00'; // Green Text
+                    sctx.fillStyle = '#00ff00';
                 } else {
-                    // V-FIX 260: Match Audio Playlist Opacity (0.05)
                     sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
                     sctx.fillRect(0, 0, 512, 100);
-                    sctx.fillStyle = '#ffffff'; // White Text
+                    sctx.fillStyle = '#ffffff';
                 }
                 sctx.font = 'bold 40px Arial';
                 sctx.textAlign = 'left'; sctx.textBaseline = 'middle';
@@ -136,19 +133,14 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
             itemMesh.userData.onClick = () => {
                 console.log("Universal Video Click (Fixed):", i);
 
-                // 1. Update Global State
                 window.masterVideoIndex = i;
 
-                // 2. Play Video (Check Play Helper or Direct)
-                // V-FIX: Check for custom onPlay handler FIRST (e.g. Bathroom)
                 if (options.onPlay && typeof options.onPlay === 'function') {
                     options.onPlay(i);
                 }
                 else if (window.playTVVideo && typeof window.playTVVideo === 'function') {
-                    // Use Living Room helper if available (handles Index update + Refresh)
                     window.playTVVideo(i);
                 } else if (window.videoElement) {
-                    // Fallback
                     window.videoElement.src = item.src;
                     window.videoElement.muted = false;
                     window.videoElement.volume = 1.0;
@@ -156,10 +148,8 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
                     window.videoElement.play().catch(e => console.error(e));
                 }
 
-                // 3. UI Update (Local & Global) - CRITICAL: This is what fixes the highlight
                 updateAllItems();
 
-                // 4. Update Button State
                 if (window.interiorClickables) {
                     const btn = window.interiorClickables.find(c => c.userData.type === 'videoControlSingle');
                     if (btn) {
@@ -168,7 +158,6 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
                     }
                 }
 
-                // 5. Stop Music
                 if (window.audioPlayer) {
                     window.audioPlayer.pause();
                     window.isMusicPlaying = false;
@@ -183,3 +172,4 @@ window.createUniversalVideoInterface = function (root, pos, playlist, options = 
 
     return trafficGroup;
 };
+console.log("UI Components Loaded Successfully");

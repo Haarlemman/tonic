@@ -1,6 +1,12 @@
 function createAtticInterior() {
+    // V-WORDHUNT: Logic is now handled inside createColoredBox for "WISDOM"
+    // Refactored to capture the box explicitly without fragile lookups.
+
+    let wisdomBoxRef = null;
+
+    // Modified helper to return the box
     const createColoredBox = (labelText, labelColor, boxColor, x, z) => {
-        // Box
+        // Box Base
         const boxGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
         const boxMat = new THREE.MeshStandardMaterial({
             color: boxColor,
@@ -12,11 +18,34 @@ function createAtticInterior() {
         box.castShadow = true;
         box.receiveShadow = true;
 
-        const lid = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 1.6), boxMat);
-        lid.position.y = 0.8;
+        // V-FIX 18: DARK INTERIOR (Simulation)
+        // A black plane just above the solid box top to look like a void
+        const voidGeo = new THREE.PlaneGeometry(1.4, 1.4);
+        const voidMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const voidPlane = new THREE.Mesh(voidGeo, voidMat);
+        voidPlane.rotation.x = -Math.PI / 2;
+        voidPlane.position.y = 0.76; // Slightly above box top (0.75)
+        box.add(voidPlane);
+
+        // V-FIX 18: HINGED LID
+        // Pivot Group at the back-top edge
+        // Box Top Y = 0.75 (relative to 0 center? No, geometry is 1.5 height, so top is 0.75)
+        // Box Back Z = -0.75
+        const lidPivot = new THREE.Group();
+        lidPivot.position.set(0, 0.75, -0.75); // Pivot at back edge
+
+        const lidGeo = new THREE.BoxGeometry(1.6, 0.1, 1.6);
+        const lid = new THREE.Mesh(lidGeo, boxMat);
+        // Lid center needs to be offset so its back edge sits at the pivot
+        // Lid Back Z must be at 0 relative to pivot. Lid depth is 1.6, so center is at +0.8
+        // Lid Bottom Y should be at 0 relative to pivot. Height 0.1, center at +0.05
+        lid.position.set(0, 0.05, 0.8);
         lid.castShadow = true;
         lid.receiveShadow = true;
-        box.add(lid);
+        lid.name = "lid";
+
+        lidPivot.add(lid);
+        box.add(lidPivot);
 
         // Label (Text on Front)
         const canvas = document.createElement('canvas');
@@ -31,20 +60,122 @@ function createAtticInterior() {
 
         const tex = new THREE.CanvasTexture(canvas);
         const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.65), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-        labelMesh.position.set(0, 0, 0.76); // Front face
+        // V-FIX 16: Move Label Forward (0.82)
+        labelMesh.position.set(0, 0, 0.82);
         box.add(labelMesh);
 
         interiorGroup.add(box);
+
+        // V-FIX: Direct Interaction Logic for WISDOM Box
+        if (labelText === "WISDOM") {
+            // Check for WordHunt Item
+            let orbItem = null;
+            if (typeof WordHunt !== 'undefined') {
+                orbItem = WordHunt.createInteractable('attic');
+            }
+
+            // V-FIX 10: Fallback Orb
+            if (!orbItem) {
+                console.log("Attic: Creating Fallback (Dummy) Orb");
+                const dummyGeo = new THREE.SphereGeometry(0.3, 16, 16);
+                const dummyMat = new THREE.MeshStandardMaterial({
+                    color: 0x00ffff,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.5,
+                    roughness: 0.2
+                });
+                orbItem = new THREE.Mesh(dummyGeo, dummyMat);
+            }
+
+            if (orbItem) {
+                console.log("Attic: Injecting Orb into WISDOM box");
+                // Start inside the "void"
+                orbItem.position.set(0, 0.5, 0);
+                orbItem.scale.set(0.1, 0.1, 0.1);
+                orbItem.visible = false;
+                box.add(orbItem);
+            }
+
+            // Click Handler
+            const openBox = () => {
+                if (box.userData.isOpen) return;
+                console.log("Wisdom Box Clicked (Hinged)!");
+                box.userData.isOpen = true;
+
+                // Open Lid (Rotate Pivot)
+                new TWEEN.Tween(lidPivot.rotation)
+                    .to({ x: -Math.PI * 0.6 }, 1500) // Rotate back ~110 degrees
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .start();
+
+                // Pop Orb (Delayed)
+                if (orbItem) {
+                    orbItem.visible = true;
+                    orbItem.userData.revealed = true;
+
+                    // Delay slightly so lid opens first
+                    setTimeout(() => {
+                        new TWEEN.Tween(orbItem.position)
+                            .to({ y: 1.8 }, 2000) // Hover nicely above
+                            .easing(TWEEN.Easing.Elastic.Out)
+                            .start();
+                        new TWEEN.Tween(orbItem.scale)
+                            .to({ x: 1.0, y: 1.0, z: 1.0 }, 2000)
+                            .easing(TWEEN.Easing.Elastic.Out)
+                            .start();
+                    }, 300);
+                }
+            };
+
+            box.userData.onClick = openBox;
+            lid.userData.onClick = openBox;
+
+            // V-FIX 21: NUCLEAR OPTION - Disable Label Raycast
+            // Ensure the label (which is in front) NEVER blocks the click
+            labelMesh.raycast = function () { };
+
+            // V-FIX 21: SUPER HITBOX (Opacity 0, NOT Visible: False)
+            // Visible: False sometimes fails raycasting depending on setup.
+            // Opacity 0 is reliable.
+            // Size 2.0 ensures it engulfs the Label (at Z=0.82) completely.
+            const hitBoxGeo = new THREE.BoxGeometry(2.0, 2.0, 2.0);
+            const hitBoxMat = new THREE.MeshBasicMaterial({
+                visible: true,
+                color: 0xffff00, // Debug color (invisible via opacity)
+                transparent: true,
+                opacity: 0.0,
+                depthWrite: false, // V-FIX 23: IMPORTANT! Don't hide stuff behind me!
+                side: THREE.DoubleSide
+            });
+            const hitBox = new THREE.Mesh(hitBoxGeo, hitBoxMat);
+            hitBox.position.copy(box.position);
+
+            // Interaction Data
+            hitBox.userData = {
+                onClick: openBox,
+                type: 'wisdomBox_HitBox'
+            };
+
+            interiorGroup.add(hitBox);
+            interiorClickables.push(hitBox);
+            console.log("Attic: Added NUCLEAR HitBox (Op0, Size 2.0) for Wisdom Box");
+
+            // Keep visuals just in case, but HitBox should catch everything
+            interiorClickables.push(box);
+            interiorClickables.push(lid);
+        }
+
+        return box;
     };
 
-    // 1. LEFT BOX: RED "BEAUTY"
-    createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -3.0, -3.0);
+    // 1. LEFT BOX: RED "BEAUTY" (Spacing -2.5)
+    createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -2.5, -1.8);
 
     // 2. MIDDLE BOX: YELLOW "KNOWLEDGE"
-    createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -3.0);
+    createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -1.8);
 
-    // 3. RIGHT BOX: DEEP-BLUE "WISDOM"
-    createColoredBox("WISDOM", '#ffffff', 0x1a237e, 3.0, -3.0);
+    // 3. RIGHT BOX: DEEP-BLUE "WISDOM" (Spacing 2.5)
+    createColoredBox("WISDOM", '#ffffff', 0x1a237e, 2.5, -1.8);
 
     // Dust Particles (Keep for atmosphere)
     const particlesGeo = new THREE.BufferGeometry();
@@ -59,7 +190,10 @@ function createAtticInterior() {
     interiorGroup.add(particles);
 
     const lampGroup = new THREE.Group();
-    lampGroup.position.set(-4.5, 5.5, -4.8); // Back Left Corner, Lowered slightly
+    // V310: Restore to Wall-Mounted position.
+    // Wall is at z = -5.0. Move to -4.8. 
+    // Was floating at (-1.5, 2.5, -2.0)
+    lampGroup.position.set(-4.0, 5.0, -4.8);
 
     // 1. Wall Mount (Brass Base)
     const mountGeo = new THREE.CylinderGeometry(0.2, 0.3, 0.1, 16);
@@ -95,12 +229,19 @@ function createAtticInterior() {
     shade.add(bulb);
 
     // 5. The Light (Stronger)
-    const light = new THREE.PointLight(0xffaa00, 2.5, 25); // Increased Intensity (1.5 -> 2.5) and Range
+    const light = new THREE.PointLight(0xffaa00, 2.5, 25);
     light.castShadow = true;
+    // V315: Soften Shadows
+    light.shadow.radius = 4;
+    light.shadow.mapSize.width = 1024;
+    light.shadow.mapSize.height = 1024;
     light.position.y = -0.5;
     shade.add(light);
 
+    // V-FIX: ACTUALLY ADD IT TO THE SCENE!
     interiorGroup.add(lampGroup);
+
+    // Logic for WISDOM box interaction is now handled inside createColoredBox
 }
 
 function createProjector() {
@@ -122,7 +263,7 @@ function createProjector() {
     // Lens
     const lenscyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.2), chrome);
     lenscyl.rotation.x = Math.PI / 2;
-    lenscyl.position.set(0, 0.45, -0.35); 
+    lenscyl.position.set(0, 0.45, -0.35);
     projGroup.add(lenscyl);
 
 

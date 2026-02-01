@@ -1,1099 +1,428 @@
-let tvVideo, tvVideoTexture;
-let tvScreensaver, tvScreensaverTexture; // V-NEW: Screensaver vars
-// Need global access to lights for dimming (Cinema Mode)
+
+// --- LIVING.JS ---
+console.log("Loading Living Room (V-Modular-Elite)...");
+
+// GLOBAL VARS FOR LIVING ROOM
 window.livingCozyLight = null;
 window.livingLibrarySpot = null;
-// masterVideoIndex is global (house.js)
+window.bookcaseSpotL = null;
+window.bookcaseSpotR = null;
+window.livingTVGlow = null;
+window.livingTVMesh = null;
+let livingTVVideo, livingTVVideoTexture, livingTVScreensaverTexture;
 
-// V-NEW: TV Screensaver
-// V-NEW: Image Slideshow Screensaver (v222)
-function createTVScreensaver() {
-    // 1. Setup Canvas
+// --- HELPERS ---
+
+function createLivingWoodMaterial() {
     const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 576; // Higher resolution for images
+    canvas.width = 512; canvas.height = 512;
     const ctx = canvas.getContext('2d');
-
+    ctx.fillStyle = '#8b5a2b';
+    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillStyle = 'rgba(60, 30, 10, 0.2)';
+    for (let i = 0; i < 200; i++) {
+        const x = Math.random() * 512;
+        ctx.beginPath(); ctx.moveTo(x, 0);
+        ctx.bezierCurveTo(x + Math.random() * 20 - 10, 170, x + Math.random() * 20 - 10, 340, x + Math.random() * 20 - 10, 512);
+        ctx.lineWidth = 1 + Math.random() * 2; ctx.strokeStyle = 'rgba(40,20,5,0.25)'; ctx.stroke();
+    }
+    for (let i = 0; i < 20000; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.01)';
+        ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+    }
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.minFilter = THREE.LinearFilter;
+    return new THREE.MeshStandardMaterial({ map: tex, color: 0xaa9977, roughness: 0.8, metalness: 0.1 });
+}
 
-    // 2. Logic Data
-    const slides = roomContent['living'].tvImages || [];
-    if (slides.length === 0) return null; // Fallback to video if no slides
+function createLivingTVScreensaver() {
+    const slides = (roomContent['living'] && roomContent['living'].tvImages) || [];
+    if (slides.length === 0) return null;
 
-    const duration = 5000; // 5 seconds per slide
-    let currentIndex = -1; // Start at -1 to force first draw
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024; canvas.height = 576;
+    const ctx = canvas.getContext('2d');
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
 
-    // Preload Images
+    const duration = 5000;
+    const fadeDuration = 800;
     const images = {};
-    slides.forEach(slide => {
-        if (slide.image) {
-            const img = new Image();
-            img.src = slide.image;
-            images[slide.image] = img;
+    slides.forEach(s => { if (s.image) { const i = new Image(); i.src = s.image; images[s.image] = i; } });
+
+    let currentIndex = -1;
+    let previousCanvas = null;
+
+    const drawSlide = (targetCtx, slide, tw, th) => {
+        targetCtx.fillStyle = slide.color || '#000000';
+        targetCtx.fillRect(0, 0, tw, th);
+        if (slide.image && images[slide.image] && images[slide.image].complete) {
+            const img = images[slide.image];
+            const scale = Math.min(tw / img.width, th / img.height);
+            const w = img.width * scale; const h = img.height * scale;
+            targetCtx.drawImage(img, (tw - w) / 2, (th - h) / 2, w, h);
         }
-    });
+        if (slide.text) {
+            targetCtx.fillStyle = '#ffffff'; targetCtx.font = 'bold 40px "Courier Prime", monospace';
+            targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
+            targetCtx.shadowColor = 'rgba(0,0,0,0.8)'; targetCtx.shadowBlur = 4;
+            targetCtx.fillText(slide.text, tw / 2, th - 76);
+        }
+    };
 
     tex.userData = {
         update: (time) => {
             const nowMs = time * 1000;
             const index = Math.floor(nowMs / duration) % slides.length;
+            const slideProgress = (nowMs % duration) / duration;
+            const fadeProgress = Math.min(slideProgress * duration / fadeDuration, 1);
 
             if (index !== currentIndex || currentIndex === -1) {
+                if (currentIndex !== -1 && !previousCanvas) {
+                    previousCanvas = document.createElement('canvas');
+                    previousCanvas.width = 1024; previousCanvas.height = 576;
+                    previousCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                }
                 currentIndex = index;
-                const slide = slides[currentIndex];
-
-                // Draw Background
-                ctx.fillStyle = slide.color || '#000000';
-                ctx.fillRect(0, 0, 1024, 576);
-
-                // Draw Image if available and loaded
-                if (slide.image && images[slide.image] && images[slide.image].complete) {
-                    // Scale to fit "contain"
-                    const img = images[slide.image];
-                    const scale = Math.min(1024 / img.width, 576 / img.height);
-                    const w = img.width * scale;
-                    const h = img.height * scale;
-                    const x = (1024 - w) / 2;
-                    const y = (576 - h) / 2;
-                    ctx.drawImage(img, x, y, w, h);
-                }
-
-                // Draw Text
-                if (slide.text) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 40px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    // Add text shadow
-                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 2;
-                    ctx.shadowOffsetY = 2;
-                    ctx.fillText(slide.text, 512, 500); // Bottom center
-                    ctx.shadowColor = 'transparent';
-                }
-
-                tex.needsUpdate = true;
-            } else {
-                // Check if image loaded late
-                const slide = slides[currentIndex];
-                if (slide.image && images[slide.image] && images[slide.image].complete && !tex.frameDrawn) {
-                    // Redraw to capture loaded image
-                    // Optimized: Set a flag or just force redraw if not sure?
-                    // We'll just rely on the next tick or force it in a simpler way if needed.
-                    // For now, let's just force redraw every frame if image is loading? No, expensive.
-                    // Let's assume preloading works fast enough or it catches next cycle.
-                }
             }
+
+            const tempC = document.createElement('canvas');
+            tempC.width = 1024; tempC.height = 576;
+            drawSlide(tempC.getContext('2d'), slides[currentIndex], 1024, 576);
+
+            if (previousCanvas && fadeProgress < 1) {
+                ctx.globalAlpha = 1 - fadeProgress; ctx.drawImage(previousCanvas, 0, 0);
+                ctx.globalAlpha = fadeProgress; ctx.drawImage(tempC, 0, 0);
+                ctx.globalAlpha = 1;
+            } else {
+                ctx.clearRect(0, 0, 1024, 576); ctx.drawImage(tempC, 0, 0);
+                if (fadeProgress >= 1) previousCanvas = null;
+            }
+            tex.needsUpdate = true;
         }
     };
-
     return tex;
 }
 
 function initTVVideo() {
-    console.log("LIVING.JS v179-FIX: initTVVideo called.");
-    if (tvVideo) return;
-
-    tvScreensaverTexture = createTVScreensaver();
-
-    tvVideo = document.createElement('video');
-    const livingData = roomContent['living'];
-    if (livingData && livingData.videoPlaylist && livingData.videoPlaylist.length > 0) {
-        tvVideo.src = livingData.videoPlaylist[0].src;
-    } else {
-        tvVideo.src = '/assets/video/premonition.mp4';
-    }
-    tvVideo.loop = true; tvVideo.muted = false; tvVideo.autoplay = false;
-    tvVideo.preload = 'auto'; tvVideo.setAttribute('playsinline', '');
-    window.videoElement = tvVideo;
-    tvVideoTexture = new THREE.VideoTexture(tvVideo);
-    tvVideoTexture.minFilter = THREE.LinearFilter;
-    tvVideoTexture.magFilter = THREE.LinearFilter;
-    tvVideoTexture.colorSpace = THREE.SRGBColorSpace;
+    if (livingTVVideo) return;
+    livingTVScreensaverTexture = createLivingTVScreensaver();
+    livingTVVideo = document.createElement('video');
+    const ld = roomContent['living'];
+    livingTVVideo.src = (ld && ld.videoPlaylist && ld.videoPlaylist.length > 0) ? ld.videoPlaylist[0].src : '../assets/video/premonition.mp4';
+    livingTVVideo.loop = true; livingTVVideo.muted = false; livingTVVideo.autoplay = false;
+    livingTVVideo.preload = 'auto';
+    window.videoElement = livingTVVideo;
+    livingTVVideoTexture = new THREE.VideoTexture(livingTVVideo);
+    livingTVVideoTexture.colorSpace = THREE.SRGBColorSpace;
 }
 
-function playTVVideo(index) {
-    const playlist = roomContent['living'].videoPlaylist;
-    if (!playlist || !playlist[index]) return;
-    window.masterVideoIndex = index;
-    const clip = playlist[index];
-    console.log("Play TV Video:", clip.title);
-    if (window.audioPlayer && !window.audioPlayer.paused) {
-        window.audioPlayer.pause();
-        window.isMusicPlaying = false;
-        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-    }
-    // Unhighlight Audio
-    window.currentTrackIndex = -1;
-    if (window.updateMusicPanelHighlight) window.updateMusicPanelHighlight();
-    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-
-    if (tvVideo) {
-        tvVideo.src = clip.src; tvVideo.load();
-        if (tvVideo.paused) nextTVContent();
-        else tvVideo.play().catch(e => console.warn(e));
-    }
-    if (window.updateVideoUI) window.updateVideoUI();
-    if (window.livingTVMesh) {
-        window.livingTVMesh.material.map = tvVideoTexture;
-        window.livingTVMesh.material.needsUpdate = true;
-        window.livingTVMesh.userData.update = null;
-    }
-}
-
-function createVideoPanel(playlist) {
-    // Remove existing if any
-    const toRemove = [];
-    const clickablesToRemove = [];
-
-    // 1. Identify Groups and Items
-    interiorGroup.traverse(child => {
-        // Remove Main Group
-        if (child.userData && child.userData.type === 'videoInterfaceGroup') {
-            toRemove.push(child);
-        }
-        // Remove known items (just in case they are orphaned or we need to clear clickables)
-        if (child.userData && (child.userData.type === 'videoPanel' || child.userData.type === 'videoItem' || child.userData.type === 'tvVideoItem' || child.userData.type === 'videoHeader' || child.userData.type === 'videoControlSingle' || child.userData.type === 'universalVideoItem')) {
-            // Note: If we remove the Group, children go with it from Scene, but we MUST remove from interiorClickables
-            clickablesToRemove.push(child);
-            // If it's a legacy item (direct child), add to toRemove
-            if (child.parent === interiorGroup) toRemove.push(child);
-        }
-    });
-
-    // 2. Clear Clickables
-    clickablesToRemove.forEach(child => {
-        const idx = interiorClickables.indexOf(child);
-        if (idx > -1) interiorClickables.splice(idx, 1);
-    });
-
-    // 3. Remove Objects from Scene
-    toRemove.forEach(child => {
-        if (child.parent) child.parent.remove(child);
-    });
-
-    if (!playlist || playlist.length === 0) return;
-
-    if (window.createUniversalVideoInterface) {
-        // Position from Data or Fallback
-        const posData = roomContent['living'].videoInterfacePos || { x: 3.0, y: 3.2, z: -4.9 };
-        // V306: Scale 0.5x
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist, {
-            scale: 0.5
-        });
-    }
-}
-
-window.stopLivingVideo = () => {
-    restoreCinemaLights();
-    if (tvVideo) {
-        tvVideo.pause(); tvVideo.muted = true;
-        console.log("Living Room Video Stopped & Muted (Cleanup)");
-        /*
-        const applyScreensaver = (mesh) => {
-             if (tvScreensaverTexture) {
-                 mesh.material.map = tvScreensaverTexture;
-                 mesh.userData.update = tvScreensaverTexture.userData.update; 
-             }
-        };
-        if (window.livingTVMesh) applyScreensaver(window.livingTVMesh);
-        else if (typeof tvMesh !== 'undefined') applyScreensaver(tvMesh);
-        */
-        // Revert to paused video texture (Premonition frame)
-        if (window.livingTVMesh) {
-            window.livingTVMesh.material.map = tvVideoTexture;
-            window.livingTVMesh.userData.update = null;
-        }
-        else if (typeof tvMesh !== 'undefined') {
-            tvMesh.material.map = tvVideoTexture;
-            tvMesh.userData.update = null;
-        }
-    }
-    window.masterVideoIndex = -1;
-    if (window.updateVideoUI) window.updateVideoUI();
-};
-
-function nextTVContent() {
-    // V-REFINE: Click toggles Play/Pause
-    if (tvVideo) {
-        if (tvVideo.paused) {
-            // --- ENTER CINEMA MODE (PLAY) ---
-            // STOP MUSIC when TV plays
-            if (window.audioPlayer && !window.audioPlayer.paused) {
-                window.audioPlayer.pause();
-                window.isMusicPlaying = false;
-                if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); // Red = Off
-            }
-            // V-FIX: Ensure Button Is Red even if music was already off
-            if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-
-
-            console.log("Cinema Mode: Capturing & Dimming Lights (LOCAL ONLY V-FIX)");
-
-            // 1. CAPTURE CURRENT STATE (Dynamic "Reverse" capability)
-            // V-FIX: Only capture if we haven't already (prevents capturing dimmed state when switching videos)
-            if (!window.preCinemaState) {
-                window.preCinemaState = {
-                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.25, // Updated default
-                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.25,
-                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 0.25,
-                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 0.25,
-                };
-            }
-
-            const dimTime = 1000;
-            const dimLevel = 0.0; // PITCH BLACK (Local)
-
-            try {
-                // Dim Room Lights (LOCAL ONLY)
-                if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // V294: Bloom TV Glow behind set
-                if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 3.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // V-FIX: Re-enable Ambient Dimming (Address "Too Bright" feedback)
-                // But Keep DirLight (Moon) ACTIVE for Outside visibility
-                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // Robot Glow - Keep it BRIGHT! (Do NOT dim)
-                if (window.metropolisRobot) {
-                    // Ensure robot is visible?
-                }
-                if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-            } catch (e) {
-                console.error("TWEEN ERROR:", e);
-                // Fallback
-                if (window.livingCozyLight) window.livingCozyLight.intensity = dimLevel;
-            }
-
-            // V143: Fix Audio - Explicitly Unmute and Max Volume on Play
-            tvVideo.muted = false;
-            tvVideo.volume = 1.0;
-            tvVideo.play().catch(e => console.warn("TV Play Error", e));
-            tvVideo.play().catch(e => console.warn("TV Play Error", e));
-        } else {
-            // --- EXIT CINEMA MODE (PAUSE) ---
-            restoreCinemaLights();
-            if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 500).easing(TWEEN.Easing.Quadratic.Out).start();
-            tvVideo.pause();
-        }
-    }
-}
-window.nextTVContent = nextTVContent;
-window.playTVVideo = playTVVideo;
-
-function restoreCinemaLights() {
-    console.log("Cinema Mode: Restoring Lights (LOCAL ONLY)");
-
-    // Default Fallbacks if capture failed (V298: Moody Normal State)
-    // Updated V315-RELOADED-5: Brighter Defaults
-    const restore = window.preCinemaState || {
-        cozy: 0.5, library: 0.5, spotL: 0.3, spotR: 0.3, ambient: 0.15,
-    };
-
-    try {
-        if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: restore.cozy }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-        if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: restore.library }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // Restore bookcase spots
-        if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: restore.spotL }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-        if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: restore.spotR }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // Restore Ambient (V298: Moody Normal Default)
-        if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: restore.ambient || 0.15 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // V294: Restore TV Glow
-        if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // Restore robot glow
-        if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-    } catch (e) {
-        if (window.livingCozyLight) window.livingCozyLight.intensity = restore.cozy;
-    }
-
-    // V-FIX: Allow re-capture next time
-    window.preCinemaState = null;
-}
-// Export for global use
-window.restoreCinemaLights = restoreCinemaLights;
-
-window.stopLivingVideo = () => {
-    restoreCinemaLights();
-    if (tvVideo) {
-        tvVideo.pause();
-        tvVideo.muted = true;
-        tvVideo.pause();
-        tvVideo.muted = true;
-        console.log("Living Room Video Stopped & Muted (Cleanup)");
-
-        // V-NEW: Revert to Screensaver
-        // Need to find tvMesh. It is local to createLivingRoomInterior, but global 'tvMesh' variable might be used?
-        // Wait, 'tvMesh' is declared inside createLivingRoomInterior without 'let/const' in my view? 
-        // Line 639: 'tvMesh = ...' (Global assignment check). 
-        // If it is global, we can use it. If not, we should have assigned it to window.
-        if (window.livingTVMesh) {
-            if (tvScreensaverTexture) window.livingTVMesh.material.map = tvScreensaverTexture;
-        } else if (typeof tvMesh !== 'undefined') {
-            if (tvScreensaverTexture) tvMesh.material.map = tvScreensaverTexture;
-        }
-    }
-};
-
-function createLivingRoomInterior() {
-    const wallsGroup = new THREE.Group();
-    // V138: Darker Interior Walls (0x8a3500 -> 0x451a00)
-    const wallMat = new THREE.MeshStandardMaterial({
-        color: 0x451a00,
-        roughness: 0.9,
-        metalness: 0.1,
-        side: THREE.DoubleSide
-    });
-
-    const wallGeoHB = new THREE.PlaneGeometry(10, 8);
-    const wallGeoV = new THREE.PlaneGeometry(10, 8);
-
-    const wallBack = new THREE.Mesh(wallGeoHB, wallMat);
-    wallBack.position.set(0, 4.0, -5.0);
-    wallBack.receiveShadow = true;
-    wallsGroup.add(wallBack);
-
-    const wallLeft = new THREE.Mesh(wallGeoV, wallMat);
-    wallLeft.rotation.y = Math.PI / 2;
-    wallLeft.position.set(-5.0, 4.0, 0);
-    wallLeft.receiveShadow = true;
-    wallsGroup.add(wallLeft);
-
-    interiorGroup.add(wallsGroup);
-
-    // --- LIGHTING ---
-    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.5, 15);
-    window.livingCozyLight.position.set(0, 5, 0);
-    window.livingCozyLight.castShadow = true;
-    // window.livingCozyLight.shadow.bias = -0.0001; // Reduce artifacts
-    interiorGroup.add(window.livingCozyLight);
-
-    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.5);
-    window.livingLibrarySpot.position.set(3, 7, 3);
-    window.livingLibrarySpot.angle = Math.PI / 4;
-    window.livingLibrarySpot.penumbra = 0.5;
-    window.livingLibrarySpot.castShadow = true;
-    window.livingLibrarySpot.target.position.set(3, 2, -4.9);
-    interiorGroup.add(window.livingLibrarySpot);
-    interiorGroup.add(window.livingLibrarySpot.target);
-
-    // V298: Moody Shelf lighting
-    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
-    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.3);
-    bookcaseSpotL.position.set(-2, 6, -3.5);
-    bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5);
-    bookcaseSpotL.angle = Math.PI / 2.2;
-    bookcaseSpotL.penumbra = 1.0;
-    bookcaseSpotL.distance = 15;
-    bookcaseSpotL.castShadow = true;
-    bookcaseSpotL.shadow.radius = 4; // V204
-    interiorGroup.add(bookcaseSpotL);
-    interiorGroup.add(bookcaseSpotL.target);
-    window.bookcaseSpotL = bookcaseSpotL;
-
-    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
-    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.3);
-    bookcaseSpotR.position.set(-2, 6, 3.5);
-    bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5);
-    bookcaseSpotR.angle = Math.PI / 2.2;
-    bookcaseSpotR.penumbra = 1.0;
-    bookcaseSpotR.distance = 15;
-    bookcaseSpotR.castShadow = true;
-    bookcaseSpotR.shadow.radius = 4; // V204
-    interiorGroup.add(bookcaseSpotR);
-    interiorGroup.add(bookcaseSpotR.target);
-    window.bookcaseSpotR = bookcaseSpotR;
-
-    // V201: Procedural Wood Texture Helper
-    const createWoodMaterial = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-
-        // Base Color (Light Brown / Oak)
-        ctx.fillStyle = '#d2b48c'; // Tan/Burlywood
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Wood Grain Pattern
-        ctx.fillStyle = 'rgba(101, 67, 33, 0.1)'; // Dark Brown, low opacity
-        for (let i = 0; i < 200; i++) {
-            const x = Math.random() * 512;
-            const y = Math.random() * 512;
-            const w = 512; // Long horizontal streaks? vertical?
-            // Let's do vertical grain for furniture usually, but texture mapping varies.
-            // Irregular wavy lines.
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.bezierCurveTo(x + Math.random() * 20 - 10, 170, x + Math.random() * 20 - 10, 340, x + Math.random() * 20 - 10, 512);
-            ctx.lineWidth = 1 + Math.random() * 2;
-            ctx.strokeStyle = 'rgba(139, 69, 19, 0.15)'; // SaddleBrown
-            ctx.stroke();
-        }
-
-        // Noise
-        for (let i = 0; i < 20000; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)';
-            ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
-        }
-
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.colorSpace = THREE.SRGBColorSpace;
-
-        const mat = new THREE.MeshStandardMaterial({
-            map: tex,
-            color: 0xddccaa, // tint
-            roughness: 0.8,
-            metalness: 0.1
-        });
-        return mat;
-    };
-
-    const woodMat = createWoodMaterial();
-
-    // --- BOOKCASES ---
-    // V202: Reverted to Dark Shelf (User Request: "Only coffeetable and TV cupboard wood")
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x150e0a, roughness: 1.0 });
-    const bookColors = [0x991b1b, 0x1e40af, 0x166534, 0x854d0e, 0x3730a3, 0xfacc15];
-
-    // ... (Helper unchanged)
-
-    // (Helper Function body skipped, assuming context allows)
-    // Wait, createBookcase uses shelfMat, need to ensure helper sees new shelfMat
-
-    // ... Skipping Helper Body ...
-
-    // RUG & COUCH
-    // V138: Darker Rug (0x450a0a -> 0x220505)
-    // V138: Darker Couch (0x5d4037 -> 0x2e201b)
-
-    // Applying to lower section now...
-
-    // V147: Menorah Artifact (User Request)
-    // Traditional 7-branched Menorah. Middle candle lit.
-    // V224: Floating 7 Lights (User Request)
-    // V225: Floating Orb Artifact (User Request)
-    // V235: Ruin Artifact (User Request: Dark ruin, broad base, container for orb)
-    // V242: Refined Ruin (Volcano-like)
-    // V243: Refined Ruin (Yellow Orb, Higher, Clickable)
-    function createRuinArtifact() {
-        const group = new THREE.Group();
-
-        // 1. The Volcano Base
-        const baseGeo = new THREE.CylinderGeometry(0.15, 0.4, 0.4, 8);
-        const baseMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 1.0,
-            flatShading: true
-        });
-        const base = new THREE.Mesh(baseGeo, baseMat);
-        base.position.y = 0.2;
-        base.castShadow = true;
-        group.add(base);
-
-        // 2. The Orb (Yellow & Higher)
-        const orbGeo = new THREE.SphereGeometry(0.12, 16, 16); // Slightly bigger
-        const orbMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 }); // Yellow/Gold
-        const orb = new THREE.Mesh(orbGeo, orbMat);
-        // V-REFINE: Higher placement (0.35 -> 0.55) to float/sit prominently
-        orb.position.y = 0.55;
-        group.add(orb);
-
-        // 3. Pulsating Light (Yellow)
-        const light = new THREE.PointLight(0xffaa00, 2.0, 7);
-        light.position.copy(orb.position);
-        group.add(light);
-
-        // 4. BIG HITBOX (Covers Base + Orb + Surroundings)
-        // Make it easy to click!
-        const hitBox = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.45, 0.45, 0.9, 8), // Big cylinder
-            new THREE.MeshBasicMaterial({ visible: false })
-        );
-        hitBox.position.y = 0.45; // Center it
-        group.add(hitBox);
-
-        // Expose hitBox as the target
-        group.userData.hitTarget = hitBox;
-
-        group.userData = {
-            update: (t) => {
-                const pulse = 1.0 + Math.sin(t * 2) * 0.3;
-                light.intensity = 2.0 + pulse;
-                orb.scale.setScalar(1.0 + Math.sin(t * 4) * 0.05);
-            }
-        };
-
-        return group;
-    }
-
-    // V317: Void Candle Removed per user request
-    /*
-    function createVoidCandle() {
-        ...
-    }
-    */
-
-    function createBookcase(posZ) {
-        const bookcaseGroup = new THREE.Group();
-
-        // V-REFINE: Right Hinge Offset Logic
-        // If it's the Right Bookcase (posZ < 0), we want the Pivot at the Right Edge (+Z relative to center).
-        // Center of Geometry logic: Backing x=-0.4. Width Z=2.4 (-1.2 to 1.2).
-        // Right Edge is +1.2.
-        // So offset children by -1.2 Z.
-        // And offset Group Buffer position by +1.2 Z.
-        // posZ is the center position passed (-3.5 or 3.5).
-        // WAIT. 3.5 is the positive one?
-        // Line 446 calls: createBookcase(-3.5); createBookcase(3.5);
-        // Living Room Wall is along X=-5. Z axis runs along wall.
-        // "Right" when facing wall (-X) is +Z. So posZ = 3.5 is Right Bookcase.
-        // Wait, User said "open right bookcase (Z < 0)".
-        // Line 283 (`row === 4 && posZ < 0`) placed artifact on Z < 0.
-        // So User considers Z < 0 "Right".
-        // Facing -X (Wall), Z is RIGHT? 
-        // 3D Coords: X Right, Y Up, Z Forward (out of screen).
-        // If Wall is Back (-Z), then X is L/R.
-        // Here Wall is LEFT (-X). So we face -X.
-        // Forward is -X. Up is +Y. Right is -Z.
-        // So "Right Bookcase" is `posZ < 0`. Correct.
-        // Right Edge of this bookcase is -Z (further right).
-        // Center is `posZ` (-3.5).
-        // Width 2.4. Extent -1.2 to +1.2.
-        // "Right Edge" (locally) is -1.2 (Mesh coords).
-        // But relative to ROOM, "Right" is -Z direction.
-        // So "Right Edge" is the one with smaller Z value?
-        // Yes. `posZ - 1.2`.
-        // So we want Pivot at `posZ - 1.2`.
-        // So move Group to `posZ - 1.2`.
-        // Move Children `+1.2`.
-
-        let pivotOffsetZ = 0;
-        if (posZ < 0) {
-            pivotOffsetZ = 1.2;
-            // V-FIX: Explicitly assign Global Ref for Secret Door
-            window.secretDoorGroup = bookcaseGroup;
-            bookcaseGroup.userData.isSecretDoor = true; // Marker
-        }
-
-        const backing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5.2, 2.4), shelfMat);
-        backing.position.x = -0.4;
-        backing.position.z = pivotOffsetZ; // Offset
-        backing.castShadow = true; backing.receiveShadow = true;
-        bookcaseGroup.add(backing);
-
-        const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat);
-        sideL.position.z = -1.2 + pivotOffsetZ;
-        sideL.castShadow = true; sideL.receiveShadow = true;
-        bookcaseGroup.add(sideL);
-
-        const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat);
-        sideR.position.z = 1.2 + pivotOffsetZ;
-        sideR.castShadow = true; sideR.receiveShadow = true;
-        bookcaseGroup.add(sideR);
-
-        for (let row = 0; row < 5; row++) {
-            const shelfY = 0.5 + (row * 1.0);
-            const plank = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 2.4), shelfMat);
-            plank.position.y = shelfY - 2.5;
-            plank.position.z = pivotOffsetZ;
-            plank.castShadow = true; plank.receiveShadow = true;
-            bookcaseGroup.add(plank);
-
-            // V-NEW: Black Portal behind Right Bookcase
-            if (row === 0 && posZ < 0) {
-                // 1. The Visual Portal (Black Void)
-                const portalMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-                const portal = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 5.2), portalMat);
-                portal.position.set(-4.95, 2.6, posZ);
-                portal.rotation.y = Math.PI / 2;
-                portal.userData = { name: 'void', type: 'decoration' };
-                interiorGroup.add(portal);
-
-                // 2. Interaction: Make the WHOLE VOID clickable (User Request)
-                portal.userData = {
-                    type: 'enter_annex', // Tag for debugging
-                    onClick: () => {
-                        console.log("Black Void Clicked -> Enter Annex");
-                        enterRoom('annex');
-                    }
-                };
-                interiorClickables.push(portal);
-
-                // 3. Backup Hitbox (Invisible, In Front)
-                // Catches clicks if the wall obscures the edges
-                const portalHitBox = new THREE.Mesh(
-                    new THREE.PlaneGeometry(2.0, 5.0),
-                    new THREE.MeshBasicMaterial({ visible: false })
-                );
-                portalHitBox.position.z = 0.1; // Slightly in front of black plane
-                portalHitBox.userData = { onClick: portal.userData.onClick };
-                portal.add(portalHitBox);
-                interiorClickables.push(portalHitBox);
-
-
-                // 4. Candle Decoration REMOVED (V317)
-                /*
-                const candle = createVoidCandle();
-                ...
-                */
-
-                // Visibility Logic (Minimal)
-                portal.userData.update = (t) => {
-                    // console.log("Void interaction active");
-                };
-            }
-
-            // V-NEW: Artifact on Top Shelf of Right Bookcase (posZ < 0)
-            if (row === 4 && posZ < 0) {
-                // V235: Ruin Artifact
-                const artifact = createRuinArtifact();
-                // Sith on shelf. Base height ~0.4. Scaled 1.5 -> 0.6.
-                // Origin y=0.2 -> 0.3. Bottom at 0.
-                // Shelf Y is `shelfY`. Plank top `shelfY - 2.45`.
-                artifact.scale.setScalar(1.5);
-                artifact.position.set(0, shelfY - 2.45, 0 + pivotOffsetZ);
-
-                // CLICK TRIGGER - Attach to hitTarget (The Base Mesh)
-                const hitTarget = artifact.userData.hitTarget || artifact; // Fallback
-
-                // Define the Handler
-                const toggleDoor = () => {
-                    console.log("Ruin Clicked! Toggle Secret Door...");
-                    try {
-                        const squeak = new Audio('../assets/audio/squeak.mp3');
-                        squeak.volume = 1.0;
-                        squeak.play().catch(e => console.error("Squeak Play Fail:", e));
-                    } catch (err) {
-                        console.error("Audio Init Fail:", err);
-                    }
-
-                    const target = window.secretDoorGroup;
-                    if (!target) return;
-
-                    if (!target.userData.isOpen) {
-                        new TWEEN.Tween(target.rotation).to({ y: Math.PI / 2.5 }, 4000).easing(TWEEN.Easing.Quadratic.InOut).start();
-                        target.userData.isOpen = true;
-                    } else {
-                        new TWEEN.Tween(target.rotation).to({ y: 0 }, 2000).easing(TWEEN.Easing.Quadratic.InOut).start();
-                        target.userData.isOpen = false;
-                    }
-                };
-
-                // Attach handler to the mesh userData
-                hitTarget.userData = {
-                    type: 'open_secret',
-                    onClick: toggleDoor
-                };
-
-                // IMPORTANT: Push the Mesh (hitTarget) to interiorClickables
-                interiorClickables.push(hitTarget);
-
-                bookcaseGroup.add(artifact);
-            }
-
-            if (row === 1 && posZ < 0) {
-                // V166: RUBIK'S CUBE (Replaces old Tintin rocket)
-                const cubeGroup = createRubiksCubeArtifact();
-                cubeGroup.position.set(0.1, shelfY - 2.15, 0 + pivotOffsetZ);
-                bookcaseGroup.add(cubeGroup);
-            }
-            else if (row === 4 && posZ > 0) {
-                // V166: REALISTIC TINTIN ROCKET (on Top Left Shelf)
-                const rocket = createRealisticRocketArtifact();
-                rocket.scale.setScalar(0.022);
-                // V-FIX: Adjust Y to sit on shelf (was shelfY - 2.47 sinking in)
-                // Corrected to shelfY - 2.32
-                rocket.position.set(0.1, shelfY - 2.32, 0);
-                bookcaseGroup.add(rocket);
-            }
-            else if (row === 2 && posZ > 0) {
-                // GLOBE
-                const globe = new THREE.Group();
-                const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05), new THREE.MeshStandardMaterial({ color: 0x333333 }));
-                const ball = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
-                ball.position.y = 0.3;
-                globe.add(standBase, ball);
-                globe.position.set(0.1, shelfY - 2.45, 0); // No offset for Left bookcase
-                bookcaseGroup.add(globe);
-            }
-            else if (!(row === 4 && posZ < 0)) {
-                for (let b = 0; b < 13; b++) {
-                    const bW = 0.14;
-                    const bH = 0.5 + Math.random() * 0.3;
-                    const book = new THREE.Mesh(new THREE.BoxGeometry(0.6, bH, bW),
-                        new THREE.MeshStandardMaterial({ color: bookColors[Math.floor(Math.random() * bookColors.length)] }));
-                    const yPos = (shelfY - 2.5) + (bH / 2) + 0.05;
-                    const zPos = (-0.9 + (b * 0.16)) + pivotOffsetZ; // Offset books
-                    book.position.set(0.1, yPos, zPos);
-                    bookcaseGroup.add(book);
-                }
-            }
-        }
-
-        // Hinge Logic for Secret Door
-        if (posZ < 0) {
-            window.secretDoorGroup = bookcaseGroup;
-            bookcaseGroup.userData.isOpen = false;
-        }
-
-        bookcaseGroup.position.set(-4.5, 2.6, posZ - pivotOffsetZ); // Apply Pivot Translation
-        interiorGroup.add(bookcaseGroup);
-    };
-
-    createBookcase(-3.5); createBookcase(3.5);
-
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 1), woodMat); // V202: Wood Texture
-    stand.position.set(0, 0.75, -4);
-    stand.castShadow = true; stand.receiveShadow = true;
-    interiorGroup.add(stand);
-
-    const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 0.2), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-    tvFrame.position.set(0, 2.6, -4.5);
-    interiorGroup.add(tvFrame);
-
-    initTVVideo();
-
-    // -- MILD GLOW BEHIND TV --
-    // V-REFINE: Soft Blue Glow (Texture based, not rectangle)
-    // V294: Atmospheric TV Glow (Pulsates in Cinema Mode)
-    const tvGlow = new THREE.PointLight(0x88ccff, 1.5, 8);
-    tvGlow.position.set(0, 2.6, -4.8);
-    interiorGroup.add(tvGlow);
-    window.livingTVGlow = tvGlow;
-
-    // Create Soft Gradient Texture for the backing
-    const glowCanvas = document.createElement('canvas');
-    glowCanvas.width = 128; glowCanvas.height = 128;
-    const gCtx = glowCanvas.getContext('2d');
-    const grd = gCtx.createRadialGradient(64, 64, 20, 64, 64, 60);
-    grd.addColorStop(0, 'rgba(0, 100, 255, 0.4)'); // Blue center
-    grd.addColorStop(0.5, 'rgba(0, 50, 150, 0.1)');
-    grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    gCtx.fillStyle = grd; gCtx.fillRect(0, 0, 128, 128);
-
-    const glowTex = new THREE.CanvasTexture(glowCanvas);
-    const glowGeo = new THREE.PlaneGeometry(6, 4); // Slightly larger
-    const glowMat = new THREE.MeshBasicMaterial({
-        map: glowTex,
-        transparent: true,
-        opacity: 0.8,
-        depthWrite: false, // Prevent occlusion issues
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending // Glowy look
-    });
-    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-    glowMesh.position.set(0, 2.6, -4.95); // Just off wall
-    interiorGroup.add(glowMesh);
-
-    // V-WORDHUNT: Moved to Maria Interaction
-
-    // V-NEW: Create Video Menu Panel
-    if (roomContent['living'].videoPlaylist && roomContent['living'].videoPlaylist.length > 0) {
-        createVideoPanel(roomContent['living'].videoPlaylist);
-    }
-
-    const screenGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    // V-FIX: Start with Screensaver (Slideshow) if available
-    tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tvScreensaverTexture || tvVideoTexture }));
-    tvMesh.position.set(0, 2.6, -4.39);
-
-    interiorGroup.add(tvMesh); // Ensure added using Variable reference (implied context)
-    tvMesh.userData = { type: 'tv', action: 'toggleVideo' };
-
-    // V294: TV Gloss Overlay (Glass Reflection)
-    const glassGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    const glassMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        transparent: true,
-        opacity: 0.1,
-        metalness: 0.9,
-        roughness: 0.1,
-        depthWrite: false
-    });
-    const tvGlass = new THREE.Mesh(glassGeo, glassMat);
-    tvGlass.position.set(0, 2.6, -4.37); // Just in front of screen
-    interiorGroup.add(tvGlass);
-
-    // Attach Screensaver Update if active
-    if (tvScreensaverTexture && tvScreensaverTexture.userData.update) {
-        tvMesh.userData.update = tvScreensaverTexture.userData.update;
-    }
-
-    interiorGroup.add(tvMesh);
-    interiorClickables.push(tvMesh);
-    window.livingTVMesh = tvMesh; // V-FIX: Expose for screensaver revert
-
-    const table = new THREE.Mesh(
-        new THREE.BoxGeometry(2.25, 0.6, 2.25),
-        woodMat // V201: Use Shared Wood Material
-    );
-    table.position.set(0, 0.3, -1.0);
-    table.castShadow = true; table.receiveShadow = true;
-    interiorGroup.add(table);
-
-    // 4. Console Table (Center)
-
-    function createBook(title, color, x, z, rotY, imagePath) {
-        const bGeo = new THREE.BoxGeometry(0.5, 0.08, 0.7);
-        let coverMat;
-        if (imagePath) {
-            const diffTex = new THREE.TextureLoader().load(imagePath);
-            diffTex.colorSpace = THREE.SRGBColorSpace;
-            coverMat = new THREE.MeshStandardMaterial({ map: diffTex, color: 0xffffff });
-        } else {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 356;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = color; ctx.fillRect(0, 0, 256, 356);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px Georgia, serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(title, 128, 100);
-            ctx.fillRect(10, 0, 20, 356);
-            const tex = new THREE.CanvasTexture(canvas);
-            coverMat = new THREE.MeshStandardMaterial({ map: tex });
-        }
-        const bMat = [
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-            coverMat,
-            new THREE.MeshStandardMaterial({ color: color }),
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee })
-        ];
-        const mesh = new THREE.Mesh(bGeo, bMat);
-        mesh.position.set(x, 0.65, z);
-        mesh.rotation.y = rotY;
-        mesh.castShadow = true;
-        interiorGroup.add(mesh);
-    }
-
-    createBook("Tonic for\nthe Bones", '#8b0000', -0.6, -1.4, 0.2, '/assets/images/tftb-cover.jpg');
-    createBook("Phantom\nParents", '#1a237e', -0.4, -0.4, -0.1, '/assets/images/phantomparents-cover.jpg');
-    createBook("Gifts", '#065f46', 0.5, -0.9, -0.3, '/assets/images/gifts-cover.jpg');
-
-    const cardGeo = new THREE.BoxGeometry(0.6, 0.15, 0.9);
-    const cardCanvas = document.createElement('canvas');
-    cardCanvas.width = 256; cardCanvas.height = 384;
-    const cctx = cardCanvas.getContext('2d');
-    cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 256, 384);
-    cctx.fillStyle = '#000000'; cctx.font = 'bold 22px Arial'; cctx.textAlign = 'center';
-    cctx.fillText("CONVERSATION", 128, 185);
-    const cardTex = new THREE.CanvasTexture(cardCanvas);
-    const cardMat = new THREE.MeshStandardMaterial({ map: cardTex });
-    const cardMesh = new THREE.Mesh(cardGeo, [
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        cardMat,
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee })
-    ]);
-    cardMesh.position.set(0, 0.45, -1.0);
-    cardMesh.userData = { type: 'decoration' };
-    interiorGroup.add(cardMesh); // Updated: Removed click logic/hologram
-
-    // V171: Dark Red Rug (0x220505 -> 0x6b0505)
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 }));
-    rug.rotation.x = -Math.PI / 2; rug.position.y = 0.02;
-    rug.receiveShadow = true; // V204: Receive Shadows
-    interiorGroup.add(rug);
-
-    // V138: Darker Couch (0x5d4037 -> 0x2e201b)
-    const couchMat = new THREE.MeshStandardMaterial({ color: 0x2e201b });
-    const couchGroup = new THREE.Group();
-    const s = new THREE.Mesh(new THREE.BoxGeometry(3, 0.4, 1.2), couchMat);
-    s.position.y = 0.5; couchGroup.add(s);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 0.3), couchMat);
-    b.position.set(0, 1.0, 0.55); couchGroup.add(b);
-    const aL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 1.3), couchMat);
-    aL.position.set(-1.6, 0.7, 0); couchGroup.add(aL);
-    const aR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 1.3), couchMat);
-    aR.position.set(1.6, 0.7, 0); couchGroup.add(aR);
-    couchGroup.position.set(0, -0.3, 2.5);
-    interiorGroup.add(couchGroup);
-
-    const chairGroup = new THREE.Group();
-    const cS = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.2), couchMat);
-    cS.position.y = 0.5; chairGroup.add(cS);
-    const cB = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.3), couchMat);
-    cB.position.set(0, 1.0, 0.55); chairGroup.add(cB);
-    const cAL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 1.3), couchMat);
-    cAL.position.set(-0.7, 0.7, 0); chairGroup.add(cAL);
-    const cAR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 1.3), couchMat);
-    cAR.position.set(0.7, 0.7, 0); chairGroup.add(cAR);
-    chairGroup.position.set(3.5, -0.3, -1.0);
-    chairGroup.rotation.y = Math.PI / 2;
-    interiorGroup.add(chairGroup);
-
-    try {
-        if (typeof createMetropolisRobot === 'function') {
-            window.metropolisRobot = createMetropolisRobot();
-            window.metropolisRobot.position.set(4.5, 0, -4.0);
-            window.metropolisRobot.rotation.y = -0.5;
-            window.metropolisRobot.scale.set(1.125, 1.125, 1.125);
-            interiorGroup.add(window.metropolisRobot);
-
-            const robotGlow = new THREE.PointLight(0x00ffff, 2.5, 12);
-            robotGlow.position.set(0, 1.5, 0.5);
-            window.metropolisRobot.add(robotGlow);
-            window.robotGlowLight = robotGlow;
-
-            // V-WORDHUNT: Hidden Orb in Maria
-            if (typeof WordHunt !== 'undefined') {
-                const item = WordHunt.createInteractable('living');
-                if (item) {
-                    item.position.set(0, 1.5, 0);
-                    item.scale.set(0.1, 0.1, 0.1);
-                    item.visible = false;
-                    window.metropolisRobot.add(item);
-
-                    // Click Handler for Robot
-                    // We need to ensure the robot mesh itself is clickable or we add a hitbox
-                    window.metropolisRobot.userData.type = 'MariaRobot';
-                    window.metropolisRobot.userData.onClick = () => {
-                        if (item.userData.revealed) return;
-
-                        console.log("Maria Clicked! Popping out orb...");
-                        item.visible = true;
-                        item.userData.revealed = true;
-
-                        // Animate Pop Out
-                        new TWEEN.Tween(item.position)
-                            .to({ y: 3.0 }, 1500)
-                            .easing(TWEEN.Easing.Elastic.Out)
-                            .start();
-
-                        new TWEEN.Tween(item.scale)
-                            .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
-                            .easing(TWEEN.Easing.Elastic.Out)
-                            .start();
-                    };
-
-                    if (window.interiorClickables) window.interiorClickables.push(window.metropolisRobot);
-                }
-            }
-        }
-    } catch (e) {
-        console.warn("Living Room Robot Init Failed", e);
-    }
-}
-// --- ARTIFACT HELPERS (V166) ---
-
-function createRubiksCubeArtifact() {
+function createLivingRuinArtifact() {
     const group = new THREE.Group();
-    const cubeSize = 0.12;
-    const spacing = 0.13;
-    const colors = [0xffffff, 0xffff00, 0xff0000, 0xffa500, 0x0000ff, 0x00ff00]; // W, Y, R, O, B, G
-
-    for (let x = -1; x <= 1; x++) {
-        for (let y = -1; y <= 1; y++) {
-            for (let z = -1; z <= 1; z++) {
-                if (x === 0 && y === 0 && z === 0) continue; // Hollow core
-
-                const materials = [];
-                for (let i = 0; i < 6; i++) {
-                    // Random-ish rotation/scramble look
-                    materials.push(new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)], roughness: 0.1 }));
-                }
-
-                // Black frame/border effect
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), materials);
-                mesh.position.set(x * spacing, y * spacing, z * spacing);
-                group.add(mesh);
-
-                // Add dark edges
-                const edges = new THREE.EdgesGeometry(mesh.geometry);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
-                mesh.add(line);
-            }
-        }
-    }
-    group.scale.setScalar(0.85); // Adjust for shelf fit
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.4, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1.0, flatShading: true }));
+    base.position.y = 0.2; base.castShadow = true; group.add(base);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+    orb.position.y = 0.55; group.add(orb);
+    const light = new THREE.PointLight(0xffaa00, 2.0, 7); light.position.copy(orb.position); group.add(light);
+    const hitBox = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.9, 8), new THREE.MeshBasicMaterial({ visible: false }));
+    hitBox.position.y = 0.45; group.add(hitBox);
+    group.userData.hitTarget = hitBox;
+    group.userData.update = (t) => {
+        const pulse = 1.0 + Math.sin(t * 2) * 0.3; light.intensity = 2.0 + pulse; orb.scale.setScalar(1.0 + Math.sin(t * 4) * 0.05);
+    };
     return group;
 }
 
-function createRealisticRocketArtifact() {
-    const rocket = new THREE.Group();
-    const size = 512;
-    const canvas = document.createElement('canvas');
-    canvas.width = size; canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const RED = '#d40000'; const WHITE = '#fcfcfc';
-    const bottomEdge = 0.32 * size;
-    const checkerHeight = 0.44 * size;
-    const rowH = checkerHeight / 5;
-    const cols = 10; const colW = size / cols;
-
-    ctx.fillStyle = RED; ctx.fillRect(0, size - bottomEdge, size, bottomEdge);
-    for (let i = 0; i < 5; i++) {
-        const y = size - bottomEdge - (i + 1) * rowH;
-        for (let j = 0; j < cols; j++) {
-            ctx.fillStyle = (i + j) % 2 === 0 ? RED : WHITE;
-            ctx.fillRect(j * colW, y, colW, rowH);
-        }
+function createLivingRubiksCubeArtifact() {
+    const group = new THREE.Group();
+    const colors = [0xffffff, 0xffff00, 0xff0000, 0xffa500, 0x0000ff, 0x00ff00];
+    for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+        if (x === 0 && y === 0 && z === 0) continue;
+        const mats = []; for (let i = 0; i < 6; i++) mats.push(new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * 6)], roughness: 0.1 }));
+        const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mats);
+        m.position.set(x * 0.13, y * 0.13, z * 0.13);
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: 0x000000 }));
+        m.add(edges); group.add(m);
     }
-    ctx.fillStyle = RED; ctx.fillRect(0, 0, size, size - bottomEdge - checkerHeight);
+    group.scale.setScalar(0.85);
+    return group;
+}
 
-    const rocketTexture = new THREE.CanvasTexture(canvas);
-    rocketTexture.wrapS = THREE.RepeatWrapping; rocketTexture.wrapT = THREE.RepeatWrapping;
-
-    const rocketMat = new THREE.MeshStandardMaterial({ map: rocketTexture, roughness: 0.2, metalness: 0.1 });
-    const redMat = new THREE.MeshStandardMaterial({ color: 0xd40000, roughness: 0.32 });
-
-    const points = [];
-    const h = 30; const bulgePoint = 0.58; const baseRadius = 1.1; const maxRadius = 2.6;
+function createLivingRealisticRocketArtifact() {
+    const rocket = new THREE.Group();
+    const size = 512; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const RED = '#d40000', WHITE = '#fcfcfc';
+    ctx.fillStyle = RED; ctx.fillRect(0, 0.68 * size, size, 0.32 * size);
+    for (let i = 0; i < 5; i++) {
+        const y = 0.68 * size - (i + 1) * (0.44 * size / 5);
+        for (let j = 0; j < 10; j++) { ctx.fillStyle = (i + j) % 2 === 0 ? RED : WHITE; ctx.fillRect(j * (size / 10), y, size / 10, 0.44 * size / 5); }
+    }
+    ctx.fillStyle = RED; ctx.fillRect(0, 0, size, 0.24 * size);
+    const tex = new THREE.CanvasTexture(canvas); tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    const pts = []; const h = 30;
     for (let i = 0; i <= 100; i++) {
         const t = i / 100; const y = t * h;
-        let x;
-        if (t < bulgePoint) {
-            const localT = t / bulgePoint;
-            x = baseRadius + (maxRadius - baseRadius) * Math.sin(localT * Math.PI / 2);
-        } else {
-            const localT = (t - bulgePoint) / (1 - bulgePoint);
-            x = maxRadius * Math.pow(Math.cos(localT * Math.PI / 2), 0.8);
-        }
-        points.push(new THREE.Vector2(x, y));
+        let x = (t < 0.58) ? 1.1 + 1.5 * Math.sin((t / 0.58) * (Math.PI / 2)) : 2.6 * Math.pow(Math.cos(((t - 0.58) / 0.42) * (Math.PI / 2)), 0.8);
+        pts.push(new THREE.Vector2(x, y));
     }
-    points.unshift(new THREE.Vector2(0, 0));
-
-    const body = new THREE.Mesh(new THREE.LatheGeometry(points, 32), rocketMat);
-    rocket.add(body);
-
-    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 3, 12), redMat);
-    tip.position.y = h + 1.5;
-    rocket.add(tip);
-
+    pts.unshift(new THREE.Vector2(0, 0));
+    rocket.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 32), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.2, metalness: 0.1 })));
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 3, 12), new THREE.MeshStandardMaterial({ color: 0xd40000, roughness: 0.32 }));
+    tip.position.y = h + 1.5; rocket.add(tip);
     for (let i = 0; i < 3; i++) {
-        const legGroup = new THREE.Group();
-        legGroup.rotation.y = (i * Math.PI * 2) / 3;
-        const legShape = new THREE.Shape();
-        legShape.moveTo(1.2, 7.2); legShape.lineTo(2.2, 7.2);
-        legShape.bezierCurveTo(9.0, 5.7, 10.5, -1.3, 10.5, -3.7);
-        legShape.lineTo(8.0, -3.7);
-        legShape.bezierCurveTo(8.0, -0.5, 4.0, 1.5, 1.2, 2.7);
-        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(legShape, { depth: 1.6, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 3 }), redMat);
+        const legGroup = new THREE.Group(); legGroup.rotation.y = (i * Math.PI * 2) / 3;
+        const legShape = new THREE.Shape(); legShape.moveTo(1.2, 7.2); legShape.lineTo(2.2, 7.2); legShape.bezierCurveTo(9.0, 5.7, 10.5, -1.3, 10.5, -3.7); legShape.lineTo(8.0, -3.7); legShape.bezierCurveTo(8.0, -0.5, 4.0, 1.5, 1.2, 2.7);
+        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(legShape, { depth: 1.6, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 3 }), tip.material);
         leg.position.set(0, 0, -0.8);
-        const pod = new THREE.Mesh(new THREE.SphereGeometry(2.0, 16, 16), redMat);
-        pod.scale.set(1, 1.35, 1); pod.position.set(9.2, -3.4, 0.8);
-        leg.add(pod);
-        legGroup.add(leg);
-        rocket.add(legGroup);
+        const pod = new THREE.Mesh(new THREE.SphereGeometry(2.0, 16, 16), tip.material); pod.scale.set(1, 1.35, 1); pod.position.set(9.2, -3.4, 0.8); leg.add(pod);
+        legGroup.add(leg); rocket.add(legGroup);
     }
     return rocket;
 }
 
-window.createRealisticRocketArtifact = createRealisticRocketArtifact;
-window.createRubiksCubeArtifact = createRubiksCubeArtifact;
-window.createLivingRoomInterior = createLivingRoomInterior;
+function createLivingMetropolisRobot() {
+    const group = new THREE.Group();
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, metalness: 0.9, roughness: 0.3, emissive: 0x331100, emissiveIntensity: 0.2 });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), goldMat); head.position.y = 1.75; head.scale.set(0.9, 1.2, 1); group.add(head);
+    [-0.08, 0.08].forEach(x => {
+        const eye = new THREE.Mesh(new THREE.CircleGeometry(0.045, 16), new THREE.MeshBasicMaterial({ color: 0xffffff })); eye.position.set(x, 1.78, 0.17); eye.rotation.y = x > 0 ? 0.2 : -0.2; head.add(eye);
+        const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.02, 16), new THREE.MeshBasicMaterial({ color: 0x000000 })); pupil.position.set(0, 0, 0.01); eye.add(pupil);
+    });
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.14, 0.8, 16), goldMat); torso.position.y = 1.1; group.add(torso);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.2), goldMat); neck.position.y = 1.55; group.add(neck);
+    [-1, 1].forEach(side => {
+        const sh = new THREE.Mesh(new THREE.SphereGeometry(0.08), goldMat); sh.position.set(0.26 * side, 1.4, 0); group.add(sh);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.7), goldMat); arm.position.set(0.32 * side, 1.05, 0); group.add(arm);
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.05), goldMat); hand.position.set(0.32 * side, 0.7, 0); group.add(hand);
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.8), goldMat); leg.position.set(0.12 * side, 0.4, 0); group.add(leg);
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.18), goldMat); foot.position.set(0.12 * side, 0.02, 0.05); group.add(foot);
+    });
+    const rings = []; const ringCount = 6; const rangeY = 2.2;
+    const glowRingMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
+    for (let i = 0; i < ringCount; i++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.03, 8, 32), glowRingMat.clone()); ring.rotation.x = Math.PI / 2; group.add(ring); rings.push(ring);
+    }
+    group.userData.update = function (t) {
+        rings.forEach((ring, idx) => {
+            ring.position.y = 2.2 - ((t * 0.4 + idx * (rangeY / ringCount)) % rangeY);
+            let p = Math.min(Math.max(ring.position.y / rangeY, 0), 1); const curve = Math.sin(p * Math.PI); ring.material.opacity = Math.pow(curve, 0.8) * 1.0;
+            const swell = 0.4 + (curve * 0.9); const pulse = 1.0 + Math.sin(t * 3 + idx) * 0.05; ring.scale.set(swell * pulse, swell * pulse, 1);
+        });
+    };
+    group.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    return group;
+}
+
+window.createLivingRoomInterior = function () {
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x451a00, roughness: 0.9, metalness: 0.1, side: THREE.DoubleSide });
+    const wBack = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), wallMat); wBack.position.set(0, 4, -5); wBack.receiveShadow = true; interiorGroup.add(wBack);
+    const wLeft = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), wallMat); wLeft.rotation.y = Math.PI / 2; wLeft.position.set(-5, 4, 0); wLeft.receiveShadow = true; interiorGroup.add(wLeft);
+
+    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.25, 15);
+    window.livingCozyLight.position.set(0, 5, 0); window.livingCozyLight.castShadow = true; window.livingCozyLight.shadow.radius = 8; window.livingCozyLight.shadow.bias = -0.0005;
+    interiorGroup.add(window.livingCozyLight);
+
+    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.25);
+    window.livingLibrarySpot.position.set(3, 7, 3); window.livingLibrarySpot.target.position.set(3, 2, -4.9); window.livingLibrarySpot.castShadow = true; window.livingLibrarySpot.shadow.radius = 8;
+    interiorGroup.add(window.livingLibrarySpot); interiorGroup.add(window.livingLibrarySpot.target);
+
+    window.bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.15); window.bookcaseSpotL.position.set(-2, 6, -3.5); window.bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5); window.bookcaseSpotL.castShadow = true; interiorGroup.add(window.bookcaseSpotL); interiorGroup.add(window.bookcaseSpotL.target);
+    window.bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.15); window.bookcaseSpotR.position.set(-2, 6, 3.5); window.bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5); window.bookcaseSpotR.castShadow = true; interiorGroup.add(window.bookcaseSpotR); interiorGroup.add(window.bookcaseSpotR.target);
+
+    if (window.livingRoomLightingOverride) clearInterval(window.livingRoomLightingOverride);
+    window.livingRoomLightingOverride = setInterval(() => {
+        if (livingTVVideo && !livingTVVideo.paused) return; // Don't override in cinema mode
+        if (window.ambientLight) window.ambientLight.intensity = 0.15;
+        if (window.dirLight) window.dirLight.intensity = 0.2;
+        if (window.livingCozyLight) window.livingCozyLight.intensity = 0.25;
+        if (window.livingLibrarySpot) window.livingLibrarySpot.intensity = 0.25;
+        if (window.bookcaseSpotL) window.bookcaseSpotL.intensity = 0.15;
+        if (window.bookcaseSpotR) window.bookcaseSpotR.intensity = 0.15;
+    }, 100);
+
+    const woodMat = createLivingWoodMaterial();
+    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x150e0a, roughness: 1.0 });
+    const bookColors = [0x991b1b, 0x1e40af, 0x166534, 0x854d0e, 0x3730a3, 0xfacc15];
+
+    function createBookcase(posZ) {
+        const grp = new THREE.Group();
+        let pOff = (posZ < 0) ? 1.2 : 0;
+        if (posZ < 0) { window.secretDoorGroup = grp; grp.userData.isSecretDoor = true; }
+
+        const backing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5.2, 2.4), shelfMat); backing.position.set(-0.4, 0, pOff); backing.receiveShadow = true; grp.add(backing);
+        const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat); sideL.position.z = -1.2 + pOff; sideL.receiveShadow = true; grp.add(sideL);
+        const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat); sideR.position.z = 1.2 + pOff; sideR.receiveShadow = true; grp.add(sideR);
+
+        for (let r = 0; r < 5; r++) {
+            const y = 0.5 + r * 1.0;
+            const plank = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 2.4), shelfMat); plank.position.set(0, y - 2.5, pOff); plank.receiveShadow = true; grp.add(plank);
+
+            if (r === 0 && posZ < 0) {
+                const portal = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 5.2), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+                portal.position.set(-4.95, 2.6, posZ); portal.rotation.y = Math.PI / 2;
+                portal.userData = { type: 'enter_annex', onClick: () => enterRoom('annex') };
+                interiorGroup.add(portal); interiorClickables.push(portal);
+            }
+            if (r === 4 && posZ < 0) {
+                const art = createLivingRuinArtifact(); art.scale.setScalar(1.5); art.position.set(0, y - 2.45, pOff);
+                const hit = art.userData.hitTarget;
+                hit.userData = {
+                    type: 'open_secret', onClick: () => {
+                        const t = window.secretDoorGroup;
+                        if (t.userData.isOpen) { new TWEEN.Tween(t.rotation).to({ y: 0 }, 2000).easing(TWEEN.Easing.Quadratic.InOut).start(); t.userData.isOpen = false; }
+                        else { new TWEEN.Tween(t.rotation).to({ y: Math.PI / 2.5 }, 4000).easing(TWEEN.Easing.Quadratic.InOut).start(); t.userData.isOpen = true; }
+                    }
+                };
+                interiorClickables.push(hit); grp.add(art);
+            }
+            if (r === 1 && posZ < 0) { const c = createLivingRubiksCubeArtifact(); c.position.set(0.1, y - 2.15, pOff); grp.add(c); }
+            if (r === 4 && posZ > 0) { const rk = createLivingRealisticRocketArtifact(); rk.scale.setScalar(0.022); rk.position.set(0.1, y - 2.32, 0); grp.add(rk); }
+            if (r === 2 && posZ > 0) {
+                const globe = new THREE.Group();
+                globe.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05), new THREE.MeshStandardMaterial({ color: 0x333333 })));
+                const ball = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshStandardMaterial({ color: 0x3b82f6 })); ball.position.y = 0.3; globe.add(ball);
+                globe.position.set(0.1, y - 2.45, 0); grp.add(globe);
+            }
+            if (!(r === 4 && posZ < 0) && r !== 0) {
+                for (let b = 0; b < 13; b++) {
+                    const bH = 0.5 + Math.random() * 0.3;
+                    const bk = new THREE.Mesh(new THREE.BoxGeometry(0.6, bH, 0.14), new THREE.MeshStandardMaterial({ color: bookColors[Math.floor(Math.random() * 6)] }));
+                    bk.position.set(0.1, (y - 2.5) + (bH / 2) + 0.05, (-0.9 + b * 0.16) + pOff); grp.add(bk);
+                }
+            }
+        }
+        grp.position.set(-4.5, 2.6, posZ - pOff); interiorGroup.add(grp);
+    }
+    createBookcase(-3.5); createBookcase(3.5);
+
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 1), woodMat); stand.position.set(0, 0.75, -4); stand.castShadow = true; stand.receiveShadow = true; interiorGroup.add(stand);
+    const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 0.2), new THREE.MeshStandardMaterial({ color: 0x111111 })); tvFrame.position.set(0, 2.6, -4.5); interiorGroup.add(tvFrame);
+    window.livingTVGlow = new THREE.PointLight(0x88ccff, 1.5, 8); window.livingTVGlow.position.set(0, 2.6, -4.8); interiorGroup.add(window.livingTVGlow);
+
+    initTVVideo();
+    const tvMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    tvMesh.position.set(0, 2.6, -4.39); tvMesh.userData = { type: 'tv', action: 'toggleVideo' };
+    if (livingTVScreensaverTexture) { tvMesh.material.map = livingTVScreensaverTexture; tvMesh.userData.update = livingTVScreensaverTexture.userData.update; }
+    window.livingTVMesh = tvMesh; interiorGroup.add(tvMesh); interiorClickables.push(tvMesh);
+
+    const tvGlass = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.8), new THREE.MeshStandardMaterial({ color: 0x888888, transparent: true, opacity: 0.1, metalness: 0.9, roughness: 0.1, depthWrite: false }));
+    tvGlass.position.set(0, 2.6, -4.37); interiorGroup.add(tvGlass);
+
+    if (roomContent['living'].videoPlaylist) createVideoPanel(roomContent['living'].videoPlaylist);
+
+    const table = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.6, 2.25), woodMat); table.position.set(0, 0.3, -1); table.castShadow = true; table.receiveShadow = true; interiorGroup.add(table);
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 })); rug.rotation.x = -Math.PI / 2; rug.position.y = 0.02; rug.receiveShadow = true; interiorGroup.add(rug);
+
+    const createRoundedBox = (w, h, d, r) => {
+        const shape = new THREE.Shape(); const x = -w / 2, y = -h / 2;
+        shape.moveTo(x, y + r); shape.lineTo(x, y + h - r); shape.quadraticCurveTo(x, y + h, x + r, y + h); shape.lineTo(x + w - r, y + h); shape.quadraticCurveTo(x + w, y + h, x + w, y + h - r); shape.lineTo(x + w, y + r); shape.quadraticCurveTo(x + w, y, x + w - r, y); shape.lineTo(x + r, y); shape.quadraticCurveTo(x, y, x, y + r);
+        return new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3 });
+    };
+
+    const couchMat = new THREE.MeshStandardMaterial({ color: 0x2e201b });
+    const couch = new THREE.Group();
+    const cBase = new THREE.Mesh(createRoundedBox(3, 1.2, 0.4, 0.15), couchMat); cBase.rotation.x = Math.PI / 2; cBase.position.y = 0.5; cBase.castShadow = true; cBase.receiveShadow = true; couch.add(cBase);
+    const cBack = new THREE.Mesh(createRoundedBox(3, 0.3, 1.2, 0.15), couchMat); cBack.rotation.x = Math.PI / 2; cBack.position.set(0, 1.0, 0.55); cBack.castShadow = true; cBack.receiveShadow = true; couch.add(cBack);
+    const armL = new THREE.Mesh(createRoundedBox(0.4, 1.3, 0.9, 0.1), couchMat); armL.rotation.x = Math.PI / 2; armL.position.set(-1.6, 0.7, 0); armL.castShadow = true; couch.add(armL);
+    const armR = new THREE.Mesh(createRoundedBox(0.4, 1.3, 0.9, 0.1), couchMat); armR.rotation.x = Math.PI / 2; armR.position.set(1.6, 0.7, 0); armR.castShadow = true; couch.add(armR);
+    couch.position.set(0, -0.3, 2.5); interiorGroup.add(couch);
+
+    const chair = new THREE.Group();
+    const chBase = new THREE.Mesh(createRoundedBox(1.2, 1.2, 0.4, 0.15), couchMat); chBase.rotation.x = Math.PI / 2; chBase.position.y = 0.5; chBase.castShadow = true; chBase.receiveShadow = true; chair.add(chBase);
+    const chBack = new THREE.Mesh(createRoundedBox(1.2, 0.3, 1.2, 0.15), couchMat); chBack.rotation.x = Math.PI / 2; chBack.position.set(0, 1.0, 0.55); chBack.castShadow = true; chBack.receiveShadow = true; chair.add(chBack);
+    chair.position.set(3.5, -0.3, -1); chair.rotation.y = Math.PI / 2; interiorGroup.add(chair);
+
+    window.metropolisRobot = createLivingMetropolisRobot();
+    window.metropolisRobot.position.set(4.5, 0, -4.0); window.metropolisRobot.rotation.y = -0.5; window.metropolisRobot.scale.set(1.125, 1.125, 1.125);
+    interiorGroup.add(window.metropolisRobot);
+    const robotGlow = new THREE.PointLight(0x00ffff, 2.5, 12); robotGlow.position.set(0, 1.5, 0.5); window.robotGlowLight = robotGlow; window.metropolisRobot.add(robotGlow);
+
+    const mariaHit = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 3.5, 16), new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0, depthWrite: false }));
+    mariaHit.position.y = 1.0; window.metropolisRobot.add(mariaHit);
+    if (typeof WordHunt !== 'undefined') {
+        const item = WordHunt.createInteractable('living');
+        if (item) {
+            item.position.set(0, 1.5, 0); item.scale.setScalar(0.1); item.visible = false; window.metropolisRobot.add(item);
+            mariaHit.userData.onClick = () => {
+                if (item.userData.revealed) return;
+                item.visible = true; item.userData.revealed = true;
+                new TWEEN.Tween(item.position).to({ y: 3.0 }, 1500).easing(TWEEN.Easing.Elastic.Out).start();
+                new TWEEN.Tween(item.scale).to({ x: 1, y: 1, z: 1 }, 1500).easing(TWEEN.Easing.Elastic.Out).start();
+            };
+            interiorClickables.push(mariaHit);
+        }
+    }
+};
+
+window.playTVVideo = function (index) {
+    if (!livingTVVideo) return;
+    const pl = roomContent['living'].videoPlaylist;
+    if (!pl || !pl[index]) return;
+    window.masterVideoIndex = index;
+    if (window.audioPlayer && !window.audioPlayer.paused) { window.audioPlayer.pause(); window.isMusicPlaying = false; if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); }
+    livingTVVideo.src = pl[index].src; livingTVVideo.load();
+    if (livingTVVideo.paused) nextTVContent(); else livingTVVideo.play().catch(e => console.warn(e));
+    if (window.livingTVMesh) { window.livingTVMesh.material.map = livingTVVideoTexture; window.livingTVMesh.userData.update = null; }
+};
+
+function nextTVContent() {
+    if (livingTVVideo) {
+        if (livingTVVideo.paused) {
+            if (!window.preCinemaState) {
+                window.preCinemaState = {
+                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.25,
+                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.25,
+                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 0.15,
+                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 0.15,
+                    ambient: window.ambientLight ? window.ambientLight.intensity : 0.15,
+                    dir: window.dirLight ? window.dirLight.intensity : 0.2
+                };
+            }
+            const dimTime = 1000;
+            if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: 0 }, dimTime).start();
+            if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: 0 }, dimTime).start();
+            if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: 0 }, dimTime).start();
+            if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: 0 }, dimTime).start();
+            if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0 }, dimTime).start();
+            if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0 }, dimTime).start();
+            if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 3.0 }, dimTime).start();
+            livingTVVideo.muted = false; livingTVVideo.volume = 1.0; livingTVVideo.play().catch(e => console.warn(e));
+        } else {
+            restoreCinemaLights();
+            if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 500).start();
+            livingTVVideo.pause();
+        }
+    }
+}
+window.nextTVContent = nextTVContent;
+
+function restoreCinemaLights() {
+    const r = window.preCinemaState || { cozy: 0.25, library: 0.25, spotL: 0.15, spotR: 0.15, ambient: 0.15, dir: 0.2 };
+    const t = 1000;
+    if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: r.cozy }, t).start();
+    if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: r.library }, t).start();
+    if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: r.spotL }, t).start();
+    if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: r.spotR }, t).start();
+    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: r.ambient }, t).start();
+    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: r.dir }, t).start();
+    if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, t).start();
+    window.preCinemaState = null;
+}
+window.restoreCinemaLights = restoreCinemaLights;
+
+window.stopLivingVideo = () => {
+    restoreCinemaLights();
+    if (livingTVVideo) { livingTVVideo.pause(); livingTVVideo.muted = true; }
+    if (window.livingTVMesh && livingTVScreensaverTexture) {
+        window.livingTVMesh.material.map = livingTVScreensaverTexture; window.livingTVMesh.userData.update = livingTVScreensaverTexture.userData.update;
+    }
+    window.masterVideoIndex = -1;
+};
+
+function createVideoPanel(playlist) {
+    if (window.createUniversalVideoInterface) {
+        const pos = roomContent['living'].videoInterfacePos || { x: 3.0, y: 3.2, z: -4.9 };
+        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(pos.x, pos.y, pos.z), playlist, { scale: 0.5 });
+    }
+}
