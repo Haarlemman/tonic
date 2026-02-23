@@ -1,5451 +1,12 @@
-const roomContent = {
-    hall: {
-        title: "Welcome Hall",
-        hex: 0x2c3e50,
-        description: "Welcome to The House of Meaning. <br><br>Life is complicated, full of surprises, twists and turns, but -within a framework - there is still control. The more you learn, the more you realise you know nothing. This space is a collection of art, music, literature, philosophy, and personal history.",
-        playlist: [
-            { artist: "Hofesh Shechter", track: "Sun", src: "../assets/audio/Sun.mp3" },
-            { artist: "Hugo Kant", track: "Entering the Black Hole", src: "../assets/audio/HugoKant-EnteringtheBlackHole.mp3" },
-            { artist: "Jun Miyake", track: "Lmt Act 3 Prologue", src: "../assets/audio/JunMiyake-LmtAct3Prologue.mp3" }
-        ]
-    },
-    living: {
-        title: "Living Room",
-        hex: 0xe65100,
-        description: "Click the TV to switch between Photos and Video Clips.",
-        playlist: [
-            { artist: "Hazel English", track: "Nine Stories", src: "../assets/audio/HazelEnglish-NineStories.mp3" },
-            { artist: "Kalkbrenner/Stromae", track: "Que ce soit clair", src: "../assets/audio/KalkbrennerStromae.mp3" },
-            { artist: "Fazerdaze", track: "Bigger", src: "../assets/audio/Fazerdaze-Bigger.mp3" }
-        ],
-        videoPlaylist: [
-            { title: "The Premonition", src: "../assets/video/premonition.mp4" },
-            { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" },
-            { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
-        ],
-        videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 }, // V197: Defined in Data
-        tvImages: [
-            { text: "PICTURE THIS", color: "#a533fc" },
-            { text: "Bavo", image: "../assets/images/bavo1.jpg", color: "#000" },
-            { text: "Hitchin, UK", image: "../assets/images/hitchin1.jpg", color: "#999" },
-            { text: "Haarlem, Netherlands", color: "#f93a00" },
-            { text: "LIVE LIFE LOVE", color: "#93c5fd" },
-        ]
-    },
-    studio: {
-        title: "Studio",
-        hex: 0x6366f1,
-        description: "Dissecting the 'why' of human behavior.",
-        playlist: [
-            { artist: "Amon Tobin", track: "Feed", src: "../assets/audio/AmonTobin-Feed.mp3" },
-            { artist: "Floating Points", track: "Nespole", src: "../assets/audio/FloatingPoints-Nespole.mp3" },
-            { artist: "Kraftwerk", track: "Spacelab", src: "../assets/audio/KraftwerkSpacelab.mp3", volume: 1 }
-        ]
-    },
-    bedroom: {
-        title: "Bedroom",
-        hex: 0x004d40,
-        description: "Where dreaming happens. Use the phone to watch video clips.",
-        playlist: [
-            { artist: "Nick Drake", track: "From The Morning", src: "../assets/audio/NickDrake-FromTheMorning.mp3" },
-            { artist: "David Bowie", track: "A New Career in a New Town", src: "../assets/audio/DavidBowie-ANewCareerinaNewTown.mp3" },
-            { artist: "Miles Davis", track: "Ascenseur pour l'échafaud", src: "../assets/audio/miles-lift.mp3" }
-        ],
-        videoPlaylist: [
-            { title: "Night After Night", artist: "Paradox Prime", src: "../assets/video/nain.mp4", volume: 0.4 },
-            { title: "The Spirit", artist: "David Enker", src: "../assets/video/spirit.mp4" },
-            { title: "Dreaming", artist: "Paradox Prime", src: "../assets/video/dreaming.mp4" },
 
-        ]
-    },
-    attic: {
-        title: "Attic",
-        hex: 0x5d4037,
-        description: "Beauty | Knowledge | Wisdom",
-        playlist: [
-            { artist: "Billie Holiday", track: "Gloomy Sunday", src: "../assets/audio/GloomySunday-BillieHoliday.mp3" },
-            { artist: "Jóhann Jóhannssone", track: "The Theory of Everything", src: "../assets/audio/JóhannJóhannsson.mp3" },
-            { artist: "Fyodorov Sisters", track: "Little Star", src: "../assets/audio/FyodorovSisters-LittleStar.mp3" }
-        ]
-    },
-    bathroom: {
-        title: "Bathroom",
-        hex: 0x0696a4,
-        description: "The mirror reflects the physical reality. In the quiet of the morning, thoughts are most audible.",
-        playlist: [
-            { artist: "Thom Yourke", track: "Dawn Chorus", src: "../assets/audio/RH-DawnChorus.mp3" },
-        ],
-        videoPlaylist: [
-            { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" },
-            { title: "Walk In", src: "../assets/video/walkin1.mp4" }
-        ],
-        videoInterfacePos: { x: -2.8, y: 2.8, z: -4.5 } // V197: Defined in Data
-    },
-    toilet: {
-        title: "The Little Room",
-        hex: 0x046896,
-        interiorWidth: 3.0,
-        interiorDepth: 5.0,
-        description: "The Think Tank. A quiet place for politics, religion, and rough drafts. Click the notepad to write.",
-        playlist: [
-            { artist: "Chrysalis", track: "Chrysalis", src: "../assets/audio/chrysalis.mp3" },
-            { artist: "John Lurie", track: "The Lamposts Are Mine", src: "../assets/audio/JohnLurieTheLampostsAreMine.mp3" }
-        ]
-    },
-    basement: {
-        title: "Basement",
-        hex: 0x334155,
-        description: "The Engine Room. Dancing nodes react to the baseline. Secrets, fears, and absolute truths live here.",
-        playlist: [
-            { artist: "I-F", track: "Spiegelbeeld", src: "../assets/audio/IF-Spiegelbeeld.mp3" },
-            { artist: "Model 500", track: "I See The Light", src: "../assets/audio/Model500-ISeeTheLight.mp3" },
-            { artist: "Vlinder Vos", track: "Reality", src: "../assets/audio/Reality-VlinderVos.mp3" }
-        ]
-    },
-    annex: {
-        title: "The Annex",
-        hex: 0x1a1a1a,
-        interiorWidth: 4,
-        interiorDepth: 4,
-        description: "A small, quiet space at the edge of the property. For contemplation and solitary rest.",
-        playlist: [
-            { artist: "Mica Levi", track: "Lonely Void", src: "../assets/audio/mica-levi-lonely-void.mp3" }
-        ]
-    }
-};
-
-const houseConfig = {
-    audio: {
-        tension: "/assets/audio/Tension_Short_07.mp3",
-        intro: "/assets/audio/premonition.mp3",
-        nightDrive: "/assets/audio/NightDrive-RobSimonsen.mp3",
-        squeak: "/assets/audio/squeak.mp3"
-    }
-};
-// --- SCALES & CONSTANTS ---
-const STEPS = 16;
-const TRACKS = [
-    { name: "BD 808", color: "#ff5555" }, { name: "SD 808", color: "#ffaa55" },
-    { name: "CH 808", color: "#ffff55" }, { name: "BD 909", color: "#55ff55" },
-    { name: "OH 909", color: "#55aaff" }, { name: "ACID", color: "#ff55ff" }
-];
-
-const SCALES = {
-    "C Min": [65.41, 77.78, 87.31, 98.00, 116.54, 130.81, 155.56, 174.61],
-    "E Min": [82.41, 98.00, 110.00, 123.47, 146.83, 164.81, 196.00, 220.00],
-    "F Maj": [87.31, 98.00, 110.00, 130.81, 146.83, 174.61, 196.00, 220.00],
-    "A Min": [110.00, 130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66]
-};
-const NOTES = ["1", "2", "3", "4", "5", "6", "7", "8"];
-let currentScale = "C Min";
-
-// --- SYNTH CLASSES ---
-
-class Minimoog {
-    constructor(ctx, dest) { this.ctx = ctx; this.dest = dest; this.params = { cutoff: 1500, detune: 15, glide: 0.05 }; this.lastFreq = 0; }
-    trigger(freq) {
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-        const now = this.ctx.currentTime;
-        const oscs = [0, 1, -1].map(offset => {
-            const o = this.ctx.createOscillator(); o.type = offset === 0 ? 'sawtooth' : 'square';
-            o.detune.value = offset * this.params.detune;
-            if (this.lastFreq > 0) { o.frequency.setValueAtTime(this.lastFreq, now); o.frequency.linearRampToValueAtTime(freq, now + this.params.glide); }
-            else { o.frequency.value = freq; }
-            return o;
-        });
-        const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 6;
-        f.frequency.setValueAtTime(this.params.cutoff, now); f.frequency.linearRampToValueAtTime(this.params.cutoff / 2, now + 0.2);
-        const g = this.ctx.createGain(); g.gain.setValueAtTime(0, now);
-        g.gain.linearRampToValueAtTime(0.3, now + 0.02); g.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
-        oscs.forEach(o => { o.connect(f); o.start(now); o.stop(now + 1.0); });
-        f.connect(g); g.connect(this.dest); this.lastFreq = freq;
-    }
-}
-
-class Drone {
-    constructor(ctx, dest) { this.ctx = ctx; this.dest = dest; this.gain = ctx.createGain(); this.gain.gain.value = 0; this.gain.connect(dest); this.oscs = []; this.isOn = false; }
-    toggle() {
-        this.isOn = !this.isOn;
-        if (this.isOn) {
-            const freqs = [65.41, 98.00, 130.81];
-            this.oscs = freqs.map((f, i) => { const o = this.ctx.createOscillator(); o.type = i % 2 == 0 ? 'sawtooth' : 'triangle'; o.frequency.value = f; o.connect(this.gain); o.start(); return o; });
-            this.gain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime + 1);
-        } else {
-            this.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5); setTimeout(() => { this.oscs.forEach(o => o.stop()); this.oscs = []; }, 500);
-        }
-        return this.isOn;
-    }
-    update(pitch, vol) {
-        if (this.oscs.length) { const bases = [65.41, 98.00, 130.81]; this.oscs.forEach((o, i) => o.frequency.setTargetAtTime(bases[i] * pitch, this.ctx.currentTime, 0.1)); }
-        if (this.isOn) this.gain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
-    }
-}
-
-class Theremin {
-    constructor(ctx, dest) { this.ctx = ctx; this.dest = dest; this.osc = null; this.g = null; this.f = null; }
-    update(x, y, active) {
-        if (active) {
-            if (!this.osc) {
-                this.osc = this.ctx.createOscillator(); this.osc.type = 'sine';
-                this.f = this.ctx.createBiquadFilter(); this.f.Q.value = 10;
-                this.g = this.ctx.createGain(); this.g.gain.value = 0;
-                this.osc.connect(this.f); this.f.connect(this.g); this.g.connect(this.dest);
-                this.osc.start();
-            }
-            this.osc.frequency.setTargetAtTime(100 + x * x * 1900, this.ctx.currentTime, 0.05);
-            this.f.frequency.setTargetAtTime(200 + y * 4800, this.ctx.currentTime, 0.05);
-            this.g.gain.setTargetAtTime(0.5, this.ctx.currentTime, 0.1);
-        } else {
-            if (this.g) { this.g.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1); setTimeout(() => { if (this.osc) { this.osc.stop(); this.osc = null; } }, 200); }
-        }
-    }
-}
-
-// --- MAIN ENGINE ---
-
-class TechnoEngine {
-    constructor() {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AC();
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = 0.8;
-        this.comp = this.ctx.createDynamicsCompressor();
-        this.comp.threshold.value = -20;
-        this.masterGain.connect(this.comp);
-
-        // Analyzer for Scope
-        this.analyser = this.ctx.createAnalyser();
-        this.analyser.fftSize = 2048;
-        this.comp.connect(this.analyser);
-        this.comp.connect(this.ctx.destination);
-
-        this.minimoog = new Minimoog(this.ctx, this.masterGain);
-        this.drone = new Drone(this.ctx, this.masterGain);
-        this.theremin = new Theremin(this.ctx, this.masterGain);
-
-        this.tempo = 120; // Default
-        this.isPlaying = false;
-        this.currentStep = 0;
-        this.nextNoteTime = 0.0;
-
-        this.params303 = { cutoff: 400, res: 15, env: 2500, decay: 0.2, wave: 'sawtooth' };
-        this.seq303 = this.gen303();
-
-        // GRID DATA (Default Pattern)
-        this.grid = [
-            [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], // BD 808
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], // SD 808
-            [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0], // CH 808
-            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], // BD 909
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], // OH 909
-            [1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0]  // ACID
-        ];
-        this.TRACKS = TRACKS; // Backward compatibility
-    }
-
-    gen303() {
-        const scale = SCALES[currentScale].slice(0, 6);
-        return Array.from({ length: 16 }, () => ({
-            freq: scale[Math.floor(Math.random() * scale.length)],
-            accent: Math.random() > 0.7, slide: Math.random() > 0.7
-        }));
-    }
-
-    playDrum(type, time) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.connect(gain); gain.connect(this.masterGain);
-        if (type === 0) { // BD 808
-            osc.frequency.setValueAtTime(150, time);
-            osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
-            gain.gain.setValueAtTime(1, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
-            osc.start(time); osc.stop(time + 0.5);
-        } else if (type === 1) { // SD 808
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(250, time);
-            gain.gain.setValueAtTime(0.6, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-            osc.start(time); osc.stop(time + 0.1);
-            this.playNoise(time, 0.2, 1000);
-        } else if (type === 2) { // CH 808
-            this.playNoise(time, 0.05, 7000, 0.2);
-        } else if (type === 3) { // BD 909
-            osc.frequency.setValueAtTime(150, time);
-            osc.frequency.exponentialRampToValueAtTime(50, time + 0.1);
-            gain.gain.setValueAtTime(0.8, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
-            osc.start(time); osc.stop(time + 0.3);
-        } else if (type === 4) { // OH 909
-            this.playNoise(time, 0.4, 7000, 0.25);
-        }
-    }
-
-    playNoise(time, dur, freq, vol = 0.3) {
-        const bSize = this.ctx.sampleRate * dur;
-        const buff = this.ctx.createBuffer(1, bSize, this.ctx.sampleRate);
-        const d = buff.getChannelData(0);
-        for (let i = 0; i < bSize; i++) d[i] = Math.random() * 2 - 1;
-        const src = this.ctx.createBufferSource(); src.buffer = buff;
-        const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = freq;
-        const g = this.ctx.createGain();
-        src.connect(f); f.connect(g); g.connect(this.masterGain);
-        g.gain.setValueAtTime(vol, time); g.gain.exponentialRampToValueAtTime(0.01, time + dur);
-        src.start(time);
-    }
-
-    play303(time, step) {
-        const n = this.seq303[step];
-        const osc = this.ctx.createOscillator();
-        const f = this.ctx.createBiquadFilter();
-        const g = this.ctx.createGain();
-        osc.type = this.params303.wave; osc.frequency.value = n.freq;
-        f.type = 'lowpass'; f.Q.value = this.params303.res;
-        const cut = this.params303.cutoff; const mod = this.params303.env * (n.accent ? 1.5 : 1);
-        f.frequency.setValueAtTime(cut, time);
-        f.frequency.linearRampToValueAtTime(cut + mod, time + 0.005);
-        f.frequency.exponentialRampToValueAtTime(cut, time + this.params303.decay);
-        g.gain.setValueAtTime(0, time);
-        g.gain.linearRampToValueAtTime(0.7 * (n.accent ? 1.2 : 1), time + 0.005);
-        g.gain.exponentialRampToValueAtTime(0.01, time + this.params303.decay);
-        osc.connect(f); f.connect(g); g.connect(this.masterGain);
-        osc.start(time); osc.stop(time + this.params303.decay + 0.1);
-    }
-
-    start() {
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-        this.isPlaying = true;
-        this.nextNoteTime = this.ctx.currentTime + 0.1;
-        this.schedule();
-    }
-
-    stop() {
-        this.isPlaying = false;
-    }
-
-    schedule() {
-        while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
-            // Play Tracks
-            if (this.grid[0][this.currentStep]) this.playDrum(0, this.nextNoteTime);
-            if (this.grid[1][this.currentStep]) this.playDrum(1, this.nextNoteTime);
-            if (this.grid[2][this.currentStep]) this.playDrum(2, this.nextNoteTime);
-            if (this.grid[3][this.currentStep]) this.playDrum(3, this.nextNoteTime);
-            if (this.grid[4][this.currentStep]) this.playDrum(4, this.nextNoteTime);
-            if (this.grid[5][this.currentStep]) this.play303(this.nextNoteTime, this.currentStep);
-
-            const secondsPerBeat = 60.0 / this.tempo;
-            this.nextNoteTime += 0.25 * secondsPerBeat; // 16th notes
-            this.currentStep = (this.currentStep + 1) % STEPS;
-        }
-        if (this.isPlaying) {
-            setTimeout(() => this.schedule(), 25);
-        }
-    }
-}
-
-// Expose
-window.TechnoEngine = TechnoEngine;
-window.TECHNO_TRACKS = TRACKS;
-// --- UI COMPONENTS ---
-// Extracted from house.js to reduce complexity
-// V308: REWRITE to fix syntax errors
-
-console.log("--- UI COMPONENTS LOADED V308-REWRITE ---");
-
-window.createUniversalVideoInterface = function (parentGroup, position, playlist, options) {
-    if (!options) options = {};
-    const scale = options.scale || 1.0;
-
-    const trafficGroup = new THREE.Group();
-    trafficGroup.position.copy(position);
-    trafficGroup.scale.set(scale, scale, scale);
-
-    trafficGroup.userData = { type: 'videoInterfaceGroup' };
-    console.log("Creating Refined Video UI at", position, "Scale:", scale);
-    parentGroup.add(trafficGroup);
-
-    // --- 1. SQUARE BUTTON (TOP) ---
-    const btnGeo = new THREE.BoxGeometry(0.6, 0.6, 0.1);
-    const btnMat = new THREE.MeshStandardMaterial({
-        color: 0xff0000,
-        emissive: 0x440000
-    });
-    const btn = new THREE.Mesh(btnGeo, btnMat);
-    btn.position.set(0, 2.5, 0);
-
-    // Initial State Check
-    if (window.videoElement && !window.videoElement.paused) {
-        btn.material.color.setHex(0x00ff00);
-        btn.material.emissive.setHex(0x004400);
-    }
-
-    btn.userData = {
-        type: 'videoControlSingle',
-        onClick: () => {
-            if (!window.videoElement) {
-                console.warn("No Window.VideoElement found");
-                return;
-            }
-
-            if (window.videoElement.paused) {
-                // PLAY
-                if (window.audioPlayer && !window.audioPlayer.paused) {
-                    window.audioPlayer.pause();
-                    window.isMusicPlaying = false;
-                    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-                }
-
-                // If no src, use first in playlist or fallback
-                if (!window.videoElement.src || window.videoElement.src === '' || window.videoElement.src === window.location.href) {
-                    if (playlist && playlist.length > 0) window.videoElement.src = playlist[0].src;
-                }
-
-                window.videoElement.play().catch(e => console.error("Video Play Error:", e));
-
-                btn.material.color.setHex(0x00ff00); // Green
-                btn.material.emissive.setHex(0x004400);
-            } else {
-                // PAUSE
-                window.videoElement.pause();
-                btn.material.color.setHex(0xffff00); // Yellow
-                btn.material.emissive.setHex(0x444400);
-            }
-        }
-    };
-    trafficGroup.add(btn);
-    if (window.interiorClickables) window.interiorClickables.push(btn);
-
-    // --- 2. HEADER "VIDEO" (MIDDLE) ---
-    const hCanvas = document.createElement('canvas');
-    hCanvas.width = 512; hCanvas.height = 128;
-    const hctx = hCanvas.getContext('2d');
-    hctx.fillStyle = 'rgba(0,0,0,0)';
-    hctx.fillStyle = '#ffffff';
-    hctx.font = 'bold 60px Arial';
-    hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
-    hctx.shadowColor = 'rgba(0,0,0,0.8)'; hctx.shadowBlur = 4; hctx.shadowOffsetX = 2; hctx.shadowOffsetY = 2;
-    hctx.fillText("VIDEO", 256, 64);
-
-    const hTex = new THREE.CanvasTexture(hCanvas);
-    const hMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: hTex, transparent: true }));
-    hMesh.position.set(0, 1.6, 0);
-    trafficGroup.add(hMesh);
-
-    // --- 3. TRACKS (BOTTOM) ---
-    const updateAllItems = () => {
-        if (window.interiorClickables) {
-            window.interiorClickables.forEach(c => {
-                if (c.userData.type === 'universalVideoItem' && c.userData.updateState) {
-                    c.userData.updateState();
-                }
-            });
-        }
-    };
-    window.updateVideoUI = updateAllItems;
-
-    if (playlist && playlist.length > 0) {
-        playlist.forEach((item, i) => {
-            const yPos = 1.0 - (i * 0.9);
-
-            const sCanvas = document.createElement('canvas');
-            sCanvas.width = 512; sCanvas.height = 100;
-            const sctx = sCanvas.getContext('2d');
-
-            const sTex = new THREE.CanvasTexture(sCanvas);
-            const itemMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
-            itemMesh.position.set(0, yPos, 0);
-
-            // Dynamic Update Function
-            itemMesh.userData.updateState = () => {
-                const isActive = (typeof window.masterVideoIndex !== 'undefined' && window.masterVideoIndex === i);
-                if (isActive) {
-                    sctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                    sctx.fillRect(0, 0, 512, 100);
-                    sctx.fillStyle = '#00ff00';
-                } else {
-                    sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                    sctx.fillRect(0, 0, 512, 100);
-                    sctx.fillStyle = '#ffffff';
-                }
-                sctx.font = 'bold 40px Arial';
-                sctx.textAlign = 'left'; sctx.textBaseline = 'middle';
-                sctx.fillText((i + 1) + ". " + item.title, 20, 50);
-                sTex.needsUpdate = true;
-            };
-
-            // Initial Draw
-            itemMesh.userData.updateState();
-
-            itemMesh.userData.type = 'universalVideoItem';
-            itemMesh.userData.index = i;
-            itemMesh.userData.onClick = () => {
-                console.log("Universal Video Click (Fixed):", i);
-
-                window.masterVideoIndex = i;
-
-                if (options.onPlay && typeof options.onPlay === 'function') {
-                    options.onPlay(i);
-                }
-                else if (window.playTVVideo && typeof window.playTVVideo === 'function') {
-                    window.playTVVideo(i);
-                } else if (window.videoElement) {
-                    window.videoElement.src = item.src;
-                    window.videoElement.muted = false;
-                    window.videoElement.volume = 1.0;
-                    window.videoElement.load();
-                    window.videoElement.play().catch(e => console.error(e));
-                }
-
-                updateAllItems();
-
-                if (window.interiorClickables) {
-                    const btn = window.interiorClickables.find(c => c.userData.type === 'videoControlSingle');
-                    if (btn) {
-                        btn.material.color.setHex(0x00ff00);
-                        btn.material.emissive.setHex(0x004400);
-                    }
-                }
-
-                if (window.audioPlayer) {
-                    window.audioPlayer.pause();
-                    window.isMusicPlaying = false;
-                    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-                }
-            };
-
-            trafficGroup.add(itemMesh);
-            if (window.interiorClickables) window.interiorClickables.push(itemMesh);
-        });
-    }
-
-    return trafficGroup;
-};
-console.log("UI Components Loaded Successfully");
-console.log("--- PLUTON.JS LOADED ---");
-
-// --- Holographic Text Helper ---
-function createUsherText() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-
-    // 1. Glowing Background (Perfectly Circular)
-    const grad = ctx.createRadialGradient(512, 512, 100, 512, 512, 510);
-    grad.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    grad.addColorStop(0.5, 'rgba(0, 255, 255, 0.1)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 1024);
-
-    // 2. Text with Glow
-    ctx.shadowColor = '#00ffff';
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-
-    // Line 1: Welcome (V-FIX: Matching R2 Font "Courier New")
-    ctx.font = 'bold 90px "Courier New", monospace';
-    ctx.fillText("Welcome!", 512, 400);
-
-    // Line 2: Subtext
-    ctx.font = '45px "Courier New", monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 1;
-    ctx.fillText("Explore the 9 rooms", 512, 500);
-    ctx.fillText("Collect the 9 words", 512, 570);
-    ctx.fillText("And win a surprise!", 512, 640);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-    });
-
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), mat);
-    return mesh;
-}
-
-// --- Ground Shadow Helper (V287) ---
-function createUsherShadow() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-    const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grd.addColorStop(0, 'rgba(0,0,0,0.6)');
-    grd.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, 128, 128);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.8, depthWrite: false });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), mat);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.y = 0.05; // Just above ground
-    return mesh;
-}
-
-// --- Hall-Style Holograph Helper (V285) ---
-function createGlitchyHalo() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Soft Radial Glow to ground the text (Exactly like Hall reference)
-    const g = ctx.createRadialGradient(256, 256, 50, 256, 256, 256);
-    g.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    g.addColorStop(0.6, 'rgba(0, 255, 255, 0.1)');
-    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0.0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-    });
-
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), mat);
-    // Faces the user (Default +Z)
-    return mesh;
-}
-
-// --- Main Character Creator ---
-function createPlutoUsher() {
-    const group = new THREE.Group();
-
-    const halo = createGlitchyHalo();
-    const baseH = 1.8;
-    halo.position.set(-0.3, baseH, 7.5);
-    group.add(halo);
-
-    const text = createUsherText();
-    text.position.set(-0.3, baseH, 7.6);
-    group.add(text);
-
-    // Update Function
-    group.userData.update = function (t) {
-        // Simple Bobbing for Hologram
-        const bob = Math.sin(t * 1.5) * 0.1;
-        halo.position.y = baseH + bob;
-        text.position.y = baseH + bob;
-
-        if (halo.userData.update) halo.userData.update(t);
-    };
-
-    return group;
-}
-
-const WordHunt = (function () {
-    // --- STATE ---
-    const TOTAL_WORDS = 9;
-
-    // The list of words and their corresponding rooms
-    const WORDS = {
-        hall: "Wonder",
-        living: "Communicate",
-        studio: "Create",
-        bedroom: "Dream",
-        bathroom: "Contemplate",
-        attic: "Think",
-        basement: "Feel",
-        toilet: "Stories",
-        annex: "Remember"
-    };
-
-    let foundWords = [];
-
-    // --- DOM ELEMENTS ---
-    let container = null;
-    let icon = null;
-    let listContainer = null;
-    let prizeOverlay = null;
-
-    // --- INITIALIZATION ---
-    function init() {
-        console.log("--- Word Hunt Initialized ---");
-        loadState();
-        createUI();
-        updateUI();
-    }
-
-    function loadState() {
-        const saved = localStorage.getItem('tonic_wordhunt_found');
-        if (saved) {
-            try {
-                foundWords = JSON.parse(saved);
-            } catch (e) {
-                console.warn("Failed to parse saved words", e);
-                foundWords = [];
-            }
-        }
-    }
-
-    function saveState() {
-        localStorage.setItem('tonic_wordhunt_found', JSON.stringify(foundWords));
-    }
-
-    // --- UI CREATION ---
-    function createUI() {
-        // 1. Main Icon (Bottom Right, near other controls?)
-        // Let's put it on the top-right, under the header, or bottom-left. 
-        // Bottom-Left seems free (Minimap area?). Let's try Top-Right (fixed).
-
-        container = document.createElement('div');
-        container.id = 'word-hunt-container';
-        container.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 2000;
-            display: none; /* V-FIX: Initially Hidden */
-            flex-direction: column-reverse; /* Grow upwards */
-            align-items: flex-end;
-            font-family: 'Arial', sans-serif;
-        `;
-
-        // Icon / Counter
-        icon = document.createElement('div');
-        icon.id = 'word-hunt-icon';
-        icon.style.cssText = `
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid #00ffff;
-            color: #00ffff;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-radius: 4px;
-            text-shadow: 0 0 5px #00ffff;
-            transition: all 0.3s;
-            user-select: none;
-        `;
-        icon.innerHTML = `<span style="font-size: 12px;">WORDS: <span id="word-count">0</span>/${TOTAL_WORDS}</span>`;
-
-        icon.onmouseenter = () => icon.style.background = 'rgba(0,0,0,0.8)';
-        icon.onmouseleave = () => icon.style.background = 'rgba(0,0,0,0.6)';
-        icon.onclick = toggleList;
-
-        container.appendChild(icon);
-
-        // List (Initially Hidden)
-        listContainer = document.createElement('div');
-        listContainer.id = 'word-hunt-list';
-        listContainer.style.cssText = `
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid #444;
-            margin-top: 10px;
-            padding: 15px;
-            border-radius: 4px;
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            min-width: 150px;
-        `;
-        container.appendChild(listContainer);
-
-        document.body.appendChild(container);
-
-        // Prize Overlay
-        createPrizeOverlay();
-    }
-
-    function createPrizeOverlay() {
-        prizeOverlay = document.createElement('div');
-        prizeOverlay.id = 'word-hunt-prize';
-        prizeOverlay.style.cssText = `
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.95);
-            z-index: 3000;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            opacity: 0;
-            transition: opacity 1s ease;
-        `;
-
-        prizeOverlay.innerHTML = `
-            <h1 style="font-family: 'Glass Antiqua', serif; font-size: 60px; color: #ffd700; text-shadow: 0 0 20px #ffaa00; margin-bottom: 20px;">CONGRATULATIONS</h1>
-            <p style="font-family: 'Glass Antiqua', cursive; font-size: 24px; max-width: 600px; text-align: center; line-height: 1.5; color: #ccc;">
-                You have found all the hidden words. The essence of the house is now yours.
-            </p>
-            <div style="margin-top: 40px; border: 2px solid #ffd700; padding: 20px; border-radius: 10px;">
-                <p style="font-size: 20px; color: #ffd700;">[ PRIZE PLACEHOLDER ]</p>
-                <p style="font-size: 14px; margin-top: 10px;">(A secret video or link will appear here)</p>
-            </div>
-            <button id="close-prize-btn" style="margin-top: 50px; background: transparent; border: 1px solid #fff; color: #fff; padding: 10px 30px; cursor: pointer; font-family: 'Courier New';">CLOSE</button>
-        `;
-
-        document.body.appendChild(prizeOverlay);
-
-        document.getElementById('close-prize-btn').addEventListener('click', () => {
-            prizeOverlay.style.opacity = '0';
-            setTimeout(() => { prizeOverlay.style.display = 'none'; }, 1000);
-        });
-    }
-
-    function toggleList() {
-        if (listContainer.style.display === 'none') {
-            renderList();
-            listContainer.style.display = 'flex';
-        } else {
-            listContainer.style.display = 'none';
-        }
-    }
-
-    function renderList() {
-        listContainer.innerHTML = '';
-        Object.keys(WORDS).forEach(room => {
-            const word = WORDS[room];
-            const isFound = foundWords.includes(word);
-
-            const item = document.createElement('div');
-            item.style.cssText = `
-                color: ${isFound ? '#00ff00' : '#555'};
-                font-size: 14px;
-                display: flex;
-                justify-content: space-between;
-            `;
-            item.innerHTML = `
-                <span>${room.toUpperCase()}</span>
-                <span>${isFound ? word : '???'}</span>
-            `;
-            listContainer.appendChild(item);
-        });
-    }
-
-    function updateUI() {
-        const count = document.getElementById('word-count');
-        if (count) count.innerText = foundWords.length;
-        if (listContainer && listContainer.style.display !== 'none') renderList();
-    }
-
-    // --- GAME LOGIC ---
-    function collectWord(roomName) {
-        const word = WORDS[roomName];
-        if (!word) return;
-
-        if (!foundWords.includes(word)) {
-            console.log(`Collect Word: ${word} in ${roomName}`);
-            foundWords.push(word);
-            saveState();
-            updateUI();
-
-            // Animation / Feedback
-            showCollectionFeedback(word);
-
-            if (foundWords.length === TOTAL_WORDS) {
-                setTimeout(triggerWinState, 1500);
-            }
-        } else {
-            console.log(`Word already collected: ${word}`);
-            // Optional: Smaller feedback "Already collected"
-        }
-    }
-
-    function showCollectionFeedback(word) {
-        // Create a temporary floating element
-        const feedback = document.createElement('div');
-        feedback.style.cssText = `
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(0.5);
-            font-family: 'Glass Antiqua', cursive;
-            font-size: 80px;
-            color: #00ffff;
-            text-shadow: 0 0 20px #00ffff;
-            pointer-events: none;
-            opacity: 0;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 2500;
-        `;
-        feedback.innerText = word;
-        document.body.appendChild(feedback);
-
-        // Pop In
-        setTimeout(() => {
-            feedback.style.opacity = '1';
-            feedback.style.transform = 'translate(-50%, -50%) scale(1.0)';
-        }, 50);
-
-        // Float Up and Fade Out
-        setTimeout(() => {
-            feedback.style.transform = 'translate(-50%, -150%) scale(1.2)';
-            feedback.style.opacity = '0';
-        }, 1500);
-
-        setTimeout(() => {
-            document.body.removeChild(feedback);
-        }, 2500);
-    }
-
-    function triggerWinState() {
-        console.log("WINNER! Playing Prize Video...");
-
-        // Create Video Overlay
-        const vidOverlay = document.createElement('div');
-        vidOverlay.style.cssText = `
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: black;
-            z-index: 5000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 1s;
-        `;
-
-        const video = document.createElement('video');
-        video.src = '../assets/video/gift.mp4';
-        video.style.cssText = "max-width: 90%; max-height: 80vh; box-shadow: 0 0 50px #ffd700;";
-        video.controls = true;
-        video.autoplay = true;
-
-        // Link Container
-        const linkContainer = document.createElement('div');
-        linkContainer.style.marginTop = '20px';
-        linkContainer.innerHTML = `
-            <a href="https://tonic.davidenker.com/" target="_blank" style="color: #ffd700; font-family: 'Glass Antiqua', cursive; font-size: 24px; text-decoration: none; border-bottom: 2px solid #ffd700;">
-                CLAIM YOUR ESSENCE
-            </a>
-            <p style="color: #888; font-family: 'Arial', sans-serif; margin-top: 10px; font-size: 14px;">(Click to proceed)</p>
-            <button id="close-win-btn" style="margin-top: 30px; background: transparent; border: 1px solid #555; color: #555; padding: 8px 20px; cursor: pointer;">CLOSE</button>
-        `;
-
-        vidOverlay.appendChild(video);
-        vidOverlay.appendChild(linkContainer);
-        document.body.appendChild(vidOverlay);
-
-        // Fade In
-        setTimeout(() => vidOverlay.style.opacity = '1', 100);
-
-        // Close Handler
-        const closeBtn = linkContainer.querySelector('#close-win-btn');
-        closeBtn.onclick = () => {
-            vidOverlay.style.opacity = '0';
-            setTimeout(() => document.body.removeChild(vidOverlay), 1000);
-        };
-    }
-
-
-    // --- 3D INTERACTABLE CREATION ---
-    function createInteractable(roomName, fontSize = 60, color = "#00ffff") {
-        const word = WORDS[roomName];
-        if (!word) return null;
-
-        // Create a glowing orb/symbol instead of the text directly? 
-        // Or floating text that says "?" until clicked?
-        // Plan says: "Hidden Word interactables" -> let's make them 3D Text that reveals itself?
-        // OR: Small distinct objects.
-        // Let's go with a floating "Orb of Knowledge" or a stylized question mark.
-
-        // For distinctness, let's use a standard "Word Hunt Orb" geometry.
-
-        const group = new THREE.Group();
-        group.userData = {
-            type: 'wordHuntItem',
-            name: 'WordHunt_' + roomName, // Used for raycasting identification
-            onClick: () => collectWord(roomName)
-        };
-
-        // 1. The Orb
-        const orbGeo = new THREE.IcosahedronGeometry(0.15, 0);
-        const orbMat = new THREE.MeshStandardMaterial({
-            color: 0x00ffff,
-            emissive: 0x0088aa,
-            emissiveIntensity: 0.8,
-            wireframe: true
-        });
-        const orb = new THREE.Mesh(orbGeo, orbMat);
-        group.add(orb);
-
-        // 2. Inner Glow
-        const glowGeo = new THREE.SphereGeometry(0.1, 16, 16);
-        const glowMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.8
-        });
-        const glow = new THREE.Mesh(glowGeo, glowMat);
-        group.add(glow);
-
-        // 3. Large Hitbox (Invisible)
-        const hitGeo = new THREE.SphereGeometry(0.4, 8, 8);
-        const hitMat = new THREE.MeshBasicMaterial({ visible: false, wireframe: true });
-        const hitBox = new THREE.Mesh(hitGeo, hitMat);
-        group.add(hitBox);
-
-        // Animation Loop (Self-contained)
-        group.userData.update = (t) => {
-            orb.rotation.y = t * 2.0;
-            orb.rotation.z = t * 1.5;
-            const pulse = Math.sin(t * 3.0) * 0.1 + 1.0;
-            orb.scale.set(pulse, pulse, pulse);
-        };
-
-        // V-FIX: Ensure it is collectible (Audit Item 4)
-        group.userData.isCollectible = true;
-
-        // V-FIX: Ensure it is clickable
-        if (window.interiorClickables) {
-            window.interiorClickables.push(group);
-        }
-
-        return group;
-    }
-
-    function showUI() {
-        if (container) container.style.display = 'flex';
-    }
-
-    return {
-        init,
-        createInteractable,
-        showUI, // V-NEW: Exposed for house.js
-        // Debug
-        collectWord,
-        triggerWinState
-    };
-
-})();
-
-window.WordHunt = WordHunt;
-function playTrack(index) {
-    try {
-        const playlist = roomContent[currentRoom].playlist;
-        if (!playlist || !playlist[index]) return;
-
-        window.currentTrackIndex = index;
-
-        audioPlayer.crossOrigin = "anonymous";
-        audioPlayer.src = playlist[currentTrackIndex].src;
-        audioPlayer.load();
-        audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
-
-        initAudioAnalyser();
-        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-
-        console.log("Attempting to play track:", playlist[currentTrackIndex]);
-
-        audioPlayer.play().then(() => {
-            isMusicPlaying = true;
-            if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
-
-            if (window.interiorClickables) {
-                const btns = window.interiorClickables.filter(c => c.userData.type === 'videoControlSingle');
-                btns.forEach(b => {
-                    if (b.material) {
-                        b.material.color.setHex(0xff0000);
-                        if (b.material.emissive) b.material.emissive.setHex(0x440000);
-                    }
-                });
-            }
-
-            createMusicPanel(playlist, window.currentMusicScale || 1.0);
-
-        }).catch(e => {
-            console.error("Play failed", e);
-        });
-
-        if (window.stopVideosForAudio) {
-            window.stopVideosForAudio();
-        }
-
-        if (currentRoom === 'attic') {
-            const atticVideo = document.getElementById('attic-video');
-            if (atticVideo) {
-                atticVideo.muted = true;
-                const knobGroup = interiorGroup.children.find(c => c.userData.type === 'atticAudioToggle');
-                if (knobGroup) {
-                    knobGroup.userData.state = 'off';
-                    if (knobGroup.children[1]) knobGroup.children[1].material.color.setHex(0xff0000);
-                }
-            }
-        }
-
-    } catch (criticalErr) {
-        console.error("Critical PlayTrack Error:", criticalErr);
-        alert("System Error in playTrack: " + criticalErr.message);
-    }
-}
-
-// Consolidated createMusicPanel with Cleanup and Scaling
-window.createMusicPanel = function (playlist) {
-    console.log("v315-FIXED: Creating Music Panel. Playlist length:", playlist ? playlist.length : 0);
-    if (!playlist || playlist.length === 0) return;
-
-    // 1. Cleanup Old UI (Self-contained within createMusicPanel)
-    if (typeof interiorGroup !== 'undefined') {
-        const toRemove = [];
-        interiorGroup.traverse(child => {
-            if (child.userData && (child.userData.type === 'musicPanelGroup' || child.userData.type === 'musicPanel' || child.userData.type === 'songItem' || child.userData.type === 'playlistHeader' || child.userData.type === 'musicSwitch')) {
-                toRemove.push(child);
-            }
-        });
-        toRemove.forEach(child => {
-            if (child.parent) child.parent.remove(child);
-            if (window.interiorClickables) {
-                const idx = window.interiorClickables.indexOf(child);
-                if (idx > -1) window.interiorClickables.splice(idx, 1);
-            }
-        });
-    }
-
-    // 2. Setup Anchor and Group
-    const rData = roomContent[currentRoom];
-    const iW = rData.interiorWidth || 10;
-    const wallX = -(iW / 2) + 0.01;
-
-    let yBase = 5.5;
-    if (currentRoom === 'annex') {
-        yBase = 6.0; // V-FIX: Moved up for visibility (was 5.0)
-    }
-
-    // V326: Bedroom-specific alignment (Centered on wall)
-    let zOffset = 0;
-    if (currentRoom === 'bedroom') zOffset = 0;
-
-    const panelGroup = new THREE.Group();
-    panelGroup.userData = { type: 'musicPanelGroup' };
-    panelGroup.position.set(wallX, yBase, zOffset);
-    interiorGroup.add(panelGroup);
-
-    // Apply Scaling Factor
-    if (currentRoom === 'annex' || currentRoom === 'toilet') {
-        panelGroup.scale.setScalar(0.75);
-    }
-    musicPanelMesh = panelGroup;
-
-    // 3. Create Static UI Elements (Relative to panelGroup)
-
-    // Audio Button
-    const switchGeo = new THREE.BoxGeometry(0.6, 0.6, 0.1);
-    const switchMat = new THREE.MeshStandardMaterial({ color: isMusicPlaying ? 0x00ff00 : 0xff0000 });
-    musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
-    musicSwitchMesh.rotation.y = Math.PI / 2;
-    musicSwitchMesh.position.set(0.02, 0.5, 0); // 0.5 above anchor
-    musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
-    panelGroup.add(musicSwitchMesh);
-    if (window.interiorClickables) window.interiorClickables.push(musicSwitchMesh);
-
-    // Header
-    const pHeadCanvas = document.createElement('canvas');
-    pHeadCanvas.width = 512; pHeadCanvas.height = 64;
-    const pctx = pHeadCanvas.getContext('2d');
-    pctx.fillStyle = '#ffffff'; pctx.font = 'bold 60px Arial'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
-    pctx.shadowColor = 'rgba(0,0,0,0.8)'; pctx.shadowBlur = 4; pctx.shadowOffsetX = 2; pctx.shadowOffsetY = 2;
-    pctx.fillText("AUDIO", 256, 32);
-    pctx.font = '14px Arial'; pctx.shadowBlur = 0;
-    // V326: Version string removed per user request
-    const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
-    const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.6), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
-    pHeadMesh.rotation.y = Math.PI / 2;
-    pHeadMesh.position.set(0, -0.5, 0); // 0.5 below anchor
-    pHeadMesh.userData = { type: 'playlistHeader' };
-    panelGroup.add(pHeadMesh);
-
-    // 4. Create Dynamic Playlist Items
-    playlist.forEach((item, i) => {
-        const isCurrent = (typeof currentTrackIndex !== 'undefined' && i === currentTrackIndex);
-        const yPos = -1.3 - (i * 0.9); // Relative to anchor
-
-        const sCanvas = document.createElement('canvas');
-        sCanvas.width = 512; sCanvas.height = 120;
-        const sctx = sCanvas.getContext('2d');
-
-        if (isCurrent && isMusicPlaying) {
-            sctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            sctx.fillRect(0, 0, 512, 120);
-            sctx.fillStyle = '#00ff00';
-        } else {
-            sctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            sctx.fillRect(0, 0, 512, 120);
-            sctx.fillStyle = '#ffffff';
-        }
-
-        sctx.font = 'bold 36px Arial';
-        sctx.textAlign = 'left'; sctx.textBaseline = 'bottom';
-        sctx.fillText((i + 1) + ". " + item.track, 20, 55);
-
-        sctx.font = '28px Arial'; sctx.textBaseline = 'top';
-        sctx.fillStyle = isCurrent ? '#aaff00' : '#cccccc';
-        sctx.fillText(item.artist, 50, 65);
-
-        const sTex = new THREE.CanvasTexture(sCanvas);
-        const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
-        sMesh.rotation.y = Math.PI / 2;
-        sMesh.position.set(0, yPos, 0);
-
-        sMesh.userData = { type: 'songItem', index: i };
-        panelGroup.add(sMesh);
-        if (window.interiorClickables) window.interiorClickables.push(sMesh);
-    });
-
-    // Define nextTrack globally so it can be referenced
-    function nextTrack() {
-        const playlist = roomContent[currentRoom].playlist;
-        if (!playlist) return;
-        currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
-
-        const wasPlaying = isMusicPlaying;
-        audioPlayer.src = playlist[currentTrackIndex].src;
-        audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
-
-        if (wasPlaying) {
-            audioPlayer.play();
-        }
-        window.createMusicPanel(playlist);
-    }
-
-    // Global Auto-Next Listener (Idempotent)
-    if (window.audioPlayer && !window.audioPlayer.hasNextTrackListener) {
-        window.audioPlayer.addEventListener('ended', nextTrack);
-        window.audioPlayer.hasNextTrackListener = true;
-    }
-
-    // Expose for external updates (e.g. from Video UI)
-    window.updateMusicPanelHighlight = function () {
-        if (window.roomContent && window.currentRoom && window.roomContent[window.currentRoom]) {
-            const playlist = window.roomContent[window.currentRoom].playlist;
-            if (playlist) window.createMusicPanel(playlist);
-        }
-    };
-
-    function toggleMusic() {
-        const playlist = roomContent[currentRoom].playlist;
-        if (!playlist) return;
-
-        if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === window.location.href) {
-            if (currentTrackIndex < 0) currentTrackIndex = 0;
-            audioPlayer.src = playlist[currentTrackIndex].src;
-            audioPlayer.volume = playlist[currentTrackIndex].volume || 0.5;
-        }
-        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-
-        if (isMusicPlaying) {
-            audioPlayer.pause(); isMusicPlaying = false;
-            if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
-            window.createMusicPanel(playlist);
-        } else {
-            if (currentRoom === 'attic') {
-                const atticVideo = document.getElementById('attic-video');
-                if (atticVideo) {
-                    atticVideo.muted = true;
-                    // Turn Knob RED
-                    const knobGroup = interiorGroup.children.find(c => c.userData.type === 'atticAudioToggle');
-                    if (knobGroup) {
-                        knobGroup.userData.state = 'off';
-                        if (knobGroup.children[1]) knobGroup.children[1].material.color.setHex(0xff0000);
-                    }
-                }
-            }
-            else if (['hall', 'studio'].indexOf(currentRoom) === -1 && videoElement && !videoElement.paused) {
-                videoElement.pause();
-            }
-
-            if (currentRoom === 'living' && window.stopLivingVideo) {
-                window.stopLivingVideo();
-            }
-            // V-FIX 24: Ensure Bathroom Video Stop (Reset Lights) is called too!
-            if (currentRoom === 'bathroom' && window.stopBathroomVideo) {
-                window.stopBathroomVideo();
-            }
-
-            if (window.updateVideoUI) {
-                window.masterVideoIndex = -1;
-                window.updateVideoUI();
-            }
-
-            audioPlayer.play().catch(e => console.log("Audio play failed", e));
-            isMusicPlaying = true;
-            if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
-            window.createMusicPanel(playlist);
-
-            if (window.interiorClickables) {
-                const btns = window.interiorClickables.filter(c => c.userData.type === 'videoControlSingle');
-                btns.forEach(b => {
-                    if (b.material) {
-                        b.material.color.setHex(0xff0000);
-                        if (b.material.emissive) b.material.emissive.setHex(0x440000);
-                    }
-                });
-            }
-        }
-    }
-    window.toggleMusic = toggleMusic;
-};
-function createHallInterior() {
-    // -- BACKGROUND VIDEO --
-    videoElement.src = "/assets/video/dots.mp4";
-    videoElement.muted = true;
-    videoElement.loop = true;
-    videoElement.play().catch(e => console.warn("Video play failed", e));
-
-    videoTexture = new THREE.VideoTexture(videoElement);
-    // Full wall size (10 width, 8 height)
-    const bgGeo = new THREE.PlaneGeometry(10, 8);
-    const bgMat = new THREE.MeshBasicMaterial({
-        map: videoTexture,
-        transparent: true,
-        opacity: 0.6, // V209: Adjusted brightness (was 0.3)
-        blending: THREE.AdditiveBlending
-    });
-    const bgMesh = new THREE.Mesh(bgGeo, bgMat);
-    bgMesh.position.set(0, 4.0, -4.95);
-    interiorGroup.add(bgMesh);
-
-    // -- LIGHTING ADJUSTMENT --
-    const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
-    if (defaultBulb) interiorGroup.remove(defaultBulb);
-
-    // Add Cozy Warm SpotLight
-    // V-NEW: Reduced Intensity (2.0 -> 0.5)
-    // V311: Significantly brighter (0.25 -> 2.5)
-    const cozySpot = new THREE.SpotLight(0xffaa00, 1.5); // V-REFINE: Lower intensity (was 3.5)
-    cozySpot.position.set(2, 5, 2); // V-REFINE: Moved down (from 6.0) per Reference
-    cozySpot.target.position.set(0, 0, 0);
-    cozySpot.angle = Math.PI / 3; // V-REFINE: Narrower (from PI/2.5) per Reference
-    cozySpot.penumbra = 0.5; // V-REFINE: Harsher Edge per Reference
-    cozySpot.castShadow = true;
-    interiorGroup.add(cozySpot);
-    interiorGroup.add(cozySpot.target);
-
-    // V-REFINE: Red Room Mood Ambient (Lowered for atmosphere)
-    const hallAmbient = new THREE.AmbientLight(0xffffff, 0.15);
-    interiorGroup.add(hallAmbient);
-
-    // --- CURTAINS ---
-    // Left side (To the very edge of the wall)
-    createHallCurtain(-4.99, 0, 4.8, Math.PI / 2);
-    // Back wall, far right (V-FIX: Shifted forward to avoid clipping)
-    createHallCurtain(4.8, 0, -4.4, 0);
-
-    // V-REFINE: Restore "Welcome to Meaning House" wall text (Match Reference)
-    const wallTextCanvas = document.createElement('canvas');
-    wallTextCanvas.width = 1024; wallTextCanvas.height = 512;
-    const wtctx = wallTextCanvas.getContext('2d');
-    wtctx.fillStyle = 'white';
-    wtctx.textAlign = 'center';
-    wtctx.shadowColor = "black"; wtctx.shadowBlur = 5;
-
-    wtctx.font = 'bold 80px "Glass Antiqua", cursive';
-    wtctx.fillText("Welcome to", 512, 130);
-
-    wtctx.font = 'bold 110px "Glass Antiqua", cursive'; // Slightly smaller to fit "the House of Meaning"
-    wtctx.fillText("the House of Meaning", 512, 250);
-
-    wtctx.font = '40px "Lato", sans-serif';
-    wtctx.fillText("Explore // Wonder // Dream", 512, 330);
-
-    wtctx.font = '28px "Lato", sans-serif';
-    wtctx.fillText("Big screen and sound recommended", 512, 410);
-
-    const wallTex = new THREE.CanvasTexture(wallTextCanvas);
-    const wallTextPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(8, 4),
-        new THREE.MeshBasicMaterial({ map: wallTex, transparent: true })
-    );
-    wallTextPlane.position.set(0, 4.0, -4.7);
-    interiorGroup.add(wallTextPlane);
-
-    // -- SHADOW UNDER R2D2 --
-    // V-REFINE: Ground Shadow logic moved to createR2D2ForHall to avoid reference error
-    createR2D2ForHall();
-}
-
-function createHallCurtain(x, y, z, rotationY) {
-    const curtainGroup = new THREE.Group();
-    curtainGroup.position.set(x, y, z);
-    curtainGroup.rotation.y = rotationY;
-
-    // V-REFINE: Narrow, Denser, Opaque Draped Curtain
-    const width = 1.2; // V-FIX: Narrower to avoid obscuring wall text
-    const height = 8;
-    const curtainGeo = new THREE.PlaneGeometry(width, height, 40, 40);
-    const pos = curtainGeo.attributes.position;
-
-    for (let i = 0; i < pos.count; i++) {
-        let ux = pos.getX(i);
-        const u = (ux + width / 2) / width;
-
-        // VOLUMINOUS ROUND FOLDS (High density: 18 folds)
-        const waveAmp = 0.35;
-        const wave = Math.sin(u * Math.PI * 18) * waveAmp;
-
-        pos.setZ(i, wave);
-    }
-    curtainGeo.computeVertexNormals();
-
-    const curtainMat = new THREE.MeshStandardMaterial({
-        color: 0xaa0000,
-        roughness: 0.9,
-        metalness: 0.1,
-        side: THREE.DoubleSide,
-        transparent: false,
-        opacity: 1.0,
-        depthWrite: true
-    });
-
-    const curtainMesh = new THREE.Mesh(curtainGeo, curtainMat);
-    curtainMesh.position.y = 4.0;
-    curtainGroup.add(curtainMesh);
-
-    // V-REFINE: Solid Backing Plane
-    // V-FIX: Moved further back (-0.4) to avoid Z-fighting/flickering with waves
-    const backGeo = new THREE.PlaneGeometry(width, height);
-    const backMesh = new THREE.Mesh(backGeo, curtainMat);
-    backMesh.position.set(0, 4.0, -0.4);
-    curtainGroup.add(backMesh);
-
-    interiorGroup.add(curtainGroup);
-}
-
-function createHologram() {
-    // HOLOGRAM: Control Instructions
-    const group = new THREE.Group();
-    group.position.set(0, 1.5, 2.0);
-
-
-    // Moving along with the 3D environment (Rotation)
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Glow
-    const g = ctx.createRadialGradient(256, 256, 120, 256, 256, 250);
-    g.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    g.addColorStop(0.5, 'rgba(0, 255, 255, 0.1)');
-    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
-
-    // Text "In the Circle"
-    ctx.fillStyle = '#ccffff';
-    ctx.shadowColor = "#00ffff"; ctx.shadowBlur = 10;
-    // V209: "INSTRUCTIONS" (V-REFINE: Exact Reference size 50/30)
-    ctx.font = 'bold 50px "Courier New", monospace'; ctx.textAlign = "center";
-    ctx.fillText("FREE WILL", 256, 230);
-
-    ctx.font = '30px "Courier New", monospace';
-    ctx.fillText("DOES NOT EXIST", 256, 280);
-    ctx.fillText("CLICK FOR MORE", 256, 320);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    // DoubleSide so it's visible from all angles as it rotates
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false });
-
-    // Vertical Plane inside the ring
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 2.5), mat);
-    mesh.position.y = 0.5; // Slightly above ring
-    // NO ROTATION -> Make sure it faces the entrance (-Z direction) or +Z?
-    // Room Camera enters from +Z looking -Z.
-    // So Plane should face +Z.
-    // Default plane faces +Z. So default rotation is fine.
-    group.add(mesh);
-
-    return group;
-}
-
-function createR2D2ForHall() {
-    const r2d2Group = new THREE.Group();
-    // V1: Scale 0.4 (Slightly larger than studio to be visible)
-    r2d2Group.scale.set(0.4, 0.4, 0.4);
-    // V311: R2D2 starting pos shifted
-    r2d2Group.position.set(0, 0, 1.0);
-    r2d2Group.rotation.y = 0;
-    interiorGroup.add(r2d2Group);
-
-    // V-FIX: Add Ground Shadow directly to the group here (V22)
-    const shadowCanvas = document.createElement('canvas');
-    shadowCanvas.width = 128; shadowCanvas.height = 128;
-    const sCtx = shadowCanvas.getContext('2d');
-    const grd = sCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grd.addColorStop(0, 'rgba(0,0,0,0.6)');
-    grd.addColorStop(1, 'rgba(0,0,0,0)');
-    sCtx.fillStyle = grd;
-    sCtx.fillRect(0, 0, 128, 128);
-
-    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-    const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.8, depthWrite: false });
-    const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 5.0), shadowMat);
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.set(0, 0.05, 0);
-    r2d2Group.add(shadowMesh);
-
-    // Parent Instructions to R2D2 so they move together
-    const instructions = createHologram();
-    // Scale BACK UP (Since R2 is 0.4x, we need 2.5x to get back to 1.0 world scale)
-    instructions.scale.set(2.5, 2.5, 2.5);
-    instructions.position.set(0, 7.0, 1.5); // Floating even higher above R2 (V318)
-    r2d2Group.add(instructions);
-
-    const white = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, roughness: 0.4 });
-    const silver = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
-    const blue = new THREE.MeshStandardMaterial({ color: 0x0044bb, roughness: 0.3 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x111111 });
-
-    const sideLegHeight = 2.2;
-    const bodyPivotY = sideLegHeight;
-    const bodyTiltAngle = -0.1; // Less tilt for standing "happily"
-
-    // Body Group
-    const bodyGroup = new THREE.Group();
-    const bodyCyl = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 3, 40), white);
-    bodyCyl.castShadow = true;
-    bodyGroup.add(bodyCyl);
-
-    // Body Details
-    const ventGeo = new THREE.BoxGeometry(0.6, 0.4, 0.1);
-    const vent1 = new THREE.Mesh(ventGeo, blue);
-    vent1.position.set(0.4, 0.5, 1.35);
-    bodyGroup.add(vent1);
-    const vent2 = new THREE.Mesh(ventGeo, blue);
-    vent2.position.set(-0.4, 0.5, 1.35);
-    bodyGroup.add(vent2);
-
-    // R2-D2 Body Rings
-    const ringGeo = new THREE.TorusGeometry(1.41, 0.015, 8, 40);
-    const ring1 = new THREE.Mesh(ringGeo, dark);
-    ring1.rotation.x = Math.PI / 2;
-    ring1.position.y = 0.8;
-    bodyGroup.add(ring1);
-    const ring2 = ring1.clone();
-    ring2.position.y = -0.8;
-    bodyGroup.add(ring2);
-
-    bodyGroup.rotation.x = bodyTiltAngle;
-    bodyGroup.position.y = bodyPivotY;
-    r2d2Group.add(bodyGroup);
-
-    // Dome
-    const domeGroup = new THREE.Group();
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(1.4, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2), silver);
-    domeGroup.add(dome);
-
-    const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.1, 20), dark);
-    eye.rotation.x = Math.PI / 2;
-    eye.position.set(0, 0.75, 1.3);
-    domeGroup.add(eye);
-
-    const proj = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.15, 12), silver);
-    proj.rotation.x = 0.6;
-    proj.position.set(0, 0.35, 1.3);
-    domeGroup.add(proj);
-
-    // Blinking Lights
-    const lightRed = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-    lightRed.position.set(0.4, 0.6, 1.25);
-    domeGroup.add(lightRed);
-    const lightBlue = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
-    lightBlue.position.set(-0.4, 0.7, 1.25);
-    domeGroup.add(lightBlue);
-    const lightGreen = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
-    lightGreen.position.set(0, 0.9, 1.1);
-    domeGroup.add(lightGreen);
-
-    domeGroup.position.y = 1.5;
-    bodyGroup.add(domeGroup);
-
-    // FOOT
-    function createFoot() {
-        const foot = new THREE.Group();
-        const footTop = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), white);
-        footTop.scale.set(1, 1, 2.2);
-        foot.add(footTop);
-        return foot;
-    }
-
-    // Side Legs
-    function createSideLeg(side) {
-        const legGroup = new THREE.Group();
-        const joint = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 20), white);
-        joint.rotation.z = Math.PI / 2;
-        joint.position.x = side * 1.5;
-        legGroup.add(joint);
-
-        const strut = new THREE.Mesh(new THREE.BoxGeometry(0.4, sideLegHeight, 0.7), white);
-        strut.position.y = -sideLegHeight / 2;
-        strut.position.x = side * 1.5;
-        legGroup.add(strut);
-
-        const foot = createFoot();
-        foot.position.y = -sideLegHeight;
-        foot.position.z = 0.1;
-        foot.position.x = side * 1.5;
-        legGroup.add(foot);
-
-        legGroup.position.y = bodyPivotY;
-        return legGroup;
-    }
-
-    r2d2Group.add(createSideLeg(1));
-    r2d2Group.add(createSideLeg(-1));
-
-    // Central Leg
-    const centralLeg = new THREE.Group();
-    const legSlant = -0.1; // Less slant
-    const cStrutHeight = 1.2;
-    const cStrut = new THREE.Mesh(new THREE.BoxGeometry(0.4, cStrutHeight, 0.4), white);
-    cStrut.position.y = -cStrutHeight / 2;
-    centralLeg.add(cStrut);
-
-    const cFoot = createFoot();
-    cFoot.rotation.x = Math.abs(bodyTiltAngle) + Math.abs(legSlant);
-    cFoot.position.y = -cStrutHeight;
-    cFoot.position.z = 0.05;
-    centralLeg.add(cFoot);
-
-    centralLeg.position.set(0, -1.2, 0);
-    centralLeg.rotation.x = legSlant;
-    bodyGroup.add(centralLeg);
-
-    // -- HAPPY HEAD ROTATION --
-    // Oscillate between -0.5 and 0.5 radians approx
-    const startRot = { y: -0.6 };
-    const targetRot = { y: 0.6 };
-
-    // Initial Tween
-    const tweenRight = new TWEEN.Tween(domeGroup.rotation)
-        .to({ y: 0.6 }, 2000)
-        .easing(TWEEN.Easing.Quadratic.InOut);
-
-    const tweenLeft = new TWEEN.Tween(domeGroup.rotation)
-        .to({ y: -0.6 }, 2000)
-        .easing(TWEEN.Easing.Quadratic.InOut);
-
-    // Chain them
-    tweenRight.chain(tweenLeft);
-    tweenLeft.chain(tweenRight);
-    tweenRight.start();
-
-
-    // Complex Patrol Animation
-    const p1 = { x: -2.0, z: 1.0, ry: 0.5 };
-    const p2 = { x: 2.0, z: -1.0, ry: -0.5 };
-    const pHome = { x: 0, z: 1.0, ry: 0 };
-
-    const patrol1 = new TWEEN.Tween(r2d2Group.position)
-        .to({ x: p1.x, z: p1.z }, 4000)
-        .easing(TWEEN.Easing.Sinusoidal.InOut);
-
-    const rotate1 = new TWEEN.Tween(r2d2Group.rotation)
-        .to({ y: p1.ry }, 1000);
-
-    const patrol2 = new TWEEN.Tween(r2d2Group.position)
-        .to({ x: p2.x, z: p2.z }, 5000)
-        .easing(TWEEN.Easing.Sinusoidal.InOut);
-
-    const rotate2 = new TWEEN.Tween(r2d2Group.rotation)
-        .to({ y: p2.ry }, 1000);
-
-    const patrolHome = new TWEEN.Tween(r2d2Group.position)
-        .to({ x: pHome.x, z: pHome.z }, 3000)
-        .easing(TWEEN.Easing.Sinusoidal.InOut);
-
-    const rotateHome = new TWEEN.Tween(r2d2Group.rotation)
-        .to({ y: pHome.ry }, 1000);
-
-    // Chain Patrol
-    patrol1.chain(rotate1);
-    rotate1.chain(patrol2);
-    patrol2.chain(rotate2);
-    rotate2.chain(patrolHome);
-    patrolHome.chain(rotateHome);
-    rotateHome.chain(patrol1);
-
-    patrol1.start();
-
-    // Make him clickable? Optional.
-    r2d2Group.userData = { type: 'r2d2', name: 'R2D2' };
-
-    // V-FIX 22: Explicit Hitbox for easier clicking (Visible but transparent)
-    const hitGeo = new THREE.CylinderGeometry(2.5, 2.5, 7.0, 16);
-    const hitMat = new THREE.MeshBasicMaterial({
-        visible: true,
-        color: 0xffff00,
-        wireframe: false,
-        transparent: true,
-        opacity: 0.0,
-        depthWrite: false
-    });
-    const hitBox = new THREE.Mesh(hitGeo, hitMat);
-    hitBox.position.y = 2.0;
-    // Name it for debug
-    hitBox.userData = { name: "R2D2_HitBox", type: "r2d2" };
-    r2d2Group.add(hitBox);
-
-    // V-WORDHUNT: Hidden Orb in R2D2
-    if (typeof WordHunt !== 'undefined') {
-        console.log("WordHunt Found in Hall. Initializing R2D2 Orb...");
-        const item = WordHunt.createInteractable('hall');
-        if (item) {
-            // Hide inside R2 initially
-            item.position.set(0, 1.0, 0);
-            item.scale.set(0.1, 0.1, 0.1); // Tiny initially
-            item.visible = false;
-            r2d2Group.add(item);
-
-            // V-FIX 19: SUPER HITBOX FOR ORB
-            // The default one might be too small or bubbling fails.
-            // Let's add a massive explicit HitBox to the Orb Item Group.
-            const orbHitGeo = new THREE.SphereGeometry(1.0, 16, 16); // Radius 1.0 * Scale 3.0 = HUGE
-            const orbHitMat = new THREE.MeshBasicMaterial({ visible: false }); // Invisible Material
-            const orbHitBox = new THREE.Mesh(orbHitGeo, orbHitMat);
-            orbHitBox.userData.onClick = () => {
-                console.log("R2D2 Orb HitBox Clicked!");
-                // Call the original handler on the group if it exists
-                if (item.userData.onClick) item.userData.onClick();
-            };
-            orbHitBox.userData.isOrbHitBox = true;
-            item.add(orbHitBox);
-
-            // Click Handler for R2D2
-            const r2ClickHandler = () => {
-                // If orb is already revealed, do nothing (orb itself handles the collection click)
-                if (item.userData.revealed) return;
-
-                console.log("R2D2 Clicked! Popping out orb...");
-                item.visible = true;
-                item.userData.revealed = true;
-
-                // Animate Pop Out (Up and Scale Up)
-                new TWEEN.Tween(item.position)
-                    .to({ y: 12.5 }, 1500) // V-FIX: Even Higher (12.5)
-                    .easing(TWEEN.Easing.Elastic.Out)
-                    .onUpdate(() => console.log("Orb Y:", item.position.y)) // Debug
-                    .start();
-
-                new TWEEN.Tween(item.scale)
-                    .to({ x: 3.0, y: 3.0, z: 3.0 }, 1500) // V-FIX: SUPER BIG (3.0)
-                    .easing(TWEEN.Easing.Elastic.Out)
-                    .start();
-            };
-
-            r2d2Group.userData.onClick = r2ClickHandler;
-            hitBox.userData.onClick = r2ClickHandler; // Double bind
-
-            // Register R2D2 as clickable
-            if (window.interiorClickables) {
-                window.interiorClickables.push(r2d2Group);
-                window.interiorClickables.push(hitBox); // Push hitbox too
-                // V-FIX: Push the Orb Item so it can be clicked when revealed!
-                window.interiorClickables.push(item);
-                // Also push our new Super HitBox
-                window.interiorClickables.push(orbHitBox);
-                console.log("R2D2, Hitbox, Orb, and SuperOrbHitBox added to interiorClickables");
-            }
-        } else {
-            console.error("WordHunt.createInteractable returned null for 'hall'");
-        }
-    } else {
-        console.error("WordHunt is undefined in hall.js");
-    }
-}
-function createBathroomInterior() {
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x463732 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.1 });
-    const chromeMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.8, roughness: 0.1 });
-
-    // SINK & VANITY (Center)
-    const vanity = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.5), woodMat);
-    vanity.position.set(0, 0.6, -4.2); interiorGroup.add(vanity);
-    const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 0.4, 16), whiteMat);
-    basin.position.set(0, 1.3, -4.2); interiorGroup.add(basin);
-    const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.6), chromeMat);
-    faucet.position.set(0, 1.6, -4.7); faucet.rotation.x = Math.PI / 4; interiorGroup.add(faucet);
-
-    // V-WORDHUNT
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('bathroom');
-        if (item) {
-            // V-FIX: Move to Sink/Vanity Area (Better visibility)
-            // Was: (3.5, 0.5, -2.0) (Bathtub)
-            item.position.set(0, 1.5, -4.2);
-            item.scale.set(0.8, 0.8, 0.8); // Slightly smaller to fit vanity
-            interiorGroup.add(item);
-        }
-    }
-
-    // MIRROR FRAME
-    const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.95, 3.20, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111 })); // 0x222222 -> 0x111111
-    mirrorFrame.position.set(0, 3.8, -4.9);
-    mirrorFrame.castShadow = true;
-    interiorGroup.add(mirrorFrame);
-
-    const shadowCanvas = document.createElement('canvas');
-    shadowCanvas.width = 128; shadowCanvas.height = 128; // Low res is fine for blur
-    const sCtx = shadowCanvas.getContext('2d');
-    // Draw blurred box
-    sCtx.shadowColor = "rgba(0, 0, 0, 0.8)";
-    sCtx.shadowBlur = 20;
-    sCtx.fillStyle = "rgba(0, 0, 0, 0.8)";
-    // Draw slightly smaller rect to allow blur to bleed
-    sCtx.fillRect(20, 20, 88, 88);
-
-    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-
-    // Scale plane to allow blur bleed area
-    const shadowGeo = new THREE.PlaneGeometry(2.4, 3.8);
-    const shadowMat = new THREE.MeshBasicMaterial({
-        map: shadowTex,
-        transparent: true,
-        opacity: 0.6,
-        depthWrite: false // Prevent Z-fighting artifacts
-    });
-
-    const shadowPlane = new THREE.Mesh(shadowGeo, shadowMat);
-    shadowPlane.position.z = -0.08; // Safe distance
-    mirrorFrame.add(shadowPlane);
-
-    // Button removed (Replaced by Universal Video UI)
-
-    // 1. Remove default bright bulb
-    const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
-    if (defaultBulb) interiorGroup.remove(defaultBulb);
-
-    // 2. Add Darker Ambience (V289: Boosted 0.05 -> 0.15)
-    const darkAmb = new THREE.PointLight(0x223344, 0.15, 15);
-    darkAmb.position.set(0, 6, 0);
-    interiorGroup.add(darkAmb);
-
-    // --- V45 SHADER (SUPER PARALLAX) ---
-    const mirrorVertexShader = `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `;
-
-    const mirrorFragmentShader = `
-        uniform float uViewRotation; 
-        uniform float uViewPitch; // V-NEW: Vertical Tilt
-        uniform float uTime;
-        uniform sampler2D uMap;
-        uniform float uScale;
-        uniform float uUseVideo;
-        varying vec2 vUv;
-        
-        void main() {
-            // V180 Fix: Single horizon calculation
-            float sensitiveAngle = uViewRotation * 4.0; 
-            
-            // V-NEW: Added uViewPitch response (-0.5 to 0.5 usually)
-            // If camera looks DOWN (pitch < 0), Horizon should move UP? Or down?
-            // User feedback: "horizon should move 'up' when it goes down".
-            // If "it" refers to view/pitch going down, horizon must go UP.
-            // Pitch < 0 -> Horizon increases.
-            // So: - (uViewPitch * factor). 
-            // V-FIX: Increased Pitch Sensitivity (0.4 -> 1.5) and Range
-            // When looking DOWN (pitch < 0), we want horizon to go UP significantly to show "floor" reflection.
-            // When looking UP, horizon goes DOWN to show ceiling.
-            float horizon = 0.5 - (uViewPitch * 1.5); // Much stronger response
-            float perspective = 1.0 / max(0.01, (horizon - vUv.y)); 
-            
-            // Checkerboard Reflection 
-            float x = (vUv.x - 0.5) * perspective * uScale + (sensitiveAngle * 3.0);
-            float y = perspective * uScale + (uTime * 0.2); 
-            
-            // Checkerboard pattern
-            float check = mod(floor(x) + floor(y), 2.0);
-            // V-FIX: Darker Tiles for Mirror (0.05/0.15)
-            vec3 tileColor = (check < 0.5) ? vec3(0.05) : vec3(0.15);
-            
-            // Glare effect (Reduced)
-            float glarePos = 0.5 + (uViewRotation * 0.3) + (sin(uTime * 0.5) * 0.1);
-            float streak = smoothstep(0.2, 0.0, abs(vUv.x - glarePos));
-            float gloss = (1.0 - vUv.y) * 0.05 + (streak * 0.1); // Much closer to matte
-
-            // Sharp horizon transition
-            float voidFactor = step(horizon, vUv.y);
-            
-            vec3 finalColor;
-
-            if (uUseVideo > 0.5) {
-                // Video mode
-                vec4 vid = texture2D(uMap, vUv);
-                finalColor = (vid.rgb * 0.8) + vec3(gloss * 0.2); 
-                // V-FIX: Do NOT darken video globally (Keep it reasonably bright)
-            } else {
-                // Reflection mode
-                vec3 finalReflect = tileColor + vec3(gloss);
-                // Mix to tinted void (Very Dark)
-                finalColor = mix(finalReflect, vec3(0.005, 0.01, 0.015), voidFactor);
-                // V-TUNE: Extra Darkening for "Blurry/Dim" feel ONLY in reflection mode?
-                // Or apply dimmer? Legacy code had global dimmer.
-                finalColor *= 0.7; // Global dimmer for reflection
-            }
-            
-            // Note: Removed global finalColor *= 0.7 outside if/else so video stays bright
-
-            gl_FragColor = vec4(finalColor, 1.0);
-        }
-    `;
-
-    const mirrorMat = new THREE.ShaderMaterial({
-        vertexShader: mirrorVertexShader,
-        fragmentShader: mirrorFragmentShader,
-        uniforms: {
-            uViewRotation: { value: 0 },
-            uViewPitch: { value: 0 },
-            uTime: { value: 0 },
-            uMap: { value: null },
-            uScale: { value: 1.5 },
-            uUseVideo: { value: 0.0 }
-        }
-    });
-
-    // Register for animation updates
-    // METHOD A: Global List
-    if (typeof animatedShaderMaterials !== 'undefined') {
-        if (!animatedShaderMaterials.includes(mirrorMat)) animatedShaderMaterials.push(mirrorMat);
-    }
-
-    // METHOD B: Direct Update (Robust)
-    mirrorFrame.userData.update = function (t) {
-        // 1. Update Time
-        mirrorMat.uniforms.uTime.value = t;
-
-        // 2. Update Rotation & Pitch (Parallax)
-        const cam = window.camera || camera;
-        if (cam) {
-            // YAW
-            const angle = Math.atan2(cam.position.x, cam.position.z);
-            mirrorMat.uniforms.uViewRotation.value = angle;
-
-            // PITCH
-            // Get look direction
-            const dir = new THREE.Vector3();
-            cam.getWorldDirection(dir);
-            // dir.y is vertical component (-1 down, +1 up)
-            mirrorMat.uniforms.uViewPitch.value = dir.y;
-
-            // DEBUG: Log every ~60 frames
-            if (Math.floor(t * 60) % 60 === 0) {
-                console.log("Mirror Update: Yaw=", angle.toFixed(3), "Pitch=", dir.y.toFixed(3));
-            }
-        }
-
-        // 3. Update Video Texture if playing
-        if (window.videoElement && mirrorMat.uniforms.uMap.value) {
-            if (!window.videoElement.paused) {
-                mirrorMat.uniforms.uMap.value.needsUpdate = true;
-                // V-FIX: Auto-Enter Screen Mode when playing (Fixes Universal Interface selection)
-                if (mirrorMat.uniforms.uUseVideo.value < 1.0) mirrorMat.uniforms.uUseVideo.value = 1.0;
-            }
-        }
-    };
-
-
-    // MIRROR GLASS (Using mirrorMat)
-    const mirrorGlass = new THREE.Mesh(new THREE.PlaneGeometry(1.70, 2.95), mirrorMat);
-    mirrorGlass.position.z = 0.06; mirrorFrame.add(mirrorGlass);
-    mirrorGlass.name = 'mirrorSurface';
-    // V44: Make Mirror Surface Clickable Too
-    mirrorGlass.userData = { type: 'bathroomMirrorButton' }; // Act like the button
-    // V-FIX: Direct toggle (videoBtn removed)
-    mirrorGlass.toggleMirror = function () {
-        if (window.toggleBathroomMirror) window.toggleBathroomMirror();
-    };
-    interiorClickables.push(mirrorGlass);
-
-
-    const tubGroup = new THREE.Group();
-
-    const tubLength = 6.0; const tubWidth = 2.2; const radius = 0.5;
-    const shape = new THREE.Shape();
-    shape.absarc(tubLength / 2 - radius, tubWidth / 2 - radius, radius, 0, Math.PI / 2, false);
-    shape.absarc(-(tubLength / 2 - radius), tubWidth / 2 - radius, radius, Math.PI / 2, Math.PI, false);
-    shape.absarc(-(tubLength / 2 - radius), -(tubWidth / 2 - radius), radius, Math.PI, Math.PI * 1.5, false);
-    shape.absarc(tubLength / 2 - radius, -(tubWidth / 2 - radius), radius, Math.PI * 1.5, Math.PI * 2, false);
-
-    // Inner Hole
-    const wallThick = 0.15;
-    const hole = new THREE.Path();
-    hole.absarc(tubLength / 2 - radius, tubWidth / 2 - radius, radius - wallThick, 0, Math.PI / 2, false);
-    hole.absarc(-(tubLength / 2 - radius), tubWidth / 2 - radius, radius - wallThick, Math.PI / 2, Math.PI, false);
-    hole.absarc(-(tubLength / 2 - radius), -(tubWidth / 2 - radius), radius - wallThick, Math.PI, Math.PI * 1.5, false);
-    hole.absarc(tubLength / 2 - radius, -(tubWidth / 2 - radius), radius - wallThick, Math.PI * 1.5, Math.PI * 2, false);
-    shape.holes.push(hole);
-
-    const tubGeo = new THREE.ExtrudeGeometry(shape, {
-        depth: 1.4, bevelEnabled: false, curveSegments: 16
-    });
-    const tubMesh = new THREE.Mesh(tubGeo, whiteMat);
-    tubMesh.rotation.x = -Math.PI / 2; // Lie flat so Z becomes Y (Height)
-
-    // Floor (Inner Puck)
-    const floorShape = new THREE.Shape();
-    const innerR = radius - wallThick;
-    floorShape.absarc(tubLength / 2 - radius, tubWidth / 2 - radius, innerR, 0, Math.PI / 2, false);
-    floorShape.absarc(-(tubLength / 2 - radius), tubWidth / 2 - radius, innerR, Math.PI / 2, Math.PI, false);
-    floorShape.absarc(-(tubLength / 2 - radius), -(tubWidth / 2 - radius), innerR, Math.PI, Math.PI * 1.5, false);
-    floorShape.absarc(tubLength / 2 - radius, -(tubWidth / 2 - radius), innerR, Math.PI * 1.5, Math.PI * 2, false);
-
-    const floorGeo = new THREE.ExtrudeGeometry(floorShape, {
-        depth: 0.5, // 0.5 thickness
-        bevelEnabled: false
-    });
-
-    const tubFloorMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.1 });
-    const tubFloor = new THREE.Mesh(floorGeo, tubFloorMat);
-    tubFloor.rotation.x = -Math.PI / 2; // Z becomes Y (Height)
-    tubFloor.position.y = 0.0; // Base at 0. Top will be at 0.5.
-
-    tubGroup.add(tubMesh);
-    tubGroup.add(tubFloor);
-
-    // Water - Oval Plane
-    const waterGeo = new THREE.ShapeGeometry(floorShape);
-    const waterMat = new THREE.MeshPhongMaterial({
-        color: 0x00aaff,
-        emissive: 0x004488,
-        specular: 0xffffff,
-        shininess: 100,
-        transparent: true,
-        opacity: 0.8
-    });
-    const water = new THREE.Mesh(waterGeo, waterMat);
-    water.rotation.x = -Math.PI / 2;
-    water.scale.set(0.98, 0.98, 1);
-    water.position.y = 0.6; // Lowered slightly to look engaged
-    tubGroup.add(water);
-
-    tubGroup.position.set(3.5, 0, -2.0); // Y=0 because extrude starts at 0
-    tubGroup.rotation.y = -Math.PI / 2;
-    interiorGroup.add(tubGroup);
-
-
-    // FLOOR - Checkered (High Contrast, Large)
-    const checkCanvas = document.createElement('canvas');
-    checkCanvas.width = 512; checkCanvas.height = 512;
-    const cctx = checkCanvas.getContext('2d');
-    cctx.fillStyle = '#888888'; cctx.fillRect(0, 0, 512, 512); // V140: Darker White
-    cctx.fillStyle = '#111111'; // Not pure black, but very dark
-    const checkSize = 128; // Large Squares
-    for (let y = 0; y < 512; y += checkSize) {
-        for (let x = 0; x < 512; x += checkSize) {
-            if (((x / checkSize) + (y / checkSize)) % 2 !== 0) {
-                cctx.fillRect(x, y, checkSize, checkSize);
-            }
-        }
-    }
-    const checkTex = new THREE.CanvasTexture(checkCanvas);
-    checkTex.wrapS = THREE.RepeatWrapping;
-    checkTex.wrapT = THREE.RepeatWrapping;
-    checkTex.repeat.set(4, 4);
-    checkTex.magFilter = THREE.NearestFilter;
-    checkTex.minFilter = THREE.NearestFilter;
-    checkTex.anisotropy = 16;
-
-    const floorMat = new THREE.MeshStandardMaterial({
-        map: checkTex,
-        roughness: 0.8, // V-FIX: Less intense reflection (was 0.2)
-        metalness: 0.05 // Reduced metalness (was 0.1)
-    });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
-    floor.rotation.x = -Math.PI / 2; floor.position.y = 0.01; interiorGroup.add(floor);
-
-
-    const matMat = new THREE.MeshStandardMaterial({
-        color: 0xff0000, // Red
-        roughness: 0.9,
-        side: THREE.DoubleSide
-    });
-    const bathMat = new THREE.Mesh(new THREE.CircleGeometry(1.4, 32), matMat);
-    bathMat.rotation.x = -Math.PI / 2;
-    bathMat.position.set(0, 0.02, -2.0); // Slightly above floor
-    interiorGroup.add(bathMat);
-
-
-    // --- VIDEO LOGIC ---
-    // START: Do NOT auto-play video. Start in Reflection Mode.
-    if (!window.videoElement) window.videoElement = document.getElementById('generic-video');
-
-    if (window.videoElement) {
-        // V41: Correct Video from data.js
-        window.videoElement.src = "/assets/video/Time-Is-Now.mp4";
-        window.videoElement.muted = true;
-        window.videoElement.loop = true;
-        window.videoElement.crossOrigin = "anonymous";
-
-        // Pre-load texture but don't show it (Pause immediately)
-        window.videoElement.play().then(() => {
-            window.videoElement.pause();
-            // Create texture ONCE
-            if (!mirrorMat.uniforms.uMap.value) {
-                const vTex = new THREE.VideoTexture(window.videoElement);
-                mirrorMat.uniforms.uMap.value = vTex;
-            }
-        }).catch(e => console.warn("Mirror Video Init fail", e));
-    }
-
-    // V-NEW: External Helper for Global Sync
-    window.stopBathroomVideo = function () {
-        if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 0.0;
-        if (window.videoElement) {
-            window.videoElement.pause();
-        }
-        // Reset Button Color (Red = Reflection Mode)
-        const btn = interiorClickables.find(c => c.userData.type === 'bathroomMirrorButton');
-        if (btn) btn.material.color.setHex(0xff0000);
-    };
-
-    window.toggleBathroomMirror = function () {
-        console.log("V46: toggleBathroomMirror CLICKED!");
-
-        // Toggle Audio on Click
-        if (window.videoElement) {
-            window.videoElement.muted = !window.videoElement.muted;
-        }
-
-        const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
-
-        if (mirrorMat) {
-            const currentMode = mirrorMat.uniforms.uUseVideo.value;
-
-            // STATE MACHINE
-            if (currentMode < 0.5) {
-                // REFLECTION -> PLAY
-                mirrorMat.uniforms.uUseVideo.value = 1.0;
-                if (window.videoElement) {
-                    window.videoElement.play();
-
-                    // ROBUST AUDIO STOP
-                    if (window.stopVideosForAudio) {
-                        if (window.audioPlayer) {
-                            window.audioPlayer.pause();
-                            window.isMusicPlaying = false;
-                        }
-                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-                    } else if (window.audioPlayer && typeof window.audioPlayer.pause === 'function') {
-                        // Legacy fallback
-                        window.audioPlayer.pause();
-                        window.isMusicPlaying = false;
-                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-                    }
-                }
-                if (btn && btn.material.color) btn.material.color.setHex(0x00ff00); // Green
-            } else {
-                // PLAY -> PAUSE
-                if (window.videoElement && !window.videoElement.paused) {
-                    window.videoElement.pause();
-                    if (btn && btn.material.color) btn.material.color.setHex(0xffff00); // Yellow
-                } else {
-                    // PAUSE -> REFLECTION
-                    mirrorMat.uniforms.uUseVideo.value = 0.0;
-                    if (btn && btn.material.color) btn.material.color.setHex(0xff0000); // Red
-                }
-            }
-        }
-    };
-
-    // V-NEW: Helper to Stop Video & Reset Lights
-    window.stopBathroomVideo = function () {
-        if (mirrorMat) {
-            mirrorMat.uniforms.uUseVideo.value = 0.0;
-            // Reset Button Color
-            const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
-            if (btn && btn.material.color) btn.material.color.setHex(0xff0000); // Red
-        }
-        if (videoElement && !videoElement.paused) videoElement.pause();
-
-        // V-FIX 22: Tween Safety & Goldilocks Reset
-        // 1. Kill any active dimming tweens so they don't overwrite our reset
-        TWEEN.getAll().forEach(t => t.stop());
-
-        // 2. Reset Lights to Goldilocks Profile (0.35/0.45)
-        if (dirLight) dirLight.intensity = 0.45;
-        if (rimLight) rimLight.intensity = 0.3;
-        if (ambientLight) ambientLight.intensity = 0.35;
-    };
-
-    // VIDEO PLAYLIST (Left of Mirror)
-    if (window.createUniversalVideoInterface && roomContent.bathroom.videoPlaylist) {
-        const posData = roomContent['bathroom'].videoInterfacePos || { x: -2.8, y: 2.8, z: -4.5 };
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), roomContent.bathroom.videoPlaylist, {
-            scale: 0.75, // V306: Scale 0.75x
-            onPlay: (index) => {
-                // V-FIX 6: Soft Darkening (Tween) - Restored
-                if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.2 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                console.log("Bathroom Video Play: Darkening Room (Soft)");
-                window.masterVideoIndex = index;
-                const clip = roomContent.bathroom.videoPlaylist[index];
-
-                // 1. Set Src & Play
-                if (window.videoElement) {
-                    window.videoElement.src = clip.src;
-                    window.videoElement.muted = false;
-                    window.videoElement.volume = 1.0;
-                    window.videoElement.play().catch(e => console.error("Bathroom play error", e));
-
-                    // 2. Mirror Mode -> Video
-                    if (mirrorMat) mirrorMat.uniforms.uUseVideo.value = 1.0;
-
-                    // 3. Stop Music
-                    if (window.audioPlayer) {
-                        window.audioPlayer.pause();
-                        window.isMusicPlaying = false;
-                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); // Music Button Red
-                    }
-
-                    // 4. Update UI
-                    if (window.updateVideoUI) window.updateVideoUI();
-
-                    // 5. Update Local Button (Green)
-                    const btn = interiorClickables.find(c => c.userData.type === 'videoControlSingle');
-                    if (btn) {
-                        btn.material.color.setHex(0x00ff00);
-                        btn.material.emissive.setHex(0x004400);
-                    }
-                }
-            }
-        });
-    }
-}
-function createAtticInterior() {
-    // V-WORDHUNT: Logic is now handled inside createColoredBox for "WISDOM"
-    // Refactored to capture the box explicitly without fragile lookups.
-
-    let wisdomBoxRef = null;
-
-    // Modified helper to return the box
-    const createColoredBox = (labelText, labelColor, boxColor, x, z) => {
-        // Box Base
-        const boxGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        const boxMat = new THREE.MeshStandardMaterial({
-            color: boxColor,
-            roughness: 0.6,
-            metalness: 0.1
-        });
-        const box = new THREE.Mesh(boxGeo, boxMat);
-        box.position.set(x, 0.75, z);
-        box.castShadow = true;
-        box.receiveShadow = true;
-
-        // V-FIX 18: DARK INTERIOR (Simulation)
-        // A black plane just above the solid box top to look like a void
-        const voidGeo = new THREE.PlaneGeometry(1.4, 1.4);
-        const voidMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const voidPlane = new THREE.Mesh(voidGeo, voidMat);
-        voidPlane.rotation.x = -Math.PI / 2;
-        voidPlane.position.y = 0.76; // Slightly above box top (0.75)
-        box.add(voidPlane);
-
-        // V-FIX 18: HINGED LID
-        // Pivot Group at the back-top edge
-        // Box Top Y = 0.75 (relative to 0 center? No, geometry is 1.5 height, so top is 0.75)
-        // Box Back Z = -0.75
-        const lidPivot = new THREE.Group();
-        lidPivot.position.set(0, 0.75, -0.75); // Pivot at back edge
-
-        const lidGeo = new THREE.BoxGeometry(1.6, 0.1, 1.6);
-        const lid = new THREE.Mesh(lidGeo, boxMat);
-        // Lid center needs to be offset so its back edge sits at the pivot
-        // Lid Back Z must be at 0 relative to pivot. Lid depth is 1.6, so center is at +0.8
-        // Lid Bottom Y should be at 0 relative to pivot. Height 0.1, center at +0.05
-        lid.position.set(0, 0.05, 0.8);
-        lid.castShadow = true;
-        lid.receiveShadow = true;
-        lid.name = "lid";
-
-        lidPivot.add(lid);
-        box.add(lidPivot);
-
-        // Label (Text on Front)
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-
-        ctx.fillStyle = labelColor;
-        ctx.font = 'bold 60px "Courier Prime", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(labelText, 256, 128);
-
-        const tex = new THREE.CanvasTexture(canvas);
-        const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.65), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-        // V-FIX 16: Move Label Forward (0.82)
-        labelMesh.position.set(0, 0, 0.82);
-        box.add(labelMesh);
-
-        interiorGroup.add(box);
-
-        // V-FIX: Direct Interaction Logic for WISDOM Box
-        if (labelText === "WISDOM") {
-            // Check for WordHunt Item
-            let orbItem = null;
-            if (typeof WordHunt !== 'undefined') {
-                orbItem = WordHunt.createInteractable('attic');
-            }
-
-            // V-FIX 10: Fallback Orb
-            if (!orbItem) {
-                console.log("Attic: Creating Fallback (Dummy) Orb");
-                const dummyGeo = new THREE.SphereGeometry(0.3, 16, 16);
-                const dummyMat = new THREE.MeshStandardMaterial({
-                    color: 0x00ffff,
-                    emissive: 0x0088ff,
-                    emissiveIntensity: 0.5,
-                    roughness: 0.2
-                });
-                orbItem = new THREE.Mesh(dummyGeo, dummyMat);
-            }
-
-            if (orbItem) {
-                console.log("Attic: Injecting Orb into WISDOM box");
-                // Start inside the "void"
-                orbItem.position.set(0, 0.5, 0);
-                orbItem.scale.set(0.1, 0.1, 0.1);
-                orbItem.visible = false;
-                box.add(orbItem);
-            }
-
-            // Click Handler
-            const openBox = () => {
-                if (!box.userData.isOpen) {
-                    console.log("Wisdom Box Clicked (Hinged) - OPENING");
-                    box.userData.isOpen = true;
-                    new TWEEN.Tween(lidPivot.rotation).to({ x: -Math.PI * 0.6 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-                    if (orbItem) {
-                        orbItem.visible = true; orbItem.userData.revealed = true;
-                        new TWEEN.Tween(orbItem.position).to({ y: 1.8 }, 1500).easing(TWEEN.Easing.Elastic.Out).start();
-                        new TWEEN.Tween(orbItem.scale).to({ x: 1.0, y: 1.0, z: 1.0 }, 1500).easing(TWEEN.Easing.Elastic.Out).start();
-                    }
-                } else {
-                    console.log("Wisdom Box Clicked (Hinged) - SHUTTING");
-                    box.userData.isOpen = false;
-                    new TWEEN.Tween(lidPivot.rotation).to({ x: 0 }, 800).easing(TWEEN.Easing.Quadratic.In).start();
-                    if (orbItem) {
-                        new TWEEN.Tween(orbItem.position).to({ y: 0.5 }, 800).easing(TWEEN.Easing.Quadratic.In).onComplete(() => { if (!box.userData.isOpen) orbItem.visible = false; }).start();
-                        new TWEEN.Tween(orbItem.scale).to({ x: 0.1, y: 0.1, z: 0.1 }, 800).easing(TWEEN.Easing.Quadratic.In).start();
-                    }
-                }
-            };
-
-            box.userData.onClick = openBox;
-            lid.userData.onClick = openBox;
-
-            // V-FIX 21: NUCLEAR OPTION - Disable Label Raycast
-            // Ensure the label (which is in front) NEVER blocks the click
-            labelMesh.raycast = function () { };
-
-            // V-FIX 21: SUPER HITBOX (Opacity 0, NOT Visible: False)
-            // Visible: False sometimes fails raycasting depending on setup.
-            // Opacity 0 is reliable.
-            // Size 2.0 ensures it engulfs the Label (at Z=0.82) completely.
-            const hitBoxGeo = new THREE.BoxGeometry(2.0, 2.0, 2.0);
-            const hitBoxMat = new THREE.MeshBasicMaterial({
-                visible: true,
-                color: 0xffff00, // Debug color (invisible via opacity)
-                transparent: true,
-                opacity: 0.0,
-                depthWrite: false, // V-FIX 23: IMPORTANT! Don't hide stuff behind me!
-                side: THREE.DoubleSide
-            });
-            const hitBox = new THREE.Mesh(hitBoxGeo, hitBoxMat);
-            hitBox.position.copy(box.position);
-
-            // Interaction Data
-            hitBox.userData = {
-                onClick: openBox,
-                type: 'wisdomBox_HitBox'
-            };
-
-            interiorGroup.add(hitBox);
-            interiorClickables.push(hitBox);
-            console.log("Attic: Added NUCLEAR HitBox (Op0, Size 2.0) for Wisdom Box");
-
-            // Keep visuals just in case, but HitBox should catch everything
-            interiorClickables.push(box);
-            interiorClickables.push(lid);
-        }
-
-        return box;
-    };
-
-    // 1. LEFT BOX: RED "BEAUTY" (Spacing -2.5)
-    createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -2.5, -1.8);
-
-    // 2. MIDDLE BOX: YELLOW "KNOWLEDGE"
-    createColoredBox("KNOWLEDGE", '#000000', 0xfbc02d, 0, -1.8);
-
-    // 3. RIGHT BOX: DEEP-BLUE "WISDOM" (Spacing 2.5)
-    createColoredBox("WISDOM", '#ffffff', 0x1a237e, 2.5, -1.8);
-
-    // Dust Particles (Keep for atmosphere)
-    const particlesGeo = new THREE.BufferGeometry();
-    const particleCount = 200;
-    const posArray = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i++) { posArray[i] = (Math.random() - 0.5) * 10; }
-    particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.1 });
-    const particles = new THREE.Points(particlesGeo, particlesMat);
-    particles.position.y = 3;
-    particles.userData = { type: 'atticDust' };
-    interiorGroup.add(particles);
-
-    const lampGroup = new THREE.Group();
-    // V310: Restore to Wall-Mounted position.
-    // Wall is at z = -5.0. Move to -4.8. 
-    // Was floating at (-1.5, 2.5, -2.0)
-    lampGroup.position.set(-4.0, 5.0, -4.8);
-
-    // 1. Wall Mount (Brass Base)
-    const mountGeo = new THREE.CylinderGeometry(0.2, 0.3, 0.1, 16);
-    const brassMat = new THREE.MeshStandardMaterial({ color: 0xb5a642, metalness: 0.6, roughness: 0.3 });
-    const mount = new THREE.Mesh(mountGeo, brassMat);
-    mount.rotation.x = Math.PI / 2; // Flat against wall
-    mount.position.z = -0.1;
-    lampGroup.add(mount);
-
-    // 2. Arm (Curved Brass Tube)
-    const armGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 16, Math.PI);
-    const arm = new THREE.Mesh(armGeo, brassMat);
-    arm.rotation.y = Math.PI / 2; // Arcing out from wall
-    arm.position.set(0, 0.2, 0.3);
-    lampGroup.add(arm);
-
-    // 3. Shade (Old Fashioned Glass/Fabric Cone)
-    const shadeGeo = new THREE.ConeGeometry(0.8, 0.6, 32, 1, true);
-    const shadeMat = new THREE.MeshStandardMaterial({
-        color: 0xfdfbd3, // Creamy/Yellowish
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.9,
-        roughness: 0.5
-    });
-    const shade = new THREE.Mesh(shadeGeo, shadeMat);
-    shade.position.set(0, -0.2, 0.7); // Hanging from arm end
-    lampGroup.add(shade);
-
-    // 4. Bulb (Inside)
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
-    bulb.position.y = -0.2;
-    shade.add(bulb);
-
-    // 5. The Light (Stronger)
-    const light = new THREE.PointLight(0xffaa00, 2.5, 25);
-    light.castShadow = true;
-    // V315: Soften Shadows
-    light.shadow.radius = 4;
-    light.shadow.mapSize.width = 1024;
-    light.shadow.mapSize.height = 1024;
-    light.position.y = -0.5;
-    shade.add(light);
-
-    // V-FIX: ACTUALLY ADD IT TO THE SCENE!
-    interiorGroup.add(lampGroup);
-
-    // Logic for WISDOM box interaction is now handled inside createColoredBox
-}
-
-function createProjector() {
-    const projGroup = new THREE.Group();
-    // Material
-    const iron = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.4 });
-    const chrome = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 1.0, roughness: 0.2 });
-
-    // Base Box
-    const base = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.6), iron);
-    base.position.y = 0.1;
-    projGroup.add(base);
-
-    // Main Body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.5), iron);
-    body.position.y = 0.4;
-    projGroup.add(body);
-
-    // Lens
-    const lenscyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.2), chrome);
-    lenscyl.rotation.x = Math.PI / 2;
-    lenscyl.position.set(0, 0.45, -0.35);
-    projGroup.add(lenscyl);
-
-
-    const lensLocal = new THREE.Vector3(0, 0.45, -0.35);
-    const targetLocal = new THREE.Vector3(0, 2.2, -2.95);
-    const vec = new THREE.Vector3().subVectors(targetLocal, lensLocal);
-    const height = vec.length(); // Length of beam
-
-    // Geometry: Top(0.05) -> Bottom(2.5 = Width 5.0)
-    // Top is +Y, Bottom is -Y.
-    const beamGeo = new THREE.CylinderGeometry(0.05, 2.5, height, 64, 1, true);
-
-    // Texture: Constant Noise + Gradient Mask
-    const bCanvas = document.createElement('canvas');
-    bCanvas.width = 128; bCanvas.height = 512;
-    const bCtx = bCanvas.getContext('2d');
-
-    // 1. Noise
-    for (let i = 0; i < 128; i++) {
-        for (let j = 0; j < 512; j++) {
-            const val = Math.floor(Math.random() * 255);
-            bCtx.fillStyle = `rgba(${val},${val},${val},0.15)`;
-            bCtx.fillRect(i, j, 1, 1);
-        }
-    }
-
-    // 2. Gradient (Top Opaque -> Bottom Transparent)
-    // GLOW EFFECT: Strong white at Top (0), fading out.
-    const g = bCtx.createLinearGradient(0, 0, 0, 512);
-    g.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); // Bright Glow at Lens
-    g.addColorStop(0.2, 'rgba(255, 255, 255, 0.35)'); // Quick fade to beam body
-    g.addColorStop(1, 'rgba(255, 255, 255, 0)'); // Fade to transparent
-
-    bCtx.globalCompositeOperation = 'destination-in';
-    bCtx.fillStyle = g;
-    bCtx.fillRect(0, 0, 128, 512);
-
-    const beamTex = new THREE.CanvasTexture(bCanvas);
-    const beamMat = new THREE.MeshBasicMaterial({
-        map: beamTex,
-        color: 0xffffff,
-        transparent: true,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-    });
-
-    const beam = new THREE.Mesh(beamGeo, beamMat);
-
-    // Position at Midpoint
-    const mid = new THREE.Vector3().addVectors(lensLocal, targetLocal).multiplyScalar(0.5);
-    beam.position.copy(mid);
-
-    const axis = new THREE.Vector3(0, 1, 0);
-    const targetDir = vec.clone().negate().normalize();
-    beam.quaternion.setFromUnitVectors(axis, targetDir);
-
-    projGroup.add(beam);
-
-
-    // Reels (Two big circles on top)
-    const reelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.05, 32);
-    const reel1 = new THREE.Mesh(reelGeo, chrome);
-    reel1.rotation.z = Math.PI / 2;
-    reel1.position.set(0, 0.75, 0.1);
-    projGroup.add(reel1);
-
-    const reel2 = new THREE.Mesh(reelGeo, chrome);
-    reel2.rotation.z = Math.PI / 2;
-    reel2.position.set(0, 0.75, -0.15);
-    projGroup.add(reel2);
-
-    // Place on the Middle Box
-    // Middle box is at x=0, z=-2. Lid is at y=0.6 + 0.1 = 0.7.
-    projGroup.position.set(0, 0.8, -2);
-    // Scale it nicely
-    projGroup.scale.set(1.5, 1.5, 1.5);
-
-    interiorGroup.add(projGroup);
-}
-let tvVideo, tvVideoTexture;
-let tvScreensaver, tvScreensaverTexture; // V-NEW: Screensaver vars
-// Need global access to lights for dimming (Cinema Mode)
-window.livingCozyLight = null;
-window.livingLibrarySpot = null;
-// masterVideoIndex is global (house.js)
-
-// V-NEW: TV Screensaver
-// V-NEW: Image Slideshow Screensaver (v222)
-function createTVScreensaver() {
-    // 1. Setup Canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 576; // Higher resolution for images
-    const ctx = canvas.getContext('2d');
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.minFilter = THREE.LinearFilter;
-
-    // 2. Logic Data
-    const slides = roomContent['living'].tvImages || [];
-    if (slides.length === 0) return null; // Fallback to video if no slides
-
-    const duration = 5000; // 5 seconds per slide
-    let currentIndex = -1; // Start at -1 to force first draw
-
-    // Preload Images
-    const images = {};
-    slides.forEach(slide => {
-        if (slide.image) {
-            const img = new Image();
-            img.src = slide.image;
-            images[slide.image] = img;
-        }
-    });
-
-    tex.userData = {
-        update: (time) => {
-            const nowMs = time * 1000;
-            const index = Math.floor(nowMs / duration) % slides.length;
-
-            if (index !== currentIndex || currentIndex === -1) {
-                currentIndex = index;
-                const slide = slides[currentIndex];
-
-                // Draw Background
-                ctx.fillStyle = slide.color || '#000000';
-                ctx.fillRect(0, 0, 1024, 576);
-
-                // Draw Image if available and loaded
-                if (slide.image && images[slide.image] && images[slide.image].complete) {
-                    // Scale to fit "contain"
-                    const img = images[slide.image];
-                    const scale = Math.min(1024 / img.width, 576 / img.height);
-                    const w = img.width * scale;
-                    const h = img.height * scale;
-                    const x = (1024 - w) / 2;
-                    const y = (576 - h) / 2;
-                    ctx.drawImage(img, x, y, w, h);
-                }
-
-                // Draw Text
-                if (slide.text) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 40px "Courier Prime", monospace';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    // Add text shadow
-                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 2;
-                    ctx.shadowOffsetY = 2;
-                    ctx.fillText(slide.text, 512, 500); // Bottom center
-                    ctx.shadowColor = 'transparent';
-                }
-
-                tex.needsUpdate = true;
-            } else {
-                // Check if image loaded late
-                const slide = slides[currentIndex];
-                if (slide.image && images[slide.image] && images[slide.image].complete && !tex.frameDrawn) {
-                    // Redraw to capture loaded image
-                    // Optimized: Set a flag or just force redraw if not sure?
-                    // We'll just rely on the next tick or force it in a simpler way if needed.
-                    // For now, let's just force redraw every frame if image is loading? No, expensive.
-                    // Let's assume preloading works fast enough or it catches next cycle.
-                }
-            }
-        }
-    };
-
-    return tex;
-}
-
-function initTVVideo() {
-    console.log("LIVING.JS v179-FIX: initTVVideo called.");
-    if (tvVideo) return;
-
-    tvScreensaverTexture = createTVScreensaver();
-
-    tvVideo = document.createElement('video');
-    const livingData = roomContent['living'];
-    if (livingData && livingData.videoPlaylist && livingData.videoPlaylist.length > 0) {
-        tvVideo.src = livingData.videoPlaylist[0].src;
-    } else {
-        tvVideo.src = '/assets/video/premonition.mp4';
-    }
-    tvVideo.loop = true; tvVideo.muted = false; tvVideo.autoplay = false;
-    tvVideo.preload = 'auto'; tvVideo.setAttribute('playsinline', '');
-    window.videoElement = tvVideo;
-    tvVideoTexture = new THREE.VideoTexture(tvVideo);
-    tvVideoTexture.minFilter = THREE.LinearFilter;
-    tvVideoTexture.magFilter = THREE.LinearFilter;
-    tvVideoTexture.colorSpace = THREE.SRGBColorSpace;
-}
-
-function playTVVideo(index) {
-    const playlist = roomContent['living'].videoPlaylist;
-    if (!playlist || !playlist[index]) return;
-    window.masterVideoIndex = index;
-    const clip = playlist[index];
-    console.log("Play TV Video:", clip.title);
-    if (window.audioPlayer && !window.audioPlayer.paused) {
-        window.audioPlayer.pause();
-        window.isMusicPlaying = false;
-        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-    }
-    // Unhighlight Audio
-    window.currentTrackIndex = -1;
-    if (window.updateMusicPanelHighlight) window.updateMusicPanelHighlight();
-    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-
-    if (tvVideo) {
-        tvVideo.src = clip.src; tvVideo.load();
-        if (tvVideo.paused) nextTVContent();
-        else tvVideo.play().catch(e => console.warn(e));
-    }
-    if (window.updateVideoUI) window.updateVideoUI();
-    if (window.livingTVMesh) {
-        window.livingTVMesh.material.map = tvVideoTexture;
-        window.livingTVMesh.material.needsUpdate = true;
-        window.livingTVMesh.userData.update = null;
-    }
-}
-
-function createVideoPanel(playlist) {
-    // Remove existing if any
-    const toRemove = [];
-    const clickablesToRemove = [];
-
-    // 1. Identify Groups and Items
-    interiorGroup.traverse(child => {
-        // Remove Main Group
-        if (child.userData && child.userData.type === 'videoInterfaceGroup') {
-            toRemove.push(child);
-        }
-        // Remove known items (just in case they are orphaned or we need to clear clickables)
-        if (child.userData && (child.userData.type === 'videoPanel' || child.userData.type === 'videoItem' || child.userData.type === 'tvVideoItem' || child.userData.type === 'videoHeader' || child.userData.type === 'videoControlSingle' || child.userData.type === 'universalVideoItem')) {
-            // Note: If we remove the Group, children go with it from Scene, but we MUST remove from interiorClickables
-            clickablesToRemove.push(child);
-            // If it's a legacy item (direct child), add to toRemove
-            if (child.parent === interiorGroup) toRemove.push(child);
-        }
-    });
-
-    // 2. Clear Clickables
-    clickablesToRemove.forEach(child => {
-        const idx = interiorClickables.indexOf(child);
-        if (idx > -1) interiorClickables.splice(idx, 1);
-    });
-
-    // 3. Remove Objects from Scene
-    toRemove.forEach(child => {
-        if (child.parent) child.parent.remove(child);
-    });
-
-    if (!playlist || playlist.length === 0) return;
-
-    if (window.createUniversalVideoInterface) {
-        // Position from Data or Fallback
-        const posData = roomContent['living'].videoInterfacePos || { x: 3.0, y: 3.2, z: -4.9 };
-        // V306: Scale 0.5x
-        window.createUniversalVideoInterface(interiorGroup, new THREE.Vector3(posData.x, posData.y, posData.z), playlist, {
-            scale: 0.5
-        });
-    }
-}
-
-window.stopLivingVideo = () => {
-    restoreCinemaLights();
-    if (tvVideo) {
-        tvVideo.pause(); tvVideo.muted = true;
-        console.log("Living Room Video Stopped & Muted (Cleanup)");
-        /*
-        const applyScreensaver = (mesh) => {
-             if (tvScreensaverTexture) {
-                 mesh.material.map = tvScreensaverTexture;
-                 mesh.userData.update = tvScreensaverTexture.userData.update; 
-             }
-        };
-        if (window.livingTVMesh) applyScreensaver(window.livingTVMesh);
-        else if (typeof tvMesh !== 'undefined') applyScreensaver(tvMesh);
-        */
-        // Revert to paused video texture (Premonition frame)
-        if (window.livingTVMesh) {
-            window.livingTVMesh.material.map = tvVideoTexture;
-            window.livingTVMesh.userData.update = null;
-        }
-        else if (typeof tvMesh !== 'undefined') {
-            tvMesh.material.map = tvVideoTexture;
-            tvMesh.userData.update = null;
-        }
-    }
-    window.masterVideoIndex = -1;
-    if (window.updateVideoUI) window.updateVideoUI();
-};
-
-function nextTVContent() {
-    // V-REFINE: Click toggles Play/Pause
-    if (tvVideo) {
-        if (tvVideo.paused) {
-            // --- ENTER CINEMA MODE (PLAY) ---
-            // STOP MUSIC when TV plays
-            if (window.audioPlayer && !window.audioPlayer.paused) {
-                window.audioPlayer.pause();
-                window.isMusicPlaying = false;
-                if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000); // Red = Off
-            }
-            // V-FIX: Ensure Button Is Red even if music was already off
-            if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
-
-
-            console.log("Cinema Mode: Capturing & Dimming Lights (LOCAL ONLY V-FIX)");
-
-            // 1. CAPTURE CURRENT STATE (Dynamic "Reverse" capability)
-            // V-FIX: Only capture if we haven't already (prevents capturing dimmed state when switching videos)
-            if (!window.preCinemaState) {
-                window.preCinemaState = {
-                    cozy: window.livingCozyLight ? window.livingCozyLight.intensity : 0.25, // Updated default
-                    library: window.livingLibrarySpot ? window.livingLibrarySpot.intensity : 0.25,
-                    spotL: window.bookcaseSpotL ? window.bookcaseSpotL.intensity : 0.25,
-                    spotR: window.bookcaseSpotR ? window.bookcaseSpotR.intensity : 0.25,
-                };
-            }
-
-            const dimTime = 1000;
-            const dimLevel = 0.0; // PITCH BLACK (Local)
-
-            try {
-                // Dim Room Lights (LOCAL ONLY)
-                if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-                if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: dimLevel }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // V294: Bloom TV Glow behind set
-                if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 3.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // V-FIX: Re-enable Ambient Dimming (Address "Too Bright" feedback)
-                // But Keep DirLight (Moon) ACTIVE for Outside visibility
-                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.0 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-                // Robot Glow - Keep it BRIGHT! (Do NOT dim)
-                if (window.metropolisRobot) {
-                    // Ensure robot is visible?
-                }
-                if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, dimTime).easing(TWEEN.Easing.Quadratic.Out).start();
-
-            } catch (e) {
-                console.error("TWEEN ERROR:", e);
-                // Fallback
-                if (window.livingCozyLight) window.livingCozyLight.intensity = dimLevel;
-            }
-
-            // V143: Fix Audio - Explicitly Unmute and Max Volume on Play
-            tvVideo.muted = false;
-            tvVideo.volume = 1.0;
-            tvVideo.play().catch(e => console.warn("TV Play Error", e));
-            tvVideo.play().catch(e => console.warn("TV Play Error", e));
-        } else {
-            // --- EXIT CINEMA MODE (PAUSE) ---
-            restoreCinemaLights();
-            if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 500).easing(TWEEN.Easing.Quadratic.Out).start();
-            tvVideo.pause();
-        }
-    }
-}
-window.nextTVContent = nextTVContent;
-window.playTVVideo = playTVVideo;
-
-function restoreCinemaLights() {
-    console.log("Cinema Mode: Restoring Lights (LOCAL ONLY)");
-
-    // Default Fallbacks if capture failed (V298: Moody Normal State)
-    // Updated V315-RELOADED-5: Brighter Defaults
-    const restore = window.preCinemaState || {
-        cozy: 0.5, library: 0.5, spotL: 0.3, spotR: 0.3, ambient: 0.15,
-    };
-
-    try {
-        if (window.livingCozyLight) new TWEEN.Tween(window.livingCozyLight).to({ intensity: restore.cozy }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-        if (window.livingLibrarySpot) new TWEEN.Tween(window.livingLibrarySpot).to({ intensity: restore.library }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // Restore bookcase spots
-        if (window.bookcaseSpotL) new TWEEN.Tween(window.bookcaseSpotL).to({ intensity: restore.spotL }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-        if (window.bookcaseSpotR) new TWEEN.Tween(window.bookcaseSpotR).to({ intensity: restore.spotR }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // Restore Ambient (V298: Moody Normal Default)
-        if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: restore.ambient || 0.15 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // V294: Restore TV Glow
-        if (window.livingTVGlow) new TWEEN.Tween(window.livingTVGlow).to({ intensity: 1.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-        // Restore robot glow
-        if (window.robotGlowLight) new TWEEN.Tween(window.robotGlowLight).to({ intensity: 2.5 }, 1000).easing(TWEEN.Easing.Quadratic.Out).start();
-
-    } catch (e) {
-        if (window.livingCozyLight) window.livingCozyLight.intensity = restore.cozy;
-    }
-
-    // V-FIX: Allow re-capture next time
-    window.preCinemaState = null;
-}
-// Export for global use
-window.restoreCinemaLights = restoreCinemaLights;
-
-window.stopLivingVideo = () => {
-    restoreCinemaLights();
-    if (tvVideo) {
-        tvVideo.pause();
-        tvVideo.muted = true;
-        tvVideo.pause();
-        tvVideo.muted = true;
-        console.log("Living Room Video Stopped & Muted (Cleanup)");
-
-        // V-NEW: Revert to Screensaver
-        // Need to find tvMesh. It is local to createLivingRoomInterior, but global 'tvMesh' variable might be used?
-        // Wait, 'tvMesh' is declared inside createLivingRoomInterior without 'let/const' in my view? 
-        // Line 639: 'tvMesh = ...' (Global assignment check). 
-        // If it is global, we can use it. If not, we should have assigned it to window.
-        if (window.livingTVMesh) {
-            if (tvScreensaverTexture) window.livingTVMesh.material.map = tvScreensaverTexture;
-        } else if (typeof tvMesh !== 'undefined') {
-            if (tvScreensaverTexture) tvMesh.material.map = tvScreensaverTexture;
-        }
-    }
-};
-
-// V326: Promoted createWoodMaterial to top-level for Hall/Living Room reuse
-const createWoodMaterial = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // V326: Darkened Base Color
-    ctx.fillStyle = '#8b5a2b';
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Wood Grain Pattern
-    ctx.fillStyle = 'rgba(60, 30, 10, 0.2)';
-    for (let i = 0; i < 200; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.bezierCurveTo(x + Math.random() * 20 - 10, 170, x + Math.random() * 20 - 10, 340, x + Math.random() * 20 - 10, 512);
-        ctx.lineWidth = 1 + Math.random() * 2;
-        ctx.strokeStyle = 'rgba(40, 20, 5, 0.25)';
-        ctx.stroke();
-    }
-
-    // Noise
-    for (let i = 0; i < 20000; i++) {
-        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.01)';
-        ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-
-    const mat = new THREE.MeshStandardMaterial({
-        map: tex,
-        color: 0xaa9977,
-        roughness: 0.8,
-        metalness: 0.1
-    });
-    return mat;
-};
-
-function createLivingRoomInterior() {
-    const wallsGroup = new THREE.Group();
-    // V138: Darker Interior Walls (0x8a3500 -> 0x451a00)
-    const wallMat = new THREE.MeshStandardMaterial({
-        color: 0x451a00,
-        roughness: 0.9,
-        metalness: 0.1,
-        side: THREE.DoubleSide
-    });
-
-    const wallGeoHB = new THREE.PlaneGeometry(10, 8);
-    const wallGeoV = new THREE.PlaneGeometry(10, 8);
-
-    const wallBack = new THREE.Mesh(wallGeoHB, wallMat);
-    wallBack.position.set(0, 4.0, -5.0);
-    wallBack.receiveShadow = true;
-    wallsGroup.add(wallBack);
-
-    const wallLeft = new THREE.Mesh(wallGeoV, wallMat);
-    wallLeft.rotation.y = Math.PI / 2;
-    wallLeft.position.set(-5.0, 4.0, 0);
-    wallLeft.receiveShadow = true;
-    wallsGroup.add(wallLeft);
-
-    interiorGroup.add(wallsGroup);
-
-    // --- LIGHTING ---
-    window.livingCozyLight = new THREE.PointLight(0xffaa00, 0.5, 15);
-    window.livingCozyLight.position.set(0, 5, 0);
-    window.livingCozyLight.castShadow = true;
-    // window.livingCozyLight.shadow.bias = -0.0001; // Reduce artifacts
-    interiorGroup.add(window.livingCozyLight);
-
-    window.livingLibrarySpot = new THREE.SpotLight(0xffffff, 0.5);
-    window.livingLibrarySpot.position.set(3, 7, 3);
-    window.livingLibrarySpot.angle = Math.PI / 4;
-    window.livingLibrarySpot.penumbra = 0.5;
-    window.livingLibrarySpot.castShadow = true;
-    window.livingLibrarySpot.target.position.set(3, 2, -4.9);
-    interiorGroup.add(window.livingLibrarySpot);
-    interiorGroup.add(window.livingLibrarySpot.target);
-
-    // V298: Moody Shelf lighting
-    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
-    const bookcaseSpotL = new THREE.SpotLight(0xfffaed, 0.3);
-    bookcaseSpotL.position.set(-2, 6, -3.5);
-    bookcaseSpotL.target.position.set(-4.5, 2.5, -3.5);
-    bookcaseSpotL.angle = Math.PI / 2.2;
-    bookcaseSpotL.penumbra = 1.0;
-    bookcaseSpotL.distance = 15;
-    bookcaseSpotL.castShadow = true;
-    bookcaseSpotL.shadow.radius = 4; // V204
-    interiorGroup.add(bookcaseSpotL);
-    interiorGroup.add(bookcaseSpotL.target);
-    window.bookcaseSpotL = bookcaseSpotL;
-
-    // V315-RELOADED-5: Brighter Spots (0.15 -> 0.3)
-    const bookcaseSpotR = new THREE.SpotLight(0xfffaed, 0.3);
-    bookcaseSpotR.position.set(-2, 6, 3.5);
-    bookcaseSpotR.target.position.set(-4.5, 2.5, 3.5);
-    bookcaseSpotR.angle = Math.PI / 2.2;
-    bookcaseSpotR.penumbra = 1.0;
-    bookcaseSpotR.distance = 15;
-    bookcaseSpotR.castShadow = true;
-    bookcaseSpotR.shadow.radius = 4; // V204
-    interiorGroup.add(bookcaseSpotR);
-    interiorGroup.add(bookcaseSpotR.target);
-    window.bookcaseSpotR = bookcaseSpotR;
-
-    // V201: Procedural Wood Texture Helper
-    const woodMat = createWoodMaterial();
-
-    // --- BOOKCASES ---
-    // V202: Reverted to Dark Shelf (User Request: "Only coffeetable and TV cupboard wood")
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x150e0a, roughness: 1.0 });
-    const bookColors = [0x991b1b, 0x1e40af, 0x166534, 0x854d0e, 0x3730a3, 0xfacc15];
-
-    // ... (Helper unchanged)
-
-    // (Helper Function body skipped, assuming context allows)
-    // Wait, createBookcase uses shelfMat, need to ensure helper sees new shelfMat
-
-    // ... Skipping Helper Body ...
-
-    // RUG & COUCH
-    // V138: Darker Rug (0x450a0a -> 0x220505)
-    // V138: Darker Couch (0x5d4037 -> 0x2e201b)
-
-    // Applying to lower section now...
-
-    // V147: Menorah Artifact (User Request)
-    // Traditional 7-branched Menorah. Middle candle lit.
-    // V224: Floating 7 Lights (User Request)
-    // V225: Floating Orb Artifact (User Request)
-    // V235: Ruin Artifact (User Request: Dark ruin, broad base, container for orb)
-    // V242: Refined Ruin (Volcano-like)
-    // V243: Refined Ruin (Yellow Orb, Higher, Clickable)
-    function createRuinArtifact() {
-        const group = new THREE.Group();
-
-        // 1. The Volcano Base
-        const baseGeo = new THREE.CylinderGeometry(0.15, 0.4, 0.4, 8);
-        const baseMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 1.0,
-            flatShading: true
-        });
-        const base = new THREE.Mesh(baseGeo, baseMat);
-        base.position.y = 0.2;
-        base.castShadow = true;
-        group.add(base);
-
-        // 2. The Orb (Yellow & Higher)
-        const orbGeo = new THREE.SphereGeometry(0.12, 16, 16); // Slightly bigger
-        const orbMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 }); // Yellow/Gold
-        const orb = new THREE.Mesh(orbGeo, orbMat);
-        // V-REFINE: Higher placement (0.35 -> 0.55) to float/sit prominently
-        orb.position.y = 0.55;
-        group.add(orb);
-
-        // 3. Pulsating Light (Yellow)
-        const light = new THREE.PointLight(0xffaa00, 2.0, 7);
-        light.position.copy(orb.position);
-        group.add(light);
-
-        // 4. BIG HITBOX (Covers Base + Orb + Surroundings)
-        // Make it easy to click!
-        const hitBox = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.45, 0.45, 0.9, 8), // Big cylinder
-            new THREE.MeshBasicMaterial({ visible: false })
-        );
-        hitBox.position.y = 0.45; // Center it
-        group.add(hitBox);
-
-        // Expose hitBox as the target
-        group.userData.hitTarget = hitBox;
-
-        group.userData = {
-            update: (t) => {
-                const pulse = 1.0 + Math.sin(t * 2) * 0.3;
-                light.intensity = 2.0 + pulse;
-                orb.scale.setScalar(1.0 + Math.sin(t * 4) * 0.05);
-            }
-        };
-
-        return group;
-    }
-
-    // V317: Void Candle Removed per user request
-    /*
-    function createVoidCandle() {
-        ...
-    }
-    */
-
-    function createBookcase(posZ) {
-        const bookcaseGroup = new THREE.Group();
-
-        // V-REFINE: Right Hinge Offset Logic
-        // If it's the Right Bookcase (posZ < 0), we want the Pivot at the Right Edge (+Z relative to center).
-        // Center of Geometry logic: Backing x=-0.4. Width Z=2.4 (-1.2 to 1.2).
-        // Right Edge is +1.2.
-        // So offset children by -1.2 Z.
-        // And offset Group Buffer position by +1.2 Z.
-        // posZ is the center position passed (-3.5 or 3.5).
-        // WAIT. 3.5 is the positive one?
-        // Line 446 calls: createBookcase(-3.5); createBookcase(3.5);
-        // Living Room Wall is along X=-5. Z axis runs along wall.
-        // "Right" when facing wall (-X) is +Z. So posZ = 3.5 is Right Bookcase.
-        // Wait, User said "open right bookcase (Z < 0)".
-        // Line 283 (`row === 4 && posZ < 0`) placed artifact on Z < 0.
-        // So User considers Z < 0 "Right".
-        // Facing -X (Wall), Z is RIGHT? 
-        // 3D Coords: X Right, Y Up, Z Forward (out of screen).
-        // If Wall is Back (-Z), then X is L/R.
-        // Here Wall is LEFT (-X). So we face -X.
-        // Forward is -X. Up is +Y. Right is -Z.
-        // So "Right Bookcase" is `posZ < 0`. Correct.
-        // Right Edge of this bookcase is -Z (further right).
-        // Center is `posZ` (-3.5).
-        // Width 2.4. Extent -1.2 to +1.2.
-        // "Right Edge" (locally) is -1.2 (Mesh coords).
-        // But relative to ROOM, "Right" is -Z direction.
-        // So "Right Edge" is the one with smaller Z value?
-        // Yes. `posZ - 1.2`.
-        // So we want Pivot at `posZ - 1.2`.
-        // So move Group to `posZ - 1.2`.
-        // Move Children `+1.2`.
-
-        let pivotOffsetZ = 0;
-        if (posZ < 0) {
-            pivotOffsetZ = 1.2;
-            // V-FIX: Explicitly assign Global Ref for Secret Door
-            window.secretDoorGroup = bookcaseGroup;
-            bookcaseGroup.userData.isSecretDoor = true; // Marker
-        }
-
-        const backing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5.2, 2.4), shelfMat);
-        backing.position.x = -0.4;
-        backing.position.z = pivotOffsetZ; // Offset
-        backing.castShadow = true; backing.receiveShadow = true;
-        bookcaseGroup.add(backing);
-
-        const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat);
-        sideL.position.z = -1.2 + pivotOffsetZ;
-        sideL.castShadow = true; sideL.receiveShadow = true;
-        bookcaseGroup.add(sideL);
-
-        const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.2, 0.1), shelfMat);
-        sideR.position.z = 1.2 + pivotOffsetZ;
-        sideR.castShadow = true; sideR.receiveShadow = true;
-        bookcaseGroup.add(sideR);
-
-        for (let row = 0; row < 5; row++) {
-            const shelfY = 0.5 + (row * 1.0);
-            const plank = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 2.4), shelfMat);
-            plank.position.y = shelfY - 2.5;
-            plank.position.z = pivotOffsetZ;
-            plank.castShadow = true; plank.receiveShadow = true;
-            bookcaseGroup.add(plank);
-
-            // V-NEW: Black Portal behind Right Bookcase
-            if (row === 0 && posZ < 0) {
-                // 1. The Visual Portal (Black Void)
-                const portalMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-                const portal = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 5.2), portalMat);
-                portal.position.set(-4.95, 2.6, posZ);
-                portal.rotation.y = Math.PI / 2;
-                portal.userData = { name: 'void', type: 'decoration' };
-                interiorGroup.add(portal);
-
-                // 2. Interaction: Make the WHOLE VOID clickable (User Request)
-                portal.userData = {
-                    type: 'enter_annex', // Tag for debugging
-                    onClick: () => {
-                        console.log("Black Void Clicked -> Enter Annex");
-                        enterRoom('annex');
-                    }
-                };
-                interiorClickables.push(portal);
-
-                // 3. Backup Hitbox (Invisible, In Front)
-                // Catches clicks if the wall obscures the edges
-                const portalHitBox = new THREE.Mesh(
-                    new THREE.PlaneGeometry(2.0, 5.0),
-                    new THREE.MeshBasicMaterial({ visible: false })
-                );
-                portalHitBox.position.z = 0.1; // Slightly in front of black plane
-                portalHitBox.userData = { onClick: portal.userData.onClick };
-                portal.add(portalHitBox);
-                interiorClickables.push(portalHitBox);
-
-
-                // 4. Candle Decoration REMOVED (V317)
-                /*
-                const candle = createVoidCandle();
-                ...
-                */
-
-                // Visibility Logic (Minimal)
-                portal.userData.update = (t) => {
-                    // console.log("Void interaction active");
-                };
-            }
-
-            // V-NEW: Artifact on Top Shelf of Right Bookcase (posZ < 0)
-            if (row === 4 && posZ < 0) {
-                // V235: Ruin Artifact
-                const artifact = createRuinArtifact();
-                // Sith on shelf. Base height ~0.4. Scaled 1.5 -> 0.6.
-                // Origin y=0.2 -> 0.3. Bottom at 0.
-                // Shelf Y is `shelfY`. Plank top `shelfY - 2.45`.
-                artifact.scale.setScalar(1.5);
-                artifact.position.set(0, shelfY - 2.45, 0 + pivotOffsetZ);
-
-                // CLICK TRIGGER - Attach to hitTarget (The Base Mesh)
-                const hitTarget = artifact.userData.hitTarget || artifact; // Fallback
-
-                // Define the Handler
-                const toggleDoor = () => {
-                    console.log("Ruin Clicked! Toggle Secret Door...");
-                    try {
-                        const squeak = new Audio('../assets/audio/squeak.mp3');
-                        squeak.volume = 1.0;
-                        squeak.play().catch(e => console.error("Squeak Play Fail:", e));
-                    } catch (err) {
-                        console.error("Audio Init Fail:", err);
-                    }
-
-                    const target = window.secretDoorGroup;
-                    if (!target) return;
-
-                    if (!target.userData.isOpen) {
-                        new TWEEN.Tween(target.rotation).to({ y: Math.PI / 2.5 }, 4000).easing(TWEEN.Easing.Quadratic.InOut).start();
-                        target.userData.isOpen = true;
-                    } else {
-                        new TWEEN.Tween(target.rotation).to({ y: 0 }, 2000).easing(TWEEN.Easing.Quadratic.InOut).start();
-                        target.userData.isOpen = false;
-                    }
-                };
-
-                // Attach handler to the mesh userData
-                hitTarget.userData = {
-                    type: 'open_secret',
-                    onClick: toggleDoor
-                };
-
-                // IMPORTANT: Push the Mesh (hitTarget) to interiorClickables
-                interiorClickables.push(hitTarget);
-
-                bookcaseGroup.add(artifact);
-            }
-
-            if (row === 1 && posZ < 0) {
-                // V166: RUBIK'S CUBE (Replaces old Tintin rocket)
-                const cubeGroup = createRubiksCubeArtifact();
-                cubeGroup.position.set(0.1, shelfY - 2.15, 0 + pivotOffsetZ);
-                bookcaseGroup.add(cubeGroup);
-            }
-            else if (row === 4 && posZ > 0) {
-                // V166: REALISTIC TINTIN ROCKET (on Top Left Shelf)
-                const rocket = createRealisticRocketArtifact();
-                rocket.scale.setScalar(0.022);
-                // V-FIX: Adjust Y to sit on shelf (was shelfY - 2.47 sinking in)
-                // Corrected to shelfY - 2.32
-                rocket.position.set(0.1, shelfY - 2.32, 0);
-                bookcaseGroup.add(rocket);
-            }
-            else if (row === 2 && posZ > 0) {
-                // GLOBE
-                const globe = new THREE.Group();
-                const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05), new THREE.MeshStandardMaterial({ color: 0x333333 }));
-                const ball = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
-                ball.position.y = 0.3;
-                globe.add(standBase, ball);
-                globe.position.set(0.1, shelfY - 2.45, 0); // No offset for Left bookcase
-                bookcaseGroup.add(globe);
-            }
-            else if (!(row === 4 && posZ < 0)) {
-                for (let b = 0; b < 13; b++) {
-                    const bW = 0.14;
-                    const bH = 0.5 + Math.random() * 0.3;
-                    const book = new THREE.Mesh(new THREE.BoxGeometry(0.6, bH, bW),
-                        new THREE.MeshStandardMaterial({ color: bookColors[Math.floor(Math.random() * bookColors.length)] }));
-                    const yPos = (shelfY - 2.5) + (bH / 2) + 0.05;
-                    const zPos = (-0.9 + (b * 0.16)) + pivotOffsetZ; // Offset books
-                    book.position.set(0.1, yPos, zPos);
-                    bookcaseGroup.add(book);
-                }
-            }
-        }
-
-        // Hinge Logic for Secret Door
-        if (posZ < 0) {
-            window.secretDoorGroup = bookcaseGroup;
-            bookcaseGroup.userData.isOpen = false;
-        }
-
-        bookcaseGroup.position.set(-4.5, 2.6, posZ - pivotOffsetZ); // Apply Pivot Translation
-        interiorGroup.add(bookcaseGroup);
-    };
-
-    createBookcase(-3.5); createBookcase(3.5);
-
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 1), woodMat); // V202: Wood Texture
-    stand.position.set(0, 0.75, -4);
-    stand.castShadow = true; stand.receiveShadow = true;
-    interiorGroup.add(stand);
-
-    const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 0.2), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-    tvFrame.position.set(0, 2.6, -4.5);
-    interiorGroup.add(tvFrame);
-
-    initTVVideo();
-
-    // -- MILD GLOW BEHIND TV --
-    // V-REFINE: Soft Blue Glow (Texture based, not rectangle)
-    // V294: Atmospheric TV Glow (Pulsates in Cinema Mode)
-    const tvGlow = new THREE.PointLight(0x88ccff, 1.5, 8);
-    tvGlow.position.set(0, 2.6, -4.8);
-    interiorGroup.add(tvGlow);
-    window.livingTVGlow = tvGlow;
-
-    // Create Soft Gradient Texture for the backing
-    const glowCanvas = document.createElement('canvas');
-    glowCanvas.width = 128; glowCanvas.height = 128;
-    const gCtx = glowCanvas.getContext('2d');
-    const grd = gCtx.createRadialGradient(64, 64, 20, 64, 64, 60);
-    grd.addColorStop(0, 'rgba(0, 100, 255, 0.4)'); // Blue center
-    grd.addColorStop(0.5, 'rgba(0, 50, 150, 0.1)');
-    grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    gCtx.fillStyle = grd; gCtx.fillRect(0, 0, 128, 128);
-
-    const glowTex = new THREE.CanvasTexture(glowCanvas);
-    const glowGeo = new THREE.PlaneGeometry(6, 4); // Slightly larger
-    const glowMat = new THREE.MeshBasicMaterial({
-        map: glowTex,
-        transparent: true,
-        opacity: 0.8,
-        depthWrite: false, // Prevent occlusion issues
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending // Glowy look
-    });
-    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-    glowMesh.position.set(0, 2.6, -4.95); // Just off wall
-    interiorGroup.add(glowMesh);
-
-    // V-WORDHUNT: Moved to Maria Interaction
-
-    // V-NEW: Create Video Menu Panel
-    if (roomContent['living'].videoPlaylist && roomContent['living'].videoPlaylist.length > 0) {
-        createVideoPanel(roomContent['living'].videoPlaylist);
-    }
-
-    const screenGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    // V-FIX: Start with Screensaver (Slideshow) if available
-    tvMesh = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tvScreensaverTexture || tvVideoTexture }));
-    tvMesh.position.set(0, 2.6, -4.39);
-
-    interiorGroup.add(tvMesh); // Ensure added using Variable reference (implied context)
-    tvMesh.userData = { type: 'tv', action: 'toggleVideo' };
-
-    // V294: TV Gloss Overlay (Glass Reflection)
-    const glassGeo = new THREE.PlaneGeometry(3.3, 1.8);
-    const glassMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        transparent: true,
-        opacity: 0.1,
-        metalness: 0.9,
-        roughness: 0.1,
-        depthWrite: false
-    });
-    const tvGlass = new THREE.Mesh(glassGeo, glassMat);
-    tvGlass.position.set(0, 2.6, -4.37); // Just in front of screen
-    interiorGroup.add(tvGlass);
-
-    // Attach Screensaver Update if active
-    if (tvScreensaverTexture && tvScreensaverTexture.userData.update) {
-        tvMesh.userData.update = tvScreensaverTexture.userData.update;
-    }
-
-    interiorGroup.add(tvMesh);
-    interiorClickables.push(tvMesh);
-    window.livingTVMesh = tvMesh; // V-FIX: Expose for screensaver revert
-
-    const table = new THREE.Mesh(
-        new THREE.BoxGeometry(2.25, 0.6, 2.25),
-        woodMat // V201: Use Shared Wood Material
-    );
-    table.position.set(0, 0.3, -1.0);
-    table.castShadow = true; table.receiveShadow = true;
-    interiorGroup.add(table);
-
-    // 4. Console Table (Center)
-
-    function createBook(title, color, x, z, rotY, imagePath) {
-        const bGeo = new THREE.BoxGeometry(0.5, 0.08, 0.7);
-        let coverMat;
-        if (imagePath) {
-            const diffTex = new THREE.TextureLoader().load(imagePath);
-            diffTex.colorSpace = THREE.SRGBColorSpace;
-            coverMat = new THREE.MeshStandardMaterial({ map: diffTex, color: 0xffffff });
-        } else {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 356;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = color; ctx.fillRect(0, 0, 256, 356);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px Georgia, serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(title, 128, 100);
-            ctx.fillRect(10, 0, 20, 356);
-            const tex = new THREE.CanvasTexture(canvas);
-            coverMat = new THREE.MeshStandardMaterial({ map: tex });
-        }
-        const bMat = [
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-            coverMat,
-            new THREE.MeshStandardMaterial({ color: color }),
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-            new THREE.MeshStandardMaterial({ color: 0xeeeeee })
-        ];
-        const mesh = new THREE.Mesh(bGeo, bMat);
-        mesh.position.set(x, 0.65, z);
-        mesh.rotation.y = rotY;
-        mesh.castShadow = true;
-        interiorGroup.add(mesh);
-    }
-
-    createBook("Tonic for\nthe Bones", '#8b0000', -0.6, -1.4, 0.2, '/assets/images/tftb-cover.jpg');
-    createBook("Phantom\nParents", '#1a237e', -0.4, -0.4, -0.1, '/assets/images/phantomparents-cover.jpg');
-    createBook("Gifts", '#065f46', 0.5, -0.9, -0.3, '/assets/images/gifts-cover.jpg');
-
-    const cardGeo = new THREE.BoxGeometry(0.6, 0.15, 0.9);
-    const cardCanvas = document.createElement('canvas');
-    cardCanvas.width = 256; cardCanvas.height = 384;
-    const cctx = cardCanvas.getContext('2d');
-    cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 256, 384);
-    cctx.fillStyle = '#000000'; cctx.font = 'bold 22px Arial, sans-serif'; cctx.textAlign = 'center';
-    cctx.fillText("CONVERSATION", 128, 185);
-    const cardTex = new THREE.CanvasTexture(cardCanvas);
-    const cardMat = new THREE.MeshStandardMaterial({ map: cardTex });
-    const cardMesh = new THREE.Mesh(cardGeo, [
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        cardMat,
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-        new THREE.MeshStandardMaterial({ color: 0xeeeeee })
-    ]);
-    cardMesh.position.set(0, 0.45, -1.0);
-    cardMesh.userData = { type: 'decoration' };
-    interiorGroup.add(cardMesh); // Updated: Removed click logic/hologram
-
-    // V171: Dark Red Rug (0x220505 -> 0x6b0505)
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 }));
-    rug.rotation.x = -Math.PI / 2; rug.position.y = 0.02;
-    rug.receiveShadow = true; // V204: Receive Shadows
-    interiorGroup.add(rug);
-
-    // V138: Darker Couch (0x5d4037 -> 0x2e201b)
-    const couchMat = new THREE.MeshStandardMaterial({ color: 0x2e201b });
-    const couchGroup = new THREE.Group();
-    const s = new THREE.Mesh(new THREE.BoxGeometry(3, 0.4, 1.2), couchMat);
-    s.position.y = 0.5; couchGroup.add(s);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 0.3), couchMat);
-    b.position.set(0, 1.0, 0.55); couchGroup.add(b);
-    const aL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 1.3), couchMat);
-    aL.position.set(-1.6, 0.7, 0); couchGroup.add(aL);
-    const aR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 1.3), couchMat);
-    aR.position.set(1.6, 0.7, 0); couchGroup.add(aR);
-    couchGroup.position.set(0, -0.3, 2.5);
-    interiorGroup.add(couchGroup);
-
-    const chairGroup = new THREE.Group();
-    const cS = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.2), couchMat);
-    cS.position.y = 0.5; chairGroup.add(cS);
-    const cB = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.3), couchMat);
-    cB.position.set(0, 1.0, 0.55); chairGroup.add(cB);
-    const cAL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 1.3), couchMat);
-    cAL.position.set(-0.7, 0.7, 0); chairGroup.add(cAL);
-    const cAR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 1.3), couchMat);
-    cAR.position.set(0.7, 0.7, 0); chairGroup.add(cAR);
-    chairGroup.position.set(3.5, -0.3, -1.0);
-    chairGroup.rotation.y = Math.PI / 2;
-    interiorGroup.add(chairGroup);
-
-    try {
-        if (typeof createMetropolisRobot === 'function') {
-            window.metropolisRobot = createMetropolisRobot();
-            window.metropolisRobot.position.set(4.5, 0, -4.0);
-            window.metropolisRobot.rotation.y = -0.5;
-            window.metropolisRobot.scale.set(1.125, 1.125, 1.125);
-            interiorGroup.add(window.metropolisRobot);
-
-            const robotGlow = new THREE.PointLight(0x00ffff, 2.5, 12);
-            robotGlow.position.set(0, 1.5, 0.5);
-            window.metropolisRobot.add(robotGlow);
-            window.robotGlowLight = robotGlow;
-
-            // V-FIX: Explicit Hitbox for Maria (Easier Clicking)
-            // V-FIX 19: Enable depthWrite: false to preventing occluding the Glow/Rings!
-            // V-FIX 21: Invisible again (User verified)
-            const hitGeo = new THREE.CylinderGeometry(0.8, 0.8, 3.5, 16);
-            const hitMat = new THREE.MeshBasicMaterial({
-                visible: true,
-                color: 0xffff00,
-                wireframe: false, // Hidden
-                transparent: true,
-                opacity: 0.0, // Hidden
-                depthWrite: false // CRITICAL: Stop blocking the glow/rings behind it
-            });
-            const hitBox = new THREE.Mesh(hitGeo, hitMat);
-            hitBox.position.y = 1.0;
-            hitBox.userData = { type: 'MariaHitbox', parentRobot: true };
-            window.metropolisRobot.add(hitBox);
-
-            // V-WORDHUNT: Hidden Orb in Maria
-            if (typeof WordHunt !== 'undefined') {
-                const item = WordHunt.createInteractable('living');
-                if (item) {
-                    item.position.set(0, 1.5, 0);
-                    item.scale.set(0.1, 0.1, 0.1);
-                    item.visible = false;
-                    window.metropolisRobot.add(item);
-
-                    // Click Handler for Robot
-                    // We need to ensure the robot mesh itself is clickable or we add a hitbox
-                    window.metropolisRobot.userData.type = 'MariaRobot';
-                    window.metropolisRobot.userData.onClick = () => {
-                        if (item.userData.revealed) return;
-
-                        console.log("Maria Clicked! Popping out orb...");
-                        item.visible = true;
-                        item.userData.revealed = true;
-
-                        // Animate Pop Out
-                        new TWEEN.Tween(item.position)
-                            .to({ y: 3.0 }, 1500)
-                            .easing(TWEEN.Easing.Elastic.Out)
-                            .start();
-
-                        new TWEEN.Tween(item.scale)
-                            .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
-                            .easing(TWEEN.Easing.Elastic.Out)
-                            .start();
-                    };
-
-                    // V-FIX: Double-Bind! Attach ONE handler to the Hitbox too
-                    hitBox.userData.onClick = window.metropolisRobot.userData.onClick;
-
-                    if (window.interiorClickables) {
-                        window.interiorClickables.push(window.metropolisRobot);
-                        // Push hitbox too just in case raycaster hits it first and stops?
-                        // (intersectObjects true handles children, but pushing explicit is safer if hierarchy logic is strict)
-                        // Actually, pushing the GROUP (robot) is usually enough.
-                    }
-                }
-            }
-        }
-    } catch (e) {
-        console.warn("Living Room Robot Init Failed", e);
-    }
-}
-// --- ARTIFACT HELPERS (V166) ---
-
-function createRubiksCubeArtifact() {
-    const group = new THREE.Group();
-    const cubeSize = 0.12;
-    const spacing = 0.13;
-    const colors = [0xffffff, 0xffff00, 0xff0000, 0xffa500, 0x0000ff, 0x00ff00]; // W, Y, R, O, B, G
-
-    for (let x = -1; x <= 1; x++) {
-        for (let y = -1; y <= 1; y++) {
-            for (let z = -1; z <= 1; z++) {
-                if (x === 0 && y === 0 && z === 0) continue; // Hollow core
-
-                const materials = [];
-                for (let i = 0; i < 6; i++) {
-                    // Random-ish rotation/scramble look
-                    materials.push(new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)], roughness: 0.1 }));
-                }
-
-                // Black frame/border effect
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), materials);
-                mesh.position.set(x * spacing, y * spacing, z * spacing);
-                group.add(mesh);
-
-                // Add dark edges
-                const edges = new THREE.EdgesGeometry(mesh.geometry);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
-                mesh.add(line);
-            }
-        }
-    }
-    group.scale.setScalar(0.85); // Adjust for shelf fit
-    return group;
-}
-
-function createRealisticRocketArtifact() {
-    const rocket = new THREE.Group();
-    const size = 512;
-    const canvas = document.createElement('canvas');
-    canvas.width = size; canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const RED = '#d40000'; const WHITE = '#fcfcfc';
-    const bottomEdge = 0.32 * size;
-    const checkerHeight = 0.44 * size;
-    const rowH = checkerHeight / 5;
-    const cols = 10; const colW = size / cols;
-
-    ctx.fillStyle = RED; ctx.fillRect(0, size - bottomEdge, size, bottomEdge);
-    for (let i = 0; i < 5; i++) {
-        const y = size - bottomEdge - (i + 1) * rowH;
-        for (let j = 0; j < cols; j++) {
-            ctx.fillStyle = (i + j) % 2 === 0 ? RED : WHITE;
-            ctx.fillRect(j * colW, y, colW, rowH);
-        }
-    }
-    ctx.fillStyle = RED; ctx.fillRect(0, 0, size, size - bottomEdge - checkerHeight);
-
-    const rocketTexture = new THREE.CanvasTexture(canvas);
-    rocketTexture.wrapS = THREE.RepeatWrapping; rocketTexture.wrapT = THREE.RepeatWrapping;
-
-    const rocketMat = new THREE.MeshStandardMaterial({ map: rocketTexture, roughness: 0.2, metalness: 0.1 });
-    const redMat = new THREE.MeshStandardMaterial({ color: 0xd40000, roughness: 0.32 });
-
-    const points = [];
-    const h = 30; const bulgePoint = 0.58; const baseRadius = 1.1; const maxRadius = 2.6;
-    for (let i = 0; i <= 100; i++) {
-        const t = i / 100; const y = t * h;
-        let x;
-        if (t < bulgePoint) {
-            const localT = t / bulgePoint;
-            x = baseRadius + (maxRadius - baseRadius) * Math.sin(localT * Math.PI / 2);
-        } else {
-            const localT = (t - bulgePoint) / (1 - bulgePoint);
-            x = maxRadius * Math.pow(Math.cos(localT * Math.PI / 2), 0.8);
-        }
-        points.push(new THREE.Vector2(x, y));
-    }
-    points.unshift(new THREE.Vector2(0, 0));
-
-    const body = new THREE.Mesh(new THREE.LatheGeometry(points, 32), rocketMat);
-    rocket.add(body);
-
-    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 3, 12), redMat);
-    tip.position.y = h + 1.5;
-    rocket.add(tip);
-
-    for (let i = 0; i < 3; i++) {
-        const legGroup = new THREE.Group();
-        legGroup.rotation.y = (i * Math.PI * 2) / 3;
-        const legShape = new THREE.Shape();
-        legShape.moveTo(1.2, 7.2); legShape.lineTo(2.2, 7.2);
-        legShape.bezierCurveTo(9.0, 5.7, 10.5, -1.3, 10.5, -3.7);
-        legShape.lineTo(8.0, -3.7);
-        legShape.bezierCurveTo(8.0, -0.5, 4.0, 1.5, 1.2, 2.7);
-        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(legShape, { depth: 1.6, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 3 }), redMat);
-        leg.position.set(0, 0, -0.8);
-        const pod = new THREE.Mesh(new THREE.SphereGeometry(2.0, 16, 16), redMat);
-        pod.scale.set(1, 1.35, 1); pod.position.set(9.2, -3.4, 0.8);
-        leg.add(pod);
-        legGroup.add(leg);
-        rocket.add(legGroup);
-    }
-    return rocket;
-}
-
-window.createRealisticRocketArtifact = createRealisticRocketArtifact;
-window.createRubiksCubeArtifact = createRubiksCubeArtifact;
-window.createLivingRoomInterior = createLivingRoomInterior;
-function createAnnexInterior() {
-    // --- LIGHTING ---
-    // --- CANDLE MESH & LIGHT ---
-    const candleGroup = new THREE.Group();
-    // 1. Wax Body
-    const waxGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2);
-    const waxMat = new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.3 });
-    const wax = new THREE.Mesh(waxGeo, waxMat);
-    wax.position.y = 0.1; // Base at 0
-    candleGroup.add(wax);
-
-    // 2. Wick
-    const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-    wick.position.y = 0.22;
-    candleGroup.add(wick);
-
-    // 3. Flame Visual
-    const flameGeo = new THREE.SphereGeometry(0.02, 8, 8);
-    const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-    const flame = new THREE.Mesh(flameGeo, flameMat);
-    flame.position.y = 0.25;
-    candleGroup.add(flame);
-
-    // 4. Light Source
-    // V306: Darker (0.5 -> 0.3)
-    const annexLight = new THREE.PointLight(0xffaa00, 0.3, 15); // Reduced range from 12 to 5 for intimacy
-    annexLight.position.set(0, 0.35, 0); // Local to group
-    annexLight.castShadow = true;
-    // V-FIX: Soft/Blurry Shadows
-    annexLight.shadow.radius = 4;
-    annexLight.shadow.mapSize.width = 512;
-    annexLight.shadow.mapSize.height = 512;
-    // V-FIX: Shadow Bias to prevent self-shadowing artifacts (the "mysterious dark shadow")
-    annexLight.shadow.bias = -0.001;
-    annexLight.userData = {
-        baseIntensity: 1.2,
-        update: (t) => {
-            const flicker = 1.2 + Math.sin(t * 15) * 0.15 + Math.cos(t * 33) * 0.15;
-            annexLight.intensity = flicker;
-            flame.scale.setScalar(0.8 + (flicker - 1.2) * 2); // Pulse visual flame too
-        }
-    };
-    candleGroup.add(annexLight);
-
-    // Position Group on Desk
-    // Desk Top Surface: y=1.0 + 0.075 = 1.075
-    candleGroup.position.set(1.0, 1.075, -1.0);
-    interiorGroup.add(candleGroup);
-
-    // Helper to run updates
-    const animator = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.001, 0.001), new THREE.MeshBasicMaterial({ visible: false }));
-    animator.castShadow = false; // V-FIX: Ensure hidden helper doesn't cast shadow
-    animator.userData = { update: (t) => { annexLight.userData.update(t); } };
-    interiorGroup.add(animator);
-
-    // --- CONTENT ---
-
-    // 1. Narrow Rounded Bed (Left Wall)
-    const bedWidth = 1.8, bedDepth = 3.8, radius = 0.2;
-    const shape = new THREE.Shape();
-    shape.moveTo(-bedWidth / 2 + radius, -bedDepth / 2);
-    shape.lineTo(bedWidth / 2 - radius, -bedDepth / 2);
-    shape.absarc(bedWidth / 2 - radius, -bedDepth / 2 + radius, radius, -Math.PI / 2, 0, false);
-    shape.lineTo(bedWidth / 2, bedDepth / 2 - radius);
-    shape.absarc(bedWidth / 2 - radius, bedDepth / 2 - radius, radius, 0, Math.PI / 2, false);
-    shape.lineTo(-bedWidth / 2 + radius, bedDepth / 2);
-    shape.absarc(-bedWidth / 2 + radius, bedDepth / 2 - radius, radius, Math.PI / 2, Math.PI, false);
-    shape.lineTo(-bedWidth / 2, -bedDepth / 2 + radius);
-    shape.absarc(-bedWidth / 2 + radius, -bedDepth / 2 + radius, radius, Math.PI, Math.PI * 1.5, false);
-
-    const bedGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.4, bevelEnabled: false });
-    bedGeo.rotateX(Math.PI / 2);
-    const bedMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 1.0 });
-    const bed = new THREE.Mesh(bedGeo, bedMat);
-    // V-FIX: Move away from wall (-1.0 -> -0.9) to fix shadow artifact
-    bed.position.set(-0.9, 0.4, 0);
-    bed.castShadow = true; bed.receiveShadow = true;
-    interiorGroup.add(bed);
-
-    // Rounded Rectangle Pillow
-    const pW = 1.4, pD = 0.7, pR = 0.2;
-    const pShape = new THREE.Shape();
-    pShape.moveTo(-pW / 2 + pR, -pD / 2);
-    pShape.lineTo(pW / 2 - pR, -pD / 2);
-    pShape.absarc(pW / 2 - pR, -pD / 2 + pR, pR, -Math.PI / 2, 0, false);
-    pShape.lineTo(pW / 2, pD / 2 - pR);
-    pShape.absarc(pW / 2 - pR, pD / 2 - pR, pR, 0, Math.PI / 2, false);
-    pShape.lineTo(-pW / 2 + pR, pD / 2);
-    pShape.absarc(-pW / 2 + pR, pD / 2 - pR, pR, Math.PI / 2, Math.PI, false);
-    pShape.lineTo(-pW / 2, -pD / 2 + pR);
-    pShape.absarc(-pW / 2 + pR, -pD / 2 + pR, pR, Math.PI, Math.PI * 1.5, false);
-
-    const pillowGeo = new THREE.ExtrudeGeometry(pShape, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3 });
-    pillowGeo.rotateX(Math.PI / 2);
-    const pillow = new THREE.Mesh(pillowGeo, new THREE.MeshStandardMaterial({ color: 0x555555 }));
-    // V-FIX: Move together with bed (-0.9)
-    pillow.position.set(-0.9, 0.45, 1.4);
-    pillow.castShadow = true; pillow.receiveShadow = true;
-    interiorGroup.add(pillow);
-
-    // Blanket (Thin & Flush)
-    // V-FIX: Reduced width (1.82 -> 1.75) to prevent clipping into wall
-    const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.02, 2.2), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1.0 }));
-    // V-FIX: Move with bed (-0.9)
-    blanket.position.set(-0.9, 0.41, -0.1);
-    interiorGroup.add(blanket);
-
-    // V-FIX: Chair closer to desk (-0.8) and scaled (0.75)
-    const chair = createAnnexChair();
-    chair.position.set(0.5, 0, -0.8);
-    chair.rotation.y = -0.3;
-    interiorGroup.add(chair);
-
-    // 2. Wall mounted Bookshelves
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x150e0a, roughness: 1.0 });
-    const darkBooks = [0x1a1510, 0x2b1d14, 0x0a0a0a, 0x3e2723, 0x1b2612];
-
-    function createWallShelf(x, y, z, rotY = 0) {
-        const shelfGroup = new THREE.Group();
-        const plank = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 0.6), shelfMat);
-        plank.castShadow = true; plank.receiveShadow = true;
-        shelfGroup.add(plank);
-        for (let i = 0; i < 10; i++) {
-            const bH = 0.4 + Math.random() * 0.2, bW = 0.15 + Math.random() * 0.1;
-            const book = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, 0.4), new THREE.MeshStandardMaterial({ color: darkBooks[Math.floor(Math.random() * darkBooks.length)] }));
-            book.position.set(-1.0 + (i * 0.22), 0.05 + bH / 2, 0);
-            book.castShadow = true; book.receiveShadow = true;
-            shelfGroup.add(book);
-        }
-        shelfGroup.position.set(x, y, z); shelfGroup.rotation.y = rotY;
-        interiorGroup.add(shelfGroup);
-    }
-    // V311: Moved from -1.95 to -1.7 to prevent wall piercing
-    createWallShelf(-1.7, 2.0, 0, Math.PI / 2);
-    createWallShelf(-1.7, 2.8, 0, Math.PI / 2);
-
-    // 3. Narrow Suitcase
-    const suitcase = createSuitcase();
-    suitcase.scale.set(1.0, 1.0, 1.4);
-    // V-FIX: On the Floor (y=0.0) - Was y=0.2 (floating)
-    suitcase.position.set(1.4, 0.0, 1.6);
-    suitcase.rotation.y = 0.4;
-    interiorGroup.add(suitcase);
-
-    // 4. Desk
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 }); // Re-using woodMat from chair for consistency
-    const deskGroup = new THREE.Group();
-    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.15, 1.2), woodMat);
-    deskTop.position.y = 1.0;
-    deskTop.castShadow = true; deskTop.receiveShadow = true;
-    deskGroup.add(deskTop);
-    const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.0);
-    // V173: Removed left legs (mounted to wall)
-    const legBR = new THREE.Mesh(legGeo, woodMat); legBR.position.set(1.4, 0.5, -0.45);
-    legBR.castShadow = true; legBR.receiveShadow = true;
-    const legFR = new THREE.Mesh(legGeo, woodMat); legFR.position.set(1.4, 0.5, 0.45);
-    legFR.castShadow = true; legFR.receiveShadow = true;
-    deskGroup.add(legBR, legFR);
-    // V173: Mounted to Left Wall (X=-2), so group shifts by -0.4 (Center at -0.4, Width 3.2)
-    deskGroup.position.set(-0.4, 0, -1.3);
-
-    // V171: Populate desk with items
-    addDeskItems(deskGroup);
-
-    // V173: Diary Hologram in 3D Space
-    createDiaryHologram(deskGroup);
-
-    interiorGroup.add(deskGroup);
-
-    // V-NEW: Moving Rothko Painting (High up on Wall)
-    createRothkoPainting();
-
-    // V-WORDHUNT: Handled in Suitcase creation (Lines 230+)
-    /*
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('annex');
-        if (item) {
-            item.position.set(0, 1.5, 0); // Near Chair
-            interiorGroup.add(item);
-        }
-    }
-    */
-}
-
-function createAnnexChair() {
-    const chair = new THREE.Group();
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 });
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.6), woodMat);
-    seat.position.y = 0.5; seat.castShadow = true; seat.receiveShadow = true; chair.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.1), woodMat);
-    back.position.set(0, 0.9, 0.25); back.castShadow = true; back.receiveShadow = true; chair.add(back);
-    for (let x of [-0.25, 0.25]) {
-        for (let z of [-0.25, 0.25]) {
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), woodMat);
-            leg.position.set(x, 0.25, z); leg.castShadow = true; leg.receiveShadow = true; chair.add(leg);
-        }
-    }
-    chair.scale.setScalar(1.1); return chair;
-}
-
-function createSuitcase() {
-    const group = new THREE.Group();
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 0.8 });
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 });
-
-    // 1. Bottom Part (Half Height)
-    const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), bodyMat);
-    bottom.castShadow = true; bottom.receiveShadow = true;
-    bottom.position.y = 0.1; // 0 to 0.2
-    group.add(bottom);
-
-    // 2. Lid Group (Pivots at back Z edge)
-    const lidGroup = new THREE.Group();
-    // Pivot Point: Top of bottom part (y=0.2), Back edge (z=-0.25)
-    lidGroup.position.set(0, 0.2, -0.25);
-
-    // Lid Mesh (Offset so pivot is at corner)
-    // Lid is 0.2 high. Center should be at z=0.25 relative to pivot?
-    // Geometry center is 0. 
-    // We want the mesh to sit from Z=0 to Z=0.5 relative to pivot Group?
-    // Let's align it.
-    const lidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), bodyMat);
-    lidMesh.position.set(0, 0.1, 0.25); // Move up 0.1 and forward 0.25
-    lidMesh.castShadow = true; lidMesh.receiveShadow = true;
-    lidGroup.add(lidMesh);
-
-    // Straps (Attached to Lid and Bottom)
-    // Simplified: Just put straps on Lid for visual continuity when opening?
-    // Or split straps. Let's put visual straps on Lid.
-    const strapGeo = new THREE.BoxGeometry(0.05, 0.22, 0.52);
-    const s1 = new THREE.Mesh(strapGeo, new THREE.MeshStandardMaterial({ color: 0x2b1d14 }));
-    s1.position.set(-0.25, 0.1, 0.25);
-    lidGroup.add(s1);
-    const s2 = s1.clone();
-    s2.position.set(0.25, 0.1, 0.25);
-    lidGroup.add(s2);
-
-    // Handle (On Lid)
-    // V-FIX: Full Torus (Math.PI -> Math.PI * 2) to look complete
-    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 8, 16, Math.PI * 2), metalMat);
-    handle.rotation.z = Math.PI / 2;
-    handle.rotation.x = -Math.PI / 2; // Flat on top
-    handle.position.set(0, 0.2, 0.25); // On top of lid
-    lidGroup.add(handle);
-
-    group.add(lidGroup);
-
-    // V-WORDHUNT Integration (Directly here to couple with Suitcase logic)
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('annex');
-        if (item) {
-            // Hide "Inside" (Sitting on bottom)
-            item.position.set(0, 0.3, 0);
-            item.scale.set(0.1, 0.1, 0.1);
-            item.visible = false;
-            group.add(item); // Add to Suitcase Group
-
-            // Click Handler
-            const openSuitcase = () => {
-                if (!lidGroup.userData.isOpen) {
-                    console.log("Suitcase Clicked - OPENING");
-                    lidGroup.userData.isOpen = true;
-                    new TWEEN.Tween(lidGroup.rotation).to({ x: -Math.PI / 2.5 }, 1200).easing(TWEEN.Easing.Quadratic.Out).start();
-                    item.visible = true; item.userData.revealed = true;
-                    new TWEEN.Tween(item.position).to({ y: 1.5 }, 1800).easing(TWEEN.Easing.Elastic.Out).start();
-                    new TWEEN.Tween(item.scale).to({ x: 1.0, y: 1.0, z: 1.0 }, 1800).easing(TWEEN.Easing.Elastic.Out).start();
-                } else {
-                    console.log("Suitcase Clicked - SHUTTING");
-                    lidGroup.userData.isOpen = false;
-                    new TWEEN.Tween(lidGroup.rotation).to({ x: 0 }, 800).easing(TWEEN.Easing.Quadratic.In).start();
-                    new TWEEN.Tween(item.position).to({ y: 0.3 }, 800).easing(TWEEN.Easing.Quadratic.In).onComplete(() => { if (!lidGroup.userData.isOpen) item.visible = false; }).start();
-                    new TWEEN.Tween(item.scale).to({ x: 0.1, y: 0.1, z: 0.1 }, 800).easing(TWEEN.Easing.Quadratic.In).start();
-                }
-            };
-
-            // Hitbox for clicking
-            const hitBox = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.6, 0.8), new THREE.MeshBasicMaterial({ visible: false }));
-            hitBox.position.y = 0.3;
-            hitBox.castShadow = false; // V-FIX: No shadow for hitbox
-            hitBox.userData = { onClick: openSuitcase, type: 'suitcase' };
-            group.add(hitBox);
-
-            if (window.interiorClickables) interiorClickables.push(hitBox);
-        }
-    }
-
-    return group;
-}
-function addDeskItems(deskGroup) {
-    const paperMat = new THREE.MeshStandardMaterial({ color: 0xfffffc, roughness: 0.8 });
-
-    // 1. Scattered Papers
-    for (let i = 0; i < 5; i++) {
-        const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.297), paperMat); // A4 ratio
-        paper.rotation.x = -Math.PI / 2;
-        paper.position.set((Math.random() - 0.5) * 2.5, 1.08 + i * 0.001, (Math.random() - 0.5) * 0.8);
-        paper.rotation.z = Math.random() * Math.PI;
-        deskGroup.add(paper);
-    }
-
-    // 2. Newspapers
-    const newsCanvas = document.createElement('canvas');
-    newsCanvas.width = 256; newsCanvas.height = 256;
-    const nctx = newsCanvas.getContext('2d');
-    nctx.fillStyle = '#cccccc'; nctx.fillRect(0, 0, 256, 256);
-    nctx.fillStyle = '#333333'; nctx.font = 'bold 20px serif';
-    nctx.fillText("DAILY GAZETTE", 40, 50);
-    nctx.fillRect(40, 60, 180, 2);
-    for (let i = 0; i < 10; i++) nctx.fillRect(40, 80 + i * 15, 180, 8);
-    const newsTex = new THREE.CanvasTexture(newsCanvas);
-    const newsMat = new THREE.MeshStandardMaterial({ map: newsTex });
-
-    const news = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3), newsMat);
-    news.rotation.x = -Math.PI / 2;
-    news.position.set(1.2, 1.085, 0.2);
-    news.rotation.z = 0.4;
-    deskGroup.add(news);
-
-    // 3. Books
-    const bookColors = [0x451a03, 0x1a2e05, 0x051a45, 0x222222];
-    for (let i = 0; i < 3; i++) {
-        const book = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.45), new THREE.MeshStandardMaterial({ color: bookColors[i % bookColors.length] }));
-        book.position.set(-1.1, 1.1 + i * 0.06, -0.2);
-        book.rotation.y = 0.1 * i;
-        deskGroup.add(book);
-    }
-
-    // 4. THE DIARY (Open)
-    const diaryGroup = new THREE.Group();
-    const pageGeo = new THREE.PlaneGeometry(0.25, 0.35);
-    const leftPage = new THREE.Mesh(pageGeo, paperMat);
-    leftPage.position.x = -0.125;
-    leftPage.rotation.y = 0.15;
-
-    const rightPage = new THREE.Mesh(pageGeo, paperMat);
-    rightPage.position.x = 0.125;
-    rightPage.rotation.y = -0.15;
-
-    diaryGroup.add(leftPage, rightPage);
-    diaryGroup.rotation.x = -Math.PI / 2;
-    diaryGroup.position.set(0, 1.1, 0.1);
-    diaryGroup.userData = { type: 'diary' };
-
-    deskGroup.add(diaryGroup);
-    interiorClickables.push(diaryGroup);
-}
-
-function createDiaryHologram(parent) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-
-    // 1. Glowing Background (Even Blurrier / More Diffuse Cyan)
-    const grad = ctx.createRadialGradient(256, 512, 0, 256, 512, 512);
-    grad.addColorStop(0, 'rgba(0, 255, 255, 0.4)'); // Reduced center opacity
-    grad.addColorStop(0.3, 'rgba(0, 255, 255, 0.2)');
-    grad.addColorStop(0.6, 'rgba(0, 255, 255, 0.05)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 1024);
-
-    // 2. White Courier Font Letters with Cyan Glow
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = '#00ffff';
-    ctx.shadowBlur = 15;
-    ctx.font = '900 42px Arial, sans-serif'; // V326 Unification
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const lines = [
-        '"You should',
-        'always be',
-        'prepared to',
-        'pack your',
-        'bags and',
-        'move west..."'
-    ];
-
-    const startY = 320;
-    const spacing = 70;
-    lines.forEach((line, i) => {
-        ctx.fillText(line, 256, startY + i * spacing);
-    });
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        depthTest: false,
-        blending: THREE.AdditiveBlending // Switch to Additive for glowing white text pop
-    });
-
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 4.0), mat);
-    // V178: Adjusted Pivot Logic - Move Geometry so Pivot is at Bottom (Y=0)
-    mesh.geometry.translate(0, 2, 0); // Translation Y=2 for a height 4 plane puts pivot at 0
-
-    // Position at desk surface (approx 1.0)
-    mesh.position.set(0, 1.1, 0.2);
-    mesh.scale.set(0, 0, 0); // Start Shrunk
-    mesh.renderOrder = 9999;
-    mesh.visible = false;
-
-    parent.add(mesh);
-    window.diaryHologram = mesh;
-}
-
-
-
-function createRothkoPainting() {
-    // 5x9 Portrait Ratio
-    // Placed on Back Wall (-0.4, 3.5, -1.95) based on previous fix
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 921;
-    const ctx = canvas.getContext('2d');
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-
-    // Use MeshStandard to react to environment but keep colors vivid
-    const mat = new THREE.MeshStandardMaterial({
-        map: tex,
-        side: THREE.DoubleSide,
-        roughness: 0.9,
-        emissive: 0x111111, // Slight self-illumination for visibility
-        emissiveIntensity: 0.2
-    });
-
-    const geo = new THREE.PlaneGeometry(1.5, 2.7);
-    // V304: Darker Annex (0.6 -> 0.3)
-    const light = new THREE.PointLight(0xffeecc, 0.3, 10);
-    light.position.set(2, 4, 2);
-    light.castShadow = true;
-    interiorGroup.add(light);
-
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(-0.4, 3.5, -1.95);
-    mesh.rotation.y = 0;
-    interiorGroup.add(mesh);
-
-    // Frame
-    const frameGeo = new THREE.BoxGeometry(1.6, 2.8, 0.05);
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-    const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.set(-0.4, 3.5, -2.0);
-    frame.rotation.y = 0;
-    frame.castShadow = true; frame.receiveShadow = true;
-    interiorGroup.add(frame);
-
-    // --- ROTHKO LOGIC ---
-    const palettes = [
-        ['#8B0000', '#FF4500', '#FFD700'],
-        ['#4B0082', '#8B008B', '#FF1493'],
-        ['#DC143C', '#FF6347', '#FFA07A'],
-        ['#2F4F4F', '#1C1C1C', '#8B4513'],
-        ['#191970', '#000080', '#4B0082'],
-        ['#CD853F', '#D2691E', '#8B4513'],
-        ['#FF4500', '#FFD700', '#FF8C00'],
-        ['#00CED1', '#4682B4', '#1E90FF'],
-        ['#BC8F8F', '#CD5C5C', '#F08080'],
-    ];
-
-    let blocks = [];
-    let bgState = { h: 200, s: 30, l: 20 };
-    let bgTarget = { h: 200, s: 30, l: 20 };
-    let lastPaletteChange = 0;
-
-    function hexToHSL(hex) {
-        let r = parseInt(hex.substr(1, 2), 16) / 255;
-        let g = parseInt(hex.substr(3, 2), 16) / 255;
-        let b = parseInt(hex.substr(5, 2), 16) / 255;
-        let max = Math.max(r, g, b), min = Math.min(r, g, b);
-        let h, s, l = (max + min) / 2;
-        if (max === min) { h = s = 0; }
-        else {
-            let d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return { h: h * 360, s: s * 100, l: l * 100 };
-    }
-
-    // Initialize Blocks (Persistent Objects)
-    // We stick to 3 blocks for stability.
-    // To switch between 2 and 3, we animate the weight of one block to 0.
-    for (let i = 0; i < 3; i++) {
-        blocks.push({
-            h: 0, s: 70, l: 50,
-            targetH: 0, targetS: 70, targetL: 50,
-            weight: 1.0,
-            targetWeight: 1.0,
-            speed: Math.random() * 0.2 + 0.1
-        });
-    }
-
-    function pickNewTargetPalette() {
-        const palette = palettes[Math.floor(Math.random() * palettes.length)];
-        const hsls = palette.map(hexToHSL);
-
-        // Background target (Average)
-        const avgH = hsls.reduce((a, c) => a + c.h, 0) / hsls.length;
-        bgTarget.h = avgH;
-        bgTarget.s = 30;
-        bgTarget.l = 18;
-
-        // Decide Mode: 2 Fields or 3 Fields?
-        const mode2 = Math.random() > 0.5;
-        let hideIndex = -1;
-        if (mode2) {
-            // Pick one random block to hide (0, 1, or 2)
-            hideIndex = Math.floor(Math.random() * 3);
-        }
-
-        // Block targets
-        blocks.forEach((b, i) => {
-            const c = hsls[i % hsls.length];
-            b.targetH = c.h;
-            b.targetS = c.s;
-            b.targetL = c.l;
-
-            // Weight Logic
-            if (i === hideIndex) {
-                b.targetWeight = 0.0; // Shrink to nothing
-            } else {
-                // Randomize size slightly
-                b.targetWeight = 1.0 + Math.random() * 0.5;
-            }
-        });
-    }
-
-    pickNewTargetPalette();
-    // Initialize current to target immediately for start
-    bgState = { ...bgTarget };
-    blocks.forEach(b => {
-        b.h = b.targetH; b.s = b.targetS; b.l = b.targetL;
-        b.weight = b.targetWeight;
-    });
-
-    // Lerp Helper handles hue wrapping
-    function lerpAngle(a, b, t) {
-        let diff = b - a;
-        while (diff > 180) diff -= 360;
-        while (diff < -180) diff += 360;
-        return a + diff * t;
-    }
-    function lerp(a, b, t) {
-        return a + (b - a) * t;
-    }
-
-    mesh.userData.update = (t) => {
-        // Slowly change targets every 15s
-        if (t - lastPaletteChange > 15) {
-            pickNewTargetPalette();
-            lastPaletteChange = t;
-        }
-
-        const dt = 0.005; // Transition speed factor
-
-        // 1. Animate BG Color
-        bgState.h = lerpAngle(bgState.h, bgTarget.h, dt);
-        bgState.s = lerp(bgState.s, bgTarget.s, dt);
-        bgState.l = lerp(bgState.l, bgTarget.l, dt);
-
-        // 2. Clear & Draw BG
-        ctx.fillStyle = `hsl(${bgState.h}, ${bgState.s}%, ${bgState.l}%)`;
-        ctx.fillRect(0, 0, 512, 921);
-
-        // 3. Draw Blocks
-        const W = 512;
-        const H = 921;
-        const padX = 40;
-        const padY = 50; // Top/Bottom padding
-        const maxGap = 40; // Max gap between blocks
-
-        // V-REFINE: "Tiny bit less blurry" -> 30px (was 45)
-        ctx.filter = 'blur(30px)';
-
-        // Lerp weights and Calculate Total Layout
-        let totalWeight = 0;
-        let activeGapCount = 0;
-
-        blocks.forEach(b => {
-            b.weight = lerp(b.weight, b.targetWeight, dt);
-
-            // Colors
-            b.h = lerpAngle(b.h, b.targetH, dt);
-            b.s = lerp(b.s, b.targetS, dt);
-            b.l = lerp(b.l, b.targetL, dt);
-
-            totalWeight += b.weight;
-        });
-
-        // Dynamic Gap Calculation
-        // Gap contributes to layout only if adjacent blocks exist. 
-        // We simulate gap "weight" based on block presence.
-        // Simple approx: Gap height = maxGap * (weight of block above?)
-        // Let's just sum (gap * smoothed_presence)
-        // Actually, simpler: 
-        // We have 2 internal gaps for 3 blocks.
-        // If mid block is gone, we have 1 big gap or 2 gaps merged?
-        // Layout: gap belongs to the block visually above it (index 0, 1). Last block (2) has no gap below.
-
-        let totalGapUsage = 0;
-        const gapSizes = [];
-
-        for (let i = 0; i < blocks.length - 1; i++) {
-            // Gap exists if BOTH current and next block have weight?
-            // Or if we just treat gap as attached to the block.
-            // If block 0 shrinks, gap 0 should shrink too to avoid big empty space at top?
-            // Yes: gap size = maxGap * Math.min(b[i].weight, 1.0) * Math.min(b[i+1].weight, 1.0)?
-            // If adjacent blocks are both visible, gap is full. If one fades, gap fades.
-
-            const w1 = Math.min(blocks[i].weight, 1.0);
-            const w2 = Math.min(blocks[i + 1].weight, 1.0);
-            const g = maxGap * w1 * w2;
-            gapSizes.push(g);
-            totalGapUsage += g;
-        }
-
-        const availH = H - (padY * 2) - totalGapUsage;
-
-        let cursorY = padY;
-
-        blocks.forEach((b, i) => {
-            if (b.weight < 0.01) return; // Skip invisible
-
-            const h = (b.weight / totalWeight) * availH;
-
-            ctx.fillStyle = `hsl(${b.h}, ${b.s}%, ${b.l}%)`;
-            ctx.fillRect(padX, cursorY, W - (padX * 2), h);
-
-            cursorY += h;
-
-            // Add gap if not last
-            if (i < blocks.length - 1) {
-                cursorY += gapSizes[i];
-            }
-        });
-
-        ctx.filter = 'none';
-        tex.needsUpdate = true;
-    };
-}
-
-window.createAnnexInterior = createAnnexInterior;
-function createToiletInterior() {
-    console.log("Loading Toilet Interior v24 (V4 Feedback) - Cozy Lamp & Perfect Seat");
-
-    const tData = roomContent.toilet;
-    const depth = tData.interiorDepth || 10;
-    const backZ = -(depth / 2);
-    const toiletZ = backZ + 1.0;
-    const shelfZ = backZ + 0.5;
-
-    // V140: Darker Ceramic (0xeeeeff -> 0x8888aa)
-    const ceramicMat = new THREE.MeshStandardMaterial({ color: 0x8888aa, roughness: 0.2 });
-    const toiletGroup = new THREE.Group();
-    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.35, 0.6, 32), ceramicMat);
-    bowl.position.y = 0.3; bowl.castShadow = true; toiletGroup.add(bowl);
-    const tank = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.25), ceramicMat);
-    tank.position.set(0, 0.85, -0.3); tank.castShadow = true; toiletGroup.add(tank);
-
-    // Water in Bowl
-    const waterGeo = new THREE.CircleGeometry(0.3, 32);
-    const waterMat = new THREE.MeshPhongMaterial({
-        color: 0x00aaff,
-        transparent: true,
-        opacity: 0.8,
-        shininess: 100
-    });
-    const water = new THREE.Mesh(waterGeo, waterMat);
-    water.rotation.x = -Math.PI / 2;
-    water.position.y = 0.4;
-    toiletGroup.add(water);
-
-    // Black Toilet Seat - LARGER TO COVER RIM
-    // V140: Darker Seat (0x111111 -> 0x050505)
-    // Bowl top radius is 0.5.
-    // Seat should match.
-    // TorusGeometry(radius, tube, radial, tubular)
-    // radius = 0.5, tube = 0.1
-    const blackWoodMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.1 });
-    const seat = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.1, 24, 64), blackWoodMat);
-    seat.rotation.x = -Math.PI / 2;
-    // seat.rotation.z = Math.PI; 
-    seat.position.y = 0.6; // Sit nicely on rim
-    // seat.scale.set(1, 1.2, 1); // Oval? Bowl is cylinder (circle).
-    seat.castShadow = true;
-    toiletGroup.add(seat);
-
-    // Scale 2.0 per archive
-    toiletGroup.scale.set(2.0, 2.0, 2.0);
-    toiletGroup.position.set(0, 0, toiletZ);
-    interiorGroup.add(toiletGroup);
-
-    // V140: Darker Shelf (0x5D4037 -> 0x2e201b)
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x2e201b });
-    // Narrow Shelf
-    const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.05, 0.6), woodMat);
-    shelf.position.set(0, 3.2, shelfZ);
-    shelf.castShadow = true;
-    interiorGroup.add(shelf);
-
-    // Enlarged Notepad with BOLDER CENTERED TEXT
-    const padGeo = new THREE.BoxGeometry(0.7, 0.04, 0.9);
-    const padMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });
-    const notepad = new THREE.Mesh(padGeo, padMat);
-    notepad.position.set(0.3, 0.045, 0.05);
-    notepad.castShadow = true;
-
-    const lineCanvas = document.createElement('canvas');
-    lineCanvas.width = 512; lineCanvas.height = 512; // Higher res for clear text
-    const lctx = lineCanvas.getContext('2d');
-    lctx.fillStyle = '#ffeb3b'; lctx.fillRect(0, 0, 512, 512);
-    // Lines
-    lctx.fillStyle = '#ccc'; for (let i = 60; i < 512; i += 60) lctx.fillRect(0, i, 512, 2);
-    // TEXT: "NOTEPAD" - BOLD & CENTERED
-    lctx.fillStyle = '#000000';
-    lctx.font = '900 80px "Glass Antiqua", cursive'; // V326 Unification
-    lctx.textAlign = 'center';
-    lctx.textBaseline = 'middle';
-
-    // Visualize center of pad. 
-    // Texture maps to Top face. Width=X, Height=Z.
-    // Text should be centered.
-    lctx.fillText("NOTEPAD", 256, 256);
-
-    notepad.material.map = new THREE.CanvasTexture(lineCanvas);
-    notepad.userData = { type: 'notepad', action: 'openKeyboard' };
-    shelf.add(notepad);
-
-    if (typeof interiorClickables !== 'undefined') interiorClickables.push(notepad);
-
-    // HOLOGRAM "WRITE IDEAS"
-    const holoCanvas = document.createElement('canvas');
-    holoCanvas.width = 512; holoCanvas.height = 512;
-    const hctx = holoCanvas.getContext('2d');
-
-    // Glow
-    const g = hctx.createRadialGradient(256, 256, 80, 256, 256, 250);
-    g.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    g.addColorStop(0.5, 'rgba(0, 255, 255, 0.1)');
-    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    hctx.fillStyle = g; hctx.fillRect(0, 0, 512, 512);
-
-    // Text "WRITE IDEAS"
-    hctx.fillStyle = '#ccffff';
-    hctx.shadowColor = "#00ffff"; hctx.shadowBlur = 10;
-    hctx.font = 'bold 60px "Glass Antiqua", cursive'; hctx.textAlign = "center";
-    hctx.fillText("WRITE", 256, 220);
-    hctx.fillText("IDEAS", 256, 290);
-
-    const holoTex = new THREE.CanvasTexture(holoCanvas);
-    const holoMat = new THREE.MeshBasicMaterial({
-        map: holoTex,
-        transparent: true,
-        opacity: 0.9,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-    });
-
-    const holoMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), holoMat);
-    holoMesh.position.set(0.3, 1.2, 0.05); // Above notepad
-    holoMesh.userData = { type: 'notepad', action: 'openKeyboard' };
-    shelf.add(holoMesh);
-
-    if (typeof interiorClickables !== 'undefined') interiorClickables.push(holoMesh);
-
-    // VISIBLE LAMP FIXTURE & COZY LIGHT
-    const lampGroup = new THREE.Group();
-    // Moved UP: Y=2.0 -> 3.5 (relative to shelf) ?? Wait, shelf is at 3.2. 
-    // Previous lamp was at shelf.add(lampGroup) at pos (0, 2.0, -0.2).
-    // So absolute Y was 3.2 + 2.0 = 5.2. That is quite high.
-    // Maybe user meant visible mesh was too low?
-    // Let's ensure it's high on the wall.
-    // Let's set it to y=2.5 relative to shelf -> Absolute 5.7.
-    lampGroup.position.set(0, 2.8, -0.2);
-    shelf.add(lampGroup);
-
-    // Fixture
-    const fixtureGeo = new THREE.CylinderGeometry(0.1, 0.15, 0.1, 16);
-    const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x336699, metalness: 0.8, roughness: 0.2 });
-    const fixture = new THREE.Mesh(fixtureGeo, fixtureMat);
-    fixture.rotation.x = Math.PI / 2;
-    lampGroup.add(fixture);
-
-    // Bulb/Glass (Warm Yellow)
-    const bulbGeo = new THREE.SphereGeometry(0.15, 32, 32);
-    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffaa33 });
-    const bulb = new THREE.Mesh(bulbGeo, bulbMat);
-    bulb.position.z = 0.1;
-    lampGroup.add(bulb);
-
-    // COZY WARM LIGHT (Brighter)
-    // V140: Dimmed (0.6 -> 0.3) -> V-FIX: Darker (0.15)
-    const backLight = new THREE.PointLight(0xffaa33, 0.15, 15);
-    backLight.castShadow = true;
-    backLight.shadow.mapSize.width = 1024; // V-REFINE: Sharp Shadows
-    backLight.shadow.mapSize.height = 1024;
-    backLight.shadow.bias = -0.0001;
-    lampGroup.add(backLight);
-
-    // V: FLICKER ANIMATION (Stronger)
-    lampGroup.userData = {
-        baseIntensity: 0.15, // V-FIX: Match new base
-        update: function (t) {
-            // Frequent Flicker (15% chance)
-            if (Math.random() > 0.85) {
-                // Stronger flicker range
-                const flicker = (Math.random() - 0.5) * 0.4;
-                backLight.intensity = Math.max(0.1, this.baseIntensity + flicker);
-
-                // Visible Bulb Dimming
-                // 0.1 Hue = Orange/Yellow. 0.5 * dim controls lightness.
-                const dim = 1 + flicker * 2;
-                bulb.material.color.setHSL(0.08, 0.9, 0.5 * dim);
-            } else {
-                // Restore stability
-                backLight.intensity += (this.baseIntensity - backLight.intensity) * 0.2;
-                bulb.material.color.setHex(0xffaa33);
-            }
-        }
-    };
-
-    // V-WORDHUNT
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('toilet');
-        if (item) {
-            item.position.set(0, 1.5, 1); // Floating inside room, away from shelf
-            interiorGroup.add(item);
-        }
-    }
-
-    // Bathroom code removed.
-}
-function createBedroomInterior() {
-    // BED (Rounded Corners)
-    const bedGroup = new THREE.Group();
-
-    // -- VIDEO PLAYLIST PANEL --
-    // V-FIX 257: Removed redundant manual button (Universal UI handles it)
-
-    // -- DARK FLOOR
-    const darkFloor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }));
-    darkFloor.rotation.x = -Math.PI / 2; darkFloor.position.y = 0.01;
-    interiorGroup.add(darkFloor);
-
-    // V142: Dark Grey Mattress (0xaaaaaa -> 0x555555)
-    const mattressColor = 0x555555;
-    const matMat = new THREE.MeshStandardMaterial({ color: mattressColor });
-    const cornerGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 16);
-
-    // 4 Corners
-    const c1 = new THREE.Mesh(cornerGeo, matMat); c1.position.set(2.0, 0.5, 2.5); bedGroup.add(c1);
-    const c2 = new THREE.Mesh(cornerGeo, matMat); c2.position.set(-2.0, 0.5, 2.5); bedGroup.add(c2);
-    const c3 = new THREE.Mesh(cornerGeo, matMat); c3.position.set(2.0, 0.5, -2.5); bedGroup.add(c3);
-    const c4 = new THREE.Mesh(cornerGeo, matMat); c4.position.set(-2.0, 0.5, -2.5); bedGroup.add(c4);
-
-    // Fillers (Cross Shape)
-    // V142: Black/Brown Frame (0x251b14 -> 0x150b04)
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 5.8), new THREE.MeshStandardMaterial({ color: 0x150b04 }));
-    frame.position.y = 0.2; bedGroup.add(frame);
-    const mainMattress = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.6, 6.0), matMat); mainMattress.position.y = 0.5; bedGroup.add(mainMattress);
-    const crossMattress = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.6, 5.0), matMat); crossMattress.position.y = 0.5; bedGroup.add(crossMattress);
-
-    // V142: Dark Maroon Duvet (0x7a1f2f -> 0x3d0f17)
-    const duvet = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.1, 4.5), new THREE.MeshStandardMaterial({ color: 0x3d0f17 }));
-    duvet.position.set(0, 0.8, -0.5); bedGroup.add(duvet);
-    // PILLOW (Rounded - Horizontal Cylinder)
-    const pillowGeo = new THREE.CylinderGeometry(0.35, 0.35, 3.5, 16);
-    const pillow = new THREE.Mesh(pillowGeo, new THREE.MeshStandardMaterial({ color: 0x666666 })); // V142: Dark Grey
-    pillow.rotation.z = Math.PI / 2; // Lie horizontal
-    pillow.scale.set(0.6, 1, 1); // Flatten height (local X)
-    pillow.position.set(0, 0.85, 2.2);
-    bedGroup.add(pillow);
-
-    bedGroup.position.set(2.5, 0, -1);
-    interiorGroup.add(bedGroup);
-
-    // DESK (Without Phone)
-    // V142: Darkest Wood Desk (0x2e201b -> 0x1e100b)
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 2), new THREE.MeshStandardMaterial({ color: 0x1e100b }));
-    desk.position.set(-2.5, 0.6, -3); interiorGroup.add(desk);
-
-    // V135: Lamp on Table (Corner) - Bigger & Brighter
-    const lampGroup = new THREE.Group();
-    // Base
-    lampGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0x111111 })));
-    // Pole
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-    pole.position.y = 0.4; lampGroup.add(pole);
-    // Shade
-    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0xcc8800, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
-    shade.position.y = 0.7; lampGroup.add(shade);
-    // Light - Dimmer (Night Bed Lamp) - Darker
-    // V142: Reduced Intensity (0.8 -> 0.4) -> V-NEW (0.15) -> V257 (1.2) -> V261 (2.5)
-    const bulb = new THREE.PointLight(0xffaa00, 2.5, 8);
-    bulb.position.y = 0.6;
-    lampGroup.add(bulb);
-
-    // Position on Desk (Left Back Corner)
-    // Scale Up 2x
-    lampGroup.scale.set(2, 2, 2);
-    lampGroup.position.set(-3.8, 1.2, -3.5);
-    interiorGroup.add(lampGroup);
-
-    // WALL MOUNTED VIDEO PLAYER (BIGGER, BACK WALL)
-    const phone = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }));
-    phone.position.set(3.2, 4.5, -4.95); // V501: Extreme right for NO overlap
-    phone.userData = { type: 'videoPhone', state: 'stopped' };
-    interiorGroup.add(phone);
-    interiorClickables.push(phone);
-
-    videoTexture = new THREE.VideoTexture(videoElement);
-    // Force src to Bedroom Playlist (Fixes "wrong video" if coming from other room)
-    if (roomContent.bedroom.videoPlaylist && roomContent.bedroom.videoPlaylist.length > 0) {
-        videoElement.src = roomContent.bedroom.videoPlaylist[0].src;
-        videoElement.pause(); // Start Paused
-    }
-
-    const phoneScreenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.6), new THREE.MeshBasicMaterial({ map: videoTexture }));
-    phoneScreenMesh.position.set(0, 0, 0.06);
-    phoneScreenMesh.name = 'screen';
-    phone.add(phoneScreenMesh);
-
-    if (roomContent.bedroom.videoPlaylist) {
-        // V-FIX: Universal Video UI
-        if (window.createUniversalVideoInterface) {
-            // Position adjusted to match previous header height (y=6.0 approx)
-            // V-FIX: Moved Right (-2.8 -> -1.5) per User Request
-            // V306: Move screen "more to the right" (User Request)
-            // Was -2.8 -> Moved to -1.5 (Closer to center/desk)
-            // V501: Extreme left for NO overlap with screen
-            const videoPos = new THREE.Vector3(-1.8, 4.2, -4.8);
-            window.createUniversalVideoInterface(interiorGroup, videoPos, roomContent.bedroom.videoPlaylist, {
-                onPlay: playVideo // V-FIX 257: Pass correct handler
-            });
-        }
-    }
-
-    const shelfGeo = new THREE.BoxGeometry(0.8, 0.1, 1.2);
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
-    const shelf = new THREE.Mesh(shelfGeo, shelfMat);
-    shelf.position.set(-4.6, 3.5, 3.0);
-    interiorGroup.add(shelf);
-
-    // V-FIX 264: Drop Shadow for Shelf
-    const shadowGeo = new THREE.PlaneGeometry(0.8, 1.2);
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
-    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(-4.6, 3.45, 3.0); // Slightly below
-    interiorGroup.add(shadow);
-
-    // V-WORDHUNT
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('bedroom');
-        if (item) {
-            item.position.set(0, 3, 0); // Above bed/center
-            interiorGroup.add(item);
-        }
-    }
-
-    // Lava Lamp
-    createLavaLamp(0.108, shelf.position);
-}
-
-function createLavaLamp(scale = 1.0, anchorPos = new THREE.Vector3(0, 0, 0)) {
-    const lampGroup = new THREE.Group();
-    const metalMat = new THREE.MeshStandardMaterial({
-        color: 0x080808,
-        metalness: 1.0,
-        roughness: 0.05
-    });
-
-    // Base
-    const baseGeo = new THREE.CylinderGeometry(1.5, 2.2, 4.2, 32);
-    const base = new THREE.Mesh(baseGeo, metalMat);
-    base.position.y = -4.5;
-    lampGroup.add(base);
-
-    // Cap
-    const topGeo = new THREE.CylinderGeometry(0.6, 1.2, 2, 32);
-    const topCap = new THREE.Mesh(topGeo, metalMat);
-    topCap.position.y = 7.0;
-    lampGroup.add(topCap);
-
-    // Glass
-    const glassGeo = new THREE.CylinderGeometry(1.1, 1.5, 10, 32, 1, true);
-    const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        metalness: 0.2,
-        roughness: 0.0,
-        transmission: 0.96,
-        thickness: 0.5,
-        transparent: true,
-        opacity: 0.7,
-        ior: 1.5,
-        reflectivity: 1.0,
-        clearcoat: 1.0
-    });
-    const glass = new THREE.Mesh(glassGeo, glassMat);
-    glass.position.y = 1.0;
-    lampGroup.add(glass);
-
-    // Liquid Core
-    const coreGeo = new THREE.CylinderGeometry(0.98, 1.38, 9.8, 32);
-    const coreMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff4d00,
-        transparent: true,
-        opacity: 0.5,
-        emissive: 0xff2200,
-        // V142: Duller Glow (1.6 -> 0.8) -> V261 (1.2)
-        emissiveIntensity: 1.2
-    });
-    const liquidCore = new THREE.Mesh(coreGeo, coreMaterial);
-    liquidCore.position.y = 1.0;
-    lampGroup.add(liquidCore);
-
-    // Lights
-    // V142: Dimmer Lights (4 -> 2) -> V-NEW (0.5) -> V261 (1.5)
-    const internalPointLight = new THREE.PointLight(0xff4d00, 1.5, 5);
-    internalPointLight.position.set(0, 0, 0);
-    lampGroup.add(internalPointLight);
-
-    const baseLight = new THREE.PointLight(0xff4d00, 1.5, 3);
-    baseLight.position.set(0, -4.5, 0);
-    lampGroup.add(baseLight);
-
-    // Blobs
-    const lavaMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff4d00,
-        emissive: 0xff4d00,
-        // V142: Duller Blobs (6.4 -> 3.2) -> V261 (4.0)
-        emissiveIntensity: 4.0,
-        roughness: 0.0
-    });
-
-    const blobs = [];
-    const blobCount = 5;
-    for (let i = 0; i < blobCount; i++) {
-        const size = 0.6 + Math.random() * 0.7;
-        const geo = new THREE.SphereGeometry(size, 16, 16);
-        const blob = new THREE.Mesh(geo, lavaMaterial);
-
-        blob.userData = {
-            yOffset: Math.random() * 10,
-            speed: 0.5 + Math.random() * 0.5, // Faster relative speed for small cleanup
-            rotationPhase: Math.random() * Math.PI * 2,
-            baseSize: size,
-            driftSpeed: 1.0 + Math.random() * 1.0
-        };
-
-        blobs.push(blob);
-        lampGroup.add(blob);
-    }
-
-    // Animation Logic attached to Group
-    let colorHue = 0.05;
-
-    lampGroup.scale.set(scale, scale, scale);
-
-    // Position: On Top of the Shelf
-    let yPos = 1.2; // Fallback
-    if (anchorPos) {
-        // Shelf Top is anchorPos.y + 0.05
-        // Lamp Bottom Offset is 6.6 * scale
-        yPos = anchorPos.y + 0.05 + (6.6 * scale);
-    }
-
-    let xPos = -1.2;
-    let zPos = -3.5;
-    if (anchorPos) {
-        xPos = anchorPos.x;
-        zPos = anchorPos.z;
-    }
-
-    lampGroup.position.set(xPos, yPos, zPos);
-
-    lampGroup.userData.update = function (t) {
-        // Color Shift
-        colorHue += 0.001; // Slower
-        if (colorHue > 1) colorHue = 0;
-        const newColor = new THREE.Color();
-        newColor.setHSL(colorHue, 1.0, 0.5);
-
-        lavaMaterial.color.copy(newColor);
-        lavaMaterial.emissive.copy(newColor);
-        coreMaterial.color.copy(newColor);
-        coreMaterial.emissive.copy(newColor);
-        baseLight.color.copy(newColor);
-        internalPointLight.color.copy(newColor);
-
-        // Blobs
-        blobs.forEach((blob) => {
-            const data = blob.userData;
-            // Original code used `time` in ms * 0.001. `t` passed from update is likely seconds.
-            // But let's check `t` in house.js... animate(time). 
-            // `t = time * 0.001` (seconds).
-
-            // Re-tuning physics for 't' (seconds)
-            const yAmplitude = 4.3;
-            const yBase = 0.5;
-
-            const timeVal = t;
-
-            const yPos = yBase + Math.sin(timeVal * data.speed + data.yOffset) * yAmplitude;
-            const normalizedY = (yPos - (yBase - yAmplitude)) / (yAmplitude * 2);
-
-            const currentBottleRadius = 1.5 - (normalizedY * 0.4);
-            const heightScaleFactor = 1.0 - (normalizedY * 0.5);
-            // safeRadius adjusted to keep blobs inside
-            const safeRadius = (currentBottleRadius - (data.baseSize * heightScaleFactor)) * 0.7;
-
-            blob.position.y = yPos;
-            blob.position.x = Math.sin(timeVal * data.driftSpeed + data.rotationPhase) * safeRadius;
-            blob.position.z = Math.cos(timeVal * data.driftSpeed + data.rotationPhase) * safeRadius;
-
-            const pulse = 1 + Math.sin(timeVal * 1.5 + data.yOffset) * 0.1;
-            const finalScale = heightScaleFactor * pulse;
-            blob.scale.set(finalScale, finalScale, finalScale);
-        });
-    };
-
-    interiorGroup.add(lampGroup);
-}
-
-function nextBedroomVideo() {
-    masterVideoIndex = (masterVideoIndex + 1) % roomContent.bedroom.videoPlaylist.length;
-    startVideoClip('bedroom');
-    // V-FIX 257: Update UI
-    if (window.updateVideoUI) window.updateVideoUI();
-}
-
-// V-FIX 9: Helper to Stop Video & Reset Lights (Bedroom specific)
-window.stopBedroomVideo = function () {
-    if (window.videoElement && !window.videoElement.paused) window.videoElement.pause();
-
-    // Restore Bedroom Defaults (Matches house.js ApplyRoomLighting)
-    // Dark/Moody
-    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.02 }, 1000).start();
-    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.05 }, 1000).start();
-    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.05 }, 1000).start();
-
-    console.log("Bedroom Video Stopped: Restoring Lights");
-};
-
-function playVideo(index) {
-    const playlist = roomContent.bedroom.videoPlaylist;
-    if (!playlist || !playlist[index]) return;
-
-    masterVideoIndex = index;
-    // V-FIX 257: Direct Play & UI Update
-    startVideoClip('bedroom');
-
-    // V-FIX: User reported room SHOULD get dark (like cinema)
-    if (window.applyRoomLighting) {
-        window.applyRoomLighting('basement'); // Use 'basement' profile for darkness
-    }
-
-    // Sync UI if available
-    if (window.updateVideoUI) window.updateVideoUI();
-}
-window.createStudioInterior = function () {
-    // -- STUDIO INTERIOR (Standard File Remastered) --
-    // Content: Furniture (Desk/Chair/Rug) + Video Posters (Metropolis/Tron) + Molecule (Atom)
-
-    // 1. FURNITURE
-    // Scaling Group for Furniture
-    const furnGroup = new THREE.Group();
-    furnGroup.scale.set(1.25, 1.25, 1.25);
-    interiorGroup.add(furnGroup);
-
-    // Desk
-    // Desk
-    // V140: Darker Desk (0x8d6e63 -> 0x463732)
-    const deskMat = new THREE.MeshStandardMaterial({ color: 0x463732 });
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.2, 1.5), deskMat);
-    desk.position.set(0, 1.0, -1.5);
-    furnGroup.add(desk);
-
-    // Legs
-    const legGeo = new THREE.BoxGeometry(0.1, 1.0, 0.1);
-    const fl = new THREE.Mesh(legGeo, deskMat); fl.position.set(-1.4, -0.5, 0.65); desk.add(fl);
-    const fr = new THREE.Mesh(legGeo, deskMat); fr.position.set(1.4, -0.5, 0.65); desk.add(fr);
-    const bh = new THREE.Mesh(legGeo, deskMat); bh.position.set(-1.4, -0.5, -0.65); desk.add(bh);
-    const br = new THREE.Mesh(legGeo, deskMat); br.position.set(1.4, -0.5, -0.65); desk.add(br);
-
-    // Laptop (Interactive)
-    const laptopGroup = new THREE.Group();
-    // V921: Scaled up 33% 
-    // Was default 1.0. New scale 1.33.
-    // Note: Furniture group is already 1.25. 
-    // This scales it further relative to the desk.
-    laptopGroup.scale.set(1.33, 1.33, 1.33);
-
-    const lapBase = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.4), new THREE.MeshStandardMaterial({ color: 0x333333 }));
-    const lapScreen = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.02), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-    lapScreen.position.set(0, 0.2, -0.2);
-    lapScreen.rotation.x = 0.2;
-    const screenGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.35), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x0044aa }));
-    screenGlow.position.z = 0.02;
-    lapScreen.add(screenGlow);
-    laptopGroup.add(lapBase); laptopGroup.add(lapScreen);
-    laptopGroup.position.set(0, 0.15, 0);
-    desk.add(laptopGroup);
-
-    const hitBox = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), new THREE.MeshBasicMaterial({ visible: false }));
-    hitBox.userData = { type: 'laptop' };
-    hitBox.position.y = 0.3;
-    laptopGroup.add(hitBox);
-    interiorClickables.push(hitBox);
-
-    // V921: "EXPAND YOUR MIND" Hologram (Replacing "Reality is Relative" popup)
-    // Create new Hologram visible in 3D space permanently (or looping)
-    const holoCanvas = document.createElement('canvas');
-    holoCanvas.width = 512; holoCanvas.height = 256;
-    const hctx = holoCanvas.getContext('2d');
-
-    // Gradient Glow
-    const grd = hctx.createRadialGradient(256, 128, 20, 256, 128, 200);
-    grd.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
-    grd.addColorStop(1, 'rgba(0,0,0,0)');
-    hctx.fillStyle = grd;
-    hctx.fillRect(0, 0, 512, 256);
-
-    // Text
-    hctx.font = 'bold 40px "Glass Antiqua", cursive';
-    hctx.textAlign = 'center';
-    hctx.textBaseline = 'middle';
-    hctx.shadowColor = 'cyan';
-    hctx.shadowBlur = 10;
-
-    // Animation loop handled via texture update? 
-    // For static canvas, just draw once. 
-    hctx.fillStyle = '#ccffff';
-    hctx.fillText("EXPAND", 256, 80);
-    hctx.fillText("YOUR MIND", 256, 150);
-
-    const deskHoloTex = new THREE.CanvasTexture(holoCanvas);
-    const deskHoloMat = new THREE.MeshBasicMaterial({
-        map: deskHoloTex,
-        transparent: true,
-        opacity: 0.8,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
-    });
-
-    const deskHoloMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.75), deskHoloMat);
-    deskHoloMesh.position.set(0, 0.8, 0); // Above laptop
-    deskHoloMesh.userData = { type: 'studioHologram' }; // Clickable
-    laptopGroup.add(deskHoloMesh);
-
-    // Add to clickables so the raycaster hits it
-    interiorClickables.push(deskHoloMesh);
-
-    // Chair
-    // V140: Darker Chair (0x333333 -> 0x111111)
-    const chairMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.8), chairMat);
-    seat.position.set(0, 0.8, 0.5);
-    seat.castShadow = true; // V306: Shadows
-    furnGroup.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.1), chairMat);
-    back.position.set(0, 0.5, 0.4);
-    seat.add(back);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8), chairMat);
-    stem.position.set(0, -0.4, 0);
-    seat.add(stem);
-
-    // Rug
-    // V140: Darker Rug (0xe91e63 -> 0x750f31)
-    const rug = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.02, 32), new THREE.MeshStandardMaterial({ color: 0x750f31 }));
-    rug.position.set(0, 0.02, 0);
-    furnGroup.add(rug);
-
-    // 2. VIDEO POSTERS
-    const createVideoPoster = (src, opacity = 1) => {
-        const vid = document.createElement('video');
-        vid.src = src;
-        vid.loop = true;
-        vid.muted = true;
-        vid.preload = 'auto';
-        vid.crossOrigin = "anonymous";
-        vid.setAttribute('playsinline', '');
-        vid.style.position = 'fixed';
-        vid.style.top = '-10000px';
-        vid.style.left = '-10000px';
-        document.body.appendChild(vid);
-
-        vid.load();
-        const p = vid.play();
-        if (p !== undefined) {
-            p.catch(error => {
-                console.error("Auto-play blocked for " + src, error);
-            });
-        }
-
-        const tex = new THREE.VideoTexture(vid);
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-
-        const vertexShader = `
-            varying vec2 vUv;
-            void main() {
-                vUv = uv;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `;
-        const fragmentShader = `
-            uniform sampler2D map;
-            uniform float opacity;
-            varying vec2 vUv;
-            void main() {
-                vec4 color = texture2D(map, vUv);
-                float dist = length(vUv - 0.5) * 1.414; 
-                float feather = smoothstep(0.1, 0.8, dist); 
-                color.a *= opacity * (1.0 - feather);
-                gl_FragColor = color;
-            }
-        `;
-
-        const mat = new THREE.ShaderMaterial({
-            uniforms: {
-                map: { value: tex },
-                opacity: { value: opacity }
-            },
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            side: THREE.DoubleSide
-        });
-
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 6.3), mat);
-        mesh.userData = { isVideo: true, videoElement: vid };
-        return { mesh: mesh, video: vid };
-    };
-
-    // Metropolis (Back Wall)
-    const mepo = createVideoPoster('/assets/video/mepo.mp4', 0.8);
-    mepo.mesh.position.set(1.0, 5, -4.9);
-    interiorGroup.add(mepo.mesh);
-
-    // Tron (Left Wall)
-    const tron = createVideoPoster('/assets/video/tronai.mp4', 0.9);
-    tron.mesh.scale.set(0.75, 0.75, 0.75);
-    tron.mesh.position.set(-4.9, 5, 3.5);
-    tron.mesh.rotation.y = Math.PI / 2;
-    interiorGroup.add(tron.mesh);
-
-    // 3. MOLECULE (Atom Group)
-    atomGroup = new THREE.Group();
-    atomGroup.position.set(-3, 4, -3);
-    interiorGroup.add(atomGroup);
-
-    const nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x000000 }));
-    atomGroup.add(nucleus);
-
-    const createOrbit = (rx, ry, rz, color) => {
-        const orbitGroup = new THREE.Group();
-        const ringGeo = new THREE.TorusGeometry(1.5, 0.02, 8, 50);
-        const ringMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.3 });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        orbitGroup.add(ring);
-
-        const electron = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: color }));
-        electron.position.x = 1.5;
-        orbitGroup.add(electron);
-
-        orbitGroup.rotation.set(rx, ry, rz);
-        orbitGroup.userData = { speed: Math.random() * 0.05 + 0.02, electron: electron };
-        atomGroup.add(orbitGroup);
-    };
-
-    createOrbit(0, 0, 0, 0xff0000);
-    createOrbit(Math.PI / 2, 0, 0, 0xffff00);
-    createOrbit(0, Math.PI / 2, Math.PI / 4, 0x00ccff);
-
-    // V-WORDHUNT: Hidden Orb in Molecule
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('studio');
-        if (item) {
-            // Hide inside Nucleus initially
-            item.position.set(0, 0, 0);
-            item.scale.set(0.1, 0.1, 0.1);
-            item.visible = false;
-            atomGroup.add(item); // Add to atomGroup so it moves with it
-
-            // Make Nucleus Clickable
-            // Nucleus is the first child of atomGroup usually, or we can add a hitbox
-            nucleus.userData = {
-                type: 'atom_nucleus',
-                onClick: () => {
-                    if (item.userData.revealed) return;
-                    console.log("Atom Nucleus Clicked! Finding Word...");
-
-                    item.visible = true;
-                    item.userData.revealed = true;
-
-                    // Animate Pop Out (Explode out)
-                    new TWEEN.Tween(item.position)
-                        .to({ y: 1.5, x: 0.5, z: 0.5 }, 1500)
-                        .easing(TWEEN.Easing.Elastic.Out)
-                        .start();
-
-                    new TWEEN.Tween(item.scale)
-                        .to({ x: 1.0, y: 1.0, z: 1.0 }, 1500)
-                        .easing(TWEEN.Easing.Elastic.Out)
-                        .start();
-                }
-            };
-            interiorClickables.push(nucleus);
-
-            // Hitbox for easier clicking (Nucleus is small 0.4)
-            const nHit = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
-            nHit.userData = nucleus.userData;
-            atomGroup.add(nHit);
-            interiorClickables.push(nHit);
-        }
-    }
-
-    // 4. R2-D2 IN RIGHT CORNER
-    createR2D2InCorner();
-}
-
-window.createR2D2InCorner = function () {
-    const r2d2Group = new THREE.Group();
-    r2d2Group.scale.set(0.33, 0.33, 0.33);
-    r2d2Group.position.set(3.5, 0, -3.5);
-    r2d2Group.rotation.y = -Math.PI / 4;
-    interiorGroup.add(r2d2Group);
-
-    const white = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, roughness: 0.4 });
-    const silver = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
-    const blue = new THREE.MeshStandardMaterial({ color: 0x0044bb, roughness: 0.3 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x111111 });
-
-    const sideLegHeight = 2.2;
-    const bodyPivotY = sideLegHeight;
-    const bodyTiltAngle = -0.32;
-
-    // Body Group
-    const bodyGroup = new THREE.Group();
-    const bodyCyl = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 3, 40), white);
-    bodyCyl.castShadow = true;
-    bodyGroup.add(bodyCyl);
-
-    // Body Details
-    const ventGeo = new THREE.BoxGeometry(0.6, 0.4, 0.1);
-    const vent1 = new THREE.Mesh(ventGeo, blue);
-    vent1.position.set(0.4, 0.5, 1.35);
-    bodyGroup.add(vent1);
-    const vent2 = new THREE.Mesh(ventGeo, blue);
-    vent2.position.set(-0.4, 0.5, 1.35);
-    bodyGroup.add(vent2);
-
-    // R2-D2 Body Rings (Restored/Kept)
-    const ringGeo = new THREE.TorusGeometry(1.41, 0.015, 8, 40);
-    const ring1 = new THREE.Mesh(ringGeo, dark);
-    ring1.rotation.x = Math.PI / 2;
-    ring1.position.y = 0.8;
-    bodyGroup.add(ring1);
-    const ring2 = ring1.clone();
-    ring2.position.y = -0.8;
-    bodyGroup.add(ring2);
-
-    bodyGroup.rotation.x = bodyTiltAngle;
-    bodyGroup.position.y = bodyPivotY;
-    r2d2Group.add(bodyGroup);
-
-    // Dome
-    const domeGroup = new THREE.Group();
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(1.4, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2), silver);
-    domeGroup.add(dome);
-
-    const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.1, 20), dark);
-    eye.rotation.x = Math.PI / 2;
-    eye.position.set(0, 0.75, 1.3);
-    domeGroup.add(eye);
-
-    const proj = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.15, 12), silver);
-    proj.rotation.x = 0.6;
-    proj.position.set(0, 0.35, 1.3);
-    domeGroup.add(proj);
-
-    // Blinking Lights
-    const lightRed = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-    lightRed.position.set(0.4, 0.6, 1.25);
-    domeGroup.add(lightRed);
-    const lightBlue = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
-    lightBlue.position.set(-0.4, 0.7, 1.25);
-    domeGroup.add(lightBlue);
-    const lightGreen = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
-    lightGreen.position.set(0, 0.9, 1.1);
-    domeGroup.add(lightGreen);
-
-    domeGroup.position.y = 1.5;
-    bodyGroup.add(domeGroup);
-
-    // FOOT
-    function createFoot() {
-        const foot = new THREE.Group();
-        const footTop = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), white);
-        footTop.scale.set(1, 1, 2.2);
-        foot.add(footTop);
-        return foot;
-    }
-
-    // Side Legs
-    function createSideLeg(side) {
-        const legGroup = new THREE.Group();
-        const joint = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 20), white);
-        joint.rotation.z = Math.PI / 2;
-        joint.position.x = side * 1.5;
-        legGroup.add(joint);
-
-        const strut = new THREE.Mesh(new THREE.BoxGeometry(0.4, sideLegHeight, 0.7), white);
-        strut.position.y = -sideLegHeight / 2;
-        strut.position.x = side * 1.5;
-        legGroup.add(strut);
-
-        const foot = createFoot();
-        foot.position.y = -sideLegHeight;
-        foot.position.z = 0.1;
-        foot.position.x = side * 1.5;
-        legGroup.add(foot);
-
-        legGroup.position.y = bodyPivotY;
-        return legGroup;
-    }
-
-    r2d2Group.add(createSideLeg(1));
-    r2d2Group.add(createSideLeg(-1));
-
-    // Central Leg
-    const centralLeg = new THREE.Group();
-    const legSlant = -0.3;
-    const cStrutHeight = 1.2;
-    const cStrut = new THREE.Mesh(new THREE.BoxGeometry(0.4, cStrutHeight, 0.4), white);
-    cStrut.position.y = -cStrutHeight / 2;
-    centralLeg.add(cStrut);
-
-    const cFoot = createFoot();
-    cFoot.rotation.x = Math.abs(bodyTiltAngle) + Math.abs(legSlant);
-    cFoot.position.y = -cStrutHeight;
-    cFoot.position.z = 0.05;
-    centralLeg.add(cFoot);
-
-    centralLeg.position.set(0, -1.2, 0);
-    centralLeg.rotation.x = legSlant;
-    bodyGroup.add(centralLeg);
-
-    // HOLOGRAM
-    const vid = document.createElement('video');
-    vid.src = '/assets/video/hologram.mp4';
-    vid.loop = true;
-    vid.muted = true;
-    vid.preload = 'auto';
-    vid.crossOrigin = "anonymous";
-    vid.setAttribute('playsinline', '');
-    vid.style.position = 'fixed';
-    vid.style.top = '-10000px';
-    vid.style.left = '-10000px';
-    document.body.appendChild(vid);
-
-    vid.load();
-    const p = vid.play();
-    if (p !== undefined) {
-        p.catch(error => console.error("Auto-play blocked for hologram", error));
-    }
-
-    const holoTex = new THREE.VideoTexture(vid);
-    holoTex.minFilter = THREE.LinearFilter;
-    holoTex.magFilter = THREE.LinearFilter;
-
-    const hologramGroup = new THREE.Group();
-
-    // BEAM: Modified to be "really more blurry" and a "glowing particle cloud"
-    // We removed the banded pulse to get rid of the "rings" in the beam.
-    const beamGeo = new THREE.ConeGeometry(0.35, 6, 32, 12, true);
-    beamGeo.translate(0, -3, 0);
-
-    const beamMat = new THREE.ShaderMaterial({
-        uniforms: {
-            time: { value: 0 },
-            color: { value: new THREE.Color(0x44eeff) }
-        },
-        vertexShader: `
-            varying vec2 vUv;
-            uniform float time;
-            void main() {
-                vUv = uv;
-                vec3 pos = position;
-                // High energy jitter
-                float jitter = fract(sin(time * 10.0 + position.y * 20.0)) * 0.12;
-                pos.x += jitter;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float time;
-            uniform vec3 color;
-            varying vec2 vUv;
-            
-            float hash(vec2 p) {
-                return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-            }
-            
-            void main() {
-                // Finer grain for "particle cloud" look
-                float grain = hash(vUv * 800.0 + time * 8.0);
-                
-                // Volume envelope - MUCH BLURRIER
-                // Softer smoothsteps create a hazier, less defined edge
-                float envelope = smoothstep(0.0, 0.4, vUv.y) * smoothstep(1.0, 0.3, vUv.y);
-                float sideFade = pow(sin(vUv.x * 3.14159), 3.0); 
-                
-                // Glitchy horizontal line cuts - less "ring-like"
-                float glitchLines = step(0.98, hash(vec2(floor(time * 20.0), floor(vUv.y * 120.0))));
-                
-                // Pulsing glow - Removed vUv.y dependency to remove "rings" in the beam
-                float pulse = 0.7 + 0.3 * sin(time * 12.0);
-                
-                // Final alpha combines grain (particles) with the volume shape
-                float alpha = (grain * 0.4 + 0.6) * envelope * sideFade * pulse;
-                alpha += glitchLines * 0.5;
-                
-                // Glowing color with random flicker
-                float flicker = 0.5 + 0.5 * hash(vec2(time * 15.0, 0.0));
-                vec3 finalColor = color + vec3(glitchLines * 0.7);
-                
-                gl_FragColor = vec4(finalColor, alpha * 0.35 * flicker);
-            }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-    });
-
-    const beamMesh = new THREE.Mesh(beamGeo, beamMat);
-    beamMesh.rotation.x = Math.PI;
-    hologramGroup.add(beamMesh);
-
-    const holoPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(3, 3),
-        new THREE.ShaderMaterial({
-            uniforms: {
-                map: { value: holoTex },
-                time: { value: 0 }
-            },
-            vertexShader: `
-                varying vec2 vUv;
-                void main() {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform sampler2D map;
-                uniform float time;
-                varying vec2 vUv;
-                float hash(vec2 p) {
-                    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-                }
-                float noise(vec2 p) {
-                    vec2 i = floor(p);
-                    vec2 f = fract(p);
-                    f = f * f * (3.0 - 2.0 * f);
-                    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-                               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-                }
-                void main() {
-                    vec2 uv = vUv;
-                    
-                    float glitchTime = floor(time * 12.0);
-                    if (hash(vec2(glitchTime, 0.0)) > 0.85) {
-                        uv.x += (hash(vec2(glitchTime, floor(uv.y * 10.0))) - 0.5) * 0.15;
-                    }
-
-                    float splitAmount = 0.012 + noise(vec2(time * 8.0, uv.y * 20.0)) * 0.02;
-                    vec4 texColorR = texture2D(map, uv + vec2(splitAmount, 0.0));
-                    vec4 texColorG = texture2D(map, uv);
-                    vec4 texColorB = texture2D(map, uv - vec2(splitAmount, 0.0));
-                    vec4 texColor = vec4(texColorR.r, texColorG.g, texColorB.b, texColorG.a);
-                    
-                    float greenness = texColor.g - max(texColor.r, texColor.b);
-                    float alpha = 1.0 - smoothstep(0.2, 0.4, greenness);
-                    
-                    float flicker = 0.7 + hash(vec2(time * 30.0, 0.0)) * 0.3;
-                    float scanline = sin(uv.y * 200.0 + time * 15.0) * 0.1 + 0.9;
-                    float dropout = step(0.94, hash(vec2(time * 10.0, 0.0))); 
-                    
-                    float finalAlpha = alpha * flicker * scanline * (1.0 - dropout) * 0.85;
-                    
-                    gl_FragColor = vec4(texColor.rgb + vec3(noise(uv*50.0 + time)*0.1), finalAlpha);
-                }
-            `,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        })
-    );
-    holoPlane.position.y = 6;
-    holoPlane.rotation.y = Math.PI;
-    hologramGroup.add(holoPlane);
-
-    hologramGroup.position.set(0, 0.35, 1.3);
-    hologramGroup.rotation.x = 0.7;
-    hologramGroup.scale.set(1.5, 1.5, 1.5); // Bigger (was 1.0)
-    domeGroup.add(hologramGroup);
-
-    // 50% Faster Animation
-    hologramGroup.userData.update = function (t) {
-        // Fast time
-        const fastTime = t * 1.5;
-        if (beamMat.uniforms) beamMat.uniforms.time.value = fastTime;
-        if (holoPlane.material.uniforms) holoPlane.material.uniforms.time.value = fastTime;
-    };
-
-    // DARKER LIGHTING
-    // Remove default bulb
-    const defaultBulb = interiorGroup.children.find(c => c.isPointLight && c.position.y === 6);
-    if (defaultBulb) interiorGroup.remove(defaultBulb);
-
-    // Add darker custom light
-    // Add darker custom light
-    // V140: Dimmed (0.4 -> 0.2) -> V-NEW: 0.05
-    // V306: Darker (0.8 -> 0.4)
-    const studioLight = new THREE.PointLight(0xffffff, 0.4, 15);
-    studioLight.position.set(0, 5, 0);
-    studioLight.castShadow = true; // V306: Shadows
-    studioLight.shadow.bias = -0.0001;
-    interiorGroup.add(studioLight);
-
-    if (!window.r2d2Elements) window.r2d2Elements = [];
-    window.r2d2Elements.push({
-        domeGroup: domeGroup,
-        lightRed: lightRed,
-        lightBlue: lightBlue,
-        lightGreen: lightGreen,
-        hologramGroup: hologramGroup,
-        holoPlane: holoPlane,
-        beamMat: beamMat
-    });
-}
-function createGenericInterior(text) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'white'; ctx.font = 'bold 40px "Glass Antiqua", cursive'; ctx.textAlign = 'center';
-    ctx.shadowColor = "black"; ctx.shadowBlur = 4; ctx.fillText(text, 256, 128);
-    const tex = new THREE.CanvasTexture(canvas);
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    plane.position.set(0, 4, -4.9);
-    interiorGroup.add(plane);
-}
 class MMAnimation {
     constructor(width, height) {
-        this.width = width || 1024;
-        this.height = height || 1024;
+        this.width = width || 512;
+        this.height = height || 512;
         this.canvas = document.createElement('canvas');
         this.canvas.width = this.width;
         this.canvas.height = this.height;
-        this.ctx = this.canvas.getContext('2d', { alpha: true }); // Enable Alpha
+        this.ctx = this.canvas.getContext('2d', { alpha: true });
 
         this.cx = this.width / 2;
         this.cy = this.height / 2;
@@ -5456,12 +17,11 @@ class MMAnimation {
 
         this.universeStarted = false;
         this.lastInteraction = Date.now();
-        this.isAutoPlaying = true; // Default auto-play
+        this.isAutoPlaying = true;
 
-        // CONFIG (Adapted from mm/index.html)
+        // CONFIG
         this.UNIVERSE_CONFIG = {
-            // General Settings
-            background: 'transparent', // Transparent background! 
+            background: 'transparent',
             textGlow: '#00FFFF',
 
             palette: {
@@ -5481,7 +41,7 @@ class MMAnimation {
                 horizon: '#ff0000'
             },
             physics: {
-                baseSpeed: 15, // Speed up slightly since no scroll interaction?
+                baseSpeed: 15,
                 brakeStart: 11500,
                 idleDelay: 3000
             }
@@ -5494,7 +54,6 @@ class MMAnimation {
 
         this.initWorld();
 
-        // Auto-start immediately
         this.launchUniverse();
     }
 
@@ -5568,8 +127,6 @@ class MMAnimation {
     launchUniverse() {
         this.universeStarted = true;
         this.isAutoPlaying = true;
-        // Audio would go here if we ported it, but for 3D mesh focus we might skip audio first
-        // or hook it up later. User focused on visuals "lines coming out".
     }
 
     lerp(start, end, amt) {
@@ -5797,9 +354,6 @@ class MMAnimation {
                 ctx.globalAlpha = alpha * 0.2; ctx.stroke();
             }
             else if (obj.type === 'horizon') {
-                // Keep center transparent if possible? Original code drew black.
-                // ctx.fillStyle = '#000'; // Void center stays black
-                // Let's use transparent for the void to see through!
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.beginPath(); ctx.arc(x2d, y2d, obj.r * scale, 0, Math.PI * 2); ctx.fill();
                 ctx.globalCompositeOperation = 'source-over';
@@ -5864,128 +418,125 @@ class MMAnimation {
         });
     }
 }
-function createBasementInterior() {
-    // -- METROPOLIS --
-    // V140: Darker Floor (0x111111 -> 0x050505)
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.8 });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    interiorGroup.add(floor);
-
-    const gridHelper = new THREE.GridHelper(10, 10, 0x00ffcc, 0x222222);
-    gridHelper.position.y = 0.05;
-    interiorGroup.add(gridHelper);
-
-    // Floating Nodes
-    const nodeCount = 60;
-    const nodeGeo = new THREE.SphereGeometry(0.06, 8, 8);
-    for (let i = 0; i < nodeCount; i++) {
-        const isTruth = i % 2 === 0;
-        const nodeMat = new THREE.MeshBasicMaterial({ color: isTruth ? 0x00ffcc : 0xff00ff });
-        const node = new THREE.Mesh(nodeGeo, nodeMat);
-        node.position.set((Math.random() - 0.5) * 8, Math.random() * 6 + 0.5, (Math.random() - 0.5) * 8);
-        node.userData = {
-            velocity: new THREE.Vector3((Math.random() - 0.5) * 0.01, (Math.random() - 0.5) * 0.01, (Math.random() - 0.5) * 0.01),
-            originalY: node.position.y,
-            isTruth: isTruth
-        };
-        basementNodes.push(node);
-        interiorGroup.add(node);
-    }
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
-    const lineGeo = new THREE.BufferGeometry();
-    basementLines = new THREE.LineSegments(lineGeo, lineMat);
-    interiorGroup.add(basementLines);
-
-    // TRON VIDEO
-    videoElement.src = "/assets/video/tron-space.mp4";
-    videoElement.muted = true; videoElement.loop = true;
-    videoElement.play().catch(e => console.warn("Video play failed", e));
-    videoTexture = new THREE.VideoTexture(videoElement);
-    const bgMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), new THREE.MeshBasicMaterial({ map: videoTexture, opacity: 0.5, transparent: true, blending: THREE.AdditiveBlending }));
-    bgMesh.position.set(0, 4, -4.9);
-    interiorGroup.add(bgMesh);
-
-    // V-WORDHUNT
-    if (typeof WordHunt !== 'undefined') {
-        const item = WordHunt.createInteractable('basement');
-        if (item) {
-            item.position.set(-2, 2, -2); // Near nodes
-            interiorGroup.add(item);
-        }
-    }
-
-    // V326: Detroit Model Phi Drum Machine removed per user request
-    if (window.technoEngine) {
-        if (window.technoEngine.isPlaying) window.technoEngine.stop();
-        window.technoEngine = null;
-    }
-}
-console.log("--- HOUSE.JS LOADED ---");
 
 let openingFog;
 let openingAnimationDone = false;
 let fireflies = [];
 let mistLayer = null;
-window.metropolisRobot = null; // V-REFINE: Global Robot Reference
+window.metropolisRobot = null; // Global Robot Reference
 let lamppostLight = null;
 let windowFlickerMaterials = [];
 let animatedShaderMaterials = [];
 let animatedTrees = [];
+// --- WAKE LOCK (Audit: Prevent Screen Sleep) ---
+let wakeLock = null;
+window.requestWakeLock = async () => {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            // console.log("Wake Lock is active.");
+        }
+    } catch (err) {
+        // console.warn(`${err.name}, ${err.message}`);
+    }
+};
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        await window.requestWakeLock();
+    }
+});
 
 
 // --- 3D SETUP ---
 let scene, camera, renderer, controls;
-let textureLoader;
-let worldGroup, interiorGroup;
+let loadingManager = new THREE.LoadingManager();
+loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+    const progress = (itemsLoaded / itemsTotal) * 100;
+    const bar = document.getElementById('progress-bar');
+    const msg = document.getElementById('loading-msg');
+
+    if (bar) bar.style.width = progress + '%';
+    if (msg) {
+        const fileName = url.split('/').pop().split('?')[0];
+        msg.innerText = `${fileName}  [${Math.round(progress)}%]`;
+    }
+};
+loadingManager.onLoad = function () {
+    console.log("All assets loaded via LoadingManager.");
+    if (window.hideLoader) window.hideLoader();
+};
+loadingManager.onError = function (url) {
+    console.error("Error loading asset:", url);
+    // Force-hide loader after a short delay so the experience can still start
+    // (though some textures/audio might be missing)
+    setTimeout(() => {
+        if (window.hideLoader) window.hideLoader();
+    }, 1000);
+};
+let textureLoader = new THREE.TextureLoader(loadingManager);
+window.loadingManager = loadingManager;
+window.textureLoader = textureLoader;
+let worldGroup, interiorGroup, foregroundGroup;
+// Debug helper for confirming runtime configuration and values
+window.houseDebug = window.houseDebug || { version: 'FORCE_SYNC_V1944' };
 let raycaster, mouse;
 let animationId;
+const clock = new THREE.Clock();
 // HOUSE MUSIC STATE
 let houseMusicTime = 0;
-const HOUSE_TRACK = "/assets/audio/premonition.mp3";
+const HOUSE_TRACK = "../assets/audio/premonition.mp3";
 
 // -- LIGHTS --
 let dirLight, rimLight, ambientLight, hemiLight;
 
 let noteTextSprite = null;
-let thoughtSprite = null;
-let thoughtInterval = null;
-let thoughtParticles = [];
 let infoTimeout = null;
 
 let state = 'HOUSE';
 let currentRoom = null;
-window.currentTrackIndex = 0; // V-FIX: Global for Music Highlight
-window.masterVideoIndex = 0;  // V-FIX: Global for Video Highlight
+window.currentTrackIndex = 0;
+window.masterVideoIndex = 0;
 let isTVVideoMode = false;
+let isTransitioning = false;
+let streetLights = [];
 let hoveredObject = null;
-const interiorClickables = [];
-window.interiorClickables = interiorClickables; // V-FIX: Global Access for Room Scripts
+window.interiorClickables = []; // Global Access for Room Scripts
 
 let tvMesh = null, currentSlideIndex = 0;
 let phoneScreenMesh = null;
-var isMusicPlaying = false;
+window.isMusicPlaying = false;
 
 let atomGroup = null;
 let basementNodes = [];
 let basementLines = null;
-let audioContext, audioAnalyser, audioDataArray;
+var audioContext, audioAnalyser, audioDataArray; // Standardized global sharing
 let pointerDownX = 0, pointerDownY = 0, isPossibleClick = false;
+let prevCameraPos = null;
+let videoElement, videoTexture; // Video playback for basement
 
 
+
+// --- House Environment Defaults ---
+const HOUSE_DEFAULTS = {
+    ambientIntensity: 0.25,
+    hemiIntensity: 0.25,
+    dirIntensity: 0.4,
+    rimIntensity: 0.4,
+    fogColor: 0x3a2560,
+    bgColor: 0x25232d,
+    fogNear: 80,
+    fogFar: 700
+};
 
 // Wrapped Init
-console.log("--- HOUSE.JS V305-HOLOGRAM-RESTORED ---");
-console.log("%c V500 - UNBREAKABLE SYNC LOADED ", "background: #222; color: #bada55; font-size: 20px;");
 scene = new THREE.Scene();
-// V-REFINE: Much Lighter Purple Fog (Visibility Check)
-scene.fog = new THREE.Fog(0x2d1b4e, 10, 250); // V292: Extended for tall towers (was 150)
+// Clarity Boost (V-SYNC to Housedev Preferred)
+scene.fog = new THREE.Fog(HOUSE_DEFAULTS.fogColor, HOUSE_DEFAULTS.fogNear, HOUSE_DEFAULTS.fogFar);
 openingFog = scene.fog;
-// V-TEST: Red Background Removed
-scene.background = new THREE.Color(0x2d1b4e);
+scene.background = new THREE.Color(HOUSE_DEFAULTS.bgColor);
 
-camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(-2.8, 51.9, 175.9); // V-FIX: Match Flight Start to prevent Jump
+camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000); // FAR PLANE 2000 for Space Room
+camera.position.set(-2.8, 51.9, 175.9); // Match Flight Start to prevent Jump
 camera.lookAt(-1.94, -20.5, -0.94);
 window.camera = camera;
 scene.add(camera);
@@ -5994,39 +545,35 @@ renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.domElement.style.filter = 'blur(0px)';
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // V204: Soft Shadows
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // V-FIX: Soft Shadows
+// V-REFINE: Simplified Rendering (No Tone Mapping per user request)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-textureLoader = new THREE.TextureLoader();
 
-// LIGHTS
-// V303: Lighter Exterior (0.35 -> 0.45)
-// V303: Lighter Exterior (0.35 -> 0.45)
-ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+// LIGHTS (V-SYNC to Housedev Preferred)
+ambientLight = new THREE.AmbientLight(0xfff0ff, HOUSE_DEFAULTS.ambientIntensity);
 window.ambientLight = ambientLight;
 scene.add(ambientLight);
 
-// Dim Global Fill
-// V303: Lighter Fill (0.35 -> 0.45)
-hemiLight = new THREE.HemisphereLight(0xffffff, 0x442288, 0.3);
+hemiLight = new THREE.HemisphereLight(0x88aaff, 0x111111, HOUSE_DEFAULTS.hemiIntensity);
 window.hemiLight = hemiLight;
 hemiLight.position.set(0, 50, 0);
 scene.add(hemiLight);
 
-// V303: Brighter Moon (1.0 -> 1.2)
-dirLight = new THREE.DirectionalLight(0xfffaed, 0.7);
+dirLight = new THREE.DirectionalLight(0xfffaed, HOUSE_DEFAULTS.dirIntensity);
 window.dirLight = dirLight;
-dirLight.position.set(50, 80, 30);
+dirLight.position.set(-22.5, 60, 30);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.mapSize.width = 1024;
+dirLight.shadow.mapSize.height = 1024;
 dirLight.shadow.camera.near = 0.5;
 dirLight.shadow.camera.far = 200;
 dirLight.shadow.camera.left = -50; dirLight.shadow.camera.right = 50; dirLight.shadow.camera.top = 50; dirLight.shadow.camera.bottom = -50;
 scene.add(dirLight);
 
-rimLight = new THREE.PointLight(0x88ccff, 0.4);
+rimLight = new THREE.PointLight(0x88ccff, HOUSE_DEFAULTS.rimIntensity);
 window.rimLight = rimLight;
 rimLight.position.set(-20, 20, -20);
 scene.add(rimLight);
@@ -6045,70 +592,44 @@ controls.maxPolarAngle = Math.PI / 2;
 controls.target.set(-1.94, -20.5, -0.94);
 
 worldGroup = new THREE.Group();
+window.worldGroup = worldGroup;
 scene.add(worldGroup);
+
 interiorGroup = new THREE.Group();
+window.interiorGroup = interiorGroup;
 scene.add(interiorGroup);
 interiorGroup.visible = false;
 
-window.isZoomingToRoom = false;
-window.introFinished = false;
+// FOREGROUND GROUP: Objects that should always render above interiors/world (e.g., Tintin rocket)
+foregroundGroup = new THREE.Group();
+window.foregroundGroup = foregroundGroup;
+foregroundGroup.renderOrder = 99999;
+scene.add(foregroundGroup);
 
-buildWorld();
-// buildEnvironment called in buildWorld
 
 
-// Initialize Word Hunt
-if (typeof WordHunt !== 'undefined') {
-    WordHunt.init();
-}
-
-raycaster = new THREE.Raycaster();
-
-mouse = new THREE.Vector2();
-
-// V-REFINE: Logic Security Guard (Prevent duplicate listeners)
-if (window.interactionsSet) {
-    console.warn("Interactions already set. Skipping duplicate attachment.");
-} else {
-    window.addEventListener('resize', onWindowResize);
-    const canvas = renderer.domElement;
-    canvas.addEventListener('pointerdown', onPointerDown);
-    canvas.addEventListener('pointermove', onPointerMove);
-    canvas.addEventListener('pointerup', onPointerUp);
-
-    // Centralised Document Click Handler (Audit Item 5)
-    document.addEventListener('click', handleGlobalClick);
-
-    window.interactionsSet = true;
-}
-
-function handleGlobalClick(event) {
-    // 1. Pixel Band Exit Logic
-    if (event.target && event.target.closest('#pixel-band')) {
-        if (document.fullscreenElement || document.getElementById('start-btn').style.display === 'none') {
-            exitExperience();
-        }
-    }
-
-    // 2. Room State Logic (Audit Recommendation)
-    // if (state === 'HOUSE') handleHouseClick(event);
-    // if (state === 'ROOM') handleRoomClick(event);
-}
-
-// --- 1. Global Media Manager ---
 class GlobalMediaManager {
     constructor() {
         this.audio = document.getElementById('room-audio');
         this.video = document.getElementById('generic-video');
-        console.log("GlobalMediaManager Initialized");
+
+        if (this.audio) {
+            this.audio.addEventListener('timeupdate', () => {
+                if (window.updateLyricsUI) window.updateLyricsUI();
+            });
+        }
+        if (this.video) {
+            this.video.addEventListener('ended', () => {
+                if (window.nextVideo) window.nextVideo();
+            });
+        }
     }
 
     playAudio(src, options = {}) {
         if (!this.audio) return;
         this.audio.src = src;
-        if (options.volume !== undefined) this.audio.volume = options.volume;
-        if (options.loop !== undefined) this.audio.loop = options.loop;
-        return this.audio.play();
+        this.audio.volume = options.volume || 0.5;
+        this.audio.play().catch(() => { });
     }
 
     pauseAudio() {
@@ -6118,10 +639,9 @@ class GlobalMediaManager {
     playVideo(src, options = {}) {
         if (!this.video) return;
         this.video.src = src;
-        if (options.volume !== undefined) this.video.volume = options.volume;
-        if (options.loop !== undefined) this.video.loop = options.loop;
-        if (options.muted !== undefined) this.video.muted = options.muted;
-        return this.video.play();
+        this.video.muted = options.muted || false;
+        this.video.loop = options.loop || false;
+        this.video.play().catch(() => { });
     }
 
     pauseVideo() {
@@ -6135,19 +655,224 @@ audioPlayer = window.mediaManager.audio;
 window.audioPlayer = audioPlayer;
 window.videoElement = videoElement;
 
-// V290: Robust Loader Logic (Wait for Build)
-window.hideLoader = function () {
-    console.log("--- Hiding 3D Loader ---");
-    const loader = document.getElementById('loading');
-    if (loader) {
-        loader.style.transition = 'opacity 0.8s ease';
-        loader.style.opacity = '0';
-        const topControls = document.getElementById('top-controls');
-        if (topControls) topControls.style.opacity = '1';
-        setTimeout(() => {
-            loader.style.display = 'none';
-        }, 800);
+// V-LYRICS: Sync lyrics with audio
+// V-LYRICS: Sync lyrics with audio
+window.updateLyricsUI = function () {
+    const lyricsContainer = document.getElementById('lyrics-container');
+    const lyricsText = document.getElementById('lyrics-text');
+    if (!lyricsContainer || !lyricsText || !window.audioPlayer) return;
+
+    // Use window.currentRoom to find the correct playlist
+    const roomKey = window.currentRoom;
+    if (!roomKey) {
+        lyricsContainer.style.opacity = '0';
+        return;
     }
+
+    const rData = window.roomContent ? window.roomContent[roomKey] : null;
+    if (!rData || !rData.playlist) {
+        lyricsContainer.style.opacity = '0';
+        return;
+    }
+
+    const track = rData.playlist[window.currentTrackIndex];
+    if (!track || !track.lyrics) {
+        lyricsContainer.style.opacity = '0';
+        return;
+    }
+
+    const currentTime = window.audioPlayer.currentTime;
+    let currentLyric = "";
+
+    // Find the latest lyric that is <= current audio time
+    for (let i = track.lyrics.length - 1; i >= 0; i--) {
+        if (currentTime >= track.lyrics[i].time) {
+            // V-FIX: Support Dutch lyrics — read from window.currentLanguage (the live variable set by SET_LANGUAGE)
+            currentLyric = (window.currentLanguage === 'nl' && track.lyrics[i].text_nl)
+                ? track.lyrics[i].text_nl
+                : track.lyrics[i].text;
+            break;
+        }
+    }
+
+    if (currentLyric && currentLyric.trim() !== "") {
+        if (lyricsText.innerText !== currentLyric) {
+            lyricsText.innerText = currentLyric;
+            // console.log(`🎵 Lyrics [${roomKey}]:`, currentLyric);
+        }
+        lyricsContainer.style.opacity = '1';
+    } else {
+        lyricsContainer.style.opacity = '0';
+    }
+};
+
+window.musicSwitchMesh = null;
+window.isZoomingToRoom = false;
+
+// buildEnvironment called in buildWorld
+
+
+raycaster = new THREE.Raycaster();
+
+mouse = new THREE.Vector2();
+
+// Interaction Safety Guard (Audit Item 1)
+if (!window.interactionsSet) {
+    window.addEventListener('resize', onWindowResize);
+    const canvas = renderer.domElement;
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+
+    // Centralised Document Click Handler (Audit Item 5)
+    document.addEventListener('click', handleGlobalClick);
+
+    window.interactionsSet = true;
+}
+
+// ---- WASD Keyboard Movement ----
+window._wasdKeys = { w: false, a: false, s: false, d: false };
+window._wasdEnabled = false; // Enabled once inside a room
+
+const isUserTyping = () => {
+    const el = document.activeElement;
+    const tag = el ? el.tagName.toUpperCase() : '';
+    const typing = (tag === 'INPUT' || tag === 'TEXTAREA' || (el && el.isContentEditable));
+
+    // Also block if narrative or question overlays are visible in the house
+    const qOverlay = document.getElementById('question-overlay');
+    const nOverlay = document.getElementById('narrative-overlay');
+    const overlayVisible = (qOverlay && qOverlay.style.display !== 'none' && qOverlay.style.display !== '') ||
+        (nOverlay && nOverlay.style.display !== 'none' && nOverlay.style.display !== '');
+
+    return typing || overlayVisible;
+};
+
+document.addEventListener('keydown', (e) => {
+    // V-FIX: Prevent movement/scrolling if typing in a popup or input field
+    if (isUserTyping()) return;
+
+    if (['KeyW', 'ArrowUp', 'KeyA', 'ArrowLeft', 'KeyS', 'ArrowDown', 'KeyD', 'ArrowRight'].includes(e.code)) {
+        // e.preventDefault(); // Optional: used to stop scroll but can be annoying
+    }
+
+    if (!window._wasdKeys) window._wasdKeys = { w: false, a: false, s: false, d: false };
+
+    switch (e.code) {
+        case 'KeyW': case 'ArrowUp': window._wasdKeys.w = true; break;
+        case 'KeyA': case 'ArrowLeft': window._wasdKeys.a = true; break;
+        case 'KeyS': case 'ArrowDown': window._wasdKeys.s = true; break;
+        case 'KeyD': case 'ArrowRight': window._wasdKeys.d = true; break;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    // V-FIX: ALWAYS clear key state on keyup to prevent "stuck" keys if focus shifts
+    if (!window._wasdKeys) return;
+    switch (e.code) {
+        case 'KeyW': case 'ArrowUp': window._wasdKeys.w = false; break;
+        case 'KeyA': case 'ArrowLeft': window._wasdKeys.a = false; break;
+        case 'KeyS': case 'ArrowDown': window._wasdKeys.s = false; break;
+        case 'KeyD': case 'ArrowRight': window._wasdKeys.d = false; break;
+    }
+});
+
+
+window.getMusicSwitch = () => musicSwitchMesh;
+
+function handleGlobalClick(event) {
+    if (!event) return; // Guard against undefined event
+    // 0. Ensure Audio Context is Active
+    if (window.audioContext && window.audioContext.state === 'suspended') {
+        window.audioContext.resume().then(() => {
+            // console.log('🔊 AudioContext resumed via global click');
+        });
+    }
+
+    // V-FIX: Recover from autoplay blocks
+    if (window.isMusicPlaying && window.audioPlayer && window.audioPlayer.paused) {
+        window.audioPlayer.play().catch(() => { });
+    }
+
+    // 1. Pixel Band Exit Logic
+    if (event.target && event.target.closest('#pixel-band')) {
+        if (document.fullscreenElement || document.getElementById('start-btn').style.display === 'none') {
+            exitExperience();
+        }
+    }
+}
+
+// Robust Loader Logic (Wait for Build)
+window.hideLoader = function () {
+    if (window.hasCriticalError) {
+        console.warn("Loader hide aborted due to critical error: window.hasCriticalError is true");
+        return;
+    }
+    if (window.isLoaderHiding) return;
+    window.isLoaderHiding = true;
+
+    const loader = document.getElementById('loading');
+
+    const startTime = window.loaderStartTime || Date.now();
+    const minTime = 3000; // Minimum 3s to let the animation be seen
+
+    const finishHide = () => {
+        if (!loader) return;
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, minTime - elapsed);
+
+        setTimeout(() => {
+            // Visualize completion to parent
+            if (window.parent) window.parent.postMessage({ type: 'EXPERIENCE_LOADED' }, '*');
+
+            loader.style.transition = 'opacity 1.5s ease';
+            loader.style.opacity = '0';
+            const topControls = document.getElementById('top-controls');
+            if (topControls) topControls.style.opacity = '1';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1500);
+        }, remaining);
+    };
+
+    if (loader) {
+        // If there's an SVG path animation, prefer a clone-based restart to avoid jumping between still frames
+        const path = loader.querySelector('.house-path');
+        if (path) {
+            try {
+                const animations = (path.getAnimations) ? path.getAnimations() : [];
+
+                // If a WAAPI animation is running and not finished, wait for it
+                if (animations && animations.length && animations[0].playState !== 'finished') {
+                    let timedOut = false;
+                    const to = setTimeout(() => { timedOut = true; finishHide(); }, 4000);
+                    animations[0].finished.then(() => { if (!timedOut) { clearTimeout(to); finishHide(); } }).catch(() => { if (!timedOut) { clearTimeout(to); finishHide(); } });
+                } else {
+                    // Otherwise, replace the path with a fresh clone so the CSS animation starts from the initial frame
+                    const clone = path.cloneNode(true);
+                    // Clear any inline animation overrides
+                    clone.style.animation = '';
+                    path.parentNode.replaceChild(clone, path);
+
+                    let handled = false;
+                    const onEnd = () => { if (handled) return; handled = true; clone.removeEventListener('animationend', onEnd); finishHide(); };
+                    clone.addEventListener('animationend', onEnd);
+
+                    // Safety timeout
+                    setTimeout(() => { if (!handled) { handled = true; clone.removeEventListener('animationend', onEnd); finishHide(); } }, 4000);
+                }
+            } catch (e) {
+                // If anything goes wrong, do a short fade to avoid locking UI
+                setTimeout(finishHide, 500);
+            }
+        } else {
+            // No path found - short delay to allow visual transition
+            setTimeout(finishHide, 500);
+        }
+    } else {
+        window.introFinished = true;
+    }
+
     window.introFinished = true;
 };
 
@@ -6169,39 +894,21 @@ if (header) {
     header.style.opacity = '1';
 }
 
-// document.addEventListener('click', function (e) {
-//     if (e.target && e.target.closest('#pixel-band')) {
-//         if (document.fullscreenElement || document.getElementById('start-btn').style.display === 'none') {
-//             exitExperience();
-//         }
-//     }
-// });
-
 const minBtn = document.getElementById('min-btn');
 if (minBtn) minBtn.addEventListener('click', toggleInfo);
 const infoHeader = document.querySelector('#room-info .room-header-flex');
 if (infoHeader) infoHeader.addEventListener('click', toggleInfo);
 
-const headerContent = document.getElementById('header-content');
-if (headerContent) {
-    headerContent.classList.remove('max-h-0', 'overflow-hidden');
-    headerContent.classList.add('max-h-40', 'overflow-visible');
-    headerContent.style.maxHeight = '160px';
-    localStorage.setItem('headerCollapsed', 'false');
-}
+// Header Content block removed (non-existent element)
 
 animate();
-
-// V290: Trigger hide after build is complete
-// setTimeout(() => {
-//     if (window.hideLoader) window.hideLoader();
-// }, 2500); // 2.5s safe minimum (was 1.5s)
-
 
 window.exitExperience = function () {
     // 1. Exit Fullscreen
     if (document.exitFullscreen) document.exitFullscreen();
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
 
     // 2. Show Header
     const headerEl = document.getElementById('main-header');
@@ -6224,17 +931,40 @@ window.exitExperience = function () {
 
 // --- AUDIO ANALYSER SETUP ---
 function initAudioAnalyser() {
-    if (audioContext) return;
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        audioAnalyser = audioContext.createAnalyser();
-        audioAnalyser.fftSize = 256;
-        const source = audioContext.createMediaElementSource(audioPlayer);
-        source.connect(audioAnalyser);
-        audioAnalyser.connect(audioContext.destination);
-        audioDataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
-    } catch (e) {
-        console.warn("Audio Context init failed", e);
+    // Skip Web Audio analyser when running from file:// protocol.
+    // crossOrigin + createMediaElementSource requires http/https — on file://
+    // the browser blocks the audio request with a CORS error, silencing playback.
+    if (window.location.protocol === 'file:') return;
+
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            window.audioContext = audioContext;
+        } catch (e) {
+            console.warn('AudioContext creation failed:', e);
+            return;
+        }
+    }
+
+    // Guard: createMediaElementSource can only be called ONCE per element.
+    // Calling it again throws InvalidStateError which silently kills audio output.
+    if (audioContext && !window._audioSourceNodeCreated) {
+        try {
+            window._audioSourceNodeCreated = true;
+            audioAnalyser = audioContext.createAnalyser();
+            audioAnalyser.fftSize = 256;
+            const source = audioContext.createMediaElementSource(audioPlayer);
+            source.connect(audioAnalyser);
+            audioAnalyser.connect(audioContext.destination);
+            audioDataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
+            window.audioAnalyser = audioAnalyser;
+            window.audioDataArray = audioDataArray;
+        } catch (e) {
+            console.warn('initAudioAnalyser error (analyser disabled):', e);
+            window._audioSourceNodeCreated = false;
+        }
+    } else if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => { });
     }
 }
 
@@ -6244,29 +974,16 @@ function createNoiseTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = size; canvas.height = size;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#A0A0A0'; // Lighter grey base (Was #808080)
+    ctx.fillStyle = '#C0C0C0';
     ctx.fillRect(0, 0, size, size);
 
     const idata = ctx.getImageData(0, 0, size, size);
-    const buffer32 = new Uint32Array(idata.data.buffer);
-    const len = buffer32.length;
-
-    for (let i = 0; i < len; i++) {
-        if (Math.random() < 0.5) {
-            // Add subtle noise
-            const noise = (Math.random() - 0.5) * 20; // range -10 to 10
-            // We manipulate R,G,B same amount to keep it greyscale noise
-            // But doing it pixel by pixel via buffer is tricky with endianness.
-            // Simpler loop:
-        }
-    }
-    // Re-do simpler loop for safety
     for (let i = 0; i < idata.data.length; i += 4) {
-        const grain = (Math.random() - 0.5) * 30; // +/- 15
-        idata.data[i] = Math.min(255, Math.max(0, 128 + grain));     // R
-        idata.data[i + 1] = Math.min(255, Math.max(0, 128 + grain)); // G
-        idata.data[i + 2] = Math.min(255, Math.max(0, 128 + grain)); // B
-        idata.data[i + 3] = 255; // Alpha
+        const grain = (Math.random() - 0.5) * 30;
+        idata.data[i] = Math.min(255, Math.max(0, 128 + grain));
+        idata.data[i + 1] = Math.min(255, Math.max(0, 128 + grain));
+        idata.data[i + 2] = Math.min(255, Math.max(0, 128 + grain));
+        idata.data[i + 3] = 255;
     }
 
     ctx.putImageData(idata, 0, 0);
@@ -6276,39 +993,85 @@ function createNoiseTexture() {
     return tex;
 }
 
+function createBrickTexture(type = 'amsterdam') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    const isAmsterdam = (type === 'amsterdam');
+    const baseColor = isAmsterdam ? '#8b4513' : '#f0e68c'; // Deep brick vs Dudok cream
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 512, 512);
+
+    const rows = 16, cols = 8;
+    const h = 512 / rows, w = 512 / cols;
+
+    for (let r = 0; r < rows; r++) {
+        const offset = (r % 2) * (w / 2);
+        for (let c = -1; c < cols + 1; c++) {
+            const vari = Math.random() * 30 - 15;
+            if (isAmsterdam) {
+                const rVal = 139 + vari;
+                const gVal = 69 + vari * 0.5;
+                const bVal = 19 + vari * 0.2;
+                ctx.fillStyle = `rgb(${rVal}, ${gVal}, ${bVal})`;
+            } else {
+                const rVal = 240 + vari;
+                const gVal = 230 + vari;
+                const bVal = 140 + vari;
+                ctx.fillStyle = `rgb(${rVal}, ${gVal}, ${bVal})`;
+            }
+            ctx.fillRect(c * w + offset + 2, r * h + 2, w - 4, h - 4);
+
+            // Subtle mortar
+            ctx.strokeStyle = isAmsterdam ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(c * w + offset + 2, r * h + 2, w - 4, h - 4);
+        }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 8);
+    return tex;
+}
+
+function createHouseNumberTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fdfdfd';
+    ctx.fillRect(0, 0, 64, 64);
+    ctx.strokeStyle = '#111111'; ctx.lineWidth = 3; ctx.strokeRect(2, 2, 60, 60);
+    ctx.fillStyle = '#111111';
+    ctx.font = 'bold 36px "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('42', 32, 34);
+    const tex = new THREE.CanvasTexture(canvas);
+    return tex;
+}
+
 function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
     const geo = new THREE.BoxGeometry(w, h, d);
 
-    // V79: Apply Gritty Texture
+    // Gritty Texture
     const noiseTex = createNoiseTexture();
-    noiseTex.repeat.set(w / 2, h / 2); // Scale texture by size
+    noiseTex.repeat.set(w / 2, h / 2);
 
-    // V138: Reverted Darkening (User said it affected exterior only)
-    const darkColor = color; // No multiplier
+    // Lighten the room colors significantly
+    const roomColor = new THREE.Color(color).addScalar(0.3);
 
     const mat = new THREE.MeshStandardMaterial({
-        color: darkColor,
+        color: roomColor,
         roughness: 0.9,
         bumpMap: noiseTex,
         bumpScale: 0.05, // Subtle bump
-        map: noiseTex // Also apply as map to darken/grime it a bit? 
-        // Wait, map will override color unless we blend. 
-        // StandardMaterial multiplies map color with .color.
-        // Our noise is grey (128). So it will dim the color by 50%.
-        // That might be too dark.
-        // Let's use lighter noise (200 base) or just bumpMap.
-        // User asked for "texture". Bump map is best.
+        map: noiseTex
     });
-    // IF we want visible grit dirt, maybe create a light map or use a lighter base for noise.
-    // Let's try JUST bumpMap first to keep colors vibrant.
-    // Actually, let's create a separate lighter noise for the map if needed, 
-    // but just BumpMap is safer style-wise.
-
-    // Re-adjusting createNoiseTexture to be just bump map (grey irrelevant, only contrast matters).
 
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x, y, z);
-    mesh.castShadow = true; // House blocks cast shadows
+    mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.userData = { name: name, type: 'room' };
 
@@ -6331,7 +1094,7 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
                 new THREE.BoxGeometry(frameW, frameH, frameDepth),
                 new THREE.MeshStandardMaterial({ color: frameColor })
             );
-            // V-FIX: Ensure Frame is Clickable (Propagate Name)
+            // Ensure Frame is Clickable (Propagate Name)
             frame.userData = { name: name, type: 'room' };
 
             const zOffset = d / 2 + 0.02;
@@ -6356,7 +1119,6 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
                 new THREE.MeshStandardMaterial({
                     color: 0xffffcc,
                     emissive: 0xffaa00,
-                    // V303: Darker Interior Glow (0.6 -> 0.4)
                     emissiveIntensity: 0.4,
                     roughness: 0.2
                 })
@@ -6365,7 +1127,6 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
 
             // -- WINDOW ANIMATION SETUP --
             glass.material.userData = {
-                // V303: Base 0.4
                 baseEmissive: 0.4,
                 speed: 1.5 + Math.random() * 2.0,
                 phase: Math.random() * Math.PI * 20,
@@ -6374,7 +1135,7 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
             };
             windowFlickerMaterials.push(glass.material);
 
-            // V-FIX: Ensure Glass is Clickable
+            // Ensure Glass is Clickable
             glass.userData = { name: name, type: 'room' };
 
             frame.add(glass);
@@ -6388,196 +1149,410 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
 
 // Restored buildWorld
 function buildWorld() {
+    // V-FIX: Prevent Double Invocation
+    if (window.worldBuilt) {
+        return;
+    }
+    window.worldBuilt = true;
+
+    // PRE-CACHE Advanced Textures
+    window.brickAmsterdamTex = createBrickTexture('amsterdam');
+    window.brickDudokTex = createBrickTexture('dudok');
+
     buildHouse();
     buildEnvironment();
+
+    // --- GARAGE RESTORATION ---
+    if (window.createGarageDoor) {
+        window.enhancedGarage = window.createGarageDoor(worldGroup, new THREE.Vector3(10, 0, 3.5));
+        if (typeof window.alignToPlanet === 'function') window.alignToPlanet(window.enhancedGarage, 10, 3.5);
+    }
+
+    // Word Sculpture "House of Awe" (Neon)
+    if (typeof createWordSculpture === 'function') createWordSculpture();
+
+    // --- CAR MODELS ---
+    if (window.initCars) window.initCars(worldGroup);
+
+    // ENHANCED FEATURES (from house-add.js)
+    if (window.createDistantBuildings) window.createDistantBuildings(scene);
 }
 
 
 
 function buildHouse() {
-    createRoomBlock('basement', 0, 0.4, 0, 4.4, 0.8, 6.0, roomContent.basement.hex, { type: 'dark', scale: 0.5, shift: 1.2 });
-    const baseWinGeo = new THREE.PlaneGeometry(1.5, 0.4);
-    const baseWinMat = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffaa00, emissiveIntensity: 0.5 });
-    const leftBaseWin = new THREE.Mesh(baseWinGeo, baseWinMat);
-    leftBaseWin.rotation.y = -Math.PI / 2;
-    leftBaseWin.position.set(-2.22, 0.5, 0);
-    worldGroup.add(leftBaseWin);
-    const rightBaseWin = new THREE.Mesh(baseWinGeo, baseWinMat);
-    rightBaseWin.rotation.y = Math.PI / 2;
-    rightBaseWin.position.set(2.22, 0.5, 0);
-    worldGroup.add(rightBaseWin);
+    // --- FOUNDATION: DUDOK BRICK BASE (DARK BROWN) ---
+    createRoomBlock('basement', 0, 0.4, 0, 7.5, 0.8, 6.5, 0x3d1f0d, { type: 'dark', scale: 0.5, shift: 1.8 });
+    const basementMesh = worldGroup.children.find(c => c.userData.name === 'basement');
+    if (basementMesh) {
+        basementMesh.material.map = window.brickDudokTex;
+        basementMesh.material.color.setHex(0x3d1f0d); // Tint it dark
+        basementMesh.material.polygonOffset = true;
+        basementMesh.material.polygonOffsetFactor = 2;
+        basementMesh.material.polygonOffsetUnits = 2;
+    }
 
-    createRoomBlock('living', -1.0, 1.8, 0, 2.0, 2, 5, roomContent.living.hex, [
-        { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: -0.2 },
-        { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: -0.2 }
-    ]);
-    // V326: Shrink hitboxes (was 2.5/2.0) to prevent Living Room selection issues
-    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 5.0), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
-    liveHitBox.position.set(-1.6, 1.8, 0);
+    // --- HORIZONTAL PLANES (DARK REDDISH BROWN) ---
+    const planeGeo = new THREE.BoxGeometry(7.5, 0.1, 6.5);
+    const planeMat = new THREE.MeshStandardMaterial({
+        color: 0x5c0000, // Dark red-brown instead of white
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: 1
+    });
+    const midPlane = new THREE.Mesh(planeGeo, planeMat);
+    midPlane.position.set(0, 0.85, 0); // Higher offset
+    worldGroup.add(midPlane);
+
+    // --- LIVING ROOM: AMSTERDAM SCHOOL CURVE (DEEP BROWN) ---
+    // Moved further left (-1.4 -> -1.8)
+    const livingX = -1.8, livingY = 2.1, livingZ = 0;
+    const livingW = 2.4, livingH = 2.4, livingD = 5;
+    const livingGroup = new THREE.Group();
+    livingGroup.position.set(livingX, livingY, livingZ);
+    worldGroup.add(livingGroup);
+
+    const amsterdamMat = new THREE.MeshStandardMaterial({ color: 0x4d2600, map: window.brickAmsterdamTex, roughness: 0.8 });
+    const livingBody = new THREE.Mesh(new THREE.BoxGeometry(livingW, livingH, livingD), amsterdamMat);
+    livingBody.castShadow = true; livingBody.receiveShadow = true;
+    livingBody.userData = { name: 'living', type: 'room' };
+    livingGroup.add(livingBody);
+
+    // Windows
+    const winGeo = new THREE.BoxGeometry(1.5, 0.4, 0.1);
+    const winMat = new THREE.MeshStandardMaterial({ color: 0xffccaa, emissive: 0xffaa44, emissiveIntensity: 0.2 });
+    const lWin = new THREE.Mesh(winGeo, winMat);
+    lWin.position.set(0, 0.4, 2.55);
+    livingGroup.add(lWin);
+
+    // BACK WINDOW: Livingroom
+    const lWinBack = new THREE.Mesh(winGeo, winMat);
+    lWinBack.position.set(0, 0.4, -2.55);
+    livingGroup.add(lWinBack);
+
+    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.5, 0.6), new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0 }));
+    liveHitBox.position.set(livingX - 0.5, livingY, 2.7);
     liveHitBox.userData = { name: 'living', type: 'room' };
     worldGroup.add(liveHitBox);
 
-    createRoomBlock('studio', 1.0, 1.8, 0, 2.0, 2, 5, roomContent.studio.hex, [
-        { type: 'dark', side: 'front', scale: 0.6, height: 1.0, shift: 0.2 },
-        { type: 'dark', side: 'back', scale: 0.6, height: 1.0, shift: 0.2 }
-    ]);
-    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 5.0), new THREE.MeshBasicMaterial({ visible: true, transparent: true, opacity: 0 }));
-    studioHitBox.position.set(1.5, 1.8, 0);
+    // --- STUDIO: DE STIJL BOX (REDDISH-ORANGE BROWN - No White) ---
+    const studioX = 2.0, studioY = 2.05, studioZ = 0;
+    const studioW = 2.8, studioH = 2.4, studioD = 5;
+    const studioBody = new THREE.Mesh(
+        new THREE.BoxGeometry(studioW, studioH, studioD),
+        new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.4, metalness: 0.1 })
+    );
+    studioBody.position.set(studioX, studioY, studioZ);
+    studioBody.userData = { name: 'studio', type: 'room' };
+    worldGroup.add(studioBody);
+
+    // BACK WINDOW: Studio
+    const sWinBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.1), winMat);
+    sWinBack.position.set(studioX, studioY + 0.4, studioZ - 2.55);
+    worldGroup.add(sWinBack);
+
+    // CIRCULAR WINDOW — centered on front face (studioZ + depth/2 = 2.5)
+    const circWinGroup = new THREE.Group();
+    circWinGroup.position.set(studioX, studioY, studioZ + 2.52);
+    const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    circWinGroup.add(circFrame);
+    const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0x222233, emissive: 0x333366, emissiveIntensity: 0.4, transparent: true, opacity: 0.9 }));
+    circGlass.userData = { name: 'studio', type: 'room' };
+    circWinGroup.add(circGlass);
+    worldGroup.add(circWinGroup);
+
+    // Studio side Windows
+    const sWinMat = new THREE.MeshStandardMaterial({ color: 0x574a63, emissive: 0x996600, emissiveIntensity: 0.5 });
+    const sWinSpan = 3.2;
+    const sWinZCenter = studioZ - 0.0;
+    for (let i = 0; i < 5; i++) {
+        const sWinSquare = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.5), sWinMat);
+        const zPos = (sWinZCenter - sWinSpan / 2) + (i * (sWinSpan / 4));
+        sWinSquare.position.set(studioX + 1.42, studioY + 0.3, zPos);
+        worldGroup.add(sWinSquare);
+    }
+
+    // DE STIJL ACCENTS - Red Plate covering the Studio Roof
+    // Dimensions match Studio: W=2.8, D=5.0. Thickness 0.05.
+    const redPlate = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.05, 5.0), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+    // Position: Center X=2.0 (studioX), Top Y=2.05+1.2+0.025=3.275, Center Z=0
+    redPlate.position.set(studioX, studioY + studioH / 2 + 0.025, studioZ);
+    redPlate.receiveShadow = true;
+    worldGroup.add(redPlate);
+
+
+
+    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.4, 0.6), new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0 }));
+    studioHitBox.position.set(studioX, studioY, 2.7);
     studioHitBox.userData = { name: 'studio', type: 'room' };
     worldGroup.add(studioHitBox);
+
+    // --- ENTRANCE: PRACTICAL PORCH ---
     const doorFacade = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 1.8, 0.05),
-        // V128: Ochre (Dark Yellow) instead of White
-        new THREE.MeshStandardMaterial({ color: 0xB99824, roughness: 0.5 })
+        new THREE.BoxGeometry(1.2, 1.8, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x5c3317, roughness: 0.5 })
     );
-    doorFacade.position.set(0, 1.6, 2.51);
-    doorFacade.userData = { name: 'hall', type: 'room' };
+    doorFacade.position.set(0, 1.6, 2.45);
     worldGroup.add(doorFacade);
-    const doorGeo = new THREE.BoxGeometry(0.8, 1.4, 0.1);
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 });
-    const door = new THREE.Mesh(doorGeo, doorMat);
-    door.position.set(0, 1.5, 2.54);
+
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.1), new THREE.MeshStandardMaterial({ color: 0x3d1f0d }));
+    door.position.set(0, 1.6, 2.57);
     door.userData = { name: 'hall', type: 'room' };
     worldGroup.add(door);
-    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshStandardMaterial({ color: 0xffd700 }));
-    knob.position.set(0.3, 0, 0.08);
-    door.add(knob);
-    const doorWinGeo = new THREE.PlaneGeometry(0.4, 0.3);
-    const doorWinMat = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffaa00, emissiveIntensity: 0.8 });
-    const doorWin = new THREE.Mesh(doorWinGeo, doorWinMat);
-    doorWin.position.set(0, 0.4, 0.06);
-    door.add(doorWin);
 
-    // -- HOUSE NUMBER PLATE (42) --
-    // V311: Resized (0.4->0.28) to fit in gap (0.6-0.9)
-    const plateGeo = new THREE.BoxGeometry(0.28, 0.3, 0.02);
-    const plateMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
-    const plate = new THREE.Mesh(plateGeo, plateMat);
+    // Triangular window on the door (top half, centered)
+    const windowShape = new THREE.Shape();
+    windowShape.moveTo(0, 0.15); // Top point
+    windowShape.lineTo(-0.1, -0.05); // Bottom left
+    windowShape.lineTo(0.1, -0.05); // Bottom right
+    windowShape.lineTo(0, 0.15); // Close the triangle
 
-    // V-FIX: Centered in wall gap (0.75) and moved forward (2.54) to ensure visibility
-    plate.position.set(0.75, 1.8, 2.54);
+    const windowGeometry = new THREE.ShapeGeometry(windowShape);
+    const windowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x88ccff,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide
+    });
+    const triangularWindow = new THREE.Mesh(windowGeometry, windowMaterial);
+    triangularWindow.position.set(0, 0.4, 0.06); // Middle of top half, slightly in front
+    door.add(triangularWindow);
 
-    // V-FIX 2: High Contrast Debug Version
-    const numCanvas = document.createElement('canvas');
-    numCanvas.width = 256; numCanvas.height = 256;
-    const nctx = numCanvas.getContext('2d');
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04), new THREE.MeshStandardMaterial({ color: 0x996633 }));
+    knob.position.set(0.3, 0, 0.08); door.add(knob);
 
-    // White Background
-    nctx.fillStyle = '#ffffff';
-    nctx.fillRect(0, 0, 256, 256);
-
-    // Black Text (Arial)
-    nctx.fillStyle = '#000000';
-    nctx.font = 'bold 160px Arial, sans-serif';
-    nctx.textAlign = 'center';
-    nctx.textBaseline = 'middle';
-    nctx.fillText("42", 128, 138);
-
-    const numTex = new THREE.CanvasTexture(numCanvas);
-    numTex.colorSpace = THREE.SRGBColorSpace; // Ensure correct color space if available
-
-    // Plane slightly smaller than plate to avoid edge overlap
-    const numMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.26, 0.28),
-        new THREE.MeshBasicMaterial({ map: numTex, transparent: false }) // Opaque for safety
+    // Number 42 Plate
+    const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.18, 0.02),
+        new THREE.MeshStandardMaterial({ map: createHouseNumberTexture(), roughness: 0.3 })
     );
-
-    // V-FIX: Massive Z-gap (0.05) to guarantee visibility
-    numMesh.position.z = 0.05;
-    plate.add(numMesh);
+    plate.position.set(0.5, 1.8, 2.56);
     worldGroup.add(plate);
 
-    const hallHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 2.4, 1.0), // V326: Slightly narrowed
-        new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
-    );
-    hallHitBox.position.set(0, 1.3, 3.0);
+    const hallHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.8, 0.5), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
+    hallHitBox.position.set(0, 1.6, 2.8);
     hallHitBox.userData = { name: 'hall', type: 'room' };
     worldGroup.add(hallHitBox);
 
-    // --- STAIRS SETUP (V230: User Geometry Fix) ---
-    const stepMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
-    const stepW = 1.4; // Width
-    const stepH = 0.2; // Height of each individual step
-    const stepD = 0.4; // Depth of each tread
+    // --- HALL ENCLOSURE (Ceiling & Back Wall) ---
+    // Ceiling connecting Living and Studio (Gap is 1.2)
+    const hallCeiling = new THREE.Mesh(
+        new THREE.BoxGeometry(1.25, 0.2, 5.0), // 1.25 allows minimal overlap to seal gap
+        new THREE.MeshStandardMaterial({ color: 0x221100 })
+    );
+    // Studio Top is ~3.25. Living Top is ~3.3. Align to 3.25.
+    // Center at 3.15 (Top face at 3.25)
+    hallCeiling.position.set(0, 3.15, 0);
+    hallCeiling.castShadow = true;
+    worldGroup.add(hallCeiling);
 
-    // We want 3 steps leading to the door (which is at Y=1.5)
-    // Step 3 (Lowest, furthest out)
-    const s3 = new THREE.Mesh(new THREE.BoxGeometry(stepW + 0.4, stepH, stepD), stepMat);
-    s3.position.set(0, stepH / 2, 3.5); // Y=0.1
-    worldGroup.add(s3);
+    // Back Wall (Closing the corridor)
+    const hallBack = new THREE.Mesh(
+        new THREE.BoxGeometry(1.25, 2.4, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x5c3317 })
+    );
+    hallBack.position.set(0, 2.0, -2.4);
+    hallBack.castShadow = true;
+    worldGroup.add(hallBack);
 
-    // Step 2 (Middle)
-    const s2 = new THREE.Mesh(new THREE.BoxGeometry(stepW + 0.2, stepH, stepD), stepMat);
-    s2.position.set(0, stepH + (stepH / 2), 3.1); // Y=0.3
-    worldGroup.add(s2);
+    // Front Upper Wall (Above door)
+    // Door facade top is at 1.6 + 0.9 = 2.5
+    // Ceiling bottom is 3.15 - 0.1 = 3.05
+    // Height = 0.55. Center = 2.775
+    const hallFrontUpper = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.55, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x5c3317 })
+    );
+    hallFrontUpper.position.set(0, 2.775, 2.45);
+    hallFrontUpper.castShadow = true;
+    worldGroup.add(hallFrontUpper);
 
-    // Step 1 (Highest, near door)
-    const s1 = new THREE.Mesh(new THREE.BoxGeometry(stepW, stepH, stepD), stepMat);
-    s1.position.set(0, (stepH * 2) + (stepH / 2), 2.7); // Y=0.5
-    worldGroup.add(s1);
-    createRoomBlock('toilet', 0, 1.1, -3.5, 1.2, 2.2, 2.0, roomContent.toilet.hex, [
-        { type: 'dark', scale: 0.6, side: 'left', narrow: true },
-        { type: 'dark', scale: 0.6, side: 'right', narrow: true }
+    // --- THE LITTLE ROOM (Toilet): EXTERIOR OUTHOUSE ---
+    // Replaced manual construction with simpler helper function (0.35 scale, slanted walls)
+    // Position preserved from legacy code: (0, 0, -3.5)
+
+    // Ensure the helper function is available (hoisted)
+    if (typeof createToiletExterior === 'function') {
+        createToiletExterior(worldGroup, new THREE.Vector3(0, 0, -3.5));
+    } else {
+        console.error('createToiletExterior function missing!');
+    }
+
+    // --- UPPER FLOOR: CLASHING VOLUMES ---
+    // BEDROOM: Cantilevered Overhang + Corner Window
+    const bedX = -1.8, bedY = 4.5, bedZ = 0.5; // Upward nudge
+    createRoomBlock('bedroom', bedX, bedY, bedZ, 3.2, 2.4, 4.0, 0x5c3317, [
+        { type: 'dark', side: 'front', scale: 0.8 },
+        { type: 'dark', side: 'back', scale: 0.4 } // Small one on the bedroom (Back)
     ]);
-    // -- CLICK AREA FOR TOILET --
-    const toiletHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(1.4, 2.4, 2.2),
-        new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
-    );
-    toiletHitBox.position.set(0, 1.1, -3.5); // Fixed: Aligned with visual mesh (was 2.0)
-    toiletHitBox.userData = { name: 'toilet', type: 'room' };
-    worldGroup.add(toiletHitBox);
 
-    createRoomBlock('bedroom', -1.0, 3.8, 0, 2.0, 2, 5, roomContent.bedroom.hex, [{ type: 'dark', side: 'front' }, { type: 'dark', side: 'back' }]);
-    // -- CLICK AREA FOR BEDROOM --
-    const bedHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 2.5, 5.2),
-        new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
-    );
-    bedHitBox.position.set(-1.0, 3.8, 0);
+    // Add side window for bedroom
+    const bWinSide = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 1.5), winMat);
+    bWinSide.position.set(bedX - 1.65, bedY, bedZ);
+    worldGroup.add(bWinSide);
+
+    const bedHitBox = new THREE.Mesh(new THREE.BoxGeometry(4.0, 3.0, 0.8), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
+    bedHitBox.position.set(bedX, bedY, 2.6);
     bedHitBox.userData = { name: 'bedroom', type: 'room' };
     worldGroup.add(bedHitBox);
 
-    createRoomBlock('bathroom', 1.0, 3.8, 0, 2.0, 2, 5, roomContent.bathroom.hex, [{ type: 'dark', side: 'front' }, { type: 'dark', side: 'back' }]);
+    // BATHROOM: Vertical Brick Tower (Amsterdam Style)
+    const bathX = 2.0, bathY = 5.05, bathZ = 0; // Upward nudge
+    const bathMesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 6.0, 2.5), amsterdamMat);
+    bathMesh.position.set(bathX, bathY, bathZ);
+    bathMesh.userData = { name: 'bathroom', type: 'room' };
+    worldGroup.add(bathMesh);
 
-    // -- CLICK AREA FOR BATHROOM --
-    const bathHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 2.5, 5.2),
-        new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true })
-    );
-    bathHitBox.position.set(1.0, 3.8, 0);
+    // Bathroom Windows (Slits on side)
+    for (let i = 0; i < 3; i++) {
+        const slit = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.4), winMat);
+        slit.position.set(bathX + 1.03, bathY + i * 1.2 - 0.1, 0);
+        worldGroup.add(slit);
+    }
+
+    // BACK WINDOWS: 3 on the tall bathroom
+    for (let i = 0; i < 3; i++) {
+        const slitBack = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), winMat);
+        slitBack.position.set(bathX, bathY + i * 1.2 - 0.1, bathZ - 1.27);
+        worldGroup.add(slitBack);
+    }
+
+    const bathHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 6.0, 0.8), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
+    bathHitBox.position.set(bathX, bathY, 1.3);
     bathHitBox.userData = { name: 'bathroom', type: 'room' };
     worldGroup.add(bathHitBox);
 
-    const roofShape = new THREE.Shape();
-    roofShape.moveTo(-3.0, 0); roofShape.lineTo(3.0, 0); roofShape.lineTo(0, 3.0); roofShape.lineTo(-3.0, 0);
-    const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 5.2, bevelEnabled: false });
-    roofGeo.center();
-    const roofTexture = createRoofTexture();
-    const roofTilesMat = new THREE.MeshStandardMaterial({ map: roofTexture, color: 0xffffff, roughness: 0.8, bumpMap: roofTexture, bumpScale: 0.02 });
-    // V128: Darker Facade (Was 0xcdc7b9 -> 0x5d4037)
-    const facadeMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
-    const roof = new THREE.Mesh(roofGeo, [facadeMat, roofTilesMat]);
-    roof.position.set(0, 6.0, 0);
-    roof.userData = { name: 'attic', type: 'room' };
-    const atticWinFrameFront = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x3e2723 }));
-    atticWinFrameFront.position.set(0, -0.6, 2.6);
-    atticWinFrameFront.userData = { name: 'attic', type: 'room' }; // V-FIX
-    const atticWinGlassFront = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffaa00, emissiveIntensity: 0.6 }));
-    atticWinGlassFront.position.z = 0.06;
-    atticWinGlassFront.userData = { name: 'attic', type: 'room' }; // V-FIX
-    atticWinFrameFront.add(atticWinGlassFront);
-    roof.add(atticWinFrameFront);
+    // --- BATHROOM RED TILED ROOF ---
+    const bathRoofTex = createRoofTexture();
+    const bathRoofTopY = bathY + 3.0 + 0.06;
+    const bathRoof = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0 + 0.3, 0.12, 2.5 + 0.3),
+        new THREE.MeshStandardMaterial({ map: bathRoofTex, color: 0xcc1010, roughness: 0.85 })
+    );
+    bathRoof.position.set(bathX, bathRoofTopY, bathZ);
+    bathRoof.castShadow = true; bathRoof.receiveShadow = true;
+    worldGroup.add(bathRoof);
 
-    const atticWinFrameBack = atticWinFrameFront.clone();
-    atticWinFrameBack.position.set(0, -0.6, -2.6);
-    atticWinFrameBack.rotation.y = Math.PI;
-    // Clone ensures userData (shallow copy) but let's be sure
-    atticWinFrameBack.userData = { name: 'attic', type: 'room' };
-    roof.add(atticWinFrameBack);
-    worldGroup.add(roof);
+    // --- BATHROOM SOLAR PANELS (1 col x 2 rows) ---
+    (function () {
+        const _frameMat2 = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.6 });
+        const _roofY2 = bathRoofTopY + 0.07;
+        const _pW2 = 0.65, _pD2 = 0.55, _pT2 = 0.04, _gap2 = 0.14;
+        const _cols2 = 1, _rows2 = 2;
+        const _sx2 = bathX - ((_cols2 - 1) * (_pW2 + _gap2)) / 2;
+        const _sz2 = bathZ - ((_rows2 - 1) * (_pD2 + _gap2)) / 2;
+        const _sc2 = document.createElement('canvas'); _sc2.width = 64; _sc2.height = 64;
+        const _s2ctx = _sc2.getContext('2d');
+        _s2ctx.fillStyle = '#0a2a55'; _s2ctx.fillRect(0, 0, 64, 64);
+        _s2ctx.strokeStyle = '#1a4a80'; _s2ctx.lineWidth = 2;
+        for (let _i2 = 1; _i2 < 4; _i2++) {
+            _s2ctx.beginPath(); _s2ctx.moveTo(_i2 * 16, 0); _s2ctx.lineTo(_i2 * 16, 64); _s2ctx.stroke();
+            _s2ctx.beginPath(); _s2ctx.moveTo(0, _i2 * 16); _s2ctx.lineTo(64, _i2 * 16); _s2ctx.stroke();
+        }
+        const _cellTex2 = new THREE.CanvasTexture(_sc2);
+        for (let _c2 = 0; _c2 < _cols2; _c2++) {
+            for (let _r2 = 0; _r2 < _rows2; _r2++) {
+                const _px2 = _sx2 + _c2 * (_pW2 + _gap2), _pz2 = _sz2 + _r2 * (_pD2 + _gap2);
+                const _frame2 = new THREE.Mesh(new THREE.BoxGeometry(_pW2 + 0.06, _pT2 + 0.02, _pD2 + 0.06), _frameMat2);
+                _frame2.position.set(_px2, _roofY2, _pz2); worldGroup.add(_frame2);
+                const _panel2 = new THREE.Mesh(new THREE.BoxGeometry(_pW2, _pT2, _pD2),
+                    new THREE.MeshStandardMaterial({ color: 0x0a2a55, roughness: 0.2, metalness: 0.8, map: _cellTex2 }));
+                _panel2.position.set(_px2, _roofY2 + 0.02, _pz2); worldGroup.add(_panel2);
+            }
+        }
+    })();
 
+    // Rounded balcony (Quarter cylinder on the corner)
+    // const balcony = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.8, 16, 1, false, 0, Math.PI / 2), amsterdamMat);
+    // Position at Right-Front corner (X=3.0, Z=1.25)
+    // bathX=2.0. Right edge is ~3.0. Front edge is ~1.25.
+    // balcony.position.set(bathX + 0.9, bathY - 1.48, 1.2);
+    // balcony.rotation.y = -Math.PI / 2; // Curve connects Front (+Z) to Right (+X)
+    // worldGroup.add(balcony);
+
+    // --- ROOF & ATTIC: AMSTERDAM FLAT BOX STYLE ---
+    const roofBaseY = 6.6; // Higher offset
+    const flatRoof = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.2, 6.0), new THREE.MeshStandardMaterial({ color: 0x221100 }));
+    flatRoof.position.set(0, roofBaseY, 0);
+    worldGroup.add(flatRoof);
+
+    // Flat Attic Cube
+    const atticX = -1.2, atticY = roofBaseY + 1.25, atticZ = 0;
+    const atticW = 3.6, atticH = 2.4, atticD = 4.5;
+
+    // BACK WINDOW: Attic
+    createRoomBlock('attic', atticX, atticY, atticZ, atticW, atticH, atticD, 0x4d2600, { type: 'dark', side: 'back', scale: 0.8 });
+    // Note: createRoomBlock already adds the mesh to worldGroup
+
+    // Row of taller, narrow Amsterdam-school slit windows
+    const rowWinGeo = new THREE.BoxGeometry(0.12, 1.2, 0.1); // Narrower and taller
+    for (let i = 0; i < 6; i++) {
+        const slit = new THREE.Mesh(rowWinGeo, winMat);
+        slit.position.set(atticX - 1.5 + i * 0.6, atticY + 0.2, atticZ + 2.28);
+        worldGroup.add(slit);
+    }
+
+    const atticHitBox = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 5), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
+    atticHitBox.position.set(atticX, atticY, 0);
+    atticHitBox.userData = { name: 'attic', type: 'room' };
+    worldGroup.add(atticHitBox);
+
+    // --- ATTIC RED TILED ROOF ---
+    const atticRoofTex = createRoofTexture();
+    const atticRoof = new THREE.Mesh(
+        new THREE.BoxGeometry(atticW + 0.3, 0.12, atticD + 0.3),
+        new THREE.MeshStandardMaterial({ map: atticRoofTex, color: 0xcc1010, roughness: 0.85 })
+    );
+    atticRoof.position.set(atticX, atticY + atticH / 2 + 0.06, atticZ);
+    atticRoof.castShadow = true; atticRoof.receiveShadow = true;
+    worldGroup.add(atticRoof);
+
+    // --- ATTIC SOLAR PANELS (2 cols x 3 rows) ---
+    (function () {
+        const _frameMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.6 });
+        const _roofY = atticY + atticH / 2 + 0.13;
+        const _pW = 0.7, _pD = 0.55, _pT = 0.04, _gap = 0.12;
+        const _cols = 2, _rows = 3;
+        const _sx = atticX - ((_cols - 1) * (_pW + _gap)) / 2;
+        const _sz = atticZ - ((_rows - 1) * (_pD + _gap)) / 2;
+        const _sc = document.createElement('canvas'); _sc.width = 64; _sc.height = 64;
+        const _sctx = _sc.getContext('2d');
+        _sctx.fillStyle = '#0a2a55'; _sctx.fillRect(0, 0, 64, 64);
+        _sctx.strokeStyle = '#1a4a80'; _sctx.lineWidth = 2;
+        for (let _i = 1; _i < 4; _i++) {
+            _sctx.beginPath(); _sctx.moveTo(_i * 16, 0); _sctx.lineTo(_i * 16, 64); _sctx.stroke();
+            _sctx.beginPath(); _sctx.moveTo(0, _i * 16); _sctx.lineTo(64, _i * 16); _sctx.stroke();
+        }
+        const _cellTex = new THREE.CanvasTexture(_sc);
+        for (let _c = 0; _c < _cols; _c++) {
+            for (let _r = 0; _r < _rows; _r++) {
+                const _px = _sx + _c * (_pW + _gap), _pz = _sz + _r * (_pD + _gap);
+                const _frame = new THREE.Mesh(new THREE.BoxGeometry(_pW + 0.06, _pT + 0.02, _pD + 0.06), _frameMat);
+                _frame.position.set(_px, _roofY, _pz); worldGroup.add(_frame);
+                const _panel = new THREE.Mesh(new THREE.BoxGeometry(_pW, _pT, _pD),
+                    new THREE.MeshStandardMaterial({ color: 0x0a2a55, roughness: 0.2, metalness: 0.8, map: _cellTex }));
+                _panel.position.set(_px, _roofY + 0.02, _pz); worldGroup.add(_panel);
+            }
+        }
+    })();
+
+    // --- STAIRS ---
+    const stepDarkMat = new THREE.MeshStandardMaterial({ color: 0x1a0d00 });
+    const stepWhiteMat = new THREE.MeshStandardMaterial({ color: 0xbfb5ae });
+    const stepMats = [
+        stepDarkMat, // Right
+        stepDarkMat, // Left
+        stepDarkMat, // Top
+        stepDarkMat, // Bottom
+        stepWhiteMat, // Front
+        stepDarkMat  // Back
+    ];
+
+    for (let i = 0; i < 4; i++) {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(2.0 - i * 0.2, 0.2, 0.4), stepMats);
+        s.position.set(0, 0.1 + i * 0.22, 4.75 - i * 0.4);
+        worldGroup.add(s);
+    }
 }
 function createRoofTexture() {
     const canvas = document.createElement('canvas');
@@ -6604,18 +1579,12 @@ function createRoofTexture() {
     return tex;
 }
 
-
-
-
 function createMistTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Clear transparent
-    // ctx.clearRect(0, 0, 512, 512);
-    // DEBUG: Add base fill to ensure visibility
-    ctx.fillStyle = 'rgba(100, 0, 200, 0.2)';
+    ctx.fillStyle = 'rgba(100, 0, 200, 0.03)';
     ctx.fillRect(0, 0, 512, 512);
 
     // Draw multiple soft "puffs" for a cloud-like effect
@@ -6625,7 +1594,7 @@ function createMistTexture() {
         const r = 50 + Math.random() * 100;
 
         const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        const opacity = 0.5 + Math.random() * 0.4; // Significantly Increased for visibility
+        const opacity = 0.08 + Math.random() * 0.10;
         g.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
         g.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
@@ -6638,35 +1607,66 @@ function createMistTexture() {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(20, 20); // Repeat "cloud" hundreds of times (conceptually) for volume
+    tex.repeat.set(8, 8);
     return tex;
 }
 
 function createGrassTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext('2d');
-    // V301: Slightly Lighter Grass (User feedback: "too dark")
-    // Base: Dark Green (was #050a03) -> #0a1406
-    ctx.fillStyle = '#0a1406'; ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 8000; i++) {
-        const shade = Math.random();
-        // Blades: Slightly lighter range
-        // Was: #0d1808 / #12200c / #030802
-        // New: #16260e / #1e3314 / #050a03
-        ctx.fillStyle = shade > 0.7 ? '#16260e' : (shade > 0.4 ? '#1e3314' : '#050a03');
-        ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 3 + 1, Math.random() * 6 + 2);
+    // Greener base with subtle gradient
+    const g = ctx.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0, '#1d4d11');
+    g.addColorStop(1, '#2b6a1b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Gravel-like speckles (mostly green, a little stone noise)
+    for (let i = 0; i < 12000; i++) {
+        const r = Math.random();
+        if (r > 0.95) ctx.fillStyle = '#9aa39a';      // small stone (rare)
+        else if (r > 0.7) ctx.fillStyle = '#5aa84a'; // bright green speck
+        else if (r > 0.35) ctx.fillStyle = '#2f6e2b'; // mid green
+        else ctx.fillStyle = '#15300a';              // dark green
+
+        const size = Math.random() * 3 + 1; // 1-4
+        ctx.fillRect(Math.random() * 512, Math.random() * 512, size, size);
     }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(10, 10);
-    return tex;
+
+    // Slight blur to soften speckles (creates gravel/noise look)
+    try {
+        ctx.filter = 'blur(1px)';
+        const blurred = document.createElement('canvas');
+        blurred.width = 512; blurred.height = 512;
+        const bctx = blurred.getContext('2d');
+        bctx.filter = 'blur(1px)';
+        bctx.drawImage(canvas, 0, 0);
+        // copy back
+        ctx.filter = 'none';
+        ctx.clearRect(0, 0, 512, 512);
+        ctx.drawImage(blurred, 0, 0);
+    } catch (e) {
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(30, 30);
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+    texture.needsUpdate = true;
+
+    return texture;
 }
 
 
 function createIntroSignTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 200; // Reduced Height (Was 300) for tight fit
+    canvas.width = 512; canvas.height = 200;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#f0f0e0'; ctx.fillRect(0, 0, 512, 200);
     for (let i = 0; i < 150; i++) {
@@ -6684,9 +1684,119 @@ function createIntroSignTexture() {
     ctx.fillText("ENTER", 256, 100); // Centered vertically in 200
 
     const tex = new THREE.CanvasTexture(canvas);
-    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
     return tex;
 }
+
+// --- WORD SCULPTURE (HOUSE OF AWE) ---
+function createWordSculpture() {
+    if (!window.worldGroup) return;
+
+    const sculptureGroup = new THREE.Group();
+    sculptureGroup.name = "wordSculpture";
+
+    // Positioned left (scX=1.0) and elevated to float (sculptureGroup.position.y lift)
+    const scX = 1.0, scZ = 8.5;
+    if (typeof window.alignToPlanetUpright === 'function') {
+        window.alignToPlanetUpright(sculptureGroup, scX, scZ);
+        sculptureGroup.position.y += 0.4; // Floating elevation
+    } else {
+        sculptureGroup.position.set(scX, 1.2, scZ);
+    }
+
+    sculptureGroup.rotation.y = 0; // Parallel to facade
+    window.worldGroup.add(sculptureGroup);
+
+    window.refreshWordSculpture = function () {
+        // Clear children
+        while (sculptureGroup.children.length > 0) {
+            const child = sculptureGroup.children[0];
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+            sculptureGroup.remove(child);
+        }
+
+        const loader = new THREE.FontLoader();
+        loader.load('../assets/fonts/droid_sans_regular.typeface.json', function (font) {
+
+            const neonBlue = 0x1133cc;
+            const neonRed = 0xcc0000;
+            const fontSize = 0.9;
+            const depth = 0.05;
+            const textGap = 0.42;
+
+            const createNeonMesh = (text, color, xOffset) => {
+                const geometry = new THREE.TextGeometry(text, {
+                    font: font,
+                    size: fontSize,
+                    height: depth,
+                    curveSegments: 16,
+                    bevelEnabled: true,
+                    bevelThickness: 0.02,
+                    bevelSize: 0.015,
+                    bevelSegments: 5
+                });
+                const material = new THREE.MeshStandardMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 3.5,
+                    roughness: 0.1,
+                    metalness: 0.1
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.x = xOffset;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                return mesh;
+            };
+
+            const lineGroup = new THREE.Group();
+
+            // Logic for split text
+            let text1 = "House of";
+            let text2 = "Awe";
+
+            if (window.currentLanguage === 'nl') {
+                text1 = "Huis der";
+                text2 = "Verwondering";
+            } else if (window.t) {
+                // Fallback attempt to split translated text
+                const fullText = t('sculpture_text');
+                const lastSpace = fullText.lastIndexOf(' ');
+                if (lastSpace !== -1) {
+                    text1 = fullText.substring(0, lastSpace);
+                    text2 = fullText.substring(lastSpace + 1);
+                }
+            }
+
+            const mesh1 = createNeonMesh(text1, neonBlue, 0);
+            mesh1.geometry.computeBoundingBox();
+            const width1 = mesh1.geometry.boundingBox.max.x - mesh1.geometry.boundingBox.min.x;
+
+            const mesh2 = createNeonMesh(text2, neonRed, width1 + textGap);
+            mesh2.geometry.computeBoundingBox();
+            const width2 = mesh2.geometry.boundingBox.max.x - mesh2.geometry.boundingBox.min.x;
+
+            lineGroup.add(mesh1);
+            lineGroup.add(mesh2);
+
+            const totalWidth = width1 + textGap + width2;
+            lineGroup.position.x = -totalWidth / 2;
+            sculptureGroup.add(lineGroup);
+
+            const blueLight = new THREE.PointLight(neonBlue, 1.6, 7);
+            blueLight.position.set(-totalWidth / 4, 0.5, 0.5);
+            sculptureGroup.add(blueLight);
+
+            const redLight = new THREE.PointLight(neonRed, 1.8, 7);
+            redLight.position.set(totalWidth / 4, 0.5, 0.5);
+            sculptureGroup.add(redLight);
+        });
+    };
+
+    window.refreshWordSculpture();
+}
+
 
 // RESTORED ORIGINAL FOR LAMPOST
 function createSignTexture(line1 = "ENTER", line2 = "at your own risk") {
@@ -6704,15 +1814,13 @@ function createSignTexture(line1 = "ENTER", line2 = "at your own risk") {
     ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 90px "Glass Antiqua", cursive'; ctx.fillText(line1, 256, 100);
     ctx.fillStyle = '#000000'; ctx.font = 'bold 40px Arial, sans-serif'; ctx.fillText(line2, 256, 180);
     const tex = new THREE.CanvasTexture(canvas);
-    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
     return tex;
 }
 
 function createIntroSign() {
     const group = new THREE.Group();
     // Position in front of camera (Camera at 0, 20, 85)
-    // V13: Lower slightly to 14 (V12 was 16 - too high)
-    // V-FIX: Moved forward 2m (70 -> 72)
     group.position.set(0, 14, 72);
     group.rotation.x = -0.2; // Tilt up slightly
 
@@ -6724,10 +1832,16 @@ function createIntroSign() {
     // Board
     const tex = createIntroSignTexture();
     const board = new THREE.Mesh(
-        new THREE.BoxGeometry(4.0, 1.8, 0.2), // Smaller box (Was 6, 4)
-        new THREE.MeshStandardMaterial({ map: tex, transparent: true }) // V7: Allow fade
+        new THREE.BoxGeometry(4.0, 1.8, 0.2),
+        new THREE.MeshStandardMaterial({ map: tex, transparent: true })
     );
-    board.userData = { type: 'introSign', name: 'introSign' }; // Important for raycaster
+    board.userData = {
+        type: 'introSign',
+        name: 'introSign',
+        onClick: function () {
+            startInteractiveIntro();
+        }
+    }; // Important for raycaster
     group.add(board);
 
     // Pulsing Glow behind
@@ -6744,31 +1858,28 @@ function createIntroSign() {
 
 function startInteractiveIntro() {
     // 1. Play Audio (Immediately)
-    // Sound should start immediately after clicking 'ENTER'
-    const audio = new Audio('audio/Tension_Short_07.wav');
+    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.tension : '../assets/audio/Tension_Short_07.mp3';
+    const audio = new Audio(audioPath);
     audio.volume = 0.8;
-    audio.play().catch(e => console.warn("Audio play error", e));
+    audio.play().catch(() => { });
 
     // 2. Animate Sign GROW (Bigger), DROP (Below Screen), FADE
-    // "slowly disappear below the screen, growing in size and dropping in transparency"
-
     const sign = worldGroup.children.find(c => {
         return c.children.some(child => child.userData && child.userData.type === 'introSign');
     });
 
     if (sign) {
-        const board = sign.children.find(c => c.userData.type === 'introSign'); // The mesh with the map
+        const board = sign.children.find(c => c.userData.type === 'introSign');
 
         // Grow Scale (Much bigger)
         new TWEEN.Tween(sign.scale)
-            .to({ x: 3.0, y: 3.0, z: 3.0 }, 3500) // Slower (3.5s)
+            .to({ x: 3.0, y: 3.0, z: 3.0 }, 3500)
             .easing(TWEEN.Easing.Quadratic.Out)
             .start();
 
         // Drop Down (Below screen) & Fade Out
-        // Using this as the "master" tween for cleanup
         new TWEEN.Tween(sign.position)
-            .to({ y: -50 }, 4000) // 4s Drop (User wanted "disappear below screen" -50 is safer than -30)
+            .to({ y: -50 }, 4000)
             .easing(TWEEN.Easing.Quadratic.In)
             .onComplete(() => {
                 if (sign.parent) sign.parent.remove(sign);
@@ -6785,7 +1896,6 @@ function startInteractiveIntro() {
     }
 
     // 3. Start Animation (Shortly after click, overlapping)
-    // V12: INSTANT SYNC (Remove V11 Delay)
     startOpeningAnimation();
 }
 
@@ -6823,14 +1933,16 @@ function createVignetteAlphaMap() {
     return new THREE.CanvasTexture(canvas);
 }
 
-function buildStreetlight(x, z, rotationY = 0) {
+function buildStreetlight(x, z, rotationY = 0, intensity = 4.0) {
     const poleGroup = new THREE.Group();
     poleGroup.position.set(x, 0, z);
     poleGroup.rotation.y = rotationY;
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0x707070, roughness: 0.4, metalness: 0.6 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x303030, roughness: 0.4, metalness: 0.6 }); // Darker pole
     const poleHeight = 4.0;
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, poleHeight, 16), metalMat);
     pole.position.y = poleHeight / 2;
+    pole.castShadow = true;
+    pole.receiveShadow = true;
     poleGroup.add(pole);
     const curve = new THREE.QuadraticBezierCurve3(
         new THREE.Vector3(0, poleHeight, 0),
@@ -6838,39 +1950,51 @@ function buildStreetlight(x, z, rotationY = 0) {
         new THREE.Vector3(-1.8, poleHeight + 1.5, 0)
     );
     const arm = new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.1, 8, false), metalMat);
+    arm.castShadow = true;
+    arm.receiveShadow = true;
     poleGroup.add(arm);
     const lanternGroup = new THREE.Group();
     lanternGroup.position.set(-1.8, poleHeight + 1.5, 0);
-    lanternGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.1, 0.2, 8), metalMat));
-    const glassMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, transparent: true, opacity: 0.7, emissive: 0xffaa00, emissiveIntensity: 0.5 });
+    const lanternHood = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.1, 0.2, 8), metalMat);
+    lanternHood.castShadow = true;
+    lanternGroup.add(lanternHood);
+
+    // DIMMER & WARMER LIGHT (User Request)
+    const lightColor = 0xffeebb;
+    const glassMat = new THREE.MeshStandardMaterial({ color: lightColor, transparent: true, opacity: 0.6, emissive: lightColor, emissiveIntensity: 0.3 });
     const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.15, 0.6, 6), glassMat);
     glass.position.y = -0.4;
     lanternGroup.add(glass);
-    const spotLight = new THREE.SpotLight(0xffaa00, 3.0); // V-FIX: Brighter but tighter
+
+    const spotLight = new THREE.SpotLight(lightColor, intensity / 20); // Much lower intensity
     spotLight.position.set(0, -0.2, 0);
-    spotLight.target.position.set(0, -5, 0);
-    spotLight.angle = Math.PI / 4; // V-FIX: Tighter Angle (PI/3 -> PI/4)
-    spotLight.penumbra = 0.6; // Softer edges
+    spotLight.target.position.set(0, -10, 0);
+    spotLight.angle = Math.PI / 2.5;
+    spotLight.penumbra = 0.5;
     spotLight.castShadow = true;
-    spotLight.distance = 12; // V-FIX: Tighter reach (15 -> 12)
-    lanternGroup.add(spotLight); lanternGroup.add(spotLight.target);
-    const glowLight = new THREE.PointLight(0xffaa00, 1, 3);
+    spotLight.distance = 40;
+    lanternGroup.add(spotLight);
+    lanternGroup.add(spotLight.target);
+    const glowLight = new THREE.PointLight(lightColor, intensity / 40, 3);
     glowLight.position.y = -0.4;
     lanternGroup.add(glowLight);
-    const spriteMat = new THREE.SpriteMaterial({ map: createGlowTexture(), color: 0xffaa00, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    const spriteMat = new THREE.SpriteMaterial({
+        map: createGlowTexture(),
+        color: lightColor,
+        transparent: true,
+        opacity: 0.4,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
     const glowSprite = new THREE.Sprite(spriteMat);
-    glowSprite.scale.set(3, 3, 3); glowSprite.position.y = -0.4;
+    // V-FIX: Much smaller glow
+    const glowScale = 1.5;
+    glowSprite.scale.set(glowScale, glowScale, glowScale);
+    glowSprite.position.y = -0.4;
     lanternGroup.add(glowSprite);
     poleGroup.add(lanternGroup);
-    // Modified buildStreetlight to fix glowing sprite position or remove it if problematic
-    // The previous implementation added a sprite below the lantern.
-    // ...
-    // poleGroup.add(sign); // Code continues below...
 
-    // Keeping original code structure but verifying the insertion point for Mist Layer.
-    // The Mist Layer logic will be added inside buildEnvironment().
-
-    const signTex = createNewSignTexture();
+    const signTex = createSignTexture();
     const signWidth = 1.4; const signHeight = 0.7;
     const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.05);
     const signMat = new THREE.MeshStandardMaterial({ map: signTex });
@@ -6886,124 +2010,187 @@ function buildStreetlight(x, z, rotationY = 0) {
     bracket.position.z = Math.abs(rotationY) > 0.1 ? 0.05 : -0.05;
     sign.add(bracket);
 
-    // V97: Make Sign Interactive -> REMOVED per user request
-    // sign.userData = { type: 'enterSign', name: 'EnterSign' };
-
-    poleGroup.add(sign);
     worldGroup.add(poleGroup);
 
-    // Return the light that we want to flicker
     return spotLight;
 }
 
 function buildEnvironment() {
     const groundTex = createGrassTexture();
-    // V-FIX: White color to let Green Texture show (was 0x666666)
     const planeMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1, color: 0xffffff });
 
-    // V230: Planet Curvature Update (Flatter)
+    // Planet Curvature
     const PLANET_RADIUS = 500;
     const planetGroup = new THREE.Group();
     // Center the sphere so its top surface touches (0,0,0)
     planetGroup.position.set(0, -PLANET_RADIUS, 0);
 
-    const sphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS, 128, 128), planeMat);
-    sphere.receiveShadow = true; // V288: Enable Lamppost Shadows on ground
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS, 512, 512), planeMat); // V-ENHANCED: Much higher density to match road math
+    sphere.receiveShadow = true; // Enable Lamppost Shadows on ground
     planetGroup.add(sphere);
 
     worldGroup.add(planetGroup);
 
-    worldGroup.add(planetGroup);
+    // Occupancy Map for collisions
+    const placedPoints = [];
+    function isLocationValid(x, z, minDist = 8) {
+        const distToHouse = Math.sqrt(x * x + z * z);
+        const distToGarage = Math.sqrt((x - 10) * (x - 10) + (z - 3.5) * (z - 3.5));
+        if (distToHouse < 8) return false;
+        if (distToGarage < 6) return false;
 
-    // V130: Removed Mist Layer (User Request "Mist Leftover")
+        for (let p of placedPoints) {
+            const dx = x - p.x; const dz = z - p.z;
+            if (dx * dx + dz * dz < minDist * minDist) return false;
+        }
+        return true;
+    }
     mistLayer = null;
 
-    // Helper: Get Height on Sphere for (x, z) relative to world origin (0,0,0)
     function getPlanetY(x, z) {
         const R = PLANET_RADIUS;
         const term = R * R - x * x - z * z;
         if (term < 0) return 0;
         return Math.sqrt(term) - R;
     }
+    window.getPlanetY = getPlanetY;
 
-    // Helper: Orient Object to Normal
     function alignToPlanet(obj, x, z) {
         const y = getPlanetY(x, z);
         obj.position.set(x, y, z);
         const normal = new THREE.Vector3(x, y + PLANET_RADIUS, z).normalize();
         obj.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
     }
+    window.alignToPlanet = alignToPlanet;
 
-    // V44: Spherical Road (Epic Scale)
+    // alignToPlanetUpright: positions on curved surface but keeps object vertical (for buildings)
+    function alignToPlanetUpright(obj, x, z) {
+        const y = getPlanetY(x, z);
+        obj.position.set(x, y, z);
+        // No quaternion tilt - buildings stay perfectly vertical
+    }
+    window.alignToPlanetUpright = alignToPlanetUpright;
+
+    // Spherical Road (Epic Scale)
     const widthAtSteps = 1.4;
-    const widthAtHorizon = 30.0; // V44: WIDE Horizon
+    const widthAtHorizon = 30.0;
     const stepZ = 2.7;
-    const horizonZ = 150.0; // V44: Far Horizon
+    const horizonZ = 250.0;
     const widthSlope = (widthAtHorizon - widthAtSteps) / (horizonZ - stepZ);
 
-    const roadSegments = 200;
-    const roadStartZ = 2.7; // Start exactly at steps
-    const roadEndZ = 150.0;
-    console.log("Road Config V44: Epic Scale (150m). Start:", roadStartZ, "End:", roadEndZ);
+    const roadSegments = 300;
+    const roadStartZ = 27.0;
+    const roadEndZ = 250.0;
 
     const rVertices = [];
     const rIndices = [];
     const rUVs = [];
     const roadThickness = 0.5;
 
-    for (let i = 0; i <= roadSegments; i++) {
-        const ratio = i / roadSegments;
-        const z = roadStartZ + (roadEndZ - roadStartZ) * ratio;
+    const roadWidth = 6.0;
+    const Z_START = 250.0;
+    const Z_END = 27.2; // Road stops exactly at roundabout outer rim — flare handles z=27.2 down to z=20
+    const step = 2.0;
 
-        // V23: Precise Formula relative to Steps
-        const currentWidth = widthAtSteps + (z - stepZ) * widthSlope;
+    // Create segments as a single buffer geometry
+    for (let z = Z_START; z > Z_END; z -= step) {
+        const nextZ = z - step;
+        const ratio = (Z_START - z) / (Z_START - Z_END);
 
-        const yTop = getPlanetY(0, z) + 0.1;
-        const yBottom = yTop - roadThickness;
+        // Zig-Zag Logic
+        let xOffset = 0;
+        let nextXOffset = 0;
 
-        rVertices.push(-currentWidth / 2, yTop, z);
-        rVertices.push(currentWidth / 2, yTop, z);
-        rVertices.push(-currentWidth / 2, yBottom, z);
-        rVertices.push(currentWidth / 2, yBottom, z);
+        const zigFactor = Math.max(0, 1.0 - (ratio * 1.5)); // Fade out zig zag
+        // Use cosine with smaller amplitude for a straighter, reversed initial curve
+        const curveAmp = 3.0;
+        // Expose for debugging
+        try { window.houseDebug.curveAmp = curveAmp; window.houseDebug.roadZStart = Z_START; window.houseDebug.roadZEnd = Z_END; } catch (e) { }
+        xOffset = -Math.cos(z * 0.1) * curveAmp * zigFactor;
+        nextXOffset = -Math.cos(nextZ * 0.1) * curveAmp * zigFactor;
 
+        // Current Segment
+        const y1 = getPlanetY(xOffset, z) + 0.035; // V-FIX: Higher offset to prevent grass clipping
+        const y2 = getPlanetY(nextXOffset, nextZ) + 0.035;
+
+        rVertices.push(xOffset - roadWidth / 2, y1, z);
+        rVertices.push(nextXOffset - roadWidth / 2, y2, nextZ);
+        rVertices.push(xOffset + roadWidth / 2, y1, z);
+
+        rVertices.push(nextXOffset - roadWidth / 2, y2, nextZ);
+        rVertices.push(nextXOffset + roadWidth / 2, y2, nextZ);
+        rVertices.push(xOffset + roadWidth / 2, y1, z);
+
+        // Simple UVs
         rUVs.push(0, ratio);
+        rUVs.push(0, ratio + 0.01);
         rUVs.push(1, ratio);
-        rUVs.push(0, ratio);
+        rUVs.push(0, ratio + 0.01);
+        rUVs.push(1, ratio + 0.01);
         rUVs.push(1, ratio);
-
-        if (i < roadSegments) {
-            const base = i * 4;
-            rIndices.push(base, base + 1, base + 4);
-            rIndices.push(base + 4, base + 1, base + 5);
-            rIndices.push(base + 2, base + 6, base + 3);
-            rIndices.push(base + 6, base + 7, base + 3);
-            rIndices.push(base + 2, base, base + 6);
-            rIndices.push(base, base + 4, base + 6);
-            rIndices.push(base + 1, base + 3, base + 5);
-            rIndices.push(base + 3, base + 7, base + 5);
-        }
     }
 
     const roadMeshGeo = new THREE.BufferGeometry();
     roadMeshGeo.setAttribute('position', new THREE.Float32BufferAttribute(rVertices, 3));
     roadMeshGeo.setAttribute('uv', new THREE.Float32BufferAttribute(rUVs, 2));
-    roadMeshGeo.setIndex(rIndices);
     roadMeshGeo.computeVertexNormals();
 
     const road = new THREE.Mesh(roadMeshGeo, new THREE.MeshStandardMaterial({
-        color: 0x222222,
+        color: 0x333333,
         roughness: 0.9,
         side: THREE.DoubleSide,
         polygonOffset: true,
         polygonOffsetFactor: -1,
         polygonOffsetUnits: 1
     }));
+    road.receiveShadow = true;
+    road.castShadow = true; // V-FIX: Cast shadows to ground to hide floating gap
     worldGroup.add(road);
 
+    // Circular approach disc — fills the area under and around the roundabout ring
+    // so the road meets the ring cleanly without rectangular flares.
+    {
+        const discSegs = 48;
+        const discR = 7.4;
+        const discVerts = [];
+        const discIdx = [];
+        const rz = 20;
+        discVerts.push(0, getPlanetY(0, rz) + 0.028, rz);
+        for (let i = 0; i <= discSegs; i++) {
+            const a = (i / discSegs) * Math.PI * 2;
+            const vx = Math.cos(a) * discR;
+            const vz = rz + Math.sin(a) * discR;
+            discVerts.push(vx, getPlanetY(vx, vz) + 0.028, vz);
+        }
+        for (let i = 1; i <= discSegs; i++) {
+            discIdx.push(0, i, i + 1);
+        }
+        const discGeo = new THREE.BufferGeometry();
+        discGeo.setAttribute('position', new THREE.Float32BufferAttribute(discVerts, 3));
+        discGeo.setIndex(discIdx);
+        discGeo.computeVertexNormals();
+        const discMesh = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({
+            color: 0x2a2a2a, roughness: 0.9,
+            polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: 1
+        }));
+        discMesh.receiveShadow = true;
+        worldGroup.add(discMesh);
+    }
+
     // Capture the light object for animation
-    const lx_lamp = -2.2, lz_lamp = 8; // V157: Restored to proximity as requested
-    lamppostLight = buildStreetlight(lx_lamp, lz_lamp, Math.PI);
+    const lx_lamp = -7, lz_lamp = 10; // Back on gravel, but still far-left corner
+    lamppostLight = buildStreetlight(lx_lamp, lz_lamp, Math.PI, 0.08); // Toned down nudge from 0.15 to 0.08
     if (lamppostLight) {
+        // CUSTOM GLOW BOOST (User Request)
+        if (lamppostLight.parent) {
+            lamppostLight.parent.children.forEach(c => {
+                if (c.isSprite) {
+                    c.scale.set(6.0, 6.0, 1.0); // Larger Glow
+                    c.material.opacity = 0.9;   // Brighter Glow
+                }
+            });
+        }
+
         let group = lamppostLight.parent.parent;
         if (group) {
             const ly = getPlanetY(lx_lamp, lz_lamp);
@@ -7017,11 +2204,59 @@ function buildEnvironment() {
             speed: 2.0 + Math.random(),
             phase: Math.random() * Math.PI * 2
         };
+
+        const lightTarget = new THREE.Object3D();
+        lightTarget.position.set(10, 0, 6.5);
+        scene.add(lightTarget);
+        lamppostLight.target = lightTarget;
+        lamppostLight.castShadow = true;
+        if (lamppostLight.shadow) {
+            lamppostLight.shadow.mapSize.width = 1024;
+            lamppostLight.shadow.mapSize.height = 1024;
+            lamppostLight.shadow.camera.near = 0.5;
+            lamppostLight.shadow.camera.far = 40;
+            lamppostLight.shadow.radius = 3; // Soft shadow edges
+        }
+
+        // Create a quick soft shadow texture
+        function createShadowTexture() {
+            const sc = document.createElement('canvas'); sc.width = 64; sc.height = 64;
+            const sctx = sc.getContext('2d');
+            const g = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            g.addColorStop(0, 'rgba(0,0,0,1.0)'); // Darker core
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            sctx.fillStyle = g; sctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(sc);
+        }
+        window.createShadowTexture = createShadowTexture;
+
+        // Add shadow for lamppost itself (Manual Plane)
+        const shadowGeo = new THREE.PlaneGeometry(8, 3); // V-FIX: X-long to match trees
+        shadowGeo.rotateX(-Math.PI / 2); // Bake rotation so Local Y is Normal
+
+        const postShadowPlane = new THREE.Mesh(
+            shadowGeo,
+            new THREE.MeshBasicMaterial({
+                map: createShadowTexture(),
+                transparent: true,
+                opacity: 0.7, // V-FIX: Softer
+                depthWrite: false
+            })
+        );
+        // Position and Orient to Planet Surface natively
+        alignToPlanet(postShadowPlane, lx_lamp, lz_lamp);
+
+        postShadowPlane.translateY(0.12);
+
+        const moonShadowAngle = Math.atan2(50, -30);
+        postShadowPlane.rotation.y = moonShadowAngle;
+
+        postShadowPlane.translateX(-4);
+
+        worldGroup.add(postShadowPlane);
+        placedPoints.push({ x: lx_lamp, z: lz_lamp });
     }
 
-    // V-CLEAN: Removed legacy Tree helpers and manual placements (Superseded by Skyscraper Loop)
-
-    // V132: Street Glow Texture (Orange)
     function createStreetGlowTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 128; canvas.height = 128;
@@ -7033,67 +2268,54 @@ function buildEnvironment() {
         return new THREE.CanvasTexture(canvas);
     }
 
-    // V133: Independent Street Lights (Not children)
+    // Independent Street Lights (Not children)
     const streetLights = [];
     window.streetLights = streetLights;
 
     // Background Blocks Helper
-    // V-NEW: Universal Skyscraper Factory (Renamed to force update)
+    // Universal Skyscraper Factory (Renamed to force update)
     function createMegaBlock() {
-        // 1. Generate LED Texture (Top Only)
-        // ... (Texture logic remains same, just brief header here)
         const canvas = document.createElement('canvas');
         canvas.width = 32; canvas.height = 64;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, 32, 64);
+        // Dark steel / silver / dark brown palette - grounded industrial tones
+        const palette = [0x2a2e32, 0x3a3f44, 0x1e1a16, 0x2f2820, 0x4a4e52, 0x353030];
+        const randomColor = palette[Math.floor(Math.random() * palette.length)];
 
-        // Simpler LED Logic for speed
-        for (let i = 0; i < 3; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? '#ff0000' : '#00ff00';
-            ctx.fillRect(Math.random() * 30, Math.random() * 10, 2, 2);
+        // Re-enabled screens (LEDs)
+        for (let i = 0; i < 12; i++) {
+            ctx.fillStyle = Math.random() > 0.5 ? '#9d13a9' : '#0a8aba';
+            ctx.fillRect(Math.random() * 28, Math.random() * 18, 2, 2);
         }
+
         const tex = new THREE.CanvasTexture(canvas);
         tex.magFilter = THREE.NearestFilter;
 
-        // V125: Base Height 1.0, Width 2.5 (Medium/Short)
-        const geo = new THREE.BoxGeometry(2.5, 1.0, 2.5);
-        geo.translate(0, 0.5, 0); // Keep pivot
-
-        // V146: Grey Scale Palette + V-NEW: Added Brown-ish shades
-        const palette = [
-            0x1a1a1a, 0x2c2c2c, 0x333333, 0x444444, 0x555555,
-            0x666666, 0x777777, 0x888888, 0x999999, 0xaaaaaa,
-            0x121212, 0x242424, 0x383838, 0x4a4a4a, 0x222233, // Subtle blue-grey
-            0x3e2723, 0x4e342e, 0x5d4037, 0x6d4c41, 0x795548  // V-NEW: Brown-ish shades
-        ];
-        const randomColor = palette[Math.floor(Math.random() * palette.length)];
-
-        // Adjust Metalness/Roughness based on color type (heuristic)
-        // If it's a "Metal" grey (blue-ish 0x60..., 0x78..., 0x90...), make it more metallic
-        const isMetal = (randomColor === 0x607d8b || randomColor === 0x78909c || randomColor === 0x90a4ae || randomColor === 0xaaaaaa);
+        const geo = new THREE.BoxGeometry(6.0, 0.8, 6.0);
+        geo.translate(0, 0.4, 0);
 
         const mat = new THREE.MeshStandardMaterial({
             color: randomColor,
-            roughness: isMetal ? 0.3 : 0.8,
-            metalness: isMetal ? 0.8 : 0.1,
-            emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 2.0 // Keep LEDs
+            roughness: 0.8,
+            metalness: 0.2,
+            emissiveMap: tex,
+            emissive: 0xffffff,
+            emissiveIntensity: 3.0 // More visible glow
         });
 
         const mesh = new THREE.Mesh(geo, mat);
         mesh.userData = {
             isSkyscraper: true,
             phase: Math.random() * Math.PI * 2,
-            speed: 2 + Math.random() * 3,
+            speed: 1.5 + Math.random() * 2,
             baseScaleY: 1.0
         };
-
         return mesh;
     }
-    function createGlowTexture() {
+    function createPathGlowTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 64; canvas.height = 64;
         const ctx = canvas.getContext('2d');
-        // V-FIX: Softer Gradient (No hard core)
         const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
         gradient.addColorStop(0, 'rgba(255, 200, 100, 1)'); // Warm white center
         gradient.addColorStop(0.2, 'rgba(255, 160, 0, 0.4)'); // Rapid falloff to transparency
@@ -7103,14 +2325,11 @@ function buildEnvironment() {
         return new THREE.CanvasTexture(canvas);
     }
 
-    // V158: Perspective-Synced Path Lights (Hero Foreground + Scaling)
-    // V158: Perspective-Synced Path Lights (Hero Foreground + Scaling)
     function spawnPathLights() {
         const lampGroup = new THREE.Group();
 
-        // V-REFINE 315: Modern Art Nouveau / Organic Design (Curved Stalk)
         const stemsMat = new THREE.MeshStandardMaterial({
-            color: 0x111111, // Dark Iron
+            color: 0x111111,
             roughness: 0.6,
             metalness: 0.5
         });
@@ -7118,39 +2337,33 @@ function buildEnvironment() {
         const bulbMat = new THREE.MeshStandardMaterial({
             color: 0xffaa00,
             emissive: 0xffaa00,
-            emissiveIntensity: 3.0 // V-FIX: Brighter Bulb
+            emissiveIntensity: 3.0
         });
 
-        // GEOMETRY REUSE
         // 1. Tapered Stalk (Base to Curve start)
         const stalkGeo = new THREE.CylinderGeometry(0.06, 0.12, 3.2, 8);
 
         // 2. The Loop/Curve (Torus Segment)
-        // Radius 0.5, Tube 0.05, Arc ~230 degrees
         const curveGeo = new THREE.TorusGeometry(0.5, 0.05, 8, 16, Math.PI * 1.3);
 
         // 3. The Bulb (Large Sphere)
         const bulbGeo = new THREE.SphereGeometry(0.3, 32, 32);
 
-        // V-FIX: One material for Glow Sprite
+        // One material for Glow Sprite
         const glowTex = createGlowTexture();
         const spriteMat = new THREE.SpriteMaterial({
             map: glowTex, color: 0xffaa00, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false
         });
 
-        // Taper variables
-        const wSteps = 1.4, wHorizon = 30.0, zSteps = 2.7, zHorizon = 150.0;
-        const slope = (wHorizon - wSteps) / (zHorizon - zSteps);
+        // Constant Road Width (No Perspective Cheating)
+        const ROAD_WIDTH = 6.0;
 
-        // V-FIX 275: Brighter Lamps, Removed Close Lamp, Visible Usher
-        // 1. Loop stops earlier (z >= 35)
-        for (let z = 115; z >= 35; z -= 15) {
-            const currentRoadWidth = wSteps + (z - zSteps) * slope;
-            const xPos = currentRoadWidth / 2 + 0.8;
-            const distRatio = (z - 20) / (115 - 20);
-            const perspectiveScale = 1.0 + distRatio * 1.0;
+        // Lampposts continue far into the distance
+        for (let z = 220; z >= 35; z -= 15) {
+            const xPos = ROAD_WIDTH / 2 + 1.2;
 
             const postGroup = new THREE.Group();
+            postGroup.scale.setScalar(1.2); // 20% BIGGER (Generic Lampposts)
 
             // 1. Stalk (Y: 1.6)
             const stalk = new THREE.Mesh(stalkGeo, stemsMat);
@@ -7159,104 +2372,63 @@ function buildEnvironment() {
 
             // 2. Curve (Top)
             const curve = new THREE.Mesh(curveGeo, stemsMat);
-            // Position at top of stalk, rotated to look like a hook
             curve.position.set(0.3, 3.2, 0);
             curve.rotation.z = Math.PI / 1.5;
             postGroup.add(curve);
 
             // 3. Bulb (Nestled in curve)
             const bulb = new THREE.Mesh(bulbGeo, bulbMat);
-            // Positioned "hanging" or held by the curve
             bulb.position.set(0.4, 3.2, 0);
             postGroup.add(bulb);
 
-            // Light & Glow (Brighter V315)
-            const pLight = new THREE.PointLight(0xffaa00, 4.0, 18); // V-FIX: Much Brighter (Massive intensity)
+            // Light & Glow
+            const pLight = new THREE.PointLight(0xffaa00, 10.0, 18); // ROAD LIGHTS: Very Intense (15.0)
             pLight.position.set(0.4, 3.2, 0);
             postGroup.add(pLight);
             streetLights.push(pLight);
 
             const spriteL = new THREE.Sprite(spriteMat);
-            spriteL.scale.set(2.5, 2.5, 1.0); // Larger Glow
+            spriteL.scale.set(3.5, 3.5, 1.0); // LARGER GLOW
             spriteL.position.set(0.4, 3.2, 0);
             postGroup.add(spriteL);
 
-
             // Left
             alignToPlanet(postGroup, -xPos, z);
-            postGroup.scale.setScalar(perspectiveScale);
-            // Look at road center, slightly
             postGroup.lookAt(new THREE.Vector3(0, postGroup.position.y, z));
             lampGroup.add(postGroup);
 
             // Right
             const postGroupR = postGroup.clone();
             alignToPlanet(postGroupR, xPos, z);
-            postGroupR.scale.setScalar(perspectiveScale);
             postGroupR.lookAt(new THREE.Vector3(0, postGroupR.position.y, z));
-            // Extract Light for animation array
             postGroupR.traverse(c => { if (c.isPointLight) streetLights.push(c); });
             lampGroup.add(postGroupR);
         }
         worldGroup.add(lampGroup);
 
-        // V-NEW: Spawn Pluto Usher!
-        if (typeof createPlutoUsher === 'function') {
-            // V-FIX 280: Singleton Check (Prevent "Double" glitches)
-            if (window.usherCharacter) {
-                if (window.usherCharacter.parent) window.usherCharacter.parent.remove(window.usherCharacter);
-                window.usherCharacter = null;
-            }
-
-            console.log("--- FOUND createPlutoUsher... Spawning REFINED V286 ---");
-            const usher = createPlutoUsher();
-            usher.scale.set(0.36, 0.36, 0.36); // V286: 2x the size (User req)
-
-            // V-FIX 283: Opposite the ENTER sign (lx_lamp=-2.2, lz_lamp=8) -> Right Side Z=8
-            // V305: Centered on Path (x=0)
-            alignToPlanet(usher, 0, 8);
-
-            // V-FIX 284: Proper Upright Angle & Height
-            // 1. Up vector must point away from planet center (0, -500, 0)
-            const normal = new THREE.Vector3(usher.position.x, usher.position.y + 500, usher.position.z).normalize();
-            usher.up.copy(normal);
-            // 2. Look across the road (towards center) THEN rotate 90deg left to face user
-            usher.lookAt(new THREE.Vector3(0, usher.position.y, 8));
-            // usher.rotateY(Math.PI / 2); // No rotation needed if looking at 0,0,8 (itself?)
-            // Wait, lookAt(0,y,8) means look at center of path.
-            // If x=0, looking at 0 means... looking nowhere?
-            // Try looking at camera start: (0, 20, 85)
-            // Or look at (0, y, 9) (slightly forward)
-            usher.lookAt(new THREE.Vector3(0, usher.position.y, 80)); // Look towards entrance/camera
-
-            // 3. Grounding (V288: Exact model alignment)
-            usher.translateY(0.02);
-
-            worldGroup.add(usher);
-            window.usherCharacter = usher;
-
-            console.log("--- PLUTO USHER SPAWNED V305 (Centered, Z=8) ---");
-        } else {
-            console.error("CRITICAL: createPlutoUsher function not found! Check pluton.js loading.");
-        }
     }
 
 
     spawnPathLights();
-    // V148: Removed spawnStreetLights call
 
+    const placedBlocks = [];
+    const BLOCK_MIN_DIST = 12.0;
 
-    // V326: Restored MESSY CITY OF CUBES (User: "Without the clean up")
-    // V326: BIT-PERFECT RESTORATION FROM ORIGINAL FILE
-    console.log("--- V326: RESTORING ORIGINAL MESSY SKYLINE ---");
-    for (let i = 0; i < 800; i++) {
+    const SKY_BASE_RADIUS = 45; window.houseDebug.skyBaseRadius = SKY_BASE_RADIUS;
+    for (let i = 0; i < 600; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const radius = 25 + Math.pow(Math.random(), 2) * 120;
+        // Start skyscrapers further out so they don't crowd the back of the house
+        const radius = SKY_BASE_RADIUS + Math.pow(Math.random(), 2) * 120; // Increased base radius (was 25)
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        // ORIGINAL ROAD CULLING (Culling road path)
-        if (z > -5 && z < 180 && Math.abs(x) < 20.0) continue;
+        // Prevent any blocks from spawning too close to house center
+        if (Math.sqrt(x * x + z * z) < 40.0) continue;
+
+        if (z > -50 && z < 250 && Math.abs(x) < 50.0) continue;
+
+        if (!isLocationValid(x, z, BLOCK_MIN_DIST)) continue;
+        placedPoints.push({ x: x, z: z });
 
         const mesh = createMegaBlock();
         const distFactor = (radius - 25) / 120;
@@ -7267,96 +2439,382 @@ function buildEnvironment() {
         mesh.userData.baseScaleY = h;
         mesh.scale.set(1, h, 1);
 
-        alignToPlanet(mesh, x, z);
+        alignToPlanetUpright(mesh, x, z);
         worldGroup.add(mesh);
-        animatedTrees.push(mesh); // City blocks participate in float animation
+        animatedTrees.push(mesh); // City blocks participate in glow animation
     }
 
-    // V326: Horizon Mega-Blocks (Far Distance)
+    // Horizon Mega-Blocks (Far Distance)
     for (let i = 0; i < 300; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = 120 + Math.random() * 130;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
-        if (z > -10 && z < 250 && Math.abs(x) < 30.0) continue;
+        if (z > -50 && z < 270 && Math.abs(x) < 80.0) continue;
+
+        let overlap = false;
+        for (let pb of placedBlocks) {
+            const dx = x - pb.x;
+            const dz = z - pb.z;
+            if (dx * dx + dz * dz < BLOCK_MIN_DIST * BLOCK_MIN_DIST) {
+                overlap = true;
+                break;
+            }
+        }
+        if (overlap) continue;
+        placedBlocks.push({ x: x, z: z });
 
         const mesh = createMegaBlock();
         const h = 20.0 + Math.random() * 30.0;
         mesh.userData.baseScaleY = h;
         mesh.scale.set(1, h, 1);
-        alignToPlanet(mesh, x, z);
+        alignToPlanetUpright(mesh, x, z);
         worldGroup.add(mesh);
         animatedTrees.push(mesh);
     }
 
-    // V132: Simple Tree Helper
+    // V-NEW: Near-house building blocks (adjusted - slightly further back and less dense)
+    window.houseDebug.nearHouseDesired = 90; window.houseDebug.nearHousePlaced = 0;
+    for (let i = 0; i < 90; i++) {
+        const x = (Math.random() - 0.5) * 48;
+        const z = -25 - Math.random() * 48;
+        // Skip if too close to house center
+        if (Math.sqrt(x * x + z * z) < 12.0) continue;
+        // Simple collision guard
+        if (!isLocationValid(x, z, 10.0)) continue;
+        placedPoints.push({ x: x, z: z });
+
+        const mesh = createMegaBlock();
+        const h = 6.0 + Math.random() * 12.0;
+        mesh.userData.baseScaleY = h;
+        mesh.scale.set(1, h, 1);
+        alignToPlanetUpright(mesh, x, z);
+        worldGroup.add(mesh);
+        animatedTrees.push(mesh);
+        window.houseDebug.nearHousePlaced++;
+    }
+
+    // Leaf Texture
+    function createLeafTexture() {
+        const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+        const ctx = c.getContext('2d');
+        // Brighter leaf base
+        ctx.fillStyle = '#1e6f2a';
+        ctx.fillRect(0, 0, 128, 128);
+
+        // Denser brighter speckles
+        for (let i = 0; i < 1400; i++) {
+            const r = Math.random();
+            if (r > 0.9) ctx.fillStyle = '#9ad56a';      // highlight (light)
+            else if (r > 0.6) ctx.fillStyle = '#58b05a'; // bright mid
+            else if (r > 0.3) ctx.fillStyle = '#2f7f36'; // mid
+            else ctx.fillStyle = '#184a20';              // deep
+
+            const size = Math.random() * 2 + 1.0;
+            ctx.fillRect(Math.random() * 128, Math.random() * 128, size, size);
+        }
+
+        // soft blur for painterly clusters
+        try {
+            ctx.filter = 'blur(0.7px)';
+            const tmp = document.createElement('canvas'); tmp.width = 128; tmp.height = 128;
+            const tctx = tmp.getContext('2d');
+            tctx.filter = 'blur(0.7px)';
+            tctx.drawImage(c, 0, 0);
+            ctx.filter = 'none';
+            ctx.clearRect(0, 0, 128, 128);
+            ctx.drawImage(tmp, 0, 0);
+        } catch (e) { }
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+        tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearMipMapLinearFilter;
+        tex.generateMipmaps = true;
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        tex.needsUpdate = true;
+        return tex;
+    }
+    const leafTex = createLeafTexture();
+
+    // V-NEW: Extra trees close behind the house for depth (closer, denser V6)
+    for (let i = 0; i < 100; i++) {
+        const z = -15 - Math.random() * 60;
+        const x = (Math.random() - 0.5) * 80;
+        if (!isLocationValid(x, z, 3.0)) continue; // Dense forest allowance
+        try {
+            const t = createSimpleTree(x, z);
+            if (typeof alignToPlanet === 'function') alignToPlanet(t, x, z);
+            t.translateY(0.02);
+            t.scale.multiplyScalar(0.7 + Math.random() * 0.9);
+            placedPoints.push({ x, z });
+        } catch (e) { /* non-fatal */ }
+    }
+
+    // Simple Tree Helper
     function createSimpleTree(x, z) {
         const group = new THREE.Group();
         group.position.set(x, 0, z);
-        // V299: Darker Trunk (Was 0x3e2723 -> 0x221111)
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.5), new THREE.MeshStandardMaterial({ color: 0x221111, roughness: 0.9 }));
-        trunk.position.y = 0.75; group.add(trunk);
-        // V299: Darker Leaves (Was 0x1b5e20 -> 0x0a220a)
-        const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.2, 3.0, 8), new THREE.MeshStandardMaterial({ color: 0x0a220a, roughness: 0.9 }));
+
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5D4037, roughness: 0.9 }); // Lighter Brown
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.5), trunkMat);
+        trunk.position.y = 0.75;
+        group.add(trunk);
+        const leaves = new THREE.Mesh(
+            new THREE.ConeGeometry(1.2, 3.0, 8),
+            new THREE.MeshStandardMaterial({
+                map: leafTex,
+                color: 0xffffff,
+                roughness: 0.9
+            }));
         leaves.position.y = 3.0; group.add(leaves);
 
-        // V166: Scale variation
-        const s = 0.7 + Math.random() * 0.8;
+        // --- TREE SHADOW PLANE ---
+        if (window.createShadowTexture) {
+            const treeShadeGeo = new THREE.PlaneGeometry(4, 1.5);
+            treeShadeGeo.rotateX(-Math.PI / 2); // Bake flat
+
+            const shadow = new THREE.Mesh(
+                treeShadeGeo,
+                new THREE.MeshBasicMaterial({
+                    map: window.createShadowTexture(),
+                    transparent: true,
+                    opacity: 0.8,
+                    depthWrite: false
+                })
+            );
+            shadow.position.y = 0.05; // Slightly above ground
+            const moonShadowAngle = Math.atan2(50, -30);
+            shadow.rotation.y = moonShadowAngle; // Rotate around Local Y
+            group.add(shadow);
+        }
+        // V166: Scale variation (Modest Neighborhood Scale) - Increased to 1.5x
+        const s = (0.5 + Math.random() * 0.7) * 1.5;
         group.scale.set(s, s, s);
 
+        // V-NEW: Register for Sway
+        if (!window.swayTrees) window.swayTrees = [];
+        group.userData.baseRotX = group.rotation.x;
+        group.userData.baseRotZ = group.rotation.z;
+        window.swayTrees.push(group);
+
         worldGroup.add(group);
-        return group; // Added return for alignment (V166)
+        return group;
     }
-    // V132: Manual Trees
-    alignToPlanet(createSimpleTree(5, 0), 5, 0);
-    alignToPlanet(createSimpleTree(6, 2), 6, 2);
-    alignToPlanet(createSimpleTree(6, -2), 6, -2);
-    alignToPlanet(createSimpleTree(-5, -4), -5, -4);
-    alignToPlanet(createSimpleTree(0, -12), 0, -12); // V-FIX: Moved further back (was -6)
+    // Bush Helper
+    function createBush(x, z) {
+        const group = new THREE.Group();
+        group.position.set(x, 0, z);
+        const bushMat = new THREE.MeshStandardMaterial({
+            map: leafTex,
+            color: 0x888888, // Darkened via tint
+            roughness: 1.0,
+            flatShading: true
+        });
+        for (let i = 0; i < 5; i++) {
+            const s = 0.3 + Math.random() * 0.4;
+            const sphere = new THREE.Mesh(new THREE.SphereGeometry(s, 8, 8), bushMat);
+            sphere.castShadow = true;
+            sphere.receiveShadow = true;
+            sphere.position.set(
+                (Math.random() - 0.5) * 0.8,
+                s * 0.5,
+                (Math.random() - 0.5) * 0.8
+            );
+            group.add(sphere);
+        }
+        const scale = 0.7 + Math.random() * 0.6;
+        group.scale.set(scale, scale, scale);
+        // Shadow for bush
+        if (window.createShadowTexture) {
+            const bShadeGeo = new THREE.PlaneGeometry(1.5, 1.5);
+            bShadeGeo.rotateX(-Math.PI / 2);
+            const shadow = new THREE.Mesh(
+                bShadeGeo,
+                new THREE.MeshBasicMaterial({
+                    map: window.createShadowTexture(),
+                    transparent: true,
+                    opacity: 0.6,
+                    depthWrite: false
+                })
+            );
+            shadow.position.y = 0.02;
+            group.add(shadow);
+        }
+        worldGroup.add(group);
+        return group;
+    }
 
-    // V166: Procedural Forest (Denser Foliage)
-    for (let i = 0; i < 150; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 10 + Math.random() * 50;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
+    // V-FIX: Absolute Precision Bush placement ONLY at the gravel borders
+    // Gravel: x: [-8, 12], z: [-7, 11]
+    const gXMin = -8.5, gXMax = 12.5, gZMin = -7.5, gZMax = 11.5; // Pushed out by 0.5 to stay CLEAR of path
 
-        // Culling: Avoid house (approx center) and road (z road)
-        if (Math.abs(x) < 8 && z > -20 && z < 100) continue;
-        if (radius < 12) continue; // Inner circle clear
+    function placeDenseHedge(iCount, isVertical) {
+        for (let i = 0; i < iCount; i++) {
+            let x, z;
+            if (isVertical) {
+                x = (Math.random() > 0.5 ? gXMin : gXMax);
+                z = gZMin + Math.random() * (gZMax - gZMin);
+            } else {
+                z = (Math.random() > 0.5 ? gZMin : gZMax);
+                x = gXMin + Math.random() * (gXMax - gXMin);
+            }
 
-        // V166: Fix floating trees - call alignToPlanet
+            // STRICT CLEARANCE: Avoid Path
+            if (window.isLocationBlocked && window.isLocationBlocked(x, z)) continue;
+
+            const b = createBush(x, z);
+            if (typeof alignToPlanet === 'function') alignToPlanet(b, x, z);
+        }
+    }
+    // Bush placement along gravel edges (reduced count for performance)
+    placeDenseHedge(60, true);   // Vertical edges
+    placeDenseHedge(60, false);  // Horizontal edges
+    // REMOVED: All scattered roundabout bushes to ensure clean borders.
+
+
+    // V166: Procedural Forest (Denser + 1.5x Scale focus)
+    for (let i = 0; i < 500; i++) {
+        const z = (Math.random() * 500) - 100; // Wider range
+
+        // Funnel Logic: Clearing widens near house, narrows at distance
+        let progress = Math.min(1.0, Math.max(0, z / 250));
+        if (z < 0) progress = 0;
+
+        // V-FIX: Wider Clearing (min 8.0 instead of 1.5) to protect road
+        // V-FIX: Narrower Clearing (min 10.0 instead of 14.0)
+        const clearingWidth = THREE.MathUtils.lerp(10, 8.0, progress);
+
+        // V-FIX: Road Path Awareness (Zig-Zag Offset)
+        const ratio = Math.max(0, 1.0 - (Math.min(1.0, (250 - z) / 223) * 1.5));
+        const roadX = -Math.cos(z * 0.1) * 3.0 * ratio;
+
+        let x;
+        if (Math.random() > 0.5) {
+            // Left side
+            x = (roadX - clearingWidth) - (Math.random() * 120);
+        } else {
+            // Right side
+            x = (roadX + clearingWidth) + (Math.random() * 120);
+        }
+
+        if (!isLocationValid(x, z, 4.0)) continue;
+
+        // Culling: Avoid house (0,0) and garage (10, 3.5)
+        const distToHouse = Math.sqrt(x * x + z * z);
+        const distToGarage = Math.sqrt((x - 10) * (x - 10) + (z - 3.5) * (z - 3.5));
+        if (distToHouse < 12.0) continue; // Pushed back for bushes
+        if (distToGarage < 10.0) continue;
+
+        // V-FIX: Explicit Road Center Check (8.0 units safety)
+        if (Math.abs(x - roadX) < 8.0 && z > 20) continue;
+
         const treeInstance = createSimpleTree(x, z);
+        if (z > 100) {
+            const extraScale = 1.0 + (z - 100) * 0.005;
+            treeInstance.scale.multiplyScalar(extraScale);
+        }
         alignToPlanet(treeInstance, x, z);
+        placedPoints.push({ x, z });
     }
 
-    // V-CLEAN: Removed V64 Fringe Trees loop
+    // --- ITEM 3: Additional trees further from house ---
+    for (let i = 0; i < 30; i++) {
+        const distance = 40 + Math.random() * 80;
+        const angle = Math.random() * Math.PI * 2;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+
+        // Road check (approximation)
+        const ratio = Math.max(0, 1.0 - (Math.min(1.0, (250 - z) / 223) * 1.5));
+        const roadX = -Math.cos(z * 0.1) * 3.0 * ratio;
+
+        // Avoid road and roundabout areas
+        const toRoadCenter = Math.abs(x - roadX);
+        const toRoundabout = Math.sqrt(x * x + (z - 20) * (z - 20));
+
+        // Avoid Gravel Path (Approx px=2, pz=2, size 20x18)
+        const toGravel = Math.max(Math.abs(x - 2) - 10, Math.abs(z - 2) - 9);
+
+        if (toRoadCenter > 8 && toRoundabout > 12 && toGravel > 2) {
+            const tree = createSimpleTree(x, z);
+            if (typeof alignToPlanet === 'function') alignToPlanet(tree, x, z);
+        }
+    }
 
 
-    // V-NEW: Dancing Mini-Skyscrapers (Matte Black + Top LEDs)
-    // V-CLEAN: Removed duplicate legacy landscape logic
+    // --- STRICT CLEARANCE CHECK ---
+    function isLocationBlocked(x, z) {
+        // Road/Driveway exclusion zones
+        const distToHouse = Math.sqrt(x * x + z * z);
+        const distToRoundabout = Math.sqrt(x * x + (z - 20) * (z - 20));
+
+        if (distToHouse < 10) return true; // House/Gravel clearance
+        if (distToRoundabout < 7.5) return true; // Roundabout clearance (inc wide transition)
+
+        // V-FIX: Block Main Road
+        if (z > 26 && Math.abs(x) < 5) return true;
+
+        // V-FIX: Block Driveway (Simple bounding box/path check for P0-P1-P2)
+        // Main limb (Roundabout to Corner): x in [0, 10], z in [18, 28] roughly
+        if (x > -2 && x < 12 && z > 18 && z < 28) return true;
+        // Second limb (To Garage): x in [8, 12], z in [3, 20] roughly
+        if (x > 7.5 && x < 12.5 && z > 3 && z < 20) return true;
+
+        return false;
+    }
+    window.isLocationBlocked = isLocationBlocked;
 
 
-    // V292: Purple Sky Glow (V102 Restoration)
+    // --- ITEM 16: Far Forest Enrichment (V5 Denser) ---
+    for (let i = 0; i < 40; i++) {
+        const z = 150 + Math.random() * 100; // Far end (150-250)
+        const ratio = Math.max(0, 1.0 - (Math.min(1.0, (250 - z) / 223) * 1.5));
+        const roadX = -Math.cos(z * 0.1) * 3.0 * ratio;
+
+        const x = (roadX + (Math.random() - 0.5) * 150);
+
+        if (Math.abs(x - roadX) < 10.0) continue;
+        if (!isLocationValid(x, z, 5.0)) continue;
+
+        const tree = createSimpleTree(x, z);
+        tree.scale.multiplyScalar(0.8);
+        if (typeof alignToPlanet === 'function') alignToPlanet(tree, x, z);
+        placedPoints.push({ x, z });
+    }
+
+    // CLEANUP PASS: Remove any trees accidentally placed on the road or driveway
+    if (window.swayTrees && window.swayTrees.length > 0) {
+        const kept = [];
+        for (let t of window.swayTrees) {
+            const x = t.position.x;
+            const z = t.position.z;
+            // Reuse same exclusions as isLocationBlocked (road, driveway, roundabout)
+            const onRoad = (z > 26 && Math.abs(x) < 5);
+            const onDriveway = (x > -2 && x < 12 && z > 18 && z < 28) || (x > 7.5 && x < 12.5 && z > 3 && z < 20);
+            if (onRoad || onDriveway || (typeof window.isLocationBlocked === 'function' && window.isLocationBlocked(x, z))) {
+                try { worldGroup.remove(t); } catch (e) { }
+            } else {
+                kept.push(t);
+            }
+        }
+        window.swayTrees = kept;
+    }
+
     const glowTex = createGlowTexture();
     const glowMat = new THREE.SpriteMaterial({
         map: glowTex,
-        color: 0x8800ff, // V292: Vivid Purple
+        color: 0x8800ff,
         transparent: true,
         opacity: 0.6,
         blending: THREE.AdditiveBlending,
         fog: false
     });
     const glowSprite = new THREE.Sprite(glowMat);
-    glowSprite.position.set(0, -20, -180); // V292: Further back for better backdrop
-    glowSprite.scale.set(1000, 800, 1); // V292: Epic Scale
+    glowSprite.position.set(0, -20, -180);
+    glowSprite.scale.set(1000, 800, 1);
     worldGroup.add(glowSprite);
 
-    // V-REFINE: METROPOLIS ROBOT (Moved to Living Room)
-    // Removed from Exterior
-
-    // V101: Stars
     const starGeo = new THREE.BufferGeometry();
     const starCount = 1000;
     const starPos = new Float32Array(starCount * 3);
@@ -7388,36 +2846,259 @@ function buildEnvironment() {
         });
     }
     ffGeo.setAttribute('position', new THREE.BufferAttribute(ffPos, 3));
-    const ffMat = new THREE.PointsMaterial({ color: 0xaaff00, size: 0.15, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
-    // V149: Fix redeclaration error. 'fireflies' is global (line 3).
-    // Re-assign to global var
+    const ffMat = new THREE.PointsMaterial({ color: 0xaacc00, size: 0.15, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+
     fireflies = new THREE.Points(ffGeo, ffMat); // Removed 'const' or 'let'
     fireflies.userData = { type: 'fireflies', speeds: ffSpeeds };
     worldGroup.add(fireflies);
-    // V150: Re-added closing brace (was wrongfully removed)
-}
+
+    const roundaboutRadius = 7.2; // V-ENHANCED: 1.2x bigger (was 6)
+    const roundaboutInnerRadius = 3.5; // KEPT SAME AS REQUESTED
+    const roundaboutSegments = 32;
+    const roundaboutVertices = [];
+    const roundaboutIndices = [];
+    const roundaboutZ = 20;
+
+    for (let i = 0; i <= roundaboutSegments; i++) {
+        const angle = (i / roundaboutSegments) * Math.PI * 2;
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
+
+        // Outer Vertex
+        const xOut = cos * roundaboutRadius;
+        const zOut = roundaboutZ + sin * roundaboutRadius;
+        const yOut = getPlanetY(xOut, zOut) + 0.03; // V-FIX: Higher
+
+        // Inner Vertex
+        const xIn = cos * roundaboutInnerRadius;
+        const zIn = roundaboutZ + sin * roundaboutInnerRadius;
+        const yIn = getPlanetY(xIn, zIn) + 0.03; // V-FIX: Higher
+
+        roundaboutVertices.push(xOut, yOut, zOut); // Even indices: Outer
+        roundaboutVertices.push(xIn, yIn, zIn);    // Odd indices: Inner
+
+        if (i < roundaboutSegments) {
+            const base = i * 2;
+            // Two triangles to form quad
+            roundaboutIndices.push(base, base + 2, base + 1); // Out1, Out2, In1
+            roundaboutIndices.push(base + 1, base + 2, base + 3); // In1, Out2, In2
+        }
+    }
+
+    const roundaboutGeo = new THREE.BufferGeometry();
+    roundaboutGeo.setAttribute('position', new THREE.Float32BufferAttribute(roundaboutVertices, 3));
+    roundaboutGeo.setIndex(roundaboutIndices);
+    roundaboutGeo.computeVertexNormals();
+
+    const roundabout = new THREE.Mesh(roundaboutGeo, new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 0.9,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -1, // V-UNIFIED
+        polygonOffsetUnits: 1
+    }));
+    roundabout.receiveShadow = true;
+    roundabout.castShadow = true; // V-FIX: Hide gap with shadows
+    worldGroup.add(roundabout);
+
+    // V-REMOVED: 'LP record' ring as requested by user.
 
 
 
-// --- ANIMATION & NAVIGATION REPAIR ---
-// --- ANIMATION & NAVIGATION REPAIR ---
+
+
+
+    const moundGeo = new THREE.CylinderGeometry(roundaboutInnerRadius, roundaboutInnerRadius, 0.05, 32);
+    const moundMat = new THREE.MeshStandardMaterial({
+        map: groundTex,
+        color: 0xffffff, // UNTINTED to perfectly match ground texture
+        roughness: 1.0
+    });
+    const mound = new THREE.Mesh(moundGeo, moundMat);
+
+    // Align to Planet Surface
+    const mY = getPlanetY(0, roundaboutZ);
+    // V-FIX: Layering. Ground (0) -> Road (0.02) -> Mound (0.05)
+    mound.position.set(0, mY + 0.01, roundaboutZ); // V-FIX: Lowered (was 0.05)
+    mound.name = 'roundaboutMound';
+
+    if (mound.material.map) {
+        const moundTex = mound.material.map.clone();
+        moundTex.repeat.set(2, 2); // 2x2 tiles on the mound itself
+        mound.material.map = moundTex;
+    }
+    worldGroup.add(mound);
+
+    // V-FIX: Explicitly add the kerb/edge to the mound
+    if (typeof addRoundaboutKerb === 'function') {
+        addRoundaboutKerb(mound);
+    }
+
+    // --- ROUNDABOUT KERB (Fixes Floating Look) ---
+    function addRoundaboutKerb(mound) {
+        const kerbGeo = new THREE.TorusGeometry(3.55, 0.25, 8, 50); // Bolder Kerb
+        const kerbMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.5 });
+        const kerb = new THREE.Mesh(kerbGeo, kerbMat);
+        kerb.rotation.x = Math.PI / 2;
+        kerb.position.y = -0.1; // Sits partly in ground
+        mound.add(kerb);
+    }
+
+    const flowerGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.05, 8);
+    const flowerCols = [0x990000, 0xcc0000, 0x990033];
+
+    for (let p = 0; p < 5; p++) {
+        // Create 5 distinct clusters
+        const pTheta = Math.random() * Math.PI * 2;
+        const pR = Math.random() * (roundaboutInnerRadius * 0.6);
+        const pxPatch = pR * Math.cos(pTheta);
+        const pzPatch = pR * Math.sin(pTheta);
+
+        for (let i = 0; i < 15; i++) {
+            const mat = new THREE.MeshStandardMaterial({ color: flowerCols[Math.floor(Math.random() * flowerCols.length)] });
+            const flower = new THREE.Mesh(flowerGeo, mat);
+            const r = Math.random() * 0.8;
+            const theta = Math.random() * Math.PI * 2;
+            // Sitting on top of our flush disk
+            flower.position.set(pxPatch + r * Math.cos(theta), 0.03, pzPatch + r * Math.sin(theta));
+            mound.add(flower);
+        }
+    }
+
+    // V-NEW: Black and White Gravel Footpath
+    function createBWGravelTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#111111'; ctx.fillRect(0, 0, 512, 512);
+
+        for (let i = 0; i < 30000; i++) {
+            const shade = Math.random();
+            // Darker gravel: #111111 mixed with #333333
+            ctx.fillStyle = shade > 0.5 ? '#333333' : '#111111';
+            const size = Math.random() * 3 + 1;
+            ctx.fillRect(Math.random() * 512, Math.random() * 512, size, size);
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(4, 12);
+        return tex;
+    }
+
+    const gravelTex = createBWGravelTexture();
+
+    // Gravel platform — 20 wide × 18 deep, centred at (2,2) so north edge reaches z=11
+    // (inside the bush line at gZMax=11.5). Matches /house/ dimensions.
+    const platGeo = new THREE.PlaneGeometry(20, 18);
+    platGeo.rotateX(-Math.PI / 2);
+
+    const gravelMat = new THREE.MeshStandardMaterial({
+        map: gravelTex,
+        roughness: 1.0,
+        color: 0xdddddd,
+        transparent: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: 1
+    });
+    const gravelPlatform = new THREE.Mesh(platGeo, gravelMat);
+    const px = 2, pz = 2; // centred at (2,2) — north edge at z=11, south edge at z=-7
+    alignToPlanet(gravelPlatform, px, pz);
+
+    // V-FIX Layering: Driveway (0.08) -> Road (0.10) -> Gravel (0.12)
+    gravelPlatform.translateY(0.12);
+    gravelPlatform.renderOrder = 5;
+
+    gravelPlatform.receiveShadow = true;
+    worldGroup.add(gravelPlatform);
+
+    // V-FIX: DRIVEWAY — curved path from roundabout → garage (matches /house/)
+    function buildDriveway() {
+        // Quadratic bezier sweeping from the road/roundabout junction (x=0, z=26)
+        // hard-right to x=10 (east/garage side), then down to garage at z=5.
+        // This path runs OUTSIDE the compound on the grass — it IS the visible
+        // connecting road between the roundabout and the compound/garage.
+        const P0_drive = new THREE.Vector2(0, 26);   // Match main road end at roundabout
+        const P1_drive = new THREE.Vector2(10, 22);  // Curve corner
+        const P2_drive = new THREE.Vector2(10, 5.0); // Reach toward garage (10, 3.5)
+
+        const drivewayPoints = [];
+        const segmentsArr = 80;
+        for (let i = 0; i <= segmentsArr; i++) {
+            const t = i / segmentsArr;
+            const bx = (1 - t) * (1 - t) * P0_drive.x + 2 * (1 - t) * t * P1_drive.x + t * t * P2_drive.x;
+            const bz = (1 - t) * (1 - t) * P0_drive.y + 2 * (1 - t) * t * P1_drive.y + t * t * P2_drive.y;
+            drivewayPoints.push(new THREE.Vector2(bx, bz));
+        }
+
+        const dVertices = [];
+        const dIndices = [];
+
+        for (let i = 0; i < drivewayPoints.length; i++) {
+            const p = drivewayPoints[i];
+            const prev = drivewayPoints[Math.max(0, i - 1)];
+            const next = drivewayPoints[Math.min(drivewayPoints.length - 1, i + 1)];
+            const tangent = new THREE.Vector2().subVectors(next, prev).normalize();
+            if (tangent.lengthSq() === 0) tangent.set(1, 0);
+            const normal = new THREE.Vector2(-tangent.y, tangent.x);
+
+            // Constant width — no flare
+            const w = 4.5;
+
+            const pL = new THREE.Vector2().copy(p).addScaledVector(normal, -w / 2);
+            const pR = new THREE.Vector2().copy(p).addScaledVector(normal, w / 2);
+
+            const yL = getPlanetY(pL.x, pL.y) + 0.08;
+            const yR = getPlanetY(pR.x, pR.y) + 0.08;
+
+            dVertices.push(pL.x, yL, pL.y);
+            dVertices.push(pR.x, yR, pR.y);
+
+            if (i < drivewayPoints.length - 1) {
+                const base = i * 2;
+                dIndices.push(base, base + 1, base + 2);
+                dIndices.push(base + 2, base + 1, base + 3);
+            }
+        }
+
+        const dGeo = new THREE.BufferGeometry();
+        dGeo.setAttribute('position', new THREE.Float32BufferAttribute(dVertices, 3));
+        dGeo.setIndex(dIndices);
+        dGeo.computeVertexNormals();
+
+        const dRoad = new THREE.Mesh(dGeo, new THREE.MeshStandardMaterial({
+            color: 0x222222,
+            roughness: 0.9,
+            side: THREE.DoubleSide,
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: 1
+        }));
+        dRoad.renderOrder = 10;
+        dRoad.receiveShadow = true;
+        worldGroup.add(dRoad);
+    }
+    buildDriveway();
+
+} // End of buildWorld block
+
+
+
+
 function startOpeningAnimation() {
-    // V-NEW: FLIGHT TWEAKER READ INPUTS
     const getVal = (id, def) => {
         const el = document.getElementById(id);
         if (!el) {
-            console.warn(`Flight Tweaker: Input #${id} not found. Using default: ${def}`);
             return def;
         }
         const val = parseFloat(el.value);
         if (isNaN(val)) {
-            console.warn(`Flight Tweaker: Input #${id} is NaN. Using default: ${def}`);
             return def;
         }
         return val;
     };
 
-    // V99/V100: SMOOTH CAMERA (No Bump)
     const animState = {
         px: getVal('fc-sx', -2.8),
         py: getVal('fc-sy', 51.9),
@@ -7428,25 +3109,20 @@ function startOpeningAnimation() {
         fogFar: 500
     };
 
-    console.log("--- START OPENING ANIMATION ---");
-    console.log("Start State:", animState);
-
     // Force Camera there immediately
     camera.position.set(animState.px, animState.py, animState.pz);
     controls.target.set(animState.tx, animState.ty, animState.tz);
-    controls.update(); // V-FIX: Force update immediately to snap camera
+    controls.update();
 
     const targetState = {
-        px: getVal('fc-ex', 0.2),
-        py: getVal('fc-ey', 2.6),
-        pz: getVal('fc-ez', 16.8),
-        tx: getVal('fc-elx', -0.01),
-        ty: getVal('fc-ely', 1.6),
-        tz: getVal('fc-elz', -9.05),
-        fogFar: 300
+        px: getVal('fc-ex', 14.0),
+        py: getVal('fc-ey', 12.0),
+        pz: getVal('fc-ez', 18.0),
+        tx: getVal('fc-elx', 0),
+        ty: getVal('fc-ely', 0),
+        tz: getVal('fc-elz', 0),
+        fogFar: 300 // V-SYNC
     };
-
-    console.log("Target State:", targetState);
 
     const duration = getVal('fc-dur', 6000);
 
@@ -7479,19 +3155,34 @@ function startOpeningAnimation() {
             window.introFinished = true;
             window.isZoomingToRoom = false;
 
-            // V-NEW: Show Word Hunt UI (Delayed)
-            if (typeof WordHunt !== 'undefined' && WordHunt.showUI) {
-                setTimeout(() => WordHunt.showUI(), 500);
+            // Trigger Narrative Prompt (Name entry) — shortly after flight lands & settles
+
+            // V-FIX: Fade in navigation icons after landing
+            const navs = ['top-left-controls', 'top-controls'];
+            navs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                }
+            });
+
+            // Signal parent (index.html) to show sidebar controls
+            if (window.parent) {
+                window.parent.postMessage('introFinished', '*');
             }
+
+            setTimeout(() => {
+                if (window.initNarrativePrompt) {
+                    window.initNarrativePrompt(true); // forceShow=true so the overlay actually appears
+                }
+            }, 1500);
         })
         .start();
 
-    // Header animation handled in enterExperience
 }
 
-// V-NEW: Global Test Function
 window.testFlightPath = function () {
-    console.log("--- TESTING FLIGHT PATH v2 ---");
 
     // 1. Force Disable Free Roam (to prevent conflicts)
     if (window.isFreeRoam) {
@@ -7556,55 +3247,36 @@ window.captureTarget = function (type) {
 };
 
 function startHeaderAnimation() {
-    const header = document.getElementById('main-header');
+    // Send message to parent (index.html) to trigger animation
+    if (window.parent) window.parent.postMessage({ type: 'START_HEADER_ANIM' }, '*');
 
-    // V136: CSS-BASED ANIMATION TRIGGER
-    // We simply add the class. CSS does the heavy lifting (transform + transition).
-    console.log("--- startHeaderAnimation V136 CALLED (CSS CLASS) ---");
-
-    if (header) {
-        // Force Reflow ensures the browser acknowledges the 'before' state
-        void header.offsetWidth;
-
-        // Add the class defined in index.html
-        header.classList.add('header-move-up');
-    }
-
-    // Also fade out the button container explicitly (though it should be hidden by enterExperience)
-    // Just ensuring smooth transition if concurrent
+    // Also fade out the button container explicitly
     const btnContainer = document.getElementById('start-btn-container');
     if (btnContainer) btnContainer.style.opacity = '0';
 }
 
-// V92: Ensure Header Fades In ON LOAD (Before Click)
-// This was missing, causing "Initial view not showing"
-function revealHeader() {
-    const header = document.getElementById('main-header');
-    if (header) {
-        setTimeout(() => {
-            header.style.opacity = '1';
-        }, 500);
+// --- 3D INTRO TRIGGER (V1950) ---
+window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'START_EXPERIENCE') {
+        window.enterExperience();
     }
-}
-// Call it immediately if script loaded late, or wait for DOM
-if (document.readyState === 'complete') revealHeader();
-else window.addEventListener('load', revealHeader);
+});
 
 window.enterExperience = function () {
-    // 1. Fullscreen
+    // 1. Fullscreen (Target the whole doc or container)
     const docEl = document.documentElement;
-    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(e => console.log(e)); }
-    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
+    if (docEl.requestFullscreen) docEl.requestFullscreen().catch(() => { });
 
-    // 2. Play Tension Audio 
+    // 1.5 Wake Lock
+    if (window.requestWakeLock) window.requestWakeLock();
+
+    // 2. Play Tension Audio
     const audio = new Audio(houseConfig.audio.tension);
     audio.volume = 0.8;
-    audio.currentTime = 0.5; // V-FIX: Start Offset (Skip first 0.5s silence)
-    audio.play().catch(e => console.warn("Audio play error", e));
+    audio.currentTime = 0.5;
+    audio.play().catch(() => { });
 
-    // V-FIX: End too late? Fade out/Stop when Animation completes (6s)
     setTimeout(() => {
-        // Simple fade out attempt or just stop
         const fadeOut = setInterval(() => {
             if (audio.volume > 0.05) audio.volume -= 0.05;
             else {
@@ -7612,69 +3284,293 @@ window.enterExperience = function () {
                 clearInterval(fadeOut);
             }
         }, 100);
-    }, 6000); // Match Animation Duration
+    }, 6000);
 
-    // Chain Main Music: Wait for Tension to FINISH, then wait 2s, then start
+    // Chain Main Music
     audio.onended = () => {
-        if (audioPlayer) {
+        // V-FIX: ONLY play intro music if we are NOT already in a room
+        if (window.audioPlayer && !window.currentRoom) {
             setTimeout(() => {
-                audioPlayer.src = houseConfig.audio.intro;
-                audioPlayer.loop = true;
-                audioPlayer.play().catch(e => console.warn("Music Play Fail", e));
-            }, 2000); // 2s Gap of Silence
+                if (window.currentRoom) return; // double check
+                window.audioPlayer.src = houseConfig.audio.intro;
+                window.audioPlayer.loop = true; // Intro should loop
+                window.audioPlayer.play().then(() => {
+                    window.isMusicPlaying = true;
+                }).catch(() => {
+                    window.isMusicPlaying = true; // Still mark as wanting to play for global click recovery
+                });
+            }, 2000);
         }
     };
-
-    const sBtn = document.getElementById('start-btn');
-    if (sBtn) {
-        sBtn.classList.add('btn-out');
-        setTimeout(() => {
-            sBtn.style.display = 'none';
-            sBtn.classList.add('hidden');
-        }, 1000);
-    }
-
-    // 3. Start Header Animation Immediately
-    startHeaderAnimation();
 
     // 4. Start Flight Immediately
     startOpeningAnimation();
 
-    // Removed fixed timeout for NightDrive (handled by onended above)
-
-    // 6. Force Header Collapse (Manually & Completely)
-    const headerContent = document.getElementById('header-content');
-    if (headerContent) {
-        // V80: FULL COLLAPSE (Remove padding/borders too)
-        // Matches layout.js collapse logic perfectly
-        headerContent.classList.remove('max-h-40', 'overflow-visible', 'py-1', 'border-b-2');
-        headerContent.classList.add('max-h-0', 'overflow-hidden', 'py-0', 'border-b-0');
-        headerContent.style.maxHeight = '0px';
-        localStorage.setItem('headerCollapsed', 'true');
-
-        // Update arrow rotation if it exists
-        const arrow = document.getElementById('collapse-arrow');
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
-    }
 };
 
 
 
 
+function createBasementInterior() {
+    // -- METROPOLIS --
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.8 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    interiorGroup.add(floor);
 
+    const gridHelper = new THREE.GridHelper(10, 10, 0x00ffcc, 0x222222);
+    gridHelper.position.y = 0.05;
+    interiorGroup.add(gridHelper);
+
+    // Floating Nodes - enhanced 3D appearance
+    const nodeCount = 60;
+    for (let i = 0; i < nodeCount; i++) {
+        const isTruth = i % 2 === 0;
+        // Use small icosahedron for faceted 3D look, with slight size variation
+        const size = 0.06 + Math.random() * 0.06;
+        const nodeGeo = new THREE.IcosahedronGeometry(size, 1);
+
+        // Physical material for highlights + emissive core for depth
+        const baseColor = isTruth ? 0x0033cc : 0xcc3300;
+        const nodeMat = new THREE.MeshPhysicalMaterial({
+            color: baseColor,
+            emissive: baseColor,
+            emissiveIntensity: 0.4,
+            roughness: 0.35,
+            metalness: 0.6,
+            clearcoat: 0.2,
+            reflectivity: 0.5
+        });
+
+        const node = new THREE.Mesh(nodeGeo, nodeMat);
+        node.castShadow = false; node.receiveShadow = false;
+
+        // Add small inner glow sprite for volumetric feel
+        const spriteCanvas = document.createElement('canvas'); spriteCanvas.width = 64; spriteCanvas.height = 64;
+        const sctx = spriteCanvas.getContext('2d');
+        const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255,255,255,0.8)');
+        grad.addColorStop(0.3, 'rgba(255,255,255,0.25)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        sctx.fillStyle = grad; sctx.fillRect(0, 0, 64, 64);
+        const spriteTex = new THREE.CanvasTexture(spriteCanvas);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: spriteTex, color: baseColor, transparent: true, opacity: 0.6, depthWrite: false }));
+        sprite.scale.set(size * 3.5, size * 3.5, 1);
+        sprite.position.set(0, 0, 0);
+        node.add(sprite);
+
+        // Slight positional jitter and starting position
+        node.position.set((Math.random() - 0.5) * 7.5, Math.random() * 6 + 0.8, (Math.random() - 0.5) * 7.5);
+        node.userData = {
+            velocity: new THREE.Vector3((Math.random() - 0.5) * 0.012, (Math.random() - 0.5) * 0.012, (Math.random() - 0.5) * 0.012),
+            originalY: node.position.y,
+            isTruth: isTruth,
+            baseSize: size
+        };
+        basementNodes.push(node);
+        interiorGroup.add(node);
+    }
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
+    const lineGeo = new THREE.BufferGeometry();
+    basementLines = new THREE.LineSegments(lineGeo, lineMat);
+    interiorGroup.add(basementLines);
+
+    // TRON VIDEO - Robust playback with retry
+    if (window.isMusicPlaying && typeof initAudioAnalyser === 'function') {
+        initAudioAnalyser();
+    }
+
+    // Stop any existing video playback to prevent conflicts
+    if (videoElement && !videoElement.paused) {
+        videoElement.pause();
+    }
+
+    // RIGHT WALL VIDEO // Set up video with proper sequencing
+    videoElement.src = "../assets/video/brin.mp4";
+    videoElement.muted = true; // Must start muted for autoplay
+    videoElement.loop = false;
+
+    videoElement.setAttribute('playsinline', '');
+
+    // Create texture BEFORE loading to ensure it's ready
+    videoTexture = new THREE.VideoTexture(videoElement);
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+
+    // Create and add mesh BEFORE playing video
+    const bgMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 8),
+        new THREE.MeshBasicMaterial({
+            map: videoTexture,
+            opacity: 0.5,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        })
+    );
+    bgMesh.position.set(0, 4, -4.9);
+    bgMesh.userData = { type: 'basementVideo', persistent: true };
+    interiorGroup.add(bgMesh);
+
+    // LEFT WALL VIDEO - behind the playlist
+    if (!window.basementLeftVideo) {
+        window.basementLeftVideo = document.createElement('video');
+        window.basementLeftVideo.crossOrigin = "anonymous";
+        window.basementLeftVideo.loop = true;
+        window.basementLeftVideo.muted = true;
+        window.basementLeftVideo.setAttribute('playsinline', '');
+    }
+    window.basementLeftVideo.src = "../assets/video/links.mp4";
+    window.basementLeftVideo.load();
+    const leftVideoTexture = new THREE.VideoTexture(window.basementLeftVideo);
+
+    // V-FIX: Intermittent Glitch Shader for Left Video
+    const glitchMat = new THREE.ShaderMaterial({
+        uniforms: {
+            uTexture: { value: leftVideoTexture },
+            uTime: { value: 0 }
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying vec2 vUv;
+            uniform sampler2D uTexture;
+            uniform float uTime;
+
+            float rand(vec2 co) {
+                return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+            }
+
+            void main() {
+                vec2 uv = vUv;
+                
+                // Burst-based glitch triggers
+                float timeStep = floor(uTime * 15.0); 
+                float glitchThreshold = 0.93; // Bursty
+                float g = rand(vec2(timeStep, 0.0));
+                
+                float jump = 0.0;
+                float split = 0.0;
+
+                if (g > glitchThreshold) {
+                    float intensity = (g - glitchThreshold) / (1.0 - glitchThreshold);
+                    
+                    // 1. Precise Jitter (Thinner segments, smaller offset)
+                    float stripY = floor(uv.y * 80.0); // Thinner strips
+                    if (rand(vec2(timeStep, stripY)) > 0.7) {
+                        jump = (rand(vec2(timeStep, stripY)) - 0.5) * 0.02 * intensity;
+                    }
+                    
+                    // 2. Refined RGB Split
+                    split = 0.015 * intensity;
+                }
+
+                // Apply Shifts
+                uv.x += jump;
+
+                float r = texture2D(uTexture, uv + vec2(split, 0.0)).r;
+                float g_col = texture2D(uTexture, uv).g;
+                float b = texture2D(uTexture, uv - vec2(split, 0.0)).b;
+
+                vec4 texColor = vec4(r, g_col, b, 1.0);
+                
+                // Micro-noise during glitch (Very subtle)
+                if (g > glitchThreshold) {
+                    float noise = rand(uv + uTime) * 0.08;
+                    texColor.rgb += noise;
+                }
+
+                gl_FragColor = texColor * 0.55;
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending
+    });
+    animatedShaderMaterials.push(glitchMat);
+
+    const leftMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 8),
+        glitchMat
+    );
+    // Position on Left Wall (x = -4.995 to be behind playlist at -4.99)
+    leftMesh.position.set(-4.995, 4, 0);
+    leftMesh.rotation.y = Math.PI / 2;
+    leftMesh.userData = { type: 'basementLeftVideo', persistent: true };
+    interiorGroup.add(leftMesh);
+
+    // Retry logic for playback
+    let playAttempts = 0;
+    const maxAttempts = 3;
+
+    const attemptPlay = () => {
+        playAttempts++;
+
+        // Play main video
+        videoElement.play().catch(() => { });
+
+        // Play left video
+        if (window.basementLeftVideo) {
+            window.basementLeftVideo.play()
+                .then(() => {
+                    if (!window.basementVideoMonitor) {
+                        window.basementVideoMonitor = setInterval(() => {
+                            if (currentRoom === 'basement') {
+                                // Monitor back wall video
+                                if (videoElement && videoElement.paused && videoElement.readyState >= 2) {
+                                    videoElement.play().catch(() => { });
+                                }
+                                // Monitor left wall video
+                                if (window.basementLeftVideo && window.basementLeftVideo.paused && window.basementLeftVideo.readyState >= 2) {
+                                    window.basementLeftVideo.play().catch(() => { });
+                                }
+                            }
+                        }, 1000);
+                    }
+                })
+                .catch(e => {
+                    if (playAttempts < maxAttempts) {
+                        setTimeout(attemptPlay, 500);
+                    }
+                });
+        }
+    };
+
+    // Start playback after a brief delay to ensure mesh is in scene
+    setTimeout(attemptPlay, 100);
+
+    // V-FIX: Ensure audio analyser is active for basement nodes
+    if (window.isMusicPlaying && typeof initAudioAnalyser === 'function') {
+        initAudioAnalyser();
+    }
+
+    if (window.addReflectionMarker) window.addReflectionMarker('basement', 0, 1.5, -4.5);
+}
 
 function buildInterior(roomKey) {
-    if (thoughtInterval) clearInterval(thoughtInterval);
-    thoughtInterval = null;
-
     // V-FIX: Stop Living Room Video if playing
     if (window.stopLivingVideo) window.stopLivingVideo();
+
+    // Cleanup Studio video monitor when leaving Studio
+    if (window.studioVideoMonitor) {
+        clearInterval(window.studioVideoMonitor);
+        window.studioVideoMonitor = null;
+        window.studioVideos = null;
+    }
+
+    // Cleanup Basement video monitor when leaving Basement
+    if (window.basementVideoMonitor) {
+        clearInterval(window.basementVideoMonitor);
+        window.basementVideoMonitor = null;
+    }
 
     while (interiorGroup.children.length > 0) { interiorGroup.remove(interiorGroup.children[0]); }
     interiorClickables.length = 0;
     atomGroup = null;
     noteTextSprite = null;
-    thoughtSprite = null;
     basementNodes = [];
     basementLines = null;
     currentTrackIndex = 0;
@@ -7686,91 +3582,77 @@ function buildInterior(roomKey) {
     // Clear Shader Animations on room switch
     animatedShaderMaterials = [];
 
-    const data = roomContent[roomKey];
+    let data = roomContent[roomKey];
+    if (!data && roomKey === 'space') {
+        data = { title: 'The Void', description: 'Beyond the known world' };
+    }
 
-    // V101: Crash Fix - Safeguard against invalid room keys
-    if (!data) {
-        console.error(`buildInterior: Room data not found for key '${roomKey}'`);
+    if (!data) return;
+
+    if (roomKey === 'space') {
+        try {
+            createSpaceInterior();
+            if (window.applyRoomLighting) window.applyRoomLighting(roomKey);
+        } catch (err) {
+            console.error(`Failed to create space interior: ${err.message} `, err);
+            // Fallback: ensure at least the background is set
+            scene.background = new THREE.Color(0x0a0412);
+            if (scene.fog) {
+                scene.fog.color.setHex(0x0a0412);
+                scene.fog.far = 2000;
+            }
+            // Add a diagnostic sphere so we know something rendered
+            const debugSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xff0080, wireframe: false })
+            );
+            debugSphere.position.set(0, 1.5, 0);
+            interiorGroup.add(debugSphere);
+        }
         return;
     }
 
-    // V128: Darker Floor (Was 0xdddddd -> 0x2c2c2c)
-    // V113: Even Darker for Basement
     const floorColor = roomKey === 'basement' ? 0x050505 : 0x2c2c2c;
     const floorMat = new THREE.MeshStandardMaterial({ color: floorColor });
     let wallMat = new THREE.MeshStandardMaterial({ color: data.hex || 0xffffff, side: THREE.DoubleSide });
 
-    // V326: Hall Floor Pattern (Checkered like Bathroom)
+    // Hall Floor Pattern
     if (roomKey === 'hall') {
         const checkCanvas = document.createElement('canvas');
-        // V-NEW: Twin Peaks Chevron Floor (Hall Only)
-        if (roomKey === 'hall') {
-            const checkCanvas = document.createElement('canvas');
-            checkCanvas.width = 512; checkCanvas.height = 512;
-            const cctx = checkCanvas.getContext('2d');
-            cctx.fillStyle = '#ffffff';
-            cctx.fillRect(0, 0, 512, 512);
-            cctx.fillStyle = '#111111';
-            const w = 512, h = 512;
-            const stepX = 128, stepY = 128;
-            for (let y = -stepY; y < h + stepY; y += stepY) {
-                cctx.beginPath();
-                cctx.moveTo(0, y);
-                for (let x = 0; x <= w; x += stepX / 2) {
-                    const alt = (x / (stepX / 2)) % 2 === 0 ? 0 : stepY / 2;
-                    cctx.lineTo(x, y + alt);
-                }
-                cctx.lineTo(w, y + stepY);
-                for (let x = w; x >= 0; x -= stepX / 2) {
-                    const alt = (x / (stepX / 2)) % 2 === 0 ? stepY / 2 : stepY;
-                    cctx.lineTo(x, y + alt);
-                }
-                cctx.closePath();
-                cctx.fill();
+        checkCanvas.width = 512; checkCanvas.height = 512;
+        const cctx = checkCanvas.getContext('2d');
+        cctx.fillStyle = '#ffffff';
+        cctx.fillRect(0, 0, 512, 512);
+        cctx.fillStyle = '#111111';
+        const w = 512, h = 512;
+        const stepX = 128, stepY = 128;
+        for (let y = -stepY; y < h + stepY; y += stepY) {
+            cctx.beginPath();
+            cctx.moveTo(0, y);
+            for (let x = 0; x <= w; x += stepX / 2) {
+                const alt = (x / (stepX / 2)) % 2 === 0 ? 0 : stepY / 2;
+                cctx.lineTo(x, y + alt);
             }
-            const tex = new THREE.CanvasTexture(checkCanvas);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(2, 2);
-            floorMat.map = tex;
-            floorMat.color.set(0xffffff);
-            floorMat.roughness = 0.4;
-        } else {
-            const checkCanvas = document.createElement('canvas');
-            checkCanvas.width = 512; checkCanvas.height = 512;
-            const cctx = checkCanvas.getContext('2d');
-            const size = 64;
-            for (let y = 0; y < 512; y += size) {
-                for (let x = 0; x < 512; x += size) {
-                    cctx.fillStyle = ((x / size + y / size) % 2 === 0) ? '#111111' : '#333333';
-                    cctx.fillRect(x, y, size, size);
-                    cctx.strokeStyle = 'rgba(255,255,255,0.05)';
-                    cctx.strokeRect(x, y, size, size);
-                }
+            cctx.lineTo(w, y + stepY);
+            for (let x = w; x >= 0; x -= stepX / 2) {
+                const alt = (x / (stepX / 2)) % 2 === 0 ? stepY / 2 : stepY;
+                cctx.lineTo(x, y + alt);
             }
-            const tex = new THREE.CanvasTexture(checkCanvas);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(2, 2);
-            floorMat.map = tex;
-            floorMat.color.set(0xffffff);
-            floorMat.roughness = 0.2;
+            cctx.closePath();
+            cctx.fill();
         }
+        const tex = new THREE.CanvasTexture(checkCanvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2);
+        floorMat.map = tex;
+        floorMat.color.set(0xffffff);
+        floorMat.roughness = 0.4;
     }
 
-    // V-FIX 113: Audio Analyser Initialization
-    if (!window.initAudioAnalyser) {
-        window.initAudioAnalyser = function () {
-            if (window.audioAnalyser) return;
-            if (!window.audioContext) { window.audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
-            if (!window.audioPlayer) return;
-            const source = window.audioContext.createMediaElementSource(window.audioPlayer);
-            window.audioAnalyser = window.audioContext.createAnalyser();
-            window.audioAnalyser.fftSize = 256;
-            source.connect(window.audioAnalyser);
-            window.audioAnalyser.connect(window.audioContext.destination);
-            window.audioDataArray = new Uint8Array(window.audioAnalyser.frequencyBinCount);
-        };
+    // Audio Analyser Initialization
+    if ((roomKey === 'basement' || roomKey === 'music' || roomKey === 'attic') && typeof initAudioAnalyser === 'function') {
+        initAudioAnalyser();
     }
-    if ((roomKey === 'basement' || roomKey === 'music') && window.initAudioAnalyser) window.initAudioAnalyser();
 
     // Walls logic parameterized by room data
     const iW = data.interiorWidth || 10;
@@ -7791,10 +3673,10 @@ function buildInterior(roomKey) {
     backWall.receiveShadow = true; // V-REFINE: Shadows
     interiorGroup.add(backWall);
 
-    // V326: Hall Left Wall (Music Wall) Wood Texture
+    // V327: Hall Left Wall (Music Wall) Deep Green Texture
     let finalLeftWallMat = wallMat;
-    if (roomKey === 'hall' && typeof createWoodMaterial === 'function') {
-        finalLeftWallMat = createWoodMaterial();
+    if (roomKey === 'hall' && typeof createHallGreenMaterial === 'function') {
+        finalLeftWallMat = createHallGreenMaterial();
     }
 
     const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(iD, iH), finalLeftWallMat);
@@ -7813,26 +3695,78 @@ function buildInterior(roomKey) {
     }
 
     // V325-v326: Scale and zOffset now handled internally by music.js
-    createMusicPanel(data.playlist);
-
-    if (roomKey === 'living') createLivingRoomInterior();
-    else if (roomKey === 'bedroom') createBedroomInterior();
-    else if (roomKey === 'studio') createStudioInterior();
-    else if (roomKey === 'toilet') createToiletInterior();
-    else if (roomKey === 'hall') {
-        createHallInterior();
-
+    // V325-v326: Scale and zOffset now handled internally by music.js
+    if (window.createMusicPanel) {
+        window.createMusicPanel(data.playlist);
+    } else {
     }
-    else if (roomKey === 'attic') createAtticInterior();
-    else if (roomKey === 'basement') createBasementInterior();
-    else if (roomKey === 'bathroom') createBathroomInterior();
+
+    // Auto-play music when entering room
+    if (data.playlist && data.playlist.length > 0) {
+        setTimeout(() => {
+            // Force play if paused OR if not marked as playing
+            const shouldStart = !window.isMusicPlaying || (window.audioPlayer && window.audioPlayer.paused);
+            if (window.toggleMusic && shouldStart) {
+                // If it was marked as playing but is actually paused, toggleMusic might pause it again.
+                // So if isMusicPlaying is true, we should probably reset it or call playTrack directly.
+                if (window.isMusicPlaying && window.playTrack) {
+                    window.playTrack(window.currentTrackIndex || 0);
+                } else {
+                    window.toggleMusic();
+                }
+            }
+        }, 500); // 500ms delay to ensure everything is initialized
+    }
+
+    if (roomKey === 'living') {
+        if (typeof createLivingRoomInterior === 'function') createLivingRoomInterior();
+    }
+    else if (roomKey === 'bedroom') {
+        if (typeof createBedroomInterior === 'function') createBedroomInterior();
+    }
+    else if (roomKey === 'studio') {
+        if (typeof createStudioInterior === 'function') createStudioInterior();
+    }
+    else if (roomKey === 'toilet') {
+        if (typeof createToiletInterior === 'function') createToiletInterior();
+    }
+    else if (roomKey === 'hall') {
+        if (typeof createHallInterior === 'function') createHallInterior();
+    }
+    else if (roomKey === 'attic') {
+        if (typeof createAtticInterior === 'function') createAtticInterior();
+    }
+    else if (roomKey === 'basement') {
+        // Safety check for basement interior
+        if (typeof createBasementInterior === 'function') {
+            createBasementInterior();
+        } else {
+            createGenericInterior(data.title);
+        }
+    }
+    else if (roomKey === 'bathroom') {
+        if (typeof createBathroomInterior === 'function') createBathroomInterior();
+    }
     else if (roomKey === 'annex') {
         // V148: Annex Interior (Added)
         // Set specific lights? Handled by buildInterior generic dark logic below?
         // Actually line 1752 handles 'dark' for most rooms.
         // We'll createInterior here.
-        createAnnexInterior();
+        if (typeof createAnnexInterior === 'function') {
+            createAnnexInterior();
+        } else {
+            createGenericInterior(data.title);
+        }
     }
+    else if (roomKey === 'garage') {
+        // Garage Interior - shows void portal to space
+        if (typeof createGarageInterior === 'function') {
+            createGarageInterior();
+        } else {
+            createGenericInterior(data.title);
+        }
+    }
+
     else createGenericInterior(data.title);
 
     // V114: Force Lighting Update for Room
@@ -7840,35 +3774,53 @@ function buildInterior(roomKey) {
 }
 
 function performClick(event) {
+    if (!event) return; // V-FIX: Guard against undefined event
     updateMousePosition(event);
     raycaster.setFromCamera(mouse, camera);
     if (state === 'HOUSE') {
+        // V-FIX: Support custom handlers (like Garage Door) in HOUSE state
         const intersects = raycaster.intersectObjects(worldGroup.children, true);
         if (intersects.length > 0) {
             let target = intersects[0].object;
+            let handlerFound = false;
+
+            // 1. Check for Custom Handler first
+            let bubbleTarget = target;
+            while (bubbleTarget && bubbleTarget !== worldGroup) {
+                if (bubbleTarget.userData && bubbleTarget.userData.onClick) {
+                    bubbleTarget.userData.onClick(intersects[0]);
+                    handlerFound = true;
+                    break;
+                }
+                bubbleTarget = bubbleTarget.parent;
+            }
+
+            if (handlerFound) return;
+
+            // 2. Fallback to Room Entry (Original Logic)
             while (target && (!target.userData || !target.userData.name)) { target = target.parent; }
-            if (target && target.userData && target.userData.name) { enterRoom(target.userData.name); }
+            if (target && target.userData && target.userData.name) {
+                // Only enter if it's a valid room (avoid garage components triggering entry errors)
+                if (window.roomContent && window.roomContent[target.userData.name]) {
+                    enterRoom(target.userData.name);
+                } else {
+                    console.log("roomContent not loaded");
+                }
+            }
         }
     } else if (state === 'ROOM') {
         // V-DEBUG: Log what we are checking against
-        // console.log("Raycasting against", interiorClickables.length, "objects");
         const intersects = raycaster.intersectObjects(interiorClickables, true);
 
         if (intersects.length > 0) {
             // V-DEBUG: Log the very first thing we hit
-            console.log("Raycast Hit:", intersects[0].object.type, intersects[0].object.userData);
-            console.log("Distance:", intersects[0].distance);
 
             let target = intersects[0].object;
             let handlerFound = false;
 
             while (target && target !== interiorGroup) {
                 // V-DEBUG: Bubbling up...
-                // console.log("Checking:", target.userData);
-
                 if (target.userData && target.userData.onClick) {
-                    // FOUND A CUSTOM HANDLER
-                    console.log("Custom Handler Found on:", target.userData.name || "Unnamed Object");
                     target.userData.onClick(intersects[0]);
                     handlerFound = true;
                     break;
@@ -7878,7 +3830,6 @@ function performClick(event) {
                 // (Only if we haven't standardized everything to onClick yet)
                 if (target.userData && target.userData.type) {
                     if (target.userData.type === 'tv') {
-                        console.log("CLICK DETECTED: TV Mesh");
                         if (window.nextTVContent) window.nextTVContent();
                         else console.error("nextTVContent function not found!");
                         handlerFound = true; break;
@@ -7901,13 +3852,20 @@ function performClick(event) {
                         else if (window.toggleBathroomMirror) window.toggleBathroomMirror();
                         handlerFound = true; break;
                     }
+                    else if (target.userData.type === 'musicPanel') { nextTrack(); handlerFound = true; break; }
+                    else if (target.userData.type === 'songItem') { playTrack(target.userData.index); handlerFound = true; break; }
+                    else if (target.userData.type === 'tvVideoItem') { if (typeof playTVVideo === 'function') playTVVideo(target.userData.index); handlerFound = true; break; }
+                    else if (target.userData.type === 'videoItem') { playVideo(target.userData.index); handlerFound = true; break; }
+                    else if (target.userData.type === 'videoPlayButton') { toggleVideo(); handlerFound = true; break; }
+                    else if (target.userData.type === 'mmAnimationClose') { stopMMAnimation(); handlerFound = true; break; }
+                    else if (target.userData.type === 'diary') { openDiaryPopup(); handlerFound = true; break; }
+                    else if (target.userData.type === 'laptop') { startGoldenRatioAnimation(); handlerFound = true; break; }
                 }
 
                 target = target.parent;
             }
 
             if (!handlerFound) {
-                console.log("Clicked object has no handler:", intersects[0].object);
             }
         }
     }
@@ -7920,19 +3878,41 @@ function performClick(event) {
 // START VIDEO CLIP
 function startVideoClip(room) {
     const playlist = roomContent[room].videoPlaylist;
-    if (!playlist) return;
+    if (!playlist) {
+        console.warn('⚠️ No video playlist for room:', room);
+        return;
+    }
     const clip = playlist[masterVideoIndex];
+    if (!clip) {
+        console.warn('⚠️ No clip at index:', masterVideoIndex);
+        return;
+    }
+
+    console.log('🎬 Starting video clip:', clip.title || clip.src, 'in room:', room);
+
+    videoElement.crossOrigin = 'anonymous'; // must precede .src assignment
     videoElement.src = clip.src;
+    videoElement.load(); // V-FIX: Ensure video loads
     // V55: Ensure Unmuted
     videoElement.muted = false;
     // V-FIX 259: Per-clip volume (Default lowered to 0.6 from 0.8)
     videoElement.volume = (typeof clip.volume !== 'undefined') ? clip.volume : 0.6;
-    videoElement.play().catch(e => console.warn("Video Play Error", e));
+
+    videoElement.play().catch((err) => {
+        console.error('❌ Video play error:', err);
+        // Try to resume audio context if suspended
+        if (window.audioContext && window.audioContext.state === 'suspended') {
+            window.audioContext.resume().then(() => {
+                console.log('🔊 Audio context resumed, retrying video play');
+                videoElement.play().catch(e => console.error('❌ Retry failed:', e));
+            });
+        }
+    });
 
     // Stop room music when video starts
-    if (isMusicPlaying) {
-        audioPlayer.pause();
-        isMusicPlaying = false;
+    if (window.isMusicPlaying) {
+        window.audioPlayer.pause();
+        window.isMusicPlaying = false;
         if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
     }
 
@@ -7942,7 +3922,6 @@ function startVideoClip(room) {
         tvMesh.material.needsUpdate = true;
 
         // V-FIX 265: Darker Environment for Video (But keep a base glow V289)
-        console.log("Video Mode: Darkening Living Room");
         if (window.ambientLight) window.ambientLight.intensity = 0.0; // V298: BLACKOUT
         if (window.dirLight) window.dirLight.intensity = 0.0; // V298: BLACKOUT
     } else if (room === 'bedroom') {
@@ -7951,10 +3930,16 @@ function startVideoClip(room) {
         if (phone) {
             const phoneScreenMesh = phone.getObjectByName('screen');
             if (phoneScreenMesh) {
+                // V-FIX: Create new texture each time to ensure it updates
                 videoTexture = new THREE.VideoTexture(videoElement);
                 phoneScreenMesh.material.map = videoTexture;
                 phoneScreenMesh.material.needsUpdate = true;
+                console.log('✅ Bedroom video texture updated');
+            } else {
+                console.warn('⚠️ Phone screen mesh not found');
             }
+        } else {
+            console.warn('⚠️ Video phone not found in bedroom');
         }
     }
 }
@@ -7963,7 +3948,13 @@ function startVideoClip(room) {
 
 // TOGGLE VIDEO (Button Click)
 function toggleVideo() {
-    const btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton');
+    let btn = interiorGroup.children.find(c => c.userData.type === 'videoPlayButton');
+    // V-FIX: Support Bedroom/Bathroom's single button control type
+    if (!btn) {
+        interiorGroup.traverse(c => {
+            if (c.userData.type === 'videoControlSingle') btn = c;
+        });
+    }
     if (!btn) return;
 
     if (videoElement.paused) {
@@ -7971,16 +3962,16 @@ function toggleVideo() {
         // V55: Ensure Unmute
         videoElement.muted = false;
         videoElement.volume = 0.8;
-        videoElement.play().catch(e => console.warn("Play error", e));
+        videoElement.play().catch(() => { });
 
         btn.userData.state = 'playing';
         btn.material.color.setHex(0x00ff00); // Green
         btn.material.emissive.setHex(0x004400);
 
         // Stop music
-        if (isMusicPlaying) {
-            audioPlayer.pause();
-            isMusicPlaying = false;
+        if (window.isMusicPlaying) {
+            window.audioPlayer.pause();
+            window.isMusicPlaying = false;
             if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
         }
 
@@ -7997,10 +3988,10 @@ function toggleVideo() {
         btn.material.color.setHex(0xff0000); // Red
         btn.material.emissive.setHex(0x440000);
 
-        // V-FIX 265: Restore Light if Living Room (V289: Brighter Room Defaults)
+        // V-FIX 265: Restore Light if Living Room (V-SYNC to HOUSE_DEFAULTS)
         if (typeof currentRoom !== 'undefined' && currentRoom === 'living') {
-            if (window.ambientLight) window.ambientLight.intensity = 0.15; // V298: Moody Normal (Visible)
-            if (window.dirLight) window.dirLight.intensity = 0.2; // V298: Moody Normal
+            if (window.ambientLight) window.ambientLight.intensity = HOUSE_DEFAULTS.ambientIntensity;
+            if (window.dirLight) window.dirLight.intensity = HOUSE_DEFAULTS.dirIntensity;
         }
     }
 }
@@ -8009,8 +4000,10 @@ function toggleVideo() {
 
 function openIdeaOverlay() {
     document.getElementById('idea-overlay').style.display = 'flex';
-    const savedIdea = localStorage.getItem('memoryHouse_idea');
-    if (savedIdea) document.getElementById('idea-text').value = savedIdea;
+    try {
+        const savedIdea = localStorage.getItem('memoryHouse_idea');
+        if (savedIdea) document.getElementById('idea-text').value = savedIdea;
+    } catch (e) { }
 }
 
 function closeIdeaOverlay() {
@@ -8019,13 +4012,14 @@ function closeIdeaOverlay() {
 
 function saveIdea() {
     const text = document.getElementById('idea-text').value;
-    localStorage.setItem('memoryHouse_idea', text);
+    try {
+        localStorage.setItem('memoryHouse_idea', text);
+    } catch (e) { }
     closeIdeaOverlay();
 }
 
-// V171: Diary Popup (Annex) - Updated to 3D Hologram with Animation
+// Diary Popup (Annex) - Updated to 3D Hologram with Animation
 window.openDiaryPopup = function () {
-    console.log("openDiaryPopup called, diaryHologram exists:", !!window.diaryHologram);
     if (!window.diaryHologram) return;
 
     if (!window.diaryHologram.userData.isOpen) {
@@ -8060,7 +4054,7 @@ window.closeDiaryPopup = function () {
     }
 };
 
-// V119: Robust Info Toggle (Direct Style)
+// Robust Info Toggle (Direct Style)
 function toggleInfo(e) {
     if (e) e.stopPropagation();
     if (infoTimeout) clearTimeout(infoTimeout);
@@ -8084,14 +4078,14 @@ function toggleInfo(e) {
         panel.style.pointerEvents = 'auto'; // Enable clicks
 
         // Icon: X / Dash
-        btn.innerHTML = `<svg id="min-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dash-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2 8a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 8z"/></svg>`;
+        btn.innerHTML = `<svg id="min-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dash-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2 8a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 8z" /></svg>`;
     } else {
         // CLOSE IT (Slide Out)
         panel.style.transform = 'translateX(100%)';
         panel.style.pointerEvents = 'none'; // Pass clicks through
 
         // Icon: Back Arrow Circle (User Request)
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-4.5-.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z"/></svg>`;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-4.5-.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z" /></svg>`;
     }
 }
 
@@ -8100,7 +4094,7 @@ function handlePanelClick(e) {
     if (panel.classList.contains('minimized')) { toggleInfo(); }
 }
 
-// V110: 3D Laptop Message
+// 3D Laptop Message
 function showLaptopMessage() {
     // Find laptop position
     let laptopPos = new THREE.Vector3(2, 2, -2); // Default fallback (Studio Desk)
@@ -8159,7 +4153,7 @@ function stopAllAudio() {
         window.audioPlayer.pause();
         window.isMusicPlaying = false;
     }
-    // 2. Main Video (Living/Bedroom)
+    // 2. Main Video (Living/Bedroom/Bathroom)
     if (window.videoElement && !window.videoElement.paused) {
         window.videoElement.pause();
 
@@ -8168,6 +4162,12 @@ function stopAllAudio() {
             if (currentRoom === 'bedroom' && window.stopBedroomVideo) window.stopBedroomVideo();
             if (currentRoom === 'living' && window.stopLivingVideo) window.stopLivingVideo();
         }
+    }
+    // Clear videoElement src entirely so iOS doesn't resume it in the background
+    if (window.videoElement) {
+        window.videoElement.pause();
+        window.videoElement.removeAttribute('src');
+        window.videoElement.load(); // Abort any pending network request
     }
     // 3. Attic Video (Specific)
     const atticVideo = document.getElementById('attic-video');
@@ -8178,18 +4178,18 @@ function stopAllAudio() {
 }
 
 // V115: Robust Room Lighting System (Global Control)
+
 window.applyRoomLighting = function (roomName) {
-    console.log("V123: Apply Dark Room Lighting for", roomName);
 
-    // Ambient 0.45 matches what exitRoom() uses
-    let targetAmbient = 0.6; // V-FIX: Brighter default
-    let targetDir = 1.2;
-    let targetRim = 0.6;
-    let targetHemi = 0.6;
+    // Default to HOUSE_DEFAULTS as baseline
+    let targetAmbient = HOUSE_DEFAULTS.ambientIntensity;
+    let targetDir = HOUSE_DEFAULTS.dirIntensity;
+    let targetRim = HOUSE_DEFAULTS.rimIntensity;
+    let targetHemi = HOUSE_DEFAULTS.hemiIntensity;
 
-    // PER-ROOM OVERRIDES
+    // PER-ROOM OVERRIDES (Kept minimal to match reference style)
     if (roomName === 'basement') {
-        targetAmbient = 0.15; // Visible dark
+        targetAmbient = 0.15;
         targetDir = 0.2;
         targetRim = 0.2;
         targetHemi = 0.1;
@@ -8216,10 +4216,11 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.3;
         targetHemi = 0.2;
     } else if (roomName === 'attic') {
-        targetAmbient = 0.3;
-        targetDir = 0.5;
-        targetRim = 0.3;
-        targetHemi = 0.2;
+        // V-ENHANCED: VERY DARK for beat-reactive lamp atmosphere
+        targetAmbient = 0.05;
+        targetDir = 0.1;
+        targetRim = 0.1;
+        targetHemi = 0.05;
     }
     else if (roomName === 'living') {
         targetAmbient = 0.4;
@@ -8233,27 +4234,97 @@ window.applyRoomLighting = function (roomName) {
         targetRim = 0.3;
         targetHemi = 0.2;
     }
+    else if (roomName === 'space') {
+        targetAmbient = 0.05;
+        targetDir = 0.2;
+        targetRim = 0.1;
+        targetHemi = 0.05;
+    }
 
-    // Apply
-    if (window.ambientLight) window.ambientLight.intensity = targetAmbient;
-    if (window.dirLight) window.dirLight.intensity = targetDir;
-    if (window.rimLight) window.rimLight.intensity = targetRim;
-    if (window.hemiLight) window.hemiLight.intensity = targetHemi;
-
-    console.log("Lighting Applied: Amb", targetAmbient, "Dir", targetDir, "Rim", targetRim, "Hemi", targetHemi);
+    // Apply with Smooth Transitions
+    const duration = 1200;
+    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: targetAmbient }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: targetDir }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: targetRim }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+    if (window.hemiLight) new TWEEN.Tween(window.hemiLight).to({ intensity: targetHemi }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
 };
 
 function enterRoom(roomName) {
+    // 1. Set room context IMMEDIATELY (V-FIX for UI/Playlist timing)
+    window.currentRoom = roomName;
+    currentRoom = roomName; // V-FIX: Sync local variable if it exists
+    window.currentTrackIndex = 0;
+    window.masterVideoIndex = 0;
     state = 'TRANSITION';
-    currentRoom = roomName;
-    currentTrackIndex = 0;
-    masterVideoIndex = 0;
+    window._wasdEnabled = true; // Enable WASD movement inside rooms
 
-    // Stop previous room's audio before building new one
-    if (audioPlayer && audioPlayer.src && audioPlayer.src.includes("NightDrive")) {
-        houseMusicTime = audioPlayer.currentTime;
+    // 2. Stop prior audio (Non-destructive - no src clearing)
+    if (window.audioPlayer) {
+        window.audioPlayer.pause();
+        window.audioPlayer.currentTime = 0;
+        window.isMusicPlaying = false;
     }
     stopAllAudio();
+
+    if (window.roomContent && window.roomContent[roomName]) {
+        const rData = window.roomContent[roomName];
+
+        // Trigger onEnter Hook if defined
+        if (rData.onEnter) {
+            rData.onEnter();
+        }
+
+        if (rData.playlist && rData.playlist.length > 0) {
+            setTimeout(() => {
+                console.log('🎵 Starting music for room:', roomName);
+
+                // Create music panel first
+                if (window.createMusicPanel) window.createMusicPanel(rData.playlist);
+
+                // Auto-play music using playTrack for reliability
+                if (window.playTrack) {
+                    console.log('🎵 Calling playTrack(0) for:', roomName);
+                    window.playTrack(0); // Start first track
+
+                    // CRITICAL for attic: Initialize audio analyzer for reactive lighting
+                    if (roomName === 'attic' && typeof initAudioAnalyser === 'function') {
+                        setTimeout(() => {
+                            console.log('🎵 Initializing audio analyzer for attic lighting');
+                            initAudioAnalyser();
+                        }, 500);
+                    }
+                } else if (window.audioPlayer) {
+                    // Fallback if playTrack not available
+                    console.log('🎵 Using fallback audio player for:', roomName);
+                    window.audioPlayer.src = rData.playlist[0].src;
+                    window.audioPlayer.volume = rData.playlist[0].volume || 0.5;
+                    window.audioPlayer.play().then(() => {
+                        console.log('✅ Audio playing successfully');
+                        window.isMusicPlaying = true;
+
+                        // Initialize analyzer for attic
+                        if (roomName === 'attic' && typeof initAudioAnalyser === 'function') {
+                            setTimeout(() => {
+                                console.log('🎵 Initializing audio analyzer for attic lighting (fallback)');
+                                initAudioAnalyser();
+                            }, 500);
+                        }
+                    }).catch(e => {
+                        console.error('❌ Music play error:', e);
+                        console.error('Audio context state:', window.audioContext ? window.audioContext.state : 'no context');
+                    });
+                } else {
+                    console.error('❌ No playTrack or audioPlayer available!');
+                }
+            }, 1000);
+        } else {
+            console.log('ℹ️ No playlist for room:', roomName);
+        }
+    }
+
+    if (window.audioPlayer && window.audioPlayer.src && window.audioPlayer.src.includes("NightDrive")) {
+        houseMusicTime = window.audioPlayer.currentTime;
+    }
 
     window.isZoomingToRoom = true;
     const curtain = document.getElementById('curtain');
@@ -8268,98 +4339,213 @@ function enterRoom(roomName) {
             const appHeader = document.getElementById('app-header');
             if (appHeader) appHeader.style.display = 'none';
 
+            if (roomName === 'space') {
+                scene.background = new THREE.Color(0x0a0412); // DARK VOID PURPLE
+                if (scene.fog) {
+                    scene.fog.color.setHex(0x0a0412); // Match Fog Color
+                    scene.fog.far = 2000;
+                }
+            } else {
+                scene.background = new THREE.Color(HOUSE_DEFAULTS.bgColor);
+                if (scene.fog) {
+                    scene.fog.color.setHex(HOUSE_DEFAULTS.fogColor);
+                    scene.fog.far = HOUSE_DEFAULTS.fogFar;
+                }
+            }
+
             buildInterior(roomName);
             interiorGroup.visible = true;
             // V15: Angled Camera (Zoomed out slightly)
-            camera.position.set(4, 6, 9);
-            camera.lookAt(0, 2.5, 0);
-            controls.target.set(0, 2.5, 0);
+            if (roomName === 'space') {
+                // Space Room Specific Camera - Zoomed IN per user request
+                camera.position.set(0, 1.5, 16);
+                camera.fov = 45;
+                camera.updateProjectionMatrix();
+                controls.target.set(0, 1.5, 0); // Look at Center
+            } else {
+                // Reset FOV in case it was changed by a previous room
+                if (camera.fov !== 45) { camera.fov = 45; camera.updateProjectionMatrix(); }
+                camera.position.set(4, 6, 9);
+                camera.lookAt(0, 2.5, 0);
+                controls.target.set(0, 2.5, 0);
+            }
             controls.update();
 
             // V114: Force Lighting Update (Replaces old inline logic)
             if (window.applyRoomLighting) window.applyRoomLighting(roomName);
 
-
-            const data = roomContent[roomName];
-            // V201: Attic Audio Default = Video Audio (Not Playlist)
-            if (data && data.playlist && data.playlist[0].src && roomName !== 'attic') {
-                audioPlayer.src = data.playlist[0].src;
-                // V78: Per-track volume support
-                audioPlayer.volume = data.playlist[0].volume || 0.5;
-                initAudioAnalyser();
-                audioPlayer.play().then(() => {
-                    isMusicPlaying = true;
-                    if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0x00ff00);
-                    // V204: Update Music Panel status on Auto-Play
-                    if (window.createMusicPanel) window.createMusicPanel(data.playlist);
-                }).catch(e => {
-                    console.error("Room Audio Play Error:", e); // V-FIX: Debugging
-                    isMusicPlaying = false;
-                    if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
-                });
-            } else {
-                isMusicPlaying = false; audioPlayer.pause(); audioPlayer.src = "";
-                if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
+            if (roomName === 'space' && typeof enhanceSpaceLighting === 'function') {
+                setTimeout(enhanceSpaceLighting, 100);
             }
 
-            // V122: Safe UI Update
+            // V130: Clean Room Info — populated but NOT auto-shown (user clicks nugget for question)
+            const data = window.roomContent[roomName];
             const infoPanel = document.getElementById('room-info');
             if (infoPanel) {
-                // infoPanel.classList.add('minimized'); // Removed logic
-                infoPanel.style.transform = 'translateX(100%)'; // Ensure closed
-                infoPanel.style.display = 'block';
-
                 const contentContainer = document.getElementById('info-content');
-                if (data && contentContainer) {
-                    contentContainer.innerHTML = `<h2 class="text-2xl font-bold mb-2 text-gray-100 pr-8">${data.title}</h2><p class="text-gray-300 leading-relaxed">${data.description}</p>`;
+                if (data && data.description && contentContainer) {
+                    const lang = window.currentLanguage || 'en';
+                    const displayTitle = (lang === 'nl' && data.title_nl) ? data.title_nl : data.title;
+                    const displayDesc = (lang === 'nl' && data.description_nl) ? data.description_nl : data.description;
+                    contentContainer.innerHTML = `
+                        <h2>${displayTitle}</h2>
+                        <p class="text-gray-300 leading-relaxed text-[10px]">${displayDesc}</p>
+                    `;
                 }
-            } else {
-                console.warn("Info Panel not found (Intentional removal?)");
+                // Do NOT auto-show panel — keep it hidden until user needs it
+                infoPanel.style.display = 'none';
+                infoPanel.style.transform = 'translateX(120%)';
             }
 
-            document.getElementById('main-header').style.setProperty('display', 'none', 'important'); // V_FINAL: Force Hide
-            document.getElementById('back-btn').style.display = 'block';
+            const mHeader = document.getElementById('main-header');
+            if (mHeader) mHeader.style.setProperty('display', 'none', 'important');
+
+            // Hide discover-btn — auto-discovery happens on room entry now
+            const dBtn = document.getElementById('discover-btn');
+            if (dBtn) dBtn.style.display = 'none';
+
+            // Auto-discover room silently (notify parent index page)
+            (function autoDiscover() {
+                const room = roomName;
+                let discoveries = {};
+                try { discoveries = JSON.parse(localStorage.getItem('houseDiscovery') || '{}'); } catch (e) { }
+                if (!discoveries[room]) {
+                    discoveries[room] = true;
+                    try { localStorage.setItem('houseDiscovery', JSON.stringify(discoveries)); } catch (e) { }
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'VISIT_ROOM', room: room }, '*');
+                    }
+                }
+            })();
+
+            // Lightbulb button removed per user request (Mystery Nugget is the cue)
+
             document.getElementById('tooltip').style.opacity = 0;
-            document.getElementById('instructions').textContent = "Click music board to cycle tracks • Drag to rotate";
+            const instructions = document.getElementById('instructions');
+            if (instructions) instructions.textContent = "Click music board to cycle tracks • Drag to rotate";
             curtain.classList.remove('active');
             state = 'ROOM';
+            window.isZoomingToRoom = false; // V-FIX: Unlock controls
 
-            // Auto-minimize REMOVED (Starts minimized)
             if (infoTimeout) clearTimeout(infoTimeout);
+
+            // V-FIX: Questions are now manually triggered in-room
+            /*
+            setTimeout(() => {
+                if (window.showRoomQuestion) window.showRoomQuestion(roomName);
+            }, 10000); 
+            */
         } catch (e) {
             console.error(e);
-            // Display Error on Curtain?
             const loading = document.getElementById('loading');
             if (loading) {
-                loading.innerHTML = `<h2 class="text-red-500 bg-black p-4">Room Error: ${e.message}</h2><pre class="text-xs text-white bg-black p-4">${e.stack}</pre>`;
-                loading.style.opacity = 1;
+                loading.innerHTML = `<h2 class="text-red-500 bg-black p-4"> Room Error: ${e.message}</h2>`;
                 loading.style.display = 'flex';
-                loading.style.zIndex = 9999;
             }
-            curtain.classList.remove('active'); // Try to remove curtain so we see error
+            curtain.classList.remove('active');
         }
-
     }, 800);
 }
 
+window.discoverRoom = function () {
+    const room = window.currentRoom;
+    if (!room) return;
+
+    // Save to localStorage
+    // Save to localStorage with safety
+    let discoveries = {};
+    try {
+        discoveries = JSON.parse(localStorage.getItem('houseDiscovery') || '{}');
+    } catch (e) { }
+
+    const isNew = !discoveries[room];
+
+    discoveries[room] = true;
+    try {
+        localStorage.setItem('houseDiscovery', JSON.stringify(discoveries));
+    } catch (e) { }
+
+    // Play victory tune on 10th room discovery (V-NEW)
+    if (isNew && Object.keys(discoveries).length === 10) {
+        try {
+            const victoryPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.victory : '../assets/audio/victory.wav';
+            const victoryTune = new Audio(victoryPath);
+            victoryTune.volume = 0.6;
+            victoryTune.play().catch(e => console.warn("Victory tune play blocked:", e));
+        } catch (err) {
+            console.error("Victory audio error:", err);
+        }
+    }
+
+    // Notify parent if in iframe
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'VISIT_ROOM', room: room }, '*');
+    }
+
+    // Visual feedback
+    const dBtn = document.getElementById('discover-btn');
+    if (dBtn) {
+        dBtn.style.color = '#4ade80'; // Success green
+        const text = dBtn.querySelector('span');
+        if (text) text.innerText = 'RECORDED';
+        setTimeout(() => {
+            dBtn.style.display = 'none';
+        }, 1500);
+    }
+};
+
 function exitRoom() {
     state = 'TRANSITION';
-    // V-FIX: Ensure Living Room Video/Audio is killed immediately
+    window._wasdEnabled = false; // Disable WASD movement outside rooms
     if (window.stopLivingVideo) window.stopLivingVideo();
+    if (window.stopBedroomVideo) window.stopBedroomVideo();
+
+    // V-FIX 2: Automatically close the physical garage door on exit from space
+    const activeRoom = window.currentRoom || currentRoom;
+    if (activeRoom === 'space' || activeRoom === 'garage') {
+        const garage = window.garageForVoid || window.enhancedGarage;
+        if (garage && garage.userData.closeDoor) {
+            garage.userData.closeDoor();
+        }
+    }
 
     const curtain = document.getElementById('curtain');
     if (curtain) curtain.classList.add('active');
 
-    stopAllAudio(); // Replaces manual pausing
-    isMusicPlaying = false; // Redundant but safe
+    // ── Audio bleed fix ───────────────────────────────────────────────────────
+    // 1. Null out currentRoom NOW (before any audio work) so that if the
+    //    'ended' event fires during src reassignment, nextTrack()'s guard
+    //    "if (!window.currentRoom)" kills it immediately.
+    window.currentRoom = null;
+    currentRoom = null;
+
+    // 2. Detach the track-ended handler that was registered by playTrack().
+    //    Without this, changing audioPlayer.src can fire 'ended' on the old
+    //    src (browser-dependent), which calls nextTrack() → playTrack() →
+    //    reloads the room playlist, overwriting the intro music we're about
+    //    to set.
+    if (window._audioEndedHandler && window.audioPlayer) {
+        window.audioPlayer.removeEventListener('ended', window._audioEndedHandler);
+        window._audioEndedHandler = null;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // V-FIX: Explicit Pause and Reset to prevent audio bleed
+    if (window.audioPlayer) {
+        window.audioPlayer.pause();
+        window.audioPlayer.currentTime = 0; // V-NEW: Reset to start
+        window.isMusicPlaying = false;
+    }
+    stopAllAudio();
+    isMusicPlaying = false;
 
     if (audioPlayer) {
         audioPlayer.src = houseConfig.audio.intro;
         audioPlayer.currentTime = houseMusicTime || 0;
         audioPlayer.loop = true;
         audioPlayer.volume = 0.5; // Default volume
-        audioPlayer.play().catch(e => console.warn("Resume House Music Fail", e));
-        isMusicPlaying = true;
+        audioPlayer.play().catch(() => { });
+        window.isMusicPlaying = true;
     }
 
     // Clear any pending info panel minimize timeout
@@ -8368,10 +4554,11 @@ function exitRoom() {
     if (infoTimeout) clearTimeout(infoTimeout);
 
     setTimeout(() => {
-        if (dirLight) dirLight.intensity = 0.7;
-        if (rimLight) rimLight.intensity = 0.4;
-        if (ambientLight) ambientLight.intensity = 0.25;
-        if (hemiLight) hemiLight.intensity = 0.3; // Restore Global Fill
+        const duration = 1500; // Smooth return to house lighting
+        if (dirLight) new TWEEN.Tween(dirLight).to({ intensity: HOUSE_DEFAULTS.dirIntensity }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (rimLight) new TWEEN.Tween(rimLight).to({ intensity: HOUSE_DEFAULTS.rimIntensity }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (ambientLight) new TWEEN.Tween(ambientLight).to({ intensity: HOUSE_DEFAULTS.ambientIntensity }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+        if (hemiLight) new TWEEN.Tween(hemiLight).to({ intensity: HOUSE_DEFAULTS.hemiIntensity }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
 
         // Clear interior group to remove all room-specific objects
         if (interiorGroup) {
@@ -8388,6 +4575,22 @@ function exitRoom() {
             interiorGroup.clear();
             window.metropolisRobot = null; // Clean reference
         }
+
+        // FIXED: Clear foregroundGroup to remove rocket and other overlay elements
+        if (foregroundGroup) {
+            foregroundGroup.children.forEach(child => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
+            foregroundGroup.clear();
+        }
+
         interiorGroup.visible = false;
         worldGroup.visible = true;
 
@@ -8400,7 +4603,7 @@ function exitRoom() {
         interiorClickables.length = 0; // V39: Prevent Ghost Clicks
         if (infoTimeout) clearTimeout(infoTimeout);
 
-        // Reset View
+        // Reset View (Angled "Landing")
         camera.position.set(14, 12, 18);
         camera.lookAt(0, 0, 0);
         controls.target.set(0, 0, 0);
@@ -8413,8 +4616,13 @@ function exitRoom() {
         const bBtn = document.getElementById('back-btn');
         if (bBtn) bBtn.style.display = 'none';
 
-        const mHead = document.getElementById('main-header');
-        if (mHead) mHead.style.opacity = 1;
+        const dBtn = document.getElementById('discover-btn');
+        if (dBtn) dBtn.style.display = 'none';
+
+        // Reflect icon removed
+
+
+        if (window.parent) window.parent.postMessage({ type: 'SHOW_HEADER' }, '*');
 
         // V-FIX: Restore Top Header Bar
         const appHeader = document.getElementById('app-header');
@@ -8424,6 +4632,17 @@ function exitRoom() {
         if (instr) instr.textContent = "Click a room to enter it • Drag to rotate";
 
         if (curtain) curtain.classList.remove('active');
+
+        window.currentRoom = null;
+        currentRoom = null;
+
+        // V-FIX: Restore Background and Fog (Synchronized with Housedev)
+        scene.background = new THREE.Color(0x2d1b4e);
+        if (scene.fog) {
+            scene.fog.color.setHex(0x2d1b4e);
+            scene.fog.far = 300;
+        }
+
         state = 'HOUSE';
         currentRoom = null;
         window.isZoomingToRoom = false;
@@ -8431,6 +4650,7 @@ function exitRoom() {
 }
 
 function updateMousePosition(event) {
+    if (!event) return;
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -8455,165 +4675,151 @@ function onPointerUp(event) {
     isPossibleClick = false;
 }
 
-function performClick(event) {
-    updateMousePosition(event);
-    raycaster.setFromCamera(mouse, camera);
-    if (state === 'HOUSE') {
-        const intersects = raycaster.intersectObjects(worldGroup.children, true);
-        if (intersects.length > 0) {
-            let target = intersects[0].object;
-            // Intro Sign Handler
-            if (target.userData && target.userData.type === 'introSign') {
-                startInteractiveIntro();
-                return;
-            }
 
-            while (target && (!target.userData || !target.userData.name)) { target = target.parent; }
-            if (target && target.userData && target.userData.name) { enterRoom(target.userData.name); }
-        }
-    } else if (state === 'ROOM') {
-        const intersects = raycaster.intersectObjects(interiorClickables, true);
-        if (intersects.length > 0) {
-            let target = intersects[0].object;
-            // Traverse up to find functional parent
-            while (target && (!target.userData || !target.userData.type) && target.parent) {
-                target = target.parent;
-            }
-
-            if (target.userData.type === 'tv') nextTVContent();
-            else if (target.userData.type === 'phone') nextBedroomVideo();
-            else if (target.userData.type === 'universalVideoItem') {
-                // alert("DEBUG: Clicked Universal Item Index " + target.userData.index);
-                console.log("V-FIX: Universal Item Clicked", target.userData.index);
-                if (target.userData.onClick) {
-                    try {
-                        target.userData.onClick();
-                    } catch (e) {
-                        alert("Click Error: " + e.message);
-                    }
-                } else {
-                    alert("Debug: No onClick handler found on this item!");
-                }
-            }
-
-            else if (target.userData.type === 'videoPhone') {
-                toggleVideo();
-            }
-            else if (target.userData.type === 'musicSwitch') toggleMusic();
-            else if (target.userData.type === 'musicPanel') nextTrack();
-            else if (target.userData.type === 'songItem') playTrack(target.userData.index);
-            else if (target.userData.type === 'tvVideoItem') {
-                if (typeof playTVVideo === 'function') playTVVideo(target.userData.index);
-            }
-            else if (target.userData.type === 'videoItem') playVideo(target.userData.index);
-            else if (target.userData.type === 'universalVideoItem') {
-                console.log("V-FIX: Universal Item Clicked", target.userData.index);
-                if (target.userData.onClick) target.userData.onClick();
-            }
-            else if (target.userData.type === 'videoControlSingle') {
-                if (target.userData.onClick) target.userData.onClick();
-            }
-            else if (target.userData.type === 'videoPlayButton') toggleVideo();
-            else if (target.userData.type === 'bathroomMirrorButton') {
-                if (target.toggleMirror) target.toggleMirror();
-            }
-            else if (target.userData.type === 'bathroomPlaylistItem') {
-                // V-FIX: Explicit handler for bathroom playlist
-                if (target.userData.onClick) target.userData.onClick();
-            }
-            else if (target.userData.type === 'atticAudioToggle') {
-                console.log("Attic Audio Toggle Clicked!");
-                if (target.toggleAudio) target.toggleAudio();
-            }
-            else if (target.userData.type === 'mmAnimationClose') {
-                stopMMAnimation();
-            }
-            else if (target.userData.type === 'notepad') openIdeaOverlay();
-            else if (target.userData.type === 'diary') openDiaryPopup();
-            else if (target.userData.type === 'laptop') {
-                startGoldenRatioAnimation();
-            }
-            else if (target.userData.onClick) {
-                target.userData.onClick(intersects[0]);
-            }
-        }
-    }
+// --- MOUSEOVER GLOW SYSTEM ---
+function setRoomGlow(target, isHover) {
+    // V-FIX: Ditching mouseover glow again as it causes color issues
+    return;
 }
+
 function checkIntersectionExternal() {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(worldGroup.children, true);
+
+    let newHovered = null;
+
     if (intersects.length > 0) {
         let target = intersects[0].object;
         while (target && (!target.userData || !target.userData.name)) target = target.parent;
-        if (target && target.userData && target.userData.name) {
-            const name = target.userData.name;
-
-            if (roomContent[name]) {
-                if (hoveredObject !== target) {
-                    hoveredObject = target;
-                    document.body.style.cursor = 'pointer';
-                    const tooltip = document.getElementById('tooltip');
-                    tooltip.textContent = roomContent[name].title;
-                    tooltip.style.opacity = 1;
+        if (target && target.userData) {
+            // Check for explicit name/room match
+            if (target.userData.name && roomContent[target.userData.name]) {
+                newHovered = target;
+            } else {
+                // Check for any parent with onClick
+                let bubble = target;
+                while (bubble && bubble !== worldGroup) {
+                    if (bubble.userData && bubble.userData.onClick) {
+                        newHovered = bubble;
+                        break;
+                    }
+                    bubble = bubble.parent;
                 }
-                return;
-            } else if (name === 'EnterSign') {
-                if (hoveredObject !== target) {
-                    hoveredObject = target;
-                    document.body.style.cursor = 'pointer';
-                    const tooltip = document.getElementById('tooltip');
-                    tooltip.textContent = "ENTER EXPERIENCE";
-                    tooltip.style.opacity = 1;
-                }
-                return;
             }
         }
-        if (target && target.userData && target.userData.type === 'introSign') {
-            document.body.style.cursor = 'pointer';
-            return;
-        }
     }
-    if (hoveredObject) {
-        hoveredObject = null;
-        document.body.style.cursor = 'default';
-        document.getElementById('tooltip').style.opacity = 0;
+
+    if (newHovered !== hoveredObject) {
+        // V-FIX: No glow calls here
+        hoveredObject = newHovered;
+        if (hoveredObject) {
+            document.body.style.cursor = 'pointer';
+            const tooltip = document.getElementById('tooltip');
+
+            // Standardize tooltip text
+            let tipText = "INTERACT";
+            if (hoveredObject.userData.name && roomContent[hoveredObject.userData.name]) {
+                tipText = roomContent[hoveredObject.userData.name].title;
+            } else if (hoveredObject.userData.onClick) {
+                tipText = hoveredObject.userData.tooltip || (hoveredObject.userData.name === 'VoidEntrance' ? "ENTER THE VOID" : (hoveredObject.name === 'garageSystem' ? "GARAGE" : "INTERACT"));
+            }
+
+            tooltip.textContent = tipText;
+            // V-FIX: FORCE HIDE TOOLTIP PER USER REQUEST
+            tooltip.style.opacity = 0;
+            tooltip.style.display = 'none';
+        } else {
+            document.body.style.cursor = 'default';
+            const tooltip = document.getElementById('tooltip');
+            if (tooltip) {
+                tooltip.style.opacity = 0;
+                tooltip.style.display = 'none';
+            }
+        }
     }
 }
 
+let hoveredInternalObject = null;
 function checkIntersectionInternal() {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(interiorClickables, true); // true = recursive
 
-    let isHoveringTopics = false;
+    let newHovered = null;
 
     if (intersects.length > 0) {
-        document.body.style.cursor = 'pointer';
-
-        // V-FIX 15: DEBUG CLICK HIT
-        // Logging what we hit to debug Attic issues
-        // console.log("Raycast Hit:", intersects[0].object.name || intersects[0].object.uuid, intersects[0].object);
-
-        // V-FIX: Bubble up to find clickable parent
         let target = intersects[0].object;
-        while (target && (!target.userData || !target.userData.onClick)) {
-            target = target.parent;
-            // Stop if we hit scene or root of interior
-            if (!target || target === interiorGroup) break;
+        let clickableParent = target;
+        while (clickableParent && (!clickableParent.userData || !clickableParent.userData.onClick)) {
+            clickableParent = clickableParent.parent;
+            if (!clickableParent || clickableParent === interiorGroup) break;
         }
-
-        if (target && target.userData && target.userData.type === 'deckOfCards') {
-            ;
-        }
-    } else {
-        document.body.style.cursor = 'default';
+        if (clickableParent) newHovered = clickableParent;
     }
 
-    if (!isHoveringTopics && window.topicsSprite) {
-        window.topicsSprite.visible = false;
+    if (newHovered !== hoveredInternalObject) {
+        // V-FIX: No glow calls here
+        hoveredInternalObject = newHovered;
+        if (hoveredInternalObject) {
+            document.body.style.cursor = 'pointer';
+            if (hoveredInternalObject.userData) hoveredInternalObject.userData.isHovered = true;
+        } else {
+            document.body.style.cursor = 'default';
+        }
     }
 }
 
 
+
+// -- MERGED LOGIC FROM COMPREHENSIVE-FIX --
+let mouseNormX = 0, mouseNormY = 0;
+function setupMouseTracking() {
+    document.addEventListener('mousemove', (e) => {
+        mouseNormX = (e.clientX / window.innerWidth) * 2 - 1;
+        mouseNormY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+            mouseNormX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+            mouseNormY = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+        }
+    }, { passive: true });
+}
+if (!window.mouseTrackingSetup) {
+    setupMouseTracking();
+    window.mouseTrackingSetup = true;
+}
+
+// Export enterRoom for global access
+window.enterRoom = enterRoom;
+
+window.updateSpaceRoom = function (time) {
+    if (window.currentRoom !== 'space') return;
+    if (!window.spaceCharacter) return;
+    const t = time * 0.001;
+    if (window.spaceCharacter.userData && window.spaceCharacter.userData.update) {
+        window.spaceCharacter.userData.update(t, mouseNormX, mouseNormY);
+    }
+    if (typeof interiorGroup !== 'undefined' && interiorGroup) {
+        interiorGroup.children.forEach(child => {
+            if (child !== window.spaceCharacter && child.userData && child.userData.update) {
+                try { child.userData.update(t); } catch (e) { }
+            }
+        });
+    }
+};
+
+function enhanceSpaceLighting() {
+    if (window.currentRoom !== 'space') return;
+    if (window.spaceCharacter && window.interiorGroup) {
+        if (!window.spaceExtraLight) {
+            const spotlight = new THREE.SpotLight(0xffffff, 3.0, 50, Math.PI / 4);
+            spotlight.position.set(0, 10, 5);
+            spotlight.target = window.spaceCharacter;
+            window.interiorGroup.add(spotlight);
+            window.spaceExtraLight = spotlight;
+        }
+    }
+}
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -8622,13 +4828,90 @@ function onWindowResize() {
 }
 
 function animate(time) {
+    const deltaTime = clock.getDelta();
     requestAnimationFrame(animate);
-    const t = time * 0.001;
+    const currentTime = time || performance.now();
+    const t = currentTime * 0.001;
+
+    // Update Enhanced Garage Door
+    if (window.enhancedGarage && window.enhancedGarage.userData.update) {
+        window.enhancedGarage.userData.update(deltaTime, camera);
+    }
 
     // DEBUG OVERLAY UPDATE REMOVED
 
     TWEEN.update(time); // Enabled TWEEN for Cinema Mode
     controls.update();
+
+    // ---- WASD Camera Movement ----
+    const wasdSpeed = 0.12;
+    if (window._wasdEnabled && window._wasdKeys && camera) {
+        const fwd = new THREE.Vector3();
+        const right = new THREE.Vector3();
+        camera.getWorldDirection(fwd);
+        fwd.y = 0; fwd.normalize();
+        right.crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const move = new THREE.Vector3();
+        if (window._wasdKeys.w) move.addScaledVector(fwd, wasdSpeed);
+        if (window._wasdKeys.s) move.addScaledVector(fwd, -wasdSpeed);
+        if (window._wasdKeys.a) move.addScaledVector(right, -wasdSpeed);
+        if (window._wasdKeys.d) move.addScaledVector(right, wasdSpeed);
+
+        if (move.length() > 0) {
+            camera.position.add(move);
+            controls.target.add(move);
+            controls.update();
+        }
+    }
+
+
+    // V-NEW: Global Animated Objects Support
+    if (window.animatedObjects) {
+        window.animatedObjects.forEach(obj => {
+            if (obj.update) obj.update(t, deltaTime);
+        });
+    }
+
+    // V-AUDIO: Real-time Frequency Analysis
+    let lowFreq = 0, midFreq = 0, avgFreq = 0;
+    if (window.audioAnalyser && window.audioDataArray && window.isMusicPlaying) {
+        window.audioAnalyser.getByteFrequencyData(window.audioDataArray);
+
+        let lowSum = 0;
+        const lowCount = Math.floor(window.audioDataArray.length * 0.1);
+        for (let i = 0; i < lowCount; i++) lowSum += window.audioDataArray[i];
+        lowFreq = (lowSum / lowCount) / 255.0; // 0..1
+
+        let midSum = 0;
+        const midStart = Math.floor(window.audioDataArray.length * 0.2);
+        const midEnd = Math.floor(window.audioDataArray.length * 0.5);
+        for (let i = midStart; i < midEnd; i++) midSum += window.audioDataArray[i];
+        midFreq = (midSum / (midEnd - midStart)) / 255.0; // 0..1
+    }
+
+    // Attic lamp audio-reactivity is handled later in the animation loop (inside interiorGroup.visible check)
+
+    // V-FIX 1944: Generic Room Updates (e.g. Attic Box Artifacts)
+    if (typeof interiorGroup !== 'undefined' && interiorGroup) {
+        interiorGroup.children.forEach(child => {
+            if (child.userData && child.userData.update) {
+                child.userData.update(t);
+            }
+            // Also check deeper children if needed, but for now top-level interior items
+            if (child.children) {
+                child.children.forEach(sub => {
+                    if (sub.userData && sub.userData.update) sub.userData.update(t);
+                });
+            }
+        });
+    }
+
+    // V-FIX: Garage Parallax Shift HANDLED INTERNALLY in enhancedGarage.userData.update
+    if (window.enhancedGarage && window.enhancedGarage.userData.update) {
+        // Approximate deltaTime as 0.016 (60fps) for the tween-like smoothing
+        window.enhancedGarage.userData.update(0.016, camera);
+    }
 
     // Mist Animation
     if (mistLayer && mistLayer.visible) {
@@ -8640,27 +4923,16 @@ function animate(time) {
         }
     }
 
-    // Funky Landscape: Pulsating Blocks Animation
-    animatedTrees.forEach(block => {
-        const u = block.userData;
-        // Pounding Rhythm: Sharp beats (Power function)
-        // V141: Really Slow Motion (User Request) -> Multiply time by 0.1
-        const val = Math.sin((t * 0.1) * u.speed + u.phase);
-        const pulse = Math.pow(Math.max(0, val), 8.0); // Spiky pulse only positive
+    // Tree Sways
+    if (window.swayTrees) {
+        window.swayTrees.forEach((tree, i) => {
+            const sway = Math.sin(t * 1.5 + i) * 0.05;
+            tree.rotation.z = (tree.userData && tree.userData.baseRotZ || 0) + sway;
+            tree.rotation.x = (tree.userData && tree.userData.baseRotX || 0) + sway * 0.5;
+        });
+    }
 
-        // Scale Y (Beat) - Grow from bottom
-        // Use baseScaleY (Total Height) * Pulse Factor
-        // V123 Fix: Multiply, don't just add to 1.0
-        block.scale.y = u.baseScaleY * (1.0 + pulse * 0.2); // Pulse 20% height
-
-        // Emissive Pulse (Glow)
-        if (block.material) {
-            block.material.emissiveIntensity = 0.1 + (pulse * 0.8);
-        }
-        // V133: Block Glow Removed (Moved to Independent Street Lights)
-    });
-
-    // V133: Animate Street Lights (Independent Pulse)
+    // Animate Street Lights (Independent Pulse)
     if (window.streetLights) {
         window.streetLights.forEach(glow => {
             const u = glow.userData;
@@ -8671,7 +4943,7 @@ function animate(time) {
             const val = Math.sin(t * speed + phase);
             const pulse = Math.pow(Math.max(0, val), 4.0); // Softer pulse
 
-            // V-FIX 263: Differentiate Types (Sprite vs PointLight)
+            // Differentiate Types (Sprite vs PointLight)
             if (glow.material) {
                 // Sprite / Mesh
                 glow.material.opacity = 0.3 + (pulse * 0.7);
@@ -8681,10 +4953,21 @@ function animate(time) {
             }
         });
     }
+    // Funky Landscape: Pulsating Blocks Animation (Restored)
+    animatedTrees.forEach(block => {
+        const u = block.userData;
+        if (!u.isSkyscraper) return;
+        const val = Math.sin(t * u.speed + u.phase); // Removed *0.1 multiplier for proper pulsing
+        const pulse = Math.pow(Math.max(0, val), 3.0); // Softer power curve (was 8.0)
+        block.scale.y = u.baseScaleY * (1.0 + pulse * 0.3); // Slightly more scale change
+        if (block.material) {
+            block.material.emissiveIntensity = 0.05 + (pulse * 1.2); // Brighter peak glow
+        }
+    });
 
     // Fireflies Motion
     worldGroup.children.forEach(child => {
-        if (child.userData.type === 'fireflies') {
+        if (child.userData.type === 'fireflies' && renderer.info.render.frame % 3 === 0) {
             // V-FIX: Robust checks to prevent crashes if geometry/attributes missing
             if (child.geometry && child.geometry.attributes.position && child.userData.speeds) {
                 const pos = child.geometry.attributes.position.array;
@@ -8716,10 +4999,6 @@ function animate(time) {
 
     // Interior Interactions (Sprite Grow / Arrow Bob)
     if (interiorGroup.visible) {
-        // V-NEW: Drum Machine Animation
-        if (window.activeDrumMachine && window.activeDrumMachine.userData.update) {
-            window.activeDrumMachine.userData.update(t);
-        }
         // V-NEW: Living Artifact Animation
         if (window.livingArtifact && window.livingArtifact.userData.update) {
             window.livingArtifact.userData.update(t);
@@ -8741,6 +5020,38 @@ function animate(time) {
             }
         });
 
+        // V-AUDIO: Early Frequency Analysis (Moved up for reactive usage)
+        if (audioAnalyser) {
+            // Robust Resume for Modern Browsers
+            if (audioContext && audioContext.state === 'suspended' && window.isMusicPlaying) {
+                audioContext.resume().catch(() => { });
+            }
+            audioAnalyser.getByteFrequencyData(audioDataArray);
+
+            let sum = 0;
+            for (let i = 0; i < audioDataArray.length; i++) sum += audioDataArray[i];
+            avgFreq = sum / Math.max(1, audioDataArray.length);
+
+            // Calculate Specific Bands
+            // Low: 0-10% of bins
+            let lowSum = 0;
+            let lowCount = Math.floor(audioDataArray.length * 0.1) || 1;
+            for (let i = 0; i < lowCount; i++) lowSum += audioDataArray[i];
+            lowFreq = (lowSum / lowCount) / 255;
+
+            // Mid: 20-50%
+            let midSum = 0;
+            let midStart = Math.floor(audioDataArray.length * 0.2);
+            let midEnd = Math.floor(audioDataArray.length * 0.5);
+            let midCount = midEnd - midStart || 1;
+            for (let i = midStart; i < midEnd; i++) midSum += audioDataArray[i];
+            midFreq = (midSum / midCount) / 255;
+
+            // Global Safety Caps
+            if (isNaN(lowFreq)) lowFreq = 0;
+            if (isNaN(midFreq)) midFreq = 0;
+        }
+
         // V-Refine: Generic Shader Update (For Studio Hologram etc)
         interiorGroup.traverse(child => {
             if (child.material) {
@@ -8749,11 +5060,85 @@ function animate(time) {
                     if (m.uniforms && m.uniforms.time) {
                         m.uniforms.time.value = t;
                     }
+                    // Audio-Reactive Uniforms
+                    if (m.uniforms && m.uniforms.uAudioLow && typeof lowFreq !== 'undefined') {
+                        m.uniforms.uAudioLow.value = lowFreq;
+                    }
                 });
             }
         });
 
-        // V-Refine: R2D2 Animation (Blinking Lights)
+        // V-AUDIO: Pulse Laptop and Light (Space Room)
+        if (currentRoom === 'space') {
+            const pulse = 4.0 + (midFreq * 14.0);
+
+            if (interiorGroup.userData.reactiveLight) {
+                interiorGroup.userData.reactiveLight.intensity = pulse;
+            }
+            if (interiorGroup.userData.laptopScreen) {
+                interiorGroup.userData.laptopScreen.material.emissiveIntensity = 1.0 + (midFreq * 4.0);
+            }
+            // Ensure ambient light isn't pitch black
+            if (window.ambientLight && window.ambientLight.intensity < 0.2) {
+                window.ambientLight.intensity = 0.2 + (midFreq * 0.5);
+            }
+        }
+
+        // V-AUDIO: Attic Light Response (Enhanced with Bulb Pulsing)
+        if (currentRoom === 'attic' && window.atticLampLight) {
+            const base = window.atticLampLight.userData.baseIntensity || 0.15;
+            const max = window.atticLampLight.userData.maxIntensity || 8.0;
+
+            if (window.isMusicPlaying && lowFreq > 0) {
+                // Strong Low/Bass response with smoothing
+                const targetIntensity = base + (lowFreq * (max - base));
+                window.atticLampLight.intensity += (targetIntensity - window.atticLampLight.intensity) * 0.3;
+
+                // Debug logging (1% of frames)
+                if (Math.random() < 0.01) {
+                    console.log(`🔊 Attic Lamp: lowFreq=${lowFreq.toFixed(3)}, intensity=${window.atticLampLight.intensity.toFixed(2)}`);
+                }
+
+                // Pulse the bulb emissive material
+                if (window.atticLampLight.parent) {
+                    window.atticLampLight.parent.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            // Pulse the bulb's emissive intensity
+                            if (child.material.emissive) {
+                                child.material.emissiveIntensity = 0.5 + (lowFreq * 2.5);
+                            }
+                            if (child.material.color && child.geometry && child.geometry.type === 'SphereGeometry') {
+                                const brightness = 1.0 + (lowFreq * 0.5);
+                                child.material.color.setHSL(0.1, 1.0, 0.3 + (lowFreq * 0.4));
+                            }
+                        }
+                    });
+                }
+            } else {
+                // Fade back to base when music stops
+                window.atticLampLight.intensity += (base - window.atticLampLight.intensity) * 0.1;
+                if (window.atticLampLight.parent) {
+                    window.atticLampLight.parent.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            if (child.material.emissive) {
+                                child.material.emissiveIntensity += (0.5 - child.material.emissiveIntensity) * 0.1;
+                            }
+                            if (child.material.color && child.geometry && child.geometry.type === 'SphereGeometry') {
+                                child.material.color.setHSL(0.1, 1.0, 0.3);
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Optional: Shake dust particles with bass
+            const dust = interiorGroup.children.find(c => c.userData.type === 'atticDust');
+            if (dust) {
+                dust.position.y = 3 + Math.sin(t * 2) * 0.1 + (lowFreq * 0.5);
+            }
+        }
+
+        // Animation (Blinking Lights)
         if (window.r2d2Elements) {
             window.r2d2Elements.forEach(r2 => {
                 if (Math.random() > 0.9) r2.lightRed.material.color.setHex(0xff0000); else r2.lightRed.material.color.setHex(0x330000);
@@ -8763,6 +5148,32 @@ function animate(time) {
                 if (r2.beamMat && r2.beamMat.uniforms.time) r2.beamMat.uniforms.time.value = t;
             });
         }
+
+        // V-NEW: Global Interior Update Hook (Fixes Static Rocket/Playlist)
+        interiorGroup.traverse(child => {
+            if (child.userData && child.userData.update) {
+                child.userData.update(t);
+
+                // --- ITEM 8: Star Parallax ---
+                if (child.isPoints && child.userData.update && currentRoom === 'space') {
+                    if (prevCameraPos) {
+                        const cameraDelta = new THREE.Vector3().subVectors(camera.position, prevCameraPos);
+                        child.rotation.y += cameraDelta.x * 0.0001;
+                        child.rotation.x += cameraDelta.y * 0.0001;
+                    }
+                }
+            }
+        });
+        prevCameraPos = camera.position.clone();
+    }
+
+    // Also check foregroundGroup even if interior is hidden (Rocket flybys)
+    if (foregroundGroup) {
+        foregroundGroup.traverse(child => {
+            if (child.userData && child.userData.update) {
+                child.userData.update(t);
+            }
+        });
     }
 
     // --- ANIMATED LIGHTING ---
@@ -8787,64 +5198,56 @@ function animate(time) {
             mat.emissiveIntensity = Math.max(0, u.baseEmissive + flicker);
 
             // Independent Color Cycle
-            // We use HSL. Hue moves slowly.
             const hue = (u.hueOffset + t * u.hueSpeed) % 1.0;
             mat.color.setHSL(hue, 0.6, 0.6); // Base color
             mat.emissive.setHSL(hue, 0.8, 0.5); // Glow color
         }
     });
 
-    // 3. Word Hunt Items Animation
-    interiorGroup.children.forEach(child => {
-        if (child.userData.type === 'wordHuntItem' && child.userData.update) {
-            child.userData.update(t);
-        }
-    });
+    // 3. Animated Shaders
+    if (state === 'ROOM') {
+        const camAngle = Math.atan2(camera.position.x, camera.position.z);
+        // Add Pitch for Vertical Parallax
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        const camPitch = camDir.y;
 
-    // 3. Animated Shaders (e.g. Mirror)
-    // V128: Add Camera Rotation for Parallax
-    // Angle from 0 to 2PI approx
-    const camAngle = Math.atan2(camera.position.x, camera.position.z);
-    // V-NEW: Add Pitch for Vertical Parallax
-    const camDir = new THREE.Vector3();
-    camera.getWorldDirection(camDir);
-    const camPitch = camDir.y;
+        animatedShaderMaterials.forEach(mat => {
+            if (mat.uniforms && mat.uniforms.uTime) {
+                mat.uniforms.uTime.value = t;
+            }
+            if (mat.uniforms && mat.uniforms.uViewRotation) {
+                mat.uniforms.uViewRotation.value = camAngle;
+            }
+            // Enable Global Pitch Update
+            if (mat.uniforms && mat.uniforms.uViewPitch) {
+                mat.uniforms.uViewPitch.value = camPitch;
+            }
+        });
+    }
 
-    animatedShaderMaterials.forEach(mat => {
-        if (mat.uniforms && mat.uniforms.uTime) {
-            mat.uniforms.uTime.value = t;
-        }
-        if (mat.uniforms && mat.uniforms.uViewRotation) {
-            mat.uniforms.uViewRotation.value = camAngle;
-        }
-        // Enable Global Pitch Update
-        if (mat.uniforms && mat.uniforms.uViewPitch) {
-            mat.uniforms.uViewPitch.value = camPitch;
-        }
-    });
+    // Update Interior Objects (Lamps, Holograms)
+    updateInteriorObjects(t, mouse.x, mouse.y);
 
-    // V-Refine: Update Interior Objects (Lamps, Holograms)
-    updateInteriorObjects(t);
-
-    // V-REFINE: Generic Room Item Updates (Mirror, etc.)
-    if (state === 'ROOM' && currentRoom === 'bathroom') {
-        // DEBUG: Verify loop is running
-        if (Math.floor(t * 60) % 300 === 0) console.log("Animate Loop: Bathroom Update Active");
-
-        interiorGroup.traverse(child => {
+    // Generic Room Item Updates (Mirror, etc.)
+    if (state === 'ROOM' && window.currentRoom === 'bathroom') {
+        if (Math.floor(t * 60) % 300 === 0) interiorGroup.traverse(child => {
             if (child.userData && child.userData.update) {
                 child.userData.update(t);
             }
         });
     }
 
-    let avgFreq = 0;
-    if (audioAnalyser) {
-        audioAnalyser.getByteFrequencyData(audioDataArray);
-        let sum = 0;
-        for (let i = 0; i < audioDataArray.length; i++) sum += audioDataArray[i];
-        avgFreq = sum / audioDataArray.length;
+    // Garage Void Portal Parallax
+    if (state === 'ROOM' && currentRoom === 'garage' && window.garageVoidPortal) {
+        if (window.garageVoidPortal.userData.update) {
+            window.garageVoidPortal.userData.update(deltaTime, camera);
+        }
     }
+
+    // AvgFreq calculated earlier
+    // avgFreq is now available here if needed for legacy code
+
 
     if (atomGroup) {
         atomGroup.rotation.y += 0.005;
@@ -8855,34 +5258,38 @@ function animate(time) {
         });
     }
 
-    // V-Refine: Universe Animation Loop
+    // Universe Animation Loop
+    if (window.updateSpaceRoom) window.updateSpaceRoom(currentTime);
+
     if (window.mmAnimation) {
         window.mmAnimation.update();
         if (window.mmMesh && window.mmMesh.material.map) window.mmMesh.material.map.needsUpdate = true;
     }
 
-    // V23: Manual Drum Machine Update
-    if (window.activeDrumMachine && window.activeDrumMachine.userData.update) {
-        window.activeDrumMachine.userData.update(time);
-    }
-
-    // V-CLEAN: Removed duplicate stopVideosForAudio definition
 
     // --- RENDER ---
-
-    if (currentRoom === 'basement' && basementNodes.length > 0) {
+    if (window.currentRoom === 'basement' && basementNodes.length > 0) {
         const linePositions = [];
         const freqMod = avgFreq / 255;
         basementNodes.forEach((node, i) => {
             const ud = node.userData;
+            // Basic motion
             node.position.add(ud.velocity);
-            const scale = 1 + freqMod * 1.5;
-            node.scale.set(scale, scale, scale);
 
+            // Slight pulsation based on audio (or idle subtle bob)
+            const pulseBase = (avgFreq || 20) / 255;
+            const pulse = 1.0 + pulseBase * 2.0;
+
+            // If node has a base size, apply smooth scale/pulse for 3D feel
+            const base = ud.baseSize || 0.06;
+            const s = base * (pulse + Math.sin(t * (0.8 + (i % 7) * 0.02)) * 0.08);
+            node.scale.setScalar(s / base);
+
+            // Vertical bobbing
             if (ud.isTruth) {
-                node.position.y = ud.originalY + Math.sin(time * 0.001 + i) * freqMod * 2;
+                node.position.y = ud.originalY + Math.sin(t * 1.0 + i) * pulseBase * 1.8;
             } else {
-                node.position.y = ud.originalY + Math.cos(time * 0.0015 + i) * freqMod * 2.5;
+                node.position.y = ud.originalY + Math.cos(t * 1.5 + i) * pulseBase * 2.2;
             }
 
             if (Math.abs(node.position.x) > 4.5) ud.velocity.x *= -1;
@@ -8906,41 +5313,11 @@ function animate(time) {
     }
 
     if (noteTextSprite) {
-        const scale = 1.5 + Math.sin(time * 0.003) * 0.1;
+        const scale = 1.5 + Math.sin(t * 3.0) * 0.1;
         noteTextSprite.scale.set(scale, scale * 0.58, 1);
     }
 
-    // FLOATING THOUGHTS (BATHROOM)
-    thoughtParticles.forEach((sprite, index) => {
-        sprite.userData.life += 1;
-        const life = sprite.userData.life;
-
-        // Move Up
-        sprite.position.y += sprite.userData.speed;
-
-        // "coming out" -> Move Forward Z faster
-        if (life < 100) sprite.position.z += 0.003;
-
-        // Grow Continuously
-        const progress = life / 300;
-        const scale = 0.1 + progress * 12.0;
-        sprite.scale.set(scale, scale * 0.12, 1);
-
-        // Fade In Fast, Fade Out Slow
-        if (life < 30) {
-            sprite.material.opacity = life / 30;
-        } else if (life > 200) {
-            sprite.material.opacity = Math.max(0, 1 - (life - 200) / 100);
-        } else {
-            sprite.material.opacity = 1;
-        }
-
-        if (life > 300) {
-            interiorGroup.remove(sprite);
-            thoughtParticles.splice(index, 1);
-        }
-    });
-    // V119: Failsafe - UNCONDITIONAL Controls Enable (unless zooming)
+    // Failsafe - UNCONDITIONAL Controls Enable (unless zooming)
     if (!window.isZoomingToRoom) {
         controls.enabled = true;
         controls.enableRotate = true;
@@ -8952,7 +5329,7 @@ function animate(time) {
 }
 
 
-// V2003: Universe Expanding Animation (Ported from Archive)
+// Universe Expanding Animation
 function startGoldenRatioAnimation() {
     // Check if exists
     if (window.mmMesh) return;
@@ -9026,13 +5403,12 @@ function stopMMAnimation() {
     window.mmAnimation = null;
 }
 
-function updateInteriorObjects(t) {
+function updateInteriorObjects(t, mouseX = 0, mouseY = 0) {
     // Lava Lamp and other animated interior objects
-    // Recursively check userData.update? Or just iterate top level?
-    // Usually added to interiorGroup.
     interiorGroup.children.forEach(child => {
         if (child.userData && child.userData.update) {
-            child.userData.update(t);
+            // Pass mouse coordinates for interactive characters (Pluton)
+            child.userData.update(t, mouseX, mouseY);
         }
         // Check direct children too (e.g. LampGroup on Shelf)
         if (child.children) {
@@ -9057,11 +5433,9 @@ function updateInteriorObjects(t) {
 // Defer init to allow UI to render and Safety Timeout to register
 setTimeout(() => {
     try {
-        console.log("--- HOUSE.JS INIT STARTING ---");
-        console.log("--- HOUSE.JS INIT STARTING ---");
         // V136: Fixed Init Crash (init() was removed, calling buildWorld direct)
         buildWorld();
-        console.log("--- HOUSE.JS INIT FINISHED ---");
+        if (window.hideLoader) window.hideLoader(); // V291: Immediate Hide after build
     } catch (e) {
         console.error("CRITICAL INIT ERROR:", e);
         const errBox = document.getElementById('loading-error');
@@ -9092,11 +5466,11 @@ function createNewSignTexture() {
     ctx.textAlign = 'center';
 
     // Line 1: ENTER (Larger & Lower)
-    ctx.font = 'bold 110px Courier Prime, monospace';
+    ctx.font = 'bold 110px "Courier Prime", monospace';
     ctx.fillText("ENTER", 256, 120);
 
     // Line 2: Click on the front door
-    ctx.font = 'bold 30px Courier Prime, monospace';
+    ctx.font = 'bold 30px "Courier Prime", monospace';
     ctx.fillText("Click on the front door", 256, 200);
 
     const tex = new THREE.CanvasTexture(canvas);
@@ -9129,28 +5503,32 @@ function toggleGlobalFullscreen() {
     const iconOn = document.getElementById('icon-fullscreen-on');
     const iconOff = document.getElementById('icon-fullscreen-off');
 
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.warn(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-        });
+    const docEl = document.documentElement;
+    const isFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+    if (!isFullScreen) {
+        if (docEl.requestFullscreen) docEl.requestFullscreen().catch(() => { });
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+        else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+        else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+
         iconOn.classList.add('hidden');
         iconOff.classList.remove('hidden');
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+
         iconOn.classList.remove('hidden');
         iconOff.classList.add('hidden');
     }
 }
 
-// V-NEW: Pluto Usher (Ported from Pluto Project)
-// Moved to js/pluton.js
-
-// V-INTEGRATION: Metropolis Robot (Ported from metropolis/claude.html)
+// Metropolis Robot (Ported from metropolis/claude.html)
 function createMetropolisRobot() {
     const group = new THREE.Group();
-    // V315-RELOADED-5: Enable Dynamic Shadows
+    // Enable Dynamic Shadows
     group.castShadow = true;
     group.receiveShadow = true;
     // 1. Materials
@@ -9217,7 +5595,6 @@ function createMetropolisRobot() {
 
     for (let i = 0; i < ringCount; i++) {
         const ring = new THREE.Mesh(
-            // V-REFINE: Bolder Rings (Radius 0.03), Narrower Diameter (0.4 instead of 0.6)
             new THREE.TorusGeometry(0.4, 0.03, 8, 32),
             glowRingMat.clone()
         );
@@ -9241,12 +5618,10 @@ function createMetropolisRobot() {
             // Curve for Opacity/Scale (Sine wave: 0 -> 1 -> 0)
             const curve = Math.sin(p * Math.PI);
 
-            // V-REFINE: Brighter Opacity (Max 1.0)
+            // Brighter Opacity (Max 1.0)
             ring.material.opacity = Math.pow(curve, 0.8) * 1.0;
 
-            // V-REFINE: Variable Diameter Animation
-            // "Smaller at top; grow; go down; contract at legs"
-            // Base Scale 0.4 -> Grow to 1.3 -> Back to 0.4
+            // Variable Diameter Animation
             const swell = 0.4 + (curve * 0.9);
 
             // Keep subtle pulse
@@ -9258,7 +5633,7 @@ function createMetropolisRobot() {
         });
     };
 
-    // V315-RELOADED-5: Ensure every mesh casts shadow
+    // Ensure every mesh casts shadow
     group.traverse(child => {
         if (child.isMesh) {
             child.castShadow = true;
@@ -9269,16 +5644,15 @@ function createMetropolisRobot() {
     return group;
 }
 
-// V-NEW: Global Video Stop Helper (For Audio Sync)
+// Global Video Stop Helper (For Audio Sync)
 window.stopVideosForAudio = function () {
-    console.log("Sync: Stopping all videos for Audio Playback");
 
-    // 1. Stop Main Helper (Skip for Basement - Tron Video should persist)
-    if (currentRoom !== 'basement' && window.videoElement && !window.videoElement.paused) {
+    // 1. Stop Main Helper (Skip for Basement and Studio - Background videos should persist)
+    if (['basement', 'studio'].indexOf(currentRoom) === -1 && window.videoElement && !window.videoElement.paused) {
         window.videoElement.pause();
     }
 
-    // V-FIX: Clear Video UI Selection (User Request: "No active video")
+    // Clear Video UI Selection
     window.masterVideoIndex = -1;
     if (window.updateVideoUI) window.updateVideoUI();
 
@@ -9293,17 +5667,1216 @@ window.stopVideosForAudio = function () {
     }
 
     // 4. Reset Lights (Safety Fallback)
-    // If not handled by room helpers, force V298 Moody Normal
-    if (currentRoom === 'living') {
-        if (window.ambientLight) window.ambientLight.intensity = 0.15; // V298: Moody Normal
-        if (window.dirLight) window.dirLight.intensity = 0.2; // V298: Moody Normal
-    } else if (currentRoom === 'bathroom') {
-        // V-FIX 25: Don't clobber stopBathroomVideo!
-        // Only apply fallback if the helper didn't run.
-        if (!window.stopBathroomVideo) {
-            if (window.ambientLight) window.ambientLight.intensity = 0.35; // Goldilocks
-            if (window.dirLight) window.dirLight.intensity = 0.45;
+    // Removed manual overrides - now handled by room scripts
+    if (currentRoom === 'bathroom' && !window.stopBathroomVideo) {
+        if (window.ambientLight) window.ambientLight.intensity = HOUSE_DEFAULTS.ambientIntensity;
+        if (window.dirLight) window.dirLight.intensity = HOUSE_DEFAULTS.dirIntensity;
+    }
+};
+
+
+// --- SPACE ROOM HELPERS (Ported from Tintin) ---
+
+// 1. STARFIELD
+function createStarTexture() {
+    const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(canvas);
+}
+
+function createStarField() {
+    const starCount = 2500; // Increased density for "filled" look
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const offsets = [];
+
+    for (let i = 0; i < starCount; i++) {
+        // Spread much farther (X, Y) and push Deep (Z)
+        positions.push(
+            (Math.random() - 0.5) * 3000, // X
+            (Math.random() - 0.5) * 3000, // Y
+            -Math.random() * 1000 - 100    // Z (Always in front of camera, far away)
+        );
+        offsets.push(Math.random() * 2000.0);
+    }
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('offset', new THREE.Float32BufferAttribute(offsets, 1));
+
+    const starMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uTexture: { value: createStarTexture() },
+            uSpeed: { value: 2.0 }, // Downward speed
+            uAudioLow: { value: 0.0 } // V-AUDIO: Reactive Bass
+        },
+        vertexShader: `
+            uniform float uTime;
+            uniform float uAudioLow;
+            uniform float uSpeed;
+            attribute float offset;
+            varying float vOpacity;
+            void main() {
+                // vOpacity pulses with time AND can be boosted by audio
+                float basePulse = 0.4 + 0.6 * sin(uTime * (1.5 + mod(offset, 2.0)) + offset);
+                vOpacity = basePulse + (uAudioLow * 0.5); // Add up to 0.5 additional brightness
+
+                vec3 pos = position;
+                // Extremely Slow Downward Move (Cosmic Scale)
+                float drop = mod(uTime * 0.8 + offset, 2000.0);
+                pos.y -= drop;
+                if (pos.y < -1000.0) pos.y += 2000.0;
+
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                float sizeBoost = 1.0 + uAudioLow * 2.0; // Bass makes stars larger
+                gl_PointSize = sizeBoost * 4.0 * (1500.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+            `,
+        fragmentShader: `
+            uniform sampler2D uTexture;
+            varying float vOpacity;
+            void main() {
+                vec4 texColor = texture2D(uTexture, gl_PointCoord);
+                gl_FragColor = texColor * clamp(vOpacity, 0.0, 1.5);
+            }
+            `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    const starField = new THREE.Points(geometry, starMaterial);
+
+    // Animation Update
+    starField.userData.update = function (t) {
+        starMaterial.uniforms.uTime.value = t;
+    };
+
+    return starField;
+}
+
+// 2. TINTIN ROCKET
+function createTintinRocket() {
+    const rocket = new THREE.Group();
+    rocket.castShadow = true;
+
+    const size = 1024;
+    const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const RED = '#d40000';
+    const WHITE = '#fcfcfc';
+
+    // Checker Texture Generation
+    const bottomEdge = 0.32 * size;
+    const checkerHeight = 0.44 * size;
+    const rowH = checkerHeight / 5;
+    const cols = 10;
+    const colW = size / cols;
+
+    ctx.fillStyle = RED;
+    ctx.fillRect(0, size - bottomEdge, size, bottomEdge); // Red Base
+    for (let i = 0; i < 5; i++) {
+        const y = size - bottomEdge - (i + 1) * rowH;
+        for (let j = 0; j < cols; j++) {
+            ctx.fillStyle = (i + j) % 2 === 0 ? RED : WHITE;
+            ctx.fillRect(j * colW, y, colW, rowH);
+        }
+    }
+    ctx.fillStyle = RED; // Red Top
+    ctx.fillRect(0, 0, size, size - bottomEdge - checkerHeight);
+
+    const rocketTexture = new THREE.CanvasTexture(canvas);
+    rocketTexture.wrapS = THREE.RepeatWrapping;
+    rocketTexture.wrapT = THREE.RepeatWrapping;
+
+    const rocketMat = new THREE.MeshStandardMaterial({
+        map: rocketTexture, roughness: 0.2, metalness: 0.4,
+        emissive: 0x220000, emissiveIntensity: 0.2
+    });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xd40000, roughness: 0.32 });
+
+    // Lathe Body
+    const points = [];
+    const height = 30;
+    const bulgePoint = 0.58;
+    const baseRadius = 1.1;
+    const maxRadius = 2.6;
+
+    for (let i = 0; i <= 100; i++) {
+        const t = i / 100;
+        const y = t * height;
+        let x;
+        if (t < bulgePoint) {
+            const localT = t / bulgePoint;
+            x = baseRadius + (maxRadius - baseRadius) * Math.sin(localT * Math.PI / 2);
+        } else {
+            const localT = (t - bulgePoint) / (1 - bulgePoint);
+            x = maxRadius * Math.pow(Math.cos(localT * Math.PI / 2), 0.8);
+        }
+        points.push(new THREE.Vector2(x, y));
+    }
+    points.unshift(new THREE.Vector2(0, 0));
+
+    const body = new THREE.Mesh(new THREE.LatheGeometry(points, 64), rocketMat);
+    rocket.add(body);
+
+    // Tip
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 3, 12), redMat);
+    tip.position.y = height + 1.5;
+    rocket.add(tip);
+
+    // Legs
+    for (let i = 0; i < 3; i++) {
+        const legGroup = new THREE.Group();
+        const angle = (i * Math.PI * 2) / 3;
+        legGroup.rotation.y = angle;
+
+        const legShape = new THREE.Shape();
+        legShape.moveTo(1.2, 7.2);
+        legShape.lineTo(2.2, 7.2);
+        legShape.bezierCurveTo(9.0, 5.7, 10.5, -1.3, 10.5, -3.7);
+        legShape.lineTo(8.0, -3.7);
+        legShape.bezierCurveTo(8.0, -0.5, 4.0, 1.5, 1.2, 2.7);
+
+        const extrudeSettings = { depth: 1.6, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 5 };
+        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(legShape, extrudeSettings), redMat);
+        leg.position.set(0, 0, -0.8);
+
+        const pod = new THREE.Mesh(new THREE.SphereGeometry(2.0, 32, 32), redMat);
+        pod.scale.set(1, 1.35, 1);
+        pod.position.set(9.2, -3.4, 0.8);
+        leg.add(pod);
+
+        legGroup.add(leg);
+        rocket.add(legGroup);
+    }
+
+    // Keep rocket visible and prefer foreground rendering
+    // Keep rocket visible
+    rocket.renderOrder = 3000;
+    rocket.frustumCulled = false;
+    rocket.traverse(c => { if (c.material) { c.material.depthTest = true; c.material.depthWrite = true; c.material.transparent = true; } });
+
+    // Default scale (more visible in scene)
+    rocket.scale.set(0.45, 0.45, 0.45);
+
+    // Animation Update
+    rocket.userData.update = function (t) {
+        const loopDuration = 10;
+        const loopCount = Math.floor(t / loopDuration);
+        const progress = (t % loopDuration) / loopDuration;
+        const isSwoop = (loopCount % 4 === 3); // Every 4th loop is a close pass
+
+        if (isSwoop) {
+            // FOREGROUND PASS: big, close, but slightly offset from center UI
+            rocket.position.x = 4.5; // Offset to the right to avoid blocking text
+            rocket.position.z = 10.0; // Foreground pass
+            rocket.position.y = -20 + progress * 100;
+            rocket.scale.setScalar(0.85); // Reduced overwhelming scale
+            rocket.renderOrder = 5000;
+        } else {
+            // Background pass: still visible but smaller
+            rocket.position.x = -15;
+            rocket.position.z = -40;
+            rocket.position.y = -40 + progress * 80;
+            rocket.scale.setScalar(0.45);
+            rocket.renderOrder = 3000;
+        }
+
+        rocket.rotation.y = t * 0.4; // Still spin for depth
+    };
+
+    return rocket;
+}
+
+// 4. MAIN SPACE INTERIOR (The Void) - Simplified without Pluton character
+
+function createSpaceInterior() {
+    try {
+        while (interiorGroup.children.length > 0) interiorGroup.remove(interiorGroup.children[0]);
+        if (foregroundGroup) while (foregroundGroup.children.length > 0) foregroundGroup.remove(foregroundGroup.children[0]);
+        interiorClickables.length = 0;
+
+        scene.background = new THREE.Color(0x0a0412);
+        if (scene.fog) { scene.fog.color.setHex(0x0a0412); scene.fog.far = 2000; }
+
+        const glowGeo = new THREE.PlaneGeometry(1200, 800);
+        const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        const g = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+        g.addColorStop(0, 'rgba(80, 0, 160, 0.45)'); g.addColorStop(0.6, 'rgba(40, 0, 80, 0.2)'); g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+        const eventHorizon = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+        eventHorizon.position.set(0, 0, -400); interiorGroup.add(eventHorizon);
+
+        if (typeof createStarField === 'function') {
+            try {
+                const stars = createStarField();
+                if (stars) interiorGroup.add(stars);
+            } catch (err) {
+            }
+        }
+
+        const laptopGroup = new THREE.Group();
+        const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.8), new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.3, metalness: 0.8 }));
+        laptopBase.position.set(0, -0.025, 0); laptopGroup.add(laptopBase);
+        const laptopScreen = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 1.5, roughness: 0.1 }));
+        laptopScreen.position.set(0, 0.375, -0.4); laptopScreen.rotation.x = -Math.PI / 8; laptopGroup.add(laptopScreen);
+        laptopGroup.position.set(5, 0, 2); laptopGroup.userData = {
+            update: (t) => {
+                laptopGroup.rotation.x = Math.sin(t * 0.3) * 0.2; laptopGroup.rotation.y = t * 0.2;
+                laptopGroup.rotation.z = Math.cos(t * 0.45) * 0.15; laptopGroup.position.y = Math.sin(t * 0.5) * 0.1;
+                if (laptopScreen && laptopScreen.material) {
+                    const hue = (t * 0.1) % 1.0;
+                    laptopScreen.material.color.setHSL(hue, 0.8, 0.5);
+                    laptopScreen.material.emissive.setHSL(hue, 0.9, 0.5);
+                }
+            }, onClick: () => { }
+        };
+        interiorClickables.push(laptopGroup); interiorGroup.add(laptopGroup);
+
+        if (typeof createTintinRocket === 'function') {
+            try {
+                const rocket = createTintinRocket();
+                if (rocket) {
+                    if (foregroundGroup) foregroundGroup.add(rocket); else interiorGroup.add(rocket);
+                }
+            } catch (err) {
+            }
+        }
+
+        if (window.createBB8ForHall) {
+            try {
+                const spaceBB8 = createBB8ForHall(); spaceBB8.scale.set(1.0, 1.0, 1.0); interiorGroup.add(spaceBB8);
+                spaceBB8.traverse(node => { if (node.isLight && node.color.getHex() === 0x00ffff) node.intensity = 0; if (node.name === 'Hologram') node.visible = false; });
+                const bb8Glow = new THREE.PointLight(0xffaa00, 15.0, 20); spaceBB8.add(bb8Glow);
+                const rim = new THREE.SpotLight(0xffffff, 10); rim.position.set(0, 5, 0); spaceBB8.add(rim);
+                spaceBB8.userData.update = (t) => {
+                    spaceBB8.position.x = Math.sin(t * 0.08) * 15; spaceBB8.position.y = 3 + Math.cos(t * 0.12) * 4;
+                    spaceBB8.position.z = -10 + Math.sin(t * 0.06) * 12;
+                    spaceBB8.rotation.x = t * 0.2; spaceBB8.rotation.y = t * 0.3; spaceBB8.rotation.z = t * 0.1;
+                };
+            } catch (err) {
+            }
+        }
+
+        if (window.ambientLight) window.ambientLight.intensity = 0.4;
+        if (window.dirLight) window.dirLight.intensity = 0.6;
+        const localLight = new THREE.PointLight(0x00ffff, 4.0, 40); localLight.position.set(2, 5, 2); interiorGroup.add(localLight);
+        if (typeof addReflectionMarker === 'function') addReflectionMarker('space', 5, 1.5, -5);
+
+        if (window.currentRoom === 'space' && window.playTrack) { window.playTrack(0); }
+    } catch (err) {
+        console.error("Space Interior Creation Error:", err, err.stack);
+        scene.background = new THREE.Color(0x0a0412);
+    }
+}
+window.createSpaceInterior = createSpaceInterior;
+
+// V-NEW: Specialized Void Music Hook (REMOVED - Unified with playTrack)
+
+
+// Persistent Audio Unlock Overlay (accessible globally)
+function showPersistentAudioUnlock() {
+    // DISABLED: Audio warning is annoying - rely on global click handler instead
+    return;
+
+    /* ORIGINAL CODE - DISABLED
+    if (document.getElementById('audio-unlock-persistent')) return;
+    const container = document.createElement('div');
+    container.id = 'audio-unlock-persistent';
+    container.style.position = 'fixed';
+    container.style.left = '50%'; container.style.top = '20%';
+    container.style.transform = 'translate(-50%, -50%)';
+    container.style.zIndex = '100000';
+    container.style.padding = '18px 24px';
+    container.style.background = 'rgba(0,0,0,0.9)';
+    container.style.color = '#fff';
+    container.style.fontFamily = 'Courier New, monospace';
+    container.style.textAlign = 'center';
+    container.style.borderRadius = '8px';
+    container.innerHTML = '<div style="font-size:14px; margin-bottom:8px;">AUDIO BLOCKED: Click to enable sound</div>';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'ENABLE SOUND';
+    btn.style.padding = '10px 14px';
+    btn.style.fontSize = '14px';
+    btn.style.cursor = 'pointer';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '6px';
+    btn.style.background = '#00aaff';
+    btn.style.color = '#001';
+    btn.onclick = function () {
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume().catch(() => { });
+        if (window.startVoidMusic) window.startVoidMusic();
+        const el = document.getElementById('audio-unlock-persistent'); if (el && el.parentNode) el.parentNode.removeChild(el);
+    };
+
+    container.appendChild(btn);
+    document.body.appendChild(container);
+    */
+}
+
+// One-time user gesture listener to attempt to enable audio (helps autoplay policies)
+if (!window._audioGestureListenerSet) {
+    window._audioGestureListenerSet = true;
+    const enableAudioGesture = function () {
+        try {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('🔊 Audio context resumed via user gesture');
+                }).catch(() => { });
+            }
+            if (window.startVoidMusic) window.startVoidMusic();
+
+            // Remove ALL audio unlock warnings
+            const el = document.getElementById('audio-unlock-persistent');
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+            const el2 = document.getElementById('audio-unlock-space');
+            if (el2 && el2.parentNode) el2.parentNode.removeChild(el2);
+
+            // Try to start any paused audio
+            if (window.audioPlayer && window.audioPlayer.paused && window.audioPlayer.src) {
+                window.audioPlayer.play().catch(() => { });
+            }
+        } catch (e) {
+            console.warn('Audio gesture handler error:', e);
+        }
+        // Remove listener after first interaction
+        window.removeEventListener('pointerdown', enableAudioGesture, true);
+        window.removeEventListener('click', enableAudioGesture, true);
+    };
+
+    // Listen to both pointerdown AND click for maximum coverage
+    window.addEventListener('pointerdown', enableAudioGesture, { passive: true, capture: true });
+    window.addEventListener('click', enableAudioGesture, { passive: true, capture: true });
+}
+
+// Final Cleanup
+if (window.roomContent && window.roomContent.space && window.roomContent.space.onEnter) {
+}
+// --- ENHANCED GRASS TEXTURE (Pixelated Style) ---
+function createPixelatedGrassTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Base grass color (Deep Dark Green)
+    ctx.fillStyle = '#0a1a05';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // V-FIX: Gravel-style Treatment (15,000 Speckles, Larger Pixels)
+    for (let i = 0; i < 15000; i++) {
+        const shade = Math.random();
+        // Grass shades: Moss, Forest, Midnight, Shadow
+        if (shade > 0.8) ctx.fillStyle = '#2d5a1e';      // Moss (Brighter)
+        else if (shade > 0.5) ctx.fillStyle = '#1a330a'; // Forest
+        else if (shade > 0.2) ctx.fillStyle = '#0f2205'; // Midnight
+        else ctx.fillStyle = '#0a1a05';                  // Darkest shadow
+
+        const size = Math.random() * 3 + 2; // V-FIX: Bigger Pixels (2-5)
+        ctx.fillRect(Math.random() * 512, Math.random() * 512, size, size);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(20, 20);
+    texture.magFilter = THREE.NearestFilter; // Keeps pixels sharp
+    texture.minFilter = THREE.NearestFilter;
+
+    return texture;
+}
+
+// --- BUSH GENERATOR (Along Gravel Path) ---
+function createBush(size = 1) {
+    const group = new THREE.Group();
+
+    // V-FIX: Dark Noise Speckles for Bushes
+    if (!window.bushNoiseTex) {
+        const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#052203'; ctx.fillRect(0, 0, 64, 64);
+        for (let i = 0; i < 400; i++) {
+            ctx.fillStyle = Math.random() > 0.7 ? '#000000' : '#0a1a05';
+            const s = Math.random() * 2 + 1;
+            ctx.fillRect(Math.random() * 64, Math.random() * 64, s, s);
+        }
+        window.bushNoiseTex = new THREE.CanvasTexture(canvas);
+    }
+
+    const bushColors = [0x052203, 0x0a2a05, 0x082604];
+    const numClusters = 4 + Math.floor(Math.random() * 3);
+
+    const material = new THREE.MeshStandardMaterial({
+        map: window.bushNoiseTex,
+        color: 0x888888, // Darkened
+        roughness: 1.0,
+        flatShading: true
+    });
+
+    for (let i = 0; i < numClusters; i++) {
+        const radius = size * (0.3 + Math.random() * 0.4);
+        const geometry = new THREE.SphereGeometry(radius, 8, 8);
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.set(
+            (Math.random() - 0.5) * size * 0.6,
+            radius * 0.8,
+            (Math.random() - 0.5) * size * 0.6
+        );
+        group.add(sphere);
+    }
+
+    return group;
+}
+
+// --- PATH CLEARING LOGIC ---
+function isLocationBlocked(x, z) {
+    // 1. Road Check (Z > 25)
+    if (z > 25) {
+        const ratio = Math.max(0, 1.0 - (((250 - z) / 223) * 1.5));
+        const roadX = -Math.cos(z * 0.1) * 3.0 * ratio;
+        if (Math.abs(x - roadX) < 4.5) return true; // Asphalt + Clearance
+    }
+
+    // 2. Roundabout Check (Z around 20)
+    const roundaboutZ = 20;
+    const distToRoundaboutCenter = Math.sqrt(x * x + (z - roundaboutZ) * (z - roundaboutZ));
+    // Road is between radial 3.5 and 7.2 approx
+    if (distToRoundaboutCenter > 3.2 && distToRoundaboutCenter < 8.2) return true;
+
+    // 3. Driveway Check (Bezier curve between house and garage)
+    if (x > -2 && x < 12 && z > 2 && z < 22) {
+        // Simple Bezier approximation check
+        const P0 = { x: 0, z: 20 };
+        const P1 = { x: 10, z: 20 };
+        const P2 = { x: 10, z: 5 };
+
+        for (let t = 0; t <= 1; t += 0.1) {
+            const bx = (1 - t) * (1 - t) * P0.x + 2 * (1 - t) * t * P1.x + t * t * P2.x;
+            const bz = (1 - t) * (1 - t) * P0.z + 2 * (1 - t) * t * P1.z + t * t * P2.z;
+            const dist = Math.sqrt((x - bx) * (x - bx) + (z - bz) * (z - bz));
+            if (dist < 2.5) return true; // Driveway width clearance
+        }
+    }
+
+    return false;
+}
+window.isLocationBlocked = isLocationBlocked;
+
+// --- PLACE BUSHES ALONG GRAVEL PATH ---
+function addBushesAlongPath(scene, houseGroup) {
+    const bushGroup = new THREE.Group();
+    bushGroup.name = 'bushes';
+
+    // Define gravel path boundaries
+    const pathInnerRadius = 12.0;
+
+    // Place more bushes but check for path clearance
+    const numBushes = 60; // Increased density
+
+    for (let i = 0; i < numBushes; i++) {
+        const angle = (i / numBushes) * Math.PI * 2;
+        const radius = pathInnerRadius + (Math.random() - 0.5) * 4.0;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+
+        // STRICT CLEARANCE CHECK
+        if (isLocationBlocked(x, z)) continue;
+
+        const bush = createBush(0.5 + Math.random() * 0.7);
+        bush.position.set(x, 0, z);
+        bush.rotation.y = Math.random() * Math.PI * 2;
+
+        // Randomly align to planet if helper exists
+        if (window.alignToPlanet) window.alignToPlanet(bush, x, z);
+
+        bushGroup.add(bush);
+    }
+
+    // Add some bushes in the roundabout center (safe zone)
+    for (let i = 0; i < 15; i++) {
+        const r = Math.random() * 2.8;
+        const a = Math.random() * Math.PI * 2;
+        const x = Math.cos(a) * r;
+        const z = 20 + Math.sin(a) * r;
+
+        const bush = createBush(0.4 + Math.random() * 0.4);
+        bush.position.set(x, 0, z);
+        if (window.alignToPlanet) window.alignToPlanet(bush, x, z);
+        bushGroup.add(bush);
+    }
+
+    if (houseGroup) {
+        houseGroup.add(bushGroup);
+    } else {
+        scene.add(bushGroup);
+    }
+
+    return bushGroup;
+}
+
+// --- DISTANT BUILDINGS (Background Skyline) ---
+function createDistantBuildings(scene) {
+    const buildingGroup = new THREE.Group();
+    buildingGroup.name = 'distantBuildings';
+
+    const distanceFromCenter = 80; // Far behind the house
+    const numBuildings = 12;
+
+    for (let i = 0; i < numBuildings; i++) {
+        const angle = (Math.random() * Math.PI * 2);
+        const distance = distanceFromCenter + Math.random() * 20;
+
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+
+        // Only place buildings in back half (behind house)
+        if (z < -20) {
+            const height = 8 + Math.random() * 25;
+            const width = 3 + Math.random() * 5;
+            const depth = 3 + Math.random() * 5;
+
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x25232d,
+                roughness: 0.7,
+                metalness: 0.4
+            });
+
+            const building = new THREE.Mesh(geometry, material);
+            building.position.set(x, height / 2, z);
+            building.castShadow = true;
+
+            // Add windows
+            const windowGeo = new THREE.PlaneGeometry(width * 0.8, height * 0.8);
+            const windowMat = new THREE.MeshBasicMaterial({
+                color: 0xffff88,
+                transparent: true,
+                opacity: 0.3
+            });
+
+            const windows = new THREE.Mesh(windowGeo, windowMat);
+            windows.position.z = depth / 2 + 0.01;
+            building.add(windows);
+
+            buildingGroup.add(building);
+        }
+    }
+
+    // V-FIX: Ensure buildings are inside worldGroup so they hide during room transitions
+    const targetGroup = window.worldGroup || scene;
+    targetGroup.add(buildingGroup);
+    return buildingGroup;
+}
+
+// --- ENHANCED GARAGE DOOR WITH PARALLAX VOID & BUILDING ---
+function createGarageDoor(parentGroup, position) {
+    const garageGroup = new THREE.Group();
+    // V-FIX 1944: Lowered from 0.15 to 0.05 to sit correctly on gravel (driveway is 0.13)
+    if (position) garageGroup.position.set(position.x, position.y + 0.05, position.z);
+    garageGroup.name = 'garageSystem';
+
+    // Building dimensions
+    const garageWidth = 3.2;
+    const garageHeight = 2.2;
+    const garageDepth = 2.6;
+    const doorWidth = 2.8;
+    const doorHeight = 1.8;
+    const doorThickness = 0.1;
+
+    // --- 1. WALLS & STRUCTURE (V-FIX: No more gaps!) ---
+    const garageExtMat = new THREE.MeshStandardMaterial({
+        color: 0x4a3a2a, // Exterior Brown
+        roughness: 0.8
+    });
+    const garageIntMat = new THREE.MeshBasicMaterial({
+        color: 0x000000 // Pitch Black Interior
+    });
+
+    const walls = new THREE.Group();
+
+    // Reusable Wall Creator (Box instead of Plane for thickness/gaps)
+    function createWall(w, h, d, x, y, z, ry = 0) {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), garageExtMat);
+        wall.position.set(x, y, z);
+        wall.rotation.y = ry;
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        walls.add(wall);
+
+        // Add matching interior lining (Black)
+        const lining = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.01, h - 0.01), garageIntMat);
+        lining.position.set(0, 0, d / 2 + 0.01); // Slightly in front of the box face
+        wall.add(lining);
+    }
+
+    // Back Wall
+    createWall(garageWidth, garageHeight, 0.2, 0, garageHeight / 2, -garageDepth / 2);
+
+    // Side Walls
+    createWall(garageDepth, garageHeight, 0.2, -garageWidth / 2, garageHeight / 2, 0, Math.PI / 2);
+    createWall(garageDepth, garageHeight, 0.2, garageWidth / 2, garageHeight / 2, 0, -Math.PI / 2);
+
+    // Floor
+    const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(garageWidth, 0.1, garageDepth),
+        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 })
+    );
+    floor.position.y = 0.05; // 0.1 height / 2
+    walls.add(floor);
+
+    // Floor extension in front to cover driveway (fixes "missing gravel")
+    const floorExt = new THREE.Mesh(
+        new THREE.PlaneGeometry(garageWidth, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9 })
+    );
+    floorExt.rotation.x = -Math.PI / 2;
+    floorExt.position.set(0, 0.01, garageDepth / 2 + 0.25);
+    walls.add(floorExt);
+
+    // Ceiling
+    const ceil = new THREE.Mesh(new THREE.BoxGeometry(garageWidth, 0.1, garageDepth), garageExtMat);
+    ceil.position.y = garageHeight;
+    walls.add(ceil);
+    const ceilInt = new THREE.Mesh(new THREE.PlaneGeometry(garageWidth - 0.1, garageDepth - 0.1), garageIntMat);
+    ceilInt.rotation.x = Math.PI / 2;
+    ceilInt.position.set(0, -0.06, 0); // Under ceiling
+    ceil.add(ceilInt);
+
+    // Front Facade (framing the door)
+    const fw = (garageWidth - doorWidth) / 2;
+    const frameZ = garageDepth / 2;
+
+    if (fw > 0) {
+        // Left frame
+        const lf = new THREE.Mesh(new THREE.BoxGeometry(fw, doorHeight, 0.1), garageExtMat);
+        lf.position.set(-garageWidth / 2 + fw / 2, doorHeight / 2, frameZ);
+        walls.add(lf);
+        // Right frame
+        const rf = new THREE.Mesh(new THREE.BoxGeometry(fw, doorHeight, 0.1), garageExtMat);
+        rf.position.set(garageWidth / 2 - fw / 2, doorHeight / 2, frameZ);
+        walls.add(rf);
+    }
+
+    const topFrame = new THREE.Mesh(new THREE.BoxGeometry(garageWidth, garageHeight - doorHeight, 0.1), garageExtMat);
+    topFrame.position.set(0, doorHeight + (garageHeight - doorHeight) / 2, frameZ);
+    walls.add(topFrame);
+
+    // V-ADD 1944: Small stars on interior walls for "Deep Space" feel
+    function addWallStars(parent, count = 20) {
+        const starGeo = new THREE.BufferGeometry();
+        const pos = [];
+        for (let i = 0; i < count; i++) pos.push((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 1.5, 0.02);
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 0.03, color: 0xffffff, transparent: true, opacity: 0.8 }));
+        parent.add(stars);
+    }
+    walls.children.forEach(w => {
+        // Find the 'lining' mesh if it exists
+        w.children.forEach(child => {
+            if (child.material === garageIntMat) addWallStars(child, 25);
+        });
+    });
+
+    garageGroup.add(walls);
+
+    // Side Window
+    const sideWinMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, emissive: 0x444444, emissiveIntensity: 0.3 });
+    const sideWin = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), sideWinMat);
+    sideWin.position.set(garageWidth / 2 + 0.11, 1.4, 0);
+    sideWin.rotation.y = Math.PI / 2;
+    garageGroup.add(sideWin);
+
+    // --- 2. DOOR GROUP for proper pivot (at top) ---
+    const doorPivot = new THREE.Group();
+    doorPivot.position.set(0, doorHeight, frameZ + 0.05); // Pivot at the top edge
+    garageGroup.add(doorPivot);
+
+    const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness);
+    const doorMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8B4513,
+        roughness: 0.6,
+        metalness: 0.2,
+        emissive: 0x331a0a,
+        emissiveIntensity: 0.2
+    });
+
+    const door = new THREE.Mesh(doorGeometry, doorMaterial);
+    door.position.y = -doorHeight / 2; // Offset so it hangs down from pivot
+    door.name = 'garageDoor';
+    door.userData.type = 'garageDoorTrigger';
+    door.userData.onClick = () => {
+        if (!doorOpen) {
+            // If closed, open it
+            garageGroup.userData.toggleDoor();
+        } else {
+            // If already open, enter the void
+            if (window.enterRoom) {
+                window.garageForVoid = garageGroup;
+                window.enterRoom('space');
+            }
+        }
+    };
+    doorPivot.add(door);
+
+    // Door Panels
+    const panelCanvas = document.createElement('canvas');
+    panelCanvas.width = 512; panelCanvas.height = 512;
+    const pctx = panelCanvas.getContext('2d');
+    pctx.fillStyle = '#8B4513'; pctx.fillRect(0, 0, 512, 512);
+    pctx.strokeStyle = '#5d2906'; pctx.lineWidth = 10;
+    for (let i = 0; i < 4; i++) {
+        pctx.strokeRect(20, i * 120 + 20, 472, 100);
+    }
+    const doorTex = new THREE.CanvasTexture(panelCanvas);
+    door.material.map = doorTex;
+
+    // --- 3. PARALLAX VOID ---
+    const voidGroup = new THREE.Group();
+    voidGroup.position.set(0, doorHeight / 2, frameZ - 0.1);
+    voidGroup.name = 'voidSpace';
+    voidGroup.visible = false;
+
+    // Add dark background plane for deep space darkness
+    const darkBg = new THREE.Mesh(
+        new THREE.PlaneGeometry(garageWidth - 0.1, garageHeight - 0.1),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+    );
+    darkBg.position.z = -2.49; // Slightly in front of the back wall to prevent Z-fighting
+    voidGroup.add(darkBg);
+
+    const layers = [
+        { distance: -2.0, size: 4.0, numStars: 150, brightness: 0.15 },
+        { distance: -1.2, size: 3.5, numStars: 100, brightness: 0.25 },
+        { distance: -0.4, size: 3.0, numStars: 50, brightness: 0.4 }
+    ];
+
+    layers.forEach((layer, layerIndex) => {
+        const layerGroup = new THREE.Group();
+        layerGroup.position.z = layer.distance;
+
+        const starGeo = new THREE.BufferGeometry();
+        const pos = [];
+        for (let i = 0; i < layer.numStars; i++) {
+            pos.push((Math.random() - 0.5) * layer.size, (Math.random() - 0.5) * layer.size, (Math.random() - 0.5) * 0.5);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        const starMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: layer.brightness });
+        layerGroup.add(new THREE.Points(starGeo, starMat));
+
+        const nebulaCanvas = document.createElement('canvas');
+        nebulaCanvas.width = 512; nebulaCanvas.height = 512;
+        const ctx = nebulaCanvas.getContext('2d');
+        const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+        grad.addColorStop(0, 'rgba(60, 30, 90, 0.08)'); // Much darker purple
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 512);
+
+        const nebMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(nebulaCanvas), transparent: true, blending: THREE.AdditiveBlending });
+        layerGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(layer.size, layer.size), nebMat));
+
+        layerGroup.userData.parallaxSpeed = (3 - layerIndex) * 0.5;
+        voidGroup.add(layerGroup);
+    });
+    garageGroup.add(voidGroup);
+
+    // --- 4. ROOF ---
+    const roofWidth = garageWidth + 0.4;
+    const roofHeight = 1.0;
+    const roofDepth = garageDepth + 0.2; // Reduced overhang in front
+    const roofShape = new THREE.Shape();
+    roofShape.moveTo(-roofWidth / 2, 0);
+    roofShape.lineTo(0, roofHeight);
+    roofShape.lineTo(roofWidth / 2, 0);
+    roofShape.lineTo(-roofWidth / 2, 0);
+    const extrudeSettings = {
+        depth: roofDepth,
+        bevelEnabled: false
+    };
+    const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
+    roofGeo.translate(0, 0, -roofDepth / 2 - 0.1); // Push back slightly
+    const roofMat = new THREE.MeshStandardMaterial({
+        color: 0x8a3324,
+        roughness: 0.9,
+        side: THREE.DoubleSide // Show both sides
+    });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.set(0, garageHeight + 0.01, 0); // Moved UP to avoid z-fighting with top of walls
+    roof.castShadow = true;
+    garageGroup.add(roof);
+
+    // --- 5. INTERACTION ---
+    let doorOpen = false;
+    let doorRotAmt = 0;
+    const openSound = new Audio('../assets/audio/garage-door-opening.mp3');
+    const closeSound = new Audio('../assets/audio/garage-door-closing.mp3');
+
+    garageGroup.userData.openDoor = function () {
+        if (doorOpen) return;
+        doorOpen = true;
+        openSound.currentTime = 0;
+        openSound.play().catch(err => { });
+        voidGroup.visible = true;
+        if (voidClickArea) voidClickArea.visible = true;
+    };
+
+    garageGroup.userData.closeDoor = function () {
+        if (!doorOpen) return;
+        doorOpen = false;
+        closeSound.currentTime = 0;
+        closeSound.play().catch(err => { });
+        voidGroup.visible = false;
+        if (voidClickArea) voidClickArea.visible = false;
+    };
+
+    garageGroup.userData.toggleDoor = function () {
+        if (doorOpen) garageGroup.userData.closeDoor();
+        else garageGroup.userData.openDoor();
+    };
+
+    const clickArea = new THREE.Mesh(
+        new THREE.PlaneGeometry(doorWidth, doorHeight),
+        new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.0 })
+    );
+    clickArea.position.set(0, doorHeight / 2, frameZ + 0.1);
+    clickArea.userData.type = 'garageDoorTrigger';
+    clickArea.userData.name = 'space'; // Corrected name to match roomContent['space']
+    clickArea.userData.tooltip = 'THE VOID';
+    clickArea.userData.onClick = () => {
+        if (!doorOpen) {
+            garageGroup.userData.toggleDoor();
+        } else {
+            if (window.enterRoom) {
+                window.garageForVoid = garageGroup;
+                window.enterRoom('space');
+            }
+        }
+    };
+    garageGroup.add(clickArea);
+
+    const voidClickArea = new THREE.Mesh(
+        new THREE.PlaneGeometry(doorWidth, doorHeight),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.0 })
+    );
+    voidClickArea.position.set(0, doorHeight / 2, frameZ - 0.2);
+    voidClickArea.userData.type = 'voidEntrance';
+    voidClickArea.userData.name = 'space';
+    voidClickArea.userData.tooltip = 'ENTER THE VOID';
+    voidClickArea.userData.onClick = () => {
+        if (doorOpen && window.enterRoom) {
+            window.garageForVoid = garageGroup;
+            window.enterRoom('space');
+        }
+    };
+    voidClickArea.visible = false;
+    garageGroup.add(voidClickArea);
+
+    garageGroup.userData.update = function (deltaTime, camera) {
+        const target = doorOpen ? -Math.PI / 1.5 : 0;
+        doorRotAmt += (target - doorRotAmt) * 0.8 * deltaTime;
+        doorPivot.rotation.x = doorRotAmt;
+
+        if (voidGroup.visible && camera) {
+            // Parallax Logic
+            const worldPos = new THREE.Vector3();
+            garageGroup.getWorldPosition(worldPos);
+
+            const relX = (camera.position.x - worldPos.x) * 0.03;
+            const relY = (camera.position.y - worldPos.y) * 0.03;
+            const camAngle = Math.atan2(camera.position.x - worldPos.x, camera.position.z - worldPos.z);
+
+            voidGroup.children.forEach((layer, i) => {
+                if (layer.userData && layer.userData.parallaxSpeed) {
+                    const speed = layer.userData.parallaxSpeed;
+                    // Rotation parallax
+                    layer.rotation.y = camAngle * 0.1 * speed;
+
+                    // Texture/Shift parallax
+                    layer.children.forEach(child => {
+                        if (child.material && child.material.map) {
+                            child.material.map.offset.set(-relX * speed, -relY * speed);
+                        }
+                    });
+                }
+            });
+        }
+    };
+
+    // Local Light REMOVED per user request (was too bright/glitchy)
+    // const gLight = new THREE.PointLight(0xfff0dd, 2.0, 10);
+    // gLight.position.set(0, 1.5, 0);
+    // garageGroup.add(gLight);
+
+    parentGroup.add(garageGroup);
+    if (window.interiorClickables) {
+        window.interiorClickables.push(door);
+        window.interiorClickables.push(voidClickArea);
+    }
+    return garageGroup;
+
+}
+
+// --- TOILET EXTERIOR (The "Little Room") ---
+// --- TOILET EXTERIOR (The "Little Room") ---
+function createToiletExterior(parentGroup, position) {
+    const toiletGroup = new THREE.Group();
+    if (position) toiletGroup.position.copy(position);
+    toiletGroup.name = 'toiletExterior';
+
+    // Dimensions - Turned Around design
+    // Design: Lean-to. High at Back (-Z), Low at Front (+Z).
+    const width = 1.3;          // Tightened width (was 1.6)
+    const heightAtHouse = 2.9;  // Levelling with neighbors
+    const heightAtGarden = 2.1; // Low point (Front)
+    const depth = 2.5;
+
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xdcb28b, roughness: 0.9 });
+
+    // 1. Side Walls
+    // Draw shape in XY. 
+    // Let's define shape from Front(Low) to Back(High).
+    // x=0 is Low, x=depth is High.
+    const sideShape = new THREE.Shape();
+    sideShape.moveTo(0, 0);
+    sideShape.lineTo(depth, 0);
+    sideShape.lineTo(depth, heightAtHouse);
+    sideShape.lineTo(0, heightAtGarden);
+    sideShape.lineTo(0, 0);
+
+    const sideGeo = new THREE.ExtrudeGeometry(sideShape, { depth: 0.1, bevelEnabled: false });
+
+    // Left Wall
+    const leftWall = new THREE.Mesh(sideGeo, wallMat);
+    // Rotate -90 Y: Shape X becomes World Z.
+    // Shape X=0 (Low/Garden) -> World -Z relative to pivot.
+    // Shape X=depth (High/House) -> World +Z relative to pivot.
+    leftWall.rotation.y = -Math.PI / 2;
+    // Position Pivot: Center X, Low Z.
+    // We want Low Z to be at -depth/2 (Garden).
+    // So Pivot (Shape 0) should be at -depth/2.
+    leftWall.position.set(-width / 2, 0, -depth / 2);
+    leftWall.castShadow = true;
+    toiletGroup.add(leftWall);
+
+    // Right Wall
+    const rightWall = new THREE.Mesh(sideGeo, wallMat);
+    rightWall.rotation.y = -Math.PI / 2;
+    rightWall.position.set(width / 2 + 0.1, 0, -depth / 2);
+    rightWall.castShadow = true;
+    toiletGroup.add(rightWall);
+
+    // Front Wall (Low side, Z = -depth/2) - Garden Facing
+    const frontGeo = new THREE.BoxGeometry(width - 0.05, heightAtGarden, 0.1); // Slightly narrower to fit inside sides
+    const frontWall = new THREE.Mesh(frontGeo, wallMat);
+    frontWall.position.set(0, heightAtGarden / 2, -depth / 2);
+    frontWall.castShadow = true;
+    toiletGroup.add(frontWall);
+
+    // Back Wall (High side) -> REMOVED to prevent Z-fighting with main house walls
+    // Since it leans against the house, we don't need a back face.
+
+    // 2. Shed Roof (Slanted Platform)
+    // Sloping UP from Garden (-Z) to House (+Z)
+    const roofLength = Math.sqrt(Math.pow(depth, 2) + Math.pow(heightAtHouse - heightAtGarden, 2));
+    const roofGeo = new THREE.BoxGeometry(width + 0.4, 0.15, roofLength + 0.4);
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+
+    // Position: Center (y averaged, z=0)
+    roof.position.set(0, (heightAtHouse + heightAtGarden) / 2 + 0.1, 0);
+
+    // Rotation: 
+    // Low at -Z, High at +Z.
+    // Rot X neg -> +Z goes UP.
+    const angle = Math.atan2(heightAtHouse - heightAtGarden, depth);
+    roof.rotation.x = -angle;
+
+    roof.castShadow = true;
+    toiletGroup.add(roof);
+
+    // 3. Door (Front - Low side - Garden Facing)
+    const doorGeo = new THREE.PlaneGeometry(0.7, 1.8);
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, side: THREE.DoubleSide });
+    const door = new THREE.Mesh(doorGeo, doorMat);
+    door.position.set(0, 0.9, -depth / 2 - 0.06);
+    door.rotation.y = Math.PI; // Face garden
+    toiletGroup.add(door);
+
+    // Symbol
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.08, 16), new THREE.MeshBasicMaterial({ color: 0x110000 }));
+    hole.position.set(0, 1.8, -depth / 2 - 0.07); // Adjusted height
+    hole.rotation.y = Math.PI;
+    toiletGroup.add(hole);
+
+    // Interaction Hitbox
+    const hitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(width + 0.5, heightAtHouse, depth + 0.5),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitBox.position.y = heightAtHouse / 2;
+    hitBox.userData = {
+        name: 'toilet',
+        tooltip: 'Little Room',
+        onClick: () => { if (window.enterRoom) window.enterRoom('toilet'); }
+    };
+    toiletGroup.add(hitBox);
+
+    if (window.interiorClickables) {
+        window.interiorClickables.push(hitBox);
+    }
+
+    parentGroup.add(toiletGroup);
+    return toiletGroup;
+}
+
+
+// --- MAIN HOUSE SETUP FUNCTION ---
+function setupEnhancedHouse(scene, camera) {
+    const houseGroup = new THREE.Group();
+    houseGroup.name = 'mainHouse';
+
+    // 1. Pixelated Grass Ground
+    const grassTexture = createPixelatedGrassTexture();
+    const groundGeometry = new THREE.CircleGeometry(50, 64);
+    const groundMaterial = new THREE.MeshStandardMaterial({
+        map: grassTexture,
+        roughness: 0.9
+    });
+
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // 2. House structure (placeholder - adapt to your existing house)
+    const houseBody = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 6, 8),
+        new THREE.MeshStandardMaterial({ color: 0xcccccc })
+    );
+    houseBody.position.y = 3;
+    houseBody.castShadow = true;
+    houseGroup.add(houseBody);
+
+    // Roof
+    const roofGeometry = new THREE.ConeGeometry(7, 3, 4);
+    const roof = new THREE.Mesh(
+        roofGeometry,
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+    );
+    roof.position.y = 7.5;
+    roof.rotation.y = Math.PI / 4;
+    roof.castShadow = true;
+    houseGroup.add(roof);
+
+    // 3. Add Garage Door (on the side)
+    const garageDoor = createGarageDoor(houseGroup, new THREE.Vector3(7, 0, 0));
+
+    // 4. Add "Little Room" (Toilet) Exterior (on the left)
+    createToiletExterior(houseGroup, new THREE.Vector3(-6, 0.05, 0));
+
+    // 5. Add Bushes
+    addBushesAlongPath(scene, houseGroup);
+
+    scene.add(houseGroup);
+
+    // Animation loop hook
+    window.updateHouse = function (deltaTime) {
+        if (garageDoor && garageDoor.userData.update) {
+            garageDoor.userData.update(deltaTime, camera);
+        }
+    };
+
+    return houseGroup;
+}
+
+// Export for use in main script
+if (typeof window !== 'undefined') {
+    window.setupEnhancedHouse = setupEnhancedHouse;
+    window.createGarageDoor = createGarageDoor;
+    window.createToiletExterior = createToiletExterior;
+    window.addBushesAlongPath = addBushesAlongPath;
+    window.createDistantBuildings = createDistantBuildings;
+    window.createPixelatedGrassTexture = createPixelatedGrassTexture;
+}
+
+// --- NEW HELPERS ---
+window.resetToIdleView = function () {
+    // If inside a room, exit it
+    if (state === 'ROOM') {
+        exitRoom();
+        return;
+    }
+    // If already in house, just reset camera
+    if (state === 'HOUSE') {
+        // Smoothly tween back to idle
+        if (controls) {
+            // controls.reset() works if we used saveState(), but we might explicit set
+            new TWEEN.Tween(camera.position)
+                .to({ x: 14, y: 12, z: 18 }, 1500)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start();
+            new TWEEN.Tween(controls.target)
+                .to({ x: 0, y: 0, z: 0 }, 1500)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onUpdate(() => controls.update())
+                .start();
         }
     }
 };
 
+
+// --- INFO PANEL TOGGLE LOGIC ---
+window.initInfoPanelToggle = function () {
+    const btn = document.getElementById('info-toggle-btn');
+    if (!btn) return;
+
+    // Clone to remove old listeners
+    const newBtn = btn.cloneNode(true);
+    if (btn.parentNode) btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent raycaster click
+        e.preventDefault();
+
+        const content = document.getElementById('info-content');
+        const icon = document.getElementById('info-toggle-icon');
+        const panel = document.getElementById('room-info');
+
+        if (!content || !panel) return;
+
+        const isMinimised = content.style.display === 'none';
+
+        if (isMinimised) {
+            // EXPAND
+            content.style.display = 'block';
+            if (icon) icon.style.transform = 'rotate(180deg)'; // V-Shape
+            panel.classList.remove('w-10', 'h-10'); // Remove minimised size
+            panel.classList.add('w-64'); // Restore width
+            newBtn.title = "Minimize Info";
+        } else {
+            // MINIMISE
+            content.style.display = 'none';
+            if (icon) icon.style.transform = 'rotate(0deg)'; // Triangle Shape
+            panel.classList.remove('w-64');
+            panel.classList.add('w-10', 'h-10'); // Shrink to button size
+            newBtn.title = "Expand Info";
+        }
+    });
+};
+
+// Auto-run init
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initInfoPanelToggle);
+} else {
+    window.initInfoPanelToggle();
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visualizer Concept</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        canvas { position: absolute; top: 0; left: 0; }
+        audio { z-index: 10; opacity: 0.5; filter: invert(1); }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <audio id="audio" controls src="../assets/audio/Nomorepain.mp3"></audio>
+
+    <script>
+        const audio = document.getElementById('audio');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let audioSource;
+        let analyser;
+
+        audio.addEventListener('play', () => {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioSource = audioCtx.createMediaElementSource(audio);
+            analyser = audioCtx.createAnalyser();
+            audioSource.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            analyser.fftSize = 256; 
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            const barWidth = canvas.width / bufferLength;
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                analyser.getByteFrequencyData(dataArray);
+
+                dataArray.forEach((value, i) => {
+                    const barHeight = value * 2;
+                    // Dynamic coloring based on frequency value
+                    ctx.fillStyle = `hsl(${i * 2 + 200}, 70%, 50%)`;
+                    ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 1, barHeight);
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        });
+    </script>
+</body>
+</html>

@@ -11,7 +11,6 @@
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Montserrat:wght@200;300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Glass+Antiqua&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Lato:wght@300;400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&display=swap';
     document.head.appendChild(fontLink);
 
-    // Lucide Icons (Check if already present)
     if (!document.querySelector('script[src*="lucide"]')) {
         const iconScript = document.createElement('script');
         iconScript.src = 'https://unpkg.com/lucide@latest';
@@ -19,9 +18,6 @@
     }
 
     // 2. Configure Tailwind (if present)
-    // We assume the tailwind script is loaded in the HTML or we inject it.
-    // To be safe, let's inject it if missing, but usually it's better in <head>.
-    // Here we define the config object regardless.
     window.tailwind = window.tailwind || {};
     window.tailwind.config = {
         theme: {
@@ -55,7 +51,7 @@
             <div id="header-content" class="w-full transition-all duration-500 ease-in-out max-h-40 py-1 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-2 border-black overflow-visible">
                 <div class="flex flex-row items-center gap-2">
                     <a href="https://tonic.davidenker.com/" class="bg-black text-white px-2 py-0 text-base uppercase border-2 border-black hover:bg-white hover:text-black transition-colors z-10 relative" style="font-family: 'Share Tech Mono', monospace;">TONIC</a>
-                    <span class="text-[12px] md:text-xs tracking-wide text-black" style="font-family: 'Share Tech Mono', monospace;">mixed-media defiance</span>
+                    <span class="text-[14px] md:text-xs tracking-wide text-black" style="font-family: 'Share Tech Mono', monospace;">multi media defiance</span>
                 </div>
                 <nav class="relative">
                     <div class="md:hidden group relative">
@@ -110,7 +106,6 @@
         }
 
         // Setup Resize Observer for Header Height
-        // Setup Resize Observer for Header Height
         const headerElement = document.getElementById('header-content');
 
         // Restore Collapsed State
@@ -124,7 +119,6 @@
         if (headerElement && pixelBand) {
             const updateHeaderHeight = () => {
                 // Total height is content + pixel band (9px)
-                // We use offsetHeight to get the actual rendered height
                 const totalHeight = headerElement.offsetHeight + pixelBand.offsetHeight - 1;
                 document.documentElement.style.setProperty('--global-header-height', `${totalHeight}px`);
             };
@@ -143,10 +137,7 @@
             headerElement.addEventListener('transitionend', updateHeaderHeight);
         }
 
-        // Setup Mobile Logic
         setupMobileMenu();
-
-        // Setup Pixel Band
         setupPixelBand();
     }
 
@@ -214,10 +205,8 @@
                         content.style.paddingBottom = '0.25rem';
                         content.style.borderBottomWidth = '2px';
                         localStorage.setItem('headerCollapsed', 'false');
-                        // Add classes back for consistency? Or just stick to style.
-                        // Let's rely on style to override.
                         content.classList.remove('max-h-0');
-                        content.classList.add('max-h-40'); // Try to sync
+                        content.classList.add('max-h-40'); 
 
                         setTimeout(() => {
                             content.style.overflow = 'visible';

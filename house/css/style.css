@@ -1,14 +1,63 @@
+/* ============================================================
+   HOUSE OF AWE — Main Stylesheet
+   ============================================================ */
+
 :root {
     --bg-color: #3b1e54;
+    --accent-color: #ffd200;
+    --ui-bg: rgba(0, 0, 0, 0.6);
+    --ui-border: rgba(255, 255, 255, 0.15);
+    --text-dim: #e2e8f0;
+    --transition-fast: 0.2s ease;
+    --transition-med: 0.3s ease;
+
+    /* Shared Fonts */
+    --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
+    --font-glass: 'Glass Antiqua', cursive;
+    --font-serif: 'Libre Baskerville', serif;
 }
 
+/* ---- Reset / Base ---- */
 body {
-    font-family: 'Lato', sans-serif;
-    background-color: var(--bg-color);
     margin: 0;
-    overflow: hidden;
+    font-family: 'Lato', sans-serif;
+    overflow-y: auto !important;
+    /* Explicitly allow scrolling on the base page */
+}
+
+/* Restrictive styles only for the 3D Experience page */
+body.experience-mode {
+    background-color: var(--bg-color);
+    overflow: hidden !important;
     touch-action: none;
-    color: #e2e8f0;
+    color: var(--text-dim);
+}
+
+/* iOS PWA / standalone: prevent elastic bounce-scroll and fix full-bleed height */
+html {
+    height: -webkit-fill-available;
+}
+
+body.experience-mode {
+    /* Fallback for browsers without dvh support */
+    min-height: 100vh;
+    /* Modern: accounts for iOS address bar and home indicator */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    position: fixed;
+    width: 100%;
+}
+
+/* Canvas container: always fill the true viewport, including behind notch */
+#canvas-container {
+    width: 100vw;
+    height: 100vh;        /* fallback */
+    height: 100dvh;       /* dynamic viewport height — correct on iOS */
+}
+
+/* Instructions bar: lift above the home indicator */
+#instructions {
+    bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
 }
 
 .serif {
@@ -16,140 +65,139 @@ body {
 }
 
 .glass-font {
-    font-family: 'Glass Antiqua', cursive;
+    font-family: var(--font-glass);
 }
 
+.share-tech-font {
+    font-family: 'Share Tech Mono', monospace !important;
+    font-weight: 400 !important;
+}
+
+.serif-italic {
+    font-family: var(--font-serif);
+    font-style: italic;
+}
+
+/* ---- Shared Animations ---- */
+@keyframes pulse-slow {
+
+    0%,
+    100% {opacity: 0.1;}
+    50%  {opacity: 0.3;}
+}
+
+.animate-pulse-slow {animation: pulse-slow 8s ease-in-out infinite;}
+
+/* ---- Utilities ---- */
+.custom-scrollbar::-webkit-scrollbar {width: 4px;}
+.custom-scrollbar::-webkit-scrollbar-track {background: #f1f1f1;}
+.custom-scrollbar::-webkit-scrollbar-thumb {background: #151414;}
+
+
+/* ---- Loading Screen ---- */
 #loading {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: fixed;
+    inset: 0;
     width: 100%;
     height: 100%;
-    background: var(--bg-color);
+    /* Full height */
+    background: #25232d;
+    z-index: 10000;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    /* TIER: Loading Screen (Highest) */
-    transition: opacity 1.0s ease-out;
-    /* Slower fade out */
-    color: white;
     flex-direction: column;
-}
-
-/* Pulsating Circle Loader */
-.loader-container {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    color: white;
 }
 
-.circle-ring {
-    position: absolute;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.6);
-    opacity: 0;
-    animation: pulse-ring 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+#loading button {
+    font-family: 'Baumans', cursive !important;
+    font-weight: 400 !important;
+    font-size: 24px !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+    color: white !important;
+    border: 1px solid white !important;
+    padding: 15px 40px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: block !important;
+    /* Ensure block for full area click */
 }
 
-.circle-ring:nth-child(1) {
-    width: 40px;
-    height: 40px;
-    animation-delay: 0s;
+#loading button:hover {
+    background: white !important;
+    color: black !important;
 }
 
-.circle-ring:nth-child(2) {
-    width: 40px;
-    height: 40px;
-    animation-delay: 1s;
+/* Ensure the button IS the click area */
+#loading button>* {pointer-events: none;}
+
+/* Stack vertically on small screens */
+@media (max-width: 500px) {
+    #loading {gap: 1.5rem;}
 }
 
-.circle-ring:nth-child(3) {
-    width: 40px;
-    height: 40px;
-    animation-delay: 2s;
-}
 
-@keyframes pulse-ring {
-    0% {
-        transform: scale(0.1);
-        opacity: 0;
-    }
 
-    50% {
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(1.5);
-        opacity: 0;
-    }
-}
-
+/* ---- Tooltip ---- */
 #tooltip {
     position: absolute;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     color: #1a202c;
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: bold;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.2s;
-    transform: translate(-50%, -100%);
-    margin-top: -25px;
-    z-index: 10;
     white-space: nowrap;
-    font-weight: bold;
+    transition: opacity var(--transition-fast);
+    transform: translate(-50%, calc(-100% - 10px));
+    z-index: 100;
 }
 
+
+/* ---- Instructions Bar ---- */
 #instructions {
     position: absolute;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--ui-bg);
     padding: 10px 20px;
     border-radius: 20px;
     font-size: 14px;
-    color: #e2e8f0;
+    color: var(--text-dim);
     pointer-events: none;
     text-align: center;
-    transition: opacity 0.3s;
+    transition: opacity var(--transition-med);
     width: 80%;
     max-width: 400px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--ui-border);
+    z-index: 110;
 }
 
-/* Hide Footer for this experience */
-#app-footer,
-footer {
-    display: none !important;
-}
 
+/* ---- Canvas Container ---- */
 #canvas-container {
-    /* V46: Full screen to remove "Lost Space" gap - Header overlays canvas */
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     z-index: 1;
-    /* TIER: Background/Canvas */
 }
 
+
+/* ---- Transition Curtain ---- */
 #curtain {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #000000;
-    z-index: 900;
-    /* TIER: Transitons/Curtain */
+    inset: 0;
+    background: #25232d;
+    z-index: 500;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.8s ease;
@@ -160,27 +208,25 @@ footer {
     pointer-events: auto;
 }
 
+
+/* ---- Back Button ---- */
 #back-btn {
     position: fixed;
-    /* V52: "More Up" - Below pixel band (9px) + padding */
     top: 24px;
     left: 20px;
     padding: 10px 20px;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--ui-bg);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: none;
     border-radius: 30px;
     cursor: pointer;
     font-family: 'Lato', sans-serif;
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 2px;
-    z-index: 110;
-    /* TIER: HUD Components */
-    /* Above canvas */
-    transition: all 0.3s ease;
+    z-index: 120;
+    transition: transform var(--transition-med), background var(--transition-med), border-color var(--transition-med);
     display: none;
-    /* Hidden by default */
 }
 
 #back-btn:hover {
@@ -189,100 +235,13 @@ footer {
     border-color: #ffffff;
 }
 
-#room-info {
-    position: absolute;
-    top: 24px;
-    right: 20px;
-    width: 300px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #e2e8f0;
-    padding: 20px;
-    border-radius: 12px;
-    z-index: 120;
-    /* TIER: HUD Components (Info panel above back button) */
-    display: none;
-    flex-direction: column;
-    align-items: flex-end;
-    pointer-events: none;
-    /* Let clicks pass through container */
-    max-height: 80vh;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-        height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-        padding 0.4s, background-color 0.4s;
-}
 
-#room-info.minimized {
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#room-info.minimized:hover {
-    background: rgba(255, 255, 255, 0.4);
-}
-
-#room-info.minimized #info-content-container {
-    opacity: 0;
-    pointer-events: none;
-    display: none;
-}
-
-#room-info.minimized #min-icon {
-    display: none;
-}
-
-#room-info.minimized #max-icon {
-    display: block;
-}
-
-#min-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 24px;
-    height: 24px;
-    background: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-}
-
-#min-btn:hover {
-    transform: scale(1.2);
-}
-
-#max-icon {
-    display: none;
-    font-weight: bold;
-    font-family: 'Lato', sans-serif;
-    font-size: 20px;
-    color: white;
-}
-
+/* ---- Idea / Notepad Overlay ---- */
 #idea-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(0, 0, 0, 0.85);
-    z-index: 500;
-    /* TIER: Modals/Overlays */
+    z-index: 1100;
     display: none;
     justify-content: center;
     align-items: center;
@@ -326,8 +285,7 @@ textarea.idea-input {
     padding-left: 20px;
     background-image: linear-gradient(#999 1px, transparent 1px);
     background-size: 100% 1.8em;
-    /* V-FIX: Allow scrolling on mobile/touch (Audit Item 6) */
-    touch-action: pan-y !important;
+    touch-action: pan-y;
 }
 
 .notepad-controls {
@@ -343,6 +301,11 @@ textarea.idea-input {
     font-weight: bold;
     cursor: pointer;
     border: none;
+    transition: opacity var(--transition-fast);
+}
+
+.btn-note:hover {
+    opacity: 0.85;
 }
 
 .btn-save {
@@ -355,96 +318,186 @@ textarea.idea-input {
     color: white;
 }
 
+
+/* ---- Footer: hidden only inside 3D view ---- */
+body.experience-mode footer {
+    display: none !important;
+}
+
+/* ---- Main Header (intro title animation anchor) ---- */
 #main-header {
-    will-change: top, transform;
+    will-change: transform, opacity;
+    padding-top: 0.5rem !important;
+    margin-top: -3rem !important;
 }
 
-/* Battery Animation */
-.battery-loader {
-    display: flex;
-    flex-direction: column;
+/* ---- Narrative Questionnaire System ---- */
+#narrative-overlay,
+#question-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: none;
     align-items: center;
-    gap: 15px;
+    justify-content: center;
+    transition: opacity 0.5s ease;
+    padding: 20px;
 }
 
-.battery-icon {
-    width: 60px;
-    height: 30px;
-    border: 3px solid #fff;
-    border-radius: 6px;
+.narrative-card {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 3rem;
+    border-radius: 4px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
     position: relative;
-    padding: 2px;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
 }
 
-.battery-icon:after {
-    content: '';
+.narrative-card::before {
+    content: "";
     position: absolute;
-    right: -6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 12px;
-    background: #fff;
-    border-radius: 0 2px 2px 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.battery-level {
-    height: 100%;
-    background: #4ade80;
-    width: 0%;
-    animation: battery-charge 2.5s infinite linear;
-    border-radius: 3px;
-}
-
-@keyframes battery-charge {
-    0% {
-        width: 0%;
-        background: #ef4444;
-    }
-
-    20% {
-        width: 20%;
-        background: #ef4444;
-    }
-
-    40% {
-        width: 40%;
-        background: #eab308;
-    }
-
-    60% {
-        width: 60%;
-        background: #eab308;
-    }
-
-    80% {
-        width: 80%;
-        background: #4ade80;
-    }
-
-    100% {
-        width: 100%;
-        background: #4ade80;
-    }
-}
-
-.loading-text {
+.narrative-card h2 {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 1.2rem;
-    letter-spacing: 2px;
+    font-size: 15px;
+    font-weight: bold;
     color: #fff;
+    margin-bottom: 2rem;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    animation: blink 1.5s infinite;
 }
 
-@keyframes blink {
+/* Ensure hint/subtitle paragraphs inside narrative cards share the same mono family */
+.narrative-card > p {
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.narrative-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    margin-bottom: 2rem;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.narrative-input:focus {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.narrative-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    padding: 12px 32px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.narrative-btn:hover {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* ---- Questionnaire Reflection Icon Tooltip ---- */
+#tooltip[data-type="reflect"] {
+    background: rgba(255, 210, 0, 0.9);
+    color: #000;
+}
+
+/* ---- Narrative Overlay — wider card for summary ---- */
+.narrative-card {
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+}
+
+/* ---- Email button style ---- */
+.narrative-btn+.narrative-btn {
+    margin-top: 0.5rem;
+}
+
+/* ---- Question overlay smooth display ---- */
+#question-overlay {
+    transition: opacity 0.4s ease;
+}
+
+/* ---- Reflect button in info panel — answered state glow ---- */
+#reflect-btn:has(svg[stroke="#4ade80"]) {
+    animation: pulse-green 3s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
 
     0%,
-    100% {
-        opacity: 1;
-    }
+    100% {box-shadow: 0 0 0 0     rgba(74, 222, 128, 0);}
+    50%  {box-shadow: 0 0 6px 1px rgba(74, 222, 128, 0.2);}
+}
 
-    50% {
-        opacity: 0.5;
-    }
+/* Glass / Blur Overlay for Initialize Layer */
+.pattern-overlay {
+    backdrop-filter: blur(10px) brightness(0.8);
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+
+
+/* Music Box Striped Pattern */
+.music-strip-animated {
+    background-image: repeating-linear-gradient(45deg,
+            transparent,
+            transparent 25px,
+            rgba(0, 0, 0, 0.2) 25px,
+            rgba(0, 0, 0, 0.2) 50px);
+    background-size: 200% 200%;
+    animation: stripe-move 15s linear infinite;
+}
+
+@keyframes stripe-move {
+    from {background-position: 0 0;}
+    to   {background-position: 70px 0;}
+}
+
+/* Close Button for Popups */
+.close-popup-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    z-index: 10;
+    background: none;
+    border: none;
+    line-height: 1;
+}
+
+.close-popup-btn:hover {
+    color: #fff;
 }
