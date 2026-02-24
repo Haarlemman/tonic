@@ -1,9 +1,9 @@
 const houseConfig = {
     audio: {
-        tension: "../assets/audio/Tension_Short_07.mp3",
-        intro: "../assets/audio/premonition.mp3",
-        victory: "../assets/audio/victory.wav",
-        squeak: "../assets/audio/squeak.mp3"
+        tension: "assets/audio/Tension_Short_07.mp3",
+        intro: "assets/audio/premonition.mp3",
+        victory: "assets/audio/victory.wav",
+        squeak: "assets/audio/squeak.mp3"
     }
 };
 
@@ -20,7 +20,7 @@ window.roomContent = {
             {
                 artist: "Paradox Prime",
                 track: "The House of Awe",
-                src: "../assets/audio/TheHouseofAwe.mp3",
+                src: "assets/audio/TheHouseofAwe.mp3",
                 lyrics: [
                     { time: 1.00, text: "\u2014", text_nl: "\u2014" },
                     { time: 10.52, text: "The Rolls Royce sits", text_nl: "De Rolls Royce staat stil" },
@@ -64,21 +64,21 @@ window.roomContent = {
         description_nl: "Het podium voor elk verhaal, verteld en onverteld. Schermen gloeien, de bank draagt het gewicht van duizend avonden. Wat heeft deze kamer meegemaakt in jouw leven?",
         hex: 0xe65100,
         playlist: [
-            { artist: "Paradox Prime", track: "Hope", src: "../assets/audio/Hope.mp3" }
+            { artist: "Paradox Prime", track: "Hope", src: "assets/audio/Hope.mp3" }
         ],
         videoPlaylist: [
-            { title: "The Premonition", src: "../assets/video/premonition.mp4" },
-            { title: "The History of Mankind", src: "../assets/video/historytrailer.mp4" },
-            { title: "LIFE or DREAM?", src: "../assets/video/life-or-dream.mp4" }
+            { title: "The Premonition", src: "assets/video/premonition.mp4" },
+            { title: "The History of Mankind", src: "assets/video/historytrailer.mp4" },
+            { title: "LIFE or DREAM?", src: "assets/video/life-or-dream.mp4" }
         ],
         videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 },
         tvImages: [
-            { image: "../assets/images/tv.jpg", color: "#000", text: "" },
-            { image: "../assets/images/brug.jpg", color: "#990000", text: "" },
-            { image: "../assets/images/bavo1.jpg", color: "#000099", text: "" },
-            { image: "../assets/images/spaarne1.jpg", color: "#009900", text: "" },
-            { image: "../assets/images/spaarne2.jpg", color: "#330066", text: "" },
-            { image: "../assets/images/sea.jpg", color: "#0000aa", text: "" }
+            { image: "assets/images/tv.jpg", color: "#000", text: "" },
+            { image: "assets/images/brug.jpg", color: "#990000", text: "" },
+            { image: "assets/images/bavo1.jpg", color: "#000099", text: "" },
+            { image: "assets/images/spaarne1.jpg", color: "#009900", text: "" },
+            { image: "assets/images/spaarne2.jpg", color: "#330066", text: "" },
+            { image: "assets/images/sea.jpg", color: "#0000aa", text: "" }
         ]
     },
 
@@ -89,7 +89,7 @@ window.roomContent = {
         description_nl: "Dit is waar het signaal wordt verzonden. Machines gonzen, ideeën kristaliseren, geluid wordt vorm. Wat zou je creëren als niets je in de weg stond?",
         hex: 0x212351,
         playlist: [
-            { artist: "Paradox Prime", track: "Heartroll", src: "../assets/audio/Heartroll.mp3" }
+            { artist: "Paradox Prime", track: "Heartroll", src: "assets/audio/Heartroll.mp3" }
         ]
     },
 
@@ -100,14 +100,14 @@ window.roomContent = {
         description_nl: "Het grensland tussen waken en dromen. Waar het masker afgaat, het lichaam rust en de geest afdwaalt naar het onmogelijke. Wat leeft hier in het donker?",
         hex: 0x004d40,
         playlist: [
-            { artist: "Paradox Prime", track: "Dreaming", src: "../assets/audio/sleepy.mp3" },
-            { artist: "Paradox Prime", track: "Prepare", src: "../assets/audio/prepare.mp3" },
-            { artist: "Paradox Prime", track: "Bells", src: "../assets/audio/bells.mp3" }
+            { artist: "Paradox Prime", track: "Dreaming", src: "assets/audio/sleepy.mp3" },
+            { artist: "Paradox Prime", track: "Prepare", src: "assets/audio/prepare.mp3" },
+            { artist: "Paradox Prime", track: "Bells", src: "assets/audio/bells.mp3" }
         ],
         videoPlaylist: [
-            { title: "Night After Night", artist: "Paradox Prime", src: "../assets/video/nain.mp4", volume: 0.4 },
-            { title: "The Spirit", artist: "David Enker", src: "../assets/video/spirit.mp4" },
-            { title: "Dreaming", artist: "Paradox Prime", src: "../assets/video/dreaming.mp4" }
+            { title: "Night After Night", artist: "Paradox Prime", src: "assets/video/nain.mp4", volume: 0.4 },
+            { title: "The Spirit", artist: "David Enker", src: "assets/video/spirit.mp4" },
+            { title: "Dreaming", artist: "Paradox Prime", src: "assets/video/dreaming.mp4" }
         ]
     },
 
@@ -118,7 +118,7 @@ window.roomContent = {
         description_nl: "De hoogste kamer. Wat we bewaren maar nooit bezoeken. Oude frequenties, oude gevoelens, het residu van wie we waren. De lamp reageert op wat hij hoort.",
         hex: 0x5d4037,
         playlist: [
-            { artist: "Paradox Prime", track: "Curiosity", src: "../assets/audio/Curiosity.mp3" }
+            { artist: "Paradox Prime", track: "Curiosity", src: "assets/audio/Curiosity.mp3" }
         ]
     },
 
@@ -129,10 +129,10 @@ window.roomContent = {
         description_nl: "De meest eerlijke kamer. Geen vertoning. Stoom, spiegel, tegels. Waar de dag wordt afgewassen en je even gewoon jezelf bent. Welk ritueel houdt jou bij elkaar?",
         hex: 0x0696a4,
         playlist: [
-            { artist: "Paradox Prime", track: "Glass Garden Waltz", src: "../assets/audio/GlassGardenWaltz.mp3" }
+            { artist: "Paradox Prime", track: "Glass Garden Waltz", src: "assets/audio/GlassGardenWaltz.mp3" }
         ],
         videoPlaylist: [
-            { title: "Time Is Now", src: "../assets/video/Time-Is-Now.mp4" }
+            { title: "Time Is Now", src: "assets/video/Time-Is-Now.mp4" }
         ],
         videoInterfacePos: { x: 2.8, y: 2.8, z: -4.92 }
     },
@@ -146,8 +146,8 @@ window.roomContent = {
         interiorWidth: 3.0,
         interiorDepth: 5.0,
         playlist: [
-            { artist: "Paradox Prime", track: "Mysterious Heartbeat 1", src: "../assets/audio/MysteriousHeartbeat1.mp3" },
-            { artist: "Paradox Prime", track: "Mysterious Heartbeat 2", src: "../assets/audio/MysteriousHeartbeat2.mp3" }
+            { artist: "Paradox Prime", track: "Mysterious Heartbeat 1", src: "assets/audio/MysteriousHeartbeat1.mp3" },
+            { artist: "Paradox Prime", track: "Mysterious Heartbeat 2", src: "assets/audio/MysteriousHeartbeat2.mp3" }
         ]
     },
 
@@ -158,7 +158,7 @@ window.roomContent = {
         description_nl: "Onder het oppervlak, waar signalen en schaduwen elkaar ontmoeten. Waarheidsknooppunten zweven in het duister. Wat bewaar je hier beneden waar je al een tijdje niet naar hebt gekeken?",
         hex: 0x334155,
         playlist: [
-            { artist: "Paradox Prime", track: "Seven is calling", src: "../assets/audio/Seven.mp3" }
+            { artist: "Paradox Prime", track: "Seven is calling", src: "assets/audio/Seven.mp3" }
         ]
     },
 
@@ -171,8 +171,8 @@ window.roomContent = {
         interiorWidth: 4,
         interiorDepth: 4,
         playlist: [
-            { artist: "Paradox Prime", track: "Free Will", src: "../assets/audio/Free_Will.mp3" },
-            { artist: "Paradox Prime", track: "Life's Lament", src: "../assets/audio/Lifes_Lament.mp3" }
+            { artist: "Paradox Prime", track: "Free Will", src: "assets/audio/Free_Will.mp3" },
+            { artist: "Paradox Prime", track: "Life's Lament", src: "assets/audio/Lifes_Lament.mp3" }
         ]
     },
 
@@ -183,7 +183,7 @@ window.roomContent = {
         description_nl: "Voorbij de bekende plattegrond. Hier lossen de regels op. De raket passeert. Sterren drijven voorbij. Je hebt de rand van het Huis der Verwondering bereikt — wat neem je mee terug?",
         hex: 0x000000,
         playlist: [
-            { artist: "Paradox Prime", track: "No More Pain", src: "../assets/audio/Nomorepain.mp3" }
+            { artist: "Paradox Prime", track: "No More Pain", src: "assets/audio/Nomorepain.mp3" }
         ]
     }
 };

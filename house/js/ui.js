@@ -412,11 +412,39 @@ function createGlitchyHalo() {
 //  NARRATIVE QUESTIONNAIRE SYSTEM
 // ============================================================
 
-window.visitorData = {
-    name: '',
-    answers: {},
-    visitedRooms: []
-};
+// --- Load saved progress from localStorage (if any) ---
+(function () {
+    const saved = (typeof loadUserProgress === 'function') ? loadUserProgress() : null;
+    if (saved && typeof saved === 'object') {
+        window.visitorData = {
+            name: saved.name || '',
+            answers: saved.answers || {},
+            visitedRooms: saved.visitedRooms || []
+        };
+        console.log('✅ Restored visitor progress:', window.visitorData);
+    } else {
+        window.visitorData = {
+            name: '',
+            answers: {},
+            visitedRooms: []
+        };
+        console.log('🆕 Starting a new session.');
+    }
+    // Initialize the rich memory system
+    if (typeof initMemory === 'function') {
+        window._aweMemory = initMemory();
+        console.log('🧠 Memory loaded — visit #' + (window._aweMemory.visitCount || 1));
+    }
+})();
+
+// Auto-save progress whenever the user leaves the page
+window.addEventListener('beforeunload', () => {
+    if (window.visitorData && (window.visitorData.name || Object.keys(window.visitorData.answers).length > 0)) {
+        if (typeof saveUserProgress === 'function') {
+            saveUserProgress(window.visitorData);
+        }
+    }
+});
 
 window.closeOverlay = function (id) {
     const el = document.getElementById(id);
@@ -451,7 +479,67 @@ window.initNarrativePrompt = function (forceShow = false) {
         `;
     }
 
-    if (!hasName && forceShow) {
+    if (hasName && forceShow) {
+        // Returning visitor — show enriched "Welcome back" greeting with memory stats
+        const answered = Object.keys(window.visitorData.answers || {}).length;
+        const mem = (typeof getMemory === 'function') ? getMemory() : null;
+
+        // Build memory stats line
+        let memoryHTML = '';
+        if (mem && mem.visitCount > 1) {
+            const visitNum = mem.visitCount;
+            const firstDate = mem.firstVisit ? new Date(mem.firstVisit) : null;
+            const lastDate = mem.lastVisit ? new Date(mem.lastVisit) : null;
+
+            // Time since last visit
+            let timeSinceHTML = '';
+            if (lastDate && mem.visitCount > 1) {
+                const diffMs = Date.now() - lastDate.getTime();
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMins = Math.floor(diffMs / (1000 * 60));
+                if (diffDays > 0) {
+                    timeSinceHTML = `${diffDays} ${t('days_ago')}`;
+                } else if (diffHours > 0) {
+                    timeSinceHTML = `${diffHours} ${t('hours_ago')}`;
+                } else {
+                    timeSinceHTML = `${diffMins} ${t('minutes_ago')}`;
+                }
+            }
+
+            // First visit date
+            const firstDateStr = firstDate ? firstDate.toLocaleDateString(window.currentLanguage === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+            memoryHTML = `
+                <div style="margin: 1rem 0 1.5rem; padding: 12px 16px; border: 1px solid rgba(96, 165, 250, 0.2); border-radius: 4px; background: rgba(96, 165, 250, 0.06); font-family: 'Share Tech Mono', monospace;">
+                    <div style="font-size: 9px; color: #60a5fa; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; opacity: 0.8;">${t('memory_header')}</div>
+                    <div style="font-size: 11px; color: #aaa; line-height: 1.8;">
+                        ${t('visit_number')}: <span style="color: #60a5fa; font-weight: bold;">#${visitNum}</span><br>
+                        ${firstDateStr ? `${t('first_visit')}: <span style="color: #eee;">${firstDateStr}</span><br>` : ''}
+                        ${timeSinceHTML ? `${t('last_seen')}: <span style="color: #eee;">${timeSinceHTML}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (card) {
+            card.innerHTML = `
+                <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
+                <h2 style="font-family: 'Share Tech Mono', monospace; font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 1rem; letter-spacing: 0.2em; text-transform: uppercase;">
+                    ${mem && mem.visitCount > 1 ? t('welcome_back') : t('hi')} <span style="color: #60a5fa">${window.visitorData.name}</span>
+                </h2>
+                <p style="color: #d4d4d4; font-size: 13px; line-height: 1.6; margin-bottom: 1rem; font-family: 'Share Tech Mono', monospace;">
+                    ${t('welcome_text')}
+                </p>
+                ${memoryHTML}
+                ${answered > 0 ? `<p style="color: #888; font-size: 11px; font-family: 'Share Tech Mono', monospace; margin-bottom: 1.5rem; letter-spacing: 0.1em;">${t('reflections_gathered')}: ${answered}/10</p>` : ''}
+                <button onclick="window.dismissWelcome()" class="narrative-btn">${t('resume')}</button>
+            `;
+        }
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.opacity = '1', 50);
+    } else if (!hasName && forceShow) {
         overlay.style.display = 'flex';
         overlay.style.opacity = '0';
         setTimeout(() => {
@@ -469,6 +557,7 @@ const UI_I18N = {
         welcome_placeholder: "YOUR NAME...",
         proceed: "PROCEED",
         hi: "HI",
+        welcome_back: "WELCOME BACK",
         welcome_text: "Go and discover.<br><br>Just follow your instinct and everything will be fine.",
         enter: "ENTER",
         reflected: "REFLECTED",
@@ -513,6 +602,27 @@ const UI_I18N = {
         usher_welcome: "Welcome",
         usher_explore: "Explore the house and surround",
         usher_discover: "Discover the messages",
+        // Memory system strings
+        memory_header: "YOUR MEMORY",
+        visit_number: "Visit",
+        first_visit: "First visited",
+        last_seen: "Last seen",
+        days_ago: "days ago",
+        hours_ago: "hours ago",
+        minutes_ago: "minutes ago",
+        // Gallery strings
+        gallery_title: "VISITOR GALLERY",
+        gallery_subtitle: "<span style='font-size:38px;'>The meaning of life</span><br><span style='font-size:16px; opacity:0.6;'>according to those who came before you</span>",
+        gallery_empty: "Be the first to complete all rooms and share your meaning.",
+        gallery_rooms: "rooms",
+        gallery_submit_prompt: "Share your meaning with future visitors?",
+        gallery_submit_yes: "SHARE ANONYMOUSLY",
+        gallery_submit_no: "KEEP PRIVATE",
+        gallery_submitted: "✓ Shared with the universe",
+        gallery_view: "VIEW GALLERY",
+        gallery_close: "CLOSE",
+        gallery_visitors: "visitors have shared their meaning",
+        // Question strings
         hall_q: "All stories begin somewhere, somehow. How does yours start?",
         living_q: "What do you love in life?",
         annex_q: "What do you fear?",
@@ -576,6 +686,7 @@ const UI_I18N = {
         welcome_placeholder: "JE NAAM...",
         proceed: "GA VERDER",
         hi: "HOI",
+        welcome_back: "WELKOM TERUG",
         welcome_text: "Ga op ontdekking!<br><br>Volg gewoon je intuïtie en alles komt goed.",
         enter: "GA VERDER",
         reflected: "GEREFLECTEERD ✓",
@@ -620,6 +731,27 @@ const UI_I18N = {
         usher_welcome: "Welkom",
         usher_explore: "Verken het huis en de omgeving",
         usher_discover: "Ontdek de berichten",
+        // Memory system strings
+        memory_header: "JOUW GEHEUGEN",
+        visit_number: "Bezoek",
+        first_visit: "Eerste bezoek",
+        last_seen: "Laatst gezien",
+        days_ago: "dagen geleden",
+        hours_ago: "uur geleden",
+        minutes_ago: "minuten geleden",
+        // Gallery strings
+        gallery_title: "BEZOEKERSOVERZICHT",
+        gallery_subtitle: "<span style='font-size:38px;'>De zin van het leven</span><br><span style='font-size:16px; opacity:0.6;'>volgens hen die voor jou kwamen</span>",
+        gallery_empty: "Wees de eerste die alle kamers voltooit en de betekenis deelt.",
+        gallery_rooms: "kamers",
+        gallery_submit_prompt: "Deel jouw betekenis met toekomstige bezoekers?",
+        gallery_submit_yes: "ANONIEM DELEN",
+        gallery_submit_no: "PRIVÉ HOUDEN",
+        gallery_submitted: "✓ Gedeeld met het universum",
+        gallery_view: "BEKIJK OVERZICHT",
+        gallery_close: "SLUITEN",
+        gallery_visitors: "bezoekers hebben hun betekenis gedeeld",
+        // Question strings
         hall_q: "Alle verhalen beginnen ergens. Hoe begint het jouwe?",
         living_q: "Waar hou je van?",
         annex_q: "Waar ben je bang voor?",
@@ -755,8 +887,13 @@ window.submitVisitorName = function () {
     }
 
     // Save Name
-    window.visitorData = window.visitorData || {};
+    window.visitorData = window.visitorData || { answers: {}, visitedRooms: [] };
     window.visitorData.name = name;
+
+    // Persist to localStorage
+    if (typeof saveUserProgress === 'function') {
+        saveUserProgress(window.visitorData);
+    }
 
     // Transition within the SAME popup (Seamless)
     const overlay = document.getElementById('narrative-overlay');
@@ -1439,6 +1576,11 @@ window.submitRoomAnswer = function () {
         window.visitorData.visitedRooms.push(room);
     }
 
+    // Persist to localStorage
+    if (typeof saveUserProgress === 'function') {
+        saveUserProgress(window.visitorData);
+    }
+
     // Notify parent index page of the new answer (include the reflection label)
     if (window.parent && window.parent !== window) {
         window.parent.postMessage({
@@ -1510,10 +1652,15 @@ function checkNarrativeCompletion() {
         try {
             const victoryAudio = new Audio(window.houseConfig && window.houseConfig.audio && window.houseConfig.audio.victory
                 ? window.houseConfig.audio.victory
-                : '../assets/audio/victory.wav');
+                : '/assets/audio/victory.wav');
             victoryAudio.volume = 0.8;
             victoryAudio.play().catch(e => console.warn('Victory audio failed:', e));
         } catch (e) { console.warn('Victory audio error:', e); }
+
+        // Record this completion in memory
+        if (typeof recordCompletion === 'function') {
+            recordCompletion(window.visitorData);
+        }
 
         // V-NEW: Show Bright Congratulatory Popup
         showCompletionPopup();
@@ -1623,6 +1770,13 @@ window.returnToIndexAndShowMeaning = function (e) {
             allAnswers: window.visitorData ? window.visitorData.answers : {}
         }, '*');
     }
+
+    // After seeing the meaning of life, prompt to share with the gallery
+    setTimeout(() => {
+        if (typeof window.showGallerySharePrompt === 'function') {
+            window.showGallerySharePrompt();
+        }
+    }, 4000);
 };
 
 function showFinalSummary() {
@@ -1950,3 +2104,296 @@ window.addEventListener('message', (event) => {
         }
     }
 });
+
+
+// ============================================================
+//  VISITOR GALLERY — Share Prompt & Community Wall
+// ============================================================
+
+/**
+ * After completing all 10 rooms, offer the visitor the choice to
+ * share their anonymous "meaning of life" to the Firestore gallery.
+ */
+window.showGallerySharePrompt = function () {
+    const mem = typeof getMemory === 'function' ? getMemory() : null;
+    if (mem && mem.gallerySubmitted) {
+        console.log('Gallery: already submitted, skipping prompt.');
+        return;
+    }
+
+    // Create an overlay prompt
+    let existing = document.getElementById('gallery-share-prompt');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'gallery-share-prompt';
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:10001',
+        'background:rgba(0,0,0,0.85)',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'opacity:0', 'transition:opacity 0.5s ease'
+    ].join(';');
+
+    const card = document.createElement('div');
+    card.style.cssText = [
+        'background:#111', 'border:1px solid rgba(96,165,250,0.3)',
+        'padding:32px 28px', 'border-radius:4px', 'max-width:420px',
+        'width:90%', 'text-align:center',
+        'box-shadow:0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(96,165,250,0.08)'
+    ].join(';');
+
+    card.innerHTML = `
+        <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#60a5fa; letter-spacing:0.25em; text-transform:uppercase; margin-bottom:16px; opacity:0.7;">
+            ${t('gallery_title')}
+        </div>
+        <p style="font-family:'Share Tech Mono',monospace; font-size:13px; color:#ddd; line-height:1.7; margin-bottom:24px;">
+            ${t('gallery_submit_prompt')}
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+            <button id="gallery-share-yes" style="
+                background:transparent; border:1px solid #60a5fa; color:#60a5fa;
+                padding:10px 28px; font-family:'Share Tech Mono',monospace;
+                font-size:11px; letter-spacing:0.15em; cursor:pointer;
+                transition:all 0.3s ease; text-transform:uppercase;
+            ">${t('gallery_submit_yes')}</button>
+            <button id="gallery-share-no" style="
+                background:transparent; border:1px solid #333; color:#666;
+                padding:8px 28px; font-family:'Share Tech Mono',monospace;
+                font-size:10px; letter-spacing:0.15em; cursor:pointer;
+                transition:all 0.3s ease; text-transform:uppercase;
+            ">${t('gallery_submit_no')}</button>
+        </div>
+        <div id="gallery-share-status" style="margin-top:16px; font-family:'Share Tech Mono',monospace; font-size:10px; color:#888; min-height:20px;"></div>
+    `;
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+    // Hover styles
+    const yesBtn = card.querySelector('#gallery-share-yes');
+    yesBtn.onmouseenter = function () { this.style.background = '#60a5fa'; this.style.color = '#000'; };
+    yesBtn.onmouseleave = function () { this.style.background = 'transparent'; this.style.color = '#60a5fa'; };
+
+    // YES — submit to gallery
+    yesBtn.onclick = async function () {
+        const statusEl = card.querySelector('#gallery-share-status');
+        statusEl.textContent = t('transmitting');
+        statusEl.style.color = '#60a5fa';
+
+        const success = typeof submitToGallery === 'function'
+            ? await submitToGallery(window.visitorData)
+            : false;
+
+        if (success) {
+            statusEl.textContent = t('gallery_submitted');
+            statusEl.style.color = '#4ade80';
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 500);
+            }, 2000);
+        } else {
+            statusEl.textContent = 'Firestore not configured — submission saved locally.';
+            statusEl.style.color = '#f87171';
+            // Still fade out after a moment
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 500);
+            }, 3000);
+        }
+    };
+
+    // NO — dismiss
+    card.querySelector('#gallery-share-no').onclick = function () {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 500);
+    };
+};
+
+/**
+ * Show the Visitor Gallery overlay — a scrollable community wall
+ * of past visitors' anonymous "meaning of life" summaries.
+ */
+window.showGalleryOverlay = async function () {
+    let existing = document.getElementById('gallery-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'gallery-overlay';
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:10000',
+        'background:rgba(0,0,0,0.92)',
+        'display:flex', 'flex-direction:column', 'align-items:center',
+        'overflow-y:auto', 'padding:40px 20px 60px',
+        'opacity:0', 'transition:opacity 0.5s ease'
+    ].join(';');
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'text-align:center; margin-bottom:30px; max-width:600px; width:100%;';
+    header.innerHTML = `
+        <div style="font-family:'Share Tech Mono',monospace; font-size:14px; color:#60a5fa; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:12px; opacity:0.7;">
+            ${t('gallery_title')}
+        </div>
+        <p style="font-family:'Orelega One',cursive; font-size:32px; color:#fff; line-height:1.3; margin-bottom:8px;">
+            ${t('gallery_subtitle')}
+        </p>
+        <div id="gallery-count" style="font-family:'Share Tech Mono',monospace; font-size:10px; color:#666; letter-spacing:0.1em;"></div>
+    `;
+    overlay.appendChild(header);
+
+    // Loading indicator
+    const loadingEl = document.createElement('div');
+    loadingEl.style.cssText = 'font-family:"Share Tech Mono",monospace; font-size:11px; color:#60a5fa; animation:pulse 1.5s ease-in-out infinite;';
+    loadingEl.textContent = '...';
+    overlay.appendChild(loadingEl);
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = t('gallery_close');
+    closeBtn.style.cssText = [
+        'position:fixed', 'top:20px', 'right:24px', 'z-index:10001',
+        'background:transparent', 'border:1px solid #444', 'color:#888',
+        'padding:8px 20px', 'font-family:"Share Tech Mono",monospace',
+        'font-size:10px', 'letter-spacing:0.15em', 'cursor:pointer',
+        'transition:all 0.3s ease', 'text-transform:uppercase'
+    ].join(';');
+    closeBtn.onmouseenter = function () { this.style.borderColor = '#fff'; this.style.color = '#fff'; };
+    closeBtn.onmouseleave = function () { this.style.borderColor = '#444'; this.style.color = '#888'; };
+    closeBtn.onclick = function () {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 500);
+    };
+    overlay.appendChild(closeBtn);
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+    // Fetch entries from Firestore
+    let entries = [];
+    if (typeof fetchGalleryEntries === 'function') {
+        entries = await fetchGalleryEntries(30);
+    }
+
+    // Remove loading
+    loadingEl.remove();
+
+    // Update count
+    const countEl = overlay.querySelector('#gallery-count');
+    if (countEl) {
+        countEl.textContent = entries.length > 0
+            ? `${entries.length} ${t('gallery_visitors')}`
+            : '';
+    }
+
+    if (entries.length === 0) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.cssText = 'font-family:"Share Tech Mono",monospace; font-size:12px; color:#555; text-align:center; margin-top:40px;';
+        emptyMsg.textContent = t('gallery_empty');
+        overlay.appendChild(emptyMsg);
+        return;
+    }
+
+    // The room prefixes (matching the final summary display)
+    const roomPrefixes = {
+        hall: { en: 'It all started...', nl: 'Het begon allemaal' },
+        living: { en: 'Love is', nl: 'Liefde is' },
+        annex: { en: 'The biggest bully is', nl: 'De grootste pestkop is' },
+        studio: { en: 'Everybody should', nl: 'Iedereen zou moeten' },
+        basement: { en: 'When in doubt,', nl: 'Bij twijfel,' },
+        toilet: { en: 'Einstein couldn\'t think of:', nl: 'Einstein dacht niet aan:' },
+        bedroom: { en: 'We should all', nl: 'We zouden allemaal moeten' },
+        bathroom: { en: '', nl: '' },  // name IS hero
+        attic: { en: 'Never forget:', nl: 'Nooit vergeten:' },
+        space: { en: 'The answer to everything', nl: 'Het antwoord op alles' }
+    };
+
+    const lang = window.currentLanguage || 'en';
+
+    // Render gallery cards
+    const grid = document.createElement('div');
+    grid.style.cssText = 'max-width:700px; width:100%; display:flex; flex-direction:column; gap:20px;';
+
+    entries.forEach((entry, idx) => {
+        const card = document.createElement('div');
+        card.style.cssText = [
+            'background:rgba(255,255,255,0.03)',
+            'border:1px solid rgba(255,255,255,0.08)',
+            'border-radius:4px', 'padding:24px',
+            'transition:all 0.3s ease',
+            'opacity:0', 'transform:translateY(20px)'
+        ].join(';');
+
+        // Staggered fade-in
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, idx * 80);
+
+        // Hover
+        card.onmouseenter = function () {
+            this.style.borderColor = 'rgba(96,165,250,0.3)';
+            this.style.background = 'rgba(96,165,250,0.04)';
+        };
+        card.onmouseleave = function () {
+            this.style.borderColor = 'rgba(255,255,255,0.08)';
+            this.style.background = 'rgba(255,255,255,0.03)';
+        };
+
+        // Build card content
+        let answerLines = '';
+        const roomOrder = ['hall', 'living', 'annex', 'studio', 'basement', 'toilet', 'bedroom', 'bathroom', 'attic', 'space'];
+        const answers = entry.answers || {};
+
+        // Show 2-3 highlighted excerpts
+        const shownRooms = roomOrder.filter(r => answers[r]);
+        shownRooms.forEach(room => {
+            const prefix = roomPrefixes[room] ? (roomPrefixes[room][lang] || roomPrefixes[room].en) : '';
+            const ans = answers[room] || '';
+            if (room === 'bathroom') {
+                answerLines += `<div style="margin-bottom:6px;"><span style="color:#67e8f9; font-weight:bold;">${ans}</span> <span style="color:#888;">is our hero</span></div>`;
+            } else {
+                answerLines += `<div style="margin-bottom:6px;"><span style="color:#888;">${prefix}</span> <span style="color:#67e8f9; font-weight:bold;">${ans}</span></div>`;
+            }
+        });
+
+        // Time ago
+        const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+                <div style="font-family:'Orelega One',cursive; font-size:18px; color:#fff;">${entry.name}</div>
+                <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.1em;">${entry.roomCount || 0} ${t('gallery_rooms')} · ${timeAgo}</div>
+            </div>
+            <div style="font-family:'Special Elite',cursive; font-size:13px; line-height:1.8;">
+                ${answerLines}
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+
+    overlay.appendChild(grid);
+};
+
+/**
+ * Helper: Format a Date as a human-readable time-ago string
+ */
+function formatTimeAgo(date) {
+    const now = Date.now();
+    const diffMs = now - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffDays > 30) {
+        return date.toLocaleDateString(window.currentLanguage === 'nl' ? 'nl-NL' : 'en-GB', {
+            day: 'numeric', month: 'short'
+        });
+    }
+    if (diffDays > 0) return `${diffDays}d`;
+    if (diffHours > 0) return `${diffHours}h`;
+    if (diffMins > 0) return `${diffMins}m`;
+    return 'now';
+}

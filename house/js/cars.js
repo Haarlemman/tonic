@@ -29,7 +29,7 @@ function buildRRWheel(g, pos, chrome, rubber) {
     const side = x < 0 ? 1 : -1;
 
     const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.22, 24, 64), rubber);
-    tyre.rotation.y = Math.PI/2; tyre.position.set(x, y, z); tyre.castShadow = true; g.add(tyre);
+    tyre.rotation.y = Math.PI/2; tyre.position.set(x, y, z); g.add(tyre);
 
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.12, 64), mat(0x1a1a1a, 0.8, 0.22));
     disc.rotation.z = Math.PI/2; disc.position.set(x + side * 0.06, y, z); g.add(disc);
@@ -106,23 +106,23 @@ function buildRollsRoyce() {
 
     // Interior
     const dash = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 0.7), mat(0x2a1a08, 0, 0.6));
-    dash.position.set(0, 1.72, 0.62); dash.castShadow = true; g.add(dash);
+    dash.position.set(0, 1.72, 0.62); g.add(dash);
     const console_ = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.28, 2.2), mat(0x2a1a08, 0.1, 0.5));
-    console_.position.set(0, 1.62, -0.55); console_.castShadow = true; g.add(console_);
+    console_.position.set(0, 1.62, -0.55); g.add(console_);
     for (const sx of [-0.5, 0.5]) {
         const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.14, 0.7), leather);
-        seat.position.set(sx, 1.7, 0.0); seat.castShadow = true; seat.receiveShadow = true; g.add(seat);
+        seat.position.set(sx, 1.7, 0.0); g.add(seat);
         const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.55, 0.12), leather);
-        seatBack.position.set(sx, 1.98, -0.34); seatBack.castShadow = true; seatBack.receiveShadow = true; g.add(seatBack);
+        seatBack.position.set(sx, 1.98, -0.34); g.add(seatBack);
     }
     for (const sx of [-0.45, 0.45]) {
         const rseat = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.12, 0.62), leather);
-        rseat.position.set(sx, 1.7, -1.7); rseat.castShadow = true; rseat.receiveShadow = true; g.add(rseat);
+        rseat.position.set(sx, 1.7, -1.7); g.add(rseat);
         const rseatBack = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.45, 0.1), leather);
-        rseatBack.position.set(sx, 1.94, -2.02); rseatBack.castShadow = true; rseatBack.receiveShadow = true; g.add(rseatBack);
+        rseatBack.position.set(sx, 1.94, -2.02); g.add(rseatBack);
     }
     const swRim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 10, 32), mat(0x111111, 0, 0.6));
-    swRim.position.set(-0.48, 1.88, 0.38); swRim.rotation.x = 0.55; swRim.castShadow = true; g.add(swRim);
+    swRim.position.set(-0.48, 1.88, 0.38); swRim.rotation.x = 0.55; g.add(swRim);
 
     // Soft-top stack
     const topStack = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.28, 1.0), softTop);
@@ -258,7 +258,7 @@ function buildFiatWheel(g, pos, chrome, rubber) {
     const side = x < 0 ? 1 : -1;
 
     const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.1, 20, 48), rubber);
-    tyre.rotation.y = Math.PI/2; tyre.position.set(x, y, z); tyre.castShadow = true; g.add(tyre);
+    tyre.rotation.y = Math.PI/2; tyre.position.set(x, y, z); g.add(tyre);
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 48), mat(0x111111, 0.6, 0.35));
     disc.rotation.z = Math.PI/2; disc.position.set(x + side * 0.03, y, z); g.add(disc);
     const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.1, 24), chrome);

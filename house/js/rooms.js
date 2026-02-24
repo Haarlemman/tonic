@@ -1372,7 +1372,7 @@ function createBathroomInterior() {
         // crossOrigin MUST be set before .src to take effect
         window.videoElement.crossOrigin = "anonymous";
         // V41: Correct Video from data.js
-        window.videoElement.src = "../assets/video/Time-Is-Now.mp4";
+        window.videoElement.src = "assets/video/Time-Is-Now.mp4";
         window.videoElement.muted = true;
         window.videoElement.loop = false;
         window.videoElement.load(); // ensure browser picks up the new src
@@ -1932,7 +1932,7 @@ function initTVVideo() {
     if (livingData && livingData.videoPlaylist && livingData.videoPlaylist.length > 0) {
         tvVideo.src = livingData.videoPlaylist[0].src;
     } else {
-        tvVideo.src = '../assets/video/premonition.mp4';
+        tvVideo.src = '/assets/video/premonition.mp4';
     }
     tvVideo.load(); // ensure browser picks up the src
     tvVideo.loop = false; tvVideo.muted = false; tvVideo.autoplay = false;
@@ -2540,7 +2540,7 @@ function createLivingRoomInterior() {
 
                 const toggleDoor = () => {
                     try {
-                        const squeak = new Audio('../assets/audio/squeak.mp3');
+                        const squeak = new Audio('/assets/audio/squeak.mp3');
                         squeak.volume = 1.0;
                         squeak.play().catch(e => console.error("Squeak Play Fail:", e));
                     } catch (err) {
@@ -2626,7 +2626,7 @@ function createLivingRoomInterior() {
             // Define toggleDoor once and reuse it
             const toggleDoor = () => {
                 try {
-                    const squeak = new Audio('../assets/audio/squeak.mp3');
+                    const squeak = new Audio('/assets/audio/squeak.mp3');
                     squeak.volume = 1.0;
                     squeak.play().catch(e => console.error("Squeak Play Fail:", e));
                 } catch (err) {
@@ -2794,9 +2794,9 @@ function createLivingRoomInterior() {
         interiorGroup.add(mesh);
     }
 
-    createBook("Tonic for\nthe Bones", '#8b0000', -0.6, -1.4, 0.2, '../assets/images/tftb-cover.jpg', "A celebration of life amidst a dire diagnosis.", "https://tonic.davidenker.com/tftb/");
-    createBook("Phantom\nParents", '#1a237e', -0.4, -0.4, -0.1, '../assets/images/phantomparents-cover.jpg', "A personal and creative look at the experience of growing up- being an adoptee.", "https://www.amazon.com/gp/product/9090369449/");
-    createBook("Tiny Socks and Vanishing Dopamine", '#065f46', 0.5, -0.9, -0.3, '../assets/images/gifts-cover.jpg', "A short story about fatherhood while dealing with Parkinson.", "https://www.amazon.com/dp/B0FCM11RH3");
+    createBook("Tonic for\nthe Bones", '#8b0000', -0.6, -1.4, 0.2, '/assets/images/tftb-cover.jpg', "A celebration of life amidst a dire diagnosis.", "https://tonic.davidenker.com/tftb/");
+    createBook("Phantom\nParents", '#1a237e', -0.4, -0.4, -0.1, '/assets/images/phantomparents-cover.jpg', "A personal and creative look at the experience of growing up- being an adoptee.", "https://www.amazon.com/gp/product/9090369449/");
+    createBook("Tiny Socks and Vanishing Dopamine", '#065f46', 0.5, -0.9, -0.3, '/assets/images/gifts-cover.jpg', "A short story about fatherhood while dealing with Parkinson.", "https://www.amazon.com/dp/B0FCM11RH3");
 
     // Red Rug
     const rug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 64), new THREE.MeshStandardMaterial({ color: 0x6b0505, roughness: 1.0 }));
@@ -4117,7 +4117,13 @@ function nextBedroomVideo() {
 
 // Helper to Stop Video & Reset Lights (Bedroom specific)
 window.stopBedroomVideo = function () {
-    if (window.videoElement && !window.videoElement.paused) window.videoElement.pause();
+    if (window.videoElement) {
+        window.videoElement.pause();
+        window.videoElement.muted = true;      // silence immediately — prevents audio bleed during src swap
+        window.videoElement.volume = 0;
+        window.videoElement.src = '';          // detach src so 'ended' can't retrigger playback
+        window.videoElement.load();            // cancel any pending network request
+    }
 
     // Restore Bedroom Defaults (Matches house.js ApplyRoomLighting V115)
     // Ambient 0.25, Dir 0.3, Rim 0.3
@@ -4317,12 +4323,12 @@ window.createStudioInterior = function () {
     };
 
     // Metropolis (Right/'Back' Wall)
-    const mepo = createVideoPoster('../assets/video/mepo.mp4', 0.8);
+    const mepo = createVideoPoster('/assets/video/mepo.mp4', 0.8);
     mepo.mesh.position.set(1.0, 5, -4.9);
     interiorGroup.add(mepo.mesh);
 
     // Tron (Left Wall)
-    const tron = createVideoPoster('../assets/video/tronai.mp4', 0.9);
+    const tron = createVideoPoster('/assets/video/tronai.mp4', 0.9);
     tron.mesh.scale.set(0.75, 0.75, 0.75);
     tron.mesh.position.set(-4.9, 5, 3.5);
     tron.mesh.rotation.y = Math.PI / 2;
@@ -4506,7 +4512,7 @@ window.createR2D2InCorner = function () {
 
     // HOLOGRAM
     const vid = document.createElement('video');
-    vid.src = '../assets/video/hologram.mp4';
+    vid.src = '/assets/video/hologram.mp4';
     vid.loop = true;
     vid.muted = true;
     vid.preload = 'auto';

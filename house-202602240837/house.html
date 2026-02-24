@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- iOS PWA fullscreen support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>The House of Awe</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/fav-infinity.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Cutive+Mono&family=Orbitron:wght@400;700&family=Playfair+Display:ital,wght@0,400;1,400&family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Syncopate:wght@400;700&family=Nanum+Myeongjo&family=Montserrat:wght@200;400&family=Baumans&family=Courier+Prime&family=Glass+Antiqua&family=JetBrains+Mono:wght@100..800&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Special+Elite&family=Tilt+Neon&family=Lexend:wght@400;700&family=Orelega+One&display=swap"
+        rel="stylesheet">
+
+    <!-- Global error display — keep early so it catches script load failures -->
+    <script>
+        window.addEventListener('error', function (e) {
+            window.hasCriticalError = true;
+            const box = document.getElementById('loading');
+            if (box) {
+                box.innerHTML = '<div style="color:red;background:#000;padding:20px;z-index:9999">'
+                    + 'ERROR: ' + e.message + '<br>File: ' + e.filename + '<br>Line: ' + e.lineno
+                    + '</div>';
+                box.style.display = 'flex';
+                box.style.opacity = '1';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fallback: force-hide loader if nothing resolves within 15 s
+            setTimeout(() => {
+                const loader = document.getElementById('loading');
+                if (loader && loader.style.display !== 'none' && !loader.innerHTML.includes('ERROR:')) {
+                    console.warn('Loader fallback triggered after 15 s.');
+                    if (window.hideLoader) window.hideLoader();
+                }
+            }, 15000);
+        });
+    </script>
+
+    <link rel="stylesheet" href="css/style.css?v=20260221-1821">
+
+
+</head>
+
+<body class="experience-mode">
+
+    <!-- ======================================================
+         LOADING SCREEN
+    ====================================================== -->
+    <div id="loading">
+        <!-- Animated loading bar — no text, no button styling -->
+        <div style="width: 220px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+
+            <!-- Indeterminate shimmer bar (shows while % is unknown) -->
+            <div id="loading-shimmer" style="
+                width: 100%;
+                height: 2px;
+                background: rgba(255,255,255,0.12);
+                border-radius: 2px;
+                overflow: hidden;
+                position: relative;
+            ">
+                <div style="
+                    position: absolute; top: 0; left: -60%;
+                    width: 60%; height: 100%;
+                    background: linear-gradient(90deg, transparent, #ffffff, transparent);
+                    animation: shimmer 1.4s ease-in-out infinite;
+                "></div>
+            </div>
+
+            <!-- Determinate progress bar (fills as assets load) -->
+            <div id="progress-container" style="
+                width: 100%;
+                height: 2px;
+                background: rgba(255,255,255,0.12);
+                border-radius: 2px;
+                overflow: hidden;
+                position: relative;
+            ">
+                <div id="progress-bar" style="
+                    position: absolute; left: 0; top: 0;
+                    height: 100%; width: 0%;
+                    background: #ffffff;
+                    transition: width 0.3s ease;
+                    border-radius: 2px;
+                "></div>
+            </div>
+
+            <!-- Filename/percentage hint — tiny, dim, mono -->
+            <div id="loading-msg" style="
+                font-family: 'Share Tech Mono', 'JetBrains Mono', monospace;
+                font-size: 0.55rem;
+                color: rgba(255,255,255,0.25);
+                letter-spacing: 0.15em;
+                text-align: center;
+                line-height: 1;
+                min-height: 0.9rem;
+            "></div>
+
+        </div>
+    </div>
+
+    <style>
+        @keyframes shimmer {
+            0% {
+                left: -60%;
+            }
+
+            100% {
+                left: 160%;
+            }
+        }
+    </style>
+
+
+    <!-- ======================================================
+         IDEA ZONE OVERLAY
+    ====================================================== -->
+    <div id="idea-overlay">
+        <div class="notepad-paper">
+            <h3 id="idea-zone-title" class="text-gray-800 font-bold mb-2 ml-5" style="font-family:'Courier Prime'">THE
+                IDEA ZONE</h3>
+            <textarea id="idea-text" class="idea-input" placeholder="Type your brilliant ideas here&hellip;"></textarea>
+            <div class="notepad-controls">
+                <button id="idea-close-btn" class="btn-note btn-close" onclick="closeIdeaOverlay()">Close</button>
+                <button id="idea-save-btn" class="btn-note btn-save" onclick="saveIdea()">Save Idea</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ======================================================
+         TOP CONTROLS
+    ====================================================== -->
+    <!-- Top-left: Reset/Back button -->
+    <!-- Top-left: Reset/Back button -->
+    <div id="top-left-controls" class="fixed left-6 z-[100] pointer-events-auto"
+        style="top:1rem; opacity: 0; pointer-events: none; transition: opacity 2s ease;">
+        <button id="reset-view-btn" onclick="window.resetToIdleView && window.resetToIdleView()"
+            class="opacity-90 hover:opacity-100 transition-opacity p-2 text-white" title="Reset View">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor"
+                stroke-width="1.2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 8 8 12 12 16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Top-right controls -->
+    <div id="top-controls" class="fixed right-6 z-[100] flex flex-col gap-4 pointer-events-auto"
+        style="top:1rem; opacity: 0; pointer-events: auto; transition: opacity 2s ease;">
+
+        <!-- Fullscreen toggle -->
+        <button id="fullscreen-btn" onclick="toggleGlobalFullscreen()"
+            class="opacity-90 hover:opacity-100 transition-opacity p-2 text-white" title="Toggle Fullscreen">
+            <svg id="icon-fullscreen-on" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                viewBox="0 0 16 16">
+                <path
+                    d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zM10 15.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 1 0v4A1.5 1.5 0 0 1 14.5 16h-4a.5.5 0 0 1-.5-.5z" />
+            </svg>
+            <svg id="icon-fullscreen-off" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                fill="currentColor" viewBox="0 0 16 16">
+                <path
+                    d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z" />
+            </svg>
+        </button>
+
+        <!-- Sound toggle (below the others) -->
+        <button id="sound-btn" onclick="toggleGlobalSound()"
+            class="opacity-90 hover:opacity-100 transition-opacity p-2 text-white" title="Toggle Sound">
+            <svg id="icon-sound-on" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                viewBox="0 0 16 16">
+                <path
+                    d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z" />
+                <path
+                    d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z" />
+                <path
+                    d="M10.025 8a4.486 4.486 0 0 1-1.318 3.182L8 10.475A3.489 3.489 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.486 4.486 0 0 1 10.025 8zM7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12V4zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z" />
+            </svg>
+            <!-- Correct mute icon -->
+            <svg id="icon-sound-off" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                fill="currentColor" viewBox="0 0 16 16">
+                <path
+                    d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 0 1 10v-4a.5.5 0 0 1 .5-.5h2.325l2.363-1.89A.5.5 0 0 1 7 4zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z" />
+                <path
+                    d="M9.364 5.636a.5.5 0 0 1 .707 0L11 6.565l.929-.929a.5.5 0 0 1 .707.707L11.707 7.272l.929.929a.5.5 0 0 1-.707.707L11 7.979l-.929.929a.5.5 0 0 1-.707-.707l.929-.929-.929-.929a.5.5 0 0 1 0-.707z" />
+            </svg>
+        </button>
+
+        <!-- Summary / Download / Email -->
+        <button id="summary-btn" onclick="window.showNarrativeSummary && window.showNarrativeSummary()"
+            class="opacity-70 hover:opacity-100 transition-opacity p-2 text-white" title="View Summary & Options">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 2v10h6V3H5z" />
+                <path
+                    d="M4.5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z" />
+            </svg>
+        </button>
+
+        <!-- Visitor Gallery -->
+        <button id="gallery-btn" onclick="window.showGalleryOverlay && window.showGalleryOverlay()"
+            class="opacity-70 hover:opacity-100 transition-opacity p-2 text-white" title="Visitor Gallery">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                <path fill-rule="evenodd"
+                    d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z" />
+                <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+            </svg>
+        </button>
+
+        <!-- Hint button — lightbulb, glows on hover -->
+        <button id="hint-btn" onclick="window.showHintArrow && window.showHintArrow()" title="Get a hint"
+            style="background:transparent; border:none; cursor:pointer; padding:8px; opacity:0.85; transition:opacity 0.2s ease, filter 0.2s ease;"
+            onmouseover="this.style.opacity='1'; this.style.filter='drop-shadow(0 0 6px rgba(255,240,100,0.9)) drop-shadow(0 0 14px rgba(255,200,0,0.6))';"
+            onmouseout="this.style.opacity='0.85'; this.style.filter='none';">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Bulb body -->
+                <path d="M9 18h6M10 21h4" />
+                <!-- Filament cross lines (give it an Edison feel) -->
+                <path
+                    d="M12 2a7 7 0 0 1 7 7c0 2.8-1.6 5.2-4 6.4V17a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.6C6.6 14.2 5 11.8 5 9a7 7 0 0 1 7-7z" />
+                <!-- Inner glow hint lines -->
+                <line x1="12" y1="6" x2="12" y2="10" stroke="rgba(255,230,80,0.7)" stroke-width="1.2" />
+                <line x1="10" y1="8" x2="14" y2="8" stroke="rgba(255,230,80,0.7)" stroke-width="1.2" />
+            </svg>
+        </button>
+
+    </div>
+
+    <!-- Hover tooltip -->
+    <div id="tooltip" style="display: none !important;">Room Name</div>
+
+    <!-- Room info panel (slides in from right) -->
+    <div id="room-info"
+        class="fixed top-4 right-16 z-[100] w-64 bg-black/60 backdrop-blur-md text-white border-l-2 border-white/20 transition-transform duration-700 translate-x-[120%]"
+        style="display:none;">
+        <div class="relative w-full h-full p-6 transition-all duration-300" id="room-info-inner">
+            <button id="info-toggle-btn"
+                class="absolute top-2 right-2 text-white/50 hover:text-white transition-colors z-50 focus:outline-none"
+                title="Toggle Info">
+                <svg id="info-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    viewBox="0 0 16 16" style="transition: transform 0.3s ease; transform: rotate(180deg);">
+                    <path
+                        d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
+                </svg>
+            </button>
+            <div id="info-content"
+                class="space-y-4 font-mono text-[10px] tracking-widest uppercase leading-relaxed mt-2 origin-top">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Lyrics overlay -->
+    <div id="lyrics-container"
+        class="fixed bottom-12 left-1/2 -translate-x-1/2 w-auto min-w-[300px] max-w-[80%] text-center pointer-events-none z-[110] opacity-0 transition-opacity duration-500 bg-black/40 backdrop-blur-sm px-8 py-4 rounded-xl border border-white/5 shadow-2xl">
+        <p id="lyrics-text"
+            class="text-white text-xl md:text-2xl font-serif font-medium tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,1)] italic leading-relaxed">
+        </p>
+    </div>
+
+    <!-- Back (exit room) button -->
+    <button id="back-btn" onclick="exitRoom()" style="display:none; top:3.5rem; background:transparent !important; border:none !important;
+                   outline:none !important; box-shadow:none !important; padding:0 !important;"
+        class="fixed left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor"
+            stroke-width="1.2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 8 8 12 12 16" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+        </svg>
+    </button>
+
+    <!-- "Found It" discovery button -->
+    <button id="discover-btn" onclick="window.discoverRoom && window.discoverRoom()" style="display:none; top:7.5rem; background:transparent !important; border:none !important;
+                   outline:none !important; box-shadow:none !important; padding:0 !important;"
+        class="fixed left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity">
+        <div class="flex flex-col items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor"
+                stroke-width="1.2" viewBox="0 0 24 24">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span id="found-it-label" class="text-[8px] uppercase tracking-widest mt-1">Found It</span>
+        </div>
+    </button>
+
+    <!-- Video playlist UI (populated by JS) -->
+    <div id="video-playlist-ui"
+        class="hidden absolute top-4 right-4 w-64 bg-black/80 backdrop-blur-md rounded-lg p-4 border border-white/10 z-50">
+    </div>
+
+    <!-- Narrative overlays -->
+    <div id="narrative-overlay" style="padding-bottom: 20vh;">
+        <div class="narrative-card">
+            <button class="close-popup-btn" onclick="closeOverlay('narrative-overlay')">&times;</button>
+            <h2 id="narrative-title">WHO ARE YOU?</h2>
+            <p class="text-gray-500 mb-4 font-mono text-xs uppercase tracking-widest">Identify yourself to enter the
+                House of Awe.</p>
+            <input type="text" id="visitor-name" class="narrative-input" placeholder="YOUR NAME..." maxlength="30"
+                onkeypress="if(event.key==='Enter') submitVisitorName()">
+            <button class="narrative-btn" onclick="submitVisitorName()">PROCEED</button>
+        </div>
+    </div>
+
+    <div id="question-overlay">
+        <div class="narrative-card">
+            <button class="close-popup-btn" onclick="closeOverlay('question-overlay')">&times;</button>
+            <h2 id="room-question-title">REFLECTIONS</h2>
+            <p id="room-question-text" class="text-gray-400 mb-6 italic font-serif leading-relaxed"></p>
+            <textarea id="room-answer" class="narrative-input h-32" placeholder="Tell us something..."
+                onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); submitRoomAnswer(); }"></textarea>
+            <button class="narrative-btn" onclick="submitRoomAnswer()">SUBMIT</button>
+        </div>
+    </div>
+
+
+    <!-- Notepad overlay -->
+
+    <!-- Black fade curtain for room transitions -->
+    <div id="curtain"></div>
+
+    <!-- ======================================================
+         MEDIA ELEMENTS
+    ====================================================== -->
+    <video id="generic-video" crossorigin="anonymous" playsinline style="display:none;">
+        <source src="/assets/video/spirit.mp4" type="video/mp4">
+    </video>
+    <video id="hall-video" crossorigin="anonymous" playsinline style="display:none;">
+        <source src="/assets/video/clouds.mp4" type="video/mp4">
+    </video>
+    <audio id="room-audio">
+        <source src="" type="audio/mpeg">
+    </audio>
+
+    <!-- ======================================================
+         3D CANVAS
+    ====================================================== -->
+    <div id="canvas-container" class="w-full block outline-none cursor-move" style="height:100dvh;"></div>
+
+    <!-- Firebase SDK (compat) for Visitor Gallery -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script>
+        // Initialize Firebase
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp({
+                apiKey: "AIzaSyASYZfiJSt-VEoMEJB7YtnRB05hNTt7w7c",
+                authDomain: "house-of-awe.firebaseapp.com",
+                projectId: "house-of-awe",
+                storageBucket: "house-of-awe.firebasestorage.app",
+                messagingSenderId: "1021263815817",
+                appId: "1:1021263815817:web:71af80fb3a6381e8839258",
+                measurementId: "G-RVM3D40MY1"
+            });
+        }
+    </script>
+
+    <script src="js/storage.js?v=20260223-1758"></script>
+    <script src="js/data.js?v=20260223-1758"></script>
+    <script src="js/cars.js?v=20260223-1315"></script>
+    <script src="js/house.js?v=20260223-1758"></script>
+    <script src="js/rooms.js?v=20260223-1315"></script>
+    <script src="js/ui.js?v=20260223-1758"></script>
+
+    <script>
+        // Refresh hardcoded UI strings that live in HTML rather than JS templates.
+        // Called once on load and again whenever the language is switched.
+        function refreshStaticUIStrings() {
+            if (typeof t !== 'function') return;
+            const ideaTitle = document.getElementById('idea-zone-title');
+            const ideaClose = document.getElementById('idea-close-btn');
+            const ideaSave = document.getElementById('idea-save-btn');
+            const foundIt = document.getElementById('found-it-label');
+            if (ideaTitle) ideaTitle.textContent = t('idea_zone');
+            if (ideaClose) ideaClose.textContent = t('idea_close');
+            if (ideaSave) ideaSave.textContent = t('idea_save');
+            if (foundIt) foundIt.textContent = t('found_it');
+        }
+
+        // Run after all scripts have loaded
+        window.addEventListener('load', refreshStaticUIStrings);
+
+        // Re-run whenever language changes (SET_LANGUAGE postMessage is also handled
+        // inside ui.js, but that only covers the narrative overlays — this covers HTML elements)
+        const _origSetLang = window.setExperienceLanguage;
+        window.setExperienceLanguage = function (lang) {
+            if (_origSetLang) _origSetLang(lang);
+            refreshStaticUIStrings();
+        };
+
+        // Hide fullscreen button if the API is not supported (e.g., iPhone Safari)
+        (function () {
+            const fsEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled || document.mozFullScreenEnabled || document.msFullscreenEnabled;
+            if (!fsEnabled) {
+                const fsBtn = document.getElementById('fullscreen-btn');
+                if (fsBtn) {
+                    fsBtn.style.display = 'none';
+                    console.log("Fullscreen API not supported on this device/browser. Hiding toggle.");
+                }
+            }
+        })();
+    </script>
+
+
+
+</body>
+
+</html>

@@ -484,7 +484,7 @@ let animationId;
 const clock = new THREE.Clock();
 // HOUSE MUSIC STATE
 let houseMusicTime = 0;
-const HOUSE_TRACK = "../assets/audio/premonition.mp3";
+const HOUSE_TRACK = "/assets/audio/premonition.mp3";
 
 // -- LIGHTS --
 let dirLight, rimLight, ambientLight, hemiLight;
@@ -547,7 +547,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // V-FIX: Soft Shadows
 // V-REFINE: Simplified Rendering (No Tone Mapping per user request)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// PERF: cap at 1.5 on mobile — cuts GPU fill rate ~44% vs 2.0 with negligible visual difference
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia('(max-width: 768px)').matches ? 1.5 : 2));
 
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
@@ -902,6 +903,15 @@ if (infoHeader) infoHeader.addEventListener('click', toggleInfo);
 // Header Content block removed (non-existent element)
 
 animate();
+
+// PERF: Pause rendering when tab is hidden — saves significant battery/CPU on mobile
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        renderer.setAnimationLoop(null); // pause
+    } else {
+        requestAnimationFrame(animate);   // resume
+    }
+});
 
 window.exitExperience = function () {
     // 1. Exit Fullscreen
@@ -1717,7 +1727,7 @@ function createWordSculpture() {
         }
 
         const loader = new THREE.FontLoader();
-        loader.load('../assets/fonts/droid_sans_regular.typeface.json', function (font) {
+        loader.load('/assets/fonts/droid_sans_regular.typeface.json', function (font) {
 
             const neonBlue = 0x1133cc;
             const neonRed = 0xcc0000;
@@ -1858,7 +1868,7 @@ function createIntroSign() {
 
 function startInteractiveIntro() {
     // 1. Play Audio (Immediately)
-    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.tension : '../assets/audio/Tension_Short_07.mp3';
+    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.tension : '/assets/audio/Tension_Short_07.mp3';
     const audio = new Audio(audioPath);
     audio.volume = 0.8;
     audio.play().catch(() => { });
@@ -2211,8 +2221,9 @@ function buildEnvironment() {
         lamppostLight.target = lightTarget;
         lamppostLight.castShadow = true;
         if (lamppostLight.shadow) {
-            lamppostLight.shadow.mapSize.width = 1024;
-            lamppostLight.shadow.mapSize.height = 1024;
+            // PERF: 512 shadow maps — halves memory vs 1024 with minimal visible difference at distance
+            lamppostLight.shadow.mapSize.width = 512;
+            lamppostLight.shadow.mapSize.height = 512;
             lamppostLight.shadow.camera.near = 0.5;
             lamppostLight.shadow.camera.far = 40;
             lamppostLight.shadow.radius = 3; // Soft shadow edges
@@ -3386,7 +3397,7 @@ function createBasementInterior() {
     }
 
     // RIGHT WALL VIDEO // Set up video with proper sequencing
-    videoElement.src = "../assets/video/brin.mp4";
+    videoElement.src = "/assets/video/brin.mp4";
     videoElement.muted = true; // Must start muted for autoplay
     videoElement.loop = false;
 
@@ -3419,7 +3430,7 @@ function createBasementInterior() {
         window.basementLeftVideo.muted = true;
         window.basementLeftVideo.setAttribute('playsinline', '');
     }
-    window.basementLeftVideo.src = "../assets/video/links.mp4";
+    window.basementLeftVideo.src = "/assets/video/links.mp4";
     window.basementLeftVideo.load();
     const leftVideoTexture = new THREE.VideoTexture(window.basementLeftVideo);
 
@@ -4468,7 +4479,7 @@ window.discoverRoom = function () {
     // Play victory tune on 10th room discovery (V-NEW)
     if (isNew && Object.keys(discoveries).length === 10) {
         try {
-            const victoryPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.victory : '../assets/audio/victory.wav';
+            const victoryPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.victory : '/assets/audio/victory.wav';
             const victoryTune = new Audio(victoryPath);
             victoryTune.volume = 0.6;
             victoryTune.play().catch(e => console.warn("Victory tune play blocked:", e));
@@ -4497,6 +4508,17 @@ window.discoverRoom = function () {
 function exitRoom() {
     state = 'TRANSITION';
     window._wasdEnabled = false; // Disable WASD movement outside rooms
+
+    // Hard-stop video immediately — belt-and-suspenders fix for bedroom audio bleed.
+    // stopBedroomVideo/stopLivingVideo handle room-specific lighting resets below,
+    // but we mute & detach src here first so there is zero chance of audio escaping
+    // during the transition, regardless of which room we're leaving.
+    if (window.videoElement) {
+        window.videoElement.pause();
+        window.videoElement.muted = true;
+        window.videoElement.volume = 0;
+    }
+
     if (window.stopLivingVideo) window.stopLivingVideo();
     if (window.stopBedroomVideo) window.stopBedroomVideo();
 
@@ -4873,10 +4895,10 @@ function animate(time) {
         });
     }
 
-    // V-AUDIO: Real-time Frequency Analysis
+    // V-AUDIO: Real-time Frequency Analysis — only when music is actively playing
     let lowFreq = 0, midFreq = 0, avgFreq = 0;
     if (window.audioAnalyser && window.audioDataArray && window.isMusicPlaying) {
-        window.audioAnalyser.getByteFrequencyData(window.audioDataArray);
+        window.audioAnalyser.getByteFrequencyData(window.audioDataArray); // PERF: guarded by isMusicPlaying
 
         let lowSum = 0;
         const lowCount = Math.floor(window.audioDataArray.length * 0.1);
@@ -4907,11 +4929,7 @@ function animate(time) {
         });
     }
 
-    // V-FIX: Garage Parallax Shift HANDLED INTERNALLY in enhancedGarage.userData.update
-    if (window.enhancedGarage && window.enhancedGarage.userData.update) {
-        // Approximate deltaTime as 0.016 (60fps) for the tween-like smoothing
-        window.enhancedGarage.userData.update(0.016, camera);
-    }
+    // PERF: garage update already called above — duplicate removed
 
     // Mist Animation
     if (mistLayer && mistLayer.visible) {
@@ -4965,10 +4983,12 @@ function animate(time) {
         }
     });
 
-    // Fireflies Motion
-    worldGroup.children.forEach(child => {
-        if (child.userData.type === 'fireflies' && renderer.info.render.frame % 3 === 0) {
-            // V-FIX: Robust checks to prevent crashes if geometry/attributes missing
+    // Fireflies Motion — PERF: use cached reference instead of scanning all worldGroup children every frame
+    if (!window._cachedFireflies) {
+        window._cachedFireflies = worldGroup.children.filter(c => c.userData.type === 'fireflies');
+    }
+    if (renderer.info.render.frame % 3 === 0) {
+        window._cachedFireflies.forEach(child => {
             if (child.geometry && child.geometry.attributes.position && child.userData.speeds) {
                 const pos = child.geometry.attributes.position.array;
                 const speeds = child.userData.speeds;
@@ -4976,16 +4996,14 @@ function animate(time) {
                     pos[i * 3] += speeds[i].x;
                     pos[i * 3 + 1] += speeds[i].y;
                     pos[i * 3 + 2] += speeds[i].z;
-
-                    // Boundaries
                     if (Math.abs(pos[i * 3]) > 40) speeds[i].x *= -1;
                     if (pos[i * 3 + 1] < 1 || pos[i * 3 + 1] > 16) speeds[i].y *= -1;
                     if (Math.abs(pos[i * 3 + 2]) > 40) speeds[i].z *= -1;
                 }
                 child.geometry.attributes.position.needsUpdate = true;
             }
-        }
-    });
+        });
+    }
 
     // Metropolis Robot Animation
     if (metropolisRobot && metropolisRobot.userData.update) {
@@ -5020,10 +5038,10 @@ function animate(time) {
             }
         });
 
-        // V-AUDIO: Early Frequency Analysis (Moved up for reactive usage)
-        if (audioAnalyser) {
+        // V-AUDIO: Early Frequency Analysis — PERF: only sample when music is playing
+        if (audioAnalyser && window.isMusicPlaying) {
             // Robust Resume for Modern Browsers
-            if (audioContext && audioContext.state === 'suspended' && window.isMusicPlaying) {
+            if (audioContext && audioContext.state === 'suspended') {
                 audioContext.resume().catch(() => { });
             }
             audioAnalyser.getByteFrequencyData(audioDataArray);
@@ -5273,19 +5291,15 @@ function animate(time) {
         const freqMod = avgFreq / 255;
         basementNodes.forEach((node, i) => {
             const ud = node.userData;
-            // Basic motion
             node.position.add(ud.velocity);
 
-            // Slight pulsation based on audio (or idle subtle bob)
             const pulseBase = (avgFreq || 20) / 255;
             const pulse = 1.0 + pulseBase * 2.0;
 
-            // If node has a base size, apply smooth scale/pulse for 3D feel
             const base = ud.baseSize || 0.06;
             const s = base * (pulse + Math.sin(t * (0.8 + (i % 7) * 0.02)) * 0.08);
             node.scale.setScalar(s / base);
 
-            // Vertical bobbing
             if (ud.isTruth) {
                 node.position.y = ud.originalY + Math.sin(t * 1.0 + i) * pulseBase * 1.8;
             } else {
@@ -5296,16 +5310,19 @@ function animate(time) {
             if (node.position.y < 0.2 || node.position.y > 6.5) ud.velocity.y *= -1;
             if (Math.abs(node.position.z) > 4.5) ud.velocity.z *= -1;
 
-            for (let j = i + 1; j < basementNodes.length; j++) {
-                const other = basementNodes[j];
-                const dist = node.position.distanceTo(other.position);
-                if (dist < 2.5) {
-                    linePositions.push(node.position.x, node.position.y, node.position.z);
-                    linePositions.push(other.position.x, other.position.y, other.position.z);
+            // PERF: O(n²) line check — only run every 3 frames
+            if (renderer.info.render.frame % 3 === 0) {
+                for (let j = i + 1; j < basementNodes.length; j++) {
+                    const other = basementNodes[j];
+                    const dist = node.position.distanceTo(other.position);
+                    if (dist < 2.5) {
+                        linePositions.push(node.position.x, node.position.y, node.position.z);
+                        linePositions.push(other.position.x, other.position.y, other.position.z);
+                    }
                 }
             }
         });
-        if (basementLines) {
+        if (basementLines && renderer.info.render.frame % 3 === 0) {
             basementLines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
             basementLines.geometry.attributes.position.needsUpdate = true;
             basementLines.material.opacity = 0.1 + freqMod * 0.4;
@@ -5325,7 +5342,7 @@ function animate(time) {
     }
 
     renderer.render(scene, camera);
-    TWEEN.update(time);
+    // PERF: TWEEN.update already called at top of animate() — duplicate removed
 }
 
 
@@ -5659,6 +5676,11 @@ window.stopVideosForAudio = function () {
     // 2. Room Specifics
     if (currentRoom === 'living' && window.stopLivingVideo) {
         window.stopLivingVideo(); // Resets TV and Lights
+    }
+
+    // Bedroom — explicit stop (audio bleed fix)
+    if (currentRoom === 'bedroom' && window.stopBedroomVideo) {
+        window.stopBedroomVideo();
     }
 
     // 3. Bathroom Specific
@@ -6518,8 +6540,8 @@ function createGarageDoor(parentGroup, position) {
     // --- 5. INTERACTION ---
     let doorOpen = false;
     let doorRotAmt = 0;
-    const openSound = new Audio('../assets/audio/garage-door-opening.mp3');
-    const closeSound = new Audio('../assets/audio/garage-door-closing.mp3');
+    const openSound = new Audio('/assets/audio/garage-door-opening.mp3');
+    const closeSound = new Audio('/assets/audio/garage-door-closing.mp3');
 
     garageGroup.userData.openDoor = function () {
         if (doorOpen) return;

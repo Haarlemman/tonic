@@ -25,7 +25,7 @@
     <meta name="twitter:description" content="Interactive 3D Environment">
     <meta name="twitter:image" content="https://tonic.davidenker.com/assets/images/awe.jpg">
 
-    <link rel="icon" type="image/x-icon" href="../assets/images/fav-infinity.ico">
+    <link rel="icon" type="image/x-icon" href="/assets/images/fav-infinity.ico">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js — required for the wireframe house animation in the placeholder -->
@@ -843,8 +843,19 @@
                             wRenderer.setSize(w, h);
                         }
 
+                        let wActive = true; // PERF: flag to kill the loop when experience starts
+
+                        function wStop() {
+                            wActive = false;
+                            if (wRenderer) {
+                                wRenderer.dispose();
+                                wRenderer = null;
+                            }
+                        }
+                        window._stopWireframe = wStop;
+
                         function wAnimate() {
-                            if (!document.getElementById('sim-placeholder')) return; // stop if removed
+                            if (!wActive || !document.getElementById('sim-placeholder')) return; // stop if removed or killed
                             requestAnimationFrame(wAnimate);
                             const time = wClock.getElapsedTime();
                             wParts.forEach(p => {
@@ -918,11 +929,40 @@
                             class="px-6 py-2 border border-black/30 text-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all font-bold">
                             Share
                         </button>
+                        <button id="add-to-gallery-btn" onclick="addToGalleryFromIndex()"
+                            class="px-6 py-2 border border-blue-600/50 text-blue-800 text-[10px] uppercase tracking-widest hover:bg-blue-800 hover:text-white transition-all font-bold inline-flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                <path fill-rule="evenodd"
+                                    d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z" />
+                                <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+                            </svg>
+                            <span id="add-to-gallery-label">Add to Gallery</span>
+                        </button>
                         <button onclick="clearResults()"
                             class="px-6 py-2 border border-red-500/30 text-red-500 text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all font-bold">
                             Clear Results
                         </button>
                     </div>
+                </div>
+
+                <!-- Visitor Gallery trigger -->
+                <div id="gallery-trigger" class="text-center mt-4 pt-4 border-t border-black/10">
+                    <button onclick="window.showGalleryOverlay && window.showGalleryOverlay()"
+                        class="px-6 py-2 border border-black/30 text-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all font-bold inline-flex items-center gap-2"
+                        data-i18n-btn="gallery_view">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                            <path fill-rule="evenodd"
+                                d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z" />
+                            <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+                        </svg>
+                        VIEW VISITOR GALLERY
+                    </button>
+                    <p id="gallery-count-index" class="text-[9px] mt-2 opacity-50"
+                        style="color:#2c2214; font-family:'Share Tech Mono',monospace; letter-spacing:0.1em;"></p>
                 </div>
             </div>
 
@@ -1122,7 +1162,7 @@
                     <!-- crack overlay using pseudo-div so blend mode only affects the image -->
                     <div style="
                         position: absolute; inset: 0;
-                        background-image: url('../assets/images/cracky.webp');
+                        background-image: url('/assets/images/cracky.webp');
                         background-repeat: repeat;
                         background-size: 512px;
                         mix-blend-mode: multiply;
@@ -1156,7 +1196,7 @@
                 style="background-color: #78350f;">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 border border-white overflow-hidden flex-shrink-0">
-                        <img src="../assets/images/cover-awe-tmb.jpg" alt="Soundtrack Thumbnail"
+                        <img src="assets/images/cover-awe-tmb.jpg" alt="Soundtrack Thumbnail"
                             class="w-full h-full object-cover">
                     </div>
                     <div class="overflow-hidden">
@@ -1453,6 +1493,8 @@
 
         // ---- Enter: animate title away and start flight ----
         window.enterExperience = function () {
+            // PERF: kill the wireframe Three.js loop — no longer needed once experience starts
+            if (window._stopWireframe) window._stopWireframe();
             const iframe = document.getElementById('experience-iframe');
             const introUI = document.getElementById('ui-wrapper');
             const mainHeader = document.getElementById('main-header');
@@ -1888,6 +1930,179 @@
         </div>
     </div>
 
+
+
+
+    <!-- Firebase SDK (compat) for Visitor Gallery -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script>
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp({
+                apiKey: "AIzaSyASYZfiJSt-VEoMEJB7YtnRB05hNTt7w7c",
+                authDomain: "house-of-awe.firebaseapp.com",
+                projectId: "house-of-awe",
+                storageBucket: "house-of-awe.firebasestorage.app",
+                messagingSenderId: "1021263815817",
+                appId: "1:1021263815817:web:71af80fb3a6381e8839258",
+                measurementId: "G-RVM3D40MY1"
+            });
+        }
+    </script>
+    <script src="js/storage.js?v=20260223-1758"></script>
+
+    <script>
+        // ---- Standalone Gallery overlay for the index page ----
+        window.showGalleryOverlay = async function () {
+            let existing = document.getElementById('gallery-overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'gallery-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:40px 20px 60px;opacity:0;transition:opacity 0.5s ease;';
+
+            const lang = window.currentLang || 'en';
+            const i = lang === 'nl'
+                ? { title: 'BEZOEKERSOVERZICHT', subtitle: '<span style=\"font-size:38px;\">De zin van het leven</span><br><span style=\"font-size:16px; opacity:0.6;\">volgens hen die voor jou kwamen</span>', close: 'SLUITEN', empty: 'Wees de eerste die alle kamers voltooit en de betekenis deelt.', rooms: 'kamers', visitors: 'bezoekers hebben hun betekenis gedeeld' }
+                : { title: 'VISITOR GALLERY', subtitle: '<span style=\"font-size:38px;\">The meaning of life</span><br><span style=\"font-size:16px; opacity:0.6;\">according to those who came before you</span>', close: 'CLOSE', empty: 'Be the first to complete all rooms and share your meaning.', rooms: 'rooms', visitors: 'visitors have shared their meaning' };
+
+            const header = document.createElement('div');
+            header.style.cssText = 'text-align:center;margin-bottom:30px;max-width:600px;width:100%;';
+            header.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:#60a5fa;letter-spacing:0.3em;text-transform:uppercase;margin-bottom:12px;opacity:0.7;">' + i.title + '</div><p style="font-family:\'Orelega One\',cursive;font-size:32px;color:#fff;line-height:1.3;margin-bottom:8px;">' + i.subtitle + '</p><div id="gallery-count-ov" style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#666;letter-spacing:0.1em;"></div>';
+            overlay.appendChild(header);
+
+            const loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'font-family:"Share Tech Mono",monospace;font-size:11px;color:#60a5fa;';
+            loadingEl.textContent = '...';
+            overlay.appendChild(loadingEl);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = i.close;
+            closeBtn.style.cssText = 'position:fixed;top:20px;right:24px;z-index:10001;background:transparent;border:1px solid #444;color:#888;padding:8px 20px;font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:0.15em;cursor:pointer;transition:all 0.3s ease;text-transform:uppercase;';
+            closeBtn.onmouseenter = function () { this.style.borderColor = '#fff'; this.style.color = '#fff'; };
+            closeBtn.onmouseleave = function () { this.style.borderColor = '#444'; this.style.color = '#888'; };
+            closeBtn.onclick = function () { overlay.style.opacity = '0'; setTimeout(function () { overlay.remove(); }, 500); };
+            overlay.appendChild(closeBtn);
+
+            document.body.appendChild(overlay);
+            requestAnimationFrame(function () { overlay.style.opacity = '1'; });
+
+            var entries = [];
+            if (typeof fetchGalleryEntries === 'function') entries = await fetchGalleryEntries(30);
+            loadingEl.remove();
+
+            var countEl = overlay.querySelector('#gallery-count-ov');
+            if (countEl && entries.length > 0) countEl.textContent = entries.length + ' ' + i.visitors;
+
+            if (entries.length === 0) {
+                var emptyMsg = document.createElement('p');
+                emptyMsg.style.cssText = 'font-family:"Share Tech Mono",monospace;font-size:12px;color:#555;text-align:center;margin-top:40px;';
+                emptyMsg.textContent = i.empty;
+                overlay.appendChild(emptyMsg);
+                return;
+            }
+
+            var prefixes = { hall: { en: 'It all started...', nl: 'Het begon allemaal' }, living: { en: 'Love is', nl: 'Liefde is' }, annex: { en: 'The biggest bully is', nl: 'De grootste pestkop is' }, studio: { en: 'Everybody should', nl: 'Iedereen zou moeten' }, basement: { en: 'When in doubt,', nl: 'Bij twijfel,' }, toilet: { en: "Einstein couldn't think of:", nl: 'Einstein dacht niet aan:' }, bedroom: { en: 'We should all', nl: 'We zouden allemaal moeten' }, bathroom: { en: '', nl: '' }, attic: { en: 'Never forget:', nl: 'Nooit vergeten:' }, space: { en: 'The answer to everything', nl: 'Het antwoord op alles' } };
+
+            var grid = document.createElement('div');
+            grid.style.cssText = 'max-width:700px;width:100%;display:flex;flex-direction:column;gap:20px;';
+
+            entries.forEach(function (entry, idx) {
+                var card = document.createElement('div');
+                card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:24px;transition:all 0.3s ease;opacity:0;transform:translateY(20px);';
+                setTimeout(function () { card.style.opacity = '1'; card.style.transform = 'translateY(0)'; }, idx * 80);
+                card.onmouseenter = function () { this.style.borderColor = 'rgba(96,165,250,0.3)'; this.style.background = 'rgba(96,165,250,0.04)'; };
+                card.onmouseleave = function () { this.style.borderColor = 'rgba(255,255,255,0.08)'; this.style.background = 'rgba(255,255,255,0.03)'; };
+
+                var answerLines = '';
+                var rOrder = ['hall', 'living', 'annex', 'studio', 'basement', 'toilet', 'bedroom', 'bathroom', 'attic', 'space'];
+                var ans = entry.answers || {};
+                var shown = rOrder.filter(function (r) { return ans[r]; });
+                shown.forEach(function (room) {
+                    var p = prefixes[room] ? (prefixes[room][lang] || prefixes[room].en) : '';
+                    var a = ans[room] || '';
+                    if (room === 'bathroom') answerLines += '<div style="margin-bottom:6px;"><span style="color:#67e8f9;font-weight:bold;">' + a + '</span> <span style="color:#888;">is our hero</span></div>';
+                    else answerLines += '<div style="margin-bottom:6px;"><span style="color:#888;">' + p + '</span> <span style="color:#67e8f9;font-weight:bold;">' + a + '</span></div>';
+                });
+
+                var ts = entry.timestamp || new Date();
+                var diff = Date.now() - ts.getTime();
+                var days = Math.floor(diff / 86400000);
+                var ago = days > 30 ? ts.toLocaleDateString(lang === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' }) : days > 0 ? days + 'd' : Math.floor(diff / 3600000) + 'h';
+
+                card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;"><div style="font-family:\'Orelega One\',cursive;font-size:18px;color:#fff;">' + entry.name + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#555;letter-spacing:0.1em;">' + (entry.roomCount || 0) + ' ' + i.rooms + ' \u00b7 ' + ago + '</div></div><div style="font-family:\'Special Elite\',cursive;font-size:13px;line-height:1.8;">' + answerLines + '</div>';
+                grid.appendChild(card);
+            });
+            overlay.appendChild(grid);
+        };
+
+        // Auto-fetch gallery count on load
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (typeof fetchGalleryEntries === 'function') {
+                try {
+                    var entries = await fetchGalleryEntries(1);
+                    if (entries.length > 0) {
+                        var cnt = typeof getGalleryCount === 'function' ? await getGalleryCount() : entries.length;
+                        var lbl = (window.currentLang || 'en') === 'nl' ? 'bezoekers hebben hun betekenis gedeeld' : 'visitors have shared their meaning';
+                        var el = document.getElementById('gallery-count-index');
+                        if (el && cnt > 0) el.textContent = cnt + ' ' + lbl;
+                    }
+                } catch (e) { console.warn('Gallery count error:', e); }
+            }
+        });
+
+        // ---- Add to Gallery button handler ----
+        async function addToGalleryFromIndex() {
+            const btn = document.getElementById('add-to-gallery-btn');
+            const label = document.getElementById('add-to-gallery-label');
+            if (!label) return;
+
+            // Check if already submitted
+            var mem = typeof getMemory === 'function' ? getMemory() : null;
+            if (mem && mem.gallerySubmitted) {
+                label.textContent = '✓ Already shared';
+                return;
+            }
+
+            // Get visitor data from localStorage
+            var saved = null;
+            try { saved = JSON.parse(localStorage.getItem('userQuizProgress')); } catch (e) { }
+            if (!saved || !saved.name || !saved.answers || Object.keys(saved.answers).length === 0) {
+                label.textContent = 'Complete rooms first';
+                setTimeout(function () { label.textContent = 'Add to Gallery'; }, 2000);
+                return;
+            }
+
+            // Show loading
+            label.textContent = 'Submitting...';
+            if (btn) { btn.style.borderColor = '#60a5fa'; btn.style.color = '#60a5fa'; }
+
+            var success = typeof submitToGallery === 'function'
+                ? await submitToGallery(saved)
+                : false;
+
+            if (success) {
+                label.textContent = '✓ Shared!';
+                if (btn) { btn.style.borderColor = '#22c55e'; btn.style.color = '#22c55e'; btn.onclick = null; }
+            } else {
+                label.textContent = 'Error — try again';
+                if (btn) { btn.style.borderColor = '#ef4444'; btn.style.color = '#ef4444'; }
+                setTimeout(function () { label.textContent = 'Add to Gallery'; if (btn) { btn.style.borderColor = ''; btn.style.color = ''; } }, 3000);
+            }
+        }
+        window.addToGalleryFromIndex = addToGalleryFromIndex;
+
+        // On load: check if already submitted → update button text
+        document.addEventListener('DOMContentLoaded', function () {
+            var mem = typeof getMemory === 'function' ? getMemory() : null;
+            if (mem && mem.gallerySubmitted) {
+                var label = document.getElementById('add-to-gallery-label');
+                var btn = document.getElementById('add-to-gallery-btn');
+                if (label) label.textContent = '✓ Shared';
+                if (btn) { btn.style.borderColor = '#22c55e'; btn.style.color = '#166534'; btn.onclick = null; }
+            }
+        });
+    </script>
 
 </body>
 
