@@ -541,16 +541,64 @@ camera.lookAt(-1.94, -20.5, -0.94);
 window.camera = camera;
 scene.add(camera);
 
-renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+// PERF: disable antialiasing on mobile to reduce GPU fill-rate pressure (prevents "Aw, Snap!" OOM crashes)
+const _isMobileDevice = window.matchMedia('(max-width: 768px)').matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+renderer = new THREE.WebGLRenderer({ antialias: !_isMobileDevice, alpha: true });
 renderer.domElement.style.filter = 'blur(0px)';
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // V-FIX: Soft Shadows
 // V-REFINE: Simplified Rendering (No Tone Mapping per user request)
 // PERF: cap at 1.5 on mobile — cuts GPU fill rate ~44% vs 2.0 with negligible visual difference
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia('(max-width: 768px)').matches ? 1.5 : 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, _isMobileDevice ? 1.5 : 2));
 
 document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+// --- WebGL context loss / restore recovery ---
+renderer.domElement.addEventListener('webglcontextlost', function (e) {
+    e.preventDefault();
+    console.error('⚠️ WebGL context lost — showing recovery UI');
+    // Pause the render loop
+    if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+    // Show recovery overlay
+    let recoveryEl = document.getElementById('webgl-recovery');
+    if (!recoveryEl) {
+        recoveryEl = document.createElement('div');
+        recoveryEl.id = 'webgl-recovery';
+        recoveryEl.style.cssText = [
+            'position:fixed', 'inset:0', 'z-index:10000',
+            'background:rgba(0,0,0,0.95)',
+            'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+            'gap:20px', 'color:#fff', 'font-family:"Share Tech Mono",monospace'
+        ].join(';');
+        recoveryEl.innerHTML = `
+            <div style="font-size:11px; color:#60a5fa; letter-spacing:0.2em; text-transform:uppercase;">Graphics Error</div>
+            <p style="font-size:13px; color:#aaa; max-width:320px; text-align:center; line-height:1.7;">
+                The 3D scene ran out of GPU memory.<br>This can happen on mobile devices.
+            </p>
+            <button id="webgl-retry-btn" style="
+                padding:12px 32px; background:transparent;
+                border:1px solid #60a5fa; color:#60a5fa;
+                font-family:'Share Tech Mono',monospace; font-size:12px;
+                letter-spacing:0.15em; cursor:pointer;
+                text-transform:uppercase; transition:all 0.3s ease;
+            ">RETRY</button>
+        `;
+        document.body.appendChild(recoveryEl);
+        document.getElementById('webgl-retry-btn').onclick = function () {
+            window.location.reload();
+        };
+    }
+    recoveryEl.style.display = 'flex';
+}, false);
+
+renderer.domElement.addEventListener('webglcontextrestored', function () {
+    console.log('✅ WebGL context restored — resuming render loop');
+    const recoveryEl = document.getElementById('webgl-recovery');
+    if (recoveryEl) recoveryEl.style.display = 'none';
+    // Restart the render loop
+    if (!animationId) animate();
+}, false);
 
 
 // LIGHTS (V-SYNC to Housedev Preferred)
@@ -567,8 +615,8 @@ dirLight = new THREE.DirectionalLight(0xfffaed, HOUSE_DEFAULTS.dirIntensity);
 window.dirLight = dirLight;
 dirLight.position.set(-22.5, 60, 30);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 1024;
-dirLight.shadow.mapSize.height = 1024;
+dirLight.shadow.mapSize.width = _isMobileDevice ? 512 : 1024;
+dirLight.shadow.mapSize.height = _isMobileDevice ? 512 : 1024;
 dirLight.shadow.camera.near = 0.5;
 dirLight.shadow.camera.far = 200;
 dirLight.shadow.camera.left = -50; dirLight.shadow.camera.right = 50; dirLight.shadow.camera.top = 50; dirLight.shadow.camera.bottom = -50;

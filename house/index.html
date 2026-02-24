@@ -1489,6 +1489,41 @@
 
             const logEl = document.getElementById('reflections-log');
             if (logEl) logEl.classList.add('ring-4', 'ring-black/5');
+
+            // RESILIENCE: If the 3D scene never sends EXPERIENCE_LOADED within 30s,
+            // the iframe likely crashed (OOM, WebGL fail). Show a retry option.
+            window._experienceLoaded = false;
+            setTimeout(() => {
+                if (!window._experienceLoaded) {
+                    console.warn('3D scene did not load within 30s — offering retry');
+                    const container = document.getElementById('simulation-container');
+                    let retryEl = document.getElementById('experience-retry');
+                    if (!retryEl && container) {
+                        retryEl = document.createElement('div');
+                        retryEl.id = 'experience-retry';
+                        retryEl.style.cssText = [
+                            'position:absolute', 'inset:0', 'z-index:35',
+                            'background:rgba(0,0,0,0.85)',
+                            'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+                            'gap:16px', 'color:#fff', 'font-family:"Share Tech Mono",monospace'
+                        ].join(';');
+                        retryEl.innerHTML = `
+                            <div style="font-size:10px; color:#f87171; letter-spacing:0.2em; text-transform:uppercase;">LOADING TIMEOUT</div>
+                            <p style="font-size:12px; color:#888; max-width:300px; text-align:center; line-height:1.6;">
+                                The 3D experience is taking too long to load.<br>This can happen on older devices.
+                            </p>
+                            <button onclick="window.location.reload()" style="
+                                padding:10px 28px; background:transparent;
+                                border:1px solid #60a5fa; color:#60a5fa;
+                                font-family:'Share Tech Mono',monospace; font-size:11px;
+                                letter-spacing:0.15em; cursor:pointer;
+                                text-transform:uppercase; transition:all 0.3s ease;
+                            ">RETRY</button>
+                        `;
+                        container.appendChild(retryEl);
+                    }
+                }
+            }, 30000);
         }
 
         // ---- Enter: animate title away and start flight ----
@@ -1572,6 +1607,10 @@
             */
 
             if (d.type === 'EXPERIENCE_LOADED') {
+                window._experienceLoaded = true;
+                // Dismiss retry overlay if it appeared during a slow load
+                const retryEl = document.getElementById('experience-retry');
+                if (retryEl) retryEl.remove();
                 const placeholder = document.getElementById('sim-placeholder');
                 const introUI = document.getElementById('ui-wrapper');
 
