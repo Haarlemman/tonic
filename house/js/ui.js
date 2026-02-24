@@ -622,6 +622,12 @@ const UI_I18N = {
         gallery_view: "VIEW GALLERY",
         gallery_close: "CLOSE",
         gallery_visitors: "visitors have shared their meaning",
+        // Visitor Wall strings (spoiler-free, shown during gameplay)
+        wall_title: "VISITOR WALL",
+        wall_subtitle: "Those who walked these halls before you",
+        wall_empty: "No visitors yet. You could be the first.",
+        wall_completed: "completed the journey",
+        wall_close: "CLOSE",
         // Question strings
         hall_q: "All stories begin somewhere, somehow. How does yours start?",
         living_q: "What do you love in life?",
@@ -751,6 +757,12 @@ const UI_I18N = {
         gallery_view: "BEKIJK OVERZICHT",
         gallery_close: "SLUITEN",
         gallery_visitors: "bezoekers hebben hun betekenis gedeeld",
+        // Visitor Wall strings (spoiler-free, shown during gameplay)
+        wall_title: "BEZOEKERSMUUR",
+        wall_subtitle: "Zij die voor jou door deze hallen liepen",
+        wall_empty: "Nog geen bezoekers. Jij kunt de eerste zijn.",
+        wall_completed: "heeft de reis voltooid",
+        wall_close: "SLUITEN",
         // Question strings
         hall_q: "Alle verhalen beginnen ergens. Hoe begint het jouwe?",
         living_q: "Waar hou je van?",
@@ -2107,7 +2119,143 @@ window.addEventListener('message', (event) => {
 
 
 // ============================================================
-//  VISITOR GALLERY — Share Prompt & Community Wall
+//  VISITOR WALL — Spoiler-Free Names-Only View (during gameplay)
+// ============================================================
+
+/**
+ * Show a spoiler-free "Visitor Wall" — only names and completion times,
+ * no answers revealed. This preserves the punchline surprise.
+ */
+window.showVisitorWall = async function () {
+    let existing = document.getElementById('visitor-wall-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'visitor-wall-overlay';
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:10000',
+        'background:rgba(0,0,0,0.92)',
+        'display:flex', 'flex-direction:column', 'align-items:center',
+        'overflow-y:auto', 'padding:40px 20px 60px',
+        'opacity:0', 'transition:opacity 0.5s ease'
+    ].join(';');
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'text-align:center; margin-bottom:30px; max-width:500px; width:100%;';
+    header.innerHTML = `
+        <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#60a5fa; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:12px; opacity:0.7;">
+            ${t('wall_title')}
+        </div>
+        <p style="font-family:'Orelega One',cursive; font-size:24px; color:#fff; line-height:1.4; margin-bottom:8px;">
+            ${t('wall_subtitle')}
+        </p>
+        <div id="wall-count" style="font-family:'Share Tech Mono',monospace; font-size:10px; color:#555; letter-spacing:0.1em; margin-top:8px;"></div>
+    `;
+    overlay.appendChild(header);
+
+    // Loading indicator
+    const loadingEl = document.createElement('div');
+    loadingEl.style.cssText = 'font-family:"Share Tech Mono",monospace; font-size:11px; color:#60a5fa; animation:pulse 1.5s ease-in-out infinite;';
+    loadingEl.textContent = '...';
+    overlay.appendChild(loadingEl);
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = t('wall_close');
+    closeBtn.style.cssText = [
+        'position:fixed', 'top:20px', 'right:24px', 'z-index:10001',
+        'background:transparent', 'border:1px solid #444', 'color:#888',
+        'padding:8px 20px', 'font-family:"Share Tech Mono",monospace',
+        'font-size:10px', 'letter-spacing:0.15em', 'cursor:pointer',
+        'transition:all 0.3s ease', 'text-transform:uppercase'
+    ].join(';');
+    closeBtn.onmouseenter = function () { this.style.borderColor = '#fff'; this.style.color = '#fff'; };
+    closeBtn.onmouseleave = function () { this.style.borderColor = '#444'; this.style.color = '#888'; };
+    closeBtn.onclick = function () {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 500);
+    };
+    overlay.appendChild(closeBtn);
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+    // Fetch entries from Firestore (same data, but we only display names)
+    let entries = [];
+    if (typeof fetchGalleryEntries === 'function') {
+        entries = await fetchGalleryEntries(50);
+    }
+
+    // Remove loading
+    loadingEl.remove();
+
+    // Update count
+    const countEl = overlay.querySelector('#wall-count');
+    if (countEl && entries.length > 0) {
+        countEl.textContent = `${entries.length} ${t('wall_completed')}`;
+    }
+
+    if (entries.length === 0) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.cssText = 'font-family:"Share Tech Mono",monospace; font-size:12px; color:#555; text-align:center; margin-top:40px;';
+        emptyMsg.textContent = t('wall_empty');
+        overlay.appendChild(emptyMsg);
+        return;
+    }
+
+    // Render names-only list
+    const list = document.createElement('div');
+    list.style.cssText = 'max-width:420px; width:100%; display:flex; flex-direction:column; gap:0;';
+
+    entries.forEach((entry, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = [
+            'display:flex', 'justify-content:space-between', 'align-items:center',
+            'padding:14px 16px',
+            'border-bottom:1px solid rgba(255,255,255,0.05)',
+            'transition:all 0.3s ease',
+            'opacity:0', 'transform:translateY(10px)'
+        ].join(';');
+
+        // Staggered fade-in
+        setTimeout(() => {
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0)';
+        }, idx * 50);
+
+        // Hover
+        row.onmouseenter = function () {
+            this.style.background = 'rgba(96,165,250,0.04)';
+        };
+        row.onmouseleave = function () {
+            this.style.background = 'transparent';
+        };
+
+        // Time ago
+        const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
+
+        row.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="
+                    width:8px; height:8px; border-radius:50%;
+                    background:#60a5fa; opacity:0.6;
+                    box-shadow:0 0 6px rgba(96,165,250,0.4);
+                "></div>
+                <span style="font-family:'Orelega One',cursive; font-size:16px; color:#fff;">${entry.name}</span>
+            </div>
+            <span style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.08em;">${timeAgo}</span>
+        `;
+
+        list.appendChild(row);
+    });
+
+    overlay.appendChild(list);
+};
+
+
+// ============================================================
+//  VISITOR GALLERY — Share Prompt & Community Wall (post-completion only)
 // ============================================================
 
 /**
