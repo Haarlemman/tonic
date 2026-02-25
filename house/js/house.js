@@ -425,9 +425,11 @@ let fireflies = [];
 let mistLayer = null;
 window.metropolisRobot = null; // Global Robot Reference
 let lamppostLight = null;
-let windowFlickerMaterials = [];
 let animatedShaderMaterials = [];
 let animatedTrees = [];
+let sharedGeos = null;
+let skyscraperMaterialPool = [];
+let windowFlickerMaterials = [];
 // --- WAKE LOCK (Audit: Prevent Screen Sleep) ---
 let wakeLock = null;
 window.requestWakeLock = async () => {
@@ -530,6 +532,12 @@ const HOUSE_DEFAULTS = {
 
 // Wrapped Init
 scene = new THREE.Scene();
+worldGroup = new THREE.Group();
+interiorGroup = new THREE.Group();
+foregroundGroup = new THREE.Group();
+scene.add(worldGroup);
+scene.add(interiorGroup);
+scene.add(foregroundGroup);
 // Clarity Boost (V-SYNC to Housedev Preferred)
 scene.fog = new THREE.Fog(HOUSE_DEFAULTS.fogColor, HOUSE_DEFAULTS.fogNear, HOUSE_DEFAULTS.fogFar);
 openingFog = scene.fog;
@@ -876,8 +884,6 @@ window.hideLoader = function () {
 
             loader.style.transition = 'opacity 1.5s ease';
             loader.style.opacity = '0';
-            const topControls = document.getElementById('top-controls');
-            if (topControls) topControls.style.opacity = '1';
             setTimeout(() => {
                 loader.style.display = 'none';
             }, 1500);
@@ -1207,11 +1213,43 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
 
 // Restored buildWorld
 function buildWorld() {
+    // V-PERF: Shared Geometry Pool
+    if (!sharedGeos) {
+        sharedGeos = {
+            skyscraper: new THREE.BoxGeometry(6.0, 1.0, 6.0),
+            treeTrunk: new THREE.CylinderGeometry(0.15, 0.25, 1.5, 12),
+            treeLeaves: new THREE.ConeGeometry(1.1, 3.0, 16),
+            bushSphere: new THREE.SphereGeometry(0.5, 16, 12),
+            bushShadow: new THREE.PlaneGeometry(1.5, 1.5).rotateX(-Math.PI / 2),
+            treeShadow: new THREE.PlaneGeometry(3.5, 1.4).rotateX(-Math.PI / 2)
+        };
+        sharedGeos.skyscraper.translate(0, 0.5, 0);
+        sharedGeos.treeTrunk.translate(0, 0.75, 0);
+        sharedGeos.treeLeaves.translate(0, 3.0, 0);
+    }
+
+    // V-FIX: Initialise Groups (Ensure they are empty if reused)
+    if (worldGroup) {
+        while (worldGroup.children.length > 0) worldGroup.remove(worldGroup.children[0]);
+    }
+    if (interiorGroup) {
+        while (interiorGroup.children.length > 0) interiorGroup.remove(interiorGroup.children[0]);
+    }
+    if (foregroundGroup) {
+        while (foregroundGroup.children.length > 0) foregroundGroup.remove(foregroundGroup.children[0]);
+    }
+
     // V-FIX: Prevent Double Invocation
     if (window.worldBuilt) {
         return;
     }
     window.worldBuilt = true;
+
+    // V-PERF: Reset animation arrays
+    animatedTrees = [];
+    window.swayTrees = [];
+    window.streetLights = [];
+    windowFlickerMaterials = [];
 
     // PRE-CACHE Advanced Textures
     window.brickAmsterdamTex = createBrickTexture('amsterdam');
@@ -1263,9 +1301,9 @@ function buildHouse() {
     worldGroup.add(midPlane);
 
     // --- LIVING ROOM: AMSTERDAM SCHOOL CURVE (DEEP BROWN) ---
-    // Moved further left (-1.4 -> -1.8)
-    const livingX = -1.8, livingY = 2.1, livingZ = 0;
-    const livingW = 2.4, livingH = 2.4, livingD = 5;
+    // Moved further left, door-side edge kept fixed at x=-0.6
+    const livingX = -2.05, livingY = 2.1, livingZ = 0;
+    const livingW = 2.9, livingH = 2.4, livingD = 5;
     const livingGroup = new THREE.Group();
     livingGroup.position.set(livingX, livingY, livingZ);
     worldGroup.add(livingGroup);
@@ -1530,7 +1568,7 @@ function buildHouse() {
 
     // --- ROOF & ATTIC: AMSTERDAM FLAT BOX STYLE ---
     const roofBaseY = 6.6; // Higher offset
-    const flatRoof = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.2, 6.0), new THREE.MeshStandardMaterial({ color: 0x221100 }));
+    const flatRoof = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.2, 6.0), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
     flatRoof.position.set(0, roofBaseY, 0);
     worldGroup.add(flatRoof);
 
@@ -1761,9 +1799,7 @@ function createWordSculpture() {
     } else {
         sculptureGroup.position.set(scX, 1.2, scZ);
     }
-
-    sculptureGroup.rotation.y = 0; // Parallel to facade
-    window.worldGroup.add(sculptureGroup);
+    worldGroup.add(sculptureGroup);
 
     window.refreshWordSculpture = function () {
         // Clear children
@@ -2332,43 +2368,50 @@ function buildEnvironment() {
     window.streetLights = streetLights;
 
     // Background Blocks Helper
-    // Universal Skyscraper Factory (Renamed to force update)
+    // Universal Skyscraper Factory (Refactored for Material Pooling)
     function createMegaBlock() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 32; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        // Dark steel / silver / dark brown palette - grounded industrial tones
-        const palette = [0x2a2e32, 0x3a3f44, 0x1e1a16, 0x2f2820, 0x4a4e52, 0x353030];
-        const randomColor = palette[Math.floor(Math.random() * palette.length)];
+        // V-PERF: Material Pooling (6 variations instead of 990 unique canvases)
+        if (skyscraperMaterialPool.length < 8) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const palette = [0x2a2e32, 0x3a3f44, 0x1e1a16, 0x2f2820, 0x4a4e52, 0x353030];
+            const color = palette[skyscraperMaterialPool.length % palette.length];
 
-        // Re-enabled screens (LEDs)
-        for (let i = 0; i < 12; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? '#9d13a9' : '#0a8aba';
-            ctx.fillRect(Math.random() * 28, Math.random() * 18, 2, 2);
+            // Re-enabled screens (LEDs)
+            for (let i = 0; i < 12; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#9d13a9' : '#0a8aba';
+                ctx.fillRect(Math.random() * 28, Math.random() * 18, 2, 2);
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.9,
+                metalness: 0.1,
+                emissiveMap: tex,
+                emissive: 0xffffff,
+                emissiveIntensity: 2.0
+            });
+            skyscraperMaterialPool.push(mat);
         }
 
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.magFilter = THREE.NearestFilter;
+        const randomMat = skyscraperMaterialPool[Math.floor(Math.random() * skyscraperMaterialPool.length)];
+        const mesh = new THREE.Mesh(sharedGeos.skyscraper, randomMat);
 
-        const geo = new THREE.BoxGeometry(6.0, 0.8, 6.0);
-        geo.translate(0, 0.4, 0);
-
-        const mat = new THREE.MeshStandardMaterial({
-            color: randomColor,
-            roughness: 0.8,
-            metalness: 0.2,
-            emissiveMap: tex,
-            emissive: 0xffffff,
-            emissiveIntensity: 3.0 // More visible glow
-        });
-
-        const mesh = new THREE.Mesh(geo, mat);
         mesh.userData = {
             isSkyscraper: true,
             phase: Math.random() * Math.PI * 2,
             speed: 1.5 + Math.random() * 2,
             baseScaleY: 1.0
         };
+        // Distant skyscrapers don't need to cast shadows (huge savings)
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+
         return mesh;
     }
     function createPathGlowTexture() {
@@ -2610,48 +2653,55 @@ function buildEnvironment() {
         } catch (e) { /* non-fatal */ }
     }
 
-    // Simple Tree Helper
+    // Simple Tree Helper (Refactored for Performance)
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5D4037, roughness: 0.9 });
+    const leafMatPool = [];
+
     function createSimpleTree(x, z) {
         const group = new THREE.Group();
         group.position.set(x, 0, z);
 
-        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5D4037, roughness: 0.9 }); // Lighter Brown
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.5), trunkMat);
-        trunk.position.y = 0.75;
+        const trunk = new THREE.Mesh(sharedGeos.treeTrunk, trunkMat);
         group.add(trunk);
-        const leaves = new THREE.Mesh(
-            new THREE.ConeGeometry(1.2, 3.0, 8),
-            new THREE.MeshStandardMaterial({
+
+        // V-PERF: Pool a few leaf material variations
+        if (leafMatPool.length < 4) {
+            leafMatPool.push(new THREE.MeshStandardMaterial({
                 map: leafTex,
                 color: 0xffffff,
                 roughness: 0.9
             }));
-        leaves.position.y = 3.0; group.add(leaves);
+        }
+
+        const leaves = new THREE.Mesh(sharedGeos.treeLeaves, leafMatPool[Math.floor(Math.random() * leafMatPool.length)]);
+        group.add(leaves);
 
         // --- TREE SHADOW PLANE ---
         if (window.createShadowTexture) {
-            const treeShadeGeo = new THREE.PlaneGeometry(4, 1.5);
-            treeShadeGeo.rotateX(-Math.PI / 2); // Bake flat
-
             const shadow = new THREE.Mesh(
-                treeShadeGeo,
+                sharedGeos.treeShadow,
                 new THREE.MeshBasicMaterial({
                     map: window.createShadowTexture(),
                     transparent: true,
-                    opacity: 0.8,
+                    opacity: 0.6,
                     depthWrite: false
                 })
             );
-            shadow.position.y = 0.05; // Slightly above ground
+            shadow.position.y = 0.05;
             const moonShadowAngle = Math.atan2(50, -30);
-            shadow.rotation.y = moonShadowAngle; // Rotate around Local Y
+            shadow.rotation.y = moonShadowAngle;
             group.add(shadow);
         }
-        // V166: Scale variation (Modest Neighborhood Scale) - Increased to 1.5x
+
+        // Disable shadows for trees unless very close (V-PERF)
+        const distFromCenter = Math.sqrt(x * x + z * z);
+        if (distFromCenter < 50) {
+            leaves.castShadow = true;
+        }
+
         const s = (0.5 + Math.random() * 0.7) * 1.5;
         group.scale.set(s, s, s);
 
-        // V-NEW: Register for Sway
         if (!window.swayTrees) window.swayTrees = [];
         group.userData.baseRotX = group.rotation.x;
         group.userData.baseRotZ = group.rotation.z;
@@ -2660,40 +2710,46 @@ function buildEnvironment() {
         worldGroup.add(group);
         return group;
     }
-    // Bush Helper
+    // Bush Helper (Refactored for Performance)
+    const bushMatPool = [];
     function createBush(x, z) {
         const group = new THREE.Group();
         group.position.set(x, 0, z);
-        const bushMat = new THREE.MeshStandardMaterial({
-            map: leafTex,
-            color: 0x888888, // Darkened via tint
-            roughness: 1.0,
-            flatShading: true
-        });
+
+        if (bushMatPool.length < 3) {
+            bushMatPool.push(new THREE.MeshStandardMaterial({
+                map: leafTex,
+                color: 0x888888,
+                roughness: 1.0,
+                flatShading: true
+            }));
+        }
+        const bushMat = bushMatPool[Math.floor(Math.random() * bushMatPool.length)];
+
         for (let i = 0; i < 5; i++) {
             const s = 0.3 + Math.random() * 0.4;
-            const sphere = new THREE.Mesh(new THREE.SphereGeometry(s, 8, 8), bushMat);
-            sphere.castShadow = true;
-            sphere.receiveShadow = true;
+            const sphere = new THREE.Mesh(sharedGeos.bushSphere, bushMat);
             sphere.position.set(
                 (Math.random() - 0.5) * 0.8,
                 s * 0.5,
                 (Math.random() - 0.5) * 0.8
             );
+            sphere.scale.setScalar(s * 2.0);
+            // Disable shadow casting for bushes to save draw calls
+            sphere.castShadow = false;
+            sphere.receiveShadow = true;
             group.add(sphere);
         }
         const scale = 0.7 + Math.random() * 0.6;
         group.scale.set(scale, scale, scale);
-        // Shadow for bush
+
         if (window.createShadowTexture) {
-            const bShadeGeo = new THREE.PlaneGeometry(1.5, 1.5);
-            bShadeGeo.rotateX(-Math.PI / 2);
             const shadow = new THREE.Mesh(
-                bShadeGeo,
+                sharedGeos.bushShadow,
                 new THREE.MeshBasicMaterial({
                     map: window.createShadowTexture(),
                     transparent: true,
-                    opacity: 0.6,
+                    opacity: 0.5,
                     depthWrite: false
                 })
             );
@@ -3329,6 +3385,19 @@ window.enterExperience = function () {
     // 1.5 Wake Lock
     if (window.requestWakeLock) window.requestWakeLock();
 
+    // V-FIX 2026: Show top controls only after JUMP IN
+    const topControls = document.getElementById('top-controls');
+    if (topControls) {
+        topControls.style.opacity = '1';
+        topControls.style.pointerEvents = 'auto';
+    }
+
+    const topLeftControls = document.getElementById('top-left-controls');
+    if (topLeftControls) {
+        topLeftControls.style.opacity = '1';
+        topLeftControls.style.pointerEvents = 'auto';
+    }
+
     // 2. Play Tension Audio
     const audio = new Audio(houseConfig.audio.tension);
     audio.volume = 0.8;
@@ -3732,7 +3801,7 @@ function buildInterior(roomKey) {
     backWall.receiveShadow = true; // V-REFINE: Shadows
     interiorGroup.add(backWall);
 
-    // V327: Hall Left Wall (Music Wall) Deep Green Texture
+    // Hall Left Wall (Music Wall) Deep Green Texture
     let finalLeftWallMat = wallMat;
     if (roomKey === 'hall' && typeof createHallGreenMaterial === 'function') {
         finalLeftWallMat = createHallGreenMaterial();
@@ -3954,6 +4023,7 @@ function startVideoClip(room) {
     videoElement.load(); // V-FIX: Ensure video loads
     // V55: Ensure Unmuted
     videoElement.muted = false;
+    videoElement.loop = false; // V-FIX: Reset loop state for each clip
     // V-FIX 259: Per-clip volume (Default lowered to 0.6 from 0.8)
     videoElement.volume = (typeof clip.volume !== 'undefined') ? clip.volume : 0.6;
 
@@ -4044,13 +4114,19 @@ function toggleVideo() {
         // PAUSE
         videoElement.pause();
         btn.userData.state = 'paused';
-        btn.material.color.setHex(0xff0000); // Red
-        btn.material.emissive.setHex(0x440000);
+        btn.material.color.setHex(0xffff00); // Yellow for Paused
+        btn.material.emissive.setHex(0x444400);
 
-        // V-FIX 265: Restore Light if Living Room (V-SYNC to HOUSE_DEFAULTS)
-        if (typeof currentRoom !== 'undefined' && currentRoom === 'living') {
-            if (window.ambientLight) window.ambientLight.intensity = HOUSE_DEFAULTS.ambientIntensity;
-            if (window.dirLight) window.dirLight.intensity = HOUSE_DEFAULTS.dirIntensity;
+        // Restore Lights
+        if (typeof currentRoom !== 'undefined') {
+            if (currentRoom === 'living') {
+                if (window.ambientLight) window.ambientLight.intensity = HOUSE_DEFAULTS.ambientIntensity;
+                if (window.dirLight) window.dirLight.intensity = HOUSE_DEFAULTS.dirIntensity;
+            } else if (currentRoom === 'bedroom') {
+                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.25 }, 1000).start();
+                if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.3 }, 1000).start();
+                if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.3 }, 1000).start();
+            }
         }
     }
 }
@@ -4386,6 +4462,17 @@ function enterRoom(roomName) {
     }
 
     window.isZoomingToRoom = true;
+    if (window.parent) window.parent.postMessage({ type: 'ENTERED_ROOM' }, '*');
+    // Update the local reset button to look like an exit button
+    const _rvBtn = document.getElementById('reset-view-btn');
+    if (_rvBtn) {
+        _rvBtn.title = 'Exit Room';
+        _rvBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M10 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4" />
+            <polyline points="15 18 20 12 15 6" />
+            <line x1="20" y1="12" x2="8" y2="12" />
+        </svg>`;
+    }
     const curtain = document.getElementById('curtain');
     curtain.classList.add('active');
     setTimeout(() => {
@@ -4405,9 +4492,9 @@ function enterRoom(roomName) {
                     scene.fog.far = 2000;
                 }
             } else {
-                scene.background = new THREE.Color(HOUSE_DEFAULTS.bgColor);
+                scene.background = new THREE.Color(0x333333);
                 if (scene.fog) {
-                    scene.fog.color.setHex(HOUSE_DEFAULTS.fogColor);
+                    scene.fog.color.setHex(0x333333);
                     scene.fog.far = HOUSE_DEFAULTS.fogFar;
                 }
             }
@@ -4692,7 +4779,17 @@ function exitRoom() {
         // Reflect icon removed
 
 
+        if (window.parent) window.parent.postMessage({ type: 'EXITED_ROOM' }, '*');
         if (window.parent) window.parent.postMessage({ type: 'SHOW_HEADER' }, '*');
+        // Restore the local reset button back to the circular-arrow reset icon
+        const _rvBtnExit = document.getElementById('reset-view-btn');
+        if (_rvBtnExit) {
+            _rvBtnExit.title = 'Reset View';
+            _rvBtnExit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+            </svg>`;
+        }
 
         // V-FIX: Restore Top Header Bar
         const appHeader = document.getElementById('app-header');
@@ -4913,6 +5010,15 @@ function animate(time) {
     TWEEN.update(time); // Enabled TWEEN for Cinema Mode
     controls.update();
 
+    // V-FIX 2026: Prevent "Flipped Underworld" glitch (stay above ground)
+    if (camera && camera.position.y < 0.3) {
+        camera.position.y = 0.3;
+    }
+    if (controls && controls.target.y < -5) {
+        // Allow some panning down but not infinite underworld
+        controls.target.y = -5;
+    }
+
     // ---- WASD Camera Movement ----
     const wasdSpeed = 0.12;
     if (window._wasdEnabled && window._wasdKeys && camera) {
@@ -4989,8 +5095,11 @@ function animate(time) {
         }
     }
 
-    // Tree Sways
-    if (window.swayTrees) {
+    // V-PERF: Frame-Multiplexed background animations (reduces frame time spikes)
+    const frameSkip = Math.floor(currentTime / 32) % 4;
+
+    // Frame 0: Tree Sways
+    if (frameSkip === 0 && window.swayTrees) {
         window.swayTrees.forEach((tree, i) => {
             const sway = Math.sin(t * 1.5 + i) * 0.05;
             tree.rotation.z = (tree.userData && tree.userData.baseRotZ || 0) + sway;
@@ -4998,44 +5107,41 @@ function animate(time) {
         });
     }
 
-    // Animate Street Lights (Independent Pulse)
-    if (window.streetLights) {
+    // Frame 1: Animate Street Lights (Independent Pulse)
+    if (frameSkip === 1 && window.streetLights) {
         window.streetLights.forEach(glow => {
             const u = glow.userData;
-            // Similar pulse logic
             const speed = u && u.speed ? u.speed : 1.5;
             const phase = u && u.phase ? u.phase : 0;
-
             const val = Math.sin(t * speed + phase);
-            const pulse = Math.pow(Math.max(0, val), 4.0); // Softer pulse
-
-            // Differentiate Types (Sprite vs PointLight)
+            const pulse = Math.pow(Math.max(0, val), 4.0);
             if (glow.material) {
-                // Sprite / Mesh
                 glow.material.opacity = 0.3 + (pulse * 0.7);
             } else if (glow.isPointLight) {
-                // Light Intensity (Base 0.8 + Pulse)
                 glow.intensity = 0.8 + (pulse * 0.8);
             }
         });
     }
-    // Funky Landscape: Pulsating Blocks Animation (Restored)
-    animatedTrees.forEach(block => {
-        const u = block.userData;
-        if (!u.isSkyscraper) return;
-        const val = Math.sin(t * u.speed + u.phase); // Removed *0.1 multiplier for proper pulsing
-        const pulse = Math.pow(Math.max(0, val), 3.0); // Softer power curve (was 8.0)
-        block.scale.y = u.baseScaleY * (1.0 + pulse * 0.3); // Slightly more scale change
-        if (block.material) {
-            block.material.emissiveIntensity = 0.05 + (pulse * 1.2); // Brighter peak glow
-        }
-    });
 
-    // Fireflies Motion — PERF: use cached reference instead of scanning all worldGroup children every frame
-    if (!window._cachedFireflies) {
-        window._cachedFireflies = worldGroup.children.filter(c => c.userData.type === 'fireflies');
+    // Frame 2: Pulse Skyscrapers
+    if (frameSkip === 2) {
+        animatedTrees.forEach(block => {
+            const u = block.userData;
+            if (!u.isSkyscraper) return;
+            const val = Math.sin(t * u.speed + u.phase);
+            const pulse = Math.pow(Math.max(0, val), 3.0);
+            block.scale.y = u.baseScaleY * (1.0 + pulse * 0.3);
+            if (block.material) {
+                block.material.emissiveIntensity = 0.05 + (pulse * 1.2);
+            }
+        });
     }
-    if (renderer.info.render.frame % 3 === 0) {
+
+    // Frame 3: Fireflies Motion
+    if (frameSkip === 3 && worldGroup) {
+        if (!window._cachedFireflies) {
+            window._cachedFireflies = worldGroup.children.filter(c => c.userData.type === 'fireflies');
+        }
         window._cachedFireflies.forEach(child => {
             if (child.geometry && child.geometry.attributes.position && child.userData.speeds) {
                 const pos = child.geometry.attributes.position.array;
@@ -5064,7 +5170,7 @@ function animate(time) {
     }
 
     // Interior Interactions (Sprite Grow / Arrow Bob)
-    if (interiorGroup.visible) {
+    if (interiorGroup && interiorGroup.visible) {
         // V-NEW: Living Artifact Animation
         if (window.livingArtifact && window.livingArtifact.userData.update) {
             window.livingArtifact.userData.update(t);
@@ -5255,20 +5361,22 @@ function animate(time) {
     }
 
     // 2. Window Lights (Independent Colors & Flicker)
-    windowFlickerMaterials.forEach((mat, idx) => {
-        if (mat.userData) {
-            const u = mat.userData;
+    if (typeof windowFlickerMaterials !== 'undefined' && windowFlickerMaterials) {
+        windowFlickerMaterials.forEach((mat, idx) => {
+            if (mat.userData) {
+                const u = mat.userData;
 
-            // Flicker intensity
-            const flicker = Math.sin(t * u.speed + u.phase) * 0.2;
-            mat.emissiveIntensity = Math.max(0, u.baseEmissive + flicker);
+                // Flicker intensity
+                const flicker = Math.sin(t * u.speed + u.phase) * 0.2;
+                mat.emissiveIntensity = Math.max(0, u.baseEmissive + flicker);
 
-            // Independent Color Cycle
-            const hue = (u.hueOffset + t * u.hueSpeed) % 1.0;
-            mat.color.setHSL(hue, 0.6, 0.6); // Base color
-            mat.emissive.setHSL(hue, 0.8, 0.5); // Glow color
-        }
-    });
+                // Independent Color Cycle
+                const hue = (u.hueOffset + t * u.hueSpeed) % 1.0;
+                mat.color.setHSL(hue, 0.6, 0.6); // Base color
+                mat.emissive.setHSL(hue, 0.8, 0.5); // Glow color
+            }
+        });
+    }
 
     // 3. Animated Shaders
     if (state === 'ROOM') {
@@ -6074,7 +6182,7 @@ function showPersistentAudioUnlock() {
     container.style.textAlign = 'center';
     container.style.borderRadius = '8px';
     container.innerHTML = '<div style="font-size:14px; margin-bottom:8px;">AUDIO BLOCKED: Click to enable sound</div>';
-
+ 
     const btn = document.createElement('button');
     btn.textContent = 'ENABLE SOUND';
     btn.style.padding = '10px 14px';
@@ -6089,7 +6197,7 @@ function showPersistentAudioUnlock() {
         if (window.startVoidMusic) window.startVoidMusic();
         const el = document.getElementById('audio-unlock-persistent'); if (el && el.parentNode) el.parentNode.removeChild(el);
     };
-
+ 
     container.appendChild(btn);
     document.body.appendChild(container);
     */

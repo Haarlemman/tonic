@@ -55,10 +55,17 @@ window.createUniversalVideoInterface = function (parentGroup, position, playlist
                 btn.material.emissive.setHex(0x004400);
             } else {
                 window.videoElement.pause();
-                // Optionally call stopBedroomVideo if it exists
-                if (window.currentRoom === 'bedroom' && window.stopBedroomVideo) {
-                    window.stopBedroomVideo();
+                // If bedroom, restore lights but don't clear src (allow resume)
+                if (window.currentRoom === 'bedroom') {
+                    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.25 }, 1000).start();
+                    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.3 }, 1000).start();
+                    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.3 }, 1000).start();
+                } else if (window.currentRoom === 'bathroom' && window.stopBathroomVideo) {
+                    window.stopBathroomVideo();
+                } else if (window.currentRoom === 'living' && window.stopLivingVideo) {
+                    window.stopLivingVideo();
                 }
+
                 btn.material.color.setHex(0xffff00);
                 btn.material.emissive.setHex(0x444400);
             }
@@ -948,9 +955,27 @@ window.dismissWelcome = function () {
         overlay.style.opacity = '0';
         setTimeout(() => {
             overlay.style.display = 'none';
-            // Start Guidance
-            if (typeof createGuidanceArrow === 'function') {
-                createGuidanceArrow();
+            // Start Guidance — but intelligently: skip already-answered rooms
+            const answered = (window.visitorData && window.visitorData.answers) ? window.visitorData.answers : {};
+            const nextRoom = HINT_ROOM_SEQUENCE.find(r => !answered[r.key]);
+
+            if (!nextRoom) {
+                // All rooms done — no arrow needed
+                return;
+            }
+
+            if (nextRoom.key === 'hall') {
+                // Hall is next — show the original guidance arrow pointing at it
+                if (typeof createGuidanceArrow === 'function') {
+                    createGuidanceArrow();
+                }
+            } else {
+                // Hall already done — point to the next unvisited room via the hint system
+                showHintToast(t('hint_next') + nextRoom.label + ' — ' + nextRoom.msg);
+                const pos = getHintTargetPos(nextRoom.key);
+                if (pos && typeof spawnOutdoorHintArrow === 'function') {
+                    spawnOutdoorHintArrow(new THREE.Vector3(pos.x, pos.y, pos.z), nextRoom.key);
+                }
             }
         }, 800);
     }
@@ -1846,6 +1871,7 @@ function showFinalSummary() {
     const vName = window.visitorData.name || "Unknown";
 
     card.innerHTML = `
+        <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
         <div class="text-center mb-6 mt-6 flex flex-col items-center">
             <h2 class="uppercase text-center" style="font-family:'Orelega One', cursive; line-height: 1.1; letter-spacing: -0.02em;">
                 <span style="font-size: 58px; display: block; width: 100%;">${t('mol_title')}</span>
@@ -2115,6 +2141,12 @@ window.addEventListener('message', (event) => {
             window.showNarrativeSummary();
         }
     }
+
+    if (d.type === 'RESET_VIEW') {
+        if (typeof window.resetToIdleView === 'function') {
+            window.resetToIdleView();
+        }
+    }
 });
 
 
@@ -2127,130 +2159,75 @@ window.addEventListener('message', (event) => {
  * no answers revealed. This preserves the punchline surprise.
  */
 window.showVisitorWall = async function () {
-    let existing = document.getElementById('visitor-wall-overlay');
-    if (existing) existing.remove();
+    // Reuse the same narrative-overlay / narrative-card as the progress popup
+    const summaryOverlay = document.getElementById('narrative-overlay');
+    if (!summaryOverlay) return;
+    const card = summaryOverlay.querySelector('.narrative-card');
+    if (!card) return;
 
-    const overlay = document.createElement('div');
-    overlay.id = 'visitor-wall-overlay';
-    overlay.style.cssText = [
-        'position:fixed', 'inset:0', 'z-index:10000',
-        'background:rgba(0,0,0,0.92)',
-        'display:flex', 'flex-direction:column', 'align-items:center',
-        'overflow-y:auto', 'padding:40px 20px 60px',
-        'opacity:0', 'transition:opacity 0.5s ease'
-    ].join(';');
+    // Style card to match progress popup (cyan border)
+    card.innerHTML = '';
+    card.style.maxWidth = '480px';
+    card.style.border = '1px solid rgba(0, 255, 255, 0.2)';
+    card.style.boxShadow = '0 0 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.05)';
+    card.style.background = 'rgba(0,0,0,0.9)';
 
-    // Header
-    const header = document.createElement('div');
-    header.style.cssText = 'text-align:center; margin-bottom:30px; max-width:500px; width:100%;';
-    header.innerHTML = `
-        <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#60a5fa; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:12px; opacity:0.7;">
-            ${t('wall_title')}
-        </div>
-        <p style="font-family:'Orelega One',cursive; font-size:24px; color:#fff; line-height:1.4; margin-bottom:8px;">
-            ${t('wall_subtitle')}
-        </p>
-        <div id="wall-count" style="font-family:'Share Tech Mono',monospace; font-size:10px; color:#555; letter-spacing:0.1em; margin-top:8px;"></div>
+    // Show while loading
+    card.innerHTML = `
+        <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
+        <div class="text-xs font-mono text-cyan-400 mb-2 tracking-[0.3em] uppercase">${t('wall_title')}</div>
+        <h2 style="font-family:'Courier Prime'; color:#fff; border-bottom:1px solid #333; padding-bottom:1rem; margin-bottom:1.5rem;">${t('wall_subtitle')}</h2>
+        <div id="wall-loading" style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#60a5fa; text-align:center; padding:20px 0;">...</div>
     `;
-    overlay.appendChild(header);
 
-    // Loading indicator
-    const loadingEl = document.createElement('div');
-    loadingEl.style.cssText = 'font-family:"Share Tech Mono",monospace; font-size:11px; color:#60a5fa; animation:pulse 1.5s ease-in-out infinite;';
-    loadingEl.textContent = '...';
-    overlay.appendChild(loadingEl);
+    summaryOverlay.style.display = 'flex';
+    summaryOverlay.style.opacity = '0';
+    setTimeout(() => summaryOverlay.style.opacity = '1', 50);
 
-    // Close button
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = t('wall_close');
-    closeBtn.style.cssText = [
-        'position:fixed', 'top:20px', 'right:24px', 'z-index:10001',
-        'background:transparent', 'border:1px solid #444', 'color:#888',
-        'padding:8px 20px', 'font-family:"Share Tech Mono",monospace',
-        'font-size:10px', 'letter-spacing:0.15em', 'cursor:pointer',
-        'transition:all 0.3s ease', 'text-transform:uppercase'
-    ].join(';');
-    closeBtn.onmouseenter = function () { this.style.borderColor = '#fff'; this.style.color = '#fff'; };
-    closeBtn.onmouseleave = function () { this.style.borderColor = '#444'; this.style.color = '#888'; };
-    closeBtn.onclick = function () {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 500);
-    };
-    overlay.appendChild(closeBtn);
-
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
-
-    // Fetch entries from Firestore (same data, but we only display names)
+    // Fetch entries
     let entries = [];
-    if (typeof fetchGalleryEntries === 'function') {
-        entries = await fetchGalleryEntries(50);
+    try {
+        if (typeof fetchGalleryEntries === 'function') {
+            entries = await fetchGalleryEntries(50);
+        }
+    } catch (err) {
+        console.error('🔥 Visitor Wall fetch error:', err);
     }
 
-    // Remove loading
-    loadingEl.remove();
-
-    // Update count
-    const countEl = overlay.querySelector('#wall-count');
-    if (countEl && entries.length > 0) {
-        countEl.textContent = `${entries.length} ${t('wall_completed')}`;
-    }
-
+    // Build list HTML
+    let listHTML = '';
     if (entries.length === 0) {
-        const emptyMsg = document.createElement('p');
-        emptyMsg.style.cssText = 'font-family:"Share Tech Mono",monospace; font-size:12px; color:#555; text-align:center; margin-top:40px;';
-        emptyMsg.textContent = t('wall_empty');
-        overlay.appendChild(emptyMsg);
-        return;
+        listHTML = `<p style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#555; text-align:center; padding:20px 0;">${t('wall_empty')}</p>`;
+    } else {
+        listHTML = `<div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.1em; margin-bottom:12px;">${entries.length} ${t('wall_completed')}</div>`;
+        listHTML += `<div class="mt-4 pt-2 border-t border-white/10 text-left max-h-[45vh] overflow-y-auto custom-scrollbar">`;
+        entries.forEach(entry => {
+            const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
+            listHTML += `
+                <div class="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 transition-colors px-1">
+                    <span class="flex items-center gap-2">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#60a5fa;opacity:0.6;display:inline-block;box-shadow:0 0 5px rgba(96,165,250,0.4);"></span>
+                        <span style="font-family:'Orelega One',cursive; font-size:15px; color:#fff;">${entry.name}</span>
+                    </span>
+                    <span style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.08em;">${timeAgo}</span>
+                </div>`;
+        });
+        listHTML += `</div>`;
     }
 
-    // Render names-only list
-    const list = document.createElement('div');
-    list.style.cssText = 'max-width:420px; width:100%; display:flex; flex-direction:column; gap:0;';
-
-    entries.forEach((entry, idx) => {
-        const row = document.createElement('div');
-        row.style.cssText = [
-            'display:flex', 'justify-content:space-between', 'align-items:center',
-            'padding:14px 16px',
-            'border-bottom:1px solid rgba(255,255,255,0.05)',
-            'transition:all 0.3s ease',
-            'opacity:0', 'transform:translateY(10px)'
-        ].join(';');
-
-        // Staggered fade-in
-        setTimeout(() => {
-            row.style.opacity = '1';
-            row.style.transform = 'translateY(0)';
-        }, idx * 50);
-
-        // Hover
-        row.onmouseenter = function () {
-            this.style.background = 'rgba(96,165,250,0.04)';
-        };
-        row.onmouseleave = function () {
-            this.style.background = 'transparent';
-        };
-
-        // Time ago
-        const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
-
-        row.innerHTML = `
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="
-                    width:8px; height:8px; border-radius:50%;
-                    background:#60a5fa; opacity:0.6;
-                    box-shadow:0 0 6px rgba(96,165,250,0.4);
-                "></div>
-                <span style="font-family:'Orelega One',cursive; font-size:16px; color:#fff;">${entry.name}</span>
-            </div>
-            <span style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.08em;">${timeAgo}</span>
-        `;
-
-        list.appendChild(row);
-    });
-
-    overlay.appendChild(list);
+    // Rebuild card with data
+    card.innerHTML = `
+        <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
+        <div class="text-xs font-mono text-cyan-400 mb-2 tracking-[0.3em] uppercase">${t('wall_title')}</div>
+        <h2 style="font-family:'Courier Prime'; color:#fff; border-bottom:1px solid #333; padding-bottom:1rem; margin-bottom:1.5rem;">${t('wall_subtitle')}</h2>
+        ${listHTML}
+        <div class="mt-6 flex justify-center">
+            <button class="px-8 py-3 border border-white/40 text-white hover:bg-white/10 transition-all uppercase tracking-widest text-sm"
+                onclick="window.closeOverlay('narrative-overlay')">
+                ${t('resume')}
+            </button>
+        </div>
+    `;
 };
 
 
@@ -2364,6 +2341,48 @@ window.showGallerySharePrompt = function () {
  * of past visitors' anonymous "meaning of life" summaries.
  */
 window.showGalleryOverlay = async function () {
+    // V-FIX: Prevent viewing the gallery until all 10 rooms are finished
+    const roomsCount = (window.visitorData && window.visitorData.visitedRooms) ? window.visitorData.visitedRooms.length : 0;
+    if (roomsCount < 10) {
+        // Show a "Locked" message instead of the gallery
+        let existing = document.getElementById('gallery-locked-overlay');
+        if (existing) existing.remove();
+
+        const lockedIcon = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#60a5fa" viewBox="0 0 16 16" style="margin-bottom:20px; opacity:0.8;">
+              <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+            </svg>
+        `;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'gallery-locked-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity 0.4s ease;';
+        overlay.innerHTML = `
+            ${lockedIcon}
+            <div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:#60a5fa; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:15px; opacity:0.7;">
+                ${t('gallery_title')}
+            </div>
+            <p style="font-family:'Orelega One',cursive; font-size:22px; color:#fff; text-align:center; max-width:320px; line-height:1.4; margin-bottom:30px;">
+                ${window.currentLanguage === 'nl' ? 'De betekenis van het leven is een verrassing die je zelf moet ontdekken.' : 'The meaning of life is a surprise you must discover for yourself.'}
+            </p>
+            <p style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#555; text-align:center;">
+                ${window.currentLanguage === 'nl' ? 'Voltooi alle 10 kamers om de galerij te ontgrendelen.' : 'Complete all 10 rooms to unlock the community gallery.'}
+            </p>
+            <button id="close-locked-gallery" style="margin-top:40px; background:transparent; border:1px solid #444; color:#888; padding:10px 30px; font-family:'Share Tech Mono',monospace; font-size:10px; text-transform:uppercase; cursor:pointer; transition:all 0.3s ease;">
+                ${t('gallery_close')}
+            </button>
+        `;
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.style.opacity = '1');
+
+        overlay.querySelector('#close-locked-gallery').onclick = () => {
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 400);
+        };
+        return;
+    }
+
     let existing = document.getElementById('gallery-overlay');
     if (existing) existing.remove();
 
@@ -2420,8 +2439,12 @@ window.showGalleryOverlay = async function () {
 
     // Fetch entries from Firestore
     let entries = [];
-    if (typeof fetchGalleryEntries === 'function') {
-        entries = await fetchGalleryEntries(30);
+    try {
+        if (typeof fetchGalleryEntries === 'function') {
+            entries = await fetchGalleryEntries(30);
+        }
+    } catch (err) {
+        console.error('🔥 Gallery fetch error:', err);
     }
 
     // Remove loading
@@ -2529,14 +2552,19 @@ window.showGalleryOverlay = async function () {
  * Helper: Format a Date as a human-readable time-ago string
  */
 function formatTimeAgo(date) {
+    if (!date) return '';
+    // Robustness: Handle non-Date inputs (strings, objects, etc)
+    const dateObj = (date instanceof Date) ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return '';
+
     const now = Date.now();
-    const diffMs = now - date.getTime();
+    const diffMs = now - dateObj.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffDays > 30) {
-        return date.toLocaleDateString(window.currentLanguage === 'nl' ? 'nl-NL' : 'en-GB', {
+        return dateObj.toLocaleDateString(window.currentLanguage === 'nl' ? 'nl-NL' : 'en-GB', {
             day: 'numeric', month: 'short'
         });
     }

@@ -7,7 +7,7 @@ function glassMat(color, transmission = 0.88) {
     return new THREE.MeshPhysicalMaterial({ color, metalness: 0.05, roughness: 0.06, transmission, transparent: true, opacity: 0.92 });
 }
 function cylinder(w, h, d, mat_) {
-    return new THREE.Mesh(new THREE.CylinderGeometry(h, h, w, 32), mat_);
+    return new THREE.Mesh(new THREE.CylinderGeometry(h, h, w, 12), mat_);
 }
 function mkPillar(g, mat_, x, y, z, w, d, h, rx, ry) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat_);
@@ -17,38 +17,47 @@ function mkPillar(g, mat_, x, y, z, w, d, h, rx, ry) {
     g.add(m);
 }
 function border(g, mat_, x, y, z, w, h, rx) {
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 0.04), mat_);
+    const frameGeo = new THREE.BoxGeometry(w, 0.05, 0.04);
+    const frame = new THREE.Mesh(frameGeo, mat_);
     frame.position.set(x, y + h / 2, z); frame.rotation.x = rx; g.add(frame);
-    const frameB = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 0.04), mat_);
+    const frameB = new THREE.Mesh(frameGeo, mat_);
     frameB.position.set(x, y - h / 2, z); frameB.rotation.x = rx; g.add(frameB);
 }
 
 // ─── ROLLS-ROYCE PHANTOM DROPHEAD — full fidelity from 2.html, body white ────
+// Caches for repeated geometries
+let rrSpokeGeo = null;
+let rrSlatGeo = null;
+
 function buildRRWheel(g, pos, chrome, rubber) {
     const [x, y, z] = pos;
     const side = x < 0 ? 1 : -1;
 
-    const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.22, 24, 64), rubber);
-    tyre.rotation.y = Math.PI/2; tyre.position.set(x, y, z); g.add(tyre);
+    // V-PERF: Drastic segment reduction (64 -> 16/20)
+    const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.22, 12, 20), rubber);
+    tyre.rotation.y = Math.PI / 2; tyre.position.set(x, y, z); g.add(tyre);
 
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.12, 64), mat(0x1a1a1a, 0.8, 0.22));
-    disc.rotation.z = Math.PI/2; disc.position.set(x + side * 0.06, y, z); g.add(disc);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.12, 16), mat(0x1a1a1a, 0.8, 0.22));
+    disc.rotation.z = Math.PI / 2; disc.position.set(x + side * 0.06, y, z); g.add(disc);
 
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.15, 32), chrome);
-    hub.rotation.z = Math.PI/2; hub.position.set(x + side * 0.13, y, z); g.add(hub);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.15, 12), chrome);
+    hub.rotation.z = Math.PI / 2; hub.position.set(x + side * 0.13, y, z); g.add(hub);
 
+    if (!rrSpokeGeo) rrSpokeGeo = new THREE.BoxGeometry(0.055, 0.565, 0.042);
     for (let i = 0; i < 20; i++) {
         const angle = (i / 20) * Math.PI * 2;
-        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.565, 0.042), chrome);
+        const spoke = new THREE.Mesh(rrSpokeGeo, chrome);
         spoke.position.set(x + side * 0.13, y + Math.sin(angle) * 0.5, z + Math.cos(angle) * 0.5);
         spoke.rotation.set(0, 0, angle); g.add(spoke);
+        // Small parts don't cast shadows
+        spoke.castShadow = false;
     }
 
-    const rimRing = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.045, 12, 64), chrome);
-    rimRing.rotation.y = Math.PI/2; rimRing.position.set(x + side * 0.13, y, z); g.add(rimRing);
+    const rimRing = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.045, 8, 20), chrome);
+    rimRing.rotation.y = Math.PI / 2; rimRing.position.set(x + side * 0.13, y, z); g.add(rimRing);
 
-    const bdisc = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.04, 32), mat(0x333333, 0, 0.7));
-    bdisc.rotation.z = Math.PI/2; bdisc.position.set(x - side * 0.04, y, z); g.add(bdisc);
+    const bdisc = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.04, 12), mat(0x333333, 0, 0.7));
+    bdisc.rotation.z = Math.PI / 2; bdisc.position.set(x - side * 0.04, y, z); g.add(bdisc);
 
     const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.22, 0.28), mat(0x888888, 0.5, 0.4));
     caliper.position.set(x - side * 0.01, y + 0.35, z); g.add(caliper);
@@ -57,14 +66,14 @@ function buildRRWheel(g, pos, chrome, rubber) {
 function buildRollsRoyce() {
     const g = new THREE.Group();
 
-    const body       = mat(0xf5e6c0, 0.45, 0.12); // Warm ivory-gold bling
-    const bodyDark   = mat(0xe0cfa0, 0.40, 0.18); // Darker ivory-gold underside
-    const chrome     = mat(0xffd700, 1.0,  0.02); // Pure gold chrome
+    const body = mat(0xf5e6c0, 0.45, 0.12); // Warm ivory-gold bling
+    const bodyDark = mat(0xe0cfa0, 0.40, 0.18); // Darker ivory-gold underside
+    const chrome = mat(0xffd700, 1.0, 0.02); // Pure gold chrome
     const darkChrome = mat(0xb8860b, 0.95, 0.08); // Dark gold
-    const glass      = glassMat(0x0a0a18, 0.85);
-    const rubber     = mat(0x0a0a0a, 0.0,  0.95);
-    const softTop    = mat(0x1a1210, 0.0,  0.88);
-    const leather    = mat(0x8b4513, 0.0,  0.65);
+    const glass = glassMat(0x0a0a18, 0.85);
+    const rubber = mat(0x0a0a0a, 0.0, 0.95);
+    const softTop = mat(0x1a1210, 0.0, 0.88);
+    const leather = mat(0x8b4513, 0.0, 0.65);
 
     // Lower body
     const bodyBaseRear = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.58, 2.8), bodyDark);
@@ -74,9 +83,9 @@ function buildRollsRoyce() {
     const bodyBaseFront = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.58, 2.6), bodyDark);
     bodyBaseFront.position.set(0, 0.57, 4.7); bodyBaseFront.castShadow = true; g.add(bodyBaseFront);
 
-    for (const [wx, wz] of [[-1.12, 3.4],[1.12, 3.4],[-1.12,-2.9],[1.12,-2.9]]) {
+    for (const [wx, wz] of [[-1.12, 3.4], [1.12, 3.4], [-1.12, -2.9], [1.12, -2.9]]) {
         const arch = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.12, 12, 32, Math.PI), mat(0x1a1614, 0, 0.9));
-        arch.rotation.z = Math.PI/2; arch.rotation.y = Math.PI/2;
+        arch.rotation.z = Math.PI / 2; arch.rotation.y = Math.PI / 2;
         arch.position.set(wx, 1.04, wz); g.add(arch);
     }
 
@@ -87,7 +96,7 @@ function buildRollsRoyce() {
     const boot = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.62, 2.2), body);
     boot.position.set(0, 1.62, -3.6); boot.castShadow = true; g.add(boot);
     const bootCurve = cylinder(2.1, 0.9, 2.22, body);
-    bootCurve.scale.set(1, 0.18, 1); bootCurve.position.set(0, 1.93, -3.6); bootCurve.rotation.z = Math.PI/2; g.add(bootCurve);
+    bootCurve.scale.set(1, 0.18, 1); bootCurve.position.set(0, 1.93, -3.6); bootCurve.rotation.z = Math.PI / 2; g.add(bootCurve);
 
     // Bonnet
     const bonnet = new THREE.Mesh(new THREE.BoxGeometry(2.08, 0.22, 3.8), body);
@@ -99,7 +108,7 @@ function buildRollsRoyce() {
     const wsHeader = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 0.12), chrome);
     wsHeader.position.set(0, 2.62, 0.72); g.add(wsHeader);
     mkPillar(g, body, -0.96, 2.18, 0.8, 0.12, 0.14, 0.92, 20, -12);
-    mkPillar(g, body,  0.96, 2.18, 0.8, 0.12, 0.14, 0.92, 20,  12);
+    mkPillar(g, body, 0.96, 2.18, 0.8, 0.12, 0.14, 0.92, 20, 12);
     const ws = new THREE.Mesh(new THREE.PlaneGeometry(1.78, 1.04), glass);
     ws.position.set(0, 2.25, 0.82); ws.rotation.x = -0.38; g.add(ws);
     border(g, chrome, 0, 2.25, 0.82, 1.84, 1.1, -0.38);
@@ -165,9 +174,12 @@ function buildRollsRoyce() {
     grilleSurround.position.set(0, 1.52, 4.85); g.add(grilleSurround);
     const grilleRecess = new THREE.Mesh(new THREE.BoxGeometry(1.78, 1.88, 0.38), mat(0x050505, 0, 0.9));
     grilleRecess.position.set(0, 1.52, 4.86); g.add(grilleRecess);
+
+    if (!rrSlatGeo) rrSlatGeo = new THREE.BoxGeometry(0.065, 1.78, 0.12);
     for (let i = -11; i <= 11; i++) {
-        const slat = new THREE.Mesh(new THREE.BoxGeometry(0.065, 1.78, 0.12), chrome);
+        const slat = new THREE.Mesh(rrSlatGeo, chrome);
         slat.position.set(i * 0.082, 1.52, 5.0); g.add(slat);
+        slat.castShadow = false; // Grille slats don't need independent shadows
     }
     const topBar = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.12, 0.38), chrome);
     topBar.position.set(0, 2.48, 4.85); g.add(topBar);
@@ -191,9 +203,9 @@ function buildRollsRoyce() {
     rBumperChr.position.set(0, 0.52, -5.05); g.add(rBumperChr);
     for (const x of [-0.62, 0.62]) {
         const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.28, 20), darkChrome);
-        exhaust.rotation.x = Math.PI/2; exhaust.position.set(x, 0.35, -5.18); g.add(exhaust);
+        exhaust.rotation.x = Math.PI / 2; exhaust.position.set(x, 0.35, -5.18); g.add(exhaust);
         const exhaustDark = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.05, 20), mat(0x000000, 0, 0.9));
-        exhaustDark.rotation.x = Math.PI/2; exhaustDark.position.set(x, 0.35, -5.22); g.add(exhaustDark);
+        exhaustDark.rotation.x = Math.PI / 2; exhaustDark.position.set(x, 0.35, -5.22); g.add(exhaustDark);
     }
 
     // Headlights
@@ -206,7 +218,7 @@ function buildRollsRoyce() {
         const lens = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.08), glassMat(0x88aacc, 0.6));
         lens.position.set(x, 1.62, 4.97); g.add(lens);
         const proj = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 20), darkChrome);
-        proj.rotation.x = Math.PI/2; proj.position.set(x, 1.62, 5.0); g.add(proj);
+        proj.rotation.x = Math.PI / 2; proj.position.set(x, 1.62, 5.0); g.add(proj);
     }
 
     // Tail lights
@@ -226,7 +238,7 @@ function buildRollsRoyce() {
         const mHead = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.26), body);
         mHead.position.set(mx + side * 0.2, 1.92, 0.82); g.add(mHead);
         const mGlass2 = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.18), glassMat(0x223344, 0.7));
-        mGlass2.rotation.y = side > 0 ? Math.PI/2 : -Math.PI/2;
+        mGlass2.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
         mGlass2.position.set(mx + side * 0.41, 1.92, 0.82); g.add(mGlass2);
     }
 
@@ -257,33 +269,37 @@ function buildFiatWheel(g, pos, chrome, rubber) {
     const [x, y, z] = pos;
     const side = x < 0 ? 1 : -1;
 
-    const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.1, 20, 48), rubber);
-    tyre.rotation.y = Math.PI/2; tyre.position.set(x, y, z); g.add(tyre);
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 48), mat(0x111111, 0.6, 0.35));
-    disc.rotation.z = Math.PI/2; disc.position.set(x + side * 0.03, y, z); g.add(disc);
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.1, 24), chrome);
-    hub.rotation.z = Math.PI/2; hub.position.set(x + side * 0.06, y, z); g.add(hub);
+    // V-PERF: Segments reduction (48 -> 16)
+    const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.1, 12, 16), rubber);
+    tyre.rotation.y = Math.PI / 2; tyre.position.set(x, y, z); g.add(tyre);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16), mat(0x111111, 0.6, 0.35));
+    disc.rotation.z = Math.PI / 2; disc.position.set(x + side * 0.03, y, z); g.add(disc);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.1, 12), chrome);
+    hub.rotation.z = Math.PI / 2; hub.position.set(x + side * 0.06, y, z); g.add(hub);
+
+    const fiatSpokeGeo = new THREE.BoxGeometry(0.055, 0.22, 0.038);
     for (let i = 0; i < 5; i++) {
         const angle = (i / 5) * Math.PI * 2;
-        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.22, 0.038), chrome);
+        const spoke = new THREE.Mesh(fiatSpokeGeo, chrome);
         spoke.position.set(x + side * 0.06, y + Math.sin(angle) * 0.22, z + Math.cos(angle) * 0.22);
         spoke.rotation.set(0, 0, angle); g.add(spoke);
+        spoke.castShadow = false;
     }
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.025, 10, 48), chrome);
-    rim.rotation.y = Math.PI/2; rim.position.set(x + side * 0.06, y, z); g.add(rim);
-    const bdisc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 28), mat(0x333333, 0, 0.7));
-    bdisc.rotation.z = Math.PI/2; bdisc.position.set(x - side * 0.02, y, z); g.add(bdisc);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.025, 8, 16), chrome);
+    rim.rotation.y = Math.PI / 2; rim.position.set(x + side * 0.06, y, z); g.add(rim);
+    const bdisc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 12), mat(0x333333, 0, 0.7));
+    bdisc.rotation.z = Math.PI / 2; bdisc.position.set(x - side * 0.02, y, z); g.add(bdisc);
 }
 
 function buildFiat500() {
     const g = new THREE.Group();
 
-    const body   = mat(0xcc2222, 0.65, 0.22);
-    const bodyDk = mat(0xa01818, 0.6,  0.28);
-    const chrome = mat(0xdddddd, 1.0,  0.04);
-    const glass  = glassMat(0x9bb8cc, 0.78);
+    const body = mat(0xcc2222, 0.65, 0.22);
+    const bodyDk = mat(0xa01818, 0.6, 0.28);
+    const chrome = mat(0xdddddd, 1.0, 0.04);
+    const glass = glassMat(0x9bb8cc, 0.78);
     const rubber = mat(0x0c0c0c, 0, 0.92);
-    const black  = mat(0x080808, 0, 0.85);
+    const black = mat(0x080808, 0, 0.85);
 
     const lowerMid = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.34, 1.5), body);
     lowerMid.position.set(0, 0.42, 0.04); lowerMid.castShadow = true; g.add(lowerMid);
@@ -292,9 +308,9 @@ function buildFiat500() {
     const lowerRear = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.34, 0.55), body);
     lowerRear.position.set(0, 0.42, -1.5); lowerRear.castShadow = true; g.add(lowerRear);
 
-    for (const [wx, wz] of [[-0.82,1.14],[0.82,1.14],[-0.82,-1.08],[0.82,-1.08]]) {
+    for (const [wx, wz] of [[-0.82, 1.14], [0.82, 1.14], [-0.82, -1.08], [0.82, -1.08]]) {
         const arch = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 10, 28, Math.PI), mat(0x200e0e, 0, 0.9));
-        arch.rotation.z = Math.PI/2; arch.rotation.y = Math.PI/2;
+        arch.rotation.z = Math.PI / 2; arch.rotation.y = Math.PI / 2;
         arch.position.set(wx, 0.46, wz); g.add(arch);
     }
 
@@ -318,11 +334,11 @@ function buildFiat500() {
     }
     for (const side of [-1, 1]) {
         const sw = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 0.55), glass);
-        sw.position.set(side * 0.78, 1.46, -0.28); sw.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2; g.add(sw);
+        sw.position.set(side * 0.78, 1.46, -0.28); sw.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(sw);
     }
     for (const side of [-1, 1]) {
         const qw = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.38), glass);
-        qw.position.set(side * 0.77, 1.42, -1.02); qw.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2; g.add(qw);
+        qw.position.set(side * 0.77, 1.42, -1.02); qw.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(qw);
     }
     const rw = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.6), glass);
     rw.position.set(0, 1.44, -1.42); rw.rotation.x = 0.55; g.add(rw);
@@ -366,7 +382,7 @@ function buildFiat500() {
         tl.position.set(side * 0.62, 1.12, -1.77); g.add(tl);
     }
     const exh = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.22, 16), chrome);
-    exh.rotation.x = Math.PI/2; exh.position.set(0, 0.44, -1.98); g.add(exh);
+    exh.rotation.x = Math.PI / 2; exh.position.set(0, 0.44, -1.98); g.add(exh);
 
     for (const side of [-1, 1]) {
         const sill = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 3.3), black);

@@ -207,19 +207,46 @@ async function submitToGallery(visitorData) {
     };
 
     try {
-        await db.collection('gallery').add(record);
-        console.log('✅ Gallery submission successful.');
+        const docRef = await db.collection('gallery').add(record);
+        console.log('✅ Gallery submission successful, ID:', docRef.id);
 
         // Mark as submitted in memory
         let mem = getMemory();
         if (mem) {
             mem.gallerySubmitted = true;
+            mem.galleryDocId = docRef.id;
             saveMemory(mem);
         }
 
-        return true;
+        return docRef.id || true;
     } catch (err) {
         console.error('Gallery submission failed:', err);
+        return false;
+    }
+}
+
+/**
+ * Remove a previously submitted record from the gallery.
+ */
+async function removeFromGallery(docId) {
+    if (!docId) return false;
+    const db = getFirestore();
+    if (!db) return false;
+
+    try {
+        await db.collection('gallery').doc(docId).delete();
+        console.log('🗑️ Gallery record removed:', docId);
+
+        // Update memory
+        let mem = getMemory();
+        if (mem) {
+            mem.gallerySubmitted = false;
+            delete mem.galleryDocId;
+            saveMemory(mem);
+        }
+        return true;
+    } catch (err) {
+        console.error('Gallery removal failed:', err);
         return false;
     }
 }
@@ -304,4 +331,5 @@ window.initMemory = initMemory;
 window.recordCompletion = recordCompletion;
 window.submitToGallery = submitToGallery;
 window.fetchGalleryEntries = fetchGalleryEntries;
+window.removeFromGallery = removeFromGallery;
 window.getGalleryCount = getGalleryCount;

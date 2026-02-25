@@ -15,7 +15,7 @@ window.roomContent = {
         title_nl: "Ontvangsthal",
         description: "The place where everything begins. A threshold between the world outside and the world within. Every room in the house holds a reflection — click the glowing icon to leave your mark.",
         description_nl: "De plek waar alles begint. Een drempel tussen de buitenwereld en de wereld binnenin. Elke kamer in het huis bevat een reflectie — klik op het gloeiende icoon om je sporen na te laten.",
-        hex: 0x2c3e50,
+        hex: 0x197654,
         playlist: [
             {
                 artist: "Paradox Prime",

@@ -1366,7 +1366,8 @@ function createBathroomInterior() {
 
     // --- VIDEO LOGIC ---
     // START: Do NOT auto-play video. Start in Reflection Mode.
-    if (!window.videoElement) window.videoElement = document.getElementById('generic-video');
+    // V-FIX 2: Ensure UI refers to the correct element (Fixes takeover from Living Room)
+    window.videoElement = videoElement || document.getElementById('generic-video');
 
     if (window.videoElement) {
         // crossOrigin MUST be set before .src to take effect
@@ -1448,7 +1449,6 @@ function createBathroomInterior() {
         }
     };
 
-    // V-NEW: Helper to Stop Video & Reset Lights
     window.stopBathroomVideo = function () {
         if (mirrorMat) {
             mirrorMat.uniforms.uUseVideo.value = 0.0;
@@ -1456,7 +1456,12 @@ function createBathroomInterior() {
             const btn = interiorClickables.find(c => c && c.userData && c.userData.type === 'videoControlSingle');
             if (btn && btn.material.color) btn.material.color.setHex(0xff0000); // Red
         }
-        if (videoElement && !videoElement.paused) videoElement.pause();
+        if (videoElement) {
+            videoElement.pause();
+            videoElement.src = '';
+            videoElement.load();
+            videoElement.loop = false; // V-FIX: Reset loop!
+        }
 
         // 1. Kill any active dimming tweens so they don't overwrite our reset
         TWEEN.getAll().forEach(t => t.stop());
@@ -1598,218 +1603,170 @@ function createAtticInterior() {
         interiorGroup.add(box);
 
         // --- ARTIFACTS INSIDE ---
-        let artifact = new THREE.Group();
-        artifact.position.set(0, 0, 0); // Relative to box for pulse/scale logic
+        const artBaseY = 0.35; // rests just inside the open box
+        const artTopY = 2.6;  // hover height above box
 
-        // We actually want the artifact GROUP centered at the box's world POS but Y-floating
-        // So we'll add it to interiorGroup and manage its POS
-        // artBaseY: inside the box (box bottom=0, top=1.5, center=0.75 — use 0.5 so orb is clearly inside)
-        const artBaseY = 0.5;
-        const artTopY = 2.8; // 1944: Increased hover height (was 1.6)
         const artifactContainer = new THREE.Group();
         artifactContainer.position.set(x, artBaseY, z);
-        artifactContainer.scale.set(0.1, 0.1, 0.1);
+        artifactContainer.scale.set(1, 1, 1); // always full size — just hidden
         artifactContainer.visible = false;
         interiorGroup.add(artifactContainer);
+
+        let artifact = new THREE.Group();
         artifactContainer.add(artifact);
 
         if (labelText === "BEAUTY") {
-            // RED GLOSSY ORB - Enhanced with wobble and pulse
             const orb = new THREE.Mesh(
                 new THREE.SphereGeometry(0.35, 32, 32),
-                new THREE.MeshStandardMaterial({
-                    color: 0xff0000,
-                    emissive: 0xcc0000,
-                    emissiveIntensity: 0.8,
-                    roughness: 0.1,
-                    metalness: 0.9
-                })
+                new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 0.8, roughness: 0.1, metalness: 0.9 })
             );
             artifact.add(orb);
             const artLight = new THREE.PointLight(0xff0000, 1.5, 5);
             artifact.add(artLight);
-            artifactContainer.userData.isBeauty = true;
 
-            // Enhanced animation: wobble, pulse, and glow
             artifactContainer.userData.update = (t) => {
-                // Gentle wobble rotation - increased
                 artifact.rotation.y = Math.sin(t * 1.5) * 0.5;
                 artifact.rotation.x = Math.cos(t * 1.0) * 0.3;
-
-                // Pulsing scale - increased
-                const pulse = 1.0 + Math.sin(t * 3.5) * 0.2;
-                orb.scale.setScalar(pulse);
-
-                // Floating motion — only when fully open (not mid-transition)
-                if (box.userData.isOpen && !box.userData.isClosing) {
-                    artifactContainer.position.y = artTopY + Math.sin(t * 1.8) * 0.35;
+                orb.material.emissiveIntensity = 0.6 + Math.sin(t * 4) * 0.4;
+                artLight.intensity = 1.5 + Math.sin(t * 3.5) * 1.0;
+                if (box.userData.isFullyOpen) {
+                    artifactContainer.position.y = artTopY + Math.sin(t * 1.8) * 0.25;
                 }
-
-                // Pulsing emissive and light
-                orb.material.emissiveIntensity = 0.6 + Math.sin(t * 4) * 0.5;
-                artLight.intensity = 1.5 + Math.sin(t * 3.5) * 1.2;
             };
         }
         else if (labelText === "KNOWLEDGE") {
-            // WIREFRAME + ORB (Geometric) - Enhanced with complex motion
             const wireGeo = new THREE.IcosahedronGeometry(0.5, 1);
             const wireMat = new THREE.MeshBasicMaterial({ color: 0xffcc00, wireframe: true, transparent: true, opacity: 0.6 });
             const frame = new THREE.Mesh(wireGeo, wireMat);
             artifact.add(frame);
-
-            const core = new THREE.Mesh(
-                new THREE.SphereGeometry(0.2, 16, 16),
-                new THREE.MeshBasicMaterial({ color: 0xff9900 })
-            );
+            const core = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshBasicMaterial({ color: 0xff9900 }));
             artifact.add(core);
             const artLight = new THREE.PointLight(0xffff00, 2.0, 5);
             artifact.add(artLight);
 
-            // Enhanced animation: rotation, wobble, pulse, and breathing
             artifactContainer.userData.update = (t) => {
-                // Faster rotation
                 frame.rotation.y = t * 3.0;
                 frame.rotation.x = t * 2.2;
-                frame.rotation.z = t * 0.8;
-
-                // Wobble the entire container - increased
-                artifact.rotation.y = Math.sin(t * 1.8) * 0.6;
-                artifact.rotation.x = Math.cos(t * 1.4) * 0.4;
-
-                // Pulsing wireframe opacity
-                wireMat.opacity = 0.5 + Math.sin(t * 5) * 0.4;
-
-                // Core pulsing - increased
-                const corePulse = 1.0 + Math.sin(t * 7) * 0.35;
-                core.scale.setScalar(corePulse);
-
-                // Floating motion — only when fully open (not mid-transition)
-                if (box.userData.isOpen && !box.userData.isClosing) {
-                    artifactContainer.position.y = artTopY + Math.sin(t * 2.2) * 0.4 + Math.cos(t * 3.5) * 0.15;
+                artifact.rotation.y = Math.sin(t * 1.8) * 0.5;
+                wireMat.opacity = 0.5 + Math.sin(t * 5) * 0.35;
+                artLight.intensity = 2.0 + Math.sin(t * 4.5) * 1.5;
+                if (box.userData.isFullyOpen) {
+                    artifactContainer.position.y = artTopY + Math.sin(t * 2.2) * 0.3 + Math.cos(t * 3.5) * 0.1;
                 }
-
-                // Light pulsing
-                artLight.intensity = 2.0 + Math.sin(t * 4.5) * 2.0;
             };
         }
         else if (labelText === "WISDOM") {
-            // BLUE ORB + YELLOW GLOW - Enhanced with breathing and wobble
-            const orb = new THREE.Mesh(
-                new THREE.SphereGeometry(0.35, 32, 32),
-                new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 0.5 })
+            // ── The REAL reflection nugget lives here ──
+            const roomKey = 'attic';
+            const isAnswered = !!(window.visitorData && window.visitorData.answers && window.visitorData.answers[roomKey]);
+            const coreHex = isAnswered ? 0xff2200 : 0x00ff00;
+            const shellHex = isAnswered ? 0xff2200 : 0x00ff00;
+
+            const nuggetCore = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.224, 0),
+                new THREE.MeshBasicMaterial({ color: coreHex, toneMapped: false })
             );
-            artifact.add(orb);
-            const artLight = new THREE.PointLight(0xffff00, 3.0, 6);
-            artifact.add(artLight);
+            const nuggetShell = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.416, 1),
+                new THREE.MeshStandardMaterial({
+                    color: shellHex, transparent: true, opacity: isAnswered ? 0.35 : 0.55,
+                    emissive: shellHex, emissiveIntensity: isAnswered ? 0.5 : 3.0, side: THREE.DoubleSide
+                })
+            );
+            const artLight = new THREE.PointLight(coreHex, isAnswered ? 0.3 : 2.0, isAnswered ? 3 : 7);
+            artifact.add(nuggetCore, nuggetShell, artLight);
 
-            // Enhanced animation: breathing pulse, wobble, and mystical glow
-            artifactContainer.userData.update = (t) => {
-                // Stronger breathing pulse - increased
-                const s = 1.0 + Math.sin(t * 4.5) * 0.3;
-                orb.scale.setScalar(s);
-
-                // Gentle wobble rotation - increased
-                artifact.rotation.y = Math.sin(t * 1.2) * 0.5;
-                artifact.rotation.x = Math.cos(t * 1.4) * 0.4;
-                artifact.rotation.z = Math.sin(t * 1.0) * 0.25;
-
-                // Floating motion — only when fully open (not mid-transition)
-                if (box.userData.isOpen && !box.userData.isClosing) {
-                    artifactContainer.position.y = artTopY + Math.sin(t * 2.0) * 0.45 + Math.sin(t * 0.8) * 0.2;
-                }
-
-                // Stronger light pulsing
-                artLight.intensity = 2.5 + Math.sin(t * 9) * 2.0;
-
-                // Emissive pulsing
-                orb.material.emissiveIntensity = 0.5 + Math.sin(t * 6) * 0.6;
+            // Make the artifact itself trigger the room question (but NOT close the box)
+            artifactContainer.userData.type = 'reflection_trigger';
+            artifactContainer.userData.roomKey = roomKey;
+            artifactContainer.userData.tooltip = isAnswered ? 'REFLECTED ✓' : 'REFLECT';
+            artifactContainer.userData.onClick = () => {
+                if (window.showRoomQuestion) window.showRoomQuestion(roomKey);
             };
+
+            artifactContainer.userData.update = (t) => {
+                nuggetCore.rotation.y = t * 2.0;
+                nuggetShell.rotation.y = -t * 1.0;
+                if (!isAnswered) {
+                    nuggetShell.material.emissiveIntensity = 2.5 + Math.sin(t * 4.0) * 1.5;
+                    artLight.intensity = 1.5 + Math.sin(t * 4.0) * 0.8;
+                }
+                if (box.userData.isFullyOpen) {
+                    artifactContainer.position.y = artTopY + Math.sin(t * 2.0) * 0.2;
+                }
+            };
+
+            // Register as clickable so raycaster picks it up
+            interiorClickables.push(artifactContainer);
         }
 
+        // ── Unified open/close toggle ──
         const openBox = () => {
             if (!box.userData.isOpen) {
+                // OPEN: lid swings up, then artifact rises
                 box.userData.isOpen = true;
                 box.userData.isClosing = false;
+                box.userData.isFullyOpen = false; // wobble stays off until rise completes
 
-                // Open lid immediately
                 new TWEEN.Tween(lidPivot.rotation)
-                    .to({ x: -Math.PI * 0.7 }, 800)
+                    .to({ x: -Math.PI * 0.72 }, 700)
                     .easing(TWEEN.Easing.Quadratic.InOut)
                     .start();
 
-                // Delay the orb appearing until the lid is at least half open
                 setTimeout(() => {
                     artifactContainer.visible = true;
-                    artifactContainer.position.y = artBaseY; // Inside the box
-                    artifactContainer.scale.set(0.05, 0.05, 0.05); // Nearly invisible — born inside
-
-                    // Smooth pop out: first grow to full size
-                    new TWEEN.Tween(artifactContainer.scale)
-                        .to({ x: 1.1, y: 1.1, z: 1.1 }, 700)
-                        .easing(TWEEN.Easing.Back.Out)
+                    artifactContainer.position.set(x, artBaseY, z);
+                    new TWEEN.Tween(artifactContainer.position)
+                        .to({ y: artTopY }, 900)
+                        .easing(TWEEN.Easing.Quadratic.Out)
                         .start()
                         .onComplete(() => {
-                            new TWEEN.Tween(artifactContainer.scale)
-                                .to({ x: 1, y: 1, z: 1 }, 500)
-                                .easing(TWEEN.Easing.Quadratic.InOut)
-                                .start();
+                            box.userData.isFullyOpen = true; // now start wobble
                         });
-
-                    // Rise up from inside the box to hover height
-                    new TWEEN.Tween(artifactContainer.position)
-                        .to({ y: artTopY }, 1200)
-                        .easing(TWEEN.Easing.Back.Out)
-                        .start();
-                }, 500); // Wait 500ms — lid needs ~560ms to reach halfway open
+                }, 450);
 
             } else {
+                // CLOSE: artifact descends, then lid closes
                 box.userData.isOpen = false;
-                box.userData.isClosing = true; // Prevent update() from fighting the TWEEN
+                box.userData.isClosing = true;
+                box.userData.isFullyOpen = false;
 
-                // Orb shrinks as it returns INSIDE the box
-                new TWEEN.Tween(artifactContainer.scale)
-                    .to({ x: 0.05, y: 0.05, z: 0.05 }, 700)
-                    .easing(TWEEN.Easing.Back.In)
-                    .start();
-
-                // Orb descends back INTO the box (to artBaseY = inside)
                 new TWEEN.Tween(artifactContainer.position)
                     .to({ y: artBaseY }, 700)
-                    .easing(TWEEN.Easing.Back.In)
+                    .easing(TWEEN.Easing.Quadratic.In)
+                    .start()
                     .onComplete(() => {
+                        artifactContainer.visible = false;
                         box.userData.isClosing = false;
-                        if (!box.userData.isOpen) artifactContainer.visible = false;
-                    })
-                    .start();
+                    });
 
-                // Lid closes AFTER orb is safely inside (700ms orb travel + small buffer)
                 new TWEEN.Tween(lidPivot.rotation)
-                    .to({ x: 0 }, 600)
+                    .to({ x: 0 }, 650)
                     .easing(TWEEN.Easing.Quadratic.InOut)
-                    .delay(750) // Wait for orb to be fully inside before lid closes
+                    .delay(650)
                     .start();
             }
         };
 
-        const onClick = () => {
-            openBox();
-        };
-
-        box.userData.onClick = onClick;
-        lid.userData.onClick = onClick;
-
+        box.userData.onClick = openBox;
+        lid.userData.onClick = openBox;
         labelMesh.raycast = function () { };
 
-        const hitBoxGeo = new THREE.BoxGeometry(2.0, 2.0, 2.0);
-        const hitBoxMat = new THREE.MeshBasicMaterial({ visible: false });
-        const hitBox = new THREE.Mesh(hitBoxGeo, hitBoxMat);
-        hitBox.position.copy(box.position);
-        hitBox.userData = { onClick: onClick };
-        interiorGroup.add(hitBox);
-        interiorClickables.push(hitBox);
+        // Invisible hit-box covering the whole crate — always clickable to toggle
+        const hitBoxMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(2.0, 2.0, 2.0),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        hitBoxMesh.position.copy(box.position);
+        hitBoxMesh.userData = { onClick: openBox, tooltip: labelText };
+        interiorGroup.add(hitBoxMesh);
+        interiorClickables.push(hitBoxMesh);
 
         return box;
     };
+
+
+
 
     // 1. LEFT BOX: RED "BEAUTY" (Spacing -2.5)
     createColoredBox("BEAUTY", '#ffffff', 0xd32f2f, -2.5, -1.8);
@@ -1909,7 +1866,7 @@ function createAtticInterior() {
             if (window.dirLight) window.dirLight.intensity = 0.05;
         }
     }, 500);
-    if (typeof addReflectionMarker === 'function') addReflectionMarker('attic', 4, 1.5, 0);
+    // Attic reflection nugget is inside the WISDOM box (see createColoredBox "WISDOM" above)
 }
 
 let tvVideo, tvVideoTexture;
@@ -2076,6 +2033,9 @@ window.stopLivingVideo = () => {
     if (window.updateLivingAtmosphere) window.updateLivingAtmosphere('light');
     if (tvVideo) {
         tvVideo.pause(); tvVideo.muted = true;
+        tvVideo.src = '';
+        tvVideo.load();
+        tvVideo.loop = false; // V-FIX: Reset loop!
         // Revert to static premonition screen
         if (window.livingTVMesh) {
             window.livingTVMesh.material.map = window.livingTVIdleTexture;
@@ -2084,6 +2044,10 @@ window.stopLivingVideo = () => {
     }
     window.masterVideoIndex = -1;
     if (window.updateVideoUI) window.updateVideoUI();
+
+    // V-FIX: Restore UI to generic video element after hijacking
+    const genericVid = document.getElementById('generic-video');
+    if (genericVid) window.videoElement = genericVid;
 };
 
 function nextTVContent() {
@@ -2223,7 +2187,7 @@ const createHallGreenMaterial = () => {
     const ctx = canvas.getContext('2d');
 
     // Deep Green Base
-    ctx.fillStyle = '#062c1a';
+    ctx.fillStyle = '#0b5532';
     ctx.fillRect(0, 0, 512, 512);
 
     // Texture: Organic/Slightly mottled
@@ -3149,12 +3113,122 @@ function createAnnexInterior() {
     createWallShelf(-1.7, 2.0, 0, Math.PI / 2);
     createWallShelf(-1.7, 2.8, 0, Math.PI / 2);
 
-    // 3. Narrow Suitcase
+    // 3. Narrow Suitcase — nugget hides inside, pops out on click
     const suitcase = createSuitcase();
     suitcase.scale.set(1.0, 1.0, 1.4);
     suitcase.position.set(1.4, 0.0, 1.6);
     suitcase.rotation.y = 0.4;
     interiorGroup.add(suitcase);
+
+    // --- BUILD THE NUGGET (reflection marker) hidden inside the suitcase ---
+    (function setupSuitcaseNugget() {
+        const roomKey = 'annex';
+        const isAnswered = !!(window.visitorData && window.visitorData.answers && window.visitorData.answers[roomKey]);
+        const coreHex = isAnswered ? 0xff2200 : 0x00ff00;
+        const shellHex = isAnswered ? 0xff2200 : 0x00ff00;
+        const shellOpacity = isAnswered ? 0.35 : 0.55;
+        const emissiveIntens = isAnswered ? 0.5 : 3.0;
+        const lightIntensity = isAnswered ? 0.3 : 2.0;
+        const lightRange = isAnswered ? 3 : 7;
+
+        const nuggetGroup = new THREE.Group();
+        const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.224 * 0.75, 0),
+            new THREE.MeshBasicMaterial({ color: coreHex, toneMapped: false }));
+        const shell = new THREE.Mesh(new THREE.OctahedronGeometry(0.416 * 0.75, 1),
+            new THREE.MeshStandardMaterial({
+                color: shellHex, transparent: true,
+                opacity: shellOpacity, emissive: shellHex,
+                emissiveIntensity: emissiveIntens, side: THREE.DoubleSide
+            }));
+        const pl = new THREE.PointLight(coreHex, lightIntensity, lightRange);
+        nuggetGroup.add(core, shell, pl);
+        nuggetGroup.scale.set(0.05, 0.05, 0.05);
+        nuggetGroup.visible = false;
+
+        // Place it at local suitcase lid-open hover position (world space)
+        // Suitcase world pos: x=1.4, y=0, z=1.6, rotY=0.4
+        // We manage nugget in world space via interiorGroup
+        const nuggetBase = { x: 1.4, y: 0.25, z: 1.6 }; // inside the case
+        const nuggetFloat = { x: 1.4, y: 1.5, z: 1.6 }; // above the case
+        nuggetGroup.position.set(nuggetBase.x, nuggetBase.y, nuggetBase.z);
+        interiorGroup.add(nuggetGroup);
+
+        nuggetGroup.userData = {
+            type: 'reflection_trigger',
+            roomKey,
+            tooltip: isAnswered ? 'REFLECTED ✓' : 'REFLECT',
+            onClick: () => { if (window.showRoomQuestion) window.showRoomQuestion(roomKey); },
+            update: (t) => {
+                core.rotation.y = t * 2.0;
+                shell.rotation.y = -t * 1.0;
+                if (nuggetGroup.visible && nuggetGroup.scale.x > 0.5) {
+                    nuggetGroup.position.y = nuggetFloat.y + Math.sin(t * 2.0) * 0.08;
+                    if (!isAnswered) { shell.material.emissiveIntensity = 2.5 + Math.sin(t * 4.0) * 1.5; pl.intensity = 1.5 + Math.sin(t * 4.0) * 0.8; }
+                }
+            }
+        };
+
+        // Get the lidGroup from the suitcase children (index 1 = lidGroup)
+        const lidGroupRef = suitcase.children[1]; // lidGroup added second
+        let suitcaseOpen = false;
+
+        const openSuitcase = () => {
+            if (!suitcaseOpen) {
+                suitcaseOpen = true;
+                // 1. Flip lid open
+                new TWEEN.Tween(lidGroupRef.rotation)
+                    .to({ x: -Math.PI * 0.75 }, 600)
+                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .start();
+                // 2. After lid is halfway open, pop nugget out
+                setTimeout(() => {
+                    nuggetGroup.visible = true;
+                    nuggetGroup.position.set(nuggetBase.x, nuggetBase.y, nuggetBase.z);
+                    nuggetGroup.scale.set(0.05, 0.05, 0.05);
+                    new TWEEN.Tween(nuggetGroup.scale)
+                        .to({ x: 0.75, y: 0.75, z: 0.75 }, 600)
+                        .easing(TWEEN.Easing.Back.Out)
+                        .start();
+                    new TWEEN.Tween(nuggetGroup.position)
+                        .to({ y: nuggetFloat.y }, 900)
+                        .easing(TWEEN.Easing.Back.Out)
+                        .start();
+                    // Make it clickable
+                    if (window.interiorClickables && !window.interiorClickables.includes(nuggetGroup)) {
+                        window.interiorClickables.push(nuggetGroup);
+                    }
+                }, 350);
+            } else {
+                suitcaseOpen = false;
+                // 1. Pull nugget back into case
+                new TWEEN.Tween(nuggetGroup.scale)
+                    .to({ x: 0.05, y: 0.05, z: 0.05 }, 500)
+                    .easing(TWEEN.Easing.Back.In)
+                    .start();
+                new TWEEN.Tween(nuggetGroup.position)
+                    .to({ y: nuggetBase.y }, 500)
+                    .easing(TWEEN.Easing.Back.In)
+                    .onComplete(() => { nuggetGroup.visible = false; })
+                    .start();
+                // 2. Close lid after nugget is inside
+                new TWEEN.Tween(lidGroupRef.rotation)
+                    .to({ x: 0 }, 500)
+                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .delay(550)
+                    .start();
+            }
+        };
+
+        // Make the suitcase group and all its meshes clickable
+        const scHit = new THREE.Mesh(
+            new THREE.BoxGeometry(0.85, 0.5, 0.7),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        scHit.position.set(1.4, 0.25, 1.6);
+        scHit.userData = { onClick: openSuitcase, tooltip: 'SUITCASE' };
+        interiorGroup.add(scHit);
+        if (window.interiorClickables) window.interiorClickables.push(scHit);
+    })();
 
     // 4. Desk
     const woodMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 }); // Re-using woodMat from chair for consistency
@@ -3177,7 +3251,7 @@ function createAnnexInterior() {
     interiorGroup.add(deskGroup);
 
     createRothkoPainting();
-    if (typeof addReflectionMarker === 'function') addReflectionMarker('annex', 3.5, 1.5, 0);
+    // No addReflectionMarker here — nugget is hidden in the suitcase above
 }
 
 function createAnnexChair() {
@@ -3886,6 +3960,8 @@ function createBedroomInterior() {
     phone.userData = { type: 'videoPhone', state: 'stopped' };
     interiorGroup.add(phone);
     interiorClickables.push(phone);
+    // V-FIX 2: Ensure UI refers to the correct element (Fixes takeover from Living Room)
+    window.videoElement = videoElement || document.getElementById('generic-video');
 
     videoTexture = new THREE.VideoTexture(videoElement);
     // Force src to Bedroom Playlist (Fixes "wrong video" if coming from other room)
@@ -3904,22 +3980,39 @@ function createBedroomInterior() {
         type: 'screen',
         onClick: () => {
             if (window.videoElement.paused) {
-                // Determine playlist index, play video. Default to 0 if none selected (-1).
+                // Determine playlist index.
                 let targetIdx = (typeof window.masterVideoIndex !== 'undefined' && window.masterVideoIndex >= 0)
                     ? window.masterVideoIndex
                     : 0;
-                playVideo(targetIdx);
+
+                // Resume if it's the same video, else use playVideo (which calls startVideoClip)
+                const currentSrc = window.videoElement.src;
+                const targetClip = roomContent.bedroom.videoPlaylist[targetIdx];
+
+                if (currentSrc.includes(targetClip.src) && window.videoElement.readyState >= 2) {
+                    window.videoElement.play();
+                    // Dim lights
+                    if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.005 }, 1000).start();
+                    if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.01 }, 1000).start();
+                    if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.01 }, 1000).start();
+                } else {
+                    playVideo(targetIdx);
+                }
             } else {
                 window.videoElement.pause();
-                if (window.stopBedroomVideo) window.stopBedroomVideo();
-                // Update UI to reflect paused state
+                // Restore lights but DON'T clear src yet (allow resume)
+                if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.25 }, 1000).start();
+                if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.3 }, 1000).start();
+                if (window.rimLight) new TWEEN.Tween(window.rimLight).to({ intensity: 0.3 }, 1000).start();
+
+                // Update UI state
                 if (window.updateVideoUI) window.updateVideoUI();
                 if (window.interiorClickables) {
                     const ctrlBtn = window.interiorClickables.find(
                         c => c && c.userData && c.userData.type === 'videoControlSingle'
                     );
                     if (ctrlBtn) {
-                        ctrlBtn.material.color.setHex(0xffff00);
+                        ctrlBtn.material.color.setHex(0xffff00); // Yellow for Paused
                         ctrlBtn.material.emissive.setHex(0x444400);
                     }
                 }
@@ -4119,10 +4212,11 @@ function nextBedroomVideo() {
 window.stopBedroomVideo = function () {
     if (window.videoElement) {
         window.videoElement.pause();
-        window.videoElement.muted = true;      // silence immediately — prevents audio bleed during src swap
+        window.videoElement.muted = true;
         window.videoElement.volume = 0;
-        window.videoElement.src = '';          // detach src so 'ended' can't retrigger playback
-        window.videoElement.load();            // cancel any pending network request
+        window.videoElement.src = '';
+        window.videoElement.load();
+        window.videoElement.loop = false; // V-FIX: Reset loop!
     }
 
     // Restore Bedroom Defaults (Matches house.js ApplyRoomLighting V115)
