@@ -2230,7 +2230,7 @@ function buildEnvironment() {
     roadMeshGeo.computeVertexNormals();
 
     const road = new THREE.Mesh(roadMeshGeo, new THREE.MeshStandardMaterial({
-        color: 0x333333,
+        color: 0x111111,
         roughness: 0.9,
         side: THREE.DoubleSide,
         polygonOffset: true,
@@ -4492,9 +4492,9 @@ function enterRoom(roomName) {
                     scene.fog.far = 2000;
                 }
             } else {
-                scene.background = new THREE.Color(0x333333);
+                scene.background = new THREE.Color(0x111111);
                 if (scene.fog) {
-                    scene.fog.color.setHex(0x333333);
+                    scene.fog.color.setHex(0x111111);
                     scene.fog.far = HOUSE_DEFAULTS.fogFar;
                 }
             }
