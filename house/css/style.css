@@ -1,5 +1,6 @@
 /* ============================================================
    HOUSE OF AWE — Main Stylesheet
+   Desktop-first with mobile enhancements.
    ============================================================ */
 
 :root {
@@ -15,6 +16,15 @@
     --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
     --font-glass: 'Glass Antiqua', cursive;
     --font-serif: 'Libre Baskerville', serif;
+
+    /* Safe-area shorthand (iOS notch / home bar) */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+
+    /* Minimum touch target size (Apple HIG) */
+    --touch-min: 44px;
 }
 
 /* ---- Reset / Base ---- */
@@ -22,15 +32,6 @@ body {
     margin: 0;
     font-family: 'Lato', sans-serif;
     overflow-y: auto !important;
-    /* Explicitly allow scrolling on the base page */
-}
-
-/* Restrictive styles only for the 3D Experience page */
-body.experience-mode {
-    background-color: var(--bg-color);
-    overflow: hidden !important;
-    touch-action: none;
-    color: var(--text-dim);
 }
 
 /* iOS PWA / standalone: prevent elastic bounce-scroll and fix full-bleed height */
@@ -38,156 +39,46 @@ html {
     height: -webkit-fill-available;
 }
 
+/* Restrictive styles only for the 3D Experience page */
 body.experience-mode {
-    /* Fallback for browsers without dvh support */
+    background-color: var(--bg-color);
+    overflow: hidden !important;
+    color: var(--text-dim);
+    overscroll-behavior: none;
+    /* Ensure true full-height on all iOS versions */
     min-height: 100vh;
-    /* Modern: accounts for iOS address bar and home indicator */
     min-height: 100dvh;
     min-height: -webkit-fill-available;
     position: fixed;
     width: 100%;
+    /* Prevent text selection during 3D interaction */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-/* Canvas container: always fill the true viewport, including behind notch */
+/* Allow text selection inside inputs/textareas even in experience mode */
+body.experience-mode input,
+body.experience-mode textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* Canvas container — touch-action:none here so Three.js gets all pointer events,
+   applied to the canvas itself rather than the whole body so overlays still work */
 #canvas-container {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     width: 100vw;
     height: 100vh;
-    /* fallback */
     height: 100dvh;
-    /* dynamic viewport height — correct on iOS */
+    touch-action: none;
 }
 
 /* Instructions bar: lift above the home indicator */
 #instructions {
-    bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
-}
-
-.serif {
-    font-family: 'Courier Prime', monospace;
-}
-
-.glass-font {
-    font-family: var(--font-glass);
-}
-
-.share-tech-font {
-    font-family: 'Share Tech Mono', monospace !important;
-    font-weight: 400 !important;
-}
-
-.serif-italic {
-    font-family: var(--font-serif);
-    font-style: italic;
-}
-
-/* ---- Shared Animations ---- */
-@keyframes pulse-slow {
-
-    0%,
-    100% {
-        opacity: 0.1;
-    }
-
-    50% {
-        opacity: 0.3;
-    }
-}
-
-.animate-pulse-slow {
-    animation: pulse-slow 8s ease-in-out infinite;
-}
-
-/* ---- Utilities ---- */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #151414;
-}
-
-
-/* ---- Loading Screen ---- */
-#loading {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    /* Full height */
-    background: #111111;
-    z-index: 10000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    color: white;
-}
-
-#loading button {
-    font-family: 'Baumans', cursive !important;
-    font-weight: 400 !important;
-    font-size: 24px !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    background: transparent !important;
-    color: white !important;
-    border: 1px solid white !important;
-    padding: 15px 40px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    position: relative !important;
-    overflow: hidden !important;
-    display: block !important;
-    /* Ensure block for full area click */
-}
-
-#loading button:hover {
-    background: white !important;
-    color: black !important;
-}
-
-/* Ensure the button IS the click area */
-#loading button>* {
-    pointer-events: none;
-}
-
-/* Stack vertically on small screens */
-@media (max-width: 500px) {
-    #loading {
-        gap: 1.5rem;
-    }
-}
-
-
-
-/* ---- Tooltip ---- */
-#tooltip {
     position: absolute;
-    background: rgba(255, 255, 255, 0.92);
-    color: #1a202c;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: bold;
-    pointer-events: none;
-    opacity: 0;
-    white-space: nowrap;
-    transition: opacity var(--transition-fast);
-    transform: translate(-50%, calc(-100% - 10px));
-    z-index: 100;
-}
-
-
-/* ---- Instructions Bar ---- */
-#instructions {
-    position: absolute;
-    bottom: 20px;
+    bottom: max(20px, calc(var(--safe-bottom) + 12px));
     left: 50%;
     transform: translateX(-50%);
     background: var(--ui-bg);
@@ -205,11 +96,85 @@ body.experience-mode {
 }
 
 
-/* ---- Canvas Container ---- */
-#canvas-container {
-    position: absolute;
+/* ---- Top Controls: minimum touch-target size ---- */
+#top-left-controls button,
+#top-controls button {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+}
+
+
+/* ---- Loading Screen ---- */
+#loading {
+    position: fixed;
     inset: 0;
-    z-index: 1;
+    width: 100%;
+    height: 100%;
+    background: #111111;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    color: white;
+    /* Safe area padding so content doesn't hide behind notch */
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    box-sizing: border-box;
+}
+
+#loading button {
+    font-family: 'Baumans', cursive !important;
+    font-weight: 400 !important;
+    font-size: 24px !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+    color: white !important;
+    border: 1px solid white !important;
+    padding: 15px 40px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: block !important;
+    min-height: var(--touch-min) !important;
+}
+
+#loading button:hover {
+    background: white !important;
+    color: black !important;
+}
+
+#loading button>* {
+    pointer-events: none;
+}
+
+/* Stack vertically on small screens */
+@media (max-width: 500px) {
+    #loading {
+        gap: 1.5rem;
+    }
+}
+
+
+/* ---- Tooltip ---- */
+#tooltip {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.92);
+    color: #1a202c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    pointer-events: none;
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity var(--transition-fast);
+    transform: translate(-50%, calc(-100% - 10px));
+    z-index: 100;
 }
 
 
@@ -233,8 +198,8 @@ body.experience-mode {
 /* ---- Back Button ---- */
 #back-btn {
     position: fixed;
-    top: 24px;
-    left: 20px;
+    top: calc(24px + var(--safe-top));
+    left: max(20px, var(--safe-left));
     padding: 10px 20px;
     background: var(--ui-bg);
     color: white;
@@ -248,6 +213,7 @@ body.experience-mode {
     z-index: 120;
     transition: transform var(--transition-med), background var(--transition-med), border-color var(--transition-med);
     display: none;
+    min-height: var(--touch-min);
 }
 
 #back-btn:hover {
@@ -307,6 +273,8 @@ textarea.idea-input {
     background-image: linear-gradient(#999 1px, transparent 1px);
     background-size: 100% 1.8em;
     touch-action: pan-y;
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .notepad-controls {
@@ -323,6 +291,7 @@ textarea.idea-input {
     cursor: pointer;
     border: none;
     transition: opacity var(--transition-fast);
+    min-height: var(--touch-min);
 }
 
 .btn-note:hover {
@@ -345,12 +314,13 @@ body.experience-mode footer {
     display: none !important;
 }
 
-/* ---- Main Header (intro title animation anchor) ---- */
+/* ---- Main Header ---- */
 #main-header {
     will-change: transform, opacity;
     padding-top: 0.5rem !important;
     margin-top: -3rem !important;
 }
+
 
 /* ---- Narrative Questionnaire System ---- */
 #narrative-overlay,
@@ -359,6 +329,7 @@ body.experience-mode footer {
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 2000;
     display: none;
     align-items: center;
@@ -372,13 +343,16 @@ body.experience-mode footer {
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 3rem;
     border-radius: 4px;
-    max-width: 500px;
+    max-width: 380px;
     width: 100%;
     text-align: center;
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
 }
 
 .narrative-card::before {
@@ -401,7 +375,6 @@ body.experience-mode footer {
     text-transform: uppercase;
 }
 
-/* Ensure hint/subtitle paragraphs inside narrative cards share the same mono family */
 .narrative-card>p {
     font-family: 'Share Tech Mono', monospace;
 }
@@ -417,6 +390,10 @@ body.experience-mode footer {
     margin-bottom: 2rem;
     outline: none;
     transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    border-radius: 4px;
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .narrative-input:focus {
@@ -436,14 +413,21 @@ body.experience-mode footer {
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
+    min-height: var(--touch-min);
 }
 
-.narrative-btn:hover {
+.narrative-btn:hover,
+.narrative-btn:active {
     background: #fff;
     color: #000;
     border-color: #fff;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
+
+.narrative-btn+.narrative-btn {
+    margin-top: 0.5rem;
+}
+
 
 /* ---- Questionnaire Reflection Icon Tooltip ---- */
 #tooltip[data-type="reflect"] {
@@ -451,23 +435,12 @@ body.experience-mode footer {
     color: #000;
 }
 
-/* ---- Narrative Overlay — wider card for summary ---- */
-.narrative-card {
-    scrollbar-width: thin;
-    scrollbar-color: #333 transparent;
-}
-
-/* ---- Email button style ---- */
-.narrative-btn+.narrative-btn {
-    margin-top: 0.5rem;
-}
-
 /* ---- Question overlay smooth display ---- */
 #question-overlay {
     transition: opacity 0.4s ease;
 }
 
-/* ---- Reflect button in info panel — answered state glow ---- */
+/* ---- Reflect button answered state glow ---- */
 #reflect-btn:has(svg[stroke="#4ade80"]) {
     animation: pulse-green 3s ease-in-out infinite;
 }
@@ -484,16 +457,43 @@ body.experience-mode footer {
     }
 }
 
-/* Glass / Blur Overlay for Initialize Layer */
+
+/* ---- Close Button for Popups ---- */
+.close-popup-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    z-index: 10;
+    background: none;
+    border: none;
+    line-height: 1;
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 4px 0;
+}
+
+.close-popup-btn:hover {
+    color: #fff;
+}
+
+
+/* ---- Glass / Blur Overlay ---- */
 .pattern-overlay {
     backdrop-filter: blur(10px) brightness(0.8);
+    -webkit-backdrop-filter: blur(10px) brightness(0.8);
     background-color: rgba(0, 0, 0, 0.2);
     z-index: 10;
 }
 
 
-
-/* Music Box Striped Pattern */
+/* ---- Music Box Striped Pattern ---- */
 .music-strip-animated {
     background-image: repeating-linear-gradient(45deg,
             transparent,
@@ -514,21 +514,156 @@ body.experience-mode footer {
     }
 }
 
-/* Close Button for Popups */
-.close-popup-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1.5rem;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 24px;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    z-index: 10;
-    background: none;
-    border: none;
-    line-height: 1;
+
+/* ---- Shared Animations ---- */
+@keyframes pulse-slow {
+
+    0%,
+    100% {
+        opacity: 0.1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
 }
 
-.close-popup-btn:hover {
-    color: #fff;
+.animate-pulse-slow {
+    animation: pulse-slow 8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -60%;
+    }
+
+    100% {
+        left: 160%;
+    }
+}
+
+
+/* ---- Utility: Scrollbars ---- */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #151414;
+}
+
+
+/* ---- Fonts ---- */
+.serif {
+    font-family: 'Courier Prime', monospace;
+}
+
+.glass-font {
+    font-family: var(--font-glass);
+}
+
+.serif-italic {
+    font-family: var(--font-serif);
+    font-style: italic;
+}
+
+.share-tech-font {
+    font-family: 'Share Tech Mono', monospace !important;
+    font-weight: 400 !important;
+}
+
+
+/* ==============================================================
+   MOBILE ENHANCEMENTS  (desktop is unchanged above this point)
+   ============================================================== */
+
+/* On narrow phones the room-info panel is too cramped — hide it */
+@media (max-width: 599px) {
+    #room-info {
+        display: none !important;
+    }
+
+    /* Lyrics: keep clear of iOS home indicator */
+    #lyrics-container {
+        bottom: calc(var(--safe-bottom) + 8px) !important;
+        font-size: 0.9rem !important;
+        max-width: 92% !important;
+    }
+
+    /* Compact the top-right icon column */
+    #top-controls {
+        right: max(12px, var(--safe-right));
+        gap: 6px !important;
+    }
+
+    #top-controls button {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    #top-left-controls {
+        left: max(12px, var(--safe-left));
+    }
+
+    /* Narrative popups: anchored to upper screen so keyboard doesn't cover them */
+    #narrative-overlay,
+    #question-overlay {
+        align-items: flex-start;
+        justify-content: center;
+        padding: 15vh 16px 0;
+    }
+
+    .narrative-card {
+        border-radius: 12px;
+        padding: 1.5rem 1.25rem 1.25rem;
+        max-width: 88vw;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* Narrative inputs: font-size >= 16px prevents iOS zoom-on-focus */
+    .narrative-input {
+        font-size: 16px;
+    }
+
+    /* Narrative button: full width on phone */
+    .narrative-btn {
+        width: 100%;
+    }
+
+    /* JUMP IN button: wider tap area */
+    #start-btn-container button {
+        padding: 18px 0 !important;
+        width: min(300px, 85vw) !important;
+        font-size: 1rem !important;
+    }
+}
+
+/* iPhone landscape: very compact, keep controls accessible */
+@media (max-height: 500px) and (orientation: landscape) {
+    #top-controls {
+        right: max(12px, var(--safe-right));
+        top: max(8px, var(--safe-top)) !important;
+        gap: 4px !important;
+    }
+
+    #top-left-controls {
+        top: max(8px, var(--safe-top)) !important;
+    }
+
+    .narrative-card {
+        max-height: 85vh;
+        overflow-y: auto;
+        border-radius: 12px;
+    }
+
+    #narrative-overlay,
+    #question-overlay {
+        align-items: center;
+        padding: 8px;
+    }
 }

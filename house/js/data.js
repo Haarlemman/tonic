@@ -13,8 +13,7 @@ window.roomContent = {
     hall: {
         title: "Reception Hall",
         title_nl: "Ontvangsthal",
-        description: "Once upon a time....",
-        description_nl: "Er was eens...",
+
         hex: 0x197654,
         playlist: [
             {
@@ -59,8 +58,7 @@ window.roomContent = {
     living: {
         title: "Living Room",
         title_nl: "Woonkamer",
-        description: "What is your story?",
-        description_nl: "Wat heb jij te vertellen?",
+
         hex: 0xe65100,
         playlist: [
             { track: "Hope", src: "assets/audio/Hope.mp3" }
@@ -79,8 +77,7 @@ window.roomContent = {
     studio: {
         title: "Studio",
         title_nl: "Studio",
-        description: "Ideas",
-        description_nl: "Ideëen",
+
         hex: 0x212351,
         playlist: [
             { track: "Heartroll", src: "assets/audio/Heartroll.mp3" }
@@ -90,8 +87,7 @@ window.roomContent = {
     bedroom: {
         title: "Bedroom",
         title_nl: "Slaapkamer",
-        description: "The World of Dreams",
-        description_nl: "De Wereld der Dromen",
+
         hex: 0x004d40,
         playlist: [
             { track: "Dreaming", src: "assets/audio/sleepy.mp3" },
@@ -107,10 +103,9 @@ window.roomContent = {
     },
 
     attic: {
-        title: "Attic",
-        title_nl: "Zolder",
-        description: "Be up high; go deep.",
-        description_nl: "Diep gaan op grote hoogte.",
+        title: "The Attic",
+        title_nl: "De Zolder",
+
         hex: 0x5d4037,
         playlist: [
             { track: "Curiosity", src: "assets/audio/Curiosity.mp3" },
@@ -121,8 +116,7 @@ window.roomContent = {
     bathroom: {
         title: "Bathroom",
         title_nl: "Badkamer",
-        description: "Reflection.",
-        description_nl: "Reflectie. Wat zie je?",
+
         hex: 0x0696a4,
         playlist: [
             { track: "Glass Garden Waltz", src: "assets/audio/GlassGardenWaltz.mp3" }
@@ -137,8 +131,7 @@ window.roomContent = {
     toilet: {
         title: "The Little Room",
         title_nl: "Het kleinste kamertje",
-        description: "Small number, big message",
-        description_nl: "Kleien booschap, grootse gedachten",
+
         hex: 0x046896,
         interiorWidth: 3.0,
         interiorDepth: 5.0,
@@ -151,8 +144,7 @@ window.roomContent = {
     basement: {
         title: "Basement",
         title_nl: "Kelder",
-        description: "De Belly of the Beast",
-        description_nl: "De Onderbuik",
+
         hex: 0x334155,
         playlist: [
             { track: "Seven is calling", src: "assets/audio/Seven.mp3" }
@@ -162,8 +154,7 @@ window.roomContent = {
     annex: {
         title: "The Annex",
         title_nl: "De Annex",
-        description: "Truth lives here",
-        description_nl: "Hier woont de Waarheid",
+
         hex: 0x1a1a1a,
         interiorWidth: 4,
         interiorDepth: 4,
@@ -176,8 +167,7 @@ window.roomContent = {
     space: {
         title: "The Void",
         title_nl: "De Leegte",
-        description: "Eternity and Infinity",
-        description_nl: "Oneindigheid",
+
         hex: 0x000000,
         playlist: [
             { track: "No More Pain", src: "assets/audio/Nomorepain.mp3" }

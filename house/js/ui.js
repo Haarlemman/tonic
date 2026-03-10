@@ -1810,24 +1810,39 @@ window.skipNameEntry = function () {
 
 window.showRoomDescription = function (roomName) {
     const rData = window.roomContent ? window.roomContent[roomName] : null;
-    if (!rData || !rData.description) return;
+    if (!rData) return;
 
-    const overlay = document.getElementById('description-overlay');
-    const titleEl = document.getElementById('room-desc-title');
-    const textEl = document.getElementById('room-desc-text');
+    const overlay = document.getElementById('room-title-overlay');
+    const titleEl = document.getElementById('room-title-text');
 
-    if (!overlay || !titleEl || !textEl) return;
+    if (!overlay || !titleEl) return;
+
+    // Clear any previous timeouts if user enters multiple rooms quickly
+    if (overlay._hideTimeout) clearTimeout(overlay._hideTimeout);
+    if (overlay._displayTimeout) clearTimeout(overlay._displayTimeout);
 
     const lang = window.currentLanguage || 'en';
     const title = lang === 'nl' && rData.title_nl ? rData.title_nl : rData.title;
-    const desc = lang === 'nl' && rData.description_nl ? rData.description_nl : rData.description;
 
     titleEl.textContent = title;
-    textEl.textContent = desc;
 
     overlay.style.display = 'flex';
     overlay.style.opacity = '0';
-    setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+
+    // Slight delay to allow display flex to apply before transitioning opacity
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+
+        // Hide after 2 seconds
+        overlay._hideTimeout = setTimeout(() => {
+            overlay.style.opacity = '0';
+            overlay._displayTimeout = setTimeout(() => {
+                if (overlay.style.opacity === '0') {
+                    overlay.style.display = 'none';
+                }
+            }, 500); // Wait for fade transition
+        }, 2000);
+    }, 50);
 };
 
 window.showCompletionPopup = function () {
