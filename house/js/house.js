@@ -1136,7 +1136,11 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    mesh.userData = { name: name, type: 'room' };
+    mesh.userData = {
+        name: name,
+        type: 'room',
+        onClick: () => window.enterRoom(name)
+    };
 
     const edges = new THREE.EdgesGeometry(geo);
     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 }));
@@ -1157,8 +1161,12 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
                 new THREE.BoxGeometry(frameW, frameH, frameDepth),
                 new THREE.MeshStandardMaterial({ color: frameColor })
             );
-            // Ensure Frame is Clickable (Propagate Name)
-            frame.userData = { name: name, type: 'room' };
+            // Ensure Frame is Clickable (Propagate Name and Handler)
+            frame.userData = {
+                name: name,
+                type: 'room',
+                onClick: () => window.enterRoom(name)
+            };
 
             const zOffset = d / 2 + 0.02;
             const xOffset = w / 2 + 0.02;
@@ -1199,7 +1207,11 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
             windowFlickerMaterials.push(glass.material);
 
             // Ensure Glass is Clickable
-            glass.userData = { name: name, type: 'room' };
+            glass.userData = {
+                name: name,
+                type: 'room',
+                onClick: () => window.enterRoom(name)
+            };
 
             frame.add(glass);
             mesh.add(frame);
@@ -1297,6 +1309,7 @@ function buildHouse() {
     });
     const midPlane = new THREE.Mesh(planeGeo, planeMat);
     midPlane.position.set(0, 0.85, 0); // Higher offset
+    midPlane.userData = { ignore: true };
     worldGroup.add(midPlane);
 
     // --- LIVING ROOM: AMSTERDAM SCHOOL CURVE (DEEP BROWN) ---
@@ -1325,9 +1338,17 @@ function buildHouse() {
     lWinBack.position.set(0, 0.4, -2.55);
     livingGroup.add(lWinBack);
 
-    const liveHitBox = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.5, 0.6), new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0 }));
-    liveHitBox.position.set(livingX - 0.5, livingY, 2.7);
-    liveHitBox.userData = { name: 'living', type: 'room' };
+    // Living Room Hitbox (Large and accessible)
+    const liveHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(4.5, 3.5, 0.5),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
+    );
+    liveHitBox.position.set(livingX - 0.5, livingY, 3.5); // Way forward
+    liveHitBox.userData = {
+        name: 'living',
+        type: 'room',
+        onClick: () => window.enterRoom('living')
+    };
     worldGroup.add(liveHitBox);
 
     // --- STUDIO: DE STIJL BOX (REDDISH-ORANGE BROWN - No White) ---
@@ -1377,9 +1398,17 @@ function buildHouse() {
 
 
 
-    const studioHitBox = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.4, 0.6), new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0 }));
-    studioHitBox.position.set(studioX, studioY, 2.7);
-    studioHitBox.userData = { name: 'studio', type: 'room' };
+    // Studio Hitbox (Large and accessible)
+    const studioHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 3.5, 0.5),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
+    );
+    studioHitBox.position.set(studioX, studioY, 3.5); // Way forward
+    studioHitBox.userData = {
+        name: 'studio',
+        type: 'room',
+        onClick: () => window.enterRoom('studio')
+    };
     worldGroup.add(studioHitBox);
 
     // --- ENTRANCE: PRACTICAL PORCH ---
@@ -1392,7 +1421,24 @@ function buildHouse() {
 
     const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.1), new THREE.MeshStandardMaterial({ color: 0x3d1f0d }));
     door.position.set(0, 1.6, 2.57);
-    door.userData = { name: 'hall', type: 'room' };
+    door.userData = {
+        name: 'hall',
+        type: 'room',
+        onClick: () => window.enterRoom('hall')
+    };
+
+    // Hall Hitbox (Large and accessible)
+    const hallHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 3.5, 0.5),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
+    );
+    hallHitBox.position.set(0, 1.6, 3.5); // Way forward
+    hallHitBox.userData = {
+        name: 'hall',
+        type: 'room',
+        onClick: () => window.enterRoom('hall')
+    };
+    worldGroup.add(hallHitBox);
     worldGroup.add(door);
 
     // Triangular window on the door (top half, centered)
@@ -1423,10 +1469,7 @@ function buildHouse() {
     numberPlane.position.set(0, 2.7, 2.56);
     worldGroup.add(numberPlane);
 
-    const hallHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.8, 0.5), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
-    hallHitBox.position.set(0, 1.6, 2.8);
-    hallHitBox.userData = { name: 'hall', type: 'room' };
-    worldGroup.add(hallHitBox);
+    worldGroup.add(numberPlane);
 
     // --- HALL ENCLOSURE (Ceiling & Back Wall) ---
     // Ceiling connecting Living and Studio (Gap is 1.2)
@@ -1477,18 +1520,14 @@ function buildHouse() {
     const bedX = -1.8, bedY = 4.5, bedZ = 0.5; // Upward nudge
     createRoomBlock('bedroom', bedX, bedY, bedZ, 3.2, 2.4, 4.0, 0x5c3317, [
         { type: 'dark', side: 'front', scale: 0.8 },
-        { type: 'dark', side: 'back', scale: 0.4 } // Small one on the bedroom (Back)
+        { type: 'dark', side: 'back', scale: 0.4 }
     ]);
 
     // Add side window for bedroom
     const bWinSide = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 1.5), winMat);
     bWinSide.position.set(bedX - 1.65, bedY, bedZ);
+    bWinSide.userData = { name: 'bedroom', type: 'room', onClick: () => window.enterRoom('bedroom') };
     worldGroup.add(bWinSide);
-
-    const bedHitBox = new THREE.Mesh(new THREE.BoxGeometry(4.0, 3.0, 0.8), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
-    bedHitBox.position.set(bedX, bedY, 2.6);
-    bedHitBox.userData = { name: 'bedroom', type: 'room' };
-    worldGroup.add(bedHitBox);
 
     // BATHROOM: Vertical Brick Tower (Amsterdam Style)
     const bathX = 2.0, bathY = 5.05, bathZ = 0; // Upward nudge
@@ -3906,15 +3945,40 @@ function performClick(event) {
     if (state === 'HOUSE') {
         // V-FIX: Support custom handlers (like Garage Door) in HOUSE state
         const intersects = raycaster.intersectObjects(worldGroup.children, true);
-        if (intersects.length > 0) {
-            let target = intersects[0].object;
+
+        let validTarget = null;
+        let intersectInfo = null;
+
+        for (let i = 0; i < intersects.length; i++) {
+            let obj = intersects[i].object;
+            if (obj.userData && obj.userData.ignore) continue;
+
+            let bubbleTarget = obj;
+            let found = false;
+            while (bubbleTarget && bubbleTarget !== worldGroup) {
+                if ((bubbleTarget.userData && bubbleTarget.userData.onClick) ||
+                    (bubbleTarget.userData && bubbleTarget.userData.name && window.roomContent && window.roomContent[bubbleTarget.userData.name])) {
+                    found = true;
+                    break;
+                }
+                bubbleTarget = bubbleTarget.parent;
+            }
+            if (found) {
+                validTarget = obj;
+                intersectInfo = intersects[i];
+                break;
+            }
+        }
+
+        if (validTarget) {
+            let target = validTarget;
             let handlerFound = false;
 
             // 1. Check for Custom Handler first
             let bubbleTarget = target;
             while (bubbleTarget && bubbleTarget !== worldGroup) {
                 if (bubbleTarget.userData && bubbleTarget.userData.onClick) {
-                    bubbleTarget.userData.onClick(intersects[0]);
+                    bubbleTarget.userData.onClick(intersectInfo);
                     handlerFound = true;
                     break;
                 }
@@ -3938,16 +4002,38 @@ function performClick(event) {
         // V-DEBUG: Log what we are checking against
         const intersects = raycaster.intersectObjects(interiorClickables, true);
 
-        if (intersects.length > 0) {
-            // V-DEBUG: Log the very first thing we hit
+        let validTarget = null;
+        let intersectInfo = null;
 
-            let target = intersects[0].object;
+        for (let i = 0; i < intersects.length; i++) {
+            let obj = intersects[i].object;
+            if (obj.userData && obj.userData.ignore) continue;
+
+            let bubbleTarget = obj;
+            let found = false;
+            while (bubbleTarget && bubbleTarget !== interiorGroup) {
+                if ((bubbleTarget.userData && bubbleTarget.userData.onClick) ||
+                    (bubbleTarget.userData && bubbleTarget.userData.type)) {
+                    found = true;
+                    break;
+                }
+                bubbleTarget = bubbleTarget.parent;
+            }
+            if (found) {
+                validTarget = obj;
+                intersectInfo = intersects[i];
+                break;
+            }
+        }
+
+        if (validTarget) {
+            let target = validTarget;
             let handlerFound = false;
 
             while (target && target !== interiorGroup) {
                 // V-DEBUG: Bubbling up...
                 if (target.userData && target.userData.onClick) {
-                    target.userData.onClick(intersects[0]);
+                    target.userData.onClick(intersectInfo);
                     handlerFound = true;
                     break;
                 }
@@ -4873,25 +4959,36 @@ function checkIntersectionExternal() {
 
     let newHovered = null;
 
-    if (intersects.length > 0) {
-        let target = intersects[0].object;
-        while (target && (!target.userData || !target.userData.name)) target = target.parent;
-        if (target && target.userData) {
-            // Check for explicit name/room match
-            if (target.userData.name && roomContent[target.userData.name]) {
-                newHovered = target;
-            } else {
-                // Check for any parent with onClick
-                let bubble = target;
-                while (bubble && bubble !== worldGroup) {
-                    if (bubble.userData && bubble.userData.onClick) {
-                        newHovered = bubble;
-                        break;
-                    }
-                    bubble = bubble.parent;
-                }
+    for (let i = 0; i < intersects.length; i++) {
+        let target = intersects[i].object;
+        if (target.userData && target.userData.ignore) continue;
+
+        // Check for onClick first up the chain
+        let bubble = target;
+        let foundClickable = false;
+        while (bubble && bubble !== worldGroup) {
+            if (bubble.userData && bubble.userData.onClick) {
+                newHovered = bubble;
+                foundClickable = true;
+                break;
             }
+            bubble = bubble.parent;
         }
+
+        if (foundClickable) break;
+
+        // Check for room name up the chain
+        bubble = target;
+        while (bubble && bubble !== worldGroup) {
+            if (bubble.userData && bubble.userData.name && roomContent[bubble.userData.name]) {
+                newHovered = bubble;
+                foundClickable = true;
+                break;
+            }
+            bubble = bubble.parent;
+        }
+
+        if (foundClickable) break;
     }
 
     if (newHovered !== hoveredObject) {
@@ -4931,14 +5028,19 @@ function checkIntersectionInternal() {
 
     let newHovered = null;
 
-    if (intersects.length > 0) {
-        let target = intersects[0].object;
+    for (let i = 0; i < intersects.length; i++) {
+        let target = intersects[i].object;
+        if (target.userData && target.userData.ignore) continue;
+
         let clickableParent = target;
         while (clickableParent && (!clickableParent.userData || !clickableParent.userData.onClick)) {
             clickableParent = clickableParent.parent;
             if (!clickableParent || clickableParent === interiorGroup) break;
         }
-        if (clickableParent) newHovered = clickableParent;
+        if (clickableParent && clickableParent.userData && clickableParent.userData.onClick) {
+            newHovered = clickableParent;
+            break;
+        }
     }
 
     if (newHovered !== hoveredInternalObject) {
@@ -6540,10 +6642,11 @@ function createGarageDoor(parentGroup, position) {
     floorExt.position.set(0, 0.01, garageDepth / 2 + 0.25);
     walls.add(floorExt);
 
-    // Ceiling
+    // Ceiling (Simple interior flat ceiling)
     const ceil = new THREE.Mesh(new THREE.BoxGeometry(garageWidth, 0.1, garageDepth), garageExtMat);
     ceil.position.y = garageHeight;
     walls.add(ceil);
+
     const ceilInt = new THREE.Mesh(new THREE.PlaneGeometry(garageWidth - 0.1, garageDepth - 0.1), garageIntMat);
     ceilInt.rotation.x = Math.PI / 2;
     ceilInt.position.set(0, -0.06, 0); // Under ceiling
@@ -6700,14 +6803,18 @@ function createGarageDoor(parentGroup, position) {
         bevelEnabled: false
     };
     const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
-    roofGeo.translate(0, 0, -roofDepth / 2 - 0.1); // Push back slightly
-    const roofMat = new THREE.MeshStandardMaterial({
-        color: 0x8a3324,
-        roughness: 0.9,
-        side: THREE.DoubleSide // Show both sides
+    roofGeo.translate(0, 0, -roofDepth / 2 - 0.1);
+    const roofTex = createRoofTexture();
+    const tRoofMat = new THREE.MeshStandardMaterial({
+        map: roofTex,
+        color: 0xcc1010,
+        roughness: 0.85,
+        side: THREE.DoubleSide
     });
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.set(0, garageHeight + 0.01, 0); // Moved UP to avoid z-fighting with top of walls
+    // Material 0: Front/Back caps (Wood), Material 1: Extruded Sides (Red Roof)
+    const roofMats = [garageExtMat, tRoofMat];
+    const roof = new THREE.Mesh(roofGeo, roofMats);
+    roof.position.set(0, garageHeight + 0.01, 0);
     roof.castShadow = true;
     garageGroup.add(roof);
 

@@ -14,6 +14,16 @@ function playTrack(index) {
         }
     }
 
+    // NEW: Stop video if playing when music starts
+    if (window.videoElement && !window.videoElement.paused) {
+        window.videoElement.pause();
+        if (window.currentRoom === 'bedroom' && window.stopBedroomVideo) {
+            window.stopBedroomVideo(); // Resets lights/src
+        } else if (window.currentRoom === 'living' && window.stopLivingVideo) {
+            window.stopLivingVideo(); // Resets lights/src for TV
+        }
+    }
+
     try {
         const playlist = window.roomContent[window.currentRoom].playlist;
         if (!playlist || !playlist[index]) {
@@ -245,6 +255,8 @@ function addReflectionMarker(roomKey, x, y, z) {
     group.scale.set(0.75, 0.75, 0.75);
     interiorGroup.add(group);
     if (window.interiorClickables) window.interiorClickables.push(group);
+
+    return group;
 }
 
 window.createMusicPanel = function (playlist) {
@@ -328,20 +340,28 @@ window.createMusicPanel = function (playlist) {
     const iW = rData.interiorWidth || 10;
     const wallX = -(iW / 2) + 0.01;
 
-    let yBase = 5.5;
+    let yBase = 3.2; // Compensate for internal offset shift
     let zOffset = 0;
     let rotY = Math.PI / 2;
 
+    if (rData.musicInterfacePos) {
+        yBase = rData.musicInterfacePos.y;
+        zOffset = rData.musicInterfacePos.z;
+    }
+
     if (currentRoom === 'annex') {
-        yBase = 6.0;
+        yBase = 3.7; // 6.0 - 2.3
     } else if (currentRoom === 'space') {
-        // Floating on Left at Angle
-        yBase = 5.0;
+        yBase = 2.7; // 5.0 - 2.3
         zOffset = 2.0;
         rotY = Math.PI / 3;
     }
 
-    if (currentRoom === 'bedroom') zOffset = 0;
+    if (currentRoom === 'bedroom') {
+        // Alignment request: Bedroom video UI y=4.2.
+        yBase = 4.2;
+        zOffset = 0;
+    }
 
     const panelGroup = new THREE.Group();
     panelGroup.userData = { type: 'musicPanelGroup' };
@@ -360,30 +380,30 @@ window.createMusicPanel = function (playlist) {
     const switchGeo = new THREE.BoxGeometry(0.6, 0.6, 0.1);
     const switchMat = new THREE.MeshStandardMaterial({ color: window.isMusicPlaying ? 0x00ff00 : 0xff0000 });
     musicSwitchMesh = new THREE.Mesh(switchGeo, switchMat);
-    musicSwitchMesh.position.set(0.02, 0.5, 0); // 0.5 above anchor
+    musicSwitchMesh.position.set(0.02, 2.5, 0); // Aligned with Video Button (y=2.5)
     musicSwitchMesh.userData = { type: 'musicSwitch', action: 'toggleMusic' };
     panelGroup.add(musicSwitchMesh);
     if (window.interiorClickables) window.interiorClickables.push(musicSwitchMesh);
 
     // Header
     const pHeadCanvas = document.createElement('canvas');
-    pHeadCanvas.width = 512; pHeadCanvas.height = 64;
+    pHeadCanvas.width = 512; pHeadCanvas.height = 128; // Matched to Video (128)
     const pctx = pHeadCanvas.getContext('2d');
     pctx.fillStyle = '#ffffff'; pctx.font = 'bold 60px Arial'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
     pctx.shadowColor = 'rgba(0,0,0,0.8)'; pctx.shadowBlur = 4; pctx.shadowOffsetX = 2; pctx.shadowOffsetY = 2;
     const audioLabel = (typeof t === 'function') ? t('audio_header') : "AUDIO";
-    pctx.fillText(audioLabel, 256, 32);
+    pctx.fillText(audioLabel, 256, 64); // Centered in 128 height
     pctx.font = '14px Arial'; pctx.shadowBlur = 0;
     const pHeadTex = new THREE.CanvasTexture(pHeadCanvas);
-    const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.6), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
-    pHeadMesh.position.set(0, -0.5, 0); // 0.5 below anchor
+    const pHeadMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: pHeadTex, transparent: true }));
+    pHeadMesh.position.set(0, 1.6, 0); // Aligned with Video Header (y=1.6)
     pHeadMesh.userData = { type: 'playlistHeader' };
     panelGroup.add(pHeadMesh);
 
     // 4. Create Dynamic Playlist Items
     playlist.forEach((item, i) => {
         const isCurrent = (typeof currentTrackIndex !== 'undefined' && i === currentTrackIndex);
-        const yPos = -1.3 - (i * 0.9); // Relative to anchor
+        const yPos = 1.0 - (i * 0.9); // Aligned with Video Items start (y=1.0)
 
         const sCanvas = document.createElement('canvas');
         sCanvas.width = 512; sCanvas.height = 120;
@@ -400,12 +420,8 @@ window.createMusicPanel = function (playlist) {
         }
 
         sctx.font = 'bold 36px Arial';
-        sctx.textAlign = 'left'; sctx.textBaseline = 'bottom';
-        sctx.fillText((i + 1) + ". " + item.track, 20, 55);
-
-        sctx.font = '28px Arial'; sctx.textBaseline = 'top';
-        sctx.fillStyle = isCurrent ? '#aaff00' : '#cccccc';
-        sctx.fillText(item.artist, 50, 65);
+        sctx.textAlign = 'left'; sctx.textBaseline = 'middle';
+        sctx.fillText((i + 1) + ". " + item.track, 20, 60);
 
         const sTex = new THREE.CanvasTexture(sCanvas);
         const sMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ map: sTex, transparent: true }));
@@ -432,7 +448,7 @@ function createHallInterior() {
         tryPlay();
 
         // ── HALL VIDEO SETTINGS — tweak these three values ──────────────────
-        const HALL_VID_OPACITY = 0.75;  // 0.0 = invisible, 1.0 = fully opaque
+        const HALL_VID_OPACITY = 1;  // 0.0 = invisible, 1.0 = fully opaque
         const HALL_VID_BRIGHTNESS = 0.55;  // < 1.0 = darker, 1.0 = original
         const HALL_VID_CONTRAST = 1.4;   // > 1.0 = more contrast, 1.0 = original
         // ────────────────────────────────────────────────────────────────────
@@ -597,8 +613,28 @@ function createHallInterior() {
     window.refreshHallSign();
 
     // -- SHADOW UNDER BB-8 --
-    createBB8ForHall();
-    if (typeof addReflectionMarker === 'function') addReflectionMarker('hall', -3, 1.5, 0);
+    const bb8 = createBB8ForHall();
+    if (typeof addReflectionMarker === 'function') {
+        const marker = addReflectionMarker('hall', 3, 1.5, -2.5);
+        if (marker && bb8) {
+            const origUpdate = marker.userData.update;
+            marker.userData.update = (t) => {
+                if (origUpdate) origUpdate(t); // Updates rotations and sets base Y + bobbing
+
+                // Follow the robot's floor position
+                marker.position.x = bb8.position.x;
+                marker.position.z = bb8.position.z;
+
+                // Hover above the robot's head (which is in hoverGroup)
+                if (bb8.hoverGroup) {
+                    // head top is around +3.2 local to hoverGroup
+                    // marker.position.y was just set by origUpdate to: 1.5 + local_nugget_bobbing
+                    const currentBob = marker.position.y - 1.5;
+                    marker.position.y = bb8.hoverGroup.position.y + 1.2 + currentBob;
+                }
+            };
+        }
+    }
 }
 
 function createHallCurtain(x, y, z, rotationY) {
@@ -869,7 +905,7 @@ function createBB8ForHall() {
         if (dist < 0.2) pickTarget();
 
         const dir = new THREE.Vector3().subVectors(targetPos, currentPos).normalize();
-        velocity.lerp(dir.multiplyScalar(0.01), 0.03); // speed , lerp
+        velocity.lerp(dir.multiplyScalar(0.004), 0.03); // speed reduced from 0.01 to 0.004
         currentPos.add(velocity);
         bb8Group.position.copy(currentPos);
 
@@ -923,7 +959,7 @@ function createBB8ForHall() {
         eyePoint.material.transparent = true;
         robotHead.position.y = 1.9 + Math.sin(t * 5) * 0.02;
     };
-
+    bb8Group.hoverGroup = hoverGroup; // Expose for attachment logic
     return bb8Group;
 }
 
@@ -3991,6 +4027,12 @@ function createBedroomInterior() {
 
                 if (currentSrc.includes(targetClip.src) && window.videoElement.readyState >= 2) {
                     window.videoElement.play();
+                    // Pause room music
+                    if (window.audioPlayer && !window.audioPlayer.paused) {
+                        window.audioPlayer.pause();
+                        window.isMusicPlaying = false;
+                        if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
+                    }
                     // Dim lights
                     if (window.ambientLight) new TWEEN.Tween(window.ambientLight).to({ intensity: 0.005 }, 1000).start();
                     if (window.dirLight) new TWEEN.Tween(window.dirLight).to({ intensity: 0.01 }, 1000).start();
@@ -4448,8 +4490,12 @@ window.createStudioInterior = function () {
     atomGroup.position.set(-3, 4, -3);
     interiorGroup.add(atomGroup);
 
-    const nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x000000 }));
-    atomGroup.add(nucleus);
+    // nugget as nucleus
+    if (typeof addReflectionMarker === 'function') {
+        const studioNugget = addReflectionMarker('studio', 0, 0, 0);
+        interiorGroup.remove(studioNugget); // Standard call puts it in interiorGroup
+        atomGroup.add(studioNugget); // Move it to atomGroup center
+    }
 
     const createOrbit = (rx, ry, rz, color, speedMult = 1) => {
         const orbitGroup = new THREE.Group();
@@ -4473,8 +4519,6 @@ window.createStudioInterior = function () {
 
     // 4. R2-D2 IN RIGHT CORNER
     createR2D2InCorner();
-
-    if (typeof addReflectionMarker === 'function') addReflectionMarker('studio', 0, 1.5, 4);
 }
 
 window.createR2D2InCorner = function () {

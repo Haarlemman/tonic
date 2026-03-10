@@ -998,10 +998,6 @@ window.submitVisitorName = function () {
                         class="narrative-btn">
                         ${t('enter')}
                     </button>
-                    <div class="mt-4 text-center">
-                        <span id="browse-hint-text" class="text-[10px] text-gray-500 uppercase tracking-widest">${t('browse_hint')}</span>
-                        <button id="browse-btn" class="narrative-btn" style="padding:4px 8px; font-size:10px; margin-left: 8px; min-height: unset;" onclick="window.skipNameEntry && window.skipNameEntry()">${t('browse')}</button>
-                    </div>
     `;
 
                 // Fade back in
@@ -1184,8 +1180,10 @@ function createGuidanceArrow() {
 
     arrowGroup.add(arrowMesh);
 
-    arrowGroup.position.set(0, 1.8, 4);
-    arrowGroup.rotation.x = -Math.PI / 2;
+    // Position above the front door, upright, pointing downward toward it
+    arrowGroup.position.set(0, 3.2, 4.2);
+    arrowGroup.rotation.x = 0; // Upright — no floor tilt
+    arrowGroup.rotation.z = Math.PI; // Flip so the tip points downward
 
     // V-FIX: Make arrow clickable to enter hall (solves blocking issue)
     arrowGroup.userData = {
@@ -1821,10 +1819,25 @@ window.showRoomDescription = function (roomName) {
     if (overlay._hideTimeout) clearTimeout(overlay._hideTimeout);
     if (overlay._displayTimeout) clearTimeout(overlay._displayTimeout);
 
-    const lang = window.currentLanguage || 'en';
-    const title = lang === 'nl' && rData.title_nl ? rData.title_nl : rData.title;
+    const lang = window.currentLanguage || (typeof currentLanguage !== 'undefined' ? currentLanguage : 'en');
+    const rawTitle = (lang === 'nl' && rData.title_nl) ? rData.title_nl : rData.title;
+    let displayHTML = rawTitle;
 
-    titleEl.textContent = title;
+    console.log(`[UI] Showing room description for: ${roomName} (${rawTitle}) in ${lang}`);
+
+    // Split "The " or "De " to its own line as requested
+    if (rawTitle.toLowerCase().startsWith('the ')) {
+        const rest = rawTitle.slice(4);
+        displayHTML = `<div style="font-size: 0.38em; margin-bottom: 0.25em; opacity: 1.0; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase;">The</div><div style="text-transform: uppercase;">${rest}</div>`;
+    } else if (rawTitle.toLowerCase().startsWith('de ')) {
+        const rest = rawTitle.slice(3);
+        displayHTML = `<div style="font-size: 0.38em; margin-bottom: 0.25em; opacity: 1.0; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase;">De</div><div style="text-transform: uppercase;">${rest}</div>`;
+    } else {
+        displayHTML = `<div style="text-transform: uppercase;">${rawTitle}</div>`;
+    }
+
+    titleEl.innerHTML = displayHTML;
+    titleEl.style.textTransform = 'uppercase'; // Revert to ALL CAPS as requested
 
     overlay.style.display = 'flex';
     overlay.style.opacity = '0';
@@ -1836,7 +1849,7 @@ window.showRoomDescription = function (roomName) {
     setTimeout(() => {
         overlay.style.opacity = '1';
 
-        // Hide after 2 seconds
+        // Hide after 4 seconds (increased from 2s for better readability)
         overlay._hideTimeout = setTimeout(() => {
             overlay.style.opacity = '0';
             overlay._displayTimeout = setTimeout(() => {
@@ -1844,7 +1857,7 @@ window.showRoomDescription = function (roomName) {
                     overlay.style.display = 'none';
                 }
             }, 1500); // Wait for 1.5s fade transition to complete
-        }, 2000);
+        }, 4000);
     }, 50);
 };
 
