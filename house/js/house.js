@@ -931,20 +931,23 @@ window.hideLoader = function () {
     window.introFinished = true;
 };
 
-const header = document.getElementById('main-header');
+const header = document.getElementById('main-header') || (window.parent && window.parent.document.getElementById('landing-header'));
 if (header) {
     header.style.transform = 'scale(1)';
     const h1 = header.querySelector('h1');
-    let naturalWidth = 300;
-    if (h1) {
+    let naturalWidth = header.dataset.naturalWidth ? parseFloat(header.dataset.naturalWidth) : 300;
+    if (h1 && !header.dataset.naturalWidth) {
         const range = document.createRange();
         range.selectNodeContents(h1);
-        naturalWidth = range.getBoundingClientRect().width;
+        const rect = range.getBoundingClientRect();
+        naturalWidth = rect.width || 300;
+        header.dataset.naturalWidth = naturalWidth;
     }
-    header.dataset.naturalWidth = naturalWidth;
+
+    // V-FIX 2026: Responsive scaling for the header
     const isMobile = window.innerWidth < 768;
-    const startPct = isMobile ? 0.8 : 0.7;
-    const startScale = (window.innerWidth * startPct) / naturalWidth;
+    const startPct = isMobile ? 0.85 : 0.7;
+    const startScale = Math.min(1, (window.innerWidth * startPct) / naturalWidth);
     header.style.transform = `scale(${startScale})`;
     header.style.opacity = '1';
 }
@@ -968,19 +971,18 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.exitExperience = function () {
-    // 1. Exit Fullscreen
+    // 1. Exit Fullscreen (Signal Parent too for iOS fallback)
     if (document.exitFullscreen) document.exitFullscreen();
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-    else if (document.msExitFullscreen) document.msExitFullscreen();
+
+    if (window.parent) window.parent.postMessage({ type: 'EXIT_FULLSCREEN' }, '*');
 
     // 2. Show Header
-    const headerEl = document.getElementById('main-header');
+    const headerEl = document.getElementById('main-header') || (window.parent && window.parent.document.getElementById('landing-header'));
     if (headerEl) {
-        headerEl.style.display = 'flex'; // Restore visibility
+        headerEl.style.display = 'flex';
         headerEl.style.opacity = '1';
-        headerEl.classList.remove('header-move-up'); // Reset position
-        // Force reflow?
+        headerEl.classList.remove('header-move-up');
         void headerEl.offsetWidth;
     }
 
@@ -988,9 +990,8 @@ window.exitExperience = function () {
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) exitBtn.classList.add('hidden');
 
-    // 4. Show Start Button again
-    const startBtn = document.getElementById('start-btn');
-    if (startBtn) startBtn.style.display = 'inline-block';
+    // 4. Show Start Button again (Signal parent)
+    if (window.parent) window.parent.postMessage({ type: 'SHOW_START_BTN' }, '*');
 };
 
 // --- AUDIO ANALYSER SETUP ---
@@ -1102,15 +1103,13 @@ function createBrickTexture(type = 'amsterdam') {
 
 function createHouseNumberTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 64; canvas.height = 64;
+    canvas.width = 128; canvas.height = 128; // Higher res
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fdfdfd';
-    ctx.fillRect(0, 0, 64, 64);
-    ctx.strokeStyle = '#111111'; ctx.lineWidth = 3; ctx.strokeRect(2, 2, 60, 60);
-    ctx.fillStyle = '#111111';
-    ctx.font = 'bold 36px "Courier New", monospace';
+    ctx.clearRect(0, 0, 128, 128); // Transparent background
+    ctx.fillStyle = '#ffffff'; // White text
+    ctx.font = 'bold 80px "Courier New", monospace';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('42', 32, 34);
+    ctx.fillText('42', 64, 64);
     const tex = new THREE.CanvasTexture(canvas);
     return tex;
 }
@@ -1417,13 +1416,12 @@ function buildHouse() {
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04), new THREE.MeshStandardMaterial({ color: 0x996633 }));
     knob.position.set(0.3, 0, 0.08); door.add(knob);
 
-    // Number 42 Plate
-    const plate = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.18, 0.02),
-        new THREE.MeshStandardMaterial({ map: createHouseNumberTexture(), roughness: 0.3 })
-    );
-    plate.position.set(0.5, 1.8, 2.56);
-    worldGroup.add(plate);
+    // Number 42 (Plain on wall)
+    const numberTex = createHouseNumberTexture();
+    const numberMat = new THREE.MeshBasicMaterial({ map: numberTex, transparent: true });
+    const numberPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), numberMat);
+    numberPlane.position.set(0, 2.7, 2.56);
+    worldGroup.add(numberPlane);
 
     const hallHitBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.8, 0.5), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
     hallHitBox.position.set(0, 1.6, 2.8);
@@ -4024,8 +4022,8 @@ function startVideoClip(room) {
     // V55: Ensure Unmuted
     videoElement.muted = false;
     videoElement.loop = false; // V-FIX: Reset loop state for each clip
-    // V-FIX 259: Per-clip volume (Default lowered to 0.6 from 0.8)
-    videoElement.volume = (typeof clip.volume !== 'undefined') ? clip.volume : 0.6;
+    // V-FIX 259: Per-clip volume (Default lowered to 0.3 from 0.6)
+    videoElement.volume = (typeof clip.volume !== 'undefined') ? clip.volume : 0.3;
 
     videoElement.play().catch((err) => {
         console.error('❌ Video play error:', err);
@@ -4039,7 +4037,7 @@ function startVideoClip(room) {
     });
 
     // Stop room music when video starts
-    if (window.isMusicPlaying) {
+    if (window.audioPlayer && !window.audioPlayer.paused) {
         window.audioPlayer.pause();
         window.isMusicPlaying = false;
         if (musicSwitchMesh) musicSwitchMesh.material.color.setHex(0xff0000);
@@ -4401,6 +4399,11 @@ function enterRoom(roomName) {
     }
     stopAllAudio();
 
+    // V-NEW: Show Room Description Popup
+    if (window.showRoomDescription) {
+        window.showRoomDescription(roomName);
+    }
+
     if (window.roomContent && window.roomContent[roomName]) {
         const rData = window.roomContent[roomName];
 
@@ -4511,7 +4514,14 @@ function enterRoom(roomName) {
             } else {
                 // Reset FOV in case it was changed by a previous room
                 if (camera.fov !== 45) { camera.fov = 45; camera.updateProjectionMatrix(); }
-                camera.position.set(4, 6, 9);
+
+                // V-NEW: Wider zoom on phones for interior environments
+                if (window.innerWidth < 768) {
+                    camera.position.set(6, 8, 12);
+                } else {
+                    camera.position.set(4, 6, 9);
+                }
+
                 camera.lookAt(0, 2.5, 0);
                 controls.target.set(0, 2.5, 0);
             }
@@ -4569,7 +4579,12 @@ function enterRoom(roomName) {
             document.getElementById('tooltip').style.opacity = 0;
             const instructions = document.getElementById('instructions');
             if (instructions) instructions.textContent = "Click music board to cycle tracks • Drag to rotate";
-            curtain.classList.remove('active');
+
+            // Force reflow and give browser a tiny window to upload textures before fading up
+            setTimeout(() => {
+                if (curtain) curtain.classList.remove('active');
+            }, 50);
+
             state = 'ROOM';
             window.isZoomingToRoom = false; // V-FIX: Unlock controls
 
@@ -4588,9 +4603,9 @@ function enterRoom(roomName) {
                 loading.innerHTML = `<h2 class="text-red-500 bg-black p-4"> Room Error: ${e.message}</h2>`;
                 loading.style.display = 'flex';
             }
-            curtain.classList.remove('active');
+            if (curtain) curtain.classList.remove('active');
         }
-    }, 800);
+    }, 1250);
 }
 
 window.discoverRoom = function () {
@@ -4798,7 +4813,10 @@ function exitRoom() {
         const instr = document.getElementById('instructions');
         if (instr) instr.textContent = "Click a room to enter it • Drag to rotate";
 
-        if (curtain) curtain.classList.remove('active');
+        // Give the renderer a tiny gap to render the wireframe house before fading out curtain
+        setTimeout(() => {
+            if (curtain) curtain.classList.remove('active');
+        }, 50);
 
         window.currentRoom = null;
         currentRoom = null;
@@ -4813,7 +4831,7 @@ function exitRoom() {
         state = 'HOUSE';
         currentRoom = null;
         window.isZoomingToRoom = false;
-    }, 800);
+    }, 1250);
 }
 
 function updateMousePosition(event) {
