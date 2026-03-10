@@ -495,8 +495,8 @@ window.initNarrativePrompt = function (forceShow = false) {
             <input type="text" id="visitor-name" class="narrative-input" placeholder="${t('welcome_placeholder')}" maxlength="30" onkeypress="if(event.key==='Enter') window.submitVisitorName()">
             <button class="narrative-btn" onclick="window.submitVisitorName()">${t('proceed')}</button>
             <div class="mt-4 text-center">
-                <span class="text-[10px] text-gray-500 uppercase tracking-widest">${window.currentLanguage === 'nl' ? "ik kom alleen even kijken." : "don't mind me, I'm just browsing."}</span>
-                <button class="narrative-btn" style="padding:4px 8px; font-size:10px; margin-left: 8px; min-height: unset;" onclick="window.skipNameEntry && window.skipNameEntry()">${t('browse')}</button>
+                <span id="browse-hint-text" class="text-[10px] text-gray-500 uppercase tracking-widest">${t('browse_hint')}</span>
+                <button id="browse-btn" class="narrative-btn" style="padding:4px 8px; font-size:10px; margin-left: 8px; min-height: unset;" onclick="window.skipNameEntry && window.skipNameEntry()">${t('browse')}</button>
             </div>
         `;
     }
@@ -584,6 +584,7 @@ const UI_I18N = {
         welcome_text: "Go and discover.<br><br>Just follow your instinct and everything will be fine.",
         enter: "ENTER",
         browse: "BROWSE",
+        browse_hint: "don't mind me, I'm just browsing.",
         reflected: "REFLECTED",
         reflection: "REFLECTION",
         submit: "SUBMIT",
@@ -720,6 +721,7 @@ const UI_I18N = {
         welcome_text: "Ga op ontdekking!<br><br>Volg gewoon je intuïtie en alles komt goed.",
         enter: "GA VERDER",
         browse: "KIJKEN",
+        browse_hint: "ik kom alleen even kijken.",
         reflected: "GEDAAN ✓",
         reflection: "REFLECTIE",
         submit: "VERSTUREN",
@@ -909,6 +911,12 @@ window.addEventListener('message', (event) => {
             card.querySelector('h2').innerHTML = `${t('hi')} <span style="color: #60a5fa">${name}</span>`;
             card.querySelector('p').innerHTML = t('welcome_text');
             card.querySelector('.narrative-btn').innerText = t('enter');
+
+            // Update browsing hint if present
+            const browseHint = card.querySelector('#browse-hint-text');
+            if (browseHint) browseHint.innerText = t('browse_hint');
+            const browseBtn = card.querySelector('#browse-btn');
+            if (browseBtn) browseBtn.innerText = t('browse');
         }
     }
 });
@@ -991,8 +999,8 @@ window.submitVisitorName = function () {
                         ${t('enter')}
                     </button>
                     <div class="mt-4 text-center">
-                        <button class="text-[10px] text-gray-500 hover:text-white transition-colors uppercase tracking-widest" 
-                            onclick="window.skipNameEntry()">don't mind me, I'm just browsing. ></button>
+                        <span id="browse-hint-text" class="text-[10px] text-gray-500 uppercase tracking-widest">${t('browse_hint')}</span>
+                        <button id="browse-btn" class="narrative-btn" style="padding:4px 8px; font-size:10px; margin-left: 8px; min-height: unset;" onclick="window.skipNameEntry && window.skipNameEntry()">${t('browse')}</button>
                     </div>
     `;
 
