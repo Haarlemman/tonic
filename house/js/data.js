@@ -11,8 +11,8 @@ window.houseConfig = houseConfig;
 
 window.roomContent = {
     hall: {
-        title: "Reception Hall",
-        title_nl: "Ontvangsthal",
+        title: "The Reception Hall",
+        title_nl: "De Ontvangsthal",
 
         hex: 0x197654,
         playlist: [
@@ -56,8 +56,8 @@ window.roomContent = {
     },
 
     living: {
-        title: "Living Room",
-        title_nl: "Woonkamer",
+        title: "The Living Room",
+        title_nl: "De Woonkamer",
 
         hex: 0xe65100,
         playlist: [
@@ -75,8 +75,8 @@ window.roomContent = {
     },
 
     studio: {
-        title: "Studio",
-        title_nl: "Studio",
+        title: "The Studio",
+        title_nl: "De Studio",
 
         hex: 0x212351,
         playlist: [
@@ -85,8 +85,8 @@ window.roomContent = {
     },
 
     bedroom: {
-        title: "Bedroom",
-        title_nl: "Slaapkamer",
+        title: "The Bedroom",
+        title_nl: "De Slaapkamer",
 
         hex: 0x004d40,
         playlist: [
@@ -114,8 +114,8 @@ window.roomContent = {
     },
 
     bathroom: {
-        title: "Bathroom",
-        title_nl: "Badkamer",
+        title: "The Bathroom",
+        title_nl: "De Badkamer",
 
         hex: 0x0696a4,
         playlist: [
@@ -142,8 +142,8 @@ window.roomContent = {
     },
 
     basement: {
-        title: "Basement",
-        title_nl: "Kelder",
+        title: "The Basement",
+        title_nl: "De Kelder",
 
         hex: 0x334155,
         playlist: [

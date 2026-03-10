@@ -1829,6 +1829,9 @@ window.showRoomDescription = function (roomName) {
     overlay.style.display = 'flex';
     overlay.style.opacity = '0';
 
+    // Force reflow to ensure the transition engine registers opacity 0
+    void overlay.offsetWidth;
+
     // Slight delay to allow display flex to apply before transitioning opacity
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -1840,7 +1843,7 @@ window.showRoomDescription = function (roomName) {
                 if (overlay.style.opacity === '0') {
                     overlay.style.display = 'none';
                 }
-            }, 500); // Wait for fade transition
+            }, 1500); // Wait for 1.5s fade transition to complete
         }, 2000);
     }, 50);
 };
