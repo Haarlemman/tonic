@@ -13,12 +13,11 @@ window.roomContent = {
     hall: {
         title: "Reception Hall",
         title_nl: "Ontvangsthal",
-        description: "The place where everything begins. A threshold between the world outside and the world within. Every room in the house holds a reflection — click the glowing icon to leave your mark.",
-        description_nl: "De plek waar alles begint. Een drempel tussen de buitenwereld en de wereld binnenin. Elke kamer in het huis bevat een reflectie — klik op het gloeiende icoon om je sporen na te laten.",
+        description: "Once upon a time....",
+        description_nl: "Er was eens...",
         hex: 0x197654,
         playlist: [
             {
-                artist: "Paradox Prime",
                 track: "The House of Awe",
                 src: "assets/audio/TheHouseofAwe.mp3",
                 lyrics: [
@@ -60,11 +59,11 @@ window.roomContent = {
     living: {
         title: "Living Room",
         title_nl: "Woonkamer",
-        description: "The stage for every story told and untold. Screens glow, the couch holds the weight of a thousand evenings. What has this room witnessed in your life?",
-        description_nl: "Het podium voor elk verhaal, verteld en onverteld. Schermen gloeien, de bank draagt het gewicht van duizend avonden. Wat heeft deze kamer meegemaakt in jouw leven?",
+        description: "What is your story?",
+        description_nl: "Wat heb jij te vertellen?",
         hex: 0xe65100,
         playlist: [
-            { artist: "Paradox Prime", track: "Hope", src: "assets/audio/Hope.mp3" }
+            { track: "Hope", src: "assets/audio/Hope.mp3" }
         ],
         videoPlaylist: [
             { title: "The Premonition", src: "assets/video/premonition.mp4" },
@@ -73,117 +72,115 @@ window.roomContent = {
         ],
         videoInterfacePos: { x: 3.0, y: 3.2, z: -4.9 },
         tvImages: [
-            { image: "assets/images/tv.jpg", color: "#000", text: "" },
-            { image: "assets/images/brug.jpg", color: "#990000", text: "" },
-            { image: "assets/images/bavo1.jpg", color: "#000099", text: "" },
-            { image: "assets/images/spaarne1.jpg", color: "#009900", text: "" },
-            { image: "assets/images/spaarne2.jpg", color: "#330066", text: "" },
-            { image: "assets/images/sea.jpg", color: "#0000aa", text: "" }
+            { image: "assets/images/tv.jpg", color: "#000", text: "" }
         ]
     },
 
     studio: {
         title: "Studio",
         title_nl: "Studio",
-        description: "This is where the signal is sent. Machines hum, ideas crystallise, sound becomes form. What would you create if nothing stood in your way?",
-        description_nl: "Dit is waar het signaal wordt verzonden. Machines gonzen, ideeën kristaliseren, geluid wordt vorm. Wat zou je creëren als niets je in de weg stond?",
+        description: "Ideas",
+        description_nl: "Ideëen",
         hex: 0x212351,
         playlist: [
-            { artist: "Paradox Prime", track: "Heartroll", src: "assets/audio/Heartroll.mp3" }
+            { track: "Heartroll", src: "assets/audio/Heartroll.mp3" }
         ]
     },
 
     bedroom: {
         title: "Bedroom",
         title_nl: "Slaapkamer",
-        description: "The border country between waking and dreaming. Where the mask comes off, the body rests, and the mind wanders into the impossible. What lives here in the dark?",
-        description_nl: "Het grensland tussen waken en dromen. Waar het masker afgaat, het lichaam rust en de geest afdwaalt naar het onmogelijke. Wat leeft hier in het donker?",
+        description: "The World of Dreams",
+        description_nl: "De Wereld der Dromen",
         hex: 0x004d40,
         playlist: [
-            { artist: "Paradox Prime", track: "Dreaming", src: "assets/audio/sleepy.mp3" },
-            { artist: "Paradox Prime", track: "Prepare", src: "assets/audio/prepare.mp3" },
-            { artist: "Paradox Prime", track: "Bells", src: "assets/audio/bells.mp3" }
+            { track: "Dreaming", src: "assets/audio/sleepy.mp3" },
+            { track: "Prepare", src: "assets/audio/prepare.mp3" },
+            { track: "Bells", src: "assets/audio/bells.mp3" }
         ],
         videoPlaylist: [
-            { title: "Night After Night", artist: "Paradox Prime", src: "assets/video/nain.mp4", volume: 0.4 },
-            { title: "The Spirit", artist: "David Enker", src: "assets/video/spirit.mp4" },
-            { title: "Dreaming", artist: "Paradox Prime", src: "assets/video/dreaming.mp4" }
-        ]
+            { title: "Night After Night", src: "assets/video/nain.mp4", volume: 0.4 },
+            { title: "The Spirit", src: "assets/video/spirit.mp4" },
+            { title: "Dreaming", src: "assets/video/dreaming.mp4" }
+        ],
+        musicInterfacePos: { y: 4.2 }
     },
 
     attic: {
         title: "Attic",
         title_nl: "Zolder",
-        description: "The highest room. What we keep but never visit. Old frequencies, old feelings, the residue of who we were. The lamp responds to what it hears.",
-        description_nl: "De hoogste kamer. Wat we bewaren maar nooit bezoeken. Oude frequenties, oude gevoelens, het residu van wie we waren. De lamp reageert op wat hij hoort.",
+        description: "Be up high; go deep.",
+        description_nl: "Diep gaan op grote hoogte.",
         hex: 0x5d4037,
         playlist: [
-            { artist: "Paradox Prime", track: "Curiosity", src: "assets/audio/Curiosity.mp3" }
+            { track: "Curiosity", src: "assets/audio/Curiosity.mp3" },
+            { track: "Symbiosis", src: "assets/audio/symbiosis.mp3" }
         ]
     },
 
     bathroom: {
         title: "Bathroom",
         title_nl: "Badkamer",
-        description: "The most honest room. No performance. Steam, mirror, tile. Where the day is washed off and you are briefly just yourself. What ritual holds you together?",
-        description_nl: "De meest eerlijke kamer. Geen vertoning. Stoom, spiegel, tegels. Waar de dag wordt afgewassen en je even gewoon jezelf bent. Welk ritueel houdt jou bij elkaar?",
+        description: "Reflection.",
+        description_nl: "Reflectie. Wat zie je?",
         hex: 0x0696a4,
         playlist: [
-            { artist: "Paradox Prime", track: "Glass Garden Waltz", src: "assets/audio/GlassGardenWaltz.mp3" }
+            { track: "Glass Garden Waltz", src: "assets/audio/GlassGardenWaltz.mp3" }
         ],
         videoPlaylist: [
             { title: "Time Is Now", src: "assets/video/Time-Is-Now.mp4" }
         ],
-        videoInterfacePos: { x: 2.8, y: 2.8, z: -4.92 }
+        videoInterfacePos: { x: 2.8, y: 2.8, z: -4.92 },
+        musicInterfacePos: { y: 2.8 }
     },
 
     toilet: {
         title: "The Little Room",
         title_nl: "Het kleinste kamertje",
-        description: "Everyone ends up here eventually. The smallest room in the house — and somehow the one where the most unexpected thoughts arrive. A room of its own kind of silence.",
-        description_nl: "Iedereen komt hier uiteindelijk terecht. De kleinste kamer van het huis — en op de een of andere manier de kamer waar de meest onverwachte gedachten opkomen. Een kamer met zijn eigen soort stilte.",
+        description: "Small number, big message",
+        description_nl: "Kleien booschap, grootse gedachten",
         hex: 0x046896,
         interiorWidth: 3.0,
         interiorDepth: 5.0,
         playlist: [
-            { artist: "Paradox Prime", track: "Mysterious Heartbeat 1", src: "assets/audio/MysteriousHeartbeat1.mp3" },
-            { artist: "Paradox Prime", track: "Mysterious Heartbeat 2", src: "assets/audio/MysteriousHeartbeat2.mp3" }
+            { track: "Mysterious Heartbeat 1", src: "assets/audio/MysteriousHeartbeat1.mp3" },
+            { track: "Mysterious Heartbeat 2", src: "assets/audio/MysteriousHeartbeat2.mp3" }
         ]
     },
 
     basement: {
         title: "Basement",
         title_nl: "Kelder",
-        description: "Below the surface, where signals meet shadows. Truth nodes float in the dark. What do you keep down here that you haven't looked at in a while?",
-        description_nl: "Onder het oppervlak, waar signalen en schaduwen elkaar ontmoeten. Waarheidsknooppunten zweven in het duister. Wat bewaar je hier beneden waar je al een tijdje niet naar hebt gekeken?",
+        description: "De Belly of the Beast",
+        description_nl: "De Onderbuik",
         hex: 0x334155,
         playlist: [
-            { artist: "Paradox Prime", track: "Seven is calling", src: "assets/audio/Seven.mp3" }
+            { track: "Seven is calling", src: "assets/audio/Seven.mp3" }
         ]
     },
 
     annex: {
         title: "The Annex",
-        title_nl: "De Aanbouw",
-        description: "Added later. An extension of self. The room that wasn't planned but became necessary — the place where new chapters begin to be written.",
-        description_nl: "Later toegevoegd. Een verlengstuk van jezelf. De kamer die niet gepland was maar noodzakelijk werd — de plek waar nieuwe hoofdstukken worden geschreven.",
+        title_nl: "De Annex",
+        description: "Truth lives here",
+        description_nl: "Hier woont de Waarheid",
         hex: 0x1a1a1a,
         interiorWidth: 4,
         interiorDepth: 4,
         playlist: [
-            { artist: "Paradox Prime", track: "Free Will", src: "assets/audio/Free_Will.mp3" },
-            { artist: "Paradox Prime", track: "Life's Lament", src: "assets/audio/Lifes_Lament.mp3" }
+            { track: "Free Will", src: "assets/audio/Free_Will.mp3" },
+            { track: "Life's Lament", src: "assets/audio/Lifes_Lament.mp3" }
         ]
     },
 
     space: {
         title: "The Void",
-        title_nl: "Het Universum",
-        description: "Beyond the known floor plan. Out here, the rules dissolve. The rocket passes. Stars drift. You've made it to the edge of the House of Awe — what do you carry back?",
-        description_nl: "Voorbij de bekende plattegrond. Hier lossen de regels op. De raket passeert. Sterren drijven voorbij. Je hebt de rand van het Huis der Verwondering bereikt — wat neem je mee terug?",
+        title_nl: "De Leegte",
+        description: "Eternity and Infinity",
+        description_nl: "Oneindigheid",
         hex: 0x000000,
         playlist: [
-            { artist: "Paradox Prime", track: "No More Pain", src: "assets/audio/Nomorepain.mp3" }
+            { track: "No More Pain", src: "assets/audio/Nomorepain.mp3" }
         ]
     }
 };
