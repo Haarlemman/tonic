@@ -2,6 +2,10 @@
 //  HOUSE OF AWE — UI Components  (ui.js)
 // ============================================================
 
+// PERF: Debug logging — mirrors the flag in house.js
+const _uiDebug = typeof DEBUG !== 'undefined' ? DEBUG : false;
+const _uiDbg = _uiDebug ? console.log.bind(console) : () => { };
+
 
 // ---- Universal Video Interface ----
 
@@ -149,6 +153,13 @@ window.createUniversalVideoInterface = function (parentGroup, position, playlist
 
             itemMesh.userData.onClick = () => {
                 window.masterVideoIndex = i;
+
+                // Stop room music when a video is selected
+                if (window.audioPlayer && !window.audioPlayer.paused) {
+                    window.audioPlayer.pause();
+                    window.isMusicPlaying = false;
+                    if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0xff0000);
+                }
 
                 if (options.onPlay && typeof options.onPlay === 'function') {
                     options.onPlay(i);
@@ -428,19 +439,19 @@ function createGlitchyHalo() {
             answers: saved.answers || {},
             visitedRooms: saved.visitedRooms || []
         };
-        console.log('✅ Restored visitor progress:', window.visitorData);
+        _uiDbg('✅ Restored visitor progress:', window.visitorData);
     } else {
         window.visitorData = {
             name: '',
             answers: {},
             visitedRooms: []
         };
-        console.log('🆕 Starting a new session.');
+        _uiDbg('🆕 Starting a new session.');
     }
     // Initialize the rich memory system
     if (typeof initMemory === 'function') {
         window._aweMemory = initMemory();
-        console.log('🧠 Memory loaded — visit #' + (window._aweMemory.visitCount || 1));
+        _uiDbg('🧠 Memory loaded — visit #' + (window._aweMemory.visitCount || 1));
     }
 })();
 
@@ -483,6 +494,10 @@ window.initNarrativePrompt = function (forceShow = false) {
             <p class="text-gray-500 mb-4 font-mono text-xs uppercase tracking-widest">${t('welcome_hint')}</p>
             <input type="text" id="visitor-name" class="narrative-input" placeholder="${t('welcome_placeholder')}" maxlength="30" onkeypress="if(event.key==='Enter') window.submitVisitorName()">
             <button class="narrative-btn" onclick="window.submitVisitorName()">${t('proceed')}</button>
+            <div class="mt-4 text-center">
+                <span class="text-[10px] text-gray-500 uppercase tracking-widest">${window.currentLanguage === 'nl' ? "ik kom alleen even kijken." : "don't mind me, I'm just browsing."}</span>
+                <button class="narrative-btn" style="padding:4px 8px; font-size:10px; margin-left: 8px; min-height: unset;" onclick="window.skipNameEntry && window.skipNameEntry()">${t('browse')}</button>
+            </div>
         `;
     }
 
@@ -496,7 +511,8 @@ window.initNarrativePrompt = function (forceShow = false) {
         if (mem && mem.visitCount > 1) {
             const visitNum = mem.visitCount;
             const firstDate = mem.firstVisit ? new Date(mem.firstVisit) : null;
-            const lastDate = mem.lastVisit ? new Date(mem.lastVisit) : null;
+            const lastDateSrc = mem.prevLastVisit || mem.lastVisit;
+            const lastDate = lastDateSrc ? new Date(lastDateSrc) : null;
 
             // Time since last visit
             let timeSinceHTML = '';
@@ -506,11 +522,11 @@ window.initNarrativePrompt = function (forceShow = false) {
                 const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
                 const diffMins = Math.floor(diffMs / (1000 * 60));
                 if (diffDays > 0) {
-                    timeSinceHTML = `${diffDays} ${t('days_ago')}`;
+                    timeSinceHTML = `${diffDays} ${t('days_ago')} `;
                 } else if (diffHours > 0) {
-                    timeSinceHTML = `${diffHours} ${t('hours_ago')}`;
+                    timeSinceHTML = `${diffHours} ${t('hours_ago')} `;
                 } else {
-                    timeSinceHTML = `${diffMins} ${t('minutes_ago')}`;
+                    timeSinceHTML = `${diffMins} ${t('minutes_ago')} `;
                 }
             }
 
@@ -526,7 +542,7 @@ window.initNarrativePrompt = function (forceShow = false) {
                         ${timeSinceHTML ? `${t('last_seen')}: <span style="color: #eee;">${timeSinceHTML}</span>` : ''}
                     </div>
                 </div>
-            `;
+        `;
         }
 
         if (card) {
@@ -540,8 +556,8 @@ window.initNarrativePrompt = function (forceShow = false) {
                 </p>
                 ${memoryHTML}
                 ${answered > 0 ? `<p style="color: #888; font-size: 11px; font-family: 'Share Tech Mono', monospace; margin-bottom: 1.5rem; letter-spacing: 0.1em;">${t('reflections_gathered')}: ${answered}/10</p>` : ''}
-                <button onclick="window.dismissWelcome()" class="narrative-btn">${t('resume')}</button>
-            `;
+    <button onclick="window.dismissWelcome()" class="narrative-btn">${t('resume')}</button>
+    `;
         }
         overlay.style.display = 'flex';
         overlay.style.opacity = '0';
@@ -567,6 +583,7 @@ const UI_I18N = {
         welcome_back: "WELCOME BACK",
         welcome_text: "Go and discover.<br><br>Just follow your instinct and everything will be fine.",
         enter: "ENTER",
+        browse: "BROWSE",
         reflected: "REFLECTED",
         reflection: "REFLECTION",
         submit: "SUBMIT",
@@ -578,16 +595,16 @@ const UI_I18N = {
         reveal_secret: "REVEAL THE SECRET",
         mol_title: "THE MEANING OF LIFE",
         mol_according: "ACCORDING TO",
-        started: "It all started...",
-        love_is: "Love is",
-        bully: "The biggest bullie is",
+        started: "The Big Bang! Suddenly:",
+        love_is: "The world should be ruled by",
+        bully: "Ignore",
         should: "Everybody should",
         doubt: "When in doubt,",
         einstein: "Einstein couldn't even think of this:",
         eat: "We should all",
         hero: "is our hero",
         forget: "never forget:",
-        answer_everything: "The answer to everything",
+        answer_everything: "The answer to everything is",
         download_report: "DOWNLOAD REPORT",
         return_house: "Return to House",
         status_progress: "Status: In Progress",
@@ -640,12 +657,12 @@ const UI_I18N = {
         living_q: "What do you love in life?",
         annex_q: "What do you fear?",
         studio_q: "What do you do in your spare time?",
-        basement_q: "Stop thinking - What does your gut say?",
+        basement_q: "If you stop thinking; what does your gut say?",
         toilet_q: "What are your big ideas?",
         bedroom_q: "What are your dreams made of?",
         bathroom_q: "Who is your favorite superhero?",
         attic_q: "What are your fondest memories?",
-        space_q: "Where were you 10 years before you were born?",
+        space_q: "Where were you 1 year before you were born?",
         hall_l: "Genesis",
         living_l: "Love",
         annex_l: "Evil",
@@ -702,7 +719,8 @@ const UI_I18N = {
         welcome_back: "WELKOM TERUG",
         welcome_text: "Ga op ontdekking!<br><br>Volg gewoon je intuïtie en alles komt goed.",
         enter: "GA VERDER",
-        reflected: "GEREFLECTEERD ✓",
+        browse: "KIJKEN",
+        reflected: "GEDAAN ✓",
         reflection: "REFLECTIE",
         submit: "VERSTUREN",
         tell_us_something: "Zeg het maar...",
@@ -713,16 +731,16 @@ const UI_I18N = {
         reveal_secret: "ONTHUL HET GEHEIM",
         mol_title: "DE ZIN VAN HET LEVEN",
         mol_according: "VOLGENS",
-        started: "Het begon allemaal",
-        love_is: "Liefde is",
-        bully: "De grootste pestkop is",
+        started: "De Oerknal! Plotseling:",
+        love_is: "De wereld zou geregeerd moeten worden door",
+        bully: "Negeer",
         should: "Iedereen zou moeten",
         doubt: "Bij twijfel,",
-        einstein: "Einstein had dit niet kunnen bedenken:",
+        einstein: "Zelfs Einstein had dit niet kunnen bedenken:",
         eat: "We zouden allemaal moeten ",
         hero: "is onze held",
-        forget: "nooit vergeten:",
-        answer_everything: "Het antwoord op alles",
+        forget: "vergeet nooit:",
+        answer_everything: "Het antwoord op alles is",
         download_report: "DOWNLOAD RAPPORT",
         return_house: "Terug naar het Huis",
         status_progress: "Status: In Uitvoering",
@@ -775,12 +793,12 @@ const UI_I18N = {
         living_q: "Waar hou je van?",
         annex_q: "Waar ben je bang voor?",
         studio_q: "Wat doe je in je vrije tijd?",
-        basement_q: "Stop NU met denken - Wat zegt je gevoel?",
+        basement_q: "SAls je nu NIET nadenkt; wat zegt dan je gevoel?",
         toilet_q: "Wat zijn je grote ideeën?",
         bedroom_q: "Waar droom je over?",
         bathroom_q: "Wie is je favoriete superheld?",
         attic_q: "Wat zijn je mooiste herinneringen?",
-        space_q: "Waar was je 10 jaar voordat je was geboren?",
+        space_q: "Waar was je 1 jaar voordat je was geboren?",
         hall_l: "Genesis",
         living_l: "Liefde",
         annex_l: "Het Kwaad",
@@ -869,7 +887,7 @@ window.addEventListener('message', (event) => {
     if (d.type === 'SET_LANGUAGE') {
         window.currentLanguage = d.lang;
         window.currentLang = d.lang; // alias — some parts of house.js read this name
-        console.log('🌐 Language switched to:', d.lang);
+        _uiDbg('🌐 Language switched to:', d.lang);
 
         // Update any visible UI
         const hTitle = document.getElementById('narrative-title');
@@ -894,6 +912,42 @@ window.addEventListener('message', (event) => {
         }
     }
 });
+window.skipNameEntry = function () {
+    window.visitorData = window.visitorData || { answers: {}, visitedRooms: [] };
+    window.visitorData.name = 'Guest';
+    window.visitorData.isBrowsing = true; // Mark as browsing
+
+    // Persist to localStorage
+    if (typeof saveUserProgress === 'function') {
+        saveUserProgress(window.visitorData);
+    }
+
+    // Move to next step smoothly
+    const overlay = document.getElementById('narrative-overlay');
+    if (overlay) {
+        const card = overlay.querySelector('.narrative-card');
+        if (card) {
+            card.style.opacity = '0';
+            setTimeout(() => {
+                card.innerHTML = `
+                    <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
+                    <h2 style="font-family: 'Share Tech Mono', monospace; font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 1.5rem; letter-spacing: 0.2em; text-transform: uppercase;">
+                        ${t('hi')} <span style="color: #60a5fa">${t('unknown') || 'GUEST'}</span>
+                    </h2>
+                    <p style="color: #d4d4d4; font-size: 13px; line-height: 1.6; margin-bottom: 2rem; font-family: 'Share Tech Mono', monospace;">
+                        ${t('welcome_text')}
+                    </p>
+                    <button onclick="window.dismissWelcome()" class="narrative-btn">${t('enter')}</button>
+    `;
+                card.style.opacity = '1';
+
+                if (window.parent) {
+                    window.parent.postMessage({ type: 'VISITOR_BROWSING' }, '*');
+                }
+            }, 300);
+        }
+    }
+};
 
 window.submitVisitorName = function () {
     const input = document.getElementById('visitor-name');
@@ -936,7 +990,11 @@ window.submitVisitorName = function () {
                         class="narrative-btn">
                         ${t('enter')}
                     </button>
-                `;
+                    <div class="mt-4 text-center">
+                        <button class="text-[10px] text-gray-500 hover:text-white transition-colors uppercase tracking-widest" 
+                            onclick="window.skipNameEntry()">don't mind me, I'm just browsing. ></button>
+                    </div>
+    `;
 
                 // Fade back in
                 card.style.transition = 'opacity 0.5s ease';
@@ -948,7 +1006,7 @@ window.submitVisitorName = function () {
 
 // Simplified Dismiss (Close Overlay -> Trigger Arrow)
 window.dismissWelcome = function () {
-    console.log('🚪 Dismissing welcome popup...');
+    _uiDbg('🚪 Dismissing welcome popup...');
     const overlay = document.getElementById('narrative-overlay');
 
     if (overlay) {
@@ -988,7 +1046,7 @@ function showWelcomePopup(name) { /* no-op */ }
 // Deprecated: Old 3D text function (kept for reference or removal)
 function createWelcomeFloatingText_OLD(name) {
     // ... (rest of old function if needed, or I can cut it to clean up. I'll just leave the start of it to match end line)
-    console.log('✨ Creating welcome text for:', name);
+    _uiDbg('✨ Creating welcome text for:', name);
     const canvas = document.createElement('canvas');
     canvas.width = 1024; canvas.height = 256;
     const ctx = canvas.getContext('2d');
@@ -1033,7 +1091,7 @@ function createWelcomeFloatingText_OLD(name) {
 
     if (window.worldGroup) {
         window.worldGroup.add(mesh);
-        console.log('📝 Welcome text added to scene at position:', mesh.position);
+        _uiDbg('📝 Welcome text added to scene at position:', mesh.position);
     } else {
         console.error('❌ worldGroup not found!');
     }
@@ -1054,7 +1112,7 @@ function createWelcomeFloatingText_OLD(name) {
                 if (opacity >= 1) {
                     opacity = 1;
                     phase = 'wait';
-                    console.log('⏸️ Welcome text visible, will fade out in 5 seconds');
+                    _uiDbg('⏸️ Welcome text visible, will fade out in 5 seconds');
                     setTimeout(() => { phase = 'out'; }, 5000);
                 }
             } else if (phase === 'out') {
@@ -1064,7 +1122,7 @@ function createWelcomeFloatingText_OLD(name) {
                     if (mesh.parent) mesh.parent.remove(mesh);
                     const idx = window.animatedObjects.indexOf(animObj);
                     if (idx > -1) window.animatedObjects.splice(idx, 1);
-                    console.log('👋 Welcome text removed');
+                    _uiDbg('👋 Welcome text removed');
                 }
             }
             if (mesh.material) mesh.material.opacity = opacity;
@@ -1075,7 +1133,7 @@ function createWelcomeFloatingText_OLD(name) {
 }
 
 function createGuidanceArrow() {
-    console.log('🎯 Creating guidance arrow');
+    _uiDbg('🎯 Creating guidance arrow');
     const arrowGroup = new THREE.Group();
 
     // Create arrow shape
@@ -1131,7 +1189,7 @@ function createGuidanceArrow() {
 
     if (window.worldGroup) {
         window.worldGroup.add(arrowGroup);
-        console.log('🎯 Arrow added to scene');
+        _uiDbg('🎯 Arrow added to scene');
     }
 
     // V-FIX: Ensure raycaster can hit it
@@ -1191,7 +1249,7 @@ function createGuidanceArrow() {
                     if (arrowGroup.parent) arrowGroup.parent.remove(arrowGroup);
                     const idx = window.animatedObjects.indexOf(animObj);
                     if (idx > -1) window.animatedObjects.splice(idx, 1);
-                    console.log('🎯 Arrow animation finished & removed');
+                    _uiDbg('🎯 Arrow animation finished & removed');
                 }
             }
 
@@ -1531,6 +1589,12 @@ window.showHintArrow = function () {
 };
 
 window.showRoomQuestion = function (roomName) {
+    // V-NEW: If in browsing mode, don't show questions, show description instead
+    if (window.visitorData && window.visitorData.isBrowsing) {
+        if (window.showRoomDescription) window.showRoomDescription(roomName);
+        return;
+    }
+
     if (!ROOM_QUESTIONS[roomName]) return;
 
     const overlay = document.getElementById('question-overlay');
@@ -1586,6 +1650,15 @@ window.showRoomQuestion = function (roomName) {
     }
     qInput.disabled = false;
     qInput.style.opacity = '';
+
+    // If browsing, we can change the prompt or just leave it. 
+    // The user said "you don't have to answer questions", but they clicked the orb.
+    // I will add a "Browsing" note in the title if they are browsing.
+    if (window.visitorData.isBrowsing) {
+        qTitle.innerHTML = `<span style="font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 0.2em; font-size: 0.55em; display: block; margin-bottom: 0.5em; opacity: 0.8; color:#60a5fa;">BROWSING</span>` + roomDisplayName.toUpperCase();
+    } else {
+        qTitle.innerHTML = `<span style="font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 0.2em; font-size: 0.55em; display: block; margin-bottom: 0.5em; opacity: 0.8; color:#facc15;">REFLECTIONS</span>` + roomDisplayName.toUpperCase();
+    }
     qInput.style.color = '';
 
     qTitle.innerHTML = `<span style="font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 0.2em; font-size: 0.55em; display: block; margin-bottom: 0.5em; opacity: 0.8;">${t('reflection')}</span>` + roomDisplayName.toUpperCase();
@@ -1629,17 +1702,6 @@ window.submitRoomAnswer = function () {
             allAnswers: window.visitorData.answers,
             totalAnswered: window.visitorData.visitedRooms.length
         }, '*');
-    }
-
-    // Update the reflect icon to green
-    const reflectBtn = document.getElementById('reflect-icon-btn');
-    if (reflectBtn) {
-        const iconSvg = reflectBtn.querySelector('#reflect-icon-svg');
-        const iconLabel = reflectBtn.querySelector('#reflect-icon-label');
-        if (iconSvg) iconSvg.setAttribute('stroke', '#ff2200');
-        if (iconLabel) { iconLabel.textContent = t('reflected'); iconLabel.style.color = '#ff2200'; }
-        reflectBtn.style.opacity = '0.8';
-        reflectBtn.onclick = null;
     }
 
     // Refresh the orb in the 3D scene to show the answered state (faded red)
@@ -1716,9 +1778,48 @@ function checkNarrativeCompletion() {
 window.closeOverlay = function (id) {
     const el = document.getElementById(id);
     if (el) {
-        el.style.display = 'none';
         el.style.opacity = '0';
+        setTimeout(() => { el.style.display = 'none'; }, 500);
     }
+};
+
+window.skipNameEntry = function () {
+    window.visitorData = window.visitorData || { answers: {}, visitedRooms: [] };
+    window.visitorData.name = 'Guest';
+    window.visitorData.isBrowsing = true;
+
+    // Notify index if in iframe
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'VISITOR_BROWSING', browsing: true }, '*');
+    }
+
+    const overlay = document.getElementById('narrative-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 500);
+    }
+};
+
+window.showRoomDescription = function (roomName) {
+    const rData = window.roomContent ? window.roomContent[roomName] : null;
+    if (!rData || !rData.description) return;
+
+    const overlay = document.getElementById('description-overlay');
+    const titleEl = document.getElementById('room-desc-title');
+    const textEl = document.getElementById('room-desc-text');
+
+    if (!overlay || !titleEl || !textEl) return;
+
+    const lang = window.currentLanguage || 'en';
+    const title = lang === 'nl' && rData.title_nl ? rData.title_nl : rData.title;
+    const desc = lang === 'nl' && rData.description_nl ? rData.description_nl : rData.description;
+
+    titleEl.textContent = title;
+    textEl.textContent = desc;
+
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.opacity = '1'; }, 10);
 };
 
 window.showCompletionPopup = function () {
@@ -1735,20 +1836,20 @@ window.showCompletionPopup = function () {
 
     // Bright, premium look
     card.style.cssText = `
-                background: white;
-                color: black;
-                padding: ${isSmall ? '32px 16px' : '60px 40px'};
-                border-radius: 4px;
-                text-align: center;
-                width: ${isSmall ? '92vw' : '90%'};
-                max-width: 500px;
-                max-height: 90vh;
-                overflow-y: auto;
-                box-sizing: border-box;
-                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(255, 255, 255, 0.1);
-                position: relative;
-                overflow: hidden;
-                `;
+    background: white;
+    color: black;
+    padding: ${isSmall ? '32px 16px' : '60px 40px'};
+    border - radius: 4px;
+    text - align: center;
+    width: ${isSmall ? '92vw' : '90%'};
+    max - width: 500px;
+    max - height: 90vh;
+    overflow - y: auto;
+    box - sizing: border - box;
+    box - shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    `;
 
     card.innerHTML = `
         <div style="position:absolute; top:0; left:0; width:100%; height:8px; background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); background-size: 200% auto; animation: rainbow 3s linear infinite;"></div>
@@ -1784,7 +1885,7 @@ window.returnToIndexAndShowMeaning = function (e) {
     window._revealBusy = true;
     setTimeout(() => { window._revealBusy = false; }, 1000);
 
-    console.log('🔮 Reveal Secret button clicked!');
+    _uiDbg('🔮 Reveal Secret button clicked!');
     const overlay = document.getElementById('narrative-overlay');
     if (overlay) {
         overlay.style.opacity = '0';
@@ -1800,7 +1901,7 @@ window.returnToIndexAndShowMeaning = function (e) {
     } catch (fsErr) { console.warn('Fullscreen exit error:', fsErr); }
 
     if (window.parent && window.parent !== window) {
-        console.log('📡 Posting GOTO_MEANING_OF_LIFE to parent');
+        _uiDbg('📡 Posting GOTO_MEANING_OF_LIFE to parent');
         window.parent.postMessage({
             type: 'GOTO_MEANING_OF_LIFE',
             visitorName: window.visitorData ? window.visitorData.name : null,
@@ -1818,24 +1919,28 @@ window.returnToIndexAndShowMeaning = function (e) {
 
 function showFinalSummary() {
     const summaryOverlay = document.getElementById('narrative-overlay');
+    if (!summaryOverlay) return;
     const card = summaryOverlay.querySelector('.narrative-card');
+    if (!card) return;
 
-    // V-FIX: Make it "Alone" on the index page (opaque background, full screen fixed)
-    summaryOverlay.style.backgroundColor = '#151515';
-    summaryOverlay.style.backgroundImage = 'linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url("https://www.transparenttextures.com/patterns/black-linen.png")';
-    summaryOverlay.style.backgroundBlendMode = 'normal';
+    // V-FIX: Ensure overlay is scrollable if content overflows (prevents "stuck" state)
+    summaryOverlay.style.display = 'flex';
+    summaryOverlay.style.overflowY = 'auto';
+    summaryOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+    summaryOverlay.style.backdropFilter = 'blur(15px)';
     summaryOverlay.style.opacity = '1';
-    summaryOverlay.style.padding = '0'; // Remove padding to prevent shift if card is large
+    summaryOverlay.style.padding = '40px 20px'; // Give some breathing room
 
     card.innerHTML = '';
     card.style.maxWidth = '640px';
     card.style.width = '100%';
-    card.style.margin = '0 auto';
-    // Remove default card look to make it feel more like a clean sheet/page
-    card.style.background = 'transparent';
-    card.style.border = 'none';
-    card.style.boxShadow = 'none';
-    card.style.textAlign = 'left'; // Reset text align specifically
+    card.style.margin = 'auto'; // Flex centering fallback
+
+    // Give the card a subtle presence so it's not "invisible"
+    card.style.background = 'rgba(255, 255, 255, 0.03)';
+    card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    card.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
+    card.style.textAlign = 'left';
 
     // Build the specific room lines
     const answers = window.visitorData.answers || {};
@@ -1847,7 +1952,7 @@ function showFinalSummary() {
         { id: 'basement', prefix: t('doubt') },
         { id: 'toilet', prefix: t('einstein') },
         { id: 'bedroom', prefix: t('eat') },
-        { id: 'bathroom', special: true, suffix: t('hero') }, // Special case
+        { id: 'bathroom', special: true, suffix: t('hero') },
         { id: 'attic', prefix: t('forget') },
         { id: 'space', prefix: t('answer_everything') }
     ];
@@ -1864,42 +1969,39 @@ function showFinalSummary() {
         } else {
             line = `<span style="${numStyle}">${idx + 1}.</span> <span class="text-gray-400" style="${fontStyle}">${r.prefix}</span> <span class="text-cyan-300 font-bold" style="${fontStyle}">${ans}</span>`;
         }
-        // V-FIX: Reduced margin-bottom and padding for tighter list
-        linesHTML += `<div class="mb-3 border-b border-gray-900 pb-2 text-md leading-snug">${line}</div>`;
+        linesHTML += `<div class="mb-3 border-b border-white/5 pb-2 text-md leading-snug">${line}</div>`;
     });
 
     const vName = window.visitorData.name || "Unknown";
 
     card.innerHTML = `
-        <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
-        <div class="text-center mb-6 mt-6 flex flex-col items-center">
-            <h2 class="uppercase text-center" style="font-family:'Orelega One', cursive; line-height: 1.1; letter-spacing: -0.02em;">
-                <span style="font-size: 58px; display: block; width: 100%;">${t('mol_title')}</span>
-                <span style="font-size: 24px; display: block; opacity: 0.7; margin: 10px 0; font-family: 'Orelega One', cursive;">${t('mol_according')}</span>
-                <span style="font-size: 82px; display: block; font-weight: 700;">${vName}</span>
+        <button class="close-popup-btn" style="position:fixed; top:20px; right:20px; z-index:2001; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2);" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
+        <div class="text-center mb-6 mt-2 flex flex-col items-center">
+            <h2 class="uppercase text-center" style="font-family:'Orelega One', cursive; line-height: 1.1; letter-spacing: -0.02em; color: #fff;">
+                <span style="font-size: min(10vw, 48px); display: block; width: 100%; opacity: 0.8;">${t('mol_title')}</span>
+                <span style="font-size: 18px; display: block; opacity: 0.6; margin: 10px 0; font-family: 'Orelega One', cursive;">${t('mol_according')}</span>
+                <span style="font-size: min(15vw, 64px); display: block; font-weight: 700; color: #fff;">${vName}</span>
             </h2>
-            <!-- Art Deco Double Line -->
-            <div class="flex flex-col items-center gap-1.5 opacity-30">
-                <div class="w-32 h-[1px] bg-white"></div>
-                <div class="w-48 h-[2px] bg-white"></div>
+            <div class="flex flex-col items-center gap-1.5 opacity-20 mt-4">
+                <div class="w-24 h-[1px] bg-white"></div>
+                <div class="w-40 h-[1px] bg-white"></div>
             </div>
         </div>
 
-        <div class="text-left leading-relaxed max-h-[65vh] overflow-y-auto px-4 custom-scrollbar">
+        <div class="text-left leading-relaxed max-h-[50vh] overflow-y-auto px-4 custom-scrollbar mb-4">
             ${linesHTML}
         </div>
 
-        <div class="mt-8 mb-4 flex flex-col gap-3 text-center px-8">
-            <button class="narrative-btn w-full" onclick="window.downloadNarrative()">${t('download_report')}</button>
-            <button class="text-[10px] text-gray-600 hover:text-white transition-colors uppercase tracking-widest mt-2"
+        <div class="mt-8 mb-4 flex flex-col gap-3 text-center px-4">
+            <button class="narrative-btn w-full py-4" style="background: #fff; color: #000; font-weight: bold;" onclick="window.downloadNarrative()">${t('download_report')}</button>
+            <button class="text-[11px] text-gray-400 hover:text-white transition-colors uppercase tracking-[0.2em] py-4"
                 onclick="window.closeFinalSummaryOverlay()">
                 ${t('return_house')}
             </button>
         </div>
     `;
-
-    summaryOverlay.style.display = 'flex';
 }
+
 
 // Closes the final summary overlay. On mobile (inside the full-screen iframe),
 // also signals the parent page to exit mobile-experience-active so the user
@@ -1958,7 +2060,7 @@ window.showNarrativeSummary = function () {
         const statusColor = isAnswered ? 'text-cyan-400' : 'text-gray-600';
         const checkMark = isAnswered ? '<span class="text-green-400">✓</span>' : '<span class="text-gray-700">○</span>';
         breakdownHTML += `
-            <div class="text-[10px] mb-2 flex justify-between items-center py-1 border-b border-white/5">
+        <div class="text-[10px] mb-2 flex justify-between items-center py-1 border-b border-white/5">
                 <span class="flex items-center gap-2">${checkMark} <span class="${isAnswered ? 'text-gray-300' : 'text-gray-600'}">${roomName}</span></span>
                 <span class="${statusColor} font-bold text-[9px] tracking-wider">${label}</span>
             </div>`;
@@ -1979,12 +2081,12 @@ window.showNarrativeSummary = function () {
             ${t('reflections_gathered')}: ${visitedCount} / 10
         </div>
         ${breakdownHTML}
-        <div class="mt-6 flex justify-center">
-            <button class="px-8 py-3 border border-white/40 text-white hover:bg-white/10 transition-all uppercase tracking-widest text-sm"
-                onclick="document.getElementById('narrative-overlay').style.display='none'">
-                ${t('resume')}
-            </button>
-        </div>
+    <div class="mt-6 flex justify-center">
+        <button class="px-8 py-3 border border-white/40 text-white hover:bg-white/10 transition-all uppercase tracking-widest text-sm"
+            onclick="document.getElementById('narrative-overlay').style.display='none'">
+            ${t('resume')}
+        </button>
+    </div>
     `;
 
     summaryOverlay.style.display = 'flex';
@@ -1996,8 +2098,8 @@ window.submitFinalRecord = function () {
     const zone = document.getElementById('submit-action-zone');
     if (zone) {
         zone.innerHTML = `
-            <div class="text-cyan-400 font-mono text-[10px] animate-pulse py-4">
-                ${t('transmitting')}
+        <div class="text-cyan-400 font-mono text-[10px] animate-pulse py-4">
+            ${t('transmitting')}
             </div>
         `;
     }
@@ -2005,28 +2107,28 @@ window.submitFinalRecord = function () {
     setTimeout(() => {
         if (zone) {
             zone.innerHTML = `
-                <div class="text-green-400 font-mono text-[10px] py-4 mb-2">
-                    ${t('record_secured')}
+        <div class="text-green-400 font-mono text-[10px] py-4 mb-2">
+            ${t('record_secured')}
                 </div>
                 <button class="narrative-btn" onclick="downloadNarrative()">${t('download_record')}</button>
                 <button class="narrative-btn" style="margin-top:10px; border-color:#333;" onclick="emailNarrative()">${t('email_record')}</button>
                 <button class="text-[10px] text-gray-500 hover:text-white transition-colors uppercase tracking-widest mt-4" onclick="document.getElementById('narrative-overlay').style.display='none'">${t('restore_view')}</button>
-            `;
+    `;
         }
 
         // Final chime or effect?
-        console.log("Transmission complete.");
+        _uiDbg("Transmission complete.");
     }, 2500);
 };
 
 window.downloadNarrative = function () {
-    let content = `${t('report_header')}\n`;
-    content += `${t('visitor')}: ${window.visitorData.name}\n`;
-    content += `${t('date')}: ${new Date().toLocaleString()}\n`;
+    let content = `${t('report_header')} \n`;
+    content += `${t('visitor')}: ${window.visitorData.name} \n`;
+    content += `${t('date')}: ${new Date().toLocaleString()} \n`;
     content += `------------------------------------------\n\n`;
 
     for (const [room, answer] of Object.entries(window.visitorData.answers)) {
-        content += `[${room.toUpperCase()}]\n${t('question')}: ${ROOM_QUESTIONS[room]}\n${t('answer')}: ${answer}\n\n`;
+        content += `[${room.toUpperCase()}]\n${t('question')}: ${ROOM_QUESTIONS[room]} \n${t('answer')}: ${answer} \n\n`;
     }
 
     const blob = new Blob([content], { type: 'text/plain' });
@@ -2039,16 +2141,16 @@ window.downloadNarrative = function () {
 };
 
 window.emailNarrative = function () {
-    let subject = encodeURIComponent(`House of Awe Record - ${window.visitorData.name}`);
+    let subject = encodeURIComponent(`House of Awe Record - ${window.visitorData.name} `);
     let body = `HOUSE OF AWE - NARRATIVE RECORD\n`;
-    body += `Visitor: ${window.visitorData.name}\n`;
-    body += `Date: ${new Date().toLocaleString()}\n`;
+    body += `Visitor: ${window.visitorData.name} \n`;
+    body += `Date: ${new Date().toLocaleString()} \n`;
     body += `------------------------------------------\n\n`;
 
     // Only include answered questions
     for (const [room, answer] of Object.entries(window.visitorData.answers)) {
         if (ROOM_QUESTIONS[room]) {
-            body += `[${room.toUpperCase()}]\nQ: ${ROOM_QUESTIONS[room]}\nA: ${answer}\n\n`;
+            body += `[${room.toUpperCase()}]\nQ: ${ROOM_QUESTIONS[room]} \nA: ${answer} \n\n`;
         }
     }
 
@@ -2056,7 +2158,7 @@ window.emailNarrative = function () {
 
     // Using an anchor tag click is more reliable than window.location.href for mailto protocol
     const a = document.createElement('a');
-    a.href = `mailto:?subject=${subject}&body=${body}`;
+    a.href = `mailto:? subject = ${subject}& body=${body} `;
     a.target = '_blank';
     a.click();
 };
@@ -2088,7 +2190,7 @@ window.setExperienceLanguage = function (lang) {
     if (!UI_I18N[lang]) return;
     window.currentLanguage = lang; // must match what t() reads
     window.currentLang = lang;     // alias for house.js references
-    console.log("🏳️ Experience language set to:", lang);
+    _uiDbg("🏳️ Experience language set to:", lang);
 
     // 1. Refresh global UI elements (prompts, overlays)
     initNarrativePrompt();
@@ -2131,6 +2233,15 @@ window.addEventListener('message', (event) => {
         window.setExperienceLanguage(d.lang);
     }
 
+    if (d.type === 'SET_VISITOR_BROWSING') {
+        window.visitorData = window.visitorData || { answers: {}, visitedRooms: [] };
+        window.visitorData.isBrowsing = !!d.browsing;
+        if (window.visitorData.isBrowsing) {
+            window.visitorData.name = 'Guest';
+            window.closeOverlay('narrative-overlay');
+        }
+    }
+
     // Triggered by parent (index.html) when the user is in mobile-experience mode
     // and has completed all 10 rooms. Shows the final summary inside the 3D world
     // instead of navigating away to the paper section on the parent page.
@@ -2159,30 +2270,33 @@ window.addEventListener('message', (event) => {
  * no answers revealed. This preserves the punchline surprise.
  */
 window.showVisitorWall = async function () {
-    // Reuse the same narrative-overlay / narrative-card as the progress popup
     const summaryOverlay = document.getElementById('narrative-overlay');
     if (!summaryOverlay) return;
     const card = summaryOverlay.querySelector('.narrative-card');
     if (!card) return;
 
-    // Style card to match progress popup (cyan border)
-    card.innerHTML = '';
-    card.style.maxWidth = '480px';
-    card.style.border = '1px solid rgba(0, 255, 255, 0.2)';
-    card.style.boxShadow = '0 0 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.05)';
-    card.style.background = 'rgba(0,0,0,0.9)';
+    const visitedCount = window.visitorData.visitedRooms.length;
+    const isUserFinished = visitedCount >= 10;
 
-    // Show while loading
+    // Style card based on mode
+    card.innerHTML = '';
+    card.style.maxWidth = isUserFinished ? '640px' : '480px';
+    card.style.border = '1px solid rgba(0, 255, 255, 0.2)';
+    card.style.boxShadow = '0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 255, 0.05)';
+    card.style.background = 'rgba(0,0,0,0.95)';
+    card.style.padding = '3rem 2rem';
+
+    // Loading State
     card.innerHTML = `
         <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
         <div class="text-xs font-mono text-cyan-400 mb-2 tracking-[0.3em] uppercase">${t('wall_title')}</div>
         <h2 style="font-family:'Courier Prime'; color:#fff; border-bottom:1px solid #333; padding-bottom:1rem; margin-bottom:1.5rem;">${t('wall_subtitle')}</h2>
-        <div id="wall-loading" style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#60a5fa; text-align:center; padding:20px 0;">...</div>
+        <div id="wall-loading" style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#60a5fa; text-align:center; padding:40px 0;">...</div>
     `;
 
     summaryOverlay.style.display = 'flex';
-    summaryOverlay.style.opacity = '0';
-    setTimeout(() => summaryOverlay.style.opacity = '1', 50);
+    summaryOverlay.style.opacity = '1';
+    summaryOverlay.style.overflowY = 'auto';
 
     // Fetch entries
     let entries = [];
@@ -2194,41 +2308,94 @@ window.showVisitorWall = async function () {
         console.error('🔥 Visitor Wall fetch error:', err);
     }
 
-    // Build list HTML
-    let listHTML = '';
     if (entries.length === 0) {
-        listHTML = `<p style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#555; text-align:center; padding:20px 0;">${t('wall_empty')}</p>`;
+        card.innerHTML = `
+        <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
+            <div class="text-xs font-mono text-cyan-400 mb-2 tracking-[0.3em] uppercase">${t('wall_title')}</div>
+            <h2 style="font-family:'Courier Prime'; color:#fff; border-bottom:1px solid #333; padding-bottom:1rem; margin-bottom:1.5rem;">${t('wall_subtitle')}</h2>
+            <p style="font-family:'Share Tech Mono',monospace; font-size:11px; color:#555; text-align:center; padding:40px 0;">${t('wall_empty')}</p>
+    `;
+        return;
+    }
+
+    // Build the list
+    let listHTML = '';
+    const prefixes = {
+        hall: t('started'),
+        living: t('love_is'),
+        annex: t('bully'),
+        studio: t('should'),
+        basement: t('doubt'),
+        toilet: t('einstein'),
+        bedroom: t('eat'),
+        bathroom: t('hero'),
+        attic: t('forget'),
+        space: t('answer_everything')
+    };
+
+    if (isUserFinished) {
+        // DETAILED MODE: Show the meaning of life for each visitor
+        listHTML = `<div class="space-y-6 max-h-[60vh] overflow-y-auto px-4 custom-scrollbar text-left mt-4">`;
+        entries.forEach(entry => {
+            const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
+            const ans = entry.answers || {};
+
+            let answersHtml = '';
+            const rOrder = ['hall', 'living', 'annex', 'studio', 'basement', 'toilet', 'bedroom', 'bathroom', 'attic', 'space'];
+            rOrder.forEach(room => {
+                if (ans[room]) {
+                    const prefix = prefixes[room] || '';
+                    if (room === 'bathroom') {
+                        answersHtml += `<div class="mb-1"><span class="text-cyan-400 font-bold">${ans[room]}</span> <span class="text-gray-500">${prefix}</span></div>`;
+                    } else {
+                        answersHtml += `<div class="mb-1"><span class="text-gray-500">${prefix}</span> <span class="text-cyan-400 font-bold">${ans[room]}</span></div>`;
+                    }
+                }
+            });
+
+            listHTML += `
+        <div class="border border-white/10 rounded p-4 bg-white/5 relative overflow-hidden">
+                    <div class="flex justify-between items-baseline mb-3 border-b border-white/5 pb-2">
+                        <span style="font-family:'Orelega One',cursive; font-size:18px; color:#fff;">${entry.name}</span>
+                        <span style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555;">${timeAgo}</span>
+                    </div>
+                    <div style="font-family:'Special Elite',cursive; font-size:12px; line-height:1.6;">
+                        ${answersHtml || '<span class="opacity-20 italic">No reflections shared.</span>'}
+                    </div>
+                </div> `;
+        });
+        listHTML += `</div>`;
     } else {
-        listHTML = `<div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.1em; margin-bottom:12px;">${entries.length} ${t('wall_completed')}</div>`;
-        listHTML += `<div class="mt-4 pt-2 border-t border-white/10 text-left max-h-[45vh] overflow-y-auto custom-scrollbar">`;
+        // SPOILER-FREE MODE: List of names only
+        listHTML = `<div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:#333; letter-spacing:0.1em; margin-bottom:12px; text-transform:uppercase;">${entries.length} ${t('wall_completed')}</div>`;
+        listHTML += `<div class="space-y-1 max-h-[50vh] overflow-y-auto px-1 custom-scrollbar">`;
         entries.forEach(entry => {
             const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
             listHTML += `
-                <div class="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 transition-colors px-1">
+        <div class="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 transition-colors px-2">
                     <span class="flex items-center gap-2">
-                        <span style="width:6px;height:6px;border-radius:50%;background:#60a5fa;opacity:0.6;display:inline-block;box-shadow:0 0 5px rgba(96,165,250,0.4);"></span>
-                        <span style="font-family:'Orelega One',cursive; font-size:15px; color:#fff;">${entry.name}</span>
+                        <span style="width:4px;height:4px;border-radius:50%;background:#00ffff;box-shadow:0 0 4px cyan;display:inline-block;"></span>
+                        <span style="font-family:'Orelega One',cursive; font-size:16px; color:#fff;">${entry.name}</span>
                     </span>
-                    <span style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.08em;">${timeAgo}</span>
-                </div>`;
+                    <span style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#444;">${timeAgo}</span>
+                </div> `;
         });
         listHTML += `</div>`;
     }
 
-    // Rebuild card with data
     card.innerHTML = `
         <button class="close-popup-btn" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
         <div class="text-xs font-mono text-cyan-400 mb-2 tracking-[0.3em] uppercase">${t('wall_title')}</div>
         <h2 style="font-family:'Courier Prime'; color:#fff; border-bottom:1px solid #333; padding-bottom:1rem; margin-bottom:1.5rem;">${t('wall_subtitle')}</h2>
         ${listHTML}
-        <div class="mt-6 flex justify-center">
-            <button class="px-8 py-3 border border-white/40 text-white hover:bg-white/10 transition-all uppercase tracking-widest text-sm"
-                onclick="window.closeOverlay('narrative-overlay')">
-                ${t('resume')}
-            </button>
-        </div>
+    <div class="mt-8 flex justify-center">
+        <button class="narrative-btn px-10 py-3" onclick="window.closeOverlay('narrative-overlay')">
+            ${t('resume')}
+        </button>
+    </div>
     `;
 };
+
 
 
 // ============================================================
@@ -2242,7 +2409,7 @@ window.showVisitorWall = async function () {
 window.showGallerySharePrompt = function () {
     const mem = typeof getMemory === 'function' ? getMemory() : null;
     if (mem && mem.gallerySubmitted) {
-        console.log('Gallery: already submitted, skipping prompt.');
+        _uiDbg('Gallery: already submitted, skipping prompt.');
         return;
     }
 
@@ -2349,8 +2516,8 @@ window.showGalleryOverlay = async function () {
         if (existing) existing.remove();
 
         const lockedIcon = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#60a5fa" viewBox="0 0 16 16" style="margin-bottom:20px; opacity:0.8;">
-              <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#60a5fa" viewBox="0 0 16 16" style="margin-bottom:20px; opacity:0.8;">
+            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
             </svg>
         `;
 
@@ -2371,7 +2538,7 @@ window.showGalleryOverlay = async function () {
             <button id="close-locked-gallery" style="margin-top:40px; background:transparent; border:1px solid #444; color:#888; padding:10px 30px; font-family:'Share Tech Mono',monospace; font-size:10px; text-transform:uppercase; cursor:pointer; transition:all 0.3s ease;">
                 ${t('gallery_close')}
             </button>
-        `;
+    `;
 
         document.body.appendChild(overlay);
         requestAnimationFrame(() => overlay.style.opacity = '1');
@@ -2454,7 +2621,7 @@ window.showGalleryOverlay = async function () {
     const countEl = overlay.querySelector('#gallery-count');
     if (countEl) {
         countEl.textContent = entries.length > 0
-            ? `${entries.length} ${t('gallery_visitors')}`
+            ? `${entries.length} ${t('gallery_visitors')} `
             : '';
     }
 
@@ -2533,14 +2700,14 @@ window.showGalleryOverlay = async function () {
         const timeAgo = entry.timestamp ? formatTimeAgo(entry.timestamp) : '';
 
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
                 <div style="font-family:'Orelega One',cursive; font-size:18px; color:#fff;">${entry.name}</div>
                 <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; letter-spacing:0.1em;">${entry.roomCount || 0} ${t('gallery_rooms')} · ${timeAgo}</div>
             </div>
-            <div style="font-family:'Special Elite',cursive; font-size:13px; line-height:1.8;">
-                ${answerLines}
-            </div>
-        `;
+        <div style="font-family:'Special Elite',cursive; font-size:13px; line-height:1.8;">
+            ${answerLines}
+        </div>
+    `;
 
         grid.appendChild(card);
     });
@@ -2553,7 +2720,6 @@ window.showGalleryOverlay = async function () {
  */
 function formatTimeAgo(date) {
     if (!date) return '';
-    // Robustness: Handle non-Date inputs (strings, objects, etc)
     const dateObj = (date instanceof Date) ? date : new Date(date);
     if (isNaN(dateObj.getTime())) return '';
 
@@ -2568,8 +2734,8 @@ function formatTimeAgo(date) {
             day: 'numeric', month: 'short'
         });
     }
-    if (diffDays > 0) return `${diffDays}d`;
-    if (diffHours > 0) return `${diffHours}h`;
-    if (diffMins > 0) return `${diffMins}m`;
+    if (diffDays > 0) return `${diffDays} d`;
+    if (diffHours > 0) return `${diffHours} h`;
+    if (diffMins > 0) return `${diffMins} m`;
     return 'now';
 }

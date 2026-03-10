@@ -25,7 +25,7 @@
     <meta name="twitter:description" content="Interactive 3D Environment">
     <meta name="twitter:image" content="https://tonic.davidenker.com/assets/images/awe.jpg">
 
-    <link rel="icon" type="image/x-icon" href="/assets/images/fav-infinity.ico">
+    <link rel="icon" type="image/x-icon" href="../assets/images/fav-infinity.ico">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js — required for the wireframe house animation in the placeholder -->
@@ -34,9 +34,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Baumans&family=Bitcount+Grid+Double:wght@300&family=Courier+Prime&family=Lexend:wght@400;700&family=Glass+Antiqua&family=JetBrains+Mono:wght@300;400;700&family=Lato:wght@300;400;700&family=Libre+Baskerville:ital@1&family=Orelega+One&family=Share+Tech+Mono&family=Special+Elite&family=Tilt+Neon&family=Fraunces:wght@400&display=swap">
-    <link rel="stylesheet" href="css/style.css?v=20260221-1624">
+    <link rel="stylesheet" href="css/style.css?v=20260309-1139">
 
     <link rel="manifest" href="manifest.json">
+
+    <!-- MOBILE DETECTION — no automatic redirects.
+         Setting data-attributes so we can conditionally show the iOS banner. -->
+    <script>
+        (function () {
+            var isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            var isMobile = isIos || /Android/i.test(navigator.userAgent);
+            if (isIos) document.documentElement.setAttribute('data-mobile-ios', '1');
+            if (isMobile) document.documentElement.setAttribute('data-is-mobile', '1');
+        })();
+    </script>
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -574,6 +585,64 @@
 
 <body class="text-white text-[11px] selection:bg-white selection:text-black">
 
+    <!-- Top sticky banner for iOS users -->
+    <div id="ios-guide" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:9999;
+        background:#0a0a14; border-bottom:1px solid rgba(0,242,255,0.2);
+        box-shadow:0 10px 30px rgba(0,0,0,0.5); font-family:-apple-system,'SF Pro Display',sans-serif; color:#fff;">
+
+        <div
+            style="padding:12px 16px env(safe-area-inset-top,0px); display:flex; flex-direction:column; gap:10px; max-width:600px; margin:0 auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span
+                    style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(0,242,255,0.8); font-weight:700;">
+                    ⌂ House of Awe
+                </span>
+                <button
+                    onclick="document.getElementById('ios-guide').style.display='none'; document.body.style.paddingTop='0'"
+                    style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0;line-height:1;margin-right:-4px;-webkit-tap-highlight-color:transparent;">✕</button>
+            </div>
+            <div style="display:flex; gap:12px; align-items:stretch;">
+                <button onclick="window.location.href='house.html?v=20260302-1850'" style="
+                    flex:1; background:rgba(255,255,255,0.9); color:#000; border:none;
+                    font-family:inherit; font-size:12px; font-weight:700;
+                    letter-spacing:0.15em; text-transform:uppercase;
+                    padding:13px 10px; border-radius:8px; cursor:pointer;">
+                    ENTER EXPERIENCE
+                </button>
+                <button
+                    onclick="var d=document.getElementById('ios-instructions'); d.style.display=d.style.display==='none'?'block':'none'"
+                    style="
+                    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2);
+                    color:rgba(255,255,255,0.8); padding:0 14px; border-radius:8px; cursor:pointer;">
+                    HELP
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <style>
+        #landing-header {
+            padding-top: env(safe-area-inset-top, 10px);
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+        }
+
+        #ios-pwa-prompt {
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
+        }
+    </style>
+
+    <style>
+        html[data-mobile-ios] #ios-guide {
+            display: block !important;
+        }
+
+        html[data-mobile-ios] body {
+            padding-top: 105px !important;
+        }
+    </style>
+
     <!-- ======================================================
          HEADER
     ====================================================== -->
@@ -581,7 +650,7 @@
         class="flex flex-col items-start px-4 md:px-8 py-1 mb-1 transition-opacity duration-1000 border-b border-white/10"
         style="background-color: #1e2525;">
         <div class="w-full">
-            <h1 class="animated-title text-3xl md:text-7xl mb-1 leading-none cursor-pointer"
+            <h1 class="animated-title text-3xl md:text-7xl leading-none cursor-pointer" style="margin-bottom: -11px;"
                 onclick="location.reload()">
                 The House of Awe
             </h1>
@@ -612,6 +681,13 @@
             <input type="text" id="visitor-name" class="narrative-input" placeholder="YOUR NAME..." maxlength="30"
                 onkeypress="if(event.key==='Enter') submitVisitorName()">
             <button class="narrative-btn" onclick="submitVisitorName()" data-i18n="proceed">PROCEED</button>
+            <div class="mt-4 text-center">
+                <span class="text-[10px] text-gray-500 uppercase tracking-widest">don't mind me, I'm just
+                    browsing.</span>
+                <button class="narrative-btn"
+                    style="padding:4px 8px; font-size:10px; margin-left: 8px; min-height: unset;"
+                    onclick="window.skipNameEntry && window.skipNameEntry()">BROWSE</button>
+            </div>
         </div>
     </div>
 
@@ -662,16 +738,38 @@
                     <canvas id="wireframe-canvas" class="absolute inset-0 w-full h-full"
                         style="display:block;"></canvas>
 
-                    <!-- INITIALIZE button — sits above the canvas -->
-                    <div class="relative z-20 text-center">
-                        <button onclick="bootExperience()" data-i18n="initialize"
-                            class="px-8 py-3 transition-all uppercase font-bold tracking-[0.2em] shadow-2xl"
-                            style="letter-spacing:0.2em; background:#ffffff; color:#000000; border:2px solid #000000; cursor:pointer;"
-                            onmouseenter="this.style.background='#000000';this.style.color='#ffffff';this.style.borderColor='#ffffff';"
-                            onmouseleave="this.style.background='#ffffff';this.style.color='#000000';this.style.borderColor='#000000';">
+                    <!-- Boot sequence content -->
+                    <div
+                        class="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 text-center flex flex-col items-center">
+                        <div id="boot-text" class="text-sm md:text-2xl font-mono tracking-[0.2em] font-bold"
+                            style="color: #ffcc00; text-shadow: 0 0 10px rgba(255,204,0,0.5);">LOADING....</div>
+
+                        <button id="boot-btn" onclick="bootExperience()" data-i18n="initialize"
+                            class="hidden px-4 md:px-8 py-1 transition-all uppercase font-bold tracking-[0.2em] shadow-2xl text-[10px] md:text-sm"
+                            style="letter-spacing:0.2em; background:#ffcc00; color:#000000; border:2px solid #ffcc00; cursor:pointer;"
+                            onmouseenter="this.style.background='#000000';this.style.color='#ffcc00';this.style.borderColor='#ffcc00';"
+                            onmouseleave="this.style.background='#ffcc00';this.style.color='#000000';this.style.borderColor='#ffcc00';">
                             INITIALIZE
                         </button>
                     </div>
+
+                    <script>
+                        document.addEventListener("DOMContentLoaded", () => {
+                            setTimeout(() => {
+                                const bootText = document.getElementById('boot-text');
+                                if (bootText) {
+                                    bootText.innerText = "INITIALIZING....";
+                                    setTimeout(() => {
+                                        bootText.classList.add('hidden');
+                                        const bootBtn = document.getElementById('boot-btn');
+                                        if (bootBtn) {
+                                            bootBtn.classList.remove('hidden');
+                                        }
+                                    }, 2000);
+                                }
+                            }, 2000);
+                        });
+                    </script>
                 </div>
 
                 <script>
@@ -869,11 +967,13 @@
                             wRenderer.render(wScene, wCamera);
                         }
 
-                        // Wait for THREE to definitely be available before init
+                        // Wait for layout to settle before init
                         if (document.readyState === 'loading') {
-                            document.addEventListener('DOMContentLoaded', wInit);
+                            document.addEventListener('DOMContentLoaded', () => {
+                                setTimeout(() => requestAnimationFrame(wInit), 100);
+                            });
                         } else {
-                            wInit();
+                            setTimeout(() => requestAnimationFrame(wInit), 100);
                         }
                     })();
                 </script>
@@ -1027,7 +1127,7 @@
                                 <div
                                     class="bg-black/10 px-3 flex items-center border border-black/20 rounded-r-sm min-w-[100px]">
                                     <span class="text-[9px] uppercase tracking-widest font-bold opacity-80"
-                                        data-i18n="to_answer">with question</span>
+                                        data-i18n="to_answer">question</span>
                                 </div>
                             </div>
 
@@ -1223,10 +1323,10 @@
                     </div>
                 </div>
                 <div class="flex items-center">
-                    <a href="https://soundcloud.com/david-enker/sets/the-house-of-awe"
+                    <a href="https://open.spotify.com/artist/297RvgooWnmjmFl7lWpQkj"
                         class="px-6 py-2 bg-white text-black text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-all whitespace-nowrap"
                         data-i18n="music_download">
-                        DOWNLOAD
+                        ON SPOTIFY
                     </a>
                 </div>
             </div>
@@ -1241,8 +1341,9 @@
                    text-white uppercase text-[10px] tracking-[0.4em] px-4 md:px-8 pb-4"
         style="background-color: #44413b;">
         <div class="grid grid-cols-2 md:flex md:gap-12 w-full">
-            <a href="/about/" class="text-yellow-400 hover:text-yellow-300 transition-colors"
-                data-i18n="about_contact">ABOUT /<br class="md:hidden"> CONTACT</a>
+            <a href="https://tonic.davidenker.com/about/"
+                class="text-yellow-400 hover:text-yellow-300 transition-colors" data-i18n="about_contact">ABOUT /<br
+                    class="md:hidden"> CONTACT</a>
             <div class="cursor-default">
                 <span class="block md:inline">© 2026</span>
                 <span class="hidden md:inline"> - </span>
@@ -1303,7 +1404,7 @@
                 music_by: "by",
                 music_download: "DOWNLOAD",
                 // Prompts
-                hall_p: "The Big Bang! Suddenly:",
+                hall_p: "It all started with",
                 living_p: "The world should be ruled by",
                 annex_p: "Ignore",
                 studio_p: "Everybody should",
@@ -1317,7 +1418,7 @@
                 tell_friend: "Tell a friend about the meaning of life!",
                 share_subject: "The Meaning of Life according to",
                 copied: "Summary copied to clipboard!",
-                to_answer: "with question",
+                to_answer: "question",
                 answered: "answered",
                 nuggets_title: "Nuggets",
                 controls_title: "USE THESE CONTROLS",
@@ -1334,10 +1435,10 @@
                 mol_placeholder: "Voltooi alle 10 reflecties om de betekenis van het leven te onthullen.<br>Kijk voor instructies in het gele blok.",
                 manual_title: "GEBRUIKSAANWIJZING",
                 manual_text: "Je bent uitgenodigd om dit 3D-huis te verkennen en niets minder dan <span style='color: aqua; background-color: navy'>de zin van het leven</span> te ontdekken. Je kunt de aanwijzingen volgen, of naar buiten gaan en gewoon een willekeurige \"kamer\" kiezen. Je moet 10 kamers bezoeken. Klik op de \"Nugget\" voor een vraag. Beantwoord alle vragen en ontdek de zin van het leven!",
-                to_answer: "met vraag",
+                to_answer: "vraag",
                 answered: "beantwoord",
                 nuggets_title: "Nuggets",
-                book_title: "LANGZAAM LICHT",
+                book_title: "Tonic voor de Botten",
                 book_subtitle: "Het Boek",
                 book_text: "Méér dan een memoir over ziekte (Parkinson) is het boek een reflectie op hoe tegenslag een leraar wordt die waarheden en schoonheden laat zien die anders onopgemerkt zouden blijven.",
                 book_btn: "MEER INFO",
@@ -1352,7 +1453,7 @@
                 music_by: "door",
                 music_download: "DOWNLOADEN",
                 // Prompts
-                hall_p: "De Oerknal! Plotseling:",
+                hall_p: "Het begon allemaal met",
                 living_p: "De wereld zou geregeerd moeten worden door",
                 annex_p: "Negeer",
                 studio_p: "Iedereen zou moeten",
@@ -1366,8 +1467,8 @@
                 tell_friend: "Vertel een vriend over de zin van het leven!",
                 share_subject: "De zin van het leven volgens",
                 copied: "Samenvatting gekopieerd naar klembord!",
-                to_answer: "nugget met vraag",
-                answered: "nugget beantwoord",
+                to_answer: "vraag",
+                answered: "beantwoord",
                 controls_title: "navigatie",
                 about_contact: "over /<br class=\"md:hidden\"> contact",
                 initialize: "INITIALISEER",
@@ -1446,6 +1547,16 @@
             }
         }
 
+        function skipNameEntry() {
+            sessionVisitorName = 'Guest';
+            updateSectionName();
+            closeOverlay('narrative-overlay');
+            const iframe = document.getElementById('experience-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'SET_VISITOR_BROWSING', browsing: true }, '*');
+            }
+        }
+
         // Add this to your existing submitRoomAnswer or where appropriate
         // (Just making sure sessionVisitorName update works)
 
@@ -1456,7 +1567,7 @@
             const iframe = document.getElementById('experience-iframe');
             const hudStatus = document.getElementById('system-status');
             const statusDot = document.getElementById('status-dot');
-            const mainHeader = document.getElementById('main-header');
+            const mainHeader = document.getElementById('landing-header');
 
             container.scrollIntoView({ behavior: 'smooth' });
 
@@ -1501,7 +1612,7 @@
             iframe.src = 'house.html?v=' + Date.now();
 
             // Hide title/subtitle overlay (user wants them only in landing header, not in 3D view)
-            if (mainHeader) mainHeader.style.display = 'none';
+            if (mainHeader) mainHeader.style.opacity = '0'; // instead of display none to keep layout if needed, though here it hides it
 
             hudStatus.innerHTML = '&nbsp;STREAM ACTIVE&nbsp;';
             hudStatus.classList.remove('bg-red-500');
@@ -1558,7 +1669,7 @@
             if (window._stopWireframe) window._stopWireframe();
             const iframe = document.getElementById('experience-iframe');
             const introUI = document.getElementById('ui-wrapper');
-            const mainHeader = document.getElementById('main-header');
+            const mainHeader = document.getElementById('landing-header');
             const startBtn = document.getElementById('start-btn');
             const landingHeader = document.getElementById('landing-header');
             const container = document.getElementById('simulation-container');
@@ -1595,7 +1706,8 @@
                     exitBtn.id = 'ios-exit-fullscreen-btn';
                     exitBtn.innerHTML = '&#x2715;';
                     exitBtn.style.cssText = `
-                        position: fixed; top: 18px; right: 18px; z-index: 10001;
+                        position: fixed; top: 12px; top: max(12px, env(safe-area-inset-top)); right: 12px; right: max(12px, env(safe-area-inset-right)); z-index: 10001;
+                        padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right);
                         background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.3);
                         border-radius: 50%; width: 36px; height: 36px; font-size: 16px;
                         cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -1747,6 +1859,11 @@
                 }
             }
 
+            if (d.type === 'VISITOR_BROWSING') {
+                sessionVisitorName = 'Guest';
+                updateSectionName();
+            }
+
             // Still track visits silently (iframe posts this)
             if (d.type === 'VISIT_ROOM') {
                 // no visual change needed — reflections log covers it
@@ -1759,6 +1876,22 @@
                 const section = document.getElementById('meaning-of-life-section');
                 if (section) {
                     setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+                }
+            }
+
+            if (d.type === 'EXIT_FULLSCREEN') {
+                const container = document.getElementById('simulation-container');
+                if (container) container.classList.remove('ios-fullscreen');
+                document.body.style.overflow = '';
+                const exitBtn = document.getElementById('ios-exit-fullscreen-btn');
+                if (exitBtn) exitBtn.style.display = 'none';
+            }
+
+            if (d.type === 'SHOW_START_BTN') {
+                const startBtn = document.getElementById('start-btn');
+                if (startBtn) {
+                    startBtn.style.display = 'inline-block';
+                    startBtn.classList.remove('btn-out');
                 }
             }
         });
@@ -2052,7 +2185,7 @@
             });
         }
     </script>
-    <script src="js/storage.js?v=20260223-1758"></script>
+    <script src="js/storage.js?v=20260309-1139"></script>
 
     <script>
         // ---- Standalone Gallery overlay for the index page ----
@@ -2072,7 +2205,7 @@
 
                 const overlay = document.createElement('div');
                 overlay.id = 'gallery-locked-overlay';
-                overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity 0.4s ease;';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);opacity:0;transition:opacity 0.4s ease;';
                 overlay.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#60a5fa" viewBox="0 0 16 16" style="margin-bottom:20px; opacity:0.8;">
                       <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
@@ -2106,7 +2239,7 @@
 
             const overlay = document.createElement('div');
             overlay.id = 'gallery-overlay';
-            overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:40px 20px 60px;opacity:0;transition:opacity 0.5s ease;';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:max(40px,env(safe-area-inset-top)) 20px max(60px,env(safe-area-inset-bottom));opacity:0;transition:opacity 0.5s ease;';
 
             const lang = window.currentLang || 'en';
             const i = lang === 'nl'
