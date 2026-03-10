@@ -1180,10 +1180,10 @@ function createGuidanceArrow() {
 
     arrowGroup.add(arrowMesh);
 
-    // Position above the front door, upright, pointing downward toward it
-    arrowGroup.position.set(0, 3.2, 4.2);
-    arrowGroup.rotation.x = 0; // Upright — no floor tilt
-    arrowGroup.rotation.z = Math.PI; // Flip so the tip points downward
+    // Position in front of the front door, flat on the ground
+    arrowGroup.position.set(0, 1.6, 4.8);
+    arrowGroup.rotation.x = -Math.PI / 2; // Flat towards the door
+    arrowGroup.rotation.z = 0;
 
     // V-FIX: Make arrow clickable to enter hall (solves blocking issue)
     arrowGroup.userData = {
@@ -1240,7 +1240,7 @@ function createGuidanceArrow() {
                 if (glowMat) glowMat.opacity = pulse * 0.9;
 
                 // Forward/backward pound (Position movement only)
-                arrowGroup.position.z = 4 + Math.sin(pulseTime * 8) * 0.4;
+                arrowGroup.position.z = 4.8 + Math.sin(pulseTime * 8) * 0.4;
 
                 if (pulseTime > 20) { // Extended to 20s
                     phase = 'out';
