@@ -535,7 +535,7 @@ window.initNarrativePrompt = function (forceShow = false) {
 
             memoryHTML = `
                 <div style="margin: 1rem 0 1.5rem; padding: 12px 16px; border: 1px solid rgba(96, 165, 250, 0.2); border-radius: 4px; background: rgba(96, 165, 250, 0.06); font-family: 'Share Tech Mono', monospace;">
-                    <div style="font-size: 9px; color: #60a5fa; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; opacity: 0.8;">${t('memory_header')}</div>
+                    <div style="font-size: 14px; color: #60a5fa; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; opacity: 0.9; font-weight: bold;">${t('memory_header')}</div>
                     <div style="font-size: 11px; color: #aaa; line-height: 1.8;">
                         ${t('visit_number')}: <span style="color: #60a5fa; font-weight: bold;">#${visitNum}</span><br>
                         ${firstDateStr ? `${t('first_visit')}: <span style="color: #eee;">${firstDateStr}</span><br>` : ''}

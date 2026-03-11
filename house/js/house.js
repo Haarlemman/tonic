@@ -1400,10 +1400,10 @@ function buildHouse() {
 
     // Studio Hitbox (Large and accessible)
     const studioHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(3.5, 3.5, 0.5),
+        new THREE.BoxGeometry(2.2, 3.5, 0.5),
         new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
     );
-    studioHitBox.position.set(studioX, studioY, 3.5); // Way forward
+    studioHitBox.position.set(studioX + 0.4, studioY, 3.5); // Way forward, shifted slightly right
     studioHitBox.userData = {
         name: 'studio',
         type: 'room',
@@ -1429,7 +1429,7 @@ function buildHouse() {
 
     // Hall Hitbox (Large and accessible)
     const hallHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.0, 3.5, 0.5),
+        new THREE.BoxGeometry(1.6, 3.5, 0.5),
         new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
     );
     hallHitBox.position.set(0, 1.6, 3.5); // Way forward
@@ -1439,6 +1439,19 @@ function buildHouse() {
         onClick: () => window.enterRoom('hall')
     };
     worldGroup.add(hallHitBox);
+
+    // Basement Hitbox (Large and accessible)
+    const basementHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(5.0, 1.2, 0.5),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
+    );
+    basementHitBox.position.set(0, 0.2, 3.5); // Way forward, at the bottom
+    basementHitBox.userData = {
+        name: 'basement',
+        type: 'room',
+        onClick: () => window.enterRoom('basement')
+    };
+    worldGroup.add(basementHitBox);
     worldGroup.add(door);
 
     // Triangular window on the door (top half, centered)
