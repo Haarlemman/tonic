@@ -1458,8 +1458,8 @@ function spawnOutdoorHintArrow(targetPos, roomKey) {
 // Known approximate world positions for each outdoor-visible target
 const HINT_TARGET_POSITIONS = {
     hall: { x: 0, y: 0, z: 4.5 },
-    living: { x: -2.3, y: 0, z: 4.5 },
-    annex: { x: -2.3, y: 0, z: 4.5 }, // Usually accessed via living inside, but outside it's same side
+    living: { x: -1.2, y: 0, z: 4.5 },
+    annex: { x: -1.2, y: 0, z: 4.5 }, // Usually accessed via living inside, but outside it's same side
     studio: { x: 2.3, y: 0, z: 4.5 },
     basement: { x: 0, y: -0.5, z: 4.5 },
     toilet: { x: 0, y: 0, z: -4.5 },
