@@ -1,0 +1,192 @@
+/* ============================================================
+   HOUSE OF AWE — iOS / Mobile Stylesheet  (mobile.css)
+   Add <link rel="stylesheet" href="css/mobile.css"> inside
+   house.html's <head>, AFTER style.css.
+   ============================================================ */
+
+/* ── 1. TRUE FULL-HEIGHT on iOS (address-bar-aware) ─────── */
+/* Uses the --vh CSS variable set by mobile.js               */
+
+body.experience-mode {
+    /* Fallback order: dvh (modern), then --vh polyfill */
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: calc(var(--vh, 1vh) * 100);
+}
+
+#canvas-container {
+    height: 100vh;
+    height: 100dvh;
+    height: calc(var(--vh, 1vh) * 100);
+}
+
+#loading {
+    height: 100vh;
+    height: 100dvh;
+    height: calc(var(--vh, 1vh) * 100);
+}
+
+
+/* ── 2. SAFE-AREA INSETS ─────────────────────────────────── */
+/* Ensures controls never hide behind the notch / home bar   */
+
+#top-controls {
+    top: calc(max(1rem, env(safe-area-inset-top, 0px) + 12px)) !important;
+    right: calc(max(1.5rem, env(safe-area-inset-right, 0px) + 12px)) !important;
+}
+
+#top-left-controls {
+    top: calc(max(1rem, env(safe-area-inset-top, 0px) + 12px)) !important;
+    left: calc(max(1rem, env(safe-area-inset-left, 0px) + 8px)) !important;
+}
+
+#instructions {
+    bottom: calc(max(20px, env(safe-area-inset-bottom, 0px) + 80px)) !important;
+}
+
+/* Back button: safe below notch, large enough to tap */
+#back-btn {
+    top: calc(max(5rem, env(safe-area-inset-top, 0px) + 5rem)) !important;
+    left: calc(max(0.5rem, env(safe-area-inset-left, 0px) + 4px)) !important;
+    min-width:  56px !important;
+    min-height: 56px !important;
+    padding:    10px !important;
+    background: rgba(0,0,0,0.35) !important;
+    border-radius: 50% !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+}
+
+/* Lift the joystick above the home indicator                 */
+#mobile-joystick {
+    bottom: calc(max(28px, env(safe-area-inset-bottom, 0px) + 16px)) !important;
+}
+
+
+/* ── 3. TOUCH TARGET SIZES ───────────────────────────────── */
+/* Apple HIG: minimum 44 × 44 pt for any interactive element */
+
+#top-controls button,
+#top-left-controls button {
+    min-width:  44px !important;
+    min-height: 44px !important;
+    padding:    10px !important;
+}
+
+
+/* ── 4. PREVENT TEXT SELECTION during 3D drag ───────────── */
+
+body.experience-mode {
+    -webkit-user-select: none;
+    user-select: none;
+    /* Prevent callout (link preview) on long-press              */
+    -webkit-touch-callout: none;
+}
+
+/* Re-allow selection inside text inputs                       */
+body.experience-mode input,
+body.experience-mode textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+
+/* ── 5. DISABLE OVERSCROLL BOUNCE on the 3D canvas ─────── */
+
+#canvas-container {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto; /* disable momentum scroll */
+}
+
+
+/* ── 6. NARRATIVE CARD — keyboard-aware positioning ─────── */
+/* On iOS, the software keyboard pushes the viewport up.     */
+/* anchor the card near the top so it stays visible.         */
+
+@media (max-width: 599px) {
+    #narrative-overlay,
+    #question-overlay {
+        align-items: flex-start;
+        padding-top: max(12vh, env(safe-area-inset-top, 0px) + 60px);
+    }
+
+    .narrative-card {
+        max-height: 65vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 16px;
+    }
+
+    /* font-size ≥ 16px prevents iOS auto-zoom on input focus  */
+    .narrative-input {
+        font-size: 16px !important;
+    }
+}
+
+
+/* ── 7. ROOM-INFO PANEL hidden on phones (already in style.css
+        but repeated here for clarity + specificity)           */
+
+@media (max-width: 599px) {
+    #room-info {
+        display: none !important;
+    }
+}
+
+
+/* ── 8. JOYSTICK LABEL (optional hint, fades after 3s) ───── */
+
+#mobile-joystick::after {
+    content: 'drag to move';
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    animation: hint-fade 4s ease forwards;
+    animation-delay: 1s;
+}
+
+@keyframes hint-fade {
+    0%   { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+
+/* ── 9. LANDSCAPE PHONE — compact controls ───────────────── */
+
+@media (max-height: 500px) and (orientation: landscape) {
+    #top-controls {
+        gap: 4px !important;
+    }
+
+    #top-controls button {
+        width:  36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+    }
+
+    #mobile-joystick {
+        width:  88px !important;
+        height: 88px !important;
+        bottom: calc(max(10px, env(safe-area-inset-bottom, 0px) + 6px)) !important;
+        left: calc(max(10px, env(safe-area-inset-left, 0px) + 6px)) !important;
+    }
+
+    #narrative-overlay,
+    #question-overlay {
+        padding: 4px 8px;
+        align-items: center;
+    }
+
+    .narrative-card {
+        max-height: 90vh;
+        padding: 1rem;
+    }
+}

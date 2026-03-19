@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe Tunnel Flight</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #0088ff;
+            pointer-events: none;
+            opacity: 0.9;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">Move mouse to look around</div>
+    
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        let scene, camera, renderer, tunnel;
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+        
+        const tunnelSegments = 100;
+        const tunnelRadius = 5;
+        const tubeDetail = 12;
+        const flightSpeed = 0.0015;
+        let tubeProgress = 0;
+
+        function init() {
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+            scene.fog = new THREE.FogExp2(0x000000, 0.05);
+
+            // 2. Camera Setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            // 3. Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // 4. Create Tunnel Geometry
+            // We'll create a curve that the tunnel follows
+            const points = [];
+            for (let i = 0; i < 10; i++) {
+                points.push(new THREE.Vector3(
+                    Math.sin(i * 0.8) * 4, 
+                    Math.cos(i * 0.7) * 4, 
+                    i * 20
+                ));
+            }
+            
+            const curve = new THREE.CatmullRomCurve3(points);
+            curve.curveType = 'centripetal';
+            curve.closed = true; // Makes the path loopable
+
+            const geometry = new THREE.TubeGeometry(curve, tunnelSegments, tunnelRadius, tubeDetail, true);
+            
+            // Use wireframe for that retro/technical look
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x0088ff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.BackSide // See the inside of the tube
+            });
+
+            tunnel = new THREE.Mesh(geometry, material);
+            scene.add(tunnel);
+
+            // 5. Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('mousemove', onMouseMove, false);
+            
+            // Touch support for interaction
+            document.addEventListener('touchmove', (e) => {
+                if (e.touches.length > 0) {
+                    onMouseMove({
+                        clientX: e.touches[0].clientX,
+                        clientY: e.touches[0].clientY
+                    });
+                }
+            }, false);
+
+            animate();
+        }
+
+        function onMouseMove(event) {
+            // Normalize mouse coordinates (-1 to 1)
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Progress the "flight"
+            tubeProgress += flightSpeed;
+            if (tubeProgress > 1) tubeProgress = 0;
+
+            // Get the current position and look-at point on the curve
+            const path = tunnel.geometry.parameters.path;
+            const pos = path.getPointAt(tubeProgress % 1);
+            const nextPos = path.getPointAt((tubeProgress + 0.01) % 1);
+
+            // Update camera position
+            camera.position.copy(pos);
+            
+            // Smoothly interpolate mouse movement for "look around" effect
+            targetX += (mouseX - targetX) * 0.05;
+            targetY += (mouseY - targetY) * 0.05;
+
+            // Look ahead on the path, influenced by mouse
+            const lookAt = nextPos.clone();
+            lookAt.x += targetX * 2;
+            lookAt.y += targetY * 2;
+            camera.lookAt(lookAt);
+
+            // Subtle rotation of the camera to simulate banking
+            camera.rotation.z += (targetX * 0.1);
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

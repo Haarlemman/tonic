@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSIC BY PARADOX PRIME / DAVID ENKER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/layout.js?v=222"></script>
+    <style>
+        :root {
+            /* True black and high-contrast white stripes */
+            --bg-color: #000000;
+            --stripe-color: #ffffff;
+            --pink-spot: #ec4899;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            /* Layer 1: True B&W 10px Diagonal Stripes */
+            background-image:
+                repeating-linear-gradient(45deg,
+                    #000000,
+                    #000000 10px,
+                    rgba(255, 255, 255, 0.15) 10px,
+                    rgba(255, 255, 255, 0.15) 20px);
+            background-attachment: fixed;
+        }
+
+        /* Layer 2: Ink Spots (Distinct, less blurred) */
+        .ink-spots {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .spot {
+            position: absolute;
+            background: var(--pink-spot);
+            border-radius: 45% 55% 70% 30% / 30% 60% 40% 70%;
+            /* Irregular ink shape */
+            filter: blur(5px);
+            opacity: 0.8;
+        }
+
+        /* Layer 3: Blended Background Layers */
+        .blended-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -10;
+            background-color: #000;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            animation: slowPan 60s infinite alternate linear;
+        }
+
+        .layer-bw {
+            background-image: url('images/strpes.png');
+            opacity: 0.3;
+            z-index: 0;
+            background-size: 1920px;
+            background-repeat: repeat;
+        }
+
+        .layer-clouds {
+            background-image: url('images/colorclouds.png');
+            mix-blend-mode: color-dodge;
+            opacity: 0.4;
+            z-index: 1;
+            filter: blur(40px);
+            animation: slowPan 40s infinite alternate linear, pulseClouds 20s infinite alternate ease-in-out;
+        }
+
+        .layer-strpes-global {
+            background-image: url('images/strpes.png');
+            mix-blend-mode: soft-light;
+            opacity: 0.1;
+            z-index: 2;
+        }
+
+        .layer-ink-subtle {
+            background-image: url('images/ink1.png');
+            background-repeat: no-repeat;
+            background-size: contain;
+            mix-blend-mode: overlay;
+            opacity: 0.15;
+            z-index: 2;
+        }
+
+        @keyframes slowPan {
+            from {
+                transform: scale(1) translate(0, 0);
+            }
+
+            to {
+                transform: scale(1.05) translate(-1%, -1%);
+            }
+        }
+
+        @keyframes pulseClouds {
+            0% {
+                opacity: 0.15;
+                transform: scale(1);
+                filter: blur(20px);
+            }
+
+            50% {
+                opacity: 0.35;
+                transform: scale(1.05);
+                filter: blur(10px);
+            }
+
+            100% {
+                opacity: 0.15;
+                transform: scale(1);
+                filter: blur(20px);
+            }
+        }
+
+        .serif-italic {
+            font-family: 'DM Serif Display', serif;
+            font-style: italic;
+        }
+
+        .card-shadow {
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 1), 0 0 40px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--pink-spot);
+            border-radius: 10px;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Themed Glows */
+        .glow-red:hover {
+            box-shadow: 0 0 70px rgba(239, 68, 68, 0.3);
+            border-color: #ef4444;
+        }
+
+        .glow-yellow:hover {
+            box-shadow: 0 0 70px rgba(245, 158, 11, 0.3);
+            border-color: #f59e0b;
+        }
+
+        .glow-blue:hover {
+            box-shadow: 0 0 70px rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body class="relative">
+
+    <!-- Blended Background Decoration -->
+    <div class="blended-bg">
+        <div class="bg-layer layer-bw"></div>
+        <div class="bg-layer layer-clouds"></div>
+        <div class="bg-layer layer-strpes-global"></div>
+        <div class="bg-layer layer-ink-subtle" style="background-position: center;"></div>
+    </div>
+
+    <div class="px-6 md:px-12 space-y-12 pb-12">
+
+    <!-- Header / Branding -->
+    <div class="max-w-3xl mx-auto text-center relative pt-12">
+        <h1 class="text-xs uppercase tracking-[0.8em] text-stone-400 font-bold mb-4 bg-black/80 inline-block px-4 py-1">
+            Music Archive</h1>
+        <h2 class="text-6xl md:text-8xl font-black tracking-tighter mix-blend-difference">PARADOX <span
+                class="text-pink-500">PRIME</span></h2>
+        <div class="h-[4px] w-48 bg-white mx-auto mt-10"></div>
+    </div>
+
+
+    <!-- SECTION I: INDIE POP -->
+    <div class="max-w-3xl mx-auto">
+        <div
+            class="bg-black/95 backdrop-blur-xl border-2 border-amber-500/30 rounded-3xl overflow-hidden card-shadow flex flex-col md:flex-row h-auto md:h-[352px] group transition-all duration-700 glow-yellow">
+            <div class="w-full md:w-[350px] shrink-0 bg-black relative">
+                <iframe style="border-radius:0px"
+                    src="https://open.spotify.com/embed/playlist/5gGgJE4hOndeaBBeXOnZDx?utm_source=generator&theme=0"
+                    width="100%" height="352" frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy">
+                </iframe>
+                <div class="absolute inset-0 pointer-events-none border-r border-amber-500/20 hidden md:block"></div>
+            </div>
+            <div class="p-8 flex flex-col bg-gradient-to-b from-[#826195] to-[#112233] flex-1 relative overflow-hidden">
+                <!-- Blended Overlay -->
+                <div class="absolute inset-0 opacity-60 pointer-events-none"
+                    style="background-image: url('images/cloud.png'); background-size: cover; mix-blend-mode: overlay;">
+                </div>
+                <div class="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                        <h4
+                            class="font-black text-2xl uppercase tracking-tighter text-amber-50 border-l-4 border-amber-500 pl-3">
+                            Live Life Love</h4>
+                        <p class="text-[10px] text-[#ff0070] font-bold uppercase tracking-[0.2em] mt-1 ml-1">The Bright
+                            Anthology</p>
+                    </div>
+                    <div
+                        class="w-12 h-12 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center shadow-lg">
+                        <i data-lucide="sparkles" class="text-pink-500 w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto pr-4 scrollbar-hide space-y-4">
+                    <p class="serif-italic text-xl text-white leading-snug">
+                        "The unexpected bursts of joy. Bright, unfiltered, and full of the shimmer that makes a long day
+                        manageable."
+                    </p>
+                    <p class="text-sm leading-relaxed text-stone-400 font-light">
+                        Combining raw independent storytelling with polished production. This collection mirrors the
+                        moments of lightness that provide the vital contrast to the memoir's deeper themes.
+                    </p>
+                </div>
+                <div class="mt-8 pt-6 border-t border-white/10 flex justify-end">
+                    <a href="https://open.spotify.com/playlist/4Mk1NSXA8P9lsAqpqSbBif" target="_blank"
+                        class="group/link flex items-center gap-2 text-pink-500 font-bold transition-all">
+                        <span class="text-[10px] uppercase tracking-widest">Open in Spotify</span>
+                        <i data-lucide="arrow-right"
+                            class="w-4 h-4 transition-transform group-hover/link:translate-x-1.5 text-pink-500"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECTION II: ELECTRO SOUL (Red) -->
+    <div class="max-w-3xl mx-auto">
+        <div
+            class="bg-black/95 backdrop-blur-xl border-2 border-red-500/30 rounded-3xl overflow-hidden card-shadow flex flex-col md:flex-row h-auto md:h-[352px] group transition-all duration-700 glow-red">
+            <div class="w-full md:w-[350px] shrink-0 bg-black relative">
+                <iframe style="border-radius:0px"
+                    src="https://open.spotify.com/embed/playlist/5bCr8aEntydXKMZxyo6KHc?utm_source=generator&theme=0"
+                    width="100%" height="352" frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy">
+                </iframe>
+                <div class="absolute inset-0 pointer-events-none border-r border-red-500/20 hidden md:block"></div>
+            </div>
+            <div class="p-8 flex flex-col bg-gradient-to-br from-stone-900 to-black flex-1 relative overflow-hidden">
+                <!-- Blended Overlay -->
+                <div class="absolute inset-0 opacity-30 pointer-events-none"
+                    style="background-image: url('images/funk.png'); background-size: cover; mix-blend-mode: color-dodge;">
+                </div>
+                <div class="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                        <h4
+                            class="font-black text-2xl uppercase tracking-tighter text-red-50 border-l-4 border-red-500 pl-3">
+                            Heartbeat</h4>
+                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-[0.2em] mt-1 ml-1">The Inner
+                            Rhythm</p>
+                    </div>
+                    <div
+                        class="w-12 h-12 rounded-full bg-red-950/40 border border-red-500/30 flex items-center justify-center shadow-lg">
+                        <i data-lucide="zap" class="text-red-500 w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto pr-4 scrollbar-hide space-y-4">
+                    <p class="serif-italic text-xl text-white leading-snug">
+                        "The electric pulse that keeps the bones moving when the mind feels heavy. Soul meets machine in
+                        the dark."
+                    </p>
+                    <p class="text-sm leading-relaxed text-stone-400 font-light">
+                        Providing movement when the tremor is at its peak.
+                    </p>
+                </div>
+                <div class="mt-8 pt-6 border-t border-white/10 flex justify-end">
+                    <a href="https://open.spotify.com/playlist/5bCr8aEntydXKMZxyo6KHc" target="_blank"
+                        class="group/link flex items-center gap-2 text-red-500 font-bold transition-all">
+                        <span class="text-[10px] uppercase tracking-widest">Open in Spotify</span>
+                        <i data-lucide="arrow-right"
+                            class="w-4 h-4 transition-transform group-hover/link:translate-x-1.5 text-red-500"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- SECTION III: LAMENTS (Blue / Video) -->
+    <div class="max-w-3xl mx-auto">
+        <div
+            class="bg-black/95 backdrop-blur-xl border-2 border-blue-500/30 rounded-3xl overflow-hidden card-shadow flex flex-col md:flex-row h-auto md:h-[352px] group transition-all duration-700 glow-blue">
+            <div class="w-full md:w-[350px] shrink-0 bg-black relative">
+                <iframe style="border-radius:0px"
+                    src="https://open.spotify.com/embed/playlist/35kCgiEsAT49DTvv9mCGGi?utm_source=generator&theme=0"
+                    width="100%" height="352" frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy">
+                </iframe>
+                <div class="absolute inset-0 pointer-events-none border-r border-blue-500/20 hidden md:block"></div>
+            </div>
+            <div class="p-8 flex flex-col bg-[#0f172a] flex-1 relative overflow-hidden">
+                <!-- Background Video -->
+                <video autoplay loop muted playsinline
+                    class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen pointer-events-none">
+                    <source src="video/glitch.mp4" type="video/mp4">
+                </video>
+
+                <div class="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                        <h4 class="font-black text-2xl uppercase tracking-tighter text-blue-50 border-l-4 border-blue-500 pl-3"
+                            style="text-shadow: 0 0 20px rgba(59,130,246,0.5);">
+                            The World Hurts</h4>
+                        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1 ml-1">
+							The Loss of reason</p>
+                    </div>
+                    <div
+                        class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shadow-lg">
+                        <i data-lucide="music" class="text-blue-400 w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto pr-4 scrollbar-hide space-y-4 relative z-10">
+                    <p class="serif-italic text-xl text-blue-100 leading-snug">
+                        "Music guides the quest for light between eternities of darkness."
+                    </p>
+                    <p class="text-sm leading-relaxed text-blue-300/70 font-light">
+                       Just sit this one out, and you'll understand, feel and know.
+                    </p>
+                </div>
+                <div class="mt-8 pt-6 border-t border-blue-500/20 flex justify-end relative z-10">
+                    <a href="https://open.spotify.com/playlist/35kCgiEsAT49DTvv9mCGGi" target="_blank"
+                        class="group/link flex items-center gap-2 text-blue-400 font-bold transition-all hover:text-blue-300">
+                        <span class="text-[10px] uppercase tracking-widest">Open in Spotify</span>
+                        <i data-lucide="arrow-right"
+                            class="w-4 h-4 transition-transform group-hover/link:translate-x-1.5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div> <!-- /content wrapper -->
+
+</body>
+
+</html>

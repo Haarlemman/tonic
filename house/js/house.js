@@ -1440,12 +1440,12 @@ function buildHouse() {
     };
     worldGroup.add(hallHitBox);
 
-    // Basement Hitbox (Large and accessible)
+    // Basement Hitbox — wide, tall, deep so the hatch is easy to click/tap
     const basementHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(5.0, 1.2, 0.5),
+        new THREE.BoxGeometry(7.0, 2.5, 6.0),
         new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
     );
-    basementHitBox.position.set(0, 0.2, 3.5); // Way forward, at the bottom
+    basementHitBox.position.set(0, -0.5, 1.5); // centred below the house, close to camera
     basementHitBox.userData = {
         name: 'basement',
         type: 'room',
@@ -4565,15 +4565,13 @@ function enterRoom(roomName) {
 
     window.isZoomingToRoom = true;
     if (window.parent) window.parent.postMessage({ type: 'ENTERED_ROOM' }, '*');
-    // Update the local reset button to look like an exit button
     const _rvBtn = document.getElementById('reset-view-btn');
     if (_rvBtn) {
-        _rvBtn.title = 'Exit Room';
-        _rvBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-            <path d="M10 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4" />
-            <polyline points="15 18 20 12 15 6" />
-            <line x1="20" y1="12" x2="8" y2="12" />
-        </svg>`;
+        _rvBtn.style.display = 'none'; // Hide reset button when in room
+    }
+    const bBtn = document.getElementById('back-btn');
+    if (bBtn) {
+        bBtn.style.display = 'flex'; // Show explicit back button
     }
     const curtain = document.getElementById('curtain');
     curtain.classList.add('active');
@@ -4583,9 +4581,9 @@ function enterRoom(roomName) {
 
             if (mistLayer) mistLayer.visible = false;
 
-            // V-FIX: Hide Top Header Bar to prevent interaction/visual clash
-            const appHeader = document.getElementById('app-header');
-            if (appHeader) appHeader.style.display = 'none';
+            // V-FIX: Keep Top Header Bar available
+            // const appHeader = document.getElementById('app-header');
+            // if (appHeader) appHeader.style.display = 'none';
 
             if (roomName === 'space') {
                 scene.background = new THREE.Color(0x0a0412); // DARK VOID PURPLE
@@ -4652,8 +4650,8 @@ function enterRoom(roomName) {
                 infoPanel.style.transform = 'translateX(120%)';
             }
 
-            const mHeader = document.getElementById('main-header');
-            if (mHeader) mHeader.style.setProperty('display', 'none', 'important');
+            // const mHeader = document.getElementById('main-header');
+            // if (mHeader) mHeader.style.setProperty('display', 'none', 'important');
 
             // Hide discover-btn — auto-discovery happens on room entry now
             const dBtn = document.getElementById('discover-btn');
@@ -4890,14 +4888,13 @@ function exitRoom() {
         const dBtn = document.getElementById('discover-btn');
         if (dBtn) dBtn.style.display = 'none';
 
-        // Reflect icon removed
-
-
         if (window.parent) window.parent.postMessage({ type: 'EXITED_ROOM' }, '*');
         if (window.parent) window.parent.postMessage({ type: 'SHOW_HEADER' }, '*');
-        // Restore the local reset button back to the circular-arrow reset icon
+        
+        // Restore the local reset button
         const _rvBtnExit = document.getElementById('reset-view-btn');
         if (_rvBtnExit) {
+            _rvBtnExit.style.display = 'block';
             _rvBtnExit.title = 'Reset View';
             _rvBtnExit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -5806,6 +5803,16 @@ function toggleGlobalSound() {
 }
 
 function toggleGlobalFullscreen() {
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    // On iOS, we toggle a parent class because the Fullscreen API is not supported on elements.
+    if (isIOS) {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'TOGGLE_FULLSCREEN' }, '*');
+        }
+        return;
+    }
+
     const iconOn = document.getElementById('icon-fullscreen-on');
     const iconOff = document.getElementById('icon-fullscreen-off');
 
@@ -5818,16 +5825,16 @@ function toggleGlobalFullscreen() {
         else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
         else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
 
-        iconOn.classList.add('hidden');
-        iconOff.classList.remove('hidden');
+        if (iconOn) iconOn.classList.add('hidden');
+        if (iconOff) iconOff.classList.remove('hidden');
     } else {
         if (document.exitFullscreen) document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
         else if (document.msExitFullscreen) document.msExitFullscreen();
 
-        iconOn.classList.remove('hidden');
-        iconOff.classList.add('hidden');
+        if (iconOn) iconOn.classList.remove('hidden');
+        if (iconOff) iconOff.classList.add('hidden');
     }
 }
 

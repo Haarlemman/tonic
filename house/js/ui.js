@@ -332,100 +332,6 @@ window.showBookPopup = function (data) {
 };
 
 
-// ---- Holographic Usher ----
-
-// V-FIX: Refreshable Usher Text
-window.refreshUsherText = function (mesh) {
-    if (!mesh) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-
-    // Glowing radial background
-    const grad = ctx.createRadialGradient(512, 512, 100, 512, 512, 510);
-    grad.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    grad.addColorStop(0.5, 'rgba(0, 255, 255, 0.1)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 1024);
-
-    // Text
-    ctx.shadowColor = '#00ffff';
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-
-    ctx.font = 'bold 90px "Courier New", monospace';
-    ctx.fillText(t('usher_welcome'), 512, 400);
-
-    ctx.font = '35px "Courier New", monospace';
-    ctx.shadowBlur = 1;
-    ctx.fillText(t('usher_explore'), 512, 500);
-    ctx.fillText(t('usher_discover'), 512, 640);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    if (mesh.material.map) mesh.material.map.dispose();
-    mesh.material.map = tex;
-    mesh.material.needsUpdate = true;
-};
-
-function createUsherText() {
-    const mat = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-    });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), mat);
-    mesh.userData.type = 'usher_text';
-    window.refreshUsherText(mesh);
-    return mesh;
-}
-
-function createUsherShadow() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-    const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grd.addColorStop(0, 'rgba(0,0,0,0.6)');
-    grd.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, 128, 128);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.8, depthWrite: false });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), mat);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.y = 0.05;
-    return mesh;
-}
-
-function createGlitchyHalo() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    const g = ctx.createRadialGradient(256, 256, 50, 256, 256, 256);
-    g.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
-    g.addColorStop(0.6, 'rgba(0, 255, 255, 0.1)');
-    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 512, 512);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-    });
-    return new THREE.Mesh(new THREE.PlaneGeometry(5, 5), mat);
-}
-
 // ============================================================
 //  NARRATIVE QUESTIONNAIRE SYSTEM
 // ============================================================
@@ -703,7 +609,7 @@ const UI_I18N = {
         hint_basement_msg: "The entrance is below — look for the hatch.",
         hint_annex_label: "The Annex",
         hint_annex_msg: "hidden — find it from inside the living room.",
-        hint_space_label: "The Void",
+        hint_space_label: "Space",
         hint_space_msg: "a portal through the garage.",
         hint_bookcase: "Look at the bookcase — there is something hidden behind it.",
         hint_orb: "Find the glowing orb and click it to reflect.",
@@ -1043,98 +949,7 @@ window.dismissWelcome = function () {
     }
 };
 
-// Deprecated/Removed: startWelcomeSequence & showWelcomePopup (Merged into above flow)
-window.startWelcomeSequence = function (name) { /* no-op */ };
-function showWelcomePopup(name) { /* no-op */ }
 
-// Deprecated: Old 3D text function (kept for reference or removal)
-function createWelcomeFloatingText_OLD(name) {
-    // ... (rest of old function if needed, or I can cut it to clean up. I'll just leave the start of it to match end line)
-    _uiDbg('✨ Creating welcome text for:', name);
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-
-    ctx.clearRect(0, 0, 1024, 256);
-
-    // Glow / Text Style
-    ctx.shadowColor = '#00ffff';
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'bold 22px "Courier New", monospace'; // Reduced from 28px
-
-    // Draw text on two lines with better spacing
-    ctx.fillText(`Hi ${name}, great to have you here.`, 512, 80);
-    ctx.fillText("Just follow your instinct and everything will be fine.", 512, 140);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        fog: false
-    });
-
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(8, 2), mat); // Reduced from 10x2.5
-    mesh.frustumCulled = false;
-
-    // Position text directly in front of camera, centered and lower
-    if (window.camera) {
-        // Place 8 units in front of the camera
-        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(window.camera.quaternion);
-        mesh.position.copy(window.camera.position).addScaledVector(dir, 8);
-        mesh.position.y = window.camera.position.y - 1.5; // Lower position (was +0.5)
-        mesh.quaternion.copy(window.camera.quaternion);
-    } else {
-        mesh.position.set(0, 5.5, 12); // Lower fallback position (was 7)
-    }
-
-    if (window.worldGroup) {
-        window.worldGroup.add(mesh);
-        _uiDbg('📝 Welcome text added to scene at position:', mesh.position);
-    } else {
-        console.error('❌ worldGroup not found!');
-    }
-
-    // Animation: Fade In, Wait, Fade Out
-    let opacity = 0;
-    let phase = 'in';
-
-    const animObj = {
-        update: function (t, dt) {
-            // Keep text parallel to camera during animation
-            if (window.camera) {
-                mesh.quaternion.copy(window.camera.quaternion);
-            }
-
-            if (phase === 'in') {
-                opacity += dt * 2.0;
-                if (opacity >= 1) {
-                    opacity = 1;
-                    phase = 'wait';
-                    _uiDbg('⏸️ Welcome text visible, will fade out in 5 seconds');
-                    setTimeout(() => { phase = 'out'; }, 5000);
-                }
-            } else if (phase === 'out') {
-                opacity -= dt * 1.0;
-                if (opacity <= 0) {
-                    opacity = 0;
-                    if (mesh.parent) mesh.parent.remove(mesh);
-                    const idx = window.animatedObjects.indexOf(animObj);
-                    if (idx > -1) window.animatedObjects.splice(idx, 1);
-                    _uiDbg('👋 Welcome text removed');
-                }
-            }
-            if (mesh.material) mesh.material.opacity = opacity;
-        }
-    };
-    window.animatedObjects.push(animObj);
-    mesh.material.opacity = 0.01;
-}
 
 function createGuidanceArrow() {
     _uiDbg('🎯 Creating guidance arrow');
@@ -1781,31 +1596,6 @@ function checkNarrativeCompletion() {
     }
 }
 
-window.closeOverlay = function (id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.style.opacity = '0';
-        setTimeout(() => { el.style.display = 'none'; }, 500);
-    }
-};
-
-window.skipNameEntry = function () {
-    window.visitorData = window.visitorData || { answers: {}, visitedRooms: [] };
-    window.visitorData.name = 'Guest';
-    window.visitorData.isBrowsing = true;
-
-    // Notify index if in iframe
-    if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: 'VISITOR_BROWSING', browsing: true }, '*');
-    }
-
-    const overlay = document.getElementById('narrative-overlay');
-    if (overlay) {
-        overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 500);
-    }
-};
-
 window.showRoomDescription = function (roomName) {
     const rData = window.roomContent ? window.roomContent[roomName] : null;
     if (!rData) return;
@@ -1878,14 +1668,14 @@ window.showCompletionPopup = function () {
     background: white;
     color: black;
     padding: ${isSmall ? '32px 16px' : '60px 40px'};
-    border - radius: 4px;
-    text - align: center;
+    border-radius: 4px;
+    text-align: center;
     width: ${isSmall ? '92vw' : '90%'};
-    max - width: 500px;
-    max - height: 90vh;
-    overflow - y: auto;
-    box - sizing: border - box;
-    box - shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(255, 255, 255, 0.1);
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: hidden;
     `;
@@ -1928,7 +1718,7 @@ window.returnToIndexAndShowMeaning = function (e) {
     const overlay = document.getElementById('narrative-overlay');
     if (overlay) {
         overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 400);
+        overlay._hideTimeout = setTimeout(() => { overlay.style.display = 'none'; }, 400);
     }
 
     // Exit fullscreen first
@@ -1959,6 +1749,7 @@ window.returnToIndexAndShowMeaning = function (e) {
 function showFinalSummary() {
     const summaryOverlay = document.getElementById('narrative-overlay');
     if (!summaryOverlay) return;
+    if (summaryOverlay._hideTimeout) clearTimeout(summaryOverlay._hideTimeout);
     const card = summaryOverlay.querySelector('.narrative-card');
     if (!card) return;
 
@@ -1975,11 +1766,14 @@ function showFinalSummary() {
     card.style.width = '100%';
     card.style.margin = 'auto'; // Flex centering fallback
 
-    // Give the card a subtle presence so it's not "invisible"
-    card.style.background = 'rgba(255, 255, 255, 0.03)';
-    card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-    card.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
+    // Give the card a bright, premium presence
+    card.style.background = '#ffffff';
+    card.style.color = '#000000';
+    card.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+    card.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5), 0 0 100px rgba(255,255,255,0.1)';
     card.style.textAlign = 'left';
+    card.style.borderRadius = '4px';
+    card.style.boxSizing = 'border-box';
 
     // Build the specific room lines
     const answers = window.visitorData.answers || {};
@@ -2004,11 +1798,11 @@ function showFinalSummary() {
         const numStyle = "font-family:'Special Elite', cursive; color: #666; min-width: 1.5em; display: inline-block;";
 
         if (r.special) {
-            line = `<span style="${numStyle}">${idx + 1}.</span> <span class="text-cyan-300 font-bold" style="${fontStyle}">${ans}</span> <span class="text-gray-400" style="${fontStyle}">${r.suffix}</span>`;
+            line = `<span style="${numStyle}">${idx + 1}.</span> <span class="font-bold" style="${fontStyle} color: #0891b2;">${ans}</span> <span style="${fontStyle} color: #666666;">${r.suffix}</span>`;
         } else {
-            line = `<span style="${numStyle}">${idx + 1}.</span> <span class="text-gray-400" style="${fontStyle}">${r.prefix}</span> <span class="text-cyan-300 font-bold" style="${fontStyle}">${ans}</span>`;
+            line = `<span style="${numStyle}">${idx + 1}.</span> <span style="${fontStyle} color: #666666;">${r.prefix}</span> <span class="font-bold" style="${fontStyle} color: #0891b2;">${ans}</span>`;
         }
-        linesHTML += `<div class="mb-3 border-b border-white/5 pb-2 text-md leading-snug">${line}</div>`;
+        linesHTML += `<div class="mb-3 border-b border-black/5 pb-2 text-md leading-snug">${line}</div>`;
     });
 
     const vName = window.visitorData.name || "Unknown";
@@ -2016,14 +1810,14 @@ function showFinalSummary() {
     card.innerHTML = `
         <button class="close-popup-btn" style="position:fixed; top:20px; right:20px; z-index:2001; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2);" onclick="window.closeOverlay('narrative-overlay')">&times;</button>
         <div class="text-center mb-6 mt-2 flex flex-col items-center">
-            <h2 class="uppercase text-center" style="font-family:'Orelega One', cursive; line-height: 1.1; letter-spacing: -0.02em; color: #fff;">
+            <h2 class="uppercase text-center" style="font-family:'Orelega One', cursive; line-height: 1.1; letter-spacing: -0.02em; color: #000;">
                 <span style="font-size: min(10vw, 48px); display: block; width: 100%; opacity: 0.8;">${t('mol_title')}</span>
                 <span style="font-size: 18px; display: block; opacity: 0.6; margin: 10px 0; font-family: 'Orelega One', cursive;">${t('mol_according')}</span>
-                <span style="font-size: min(15vw, 64px); display: block; font-weight: 700; color: #fff;">${vName}</span>
+                <span style="font-size: min(15vw, 64px); display: block; font-weight: 700; color: #000;">${vName}</span>
             </h2>
             <div class="flex flex-col items-center gap-1.5 opacity-20 mt-4">
-                <div class="w-24 h-[1px] bg-white"></div>
-                <div class="w-40 h-[1px] bg-white"></div>
+                <div class="w-24 h-[1px] bg-black"></div>
+                <div class="w-40 h-[1px] bg-black"></div>
             </div>
         </div>
 
@@ -2086,7 +1880,7 @@ window.showNarrativeSummary = function () {
         { key: 'attic', nameEn: 'The Attic', nameNl: 'De Zolder' },
         { key: 'basement', nameEn: 'The Basement', nameNl: 'De Kelder' },
         { key: 'annex', nameEn: 'The Annex', nameNl: 'De Annex' },
-        { key: 'space', nameEn: 'The Void', nameNl: 'De Ruimte' },
+        { key: 'space', nameEn: 'Space', nameNl: 'De Ruimte' },
     ];
 
     const lang = window.currentLanguage || 'en';
@@ -2202,28 +1996,6 @@ window.emailNarrative = function () {
     a.click();
 };
 
-function createPlutoUsher() {
-    const group = new THREE.Group();
-    group.userData.type = 'usher_group';
-    const baseH = 1.8;
-
-    const halo = createGlitchyHalo();
-    halo.position.set(0, baseH, 0);
-    group.add(halo);
-
-    const text = createUsherText();
-    text.position.set(0, baseH, 0);
-    group.add(text);
-
-    group.userData.update = function (t) {
-        const bob = Math.sin(t * 1.5) * 0.1;
-        halo.position.y = baseH + bob;
-        text.position.y = baseH + bob;
-    };
-
-    return group;
-}
-
 // ---- LANGUAGE SYNC ----
 window.setExperienceLanguage = function (lang) {
     if (!UI_I18N[lang]) return;
@@ -2253,15 +2025,6 @@ window.setExperienceLanguage = function (lang) {
 
     // 3. Refresh Word Sculpture (Neon)
     if (window.refreshWordSculpture) window.refreshWordSculpture();
-
-    // 4. Refresh Usher (if exists)
-    if (window.worldGroup && window.refreshUsherText) {
-        window.worldGroup.traverse(c => {
-            if (c.userData && c.userData.type === 'usher_text') {
-                window.refreshUsherText(c);
-            }
-        });
-    }
 };
 
 window.addEventListener('message', (event) => {

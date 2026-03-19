@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triple-Plane Chess: Celestial Ascent</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #05050a; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: white;
+            background: rgba(15, 15, 25, 0.95); padding: 20px; border-radius: 12px;
+            pointer-events: none; border: 1px solid rgba(0, 212, 255, 0.4);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8); backdrop-filter: blur(12px);
+            width: 280px; z-index: 10;
+        }
+        .label { font-weight: bold; color: #00d4ff; margin-bottom: 8px; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
+        .instruction { font-size: 0.85em; color: #ccc; margin-bottom: 4px; }
+        #status-box { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.4); border-radius: 6px; border-left: 3px solid #ff3333; transition: border-color 0.3s; }
+        #turn-info { color: #fff; font-weight: bold; margin-bottom: 5px; }
+        #msg { color: #ffd700; font-size: 0.85em; min-height: 1.2em; }
+        #clock-container { margin-top: 10px; display: flex; justify-content: space-between; font-family: 'Courier New', monospace; font-size: 1.1em; }
+        .clock { padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .clock.active { border-color: #ffd700; box-shadow: 0 0 10px rgba(255,215,0,0.3); color: #fff; }
+        .clock.inactive { color: #666; }
+        .rules-toggle { margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); pointer-events: auto; cursor: pointer; color: #00d4ff; font-size: 0.8em; text-decoration: underline; }
+        #rules-content { display: none; font-size: 0.75em; color: #bbb; margin-top: 10px; line-height: 1.4; }
+        #sky-gradient { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 0; transition: background 1.2s ease; }
+    #fade-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; opacity: 0; pointer-events: none; z-index: 100000; transition: opacity 0.8s ease-in-out; }
+    canvas { display: block; cursor: crosshair; position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+<div id="sky-gradient"></div>
+<div id="fade-overlay"></div>
+<div id="ui">
+    <div class="label">Celestial Ascent</div>
+    <div class="instruction">L1: Earth &nbsp;|&nbsp; L2: Purgatory &nbsp;|&nbsp; L3: Heaven</div>
+    <div id="status-box">
+        <div id="turn-info"><span id="turn-text">Red's Turn</span></div>
+        <div id="clock-container">
+            <div id="clock-red" class="clock active">10:00</div>
+            <div id="clock-blue" class="clock inactive">10:00</div>
+        </div>
+        <div id="msg" style="margin-top:8px;">Select a piece to begin.</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:6px;pointer-events:auto;">
+        <button id="lvl-btn-1" onclick="focusLevel(1)" style="flex:1;background:#00ff66;color:#000;border:1px solid #00ff66;padding:6px;border-radius:6px;cursor:pointer;font-weight:bold;box-shadow:0 0 12px #00ff66">Level 1</button>
+        <button id="lvl-btn-2" onclick="focusLevel(2)" style="flex:1;background:#4a0a30;color:#ff44bb;border:1px solid #ff0088;padding:6px;border-radius:6px;cursor:pointer;font-weight:normal">Level 2</button>
+        <button id="lvl-btn-3" onclick="focusLevel(3)" style="flex:1;background:#001a40;color:#44eeff;border:1px solid #00ddff;padding:6px;border-radius:6px;cursor:pointer;font-weight:normal">Level 3</button>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:6px;pointer-events:auto;">
+        <button onclick="zoomBy(-8)" style="flex:1;background:rgba(0,0,0,0.4);color:#ffd700;border:1px solid rgba(255,215,0,0.4);padding:6px;border-radius:6px;cursor:pointer;font-size:1.1em;font-weight:bold">＋</button>
+        <button onclick="zoomBy(8)"  style="flex:1;background:rgba(0,0,0,0.4);color:#ffd700;border:1px solid rgba(255,215,0,0.4);padding:6px;border-radius:6px;cursor:pointer;font-size:1.1em;font-weight:bold">－</button>
+    </div>
+    <div class="rules-toggle" onclick="const c=document.getElementById('rules-content');c.style.display=c.style.display==='block'?'none':'block';">View Rules & Controls</div>
+    <div id="rules-content">
+        <b>Portals (cyan/magenta columns):</b><br>
+        Move a piece onto a portal square. On your next turn, select it —
+        a <b style="color:#00ff00">green ring</b> appears at the destination above.
+        Click that ring to ascend.<br><br>
+        <b>Atmospheric Pressure:</b><br>
+        Time drains faster on higher levels.<br><br>
+        <b>Controls:</b><br>
+        Left-drag: orbit &nbsp;|&nbsp; Right-drag or Shift+drag: pan &nbsp;|&nbsp; Scroll: zoom
+    </div>
+</div>
+
+<script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let scene, camera, renderer, raycaster, mouse;
+    let pieces = [], validMoves = [];
+    let selectedPiece = null;
+    let turn = 'red';
+    let isThinking = false;
+    let isTransitioning = false;
+    let gameOver = false;
+
+    const timers = { red: 600, blue: 600 };  // start at L1 = 10 min
+    let lastTick = Date.now();
+
+    let isOrbiting = false, isPanning = false;
+    let prevMouse = { x: 0, y: 0 };
+    let mouseDownPos = { x: 0, y: 0 };
+    let didDrag = false;
+    let cameraTarget = new THREE.Vector3(0, 0, 0);
+    let currentLevel = 1;
+    let ambientLight, pointLight;
+    let cameraGoal   = new THREE.Vector3(0, 0, 0);
+
+    // ── Constants ────────────────────────────────────────────────────────────
+    const BOARD = 8;
+    const GAP   = 6;
+    const ly    = l => (l - 1) * GAP;   // level 1 → y=0, 2 → y=6, 3 → y=12
+
+    const COLORS = { red: 0xff3333, blue: 0x3366ff };
+
+    // Portals: standing on (level, x, z) → can jump to target level
+    // Red moves in -z, so red portal at z:5 (one pawn move from z:6)
+    // Blue moves in +z, so blue portal at z:2 (one pawn move from z:1)
+    const PORTALS = [
+        { level: 1, x: 3, z: 5, target: 2, color: 0x00ffff },
+        { level: 2, x: 4, z: 2, target: 3, color: 0xff00ff }
+    ];
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+
+    const LEVEL_SKY = [
+        null,
+        { bg: 0x1a6b1a, fog: 0x1a5a1a, ambient: 0xccffdd, point: 0x00ff66,
+          btnBg: '#1a6b1a', btnBorder: '#00ff66', btnColor: '#00ff66', label: 'L1 Earth',
+          gradTop: '#6b1a4a', gradMid: '#00cc44', gradBot: '#003310' },
+        { bg: 0x6b0a3a, fog: 0x5a0830, ambient: 0xff77cc, point: 0xff0088,
+          btnBg: '#6b0a3a', btnBorder: '#ff0088', btnColor: '#ff77cc', label: 'L2 Purgatory',
+          gradTop: '#3a6b2a', gradMid: '#8b0050', gradBot: '#1a2255' },
+        { bg: 0x002a5c, fog: 0x002040, ambient: 0x88f0ff, point: 0x00eeff,
+          btnBg: '#002a5c', btnBorder: '#00eeff', btnColor: '#88f0ff', label: 'L3 Heaven',
+          gradTop: '#ccf0ff', gradMid: '#00ccff', gradBot: '#3a1a55' },
+    ];
+
+    function zoomBy(delta) {
+        const p = camera.position.clone().sub(cameraTarget);
+        const newLen = Math.max(4, Math.min(300, p.length() + delta));
+        camera.position.copy(cameraTarget).addScaledVector(p.normalize(), newLen);
+    }
+
+    function focusLevel(l) {
+        const dy = ly(l) - ly(currentLevel);  // how many units to shift
+        // Move both camera and target by the same dy — preserves orbit distance and angle
+        camera.position.y += dy;
+        cameraTarget.y    += dy;
+        cameraGoal.y       = cameraTarget.y;
+        currentLevel = l;
+
+        // Update sky, fog and lights
+        const sky = LEVEL_SKY[l];
+        scene.background = null;
+        scene.fog.color.set(sky.fog);
+        document.getElementById('sky-gradient').style.background = 'linear-gradient(to bottom, ' + sky.gradTop + ' 0%, ' + sky.gradMid + ' 50%, ' + sky.gradBot + ' 100%)';
+        ambientLight.color.set(sky.ambient);
+        pointLight.color.set(sky.point);
+
+        // Update button styles to reflect active level
+        [1,2,3].forEach(i => {
+            const btn = document.getElementById('lvl-btn-' + i);
+            const s = LEVEL_SKY[i];
+            btn.style.background  = i === l ? s.btnBorder : s.btnBg;
+            btn.style.borderColor = s.btnBorder;
+            btn.style.color       = i === l ? '#000' : s.btnColor;
+            btn.style.fontWeight  = i === l ? 'bold' : 'normal';
+            btn.style.boxShadow   = i === l ? '0 0 12px ' + s.btnBorder : 'none';
+        });
+        document.getElementById('msg').innerText = ['','Earth (L1)','Purgatory (L2)','Heaven (L3)'][l];
+    }
+
+    // Keyboard shortcuts: 1/2/3 to focus levels
+    window.addEventListener('keydown', e => {
+        if (e.key === '1') focusLevel(1);
+        if (e.key === '2') focusLevel(2);
+        if (e.key === '3') focusLevel(3);
+    });
+
+
+    window.onload = () => { init(); animate(); focusLevel(1); };
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = null;  // transparent — CSS gradient shows through
+        scene.fog = new THREE.FogExp2(0x0d4a0d, 0.003);
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 4, 18);
+        camera.lookAt(cameraTarget);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+
+        ambientLight = new THREE.AmbientLight(0x88ffaa, 0.9);
+        scene.add(ambientLight);
+        const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+        sun.position.set(20, 100, 20);
+        scene.add(sun);
+        pointLight = new THREE.PointLight(0x44ff88, 1.5, 300);
+        pointLight.position.set(-15, 30, -15);
+        scene.add(pointLight);
+
+        for (let l = 1; l <= 3; l++) buildBoard(l);
+        PORTALS.forEach(p => buildPortalFx(p));
+        spawnPieces();
+        setupInput();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        setInterval(tickClocks, 100);
+    }
+
+    // ── Board ────────────────────────────────────────────────────────────────
+    function buildBoard(l) {
+        const y = ly(l);
+        const g = new THREE.Group();
+        for (let i = 0; i < BOARD; i++) {
+            for (let j = 0; j < BOARD; j++) {
+                const tile = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.95, 0.1, 0.95),
+                    new THREE.MeshPhongMaterial({
+                        color: (i + j) % 2 === 0 ? 0x222233 : 0x050510,
+                        transparent: true, opacity: 0.8, shininess: 60
+                    })
+                );
+                tile.position.set(i - 3.5, y, j - 3.5);
+                tile.userData = { type: 'tile', x: i, z: j, level: l };
+                g.add(tile);
+            }
+        }
+        scene.add(g);
+    }
+
+    function buildPortalFx(p) {
+        const wx = p.x - 3.5, wz = p.z - 3.5;
+        const yBot = ly(p.level);
+        const height = ly(p.target) - yBot;
+
+        const cyl = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.48, 0.48, height, 24, 1, true),
+            new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.12, wireframe: true, side: THREE.DoubleSide })
+        );
+        cyl.position.set(wx, yBot + height / 2, wz);
+        cyl.userData = { isPortalFx: true };
+        scene.add(cyl);
+
+        const core = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, height, 8),
+            new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.5 })
+        );
+        core.position.set(wx, yBot + height / 2, wz);
+        core.userData = { isPortalFx: true };
+        scene.add(core);
+
+        // Glowing ring on the portal square surface
+        const ring = new THREE.Mesh(
+            new THREE.RingGeometry(0.35, 0.48, 32),
+            new THREE.MeshBasicMaterial({ color: p.color, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.set(wx, yBot + 0.06, wz);
+        ring.userData = { isPortalFx: true };
+        scene.add(ring);
+    }
+
+    // ── Pieces ───────────────────────────────────────────────────────────────
+    function makeMesh(type, side) {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshPhongMaterial({
+            color: COLORS[side], transparent: true, opacity: 0.92,
+            emissive: COLORS[side], emissiveIntensity: 0.7, shininess: 160,
+            specular: new THREE.Color(0xffffff)
+        });
+        // Helper: lathe profile for classic chess silhouettes
+        const cyl  = (rt, rb, h, s=16) => new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s), mat);
+        const sph  = (r,  s=12)        => new THREE.Mesh(new THREE.SphereGeometry(r, s, s), mat);
+        const box  = (x, y, z)         => new THREE.Mesh(new THREE.BoxGeometry(x, y, z), mat);
+        const tor  = (R, r)            => new THREE.Mesh(new THREE.TorusGeometry(R, r, 8, 24), mat);
+        const add  = (...ms)           => ms.forEach(m => g.add(m));
+        const at   = (m, x, y, z)     => { m.position.set(x, y, z); return m; };
+
+        switch (type) {
+            case 'p': {  // Classic pawn: wide foot, tapered waist, round head
+                const foot  = cyl(0.24, 0.26, 0.06, 20); at(foot,  0, 0.03, 0);
+                const ankle = cyl(0.14, 0.22, 0.08, 16); at(ankle, 0, 0.10, 0);
+                const waist = cyl(0.09, 0.14, 0.20, 16); at(waist, 0, 0.24, 0);
+                const neck  = cyl(0.11, 0.09, 0.06, 16); at(neck,  0, 0.37, 0);
+                const head  = sph(0.14, 16);              at(head,  0, 0.48, 0);
+                add(foot, ankle, waist, neck, head); break;
+            }
+            case 'r': {  // Rook: solid tower, taller than knight
+                const foot  = cyl(0.22, 0.25, 0.06, 20); at(foot,  0, 0.03, 0);
+                const shaft = cyl(0.17, 0.21, 0.40, 16); at(shaft, 0, 0.26, 0);
+                const ledge = cyl(0.22, 0.17, 0.06, 16); at(ledge, 0, 0.49, 0);
+                for (let i = 0; i < 4; i++) {
+                    const b = box(0.08, 0.12, 0.08);
+                    b.position.set(Math.cos(i*Math.PI/2)*0.15, 0.58, Math.sin(i*Math.PI/2)*0.15);
+                    g.add(b);
+                }
+                add(foot, shaft, ledge); break;
+            }
+            case 'n': {  // Knight: base + upward neck + distinct horse-head block
+                const foot  = cyl(0.24, 0.26, 0.06, 20); at(foot,  0, 0.03, 0);
+                const ankle = cyl(0.14, 0.22, 0.08, 16); at(ankle, 0, 0.10, 0);
+                const neck  = cyl(0.10, 0.14, 0.28, 10); at(neck,  0, 0.28, 0);
+                // Head: elongated box tilted forward
+                const muzzle = box(0.16, 0.12, 0.28); at(muzzle, 0.04, 0.46, 0.02); muzzle.rotation.z = -0.25;
+                const skull  = box(0.20, 0.18, 0.20); at(skull,  0.02, 0.58, 0);    skull.rotation.z  = -0.15;
+                const ear    = box(0.06, 0.10, 0.06); at(ear,    0.06, 0.70, 0);
+                add(foot, ankle, neck, muzzle, skull, ear); break;
+            }
+            case 'b': {  // Bishop: tall elegant taper with ball finial and notch
+                const foot   = cyl(0.24, 0.26, 0.06, 20); at(foot,   0, 0.03, 0);
+                const ankle  = cyl(0.14, 0.22, 0.08, 16); at(ankle,  0, 0.10, 0);
+                const body   = cyl(0.08, 0.14, 0.36, 16); at(body,   0, 0.32, 0);
+                const collar = cyl(0.12, 0.08, 0.05, 16); at(collar, 0, 0.52, 0);
+                const ball   = sph(0.10, 14);              at(ball,   0, 0.62, 0);
+                const tip    = sph(0.04, 8);               at(tip,    0, 0.74, 0);
+                add(foot, ankle, body, collar, ball, tip); break;
+            }
+            case 'q': {  // Queen: tall and regal
+                const foot   = cyl(0.30, 0.32, 0.07, 20); at(foot,   0, 0.035, 0);
+                const ankle  = cyl(0.18, 0.28, 0.09, 16); at(ankle,  0, 0.12,  0);
+                const body   = cyl(0.11, 0.18, 0.46, 16); at(body,   0, 0.40,  0);
+                const waist  = sph(0.16, 14);              at(waist,  0, 0.68,  0);
+                const crown  = cyl(0.21, 0.14, 0.12, 16); at(crown,  0, 0.81,  0);
+                for (let i = 0; i < 5; i++) {
+                    const pt = cyl(0.025, 0.05, 0.15, 6);
+                    pt.position.set(Math.cos(i*Math.PI*2/5)*0.17, 0.96, Math.sin(i*Math.PI*2/5)*0.17);
+                    g.add(pt);
+                }
+                const orb = sph(0.07, 10); at(orb, 0, 0.92, 0);
+                add(foot, ankle, body, waist, crown, orb); break;
+            }
+            case 'k': {  // King: tallest, most imposing
+                const foot   = cyl(0.32, 0.34, 0.07, 20); at(foot,   0, 0.035, 0);
+                const ankle  = cyl(0.20, 0.30, 0.09, 16); at(ankle,  0, 0.12,  0);
+                const body   = cyl(0.13, 0.20, 0.48, 16); at(body,   0, 0.43,  0);
+                const collar = sph(0.18, 14);              at(collar, 0, 0.72,  0);
+                const crown  = cyl(0.23, 0.16, 0.12, 16); at(crown,  0, 0.85,  0);
+                const crossV = box(0.07, 0.32, 0.07);      at(crossV, 0, 1.06,  0);
+                const crossH = box(0.26, 0.07, 0.07);      at(crossH, 0, 1.14,  0);
+                add(foot, ankle, body, collar, crown, crossV, crossH); break;
+            }
+        }
+        return g;
+    }
+
+    function spawnPiece(type, side, x, z, level) {
+        const g = makeMesh(type, side);
+        g.position.set(x - 3.5, ly(level) + 0.15, z - 3.5);
+        g.userData = { type: 'piece', pType: type, side, x, z, level, moved: false };
+        scene.add(g);
+        pieces.push(g);
+    }
+
+    function spawnPieces() {
+        const layout = ['r','n','b','q','k','b','n','r'];
+        for (let i = 0; i < 8; i++) {
+            spawnPiece('p',       'red',  i, 6, 1);   // red pawns at z:6, move toward z:5,4,3...
+            spawnPiece(layout[i], 'red',  i, 7, 1);   // red back rank at z:7
+            spawnPiece('p',       'blue', i, 1, 1);   // blue pawns at z:1, move toward z:2,3,4...
+            spawnPiece(layout[i], 'blue', i, 0, 1);   // blue back rank at z:0
+        }
+    }
+
+    // ── Move generation ──────────────────────────────────────────────────────
+    function pieceAt(x, z, level) {
+        return pieces.find(p => p.userData.x === x && p.userData.z === z && p.userData.level === level) || null;
+    }
+
+    function getMoves(piece) {
+        const moves = [];
+        const { pType, side, x, z, level, moved } = piece.userData;
+        const dir = side === 'red' ? -1 : 1;
+        const oob = (nx, nz) => nx < 0 || nx >= BOARD || nz < 0 || nz >= BOARD;
+
+        // Portal jump — only if standing exactly on a portal square
+        const portal = PORTALS.find(p => p.level === level && p.x === x && p.z === z);
+        if (portal) {
+            const occ = pieceAt(x, z, portal.target);
+            if (!occ || occ.userData.side !== side) {
+                moves.push({ x, z, level: portal.target, type: 'portal' });
+            }
+        }
+
+        const add = (nx, nz) => {
+            if (oob(nx, nz)) return false;
+            const t = pieceAt(nx, nz, level);
+            if (!t) { moves.push({ x: nx, z: nz, level }); return true; }
+            if (t.userData.side !== side) { moves.push({ x: nx, z: nz, level, capture: true }); return false; }
+            return false;
+        };
+
+        if (pType === 'p') {
+            if (!pieceAt(x, z + dir, level)) {
+                moves.push({ x, z: z + dir, level });
+                if (!moved && !pieceAt(x, z + 2 * dir, level)) moves.push({ x, z: z + 2 * dir, level });
+            }
+            [-1, 1].forEach(dx => {
+                const t = pieceAt(x + dx, z + dir, level);
+                if (t && t.userData.side !== side) moves.push({ x: x + dx, z: z + dir, level, capture: true });
+            });
+        }
+        if (pType === 'r' || pType === 'q') [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dz]) => { for (let i=1;i<8;i++) if(!add(x+dx*i,z+dz*i)) break; });
+        if (pType === 'b' || pType === 'q') [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([dx,dz]) => { for (let i=1;i<8;i++) if(!add(x+dx*i,z+dz*i)) break; });
+        if (pType === 'n') [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dx,dz]) => add(x+dx,z+dz));
+        if (pType === 'k') { for (let i=-1;i<=1;i++) for (let j=-1;j<=1;j++) if (i||j) add(x+i,z+j); }
+
+        return moves;
+    }
+
+    // ── Highlights ───────────────────────────────────────────────────────────
+    function addHighlight(x, level, z, color, isPortal) {
+        const wx = x - 3.5, wz = z - 3.5, wy = ly(level) + 0.15;
+
+        // Standard move ring on the board surface
+        const ring = new THREE.Mesh(
+            new THREE.RingGeometry(0.38, 0.52, 32),
+            new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.set(wx, wy, wz);
+        ring.userData = { type: 'tile', x, z, level };
+        scene.add(ring);
+        validMoves.push(ring);
+
+        // Filled disc too for easier clicking
+        const disc = new THREE.Mesh(
+            new THREE.CircleGeometry(0.36, 32),
+            new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.35 })
+        );
+        disc.rotation.x = Math.PI / 2;
+        disc.position.set(wx, wy - 0.01, wz);
+        disc.userData = { type: 'tile', x, z, level };
+        scene.add(disc);
+        validMoves.push(disc);
+
+        if (isPortal) {
+            // Big glowing sphere at the destination level — impossible to miss, easy to click
+            const sphere = new THREE.Mesh(
+                new THREE.SphereGeometry(0.6, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.7, wireframe: false })
+            );
+            sphere.position.set(wx, wy + 1.0, wz);
+            sphere.userData = { type: 'tile', x, z, level };
+            scene.add(sphere);
+            validMoves.push(sphere);
+
+            // Vertical beam from current level up to destination — makes it visible from below
+            const fromY = ly(level - 1) + 0.15;
+            const toY   = wy + 1.0;
+            const beamH = toY - fromY;
+            const beam  = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.08, beamH, 8),
+                new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.4 })
+            );
+            beam.position.set(wx, fromY + beamH / 2, wz);
+            // No userData on beam — not clickable, just visual
+            scene.add(beam);
+            validMoves.push(beam);
+        }
+    }
+
+    function clearHighlights() { validMoves.forEach(m => scene.remove(m)); validMoves = []; }
+
+    // ── Tweens ───────────────────────────────────────────────────────────────
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const activeTweens = [];
+
+    function tweenTo(object, targetPos, duration) {
+        return new Promise(resolve => {
+            const start = object.position.clone();
+            const end   = targetPos.clone();
+            const t0    = performance.now();
+            activeTweens.push(function tick(now) {
+                const f = Math.min(1, (now - t0) / duration);
+                const ease = f < 0.5 ? 2*f*f : -1+(4-2*f)*f; // ease in-out
+                object.position.lerpVectors(start, end, ease);
+                if (f >= 1) { resolve(); return false; }
+                return true;
+            });
+        });
+    }
+
+    // ── Move execution ───────────────────────────────────────────────────────
+
+    async function movePiece(piece, nx, nz, nl) {
+        const target = pieceAt(nx, nz, nl);
+        if (target) { scene.remove(target); pieces = pieces.filter(p => p !== target); }
+        // Update logical position immediately
+        Object.assign(piece.userData, { x: nx, z: nz, level: nl, moved: true });
+        // Animate: lift up, slide across, land
+        const endPos = new THREE.Vector3(nx - 3.5, ly(nl) + 0.15, nz - 3.5);
+        const liftPos = new THREE.Vector3(piece.position.x, Math.max(piece.position.y, ly(nl)) + 1.2, piece.position.z);
+        await tweenTo(piece, liftPos, 180);
+        await tweenTo(piece, new THREE.Vector3(endPos.x, liftPos.y, endPos.z), 260);
+        await tweenTo(piece, endPos, 140);
+    }
+
+    async function doMove(piece, nx, nz, nl) {
+        const oldL = piece.userData.level;
+        movePiece(piece, nx, nz, nl);
+        if (nl !== oldL) {
+            const ov = document.getElementById('fade-overlay');
+            ov.style.opacity = '1';
+            await wait(700);
+            ov.style.opacity = '0';
+            const names = ['','Earth','Purgatory','Heaven'];
+            document.getElementById('msg').innerText = 'Piece ascended to ' + names[nl] + '! Press ' + nl + ' to follow.';
+        }
+    }
+
+    // ── Click handling ───────────────────────────────────────────────────────
+    function handleClick(e) {
+        if (isThinking || isTransitioning || gameOver) return;
+
+        mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        const hits = raycaster.intersectObjects(scene.children, true);
+
+        // Collect unique userData from all hits, skip wireframe geometry
+        const seen = new Set();
+        const candidates = [];
+        for (const hit of hits) {
+            const o = hit.object;
+            if (o.material && o.material.wireframe) continue;
+            const ud = (o.userData && o.userData.type) ? o.userData
+                     : (o.parent && o.parent.userData && o.parent.userData.type) ? o.parent.userData
+                     : null;
+            if (ud && !seen.has(ud)) { seen.add(ud); candidates.push(ud); }
+        }
+
+        // Check if we clicked our own piece
+        const ownPiece = candidates.find(d => d.type === 'piece' && d.side === turn);
+
+        // If a piece is already selected...
+        if (selectedPiece) {
+            const moves = getMoves(selectedPiece);
+
+            // Clicked the SAME piece again (compare by coords, not reference)
+            const isSame = ownPiece &&
+                ownPiece.x === selectedPiece.userData.x &&
+                ownPiece.z === selectedPiece.userData.z &&
+                ownPiece.level === selectedPiece.userData.level;
+            if (isSame) {
+                const portalMove = moves.find(m => m.type === 'portal');
+                if (portalMove) { executeMove(portalMove); return; }
+                return; // re-click same piece, no portal — stay selected
+            }
+
+            // Clicked a tile or enemy piece — try to match a valid move
+            for (const cand of candidates) {
+                if (cand.type !== 'tile' && !(cand.type === 'piece' && cand.side !== turn)) continue;
+                const move = moves.find(m => m.x === cand.x && m.z === cand.z && m.level === cand.level);
+                if (move) { executeMove(move); return; }
+            }
+
+            // Clicked a different own piece — select it instead
+            if (ownPiece) {
+                clearHighlights();
+                selectedPiece = pieces.find(p => p.userData === ownPiece);
+                const newMoves = getMoves(selectedPiece);
+                newMoves.forEach(m => addHighlight(m.x, m.level, m.z, m.capture ? 0xff2200 : (m.type === 'portal' ? 0x00ff00 : 0x00d4ff), m.type === 'portal'));
+                const hasPortal = newMoves.some(m => m.type === 'portal');
+                document.getElementById('msg').innerText = hasPortal ? 'On portal — click again to ascend.' : 'Piece selected.';
+                return;
+            }
+
+            // Clicked empty space — deselect
+            clearHighlights();
+            selectedPiece = null;
+            document.getElementById('msg').innerText = 'Deselected.';
+            return;
+        }
+
+        // Nothing selected yet — select clicked piece
+        if (ownPiece) {
+            selectedPiece = pieces.find(p => p.userData === ownPiece);
+            const moves = getMoves(selectedPiece);
+            moves.forEach(m => addHighlight(m.x, m.type === 'portal' ? selectedPiece.userData.level : m.level, m.z, m.capture ? 0xff2200 : (m.type === 'portal' ? 0x00ff00 : 0x00d4ff), m.type === 'portal'));
+            const hasPortal = moves.some(m => m.type === 'portal');
+            document.getElementById('msg').innerText = hasPortal ? 'On portal — click again to ascend.' : 'Piece selected.';
+        }
+    }
+
+    function relocatePortals(usedLevel) {
+        // Only move the portal on the level that was just used
+        const portal = PORTALS.find(p => p.level === usedLevel);
+        if (!portal) return;
+        const occupied = new Set(pieces.map(p => p.userData.level === portal.level ? p.userData.x + ',' + p.userData.z : null).filter(Boolean));
+        const candidates = [];
+        for (let x = 0; x < BOARD; x++)
+            for (let z = 0; z < BOARD; z++)
+                if (!occupied.has(x + ',' + z)) candidates.push({x, z});
+        if (candidates.length === 0) return;
+        portal.x = candidates[Math.floor(Math.random() * candidates.length)].x;
+        portal.z = candidates[Math.floor(Math.random() * candidates.length)].z;
+        // Rebuild portal visuals
+        scene.children
+            .filter(o => o.userData && o.userData.isPortalFx)
+            .forEach(o => scene.remove(o));
+        PORTALS.forEach(p => buildPortalFx(p));
+    }
+
+    async function executeMove(m) {
+        const p = selectedPiece;
+        clearHighlights();
+        selectedPiece = null;
+        await doMove(p, m.x, m.z, m.level);
+        if (m.type === 'portal') relocatePortals(m.level - 1); // relocate the portal on the level just left
+        turn = 'blue';
+        document.getElementById('status-box').style.borderColor = '#3366ff';
+        document.getElementById('turn-text').innerText = "Blue's Turn";
+        await botMove();
+    }
+
+    // ── Bot ──────────────────────────────────────────────────────────────────
+    async function botMove() {
+        if (gameOver) return;
+        isThinking = true;
+        document.getElementById('msg').innerText = 'Bot calculating...';
+        await wait(700);
+
+        const vals = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 };
+        let best = null, bestScore = -Infinity;
+
+        pieces.filter(p => p.userData.side === 'blue').forEach(p => {
+            getMoves(p).forEach(m => {
+                const { x: ox, z: oz, level: ol } = p.userData;
+                const cap = pieceAt(m.x, m.z, m.level);
+                if (cap) pieces = pieces.filter(o => o !== cap);
+                p.userData.x = m.x; p.userData.z = m.z; p.userData.level = m.level;
+
+                let sc = 0;
+                pieces.forEach(o => {
+                    const v = (vals[o.userData.pType] || 0) + (o.userData.level * 80);
+                    sc += o.userData.side === 'blue' ? v : -v;
+                });
+
+                p.userData.x = ox; p.userData.z = oz; p.userData.level = ol;
+                if (cap) pieces.push(cap);
+                if (sc > bestScore) { bestScore = sc; best = { p, m }; }
+            });
+        });
+
+        if (best) await doMove(best.p, best.m.x, best.m.z, best.m.level);
+
+        turn = 'red';
+        isThinking = false;
+        document.getElementById('status-box').style.borderColor = '#ff3333';
+        document.getElementById('turn-text').innerText = "Red's Turn";
+        document.getElementById('msg').innerText = 'Your turn.';
+    }
+
+    // ── Input ────────────────────────────────────────────────────────────────
+    function setupInput() {
+        window.addEventListener('mousedown', e => {
+            mouseDownPos = { x: e.clientX, y: e.clientY };
+            prevMouse    = { x: e.clientX, y: e.clientY };
+            didDrag = false;
+            if (e.button === 2 || (e.button === 0 && e.shiftKey)) isPanning = true;
+        });
+
+        window.addEventListener('mouseup', e => {
+            if (e.button === 0 && !didDrag && !e.shiftKey) handleClick(e);
+            isOrbiting = false; isPanning = false; didDrag = false;
+        });
+
+        window.addEventListener('mousemove', e => {
+            const dx = e.clientX - mouseDownPos.x, dy = e.clientY - mouseDownPos.y;
+            if (!didDrag && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+                didDrag = true;
+                if (e.buttons === 1 && !e.shiftKey) isOrbiting = true;
+            }
+            const mdx = e.clientX - prevMouse.x, mdy = e.clientY - prevMouse.y;
+            if (isOrbiting) {
+                const pos = camera.position.clone().sub(cameraTarget);
+                const r   = pos.length();
+                let az  = Math.atan2(pos.x, pos.z) - mdx * 0.005;
+                let pol = Math.max(0.1, Math.min(Math.PI - 0.1, Math.acos(Math.max(-1, Math.min(1, pos.y / r))) - mdy * 0.005));
+                camera.position.set(
+                    r * Math.sin(pol) * Math.sin(az),
+                    r * Math.cos(pol),
+                    r * Math.sin(pol) * Math.cos(az)
+                ).add(cameraTarget);
+            }
+            if (isPanning) {
+                const f  = 0.02;
+                const L  = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+                const U  = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+                const mv = L.clone().multiplyScalar(-mdx * f).add(U.clone().multiplyScalar(mdy * f));
+                camera.position.add(mv); cameraTarget.add(mv); cameraGoal.add(mv);
+            }
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('wheel', e => {
+            const p = camera.position.clone().sub(cameraTarget);
+            camera.position.copy(cameraTarget).add(p.setLength(Math.max(4, Math.min(400, p.length() + e.deltaY * 0.05))));
+        });
+
+        window.addEventListener('contextmenu', e => e.preventDefault());
+
+        window.addEventListener('keydown', e => {
+            // Don't hijack 1/2/3 level keys
+            const step = 0.4;
+            const zoomStep = 2;
+            const pos = camera.position.clone().sub(cameraTarget);
+
+            if (e.key === 'ArrowUp'    && !e.shiftKey && !e.ctrlKey) { cameraGoal.z -= step; cameraTarget.z -= step; camera.position.z -= step; }
+            if (e.key === 'ArrowDown'  && !e.shiftKey && !e.ctrlKey) { cameraGoal.z += step; cameraTarget.z += step; camera.position.z += step; }
+            if (e.key === 'ArrowLeft'  && !e.shiftKey && !e.ctrlKey) { cameraGoal.x -= step; cameraTarget.x -= step; camera.position.x -= step; }
+            if (e.key === 'ArrowRight' && !e.shiftKey && !e.ctrlKey) { cameraGoal.x += step; cameraTarget.x += step; camera.position.x += step; }
+
+            // Shift+Arrow: pan vertically (move between levels)
+            if (e.key === 'ArrowUp'   && e.shiftKey) { cameraGoal.y += step; cameraTarget.y += step; camera.position.y += step; }
+            if (e.key === 'ArrowDown' && e.shiftKey) { cameraGoal.y -= step; cameraTarget.y -= step; camera.position.y -= step; }
+
+            // Ctrl+Arrow or +/- : zoom
+            if ((e.key === 'ArrowUp'   && e.ctrlKey) || e.key === '+' || e.key === '=') { zoomBy(-zoomStep); e.preventDefault(); }
+            if ((e.key === 'ArrowDown' && e.ctrlKey) || e.key === '-' || e.key === '_') { zoomBy( zoomStep); e.preventDefault(); }
+
+            if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+        });
+    }
+
+    // ── Clocks ───────────────────────────────────────────────────────────────
+    function tickClocks() {
+        if (gameOver || isTransitioning) return;
+        const now = Date.now(), dt = (now - lastTick) / 1000;
+        lastTick = now;
+
+        // Time drains at level-appropriate rate: L1=normal, L2=2x, L3=5x
+        const maxLv = side => pieces.filter(p => p.userData.side === side).reduce((m, p) => Math.max(m, p.userData.level), 1);
+        const mult  = l => l === 3 ? 5.0 : l === 2 ? 2.0 : 1.0;
+        timers[turn] -= dt * mult(maxLv(turn));
+        if (timers[turn] <= 0) {
+            timers[turn] = 0; gameOver = true;
+            document.getElementById('msg').innerText = `TIMEOUT! ${turn === 'red' ? 'Blue' : 'Red'} wins.`;
+        }
+
+        const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+        document.getElementById('clock-red').innerText  = fmt(timers.red);
+        document.getElementById('clock-blue').innerText = fmt(timers.blue);
+        document.getElementById('clock-red').className  = `clock ${turn === 'red'  ? 'active' : 'inactive'}`;
+        document.getElementById('clock-blue').className = `clock ${turn === 'blue' ? 'active' : 'inactive'}`;
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────────
+    function animate() {
+        requestAnimationFrame(animate);
+        // Process tweens
+        for (let i = activeTweens.length - 1; i >= 0; i--) {
+            if (!activeTweens[i](performance.now())) activeTweens.splice(i, 1);
+        }
+        cameraTarget.lerp(cameraGoal, 0.08);
+        camera.lookAt(cameraTarget);
+        renderer.render(scene, camera);
+        updateGradient();
+    }
+
+    function updateGradient() {
+        // Blend between level colours based on camera Y position
+        // L1=y0, L2=y6, L3=y12 — normalise to 0..2
+        // Use cameraTarget.y (tracks board level) not camera.position.y (orbiting angle)
+        const t = Math.max(0, Math.min(2, cameraTarget.y / GAP));
+
+        // Define key colours at each level
+        const stops = [
+            { top: [0,255,102],   mid: [26,107,26],   bot: [74,10,48]   },  // L1 Earth
+            { top: [58,107,42],   mid: [139,0,80],    bot: [26,34,85]   },  // L2 Purgatory
+            { top: [204,240,255], mid: [0,204,255],   bot: [58,26,85]   },  // L3 Heaven
+        ];
+
+        function lerp3(a, b, f) {
+            return [
+                Math.round(a[0] + (b[0]-a[0])*f),
+                Math.round(a[1] + (b[1]-a[1])*f),
+                Math.round(a[2] + (b[2]-a[2])*f)
+            ];
+        }
+        function rgb(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+
+        const lo = Math.min(1, Math.floor(t));
+        const hi = Math.min(2, lo + 1);
+        const f  = t - lo;
+
+        const top = rgb(lerp3(stops[lo].top, stops[hi].top, f));
+        const mid = rgb(lerp3(stops[lo].mid, stops[hi].mid, f));
+        const bot = rgb(lerp3(stops[lo].bot, stops[hi].bot, f));
+
+        document.getElementById('sky-gradient').style.background =
+            `linear-gradient(to bottom, ${top} 0%, ${mid} 50%, ${bot} 100%)`;
+
+        // Also update fog colour to match mid tone
+        scene.fog.color.setRGB(
+            lerp3(stops[lo].mid, stops[hi].mid, f)[0]/255,
+            lerp3(stops[lo].mid, stops[hi].mid, f)[1]/255,
+            lerp3(stops[lo].mid, stops[hi].mid, f)[2]/255
+        );
+    }
+</script>
+</body>
+</html>

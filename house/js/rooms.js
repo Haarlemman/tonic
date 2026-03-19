@@ -1,15 +1,15 @@
 function playTrack(index) {
     if (!window.currentRoom || !window.roomContent || !window.roomContent[window.currentRoom]) {
-        console.error("playTrack called too early – currentRoom =", window.currentRoom);
+        console.error("playTrack called too early � currentRoom =", window.currentRoom);
         return;
     }
 
     // Ensure audioPlayer exists
     if (!window.audioPlayer) {
-        console.error("❌ audioPlayer not found! Attempting to initialize...");
+        console.error("? audioPlayer not found! Attempting to initialize...");
         window.audioPlayer = document.getElementById('room-audio');
         if (!window.audioPlayer) {
-            console.error("❌ CRITICAL: Cannot find #room-audio element!");
+            console.error("? CRITICAL: Cannot find #room-audio element!");
             return;
         }
     }
@@ -35,7 +35,7 @@ function playTrack(index) {
 
         // If already playing this track, don't restart it (prevent glitching)
         if (window.audioPlayer.src && window.audioPlayer.src.includes(targetSrc.substring(targetSrc.lastIndexOf('/') + 1)) && !window.audioPlayer.paused) {
-            console.log('🎵 Track already playing:', targetSrc);
+            console.log('?? Track already playing:', targetSrc);
             window.currentTrackIndex = index;
             if (window.updateMusicPanelHighlight) window.updateMusicPanelHighlight();
             return;
@@ -44,7 +44,7 @@ function playTrack(index) {
         window.currentTrackIndex = index;
 
         window.audioPlayer.src = targetSrc;
-        console.log('🎵 Setting audio source:', targetSrc);
+        console.log('?? Setting audio source:', targetSrc);
 
         // Ensure playlist progression (No Loop, Auto Next)
         window.audioPlayer.loop = false;
@@ -55,7 +55,7 @@ function playTrack(index) {
         }
 
         window._audioEndedHandler = function () {
-            console.log('🎵 Track ended, calling nextTrack');
+            console.log('?? Track ended, calling nextTrack');
             if (window.nextTrack) window.nextTrack();
         };
 
@@ -69,12 +69,12 @@ function playTrack(index) {
         // Initialise analyser (creates AudioContext if needed)
         if (typeof initAudioAnalyser === 'function') initAudioAnalyser();
 
-        // Resume AudioContext BEFORE calling play() — a suspended context silently
+        // Resume AudioContext BEFORE calling play() � a suspended context silently
         // blocks playback on Chrome/Safari without throwing a visible error.
         const doPlay = () => {
-            console.log('🎵 Playing track:', playlist[index].track || playlist[index].src);
+            console.log('?? Playing track:', playlist[index].track || playlist[index].src);
             window.audioPlayer.play().then(() => {
-                console.log('✅ Audio playback started successfully');
+                console.log('? Audio playback started successfully');
                 window.isMusicPlaying = true;
                 if (window.musicSwitchMesh) window.musicSwitchMesh.material.color.setHex(0x00ff00);
 
@@ -93,21 +93,21 @@ function playTrack(index) {
                     if (window.createMusicPanel) window.createMusicPanel(playlist);
                 }
             }).catch(e => {
-                console.error("❌ Play failed:", e);
+                console.error("? Play failed:", e);
                 console.error("Audio context state:", window.audioContext ? window.audioContext.state : 'no context');
                 if (typeof showPersistentAudioUnlock === 'function') showPersistentAudioUnlock();
             });
         };
 
         if (window.audioContext && window.audioContext.state === 'suspended') {
-            console.log('🔊 Resuming suspended AudioContext before play...');
+            console.log('?? Resuming suspended AudioContext before play...');
             window.audioContext.resume().then(doPlay).catch(doPlay);
         } else {
             doPlay();
         }
 
     } catch (criticalErr) {
-        console.error("❌ Critical PlayTrack Error:", criticalErr);
+        console.error("? Critical PlayTrack Error:", criticalErr);
         console.error("Stack:", criticalErr.stack);
     }
 }
@@ -116,19 +116,19 @@ window.playTrack = playTrack;
 // --- GLOBAL PLAYLIST CONTROLS ---
 
 window.nextTrack = function () {
-    console.log("🎵 nextTrack called");
+    console.log("?? nextTrack called");
     if (!window.currentRoom || !window.roomContent?.[window.currentRoom]?.playlist) return;
     const pl = window.roomContent[window.currentRoom].playlist;
     if (!pl || pl.length === 0) return;
 
     // Use playTrack for robust loading, cross-origin, and analysis (V-FIX)
     const nextIndex = (window.currentTrackIndex + 1) % pl.length;
-    console.log(`⏭️ Advancing to Track ${nextIndex + 1}/${pl.length}: ${pl[nextIndex].track}`);
+    console.log(`?? Advancing to Track ${nextIndex + 1}/${pl.length}: ${pl[nextIndex].track}`);
 
     if (window.playTrack) {
         window.playTrack(nextIndex);
     } else {
-        console.warn("⚠️ window.playTrack not found, falling back to manual");
+        console.warn("?? window.playTrack not found, falling back to manual");
         window.currentTrackIndex = nextIndex;
         audioPlayer.src = pl[window.currentTrackIndex].src;
         audioPlayer.load();
@@ -138,7 +138,7 @@ window.nextTrack = function () {
 };
 
 window.nextVideo = function () {
-    console.log("🎬 nextVideo called");
+    console.log("?? nextVideo called");
     if (!window.currentRoom || !window.roomContent?.[window.currentRoom]?.videoPlaylist) return;
     const vpl = window.roomContent[window.currentRoom].videoPlaylist;
     if (!vpl || vpl.length === 0) return;
@@ -148,7 +148,7 @@ window.nextVideo = function () {
     } else {
         window.masterVideoIndex = (window.masterVideoIndex + 1) % vpl.length;
     }
-    console.log(`⏭️ Advancing to Video ${window.masterVideoIndex + 1}/${vpl.length}: ${vpl[window.masterVideoIndex].title}`);
+    console.log(`?? Advancing to Video ${window.masterVideoIndex + 1}/${vpl.length}: ${vpl[window.masterVideoIndex].title}`);
 
     if (window.videoElement) {
         const item = vpl[window.masterVideoIndex];
@@ -171,8 +171,8 @@ function addReflectionMarker(roomKey, x, y, z) {
     const isAnswered = !!(window.visitorData && window.visitorData.answers && window.visitorData.answers[roomKey]);
 
     // Colour scheme:
-    //   Unanswered → bright pulsing GREEN (draws attention)
-    //   Answered   → faded RED (calm, "done")
+    //   Unanswered ? bright pulsing GREEN (draws attention)
+    //   Answered   ? faded RED (calm, "done")
     const coreHex = isAnswered ? 0xff2200 : 0x00ff00;
     const shellHex = isAnswered ? 0xff2200 : 0x00ff00;
     const glowStop0 = isAnswered ? 'rgba(255,40,0,0.8)' : 'rgba(0,255,0,0.8)';
@@ -229,7 +229,7 @@ function addReflectionMarker(roomKey, x, y, z) {
     group.userData = {
         type: 'reflection_trigger',
         roomKey: roomKey,
-        tooltip: isAnswered ? 'REFLECTED ✓' : 'REFLECT',
+        tooltip: isAnswered ? 'REFLECTED ?' : 'REFLECT',
         onClick: () => {
             if (window.showRoomQuestion) window.showRoomQuestion(roomKey);
         },
@@ -245,7 +245,7 @@ function addReflectionMarker(roomKey, x, y, z) {
                 pl.intensity = 1.5 + Math.sin(t * 4.0) * 0.8;
                 glowSprite.material.opacity = 0.6 + Math.sin(t * 4.0) * 0.3;
             } else {
-                // Answered: slow, dim fade — barely glowing
+                // Answered: slow, dim fade � barely glowing
                 shellMat.emissiveIntensity = 0.3 + Math.sin(t * 1.0) * 0.15;
                 pl.intensity = 0.2 + Math.sin(t * 1.0) * 0.1;
             }
@@ -447,11 +447,11 @@ function createHallInterior() {
         });
         tryPlay();
 
-        // ── HALL VIDEO SETTINGS — tweak these three values ──────────────────
+        // -- HALL VIDEO SETTINGS � tweak these three values ------------------
         const HALL_VID_OPACITY = 1;  // 0.0 = invisible, 1.0 = fully opaque
         const HALL_VID_BRIGHTNESS = 0.55;  // < 1.0 = darker, 1.0 = original
         const HALL_VID_CONTRAST = 1.4;   // > 1.0 = more contrast, 1.0 = original
-        // ────────────────────────────────────────────────────────────────────
+        // --------------------------------------------------------------------
 
         const hallTex = new THREE.VideoTexture(hallVid);
         hallTex.minFilter = THREE.LinearFilter;
@@ -618,6 +618,7 @@ function createHallInterior() {
         const marker = addReflectionMarker('hall', 3, 1.5, -2.5);
         if (marker && bb8) {
             const origUpdate = marker.userData.update;
+            const _headWorldPos = new THREE.Vector3();
             marker.userData.update = (t) => {
                 if (origUpdate) origUpdate(t); // Updates rotations and sets base Y + bobbing
 
@@ -625,12 +626,14 @@ function createHallInterior() {
                 marker.position.x = bb8.position.x;
                 marker.position.z = bb8.position.z;
 
-                // Hover above the robot's head (which is in hoverGroup)
+                // Hover above the robot's head using actual world position
                 if (bb8.hoverGroup) {
-                    // head top is around +3.2 local to hoverGroup
-                    // marker.position.y was just set by origUpdate to: 1.5 + local_nugget_bobbing
-                    const currentBob = marker.position.y - 1.5;
-                    marker.position.y = bb8.hoverGroup.position.y + 1.2 + currentBob;
+                    bb8.hoverGroup.getWorldPosition(_headWorldPos);
+                    // head top in world space: hoverGroup world Y + (head local Y + head radius) * bb8 scale
+                    // head.position.y = 1.9, head radius = 1.3, bb8Group.scale = 0.4 ? 3.2 * 0.4 = 1.28
+                    const headTopWorldY = _headWorldPos.y + 1.28;
+                    const bob = Math.sin(t * 2.0) * 0.08;
+                    marker.position.y = headTopWorldY + 0.55 + bob;
                 }
             };
         }
@@ -878,7 +881,7 @@ function createBB8ForHall() {
         new THREE.CylinderGeometry(2.5, 2.5, 7.0, 16),
         new THREE.MeshBasicMaterial({ visible: false })
     );
-    hitBox.position.y = 2.0;
+    hitBox.position.y = 1.5; // V-ADJUST: Lowered from 2.0 to better align with nugget top
     hitBox.userData = { type: 'bb8', name: 'BB8' };
     hoverGroup.add(hitBox);
     interiorClickables.push(hitBox);
@@ -1644,7 +1647,7 @@ function createAtticInterior() {
 
         const artifactContainer = new THREE.Group();
         artifactContainer.position.set(x, artBaseY, z);
-        artifactContainer.scale.set(1, 1, 1); // always full size — just hidden
+        artifactContainer.scale.set(1, 1, 1); // always full size � just hidden
         artifactContainer.visible = false;
         interiorGroup.add(artifactContainer);
 
@@ -1692,7 +1695,7 @@ function createAtticInterior() {
             };
         }
         else if (labelText === "WISDOM") {
-            // ── The REAL reflection nugget lives here ──
+            // -- The REAL reflection nugget lives here --
             const roomKey = 'attic';
             const isAnswered = !!(window.visitorData && window.visitorData.answers && window.visitorData.answers[roomKey]);
             const coreHex = isAnswered ? 0xff2200 : 0x00ff00;
@@ -1715,7 +1718,7 @@ function createAtticInterior() {
             // Make the artifact itself trigger the room question (but NOT close the box)
             artifactContainer.userData.type = 'reflection_trigger';
             artifactContainer.userData.roomKey = roomKey;
-            artifactContainer.userData.tooltip = isAnswered ? 'REFLECTED ✓' : 'REFLECT';
+            artifactContainer.userData.tooltip = isAnswered ? 'REFLECTED ?' : 'REFLECT';
             artifactContainer.userData.onClick = () => {
                 if (window.showRoomQuestion) window.showRoomQuestion(roomKey);
             };
@@ -1736,7 +1739,7 @@ function createAtticInterior() {
             interiorClickables.push(artifactContainer);
         }
 
-        // ── Unified open/close toggle ──
+        // -- Unified open/close toggle --
         const openBox = () => {
             if (!box.userData.isOpen) {
                 // OPEN: lid swings up, then artifact rises
@@ -1788,7 +1791,7 @@ function createAtticInterior() {
         lid.userData.onClick = openBox;
         labelMesh.raycast = function () { };
 
-        // Invisible hit-box covering the whole crate — always clickable to toggle
+        // Invisible hit-box covering the whole crate � always clickable to toggle
         const hitBoxMesh = new THREE.Mesh(
             new THREE.BoxGeometry(2.0, 2.0, 2.0),
             new THREE.MeshBasicMaterial({ visible: false })
@@ -3149,7 +3152,7 @@ function createAnnexInterior() {
     createWallShelf(-1.7, 2.0, 0, Math.PI / 2);
     createWallShelf(-1.7, 2.8, 0, Math.PI / 2);
 
-    // 3. Narrow Suitcase — nugget hides inside, pops out on click
+    // 3. Narrow Suitcase � nugget hides inside, pops out on click
     const suitcase = createSuitcase();
     suitcase.scale.set(1.0, 1.0, 1.4);
     suitcase.position.set(1.4, 0.0, 1.6);
@@ -3192,7 +3195,7 @@ function createAnnexInterior() {
         nuggetGroup.userData = {
             type: 'reflection_trigger',
             roomKey,
-            tooltip: isAnswered ? 'REFLECTED ✓' : 'REFLECT',
+            tooltip: isAnswered ? 'REFLECTED ?' : 'REFLECT',
             onClick: () => { if (window.showRoomQuestion) window.showRoomQuestion(roomKey); },
             update: (t) => {
                 core.rotation.y = t * 2.0;
@@ -3287,7 +3290,7 @@ function createAnnexInterior() {
     interiorGroup.add(deskGroup);
 
     createRothkoPainting();
-    // No addReflectionMarker here — nugget is hidden in the suitcase above
+    // No addReflectionMarker here � nugget is hidden in the suitcase above
 }
 
 function createAnnexChair() {
@@ -4006,7 +4009,7 @@ function createBedroomInterior() {
         videoElement.src = roomContent.bedroom.videoPlaylist[0].src;
         videoElement.load(); // Ensure video is loaded
         videoElement.pause(); // Start Paused
-        console.log('🎬 Bedroom video initialized:', videoElement.src);
+        console.log('?? Bedroom video initialized:', videoElement.src);
     }
 
     const phoneScreenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.6), new THREE.MeshBasicMaterial({ map: videoTexture }));
@@ -4072,7 +4075,7 @@ function createBedroomInterior() {
                 onPlay: playVideo
             });
         } else {
-            console.warn('⚠️ createUniversalVideoInterface not found');
+            console.warn('?? createUniversalVideoInterface not found');
         }
     }
 

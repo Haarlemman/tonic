@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <!-- iOS PWA fullscreen support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="House of Awe">
     <meta name="mobile-web-app-capable" content="yes">
+    <!-- Force black chrome on all browsers / Android -->
+    <meta name="theme-color" content="#000000">
     <title>The House of Awe</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/fav-infinity.ico">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +50,8 @@
         });
     </script>
 
-    <link rel="stylesheet" href="css/style.css?v=20260311-1106">
+    <link rel="stylesheet" href="css/style.css?v=20260313-1653">
+    <link rel="stylesheet" href="css/mobile.css?v=20260313-1653">
 
 
 </head>
@@ -159,18 +163,12 @@
     <div id="top-controls" class="fixed right-6 z-[100] flex flex-col gap-4"
         style="top:1rem; opacity: 0; pointer-events: none; transition: opacity 2s ease;">
 
-        <!-- Fullscreen toggle -->
-        <button id="fullscreen-btn" onclick="toggleGlobalFullscreen()"
-            class="opacity-90 hover:opacity-100 transition-opacity p-2 text-white" title="Toggle Fullscreen">
-            <svg id="icon-fullscreen-on" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
-                viewBox="0 0 16 16">
-                <path
-                    d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zM10 15.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 1 0v4A1.5 1.5 0 0 1 14.5 16h-4a.5.5 0 0 1-.5-.5z" />
-            </svg>
-            <svg id="icon-fullscreen-off" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                fill="currentColor" viewBox="0 0 16 16">
-                <path
-                    d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z" />
+        <!-- Back to Home (replaces both exit + fullscreen buttons) -->
+        <button id="exit-app-btn" onclick="window.exitApplication && window.exitApplication()"
+            class="opacity-90 hover:opacity-100 transition-opacity p-2 text-white" title="Back to Home">
+            <!-- House icon: unambiguous "go back to landing page" -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h4a.5.5 0 0 0 .5-.5v-4h1v4a.5.5 0 0 0 .5.5h4a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/>
             </svg>
         </button>
 
@@ -192,7 +190,7 @@
                 <path
                     d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 0 1 10v-4a.5.5 0 0 1 .5-.5h2.325l2.363-1.89A.5.5 0 0 1 7 4zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z" />
                 <path
-                    d="M9.364 5.636a.5.5 0 0 1 .707 0L11 6.565l.929-.929a.5.5 0 0 1 .707.707L11.707 7.272l.929.929a.5.5 0 0 1-.707.707L11 7.979l-.929.929a.5.5 0 0 1-.707-.707l.929-.929-.929-.929a.5.5 0 0 1 0-.707z" />
+                    d="M9.364 5.636a.5.5 0 0 1 .707 0L11 6.565l.929-.929a.5.5 0 0 1 .707.707L11.707 7.272l.929.929a.5.5 0 0 1-.707.707L11.707 7.272l.929.929a.5.5 0 0 1-.707.707L11 7.979l-.929.929a.5.5 0 0 1-.707-.707l.929-.929-.929-.929a.5.5 0 0 1 0-.707z" />
             </svg>
         </button>
 
@@ -269,11 +267,13 @@
     </div>
 
     <!-- Back (exit room) button -->
-    <button id="back-btn" onclick="exitRoom()" style="display:none; top:3.5rem; background:transparent !important; border:none !important;
-                   outline:none !important; box-shadow:none !important; padding:0 !important;"
-        class="fixed left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity">
+    <button id="back-btn" onclick="exitRoom()" 
+        style="display:none; top: max(12px, env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); background:transparent !important; border:none !important;
+                   outline:none !important; box-shadow:none !important; padding:8px !important; min-width:44px; min-height:44px;"
+        class="fixed z-[110] text-white opacity-90 hover:opacity-100 transition-opacity flex items-center justify-center"
+        title="Exit Room">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor"
-            stroke-width="1.2" viewBox="0 0 24 24">
+            stroke-width="1.8" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 8 8 12 12 16" />
             <line x1="8" y1="12" x2="16" y2="12" />
@@ -333,7 +333,7 @@
     <div id="room-title-overlay"
         style="display: none; position: fixed; inset: 0; z-index: 1000; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 1.5s ease;">
         <h1 id="room-title-text"
-            style="font-family: 'Inter', sans-serif; font-size: clamp(2.2rem, 6vw, 4.5rem); font-weight: 500; color: #fff; text-align: center; text-transform: uppercase; letter-spacing: 0.12em; text-shadow: 0 4px 20px rgba(0,0,0,0.8); width: 100%;">
+            style="font-family: 'Inter', sans-serif; font-size: clamp(2.5rem, 9vw, 7rem); font-weight: 500; color: #fff; text-align: center; text-transform: uppercase; letter-spacing: 0.12em; text-shadow: 0 4px 28px rgba(0,0,0,0.9); width: 100%;">
             ROOM</h1>
     </div>
 
@@ -379,12 +379,13 @@
         }
     </script>
 
-    <script src="js/storage.js?v=20260311-1106"></script>
-    <script src="js/data.js?v=20260311-1106"></script>
-    <script src="js/cars.js?v=20260311-1106"></script>
-    <script src="js/house.js?v=20260311-1106"></script>
-    <script src="js/rooms.js?v=20260311-1106"></script>
-    <script src="js/ui.js?v=20260311-1106"></script>
+    <script src="js/storage.js?v=20260313-1653"></script>
+    <script src="js/data.js?v=20260313-1653"></script>
+    <script src="js/cars.js?v=20260313-1653"></script>
+    <script src="js/house.js?v=20260313-1653"></script>
+    <script src="js/rooms.js?v=20260313-1653"></script>
+    <script src="js/ui.js?v=20260313-1653"></script>
+    <script src="js/mobile.js?v=20260313-1653"></script>
 
     <script>
         // Refresh hardcoded UI strings that live in HTML rather than JS templates.
@@ -416,17 +417,29 @@
             refreshStaticUIStrings();
         };
 
-        // Hide fullscreen button if the API is not supported (e.g., iPhone Safari)
-        (function () {
-            const fsEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled || document.mozFullScreenEnabled || document.msFullscreenEnabled;
-            if (!fsEnabled) {
-                const fsBtn = document.getElementById('fullscreen-btn');
-                if (fsBtn) {
-                    fsBtn.style.display = 'none';
-                    console.log("Fullscreen API not supported on this device/browser. Hiding toggle.");
-                }
+        // Exit Application Logic — always return to landing page
+        window.exitApplication = function() {
+            if (window.parent && window.parent !== window) {
+                // Embedded in iframe: tell the parent to navigate
+                window.parent.postMessage({ type: 'EXIT_EXPERIENCE' }, '*');
             }
-        })();
+            // Navigate directly (works both standalone PWA and normal browser)
+            window.location.href = 'index.html';
+        };
+
+        // toggleGlobalFullscreen is defined in mobile.js for iOS;
+        // stub it for desktop so any lingering references don't throw.
+        if (!window.toggleGlobalFullscreen) {
+            window.toggleGlobalFullscreen = function () {
+                const el = document.documentElement;
+                if (!document.fullscreenElement) {
+                    el.requestFullscreen && el.requestFullscreen();
+                } else {
+                    document.exitFullscreen && document.exitFullscreen();
+                }
+            };
+        }
+
     </script>
 
 

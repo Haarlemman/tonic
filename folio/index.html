@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Meaning Machine // HTML FOLIO</title>
+    <title>The Meaning Machine // DIGITAL EXPERIENCES</title>
 
     <!-- --- SEO & META DATA --- -->
     <meta name="description"
@@ -39,7 +40,7 @@
 
     <!-- Shared Layout Script & Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="../js/layout.js?v=308"></script>
+    <script src="../js/layout.js?v=321"></script>
 
     <link rel="stylesheet" href="style.css?v=101">
 
@@ -50,6 +51,7 @@
     <div id="app-header"></div>
 
     <nav class="filter-bar container">
+        <button class="filter-btn filter-btn-all" id="filterAll">ALL</button>
         <button class="filter-btn" data-filter="science">SCIENCE</button>
         <button class="filter-btn" data-filter="music">MUSIC</button>
         <button class="filter-btn" data-filter="art">ART</button>
@@ -422,6 +424,41 @@
 
 
 
+
+            <!-- MUSIC -->
+            <article class="project-card theme-blue">
+                <a href="https://tonic.davidenker.com/techno/" class="card-link-wrapper">
+                    <div class="card-image-container">
+                        <img src="../assets/images/techno.jpg" alt="Techno"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="img-fallback">🎵</div>
+                    </div>
+                    <div class="card-content">
+                        <h2>TECHNO</h2>
+                        <p class="mono-text">ELECTRONIC MUSIC</p>
+                        <span class="btn">LISTEN</span>
+                    </div>
+                </a>
+            </article>
+
+
+
+            <!-- MUSIC -->
+            <article class="project-card theme-red">
+                <a href="/mbw/" class="card-link-wrapper">
+                    <div class="card-image-container">
+                        <video src="../assets/video/mbw.mp4" autoplay loop muted playsinline></video>
+                        <div class="img-fallback">⚙️
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h2>Mondriaan Boogie Woogie</h2>
+                        <p class="mono-text">© 2026 - Music by Paradox Prime (DDJE)</p>
+                        <span class="btn">GO ON</span>
+                    </div>
+                </a>
+            </article>
+
         </section>
     </main>
 
@@ -494,9 +531,19 @@
 
         /* --- CATEGORY FILTERING --- */
         (function () {
-            const buttons = document.querySelectorAll('.filter-btn');
+            const buttons = document.querySelectorAll('.filter-btn[data-filter]');
+            const allBtn = document.getElementById('filterAll');
             const cards = document.querySelectorAll('.project-card');
             let currentFilter = null;
+
+            function showAll() {
+                currentFilter = null;
+                buttons.forEach(b => b.classList.remove('active'));
+                allBtn.classList.add('active');
+                cards.forEach(card => card.classList.remove('hidden'));
+            }
+
+            allBtn.addEventListener('click', showAll);
 
             buttons.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -504,15 +551,13 @@
 
                     // Toggle logic: if clicking the active filter, turn it off (show all)
                     if (currentFilter === filter) {
-                        currentFilter = null;
-                        buttons.forEach(b => b.classList.remove('active'));
-                        // Show all
-                        cards.forEach(card => card.classList.remove('hidden'));
+                        showAll();
                     } else {
                         currentFilter = filter;
 
                         // Update Active Button
                         buttons.forEach(b => b.classList.remove('active'));
+                        allBtn.classList.remove('active');
                         btn.classList.add('active');
 
                         // Filter Cards based on theme classes
@@ -538,6 +583,9 @@
                     }
                 });
             });
+
+            // Start with ALL active
+            allBtn.classList.add('active');
         })();
     </script>
 </body>

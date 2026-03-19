@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondriaan Boogie Woogie</title>
+    <meta name="description"
+        content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+
+    <meta name="keywords"
+        content="Animation, Music, Mondriaan, Mondrian, David Enker, Paradox Prime, art, Digital Art, music, video, Virtual Environment">
+    <meta name="author" content="David Enker">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tonic.davidenker.com/mbw/index.html">
+    <meta property="og:title" content="Mondriaan Boogie Woogie">
+    <meta property="og:description" content="A digital animated interpretation of Mondriaan's last work">
+    <meta property="og:image" content="https://tonic.davidenker.com/assets/images/mbw.jpg">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://tonic.davidenker.com/mbw/">
+    <meta name="twitter:title" content="Mondriaan Boogie Woogie">
+    <meta name="twitter:description" content="Animated Mondriaan">
+    <meta name="twitter:image" content="https://tonic.davidenker.com/assets/images/mbw.jpg">
+
+    <link rel="icon" type="image/x-icon" href="mbw.ico">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&family=Tilt+Neon&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="apple-touch-icon" sizes="120x120" href="icon-120.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836;
+            --m-red: #E22626;
+            --m-blue: #2854A5;
+            --m-grey: #AAAAAA;
+            --m-white: #fff4e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: #020404;
+            overflow: hidden;
+            font-family: 'Poiret One', cursive;
+        }
+
+        /* ============================================================
+           LANDING SCREEN
+        ============================================================ */
+        #landing {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            background: radial-gradient(ellipse at center, #1a2a26 0%, #090f0e 60%, #020404 100%);
+            transition: opacity 1.4s ease, visibility 1.4s ease;
+            cursor: pointer;
+        }
+
+        #landing.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .landing-title {
+            font-family: 'Tilt Neon', sans-serif;
+            font-weight: normal;
+            font-size: clamp(22px, 4.5vw, 68px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.15;
+            margin-bottom: 8px;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 1.2s ease, transform 1.2s ease;
+            color: #F8D836;
+            text-shadow:
+                0 0 8px #F8D836,
+                0 0 24px #F8D836,
+                0 0 60px rgba(248, 216, 54, 0.6);
+        }
+
+        .landing-title.show {
+            opacity: 1;
+            transform: translateY(0);
+            animation: title-glow 2.8s ease-in-out infinite,
+                title-glitch 5.5s steps(1) infinite;
+        }
+
+        @keyframes title-glow {
+
+            0%,
+            100% {
+                color: #EFE9DA;
+                text-shadow: 0 0 8px #F8D836, 0 0 24px #ffff00, 0 0 60px rgba(248, 216, 54, 0.5);
+            }
+
+            33% {
+                color: #FDCACA;
+                text-shadow: 0 0 8px #ff4444, 0 0 24px #ff0000, 0 0 60px rgba(210, 38, 38, 0.5);
+            }
+
+            66% {
+                color: #BCE3EF;
+                text-shadow: 0 0 8px #4da6ff, 0 0 24px #0000ff, 0 0 60px rgba(40, 84, 149, 0.5);
+            }
+        }
+
+        @keyframes title-glitch {
+
+            0%,
+            85% {
+                clip-path: none;
+                transform: translateY(0) skewX(0deg);
+            }
+
+            86% {
+                clip-path: inset(20% 0 60% 0);
+                transform: translateY(0) skewX(-4deg);
+            }
+
+            87% {
+                clip-path: inset(60% 0 10% 0);
+                transform: translateY(0) skewX(3deg);
+            }
+
+            88% {
+                clip-path: none;
+                transform: translateY(-2px) skewX(0deg);
+            }
+
+            89% {
+                clip-path: inset(40% 0 40% 0);
+                transform: translateY(0) skewX(-2deg);
+            }
+
+            90%,
+            100% {
+                clip-path: none;
+                transform: translateY(0) skewX(0deg);
+            }
+        }
+
+        .landing-stripe {
+            width: clamp(180px, 36vw, 440px);
+            height: 5px;
+            background: linear-gradient(90deg, #D22626 0% 33%, #285495 33% 66%, #F8D836 66% 100%);
+            margin: 24px 0 48px;
+            opacity: 0;
+            transition: opacity 1.2s ease 0.4s;
+        }
+
+        .landing-stripe.show {
+            opacity: 0.85;
+        }
+
+        #enter-btn {
+            background: transparent;
+            border: 2px solid var(--m-yellow);
+            color: var(--m-yellow);
+            font-family: 'Tilt Neon', sans-serif;
+            font-weight: normal;
+            font-size: clamp(13px, 1.8vw, 20px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            padding: 16px 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s ease;
+            opacity: 0;
+            text-shadow: 0 0 8px rgba(248, 216, 54, 0.8), 0 0 20px rgba(248, 216, 54, 0.4);
+            box-shadow: 0 0 12px rgba(248, 216, 54, 0.2), inset 0 0 12px rgba(248, 216, 54, 0.05);
+        }
+
+        #enter-btn.show {
+            opacity: 1;
+            animation: btn-pulse 2.1s ease-in-out infinite;
+        }
+
+        @keyframes btn-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 12px rgba(248, 216, 54, 0.2), inset 0 0 12px rgba(248, 216, 54, 0.05);
+                border-color: var(--m-yellow);
+            }
+
+            50% {
+                box-shadow: 0 0 28px rgba(248, 216, 54, 0.5), inset 0 0 20px rgba(248, 216, 54, 0.1);
+                border-color: #fff8a0;
+            }
+        }
+
+        #enter-btn.show {
+            opacity: 1;
+        }
+
+        #enter-btn:hover {
+            background: var(--m-yellow);
+            color: #1a1a1a;
+            box-shadow: 0 0 50px rgba(248, 216, 54, 0.4);
+        }
+
+        /* ============================================================
+           MAIN STAGE (SCREEN FILLER)
+        ============================================================ */
+        #stage {
+            position: absolute;
+            inset: 0;
+            background-color: var(--m-white);
+            display: none;
+            opacity: 0;
+            transition: opacity 3s ease, background-color 3s ease;
+            overflow: hidden;
+            filter: contrast(1.05) brightness(0.98);
+        }
+
+        #stage.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Viewport wrap keeps composition centered while lines extend */
+        #viewport-wrap {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            transform: translateZ(0);
+            transition: opacity 3s ease;
+        }
+
+        #scene-mount {
+            position: absolute;
+            inset: 0;
+            will-change: transform;
+            transform-origin: center center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateZ(0);
+        }
+
+        #composition-layer,
+        #block-layer,
+        #grid-layer,
+        #traffic-layer,
+        #letter-layer,
+        #texture-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        #composition-layer {
+            transition: filter 3s ease;
+        }
+
+        #stage.night #composition-layer {
+            filter: brightness(0.35);
+        }
+
+        #texture-layer {
+            z-index: 250;
+            pointer-events: none;
+            opacity: 0.12;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .grid-line {
+            position: absolute;
+            background-color: var(--m-yellow);
+            z-index: 10;
+            opacity: 1;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease,
+                background-color 4s ease, filter 4s ease;
+        }
+
+        .grid-line.v {
+            transform-origin: top;
+            transform: scaleY(0);
+        }
+
+        .grid-line.h {
+            transform-origin: left;
+            transform: scaleX(0);
+        }
+
+        .grid-line.visible {
+            transform: scale(1) !important;
+        }
+
+        /* Night: grid lines become a deep amber-brown, slightly dimmed */
+        #stage.night .grid-line {
+            background-color: #7a5e10;
+            filter: brightness(0.55);
+        }
+
+        .static-block {
+            position: absolute;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s ease, background-color 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .static-block.visible {
+            opacity: 1;
+        }
+
+        .letter-block {
+            position: absolute;
+            z-index: 20;
+            /* Above grid lines */
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.95);
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .letter-block.visible {
+            opacity: 1;
+        }
+
+        /* Optimize: promote layers */
+        #block-layer,
+        #grid-layer,
+        #traffic-layer,
+        #letter-layer {
+            transform: translateZ(0);
+        }
+
+        /* Night Mode Letters */
+        #stage.night .letter-block {
+            background-color: #111 !important;
+            box-shadow: none !important;
+            transition: background-color 1s ease, box-shadow 1s ease;
+            overflow: hidden;
+        }
+
+        #stage.night .letter-block.bg-red span {
+            --neon-color: #ff3131;
+            --neon-glow: #d22626;
+        }
+
+        #stage.night .letter-block.bg-blue span {
+            --neon-color: #2b7fff;
+            --neon-glow: #285495;
+        }
+
+        #stage.night .letter-block.bg-yellow span {
+            --neon-color: #fdfd01;
+            --neon-glow: #f8d836;
+        }
+
+        #stage.night .letter-block.bg-white span {
+            --neon-color: #ffffff;
+            --neon-glow: #cccccc;
+        }
+
+        #stage.night .letter-block.off-beat {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        /* Neon letter spans — Tilt Neon always, colour/glow added in night mode */
+        .letter-block span {
+            font-family: 'Tilt Neon', sans-serif;
+            font-weight: normal;
+            display: inline-block;
+        }
+
+        #stage.night .letter-block span {
+            color: transparent;
+            text-shadow: none;
+        }
+
+        /* ── Flicker variants (neon-throb removed — size now JS beat-stepped) ── */
+        #stage.night .letter-block.neon-fast span {
+            animation: neon-loop 0.18s steps(1) infinite;
+        }
+
+        #stage.night .letter-block.neon-med span {
+            animation: neon-loop 0.7s steps(1) infinite;
+        }
+
+        #stage.night .letter-block.neon-slow span {
+            animation: neon-flicker 2.1s steps(1) infinite;
+        }
+
+        #stage.night .letter-block.neon-dawn span {
+            animation: neon-loop 0.4s steps(1) infinite;
+        }
+
+        /* Beat-stepped size classes — no transition, instant snap */
+        .letter-block span {
+            display: inline-block;
+            transition: none;
+        }
+
+        .letter-block span.beat-sm {
+            transform: scale(0.62);
+        }
+
+        .letter-block span.beat-md {
+            transform: scale(0.9);
+        }
+
+        .letter-block span.beat-lg {
+            transform: scale(1.28);
+        }
+
+        .letter-block span.beat-xl {
+            transform: scale(1.55);
+        }
+
+        /* Looping on/off strobe for fast/med */
+        @keyframes neon-loop {
+
+            0%,
+            49% {
+                color: var(--neon-color);
+                text-shadow: 0 0 6px var(--neon-color), 0 0 18px var(--neon-glow), 0 0 36px var(--neon-glow);
+            }
+
+            50%,
+            100% {
+                color: transparent;
+                text-shadow: none;
+            }
+        }
+
+        /* Erratic flicker — on/off/on with brief blackouts */
+        @keyframes neon-flicker {
+            0% {
+                color: var(--neon-color);
+                text-shadow: 0 0 6px var(--neon-color), 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow);
+            }
+
+            8% {
+                color: transparent;
+                text-shadow: none;
+            }
+
+            10% {
+                color: var(--neon-color);
+                text-shadow: 0 0 4px var(--neon-color), 0 0 12px var(--neon-glow);
+            }
+
+            13% {
+                color: transparent;
+                text-shadow: none;
+            }
+
+            15% {
+                color: var(--neon-color);
+                text-shadow: 0 0 8px var(--neon-color), 0 0 24px var(--neon-glow), 0 0 50px var(--neon-glow);
+            }
+
+            40% {
+                color: var(--neon-color);
+                text-shadow: 0 0 8px var(--neon-color), 0 0 24px var(--neon-glow), 0 0 50px var(--neon-glow);
+            }
+
+            41% {
+                color: transparent;
+                text-shadow: none;
+            }
+
+            43% {
+                color: var(--neon-color);
+                text-shadow: 0 0 6px var(--neon-color), 0 0 18px var(--neon-glow);
+            }
+
+            70% {
+                color: var(--neon-color);
+                text-shadow: 0 0 6px var(--neon-color), 0 0 18px var(--neon-glow);
+            }
+
+            72% {
+                color: transparent;
+                text-shadow: none;
+            }
+
+            75% {
+                color: var(--neon-color);
+                text-shadow: 0 0 10px var(--neon-color), 0 0 30px var(--neon-glow), 0 0 60px var(--neon-glow);
+            }
+
+            100% {
+                color: var(--neon-color);
+                text-shadow: 0 0 10px var(--neon-color), 0 0 30px var(--neon-glow), 0 0 60px var(--neon-glow);
+            }
+        }
+
+        .bg-red {
+            background-color: #b42323;
+        }
+
+        .bg-blue {
+            background-color: #234679;
+        }
+
+        .bg-yellow {
+            background-color: #d8bd32;
+        }
+
+        .bg-grey {
+            background-color: #C8C8C8;
+        }
+
+        .bg-white {
+            background-color: #f4f4f4;
+        }
+
+        #block-layer {
+            filter: brightness(var(--block-brightness));
+        }
+
+        #traffic-layer {
+            --traffic-speed-mult: 1;
+        }
+
+        /* CSS-var driven visual responses — avoids per-element JS loops every frame */
+        #stage {
+            --block-brightness: 1;
+            --letter-scale: 1;
+            --grid-glow: 0px;
+        }
+
+        /* Optimization: Moved brightness filter to #block-layer to avoid N filter applies */
+
+        .letter-block {
+            transform: scale(var(--letter-scale));
+        }
+
+        .grid-line {
+            box-shadow: 0 0 var(--grid-glow) rgba(248, 216, 54, 0.6);
+        }
+
+        /* --- TRAFFIC --- */
+        .car {
+            position: absolute;
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .car.visible {
+            opacity: 1;
+        }
+
+        #stage.night .car.bg-red {
+            box-shadow: 0 0 15px rgba(210, 38, 38, 0.8);
+        }
+
+        #stage.night .car.bg-blue {
+            box-shadow: 0 0 15px rgba(40, 84, 149, 0.8);
+        }
+
+        #stage.night .car.bg-yellow {
+            box-shadow: 0 0 15px rgba(248, 216, 54, 0.8);
+        }
+
+        #stage.night .car.bg-white {
+            box-shadow: 0 0 15px rgba(244, 244, 244, 0.8);
+        }
+
+        #stage.night .car.bg-grey {
+            box-shadow: 0 0 15px rgba(200, 200, 200, 0.8);
+        }
+
+        @keyframes driveH {
+            from {
+                left: -15%;
+            }
+
+            to {
+                left: 115%;
+            }
+        }
+
+        @keyframes driveHRev {
+            from {
+                left: 115%;
+            }
+
+            to {
+                left: -15%;
+            }
+        }
+
+        @keyframes driveV {
+            from {
+                top: -15%;
+            }
+
+            to {
+                top: 115%;
+            }
+        }
+
+        @keyframes driveVRev {
+            from {
+                top: 115%;
+            }
+
+            to {
+                top: -15%;
+            }
+        }
+
+        /* --- HUD & FX --- */
+        #vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.85) 100%);
+            mix-blend-mode: multiply;
+            opacity: 0.75;
+            transition: opacity 0.15s ease;
+        }
+
+        #audio-ctrl {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            pointer-events: all;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(5px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            #audio-ctrl {
+                backdrop-filter: none;
+                background: rgba(255, 255, 255, 0.7);
+            }
+
+            .static-block {
+                box-shadow: none;
+            }
+
+            #vignette {
+                opacity: 0.5 !important;
+            }
+        }
+
+        #audio-ctrl:hover {
+            color: var(--m-red);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        #vu-meter {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 18px;
+        }
+
+        .vu-bin {
+            width: 3px;
+            background: var(--m-red);
+            height: 2px;
+            transition: height 0.05s ease;
+        }
+
+        #beat-flash {
+            position: absolute;
+            inset: 0;
+            z-index: 190;
+            pointer-events: none;
+            opacity: 0;
+            background: rgba(248, 216, 54, 0.15);
+        }
+
+        #colour-sweep {
+            position: absolute;
+            inset: 0;
+            z-index: 195;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        #replay-btn {
+            background: transparent;
+            border: 2px solid var(--m-yellow);
+            color: var(--m-yellow);
+            font-family: 'Tilt Neon', sans-serif;
+            font-weight: normal;
+            font-size: clamp(13px, 1.8vw, 20px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            padding: 16px 50px;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            overflow: hidden;
+            transition: all 0.35s ease;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(248, 216, 54, 0.8), 0 0 20px rgba(248, 216, 54, 0.4);
+            box-shadow: 0 0 12px rgba(248, 216, 54, 0.2), inset 0 0 12px rgba(248, 216, 54, 0.05);
+        }
+
+        #replay-btn.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            animation: btn-pulse 2.1s ease-in-out infinite;
+        }
+
+        #replay-btn:hover {
+            background: var(--m-yellow);
+            color: #1a1a1a;
+            box-shadow: 0 0 50px rgba(248, 216, 54, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="landing">
+        <h1 class="landing-title" id="landing-title">Mondriaan<br>Boogie Woogie</h1>
+        <div class="landing-stripe" id="landing-stripe"></div>
+        <button id="enter-btn">ENTER</button>
+    </div>
+
+    <div id="stage">
+        <div id="beat-flash"></div>
+        <div id="colour-sweep"></div>
+        <div id="scene-mount">
+            <div id="viewport-wrap">
+                <div id="composition-layer">
+                    <div id="block-layer" style="z-index: 10;"></div>
+                </div>
+                <div id="letter-layer" style="z-index: 20;"></div>
+                <div id="grid-layer" style="z-index: 30;"></div>
+            </div>
+            <div id="traffic-layer" style="z-index: 40;"></div>
+        </div>
+        <div id="texture-layer"></div>
+        <div id="vignette"></div>
+
+        <button id="replay-btn">REPLAY</button>
+
+        <div id="audio-ctrl">
+            <span style="font-size: 10px; letter-spacing: 2px; font-weight: bold;">AUDIO</span>
+            <div id="vu-meter"></div>
+            <i id="volume-icon" class="fa-solid fa-volume-high"></i>
+        </div>
+    </div>
+
+    <audio id="bg-music" crossorigin="anonymous">
+        <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const landing = document.getElementById('landing');
+        const enterBtn = document.getElementById('enter-btn');
+        const stage = document.getElementById('stage');
+        const blockLayer = document.getElementById('block-layer');
+        const gridLayer = document.getElementById('grid-layer');
+        const trafficLayer = document.getElementById('traffic-layer');
+        const letterLayer = document.getElementById('letter-layer');
+        const audio = document.getElementById('bg-music');
+        const volIcon = document.getElementById('volume-icon');
+        const beatFlash = document.getElementById('beat-flash');
+        const colourSweep = document.getElementById('colour-sweep');
+        const sceneMount = document.getElementById('scene-mount');
+
+        // --- GRID CONFIG ---
+        const vLines = [
+            { x: 15, w: 12 }, { x: 45, w: 6 }, { x: 80, w: 10 }, { x: 130, w: 6 },
+            { x: 200, w: 8 }, { x: 265, w: 6 }, { x: 380, w: 14 }, { x: 480, w: 6 },
+            { x: 540, w: 8 }, { x: 650, w: 10 }, { x: 710, w: 6 }, { x: 760, w: 8 },
+            { x: 830, w: 6 }, { x: 880, w: 10 }, { x: 940, w: 8 }, { x: 980, w: 12 },
+        ];
+        const hLines = [
+            { y: 15, h: 12 }, { y: 50, h: 6 }, { y: 90, h: 10 }, { y: 160, h: 8 },
+            { y: 220, h: 6 }, { y: 310, h: 14 }, { y: 420, h: 6 }, { y: 500, h: 8 },
+            { y: 580, h: 10 }, { y: 640, h: 6 }, { y: 700, h: 8 }, { y: 770, h: 6 },
+            { y: 820, h: 10 }, { y: 870, h: 8 }, { y: 940, h: 12 }, { y: 975, h: 6 },
+        ];
+        // staticBlocks are defined as grid-cell references [vLineIdx, hLineIdx] pairs,
+        // then resolved to exact pixel coords at render time using the line arrays.
+        // Each entry: { vi: vLine index (left wall), hi: hLine index (top wall), c: color }
+        // The block fills exactly from (vLines[vi].x + vLines[vi].w) to (vLines[vi+1].x)
+        // and from (hLines[hi].y + hLines[hi].h) to (hLines[hi+1].y)
+        const staticBlockDefs = [
+            // ── CENTER CLUSTER ──────────────────────────────────────
+            { vi: 6, hi: 5, c: 'bg-red' },
+            { vi: 7, hi: 5, c: 'bg-blue' },
+            { vi: 8, hi: 5, c: 'bg-yellow' },
+            { vi: 9, hi: 5, c: 'bg-grey' },
+            { vi: 6, hi: 6, c: 'bg-yellow' },
+            { vi: 7, hi: 6, c: 'bg-grey' },
+            { vi: 8, hi: 6, c: 'bg-white' },
+            { vi: 9, hi: 6, c: 'bg-red' },
+            { vi: 10, hi: 6, c: 'bg-blue' },
+            { vi: 11, hi: 6, c: 'bg-red' },
+            { vi: 6, hi: 7, c: 'bg-yellow' },
+            { vi: 7, hi: 7, c: 'bg-grey' },
+            { vi: 8, hi: 7, c: 'bg-white' },
+            { vi: 9, hi: 7, c: 'bg-red' },
+            { vi: 10, hi: 7, c: 'bg-blue' },
+            { vi: 6, hi: 8, c: 'bg-grey' },
+            { vi: 7, hi: 8, c: 'bg-white' },
+            { vi: 8, hi: 8, c: 'bg-red' },
+            { vi: 9, hi: 8, c: 'bg-blue' },
+            { vi: 6, hi: 9, c: 'bg-grey' },
+            { vi: 7, hi: 9, c: 'bg-white' },
+            { vi: 8, hi: 9, c: 'bg-red' },
+            { vi: 9, hi: 10, c: 'bg-yellow' },
+            { vi: 10, hi: 10, c: 'bg-blue' },
+            { vi: 11, hi: 10, c: 'bg-red' },
+            // ── LEFT SIDE ────────────────────────────────────────────
+            { vi: 0, hi: 4, c: 'bg-red' },
+            { vi: 1, hi: 4, c: 'bg-blue' },
+            { vi: 2, hi: 4, c: 'bg-yellow' },
+            { vi: 3, hi: 4, c: 'bg-grey' },
+            { vi: 0, hi: 5, c: 'bg-white' },
+            { vi: 1, hi: 5, c: 'bg-red' },
+            { vi: 2, hi: 5, c: 'bg-blue' },
+            { vi: 3, hi: 5, c: 'bg-yellow' },
+            { vi: 4, hi: 5, c: 'bg-grey' },
+            { vi: 0, hi: 6, c: 'bg-yellow' },
+            { vi: 1, hi: 6, c: 'bg-blue' },
+            { vi: 2, hi: 7, c: 'bg-red' },
+            { vi: 3, hi: 7, c: 'bg-white' },
+            { vi: 4, hi: 7, c: 'bg-yellow' },
+            { vi: 0, hi: 8, c: 'bg-grey' },
+            { vi: 1, hi: 8, c: 'bg-red' },
+            { vi: 2, hi: 8, c: 'bg-blue' },
+            { vi: 3, hi: 9, c: 'bg-yellow' },
+            { vi: 4, hi: 9, c: 'bg-red' },
+            { vi: 0, hi: 10, c: 'bg-blue' },
+            { vi: 1, hi: 10, c: 'bg-white' },
+            { vi: 2, hi: 11, c: 'bg-red' },
+            { vi: 3, hi: 11, c: 'bg-grey' },
+            // ── RIGHT SIDE ────────────────────────────────────────────
+            { vi: 11, hi: 4, c: 'bg-yellow' },
+            { vi: 12, hi: 4, c: 'bg-red' },
+            { vi: 13, hi: 4, c: 'bg-blue' },
+            { vi: 14, hi: 4, c: 'bg-grey' },
+            { vi: 11, hi: 5, c: 'bg-white' },
+            { vi: 12, hi: 5, c: 'bg-yellow' },
+            { vi: 13, hi: 5, c: 'bg-red' },
+            { vi: 14, hi: 5, c: 'bg-blue' },
+            { vi: 12, hi: 6, c: 'bg-grey' },
+            { vi: 13, hi: 6, c: 'bg-white' },
+            { vi: 14, hi: 6, c: 'bg-yellow' },
+            { vi: 11, hi: 7, c: 'bg-red' },
+            { vi: 12, hi: 7, c: 'bg-blue' },
+            { vi: 13, hi: 8, c: 'bg-grey' },
+            { vi: 14, hi: 8, c: 'bg-red' },
+            { vi: 11, hi: 9, c: 'bg-yellow' },
+            { vi: 12, hi: 9, c: 'bg-white' },
+            { vi: 13, hi: 9, c: 'bg-blue' },
+            { vi: 14, hi: 10, c: 'bg-grey' },
+            { vi: 11, hi: 11, c: 'bg-red' },
+            { vi: 12, hi: 11, c: 'bg-yellow' },
+            // ── TOP SCATTERED ─────────────────────────────────────────
+            { vi: 4, hi: 0, c: 'bg-red' },
+            { vi: 5, hi: 0, c: 'bg-blue' },
+            { vi: 7, hi: 0, c: 'bg-yellow' },
+            { vi: 9, hi: 0, c: 'bg-grey' },
+            { vi: 11, hi: 0, c: 'bg-red' },
+            { vi: 2, hi: 1, c: 'bg-blue' },
+            { vi: 5, hi: 1, c: 'bg-red' },
+            { vi: 8, hi: 1, c: 'bg-yellow' },
+            { vi: 12, hi: 1, c: 'bg-white' },
+            { vi: 1, hi: 2, c: 'bg-grey' },
+            { vi: 4, hi: 2, c: 'bg-red' },
+            { vi: 6, hi: 2, c: 'bg-blue' },
+            { vi: 10, hi: 2, c: 'bg-yellow' },
+            { vi: 13, hi: 2, c: 'bg-red' },
+            { vi: 3, hi: 3, c: 'bg-white' },
+            { vi: 7, hi: 3, c: 'bg-grey' },
+            { vi: 11, hi: 3, c: 'bg-blue' },
+            { vi: 14, hi: 3, c: 'bg-red' },
+            // ── BOTTOM SCATTERED ──────────────────────────────────────
+            { vi: 3, hi: 11, c: 'bg-blue' },
+            { vi: 6, hi: 11, c: 'bg-yellow' },
+            { vi: 8, hi: 11, c: 'bg-red' },
+            { vi: 10, hi: 11, c: 'bg-white' },
+            { vi: 13, hi: 11, c: 'bg-blue' },
+            { vi: 1, hi: 12, c: 'bg-red' },
+            { vi: 5, hi: 12, c: 'bg-grey' },
+            { vi: 9, hi: 12, c: 'bg-blue' },
+            { vi: 12, hi: 12, c: 'bg-yellow' },
+            { vi: 14, hi: 12, c: 'bg-red' },
+            { vi: 2, hi: 13, c: 'bg-white' },
+            { vi: 6, hi: 13, c: 'bg-red' },
+            { vi: 10, hi: 13, c: 'bg-grey' },
+            { vi: 4, hi: 14, c: 'bg-blue' },
+            { vi: 8, hi: 14, c: 'bg-yellow' },
+            { vi: 13, hi: 14, c: 'bg-red' },
+        ];
+
+        let isPlaying = false;
+        let wakeLock = null;
+
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+            }
+        };
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible' && isPlaying) {
+                await requestWakeLock();
+            }
+        });
+
+        let audioCtx, analyser, dataArray, srcNode;
+        let startTime = 0;
+        const gridEls = [];
+        const blockEls = [];
+        const letterEls = [];
+        const cars = [];
+        let allV = [], allH = [];
+        const isMobile = window.innerWidth < 768;
+
+        const REF = 1000;
+        function getS() { return Math.min(window.innerWidth, window.innerHeight); }
+
+        function getInnerCell(rx, ry) {
+            let vL = allV[0], vR = allV[allV.length - 1];
+            let hT = allH[0], hB = allH[allH.length - 1];
+            for (let i = 0; i < allV.length - 1; i++) {
+                if (rx >= allV[i].x && rx < allV[i + 1].x) { vL = allV[i]; vR = allV[i + 1]; break; }
+            }
+            for (let i = 0; i < allH.length - 1; i++) {
+                if (ry >= allH[i].y && ry < allH[i + 1].y) { hT = allH[i]; hB = allH[i + 1]; break; }
+            }
+            return {
+                x: vL.x + vL.w,
+                y: hT.y + hT.h,
+                w: Math.max(0, vR.x - (vL.x + vL.w)),
+                h: Math.max(0, hB.y - (hT.y + hT.h))
+            };
+        }
+
+        function initGrid() {
+            gridLayer.innerHTML = '';
+            blockLayer.innerHTML = '';
+            gridEls.length = 0;
+            blockEls.length = 0;
+
+            const S = getS();
+            const unitsX = (window.innerWidth / S) * REF;
+            const unitsY = (window.innerHeight / S) * REF;
+            const xMin = 500 - unitsX / 2;
+            const xMax = 500 + unitsX / 2;
+            const yMin = 500 - unitsY / 2;
+            const yMax = 500 + unitsY / 2;
+
+            allV = [...vLines];
+            let currX = vLines[0].x;
+            while (currX > xMin - 400) {
+                currX -= (35 + Math.random() * 40);
+                allV.unshift({ x: currX, w: 6 + Math.random() * 6 });
+            }
+            currX = vLines[vLines.length - 1].x;
+            while (currX < xMax + 400) {
+                currX += (35 + Math.random() * 40);
+                allV.push({ x: currX, w: 6 + Math.random() * 6 });
+            }
+
+            allH = [...hLines];
+            let currY = hLines[0].y;
+            while (currY > yMin - 400) {
+                currY -= (40 + Math.random() * 50);
+                allH.unshift({ y: currY, h: 6 + Math.random() * 6 });
+            }
+            currY = hLines[hLines.length - 1].y;
+            while (currY < yMax + 400) {
+                currY += (40 + Math.random() * 50);
+                allH.push({ y: currY, h: 6 + Math.random() * 6 });
+            }
+
+            allV.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line v';
+                el.style.left = `calc(50% + (${l.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.width = `calc(${l.w} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.top = '0'; el.style.height = '100%';
+                gridLayer.appendChild(el); gridEls.push(el);
+            });
+            allH.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line h';
+                el.style.top = `calc(50% + (${l.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.height = `calc(${l.h} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.left = '0'; el.style.width = '100%';
+                gridLayer.appendChild(el); gridEls.push(el);
+            });
+
+            // Resolve staticBlockDefs: each def references vLines[vi] (left wall) and vLines[vi+1] (right wall),
+            // hLines[hi] (top wall) and hLines[hi+1] (bottom wall), filling the inner cell exactly.
+            staticBlockDefs.forEach(b => {
+                const vL = vLines[b.vi], vR = vLines[b.vi + 1];
+                const hT = hLines[b.hi], hB = hLines[b.hi + 1];
+                if (!vL || !vR || !hT || !hB) return;
+                const x = vL.x + vL.w;
+                const y = hT.y + hT.h;
+                const w = Math.max(0, vR.x - x);
+                const h = Math.max(0, hB.y - y);
+                if (w <= 0 || h <= 0) return;
+                const el = document.createElement('div');
+                el.className = `static-block ${b.c}`;
+                el.style.left = `calc(50% + (${x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.top = `calc(50% + (${y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.width = `calc(${w} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.height = `calc(${h} * (min(100vw, 100vh) / ${REF}))`;
+                blockLayer.appendChild(el); blockEls.push(el);
+            });
+
+            // Fix adjacency in staticBlockDefs: reassign colour if left/top neighbour matches
+            const allColors = ['bg-red', 'bg-blue', 'bg-yellow', 'bg-grey', 'bg-white'];
+            const coreEls = blockEls.slice(); // copy before fringe appended
+            staticBlockDefs.forEach((b, idx) => {
+                const el = coreEls[idx];
+                if (!el) return;
+                const leftDef = staticBlockDefs.find(d => d.hi === b.hi && d.vi === b.vi - 1);
+                const topDef = staticBlockDefs.find(d => d.vi === b.vi && d.hi === b.hi - 1);
+                const avoid = new Set([leftDef?.c, topDef?.c].filter(Boolean));
+                if (!avoid.has(b.c)) return; // already fine
+                const pool = allColors.filter(c => !avoid.has(c));
+                const newCol = pool[Math.floor(Math.random() * pool.length)] || b.c;
+                el.classList.remove(...allColors);
+                el.classList.add(newCol);
+                b.c = newCol; // update def so neighbours see updated colour
+            });
+            const fringeColors = ['bg-red', 'bg-blue', 'bg-yellow', 'bg-grey', 'bg-white'];
+            const coreVStart = allV.indexOf(vLines[0]);
+            const coreVEnd = allV.indexOf(vLines[vLines.length - 1]);
+            const coreHStart = allH.indexOf(hLines[0]);
+            const coreHEnd = allH.indexOf(hLines[hLines.length - 1]);
+
+            // Track placed colour per [vi,hi] cell for adjacency check
+            const placedColor = {};
+
+            const hash2 = (a, b) => {
+                let h = (a * 374761393 + b * 668265263) | 0;
+                h = (h ^ (h >>> 13)) * 1274126177;
+                h = h ^ (h >>> 16);
+                return (h & 0x7fffffff) / 0x7fffffff;
+            };
+
+            // Pick a colour avoiding left and top neighbours
+            function pickColor(vi, hi, roll) {
+                const leftColor = placedColor[`${vi - 1},${hi}`];
+                const topColor = placedColor[`${vi},${hi - 1}`];
+                const avoid = new Set([leftColor, topColor].filter(Boolean));
+                const available = fringeColors.filter(c => !avoid.has(c));
+                const pool = available.length > 0 ? available : fringeColors;
+                return pool[Math.floor(roll * pool.length)];
+            }
+
+            for (let vi = 0; vi < allV.length - 1; vi++) {
+                for (let hi = 0; hi < allH.length - 1; hi++) {
+                    const inCoreV = vi >= coreVStart && vi < coreVEnd;
+                    const inCoreH = hi >= coreHStart && hi < coreHEnd;
+                    if (inCoreV && inCoreH) continue;
+
+                    const roll = hash2(vi * 3, hi * 7);
+                    const colorRoll = hash2(vi * 13 + 5, hi * 19 + 3);
+
+                    let density;
+                    if (!inCoreV && inCoreH) density = isMobile ? 0.22 : 0.45;
+                    else if (inCoreV && !inCoreH) density = isMobile ? 0.18 : 0.35;
+                    else density = isMobile ? 0.12 : 0.25;
+
+                    if (roll > density) continue;
+
+                    const vL = allV[vi], vR = allV[vi + 1];
+                    const hT = allH[hi], hB = allH[hi + 1];
+                    const x = vL.x + vL.w;
+                    const y = hT.y + hT.h;
+                    const w = Math.max(0, vR.x - x);
+                    const h = Math.max(0, hB.y - y);
+                    if (w < 4 || h < 4) continue;
+
+                    const col = pickColor(vi, hi, colorRoll);
+                    placedColor[`${vi},${hi}`] = col;
+                    const el = document.createElement('div');
+                    el.className = `static-block ${col}`;
+                    el.style.left = `calc(50% + (${x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    el.style.top = `calc(50% + (${y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    el.style.width = `calc(${w} * (min(100vw, 100vh) / ${REF}))`;
+                    el.style.height = `calc(${h} * (min(100vw, 100vh) / ${REF}))`;
+                    blockLayer.appendChild(el); blockEls.push(el);
+                }
+            }
+        }
+
+        // Fisher-Yates shuffle — used so blocks reveal in random spatial order
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function renderLetters() {
+            letterLayer.innerHTML = '';
+            letterEls.length = 0;
+            const words = [
+                { text: 'MONDRIAAN', yIndex: 4, xIndex: 3, color: 'bg-red' },
+                { text: 'BOOGIE', yIndex: 7, xIndex: 1, color: 'bg-blue' },
+                { text: 'WOOGIE', yIndex: 7, xIndex: 8, color: 'bg-yellow' }
+            ];
+            words.forEach(word => {
+                const chars = word.text.split('');
+                const hT = hLines[word.yIndex], hB = hLines[word.yIndex + 1];
+                chars.forEach((ch, ci) => {
+                    const vL = vLines[word.xIndex + ci], vR = vLines[word.xIndex + ci + 1];
+                    const cell = {
+                        x: vL.x + vL.w, y: hT.y + hT.h,
+                        w: Math.max(0, vR.x - (vL.x + vL.w)), h: Math.max(0, hB.y - (hT.y + hT.h))
+                    };
+                    const el = document.createElement('div');
+                    el.className = `letter-block ${word.color}`;
+                    el.style.left = `calc(50% + (${cell.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    el.style.top = `calc(50% + (${cell.y - 500} * (min(100vw, 100vh) / ${REF})) + 2px)`;
+                    el.style.width = `calc(${cell.w} * (min(100vw, 100vh) / ${REF}))`;
+                    el.style.height = `calc((${cell.h} - 2) * (min(100vw, 100vh) / ${REF}) - 2px)`;
+                    const minDim = Math.min(cell.w, cell.h) * 0.7;
+                    el.style.fontSize = `calc(${minDim} * (min(100vw, 100vh) / ${REF}))`;
+                    el.innerHTML = `<span>${ch}</span>`;
+                    letterLayer.appendChild(el); letterEls.push(el);
+                });
+            });
+        }
+
+        function createTraffic() {
+            const colors = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white', 'bg-red', 'bg-yellow'];
+            const BASE_SPEED = 14; // seconds for a full traversal at "neutral" tempo
+            const carCount = isMobile ? 3 : 8;
+            hLines.forEach((l, li) => {
+                const dir = li % 2 === 0; // alternate direction per lane for visual order
+                const count = carCount;
+                for (let i = 0; i < count; i++) {
+                    const car = document.createElement('div');
+                    const baseSpeed = BASE_SPEED + (Math.random() * 8 - 4);
+                    car.className = `car ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    car.style.top = `calc(50% + (${l.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    car.style.height = `calc(${l.h} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.width = `calc(${(Math.random() * 30 + 18)} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.animationName = dir ? 'driveH' : 'driveHRev';
+                    car.style.setProperty('--base-speed', `${baseSpeed}s`);
+                    car.style.animationDuration = `calc(var(--base-speed) * var(--traffic-speed-mult))`;
+                    car.style.animationTimingFunction = 'linear';
+                    car.style.animationIterationCount = 'infinite';
+                    // Stagger start offsets so cars don't bunch at same position
+                    car.style.animationDelay = `-${(i / count) * baseSpeed}s`;
+                    car.style.animationPlayState = 'paused'; // start paused, enabled on beat kick
+                    car.dataset.baseSpeed = baseSpeed;
+                    car.dataset.axis = 'h';
+                    trafficLayer.appendChild(car); cars.push(car);
+                }
+            });
+            vLines.forEach((l, li) => {
+                const dir = li % 2 === 0;
+                const count = carCount;
+                for (let i = 0; i < count; i++) {
+                    const car = document.createElement('div');
+                    const baseSpeed = BASE_SPEED + (Math.random() * 8 - 4);
+                    car.className = `car ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    car.style.left = `calc(50% + (${l.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    car.style.width = `calc(${l.w} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.height = `calc(${(Math.random() * 30 + 18)} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.animationName = dir ? 'driveV' : 'driveVRev';
+                    car.style.setProperty('--base-speed', `${baseSpeed}s`);
+                    car.style.animationDuration = `calc(var(--base-speed) * var(--traffic-speed-mult))`;
+                    car.style.animationTimingFunction = 'linear';
+                    car.style.animationIterationCount = 'infinite';
+                    car.style.animationDelay = `-${(i / count) * baseSpeed}s`;
+                    car.style.animationPlayState = 'paused';
+                    car.dataset.baseSpeed = baseSpeed;
+                    car.dataset.axis = 'v';
+                    trafficLayer.appendChild(car); cars.push(car);
+                }
+            });
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser(); analyser.fftSize = isMobile ? 128 : 256;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            srcNode = audioCtx.createMediaElementSource(audio);
+            srcNode.connect(analyser); analyser.connect(audioCtx.destination);
+            const vuMeter = document.getElementById('vu-meter');
+            for (let i = 0; i < 12; i++) {
+                const b = document.createElement('div'); b.className = 'vu-bin'; vuMeter.appendChild(b);
+            }
+        }
+
+        let smoothBass = 0, smoothEnergy = 0, buildStarted = false, lastHitTime = 0;
+        let revealStage = 0, revealIdx = 0, letterRevealIdx = 0;
+        let burst1Fired = false, burst131Fired = false, burst176Fired = false, burstEndFired = false;
+        let currentDarkState = -1;
+        let lastBeatStep = 0; // throttle for night beat-step letter sizing
+        let lastFlickerBeat = 0;
+        let flickerBeatCount = 0;
+
+        function fireBurst() {
+            const steps = ['#D22626', '#285495', '#F8D836'];
+            steps.forEach((col, i) => {
+                setTimeout(() => {
+                    colourSweep.style.background = col;
+                    colourSweep.style.transition = 'none';
+                    colourSweep.style.opacity = '0.9';
+                    setTimeout(() => {
+                        colourSweep.style.transition = 'opacity 0.35s ease-out';
+                        colourSweep.style.opacity = '0';
+                    }, 90);
+                }, i * 210);
+            });
+        }
+
+        const BURST_TIME = 16;   // colour burst + letters start
+        const BEAT_KICK_TIME = 16; // full traffic
+        let allCarsStarted = false;
+        let trickleIdx = 0;
+
+        // Smooth speed tracking — applied via CSS custom property on trafficLayer
+        let currentSpeedMult = 1.0;
+        let targetSpeedMult = 1.0;
+
+        // Throttle counters for expensive DOM loops
+        let frameCount = 0;
+        let lastNeonClass = '';
+        let lastIsNight = null;
+
+        // Throttled VU bins — only update every 3 frames
+        let vuBins = null;
+
+        // Mobile performance: cap to ~30fps on Android
+        function update() {
+            requestAnimationFrame(update);
+            frameCount++;
+            // Skip every other frame on mobile — halves CPU/GPU load
+            if (isMobile && frameCount % 2 !== 0) return;
+            const elapsed = (Date.now() - startTime) / 1000;
+            if (isPlaying) buildStarted = true;
+
+            // ── Scene Rotation: slow drift starts after 45s, stops at 45deg ──
+            if (elapsed > 45) {
+                const rotElapsed = elapsed - 45;
+                const maxRot = 45;
+                const duration = 120; // Take 2 minutes to reach 45 degrees
+                const progress = Math.min(1, rotElapsed / duration);
+                const rotation = progress * maxRot;
+                // Scale up (zoom) to hide grid edges/corners during rotation
+                let scale = 1.0 + (0.3 * progress);
+
+                // Zoom out slowly until 10% size between 250s and 290s
+                if (elapsed > 250) {
+                    const zoomProgress = Math.min(1, (elapsed - 250) / 40);
+                    scale = 1.3 - (1.2 * zoomProgress); // 1.3 to 0.1
+                }
+
+                sceneMount.style.transform = `rotate(${rotation.toFixed(3)}deg) scale(${scale.toFixed(3)})`;
+            }
+            if (!analyser || audio.paused || audio.muted) return;
+            analyser.getByteFrequencyData(dataArray);
+
+            let bass = 0; for (let i = 0; i < 8; i++) bass += dataArray[i]; bass /= 8;
+            let energy = 0; for (let i = 0; i < 32; i++) energy += dataArray[i]; energy /= 32;
+            const SK = 0.12;
+            smoothBass = smoothBass + SK * (bass / 255 - smoothBass);
+            smoothEnergy = smoothEnergy + SK * (energy / 255 - smoothEnergy);
+
+            // Night cycle — smooth 60s loop: 0-30s day, 30-60s night
+            const cyclePos = elapsed % 60;
+            const isNight = cyclePos > 30 || elapsed >= 242;
+            if (isNight !== lastIsNight) {
+                lastIsNight = isNight;
+                stage.style.backgroundColor = isNight ? '#143b40' : '#f4f4f4';
+
+                if (isNight) {
+                    stage.classList.add('night');
+                } else {
+                    stage.classList.remove('night');
+                    // Reset spans to neutral size for day mode
+                    letterEls.forEach(lb => {
+                        const span = lb.querySelector('span');
+                        if (span) span.classList.remove('beat-sm', 'beat-md', 'beat-lg', 'beat-xl');
+                    });
+                }
+            }
+
+            // ── Neon flicker — only reclassify when the zone changes (not every frame) ──
+            let neonClass = '';
+            if (elapsed >= 242) {
+                neonClass = ''; // Keep letters hidden in final dark section
+            } else if (cyclePos >= 30 && cyclePos < 33) neonClass = 'neon-fast';
+            else if (cyclePos >= 33 && cyclePos < 36) neonClass = 'neon-med';
+            else if (cyclePos >= 36 && cyclePos < 56) neonClass = 'neon-slow';
+            else if (cyclePos >= 56 && cyclePos < 58) neonClass = 'neon-med';
+            else if (cyclePos >= 58) neonClass = 'neon-dawn';
+
+            if (neonClass !== lastNeonClass) {
+                lastNeonClass = neonClass;
+                letterEls.forEach(lb => {
+                    lb.classList.remove('neon-fast', 'neon-med', 'neon-slow', 'neon-dawn');
+                    if (neonClass) lb.classList.add(neonClass);
+                });
+            }
+
+            const now = Date.now();
+
+            // ── Time-based opacity management for specific sections ────────────────
+            let newDarkState = 0; // normal
+            if (elapsed >= 90 && elapsed < 120) newDarkState = 1;      // second night
+            else if (elapsed >= 161 && elapsed < 176) newDarkState = 2; // suddenly turns dark, except traffic
+            else if (elapsed >= 288.5) newDarkState = 4;                // Absolute Black at end
+            else if (elapsed >= 242) newDarkState = 3;                  // turns dark, except letters and traffic
+
+            if (currentDarkState !== newDarkState) {
+                currentDarkState = newDarkState;
+                const compLayer = document.getElementById('composition-layer');
+                const gridL = document.getElementById('grid-layer');
+                const letterL = document.getElementById('letter-layer');
+
+                let compOp = "1.0", gridOp = "1.0", letterOp = "1.0", trafficOp = "1.0", trans = "3s";
+                if (newDarkState === 1) {
+                    compOp = "0.15"; gridOp = "0.15";
+                } else if (newDarkState === 2) {
+                    compOp = "0.0"; gridOp = "0.0"; letterOp = "0.0"; trans = "0.2s";
+                } else if (newDarkState === 3) {
+                    compOp = "0.0"; gridOp = "0.0"; letterOp = "1.0"; trans = "2s";
+                } else if (newDarkState === 4) {
+                    compOp = "0.0"; gridOp = "0.0"; letterOp = "0.0"; trafficOp = "0.0"; trans = "1.2s";
+                }
+
+                compLayer.style.transition = `opacity ${trans} ease, filter 3s ease`;
+                gridL.style.transition = `opacity ${trans} ease`;
+                letterL.style.transition = `opacity ${trans} ease`;
+                trafficLayer.style.transition = `opacity ${trans} ease`;
+
+                compLayer.style.opacity = compOp;
+                gridL.style.opacity = gridOp;
+                letterL.style.opacity = letterOp;
+                trafficLayer.style.opacity = trafficOp;
+            }
+
+            // ── Real beat detection for letter block background flicker ────────
+            if (smoothBass > 0.35 && now - lastFlickerBeat > 350) {
+                lastFlickerBeat = now;
+                flickerBeatCount++;
+                if (elapsed >= 242 && elapsed < 288.5) {
+                    const blockPat = [
+                        [1, 1, 1, 0],
+                        [1, 0, 1, 1],
+                        [1, 1, 0, 1],
+                        [0, 1, 1, 1],
+                        [1, 0, 1, 0],
+                        [0, 1, 0, 1]
+                    ];
+                    letterEls.forEach((lb, i) => {
+                        const pat = blockPat[i % blockPat.length];
+                        if (pat[flickerBeatCount % pat.length]) lb.classList.remove('off-beat');
+                        else lb.classList.add('off-beat');
+                    });
+                }
+            }
+
+            // ── Stage 1: grid lines, 1 per bass hit ──────────────────────────
+            if (revealStage === 0 && smoothBass > 0.3 && now - lastHitTime > 100) {
+                lastHitTime = now;
+                if (revealIdx < gridEls.length) {
+                    gridEls[revealIdx++].classList.add('visible');
+                } else {
+                    revealStage = 1; revealIdx = 0;
+                }
+            }
+
+            // ── Stage 2: blocks (accelerating) + letters trailing in from ~12s ──
+            if (revealStage === 1 && elapsed < BURST_TIME && smoothBass > 0.3 && now - lastHitTime > 100) {
+                lastHitTime = now;
+                const perHit = Math.round(2 + 6 * Math.max(0, (elapsed - 6) / (BURST_TIME - 6)));
+                for (let i = 0; i < perHit && revealIdx < blockEls.length; i++) {
+                    blockEls[revealIdx++].classList.add('visible');
+                }
+                if (elapsed >= 12 && letterRevealIdx < letterEls.length) {
+                    letterEls[letterRevealIdx++].classList.add('visible');
+                }
+            }
+
+            // ── At 16s: snap remaining blocks+letters, fire colour burst ────────
+            if (!burst1Fired && elapsed >= BURST_TIME) {
+                burst1Fired = true;
+                revealStage = 2; revealIdx = 0;
+                blockEls.forEach(el => el.classList.add('visible'));
+                letterEls.forEach(el => el.classList.add('visible'));
+                fireBurst();
+            }
+            if (!burst131Fired && elapsed >= 128 && smoothBass > 0.45) {
+                burst131Fired = true;
+                fireBurst();
+            }
+            if (!burst176Fired && elapsed >= 174 && smoothBass > 0.45) {
+                burst176Fired = true;
+                fireBurst();
+            }
+            if (!burstEndFired && elapsed >= 283) {
+                if (smoothBass > 0.35 || elapsed >= 285) {
+                    burstEndFired = true;
+                    fireBurst();
+                }
+            }
+
+            // ── Traffic trickle from 9s ─────────────────────────────────────
+            if (elapsed >= 9 && trickleIdx < cars.length && !allCarsStarted) {
+                const target = Math.floor((elapsed - 9) / 5 * 20);
+                while (trickleIdx < target && trickleIdx < cars.length) {
+                    cars[trickleIdx].classList.add('visible');
+                    cars[trickleIdx].style.animationPlayState = 'running';
+                    trickleIdx++;
+                }
+            }
+
+            // ── At 16s: full traffic kick ─────────────────────────────────────
+            if (!allCarsStarted && elapsed >= BEAT_KICK_TIME) {
+                allCarsStarted = true;
+                gridEls.forEach(el => el.classList.add('visible'));
+                blockEls.forEach(el => el.classList.add('visible'));
+                letterEls.forEach(el => el.classList.add('visible'));
+                cars.forEach(car => {
+                    car.classList.add('visible');
+                    car.style.animationPlayState = 'running';
+                });
+            }
+
+            // ── Traffic speed: updated via single CSS variable for performance ──
+            if (allCarsStarted) {
+                const musicResponse = 1.3 - smoothEnergy * 1.4;
+                targetSpeedMult = Math.max(0.55, Math.min(1.5, musicResponse));
+            } else {
+                targetSpeedMult = 1.0;
+            }
+            currentSpeedMult += 0.05 * (targetSpeedMult - currentSpeedMult);
+
+            if (frameCount % 2 === 0) {
+                trafficLayer.style.setProperty('--traffic-speed-mult', currentSpeedMult.toFixed(3));
+            }
+
+            // ── Visual responses via CSS custom properties on stage (one write each) ──
+            const responseScale = elapsed < 10 ? 0.3 + (elapsed / 10) * 0.7 : 1.0;
+            const beatKickBoost = allCarsStarted ? 1.4 : 1.0;
+            const brightnessVal = (1 + smoothBass * 0.65 * responseScale * beatKickBoost).toFixed(3);
+            const glowPx = smoothEnergy > 0.1 ? (smoothEnergy * 28 * beatKickBoost).toFixed(1) : '0';
+
+            stage.style.setProperty('--block-brightness', brightnessVal);
+            if (!isMobile) stage.style.setProperty('--grid-glow', `${glowPx}px`);
+
+            // ── Letter scale: smooth during day, beat-stepped during night ──────
+            const isNightNow = stage.classList.contains('night');
+            if (!isNightNow) {
+                // Day: smooth scale via CSS var on the block (spans have no beat class)
+                const scaleVal = (1.0 + smoothEnergy * 0.22 * responseScale * beatKickBoost).toFixed(3);
+                stage.style.setProperty('--letter-scale', scaleVal);
+            } else {
+                stage.style.setProperty('--letter-scale', '1'); // block stays still at night
+                // Beat detection: fire on bass threshold crossing upward
+                const BEAT_SIZES = ['beat-sm', 'beat-md', 'beat-lg', 'beat-xl'];
+                if (smoothBass > 0.28 && now - lastBeatStep > 80) {
+                    lastBeatStep = now;
+                    // Each letter independently picks a size weighted by current bass intensity
+                    const intensity = Math.min(1, smoothBass * 1.8); // 0..1
+                    letterEls.forEach((lb, i) => {
+                        const span = lb.querySelector('span');
+                        if (!span) return;
+                        // Per-letter pseudo-random roll that changes each beat
+                        const seed = (smoothBass * 97 + i * 31 + frameCount * 7);
+                        const roll = (seed - Math.floor(seed));
+                        let sizeIdx;
+                        if (intensity < 0.35) sizeIdx = roll < 0.6 ? 0 : 1;        // mostly sm
+                        else if (intensity < 0.6) sizeIdx = roll < 0.45 ? 1 : (roll < 0.8 ? 2 : 0); // sm/md/lg
+                        else if (intensity < 0.85) sizeIdx = roll < 0.35 ? 2 : (roll < 0.65 ? 3 : 1); // lg/xl bias
+                        else sizeIdx = roll < 0.5 ? 3 : 2;                          // xl/lg
+                        span.classList.remove(...BEAT_SIZES);
+                        span.classList.add(BEAT_SIZES[sizeIdx]);
+                    });
+                }
+            }
+
+            if (!isMobile && elapsed >= 12 && smoothBass > 0.6) {
+                beatFlash.style.transition = 'opacity 0.05s ease';
+                beatFlash.style.opacity = (smoothBass * (allCarsStarted ? 0.28 : 0.18)).toFixed(2);
+                setTimeout(() => beatFlash.style.opacity = '0', 55);
+            }
+
+            // Vignette: throttle to every 3 frames
+            if (frameCount % 3 === 0) {
+                document.getElementById('vignette').style.opacity = (0.6 + smoothEnergy * 0.35).toFixed(3);
+            }
+
+            // VU meter: throttle to every 3 frames
+            if (frameCount % 3 === 0) {
+                if (!vuBins) vuBins = document.querySelectorAll('.vu-bin');
+                vuBins.forEach((bin, i) => { bin.style.height = `${(dataArray[i * 4] / 255) * 20}px`; });
+            }
+        }
+
+        enterBtn.addEventListener('click', () => {
+            startTime = Date.now(); isPlaying = true; landing.classList.add('hidden'); stage.classList.add('active');
+            requestWakeLock();
+            initAudio(); audio.play(); initGrid(); renderLetters(); createTraffic();
+            // Shuffle blocks so they reveal scattered across canvas, not center-first
+            shuffleArray(blockEls);
+            // letterEls intentionally NOT shuffled — must appear letter-by-letter in word order
+            update();
+        });
+
+        setTimeout(() => document.getElementById('landing-title').classList.add('show'), 400);
+        setTimeout(() => document.getElementById('landing-stripe').classList.add('show'), 800);
+        setTimeout(() => enterBtn.classList.add('show'), 1200);
+
+        document.getElementById('audio-ctrl').addEventListener('click', () => {
+            audio.muted = !audio.muted; volIcon.className = audio.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+        });
+
+        audio.addEventListener('ended', () => {
+            isPlaying = false;
+            document.getElementById('replay-btn').classList.add('show');
+        });
+
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+
+</html>

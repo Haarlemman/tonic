@@ -47,7 +47,7 @@
 
     // 3. Define HTML Templates
     const HEADER_HTML = `
-        <header class="sticky top-0 z-50 flex flex-col font-sans">
+		<header class="sticky top-0 z-50 flex flex-col font-sans">
             <div id="header-content" class="w-full transition-all duration-500 ease-in-out max-h-40 py-1 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-2 border-black overflow-visible">
                 <div class="flex flex-row items-center gap-2">
                     <a href="https://tonic.davidenker.com/" class="bg-black text-white px-2 py-0 text-base uppercase border-2 border-black hover:bg-white hover:text-black transition-colors z-10 relative" style="font-family: 'Share Tech Mono', monospace;">TONIC</a>
@@ -58,7 +58,9 @@
                          <button id="mobile-menu-btn" class="p-0.5 bg-tonicRed text-white border border-black hover:bg-tonicDarkRed transition-colors focus:outline-none"><i data-lucide="menu" class="w-4 h-4"></i></button>
                         <div id="mobile-menu" class="absolute right-0 mt-0 w-32 bg-white border border-black py-0 hidden shadow-xl z-50">
                             <a href="/tftb/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">BOOK</a>
-                            <a href="/folio/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">DIGITAL EXPERIENCES</a>
+                            <a href="/folio/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">DIGITAL</a>
+                            <a href="/photos/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">PHOTOS</a>
+                            <a href="/music/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-black hover:text-pink-400 border-b border-black">MUSIC</a>
                             <a href="/about/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-stone-800 hover:text-white border-b border-black">ABOUT</a>
                         </div>
                     </div>
@@ -67,7 +69,9 @@
                             <span class="bg-tonicRed text-white border border-black px-2 py-0.5 hover:bg-tonicDarkRed transition-colors flex items-center gap-1">Menu <i data-lucide="chevron-down" class="w-3 h-3"></i></span>
                             <div class="dropdown-menu absolute right-0 top-full mt-0 w-32 bg-white border border-black py-0 hidden group-hover:block z-50 shadow-xl">
                                 <a href="/tftb/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">BOOK</a>
-                                <a href="/folio/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">DIGITAL EXPERIENCE</a>
+                                <a href="/folio/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">DIGITAL</a>
+                                <a href="/photos/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">PHOTOS</a>
+                                <a href="/music/" class="block px-3 py-2 text-black hover:bg-black hover:text-pink-400 transition-colors border-b border-black">MUSIC</a>
                                 <a href="/about/" class="block px-3 py-2 text-black hover:bg-stone-800 hover:text-white transition-colors border-b border-black">ABOUT</a>
                             </div>
                         </li>
@@ -80,7 +84,11 @@
 
     const FOOTER_HTML = `
     <footer class="w-full py-6 text-center text-[10px] text-tonicYellow uppercase tracking-widest border-t border-tonicYellow/20 bg-[#000814] mt-auto">
-        &copy; ${new Date().getFullYear()} David Enker | Tonic for the Bones | <a href="/about/" class="text-cyan-400 hover:text-cyan-200 hover:drop-shadow-[0_0_10px_rgba(34,211,238,1)] transition-all duration-300 font-bold">about/contact</a>
+        &copy; ${new Date().getFullYear()} David Enker | 
+		<a href="/" class="text-red-400 hover:text-red-200 hover:drop-shadow-[0_0_10px_rgba(34,211,238,1)] transition-all 
+				duration-300 font-bold">TONIC FOR THE BONES</a> | 
+		<a href="/about/" class="text-cyan-400 hover:text-cyan-200 hover:drop-shadow-[0_0_10px_rgba(34,211,238,1)] transition-all 
+				duration-300 font-bold">about/contact</a>
     </footer>
     `;
 
@@ -97,6 +105,15 @@
 
         if (footerPlaceholder) footerPlaceholder.outerHTML = FOOTER_HTML;
         else document.body.insertAdjacentHTML('beforeend', FOOTER_HTML);
+
+        // Inject fixed toggle arrow into body
+        const arrowEl = document.createElement('div');
+        arrowEl.id = 'header-toggle-arrow';
+        arrowEl.title = 'Toggle header';
+        arrowEl.innerHTML = `<svg id="header-toggle-svg" viewBox="0 0 20 10" width="20" height="10" xmlns="http://www.w3.org/2000/svg"><polygon id="header-toggle-poly" points="0,0 20,0 10,10" fill="#09826a" stroke="none"/></svg>`;
+        arrowEl.style.cssText = 'position:fixed;left:12px;top:calc(var(--global-header-height, 50px) - 1px);width:20px;height:10px;cursor:pointer;z-index:9999;display:flex;align-items:flex-start;justify-content:center;transition:top 0.5s ease;';
+
+        document.body.appendChild(arrowEl);
 
         // Initialize Icons
         if (window.lucide) window.lucide.createIcons();
@@ -139,6 +156,7 @@
 
         setupMobileMenu();
         setupPixelBand();
+        setupToggleArrow();
     }
 
     function setupPixelBand() {
@@ -215,6 +233,57 @@
                 }
             }
         });
+    }
+
+    function setupToggleArrow() {
+        const arrow = document.getElementById('header-toggle-arrow');
+        const poly = document.getElementById('header-toggle-poly');
+        if (!arrow || !poly) return;
+
+        function syncArrow() {
+            const content = document.getElementById('header-content');
+            if (!content) return;
+            const isCollapsed = content.style.maxHeight === '0px' || content.classList.contains('max-h-0');
+            arrow.title = isCollapsed ? 'Show header' : 'Hide header';
+            arrow.style.top = 'calc(var(--global-header-height, 50px) - 1px)';
+        }
+
+        syncArrow();
+
+        arrow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const content = document.getElementById('header-content');
+            if (!content) return;
+            const isCollapsed = content.style.maxHeight === '0px' || content.classList.contains('max-h-0');
+
+            if (!isCollapsed) {
+                content.style.transition = 'max-height 0.5s ease-out, padding 0.5s ease, border 0.5s ease';
+                content.style.overflow = 'hidden';
+                content.style.maxHeight = '0px';
+                content.style.paddingTop = '0px';
+                content.style.paddingBottom = '0px';
+                content.style.borderBottomWidth = '0px';
+                localStorage.setItem('headerCollapsed', 'true');
+                content.classList.remove('max-h-40', 'py-1', 'border-b-2');
+            } else {
+                content.style.overflow = 'hidden';
+                content.style.maxHeight = '160px';
+                content.style.paddingTop = '0.25rem';
+                content.style.paddingBottom = '0.25rem';
+                content.style.borderBottomWidth = '2px';
+                localStorage.setItem('headerCollapsed', 'false');
+                content.classList.remove('max-h-0');
+                content.classList.add('max-h-40');
+                setTimeout(() => { content.style.overflow = 'visible'; }, 500);
+            }
+
+            setTimeout(syncArrow, 50);
+        });
+
+        const content = document.getElementById('header-content');
+        if (content) {
+            content.addEventListener('transitionend', syncArrow);
+        }
     }
 
     function setupMobileMenu() {

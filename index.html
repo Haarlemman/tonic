@@ -17,17 +17,17 @@
     <link rel="canonical" href="https://tonic.davidenker.com/">
 
     <!-- Favicon & Icons -->
-    <link rel="icon" type="image/svg+xml" href="davicon1000.svg" />
-    <link rel="icon" type="image/x-icon" href="davico.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="davicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="davicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="davicon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/images/davicon.svg" />
+    <link rel="icon" type="image/x-icon" href="assets/images/davicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/tb-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/tb-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/davicon.png">
     <link rel="manifest" href="site.webmanifest">
     <meta name="theme-color" content="#e0d7c6">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Original JS/CSS references -->
-    <script src="js/layout.js"></script>
+    <script src="js/layout.js?v=130"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -68,7 +68,7 @@
 
         .bg-cracked {
             background-color: #e5dfd3;
-            background-image: url('/assets/images/cracky.webp');
+            background-image: url('assets/images/cracky.webp');
             background-repeat: repeat;
             background-size: 512px;
         }
@@ -79,6 +79,382 @@
             font-weight: 800;
             letter-spacing: -0.02em;
             line-height: 1.1;
+        }
+
+        @keyframes cloudDrift {
+
+            0%,
+            100% {
+                transform: translateX(20%) translateY(0);
+                opacity: 0.25;
+            }
+
+            50% {
+                transform: translateX(-140%) translateY(-20px);
+                opacity: 0.45;
+            }
+        }
+
+        /* ── Music & Video Block ─────────────────────────── */
+        .music-video-block {
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            min-height: 260px;
+        }
+
+        @media (min-width: 768px) {
+            .music-video-block {
+                flex-direction: row;
+                min-height: 340px;
+            }
+        }
+
+        /* Left: video panel (2/3) — always black */
+        .music-video-left {
+            position: relative;
+            flex: 0 0 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 16px 10px;
+            gap: 10px;
+        }
+
+        @media (min-width: 768px) {
+            .music-video-left {
+                flex: 0 0 66.666%;
+                padding: 20px 20px 12px;
+            }
+        }
+
+        /* The actual video — smaller, centered */
+        .video-screen-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 520px;
+            background: #000;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .video-screen-wrapper video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            display: block;
+            object-fit: cover;
+        }
+
+        /* Play/Pause overlay (big centred button, only visible when paused) */
+        .video-play-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.32);
+            transition: background 0.25s ease, opacity 0.25s ease;
+            cursor: pointer;
+        }
+
+        .video-play-overlay.playing {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .video-play-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.18s ease;
+        }
+
+        .video-play-btn svg {
+            width: 56px;
+            height: 56px;
+            filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+        }
+
+        .video-play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* ── Video Controls Bar ──────────────────────────── */
+        .video-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .video-controls-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Small play/pause toggle inside the controls bar */
+        .ctrl-play-btn {
+            background: none;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.18s ease, background 0.18s ease;
+            padding: 0;
+        }
+
+        .ctrl-play-btn:hover {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .ctrl-play-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #fff;
+        }
+
+        /* Time display */
+        .ctrl-time {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        /* Progress / Scrubber slider */
+        .ctrl-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 3px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .ctrl-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s ease;
+        }
+
+        .ctrl-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        .ctrl-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* YouTube button */
+        .yt-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #FF0000;
+            color: #fff;
+            border-radius: 3px;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            transition: background 0.18s ease, transform 0.15s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .yt-link:hover {
+            background: #cc0000;
+            transform: translateY(-1px);
+        }
+
+        .yt-link svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        /* Right: music info (1/3) */
+        .music-info-panel {
+            flex: 1;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        @media (min-width: 768px) {
+            .music-info-panel {
+                border-top: none;
+                border-left: 1px solid rgba(255, 255, 255, 0.06);
+                flex: 0 0 33.333%;
+            }
+        }
+
+        .music-info-inner {
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .music-panel-tag {
+            font-family: 'Inter', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #00c9b1;
+        }
+
+        .music-panel-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-top: 4px;
+            color: #fff;
+        }
+
+        .music-panel-desc {
+            font-family: 'Inter', sans-serif;
+            font-size: 10.5px;
+            line-height: 1.55;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        /* Playlist */
+        .music-playlist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s ease;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .playlist-item:last-child {
+            border-bottom: none;
+        }
+
+        .playlist-item:hover {
+            color: #00c9b1;
+        }
+
+        .playlist-item.active {
+            color: #00c9b1;
+        }
+
+        .track-num {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: inherit;
+            opacity: 0.45;
+            min-width: 20px;
+        }
+
+        .track-name {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: inherit;
+            flex: 1;
+        }
+
+        .track-spotify {
+            opacity: 0.5;
+            transition: opacity 0.15s ease;
+            line-height: 0;
+        }
+
+        .playlist-item:hover .track-spotify {
+            opacity: 1;
+        }
+
+        .track-spotify svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        /* Spotify Button */
+        .spotify-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            background: #1DB954;
+            color: #fff;
+            border-radius: 3px;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            transition: background 0.18s ease, transform 0.15s ease;
+            margin-top: auto;
+            align-self: flex-start;
+        }
+
+        .spotify-link:hover {
+            background: #17a349;
+            transform: translateX(2px);
+        }
+
+        .spotify-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .spotify-arrow {
+            width: 14px;
+            height: 14px;
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -92,11 +468,22 @@
     <main class="min-h-screen">
         <!-- HERO SECTION: THE BOOK -->
         <section class="w-full border-b border-black">
-            <div class="grid grid-cols-1 md:grid-cols-2 min-h-[60vh]">
-                <div class="p-8 md:p-16 flex flex-col justify-center bg-cracked border-r border-black">
-                    <span class="font-bold text-xs tracking-widest uppercase text-tonicRed mb-4">Featured Work</span>
-                    <h1 class="font-serif text-5xl md:text-7xl leading-[0.9] mb-6">TONIC FOR THE BONES</h1>
-                    <p class="text-lg md:text-xl text-stone-600 max-w-md leading-relaxed mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 min-h-[38vh]">
+                <div class="p-6 md:p-10 flex flex-col justify-center bg-cracked border-r border-black">
+                    <span
+                        class="font-bold text-xs tracking-widest uppercase text-white mb-3 bg-tonicRed px-2 py-0.5 self-start">Featured
+                        Work</span>
+                    <h1 class="font-serif leading-[0.9] mb-4 flex items-center gap-2">
+                        <span class="text-4xl md:text-7xl">TONIC</span>
+                        <span
+                            class="flex flex-col font-sans font-extrabold tracking-widest uppercase text-[10px] md:text-sm leading-tight"
+                            style="letter-spacing:0.15em;">
+                            <span>FOR</span>
+                            <span>THE</span>
+                        </span>
+                        <span class="text-4xl md:text-7xl">BONES</span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-stone-600 leading-relaxed mb-5">
                         A memoir about a fractured life where adversity becomes a teacher. Finding the "tonic" in the
                         chaos, lit by the spark of a 7-year-old son.
                     </p>
@@ -106,7 +493,7 @@
                     </a>
                 </div>
                 <!-- Hero Experience Cell with Boomerang Video Background -->
-                <div class="relative overflow-hidden bg-black group h-80 md:h-auto">
+                <div class="relative overflow-hidden bg-black group h-40 md:h-auto">
                     <video id="hero-video" autoplay muted playsinline
                         class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700">
                         <source src="assets/video/light.mp4" type="video/mp4">
@@ -129,50 +516,51 @@
         <section class="border-b border-black">
             <div class="grid grid-cols-1 md:grid-cols-2">
                 <a href="/intro/"
-                    class="group block relative border-b md:border-b-0 md:border-r border-black h-48 md:h-64 overflow-hidden">
+                    class="group block relative border-b md:border-b-0 md:border-r border-black h-32 md:h-32 overflow-hidden">
                     <div class="absolute inset-0 bg-stone-900">
                         <div
-                            class="absolute inset-0 bg-[url('assets/images/campus.jpg')] bg-cover bg-center opacity-70 group-hover:opacity-40 transition-opacity duration-500">
+                            class="absolute inset-0 bg-[url('assets/images/grfx.gif')] bg-cover bg-center opacity-70 group-hover:opacity-40 transition-opacity duration-500">
                         </div>
                         <div
-                            class="absolute inset-0 bg-tonicBlue/30 group-hover:bg-tonicBlue/90 transition-colors duration-500">
+                            class="absolute inset-0 bg-tonicRed/20 group-hover:bg-tonicRed/90 transition-colors duration-500">
                         </div>
                     </div>
 
-                    <div class="absolute inset-0 p-8 flex flex-col justify-between relative z-10">
+                    <div
+                        class="absolute inset-0 pt-3 pb-1 md:py-4 px-4 md:px-8 flex flex-col justify-between relative z-10">
                         <span
                             class="font-bold text-xs tracking-widest uppercase text-white/80 group-hover:text-white transition-colors">THE
                             FOUNDATION</span>
                         <div>
                             <h2
                                 class="font-serif text-3xl md:text-4xl text-white group-hover:text-white transition-colors">
-                                BODY // MIND // SOUL</h2>
-                            <p class="mt-2 text-white/80 text-sm group-hover:text-white transition-colors">
-                                3D INTERACTIVE VIEW</p>
+                                The University of Free Will</h2>
+                            <p class="mt-2 text-white/80 text-sm group-hover:text-white transition-colors">The
+                                Body // Mind // Soul</p>
                         </div>
                     </div>
                 </a>
-                <a href="/house/" class="group block relative h-48 md:h-64 overflow-hidden">
+                <a href="https://house-of-awe.web.app/" class="group block relative h-32 md:h-32 overflow-hidden">
                     <div class="absolute inset-0 bg-stone-900">
                         <div
-                            class="absolute inset-0 bg-[url('/assets/images/house.jpg')] bg-cover bg-center opacity-70 group-hover:opacity-40 transition-opacity duration-500">
+                            class="absolute inset-0 bg-[url('assets/images/house.jpg')] bg-cover bg-center opacity-70 group-hover:opacity-40 transition-opacity duration-500">
                         </div>
                         <div
-                            class="absolute inset-0 bg-tonicYellow/30 group-hover:bg-tonicYellow/90 transition-colors duration-500">
+                            class="absolute inset-0 bg-tonicYellow/20 group-hover:bg-tonicYellow/90 transition-colors duration-500">
                         </div>
                     </div>
 
-                    <div class="absolute inset-0 p-8 flex flex-col justify-between relative z-10">
+                    <div
+                        class="absolute inset-0 pt-3 pb-1 md:py-4 px-4 md:px-8 flex flex-col justify-between relative z-10">
                         <span
                             class="font-bold text-xs tracking-widest uppercase text-white/80 group-hover:text-black transition-colors">THE
                             IMMERSION</span>
                         <div>
                             <h2
                                 class="font-serif text-3xl md:text-4xl text-white group-hover:text-black transition-colors">
-                                House
-                                of Awe</h2>
-                            <p class="mt-2 text-white/80 text-sm group-hover:text-black transition-colors">
-                                3D INTERACTIVE VIEW</p>
+                                The House of Awe</h2>
+                            <p class="mt-2 text-white/80 text-sm group-hover:text-black transition-colors">Discover the
+                                Meaning of Life</p>
                         </div>
                     </div>
                 </a>
@@ -180,135 +568,322 @@
         </section>
 
         <!-- SELECTED FOLIO GRID -->
-        <section class="p-8 md:p-16 bg-cracked border-b border-black">
-            <div class="flex justify-between items-end mb-12 relative">
+        <section class="px-6 pb-4 pt-4 md:px-10 md:pb-6 md:pt-6 border-b border-black relative overflow-hidden"
+            style="background: linear-gradient(to bottom, #395778, #999, #2d3e3d);">
+            <div class="absolute inset-0 pointer-events-none"></div>
+            <!-- Cloud drifting behind everything -->
+            <img src="/music/images/cloud.png" alt="" class="absolute pointer-events-none"
+                style="width: 80%; bottom: 10%; right: -20%; animation: cloudDrift 28s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite; z-index: 1;">
+            <div class="relative flex justify-between items-end mb-3" style="z-index:2;">
                 <div class="flex items-center">
-                    <h2 class="font-serif text-4xl relative z-10">Portals</h2>
+                    <h2
+                        class="font-bold text-lg tracking-widest uppercase text-white">
+                        EXPERIENCES</h2>
                 </div>
 
-                <a href="/folio/"
-                    class="hidden md:inline-block text-xs font-bold uppercase tracking-widest hover:text-tonicRed transition-colors relative z-10">View
-                    All Archive</a>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <a href="https://www.youtube.com/@DavidEnker/videos/" target="_blank" class="group block space-y-3">
-                    <div class="aspect-video bg-stone-800 overflow-hidden border border-black relative">
+            <div class="relative grid grid-cols-2 md:grid-cols-4 gap-5" style="z-index:2;">
+                <a href="/photos/" class="group block space-y-2">
+                    <div class="aspect-[4/3] bg-stone-800 overflow-hidden border border-black relative">
                         <div
-                            class="absolute inset-0 bg-[url('/assets/images/premonition.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                            class="absolute inset-0 bg-[url('assets/images/reflections.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
                         </div>
                     </div>
                     <div>
                         <h3
-                            class="font-bold text-sm uppercase tracking-wide group-hover:text-tonicRed transition-colors">
-                            YOUTUBE</h3>
-                        <p class="text-xs text-stone-500">Videos & Music</p>
+                            class="font-bold text-sm uppercase tracking-wide text-white/90 group-hover:text-tonicRed transition-colors">
+                            Photos</h3>
+                        <p class="text-xs text-stone-400">Chasing the light</p>
                     </div>
                 </a>
-                <a href="https://davidenker.substack.com/" target="_blank" class="group block space-y-3">
-                    <div class="aspect-video bg-stone-200 overflow-hidden border border-black relative">
+                <a href="/music/" class="group block space-y-2">
+                    <div class="aspect-[4/3] bg-stone-900 overflow-hidden border border-black relative">
                         <div
-                            class="absolute inset-0 bg-[url('/assets/images/gracht.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                            class="absolute inset-0 bg-[url('assets/images/music.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                        </div>
+                        <div
+                            class="absolute inset-0 bg-tonicCyan/20 group-hover:bg-tonicCyan/10 transition-colors duration-500">
                         </div>
                     </div>
                     <div>
                         <h3
-                            class="font-bold text-sm uppercase tracking-wide group-hover:text-tonicYellow transition-colors">
-                            SUBSTACK</h3>
-                        <p class="text-xs text-stone-500">my writing corner</p>
+                            class="font-bold text-sm uppercase tracking-wide text-white/90 group-hover:text-tonicCyan transition-colors">
+                            Music</h3>
+                        <p class="text-xs text-stone-400">On Spotify</p>
                     </div>
                 </a>
-                <a href="/folio/" class="group block space-y-3">
-                    <div class="aspect-video bg-stone-800 overflow-hidden border border-black relative">
+                <a href="https://www.youtube.com/@DavidEnker/videos/" target="_blank" class="group block space-y-2">
+                    <div class="aspect-[4/3] bg-stone-800 overflow-hidden border border-black relative">
                         <div
-                            class="absolute inset-0 bg-[url('/assets/images/overview.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                            class="absolute inset-0 bg-[url('assets/images/premovid.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
                         </div>
                     </div>
                     <div>
                         <h3
-                            class="font-bold text-sm uppercase tracking-wide group-hover:text-tonicBlue transition-colors">
-                            Folio</h3>
-                        <p class="text-xs text-stone-500">Overview of HTML projects</p>
+                            class="font-bold text-sm uppercase tracking-wide text-white/90 group-hover:text-tonicYellow transition-colors">
+                            Video</h3>
+                        <p class="text-xs text-stone-400">On YouTube</p>
                     </div>
                 </a>
+                <a href="/folio/" class="group block space-y-2">
+                    <div class="aspect-[4/3] bg-stone-800 overflow-hidden border border-black relative">
+                        <div
+                            class="absolute inset-0 bg-[url('assets/images/web.jpg')] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                        </div>
+                    </div>
+                    <div>
+                        <h3
+                            class="font-bold text-sm uppercase tracking-wide text-white/90 group-hover:text-tonicBlue transition-colors">
+                            Web</h3>
+                        <p class="text-xs text-stone-400">HTML experiences</p>
+                    </div>
+                </a>
+
             </div>
         </section>
 
         <!-- THE TONIC AND THE BONES SECTION -->
-        <section class="p-8 md:p-16 bg-cracked border-b border-black">
-            <div class="max-w-4xl mx-auto text-center mb-16">
+        <section class="px-8 pb-4 pt-2 md:px-16 md:pb-8 md:pt-4 bg-cracked border-b border-black">
+            <div class="max-w-4xl mx-auto text-center mb-6">
                 <h2 class="font-serif text-3xl md:text-5xl mb-4 italic">The Tonic and the Bones</h2>
-                <p class="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
-                    Identity is rarely a single line. In the memoir <span class="font-bold italic">Tonic for the
-                        Bones</span>, the narrative is shaped by conflicting pillars that define the search for meaning.
+                <p class="text-base text-stone-600 max-w-2xl mx-auto leading-relaxed">
+                    Things often come in 3's. My story seems a strange dance with adversity: the 'Bones'.
+                    But there is an antidode to darkness - the 'Tonic'.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto mb-6">
                 <!-- PARADOX -->
-                <div class="space-y-4 p-6 bg-black text-white shadow-xl border border-white/10">
+                <div
+                    class="flex flex-col space-y-4 py-4 px-6 bg-black text-white shadow-xl border border-white/10 h-full">
                     <div>
                         <h3 class="brutalist-title text-3xl md:text-4xl">Paradox</h3>
                         <div class="h-1 w-12 bg-tonicRed mt-2"></div>
                         <p class="text-[10px] uppercase tracking-widest font-bold mt-2 text-tonicRed/80">Parkinson’s</p>
                     </div>
-                    <p class="text-stone-300 leading-relaxed text-xs text-justify">
-                        Diagnosed in 2021, this is the uninvited guest in my creative process. It is a physical paradox:
-                        a loss of motor control that has sharpened my mental focus. I’ve stopped trying to silence the
-                        symptoms and started using the friction it creates to find a more honest, urgent rhythm in my
-                        work.
+                    <p class="text-stone-300 leading-relaxed text-xs text-justify flex-grow">
+                        Diagnosed in 2021, this is the uninvited guest in my life's party. It is a paradox:
+                        a loss of motor control that has sharpened my mental focus.
                     </p>
                 </div>
 
                 <!-- FRACTURE -->
-                <div class="space-y-4 p-6 bg-black text-white shadow-xl border border-white/10">
+                <div
+                    class="flex flex-col space-y-4 py-4 px-6 bg-black text-white shadow-xl border border-white/10 h-full">
                     <div>
                         <h3 class="brutalist-title text-3xl md:text-4xl">Outsider</h3>
                         <div class="h-1 w-12 bg-tonicBlue mt-2"></div>
                         <p class="text-[10px] uppercase tracking-widest font-bold mt-2 text-tonicBlue/80">Adoption</p>
                     </div>
-                    <p class="text-stone-300 leading-relaxed text-xs text-justify">
-                        I am an adoptee. Being raised outside my biological narrative turned me into a permanent
-                        observer, a writer who looks at the world from the outside in. It is the foundation of my belief
-                        that identity isn’t just inherited; it is constructed, piece by piece, from the shards.
+                    <p class="text-stone-300 leading-relaxed text-xs text-justify flex-grow">
+                        I am an adoptee. Being raised outside my biological environment turned me into a permanent
+                        observer; like a writer who looks at the world from the outside in.
                     </p>
                 </div>
 
                 <!-- QUESTION -->
-                <div class="space-y-4 p-6 bg-black text-white shadow-xl border border-white/10">
+                <div
+                    class="flex flex-col space-y-4 py-4 px-6 bg-black text-white shadow-xl border border-white/10 h-full">
                     <div>
                         <h3 class="brutalist-title text-3xl md:text-4xl">Question</h3>
                         <div class="h-1 w-12 bg-tonicYellow mt-2"></div>
                         <p class="text-[10px] uppercase tracking-widest font-bold mt-2 text-tonicYellow/80">Jewish
                             Legacy</p>
                     </div>
-                    <p class="text-stone-300 leading-relaxed text-xs text-justify">
-                        An ongoing conversation with history, tradition, and a complex present. My stance is hard to
-                        categorise—critical of the simple slogans, yet deeply rooted in the ancient necessity of
-                        wrestling with the truth.
+                    <p class="text-stone-300 leading-relaxed text-xs text-justify flex-grow">
+                        The awareness of what happened to my Jewish ancestors created profound ripples in my soul,
+                        prompting me to have a serious chat with 'The Truth'.
                     </p>
                 </div>
+
+                <!-- FATHERHOOD -->
+                <div
+                    class="flex flex-col space-y-4 py-4 px-6 bg-white text-stone-900 shadow-xl border border-black/10 h-full">
+                    <div>
+                        <h3 class="brutalist-title text-3xl md:text-4xl">Fatherhood</h3>
+                        <div class="h-1 w-12 bg-tonicCyan mt-2"></div>
+                        <p class="text-[10px] uppercase tracking-widest font-bold mt-2 text-tonicRed">The Tonic</p>
+                    </div>
+                    <p class="text-stone-600 leading-relaxed text-xs text-justify font-medium flex-grow">
+                        My seven-year-old son is the counter-force to everything. His spark of humour and intelligence
+                        is the tonic—love as the mortar that holds the whole structure firm.
+                    </p>
+                </div>
+
             </div>
 
-            <!-- FATHERHOOD: THE TONIC -->
+        </section>
+
+        <!-- MUSIC & VIDEO BLOCK SECTION -->
+        <section class="px-8 py-4 md:px-16 md:py-8 bg-cracked border-b border-black">
             <div class="max-w-6xl mx-auto">
-                <div
-                    class="space-y-4 p-8 bg-white text-stone-900 shadow-sm border border-black/5 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                    <div class="md:w-1/3">
-                        <h3 class="brutalist-title text-4xl md:text-5xl">Fatherhood</h3>
-                        <div class="h-1 w-16 bg-tonicCyan mt-2"></div>
-                        <p
-                            class="text-[10px] uppercase tracking-widest font-bold mt-2 text-tonicCyan mix-blend-difference">
-                            The Tonic</p>
+                <div class="music-video-block border border-white/5 shadow-sm overflow-hidden">
+
+                    <!-- LEFT: 2/3 — Black panel with smaller centred video + controls -->
+                    <div class="music-video-left">
+
+                        <!-- Video wrapper (smaller, centred) -->
+                        <div class="video-screen-wrapper">
+                            <video id="premonition-video" preload="metadata" playsinline>
+                                <source src="assets/video/premonition.mp4" type="video/mp4">
+                            </video>
+                            <!-- Big centred play overlay (shown when paused) -->
+                            <div class="video-play-overlay" id="premonition-overlay">
+                                <button class="video-play-btn" id="premonition-play-btn" aria-label="Play video">
+                                    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="30" cy="30" r="29" stroke="white" stroke-width="2"
+                                            fill="rgba(0,0,0,0.4)" />
+                                        <polygon points="24,18 24,42 46,30" fill="white" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Controls bar -->
+                        <div class="video-controls">
+                            <!-- Slider row -->
+                            <input class="ctrl-slider" id="premonition-slider" type="range" min="0" max="100" value="0"
+                                step="0.1" aria-label="Video progress">
+                            <!-- Play + time + YouTube button -->
+                            <div class="video-controls-row">
+                                <button class="ctrl-play-btn" id="premonition-ctrl-play" aria-label="Play / Pause">
+                                    <!-- Play icon (default) -->
+                                    <svg id="ctrl-icon-play" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                        <polygon points="4,2 14,8 4,14" fill="white" />
+                                    </svg>
+                                    <!-- Pause icon (hidden when paused) -->
+                                    <svg id="ctrl-icon-pause" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                                        style="display:none">
+                                        <rect x="3" y="2" width="4" height="12" rx="1" fill="white" />
+                                        <rect x="9" y="2" width="4" height="12" rx="1" fill="white" />
+                                    </svg>
+                                </button>
+                                <span class="ctrl-time" id="premonition-time">0:00 / 0:00</span>
+                                <div style="flex:1"></div>
+                                <a class="yt-link" href="https://www.youtube.com/watch?v=xL393PMR_6o" target="_blank"
+                                    rel="noopener noreferrer">
+                                    <!-- YouTube icon -->
+                                    <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.75 15.5V8.5l6.25 3.5-6.25 3.5z" />
+                                    </svg>
+                                    Watch on YouTube
+                                </a>
+                            </div>
+                        </div>
+
                     </div>
-                    <div class="md:w-2/3">
-                        <p class="text-stone-600 leading-relaxed text-sm text-justify italic font-medium">
-                            My son Yaron, now seven, is the counter-force to adversity. He is the bright spark of humor
-                            and intelligence that refocuses the entire narrative. In the chaos of the bones, his
-                            presence is the tonic—the reminder that while identity is constructed, love is the mortar
-                            that holds the structure firm.
-                        </p>
+
+                    <!-- RIGHT: 1/3 Music Info — dark panel -->
+                    <div class="music-info-panel">
+                        <div class="music-info-inner">
+                            <span class="music-panel-tag">Music</span>
+                            <h3 class="music-panel-title">Paradox Prime</h3>
+                            <p class="music-panel-desc">An eclectic mix of music I authored, from Poppy songs to
+                                &ldquo;Cabaret Avant-Garde Jewish Soul&rdquo;, via 1980s electro and house, to Indie
+                                pop.</p>
+                            <div class="h-px my-3" style="background:rgba(255,255,255,0.08)"></div>
+
+                            <!-- Playlist with Spotify links -->
+                            <ul class="music-playlist" id="music-playlist">
+                                <li>
+                                    <a class="playlist-item active"
+                                        href="https://open.spotify.com/track/0cfmcUOI2Wehb6pqcjhgRl" target="_blank"
+                                        rel="noopener noreferrer">
+                                        <span class="track-num">01</span>
+                                        <span class="track-name">The House of Awe</span>
+                                        <span class="track-spotify" title="Open on Spotify"><svg viewBox="0 0 24 24"
+                                                fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="12" cy="12" r="12" fill="#1DB954" />
+                                                <path
+                                                    d="M17.25 16.15a.72.72 0 01-1 .24c-2.72-1.66-6.14-2.04-10.17-1.12a.72.72 0 01-.32-1.4c4.41-1 8.2-.57 11.25 1.3a.72.72 0 01.24.98zm1.35-2.97a.9.9 0 01-1.24.3C14.54 11.5 10.72 11 7.2 12.03a.9.9 0 01-.52-1.72c3.93-1.19 8.2-.61 11.63 1.63a.9.9 0 01.3 1.24zm.12-3.1C15.14 7.94 9.73 7.75 6.08 8.85a1.08 1.08 0 01-.63-2.07C9.73 5.59 15.7 5.8 19.6 8.08a1.08 1.08 0 01-1.08 1.86-.9.9 0 01.2-.06z"
+                                                    fill="white" />
+                                            </svg></span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="playlist-item"
+                                        href="https://open.spotify.com/album/2cdPHUMSusa21G3ilmSaID" target="_blank"
+                                        rel="noopener noreferrer">
+                                        <span class="track-num">02</span>
+                                        <span class="track-name">Time Is Now</span>
+                                        <span class="track-spotify" title="Open on Spotify"><svg viewBox="0 0 24 24"
+                                                fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="12" cy="12" r="12" fill="#1DB954" />
+                                                <path
+                                                    d="M17.25 16.15a.72.72 0 01-1 .24c-2.72-1.66-6.14-2.04-10.17-1.12a.72.72 0 01-.32-1.4c4.41-1 8.2-.57 11.25 1.3a.72.72 0 01.24.98zm1.35-2.97a.9.9 0 01-1.24.3C14.54 11.5 10.72 11 7.2 12.03a.9.9 0 01-.52-1.72c3.93-1.19 8.2-.61 11.63 1.63a.9.9 0 01.3 1.24zm.12-3.1C15.14 7.94 9.73 7.75 6.08 8.85a1.08 1.08 0 01-.63-2.07C9.73 5.59 15.7 5.8 19.6 8.08a1.08 1.08 0 01-1.08 1.86-.9.9 0 01.2-.06z"
+                                                    fill="white" />
+                                            </svg></span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="playlist-item" href="https://open.spotify.com/album/4tUsTlouLOtXdKmkEfe3F"
+                                        target="_blank" rel="noopener noreferrer">
+                                        <span class="track-num">03</span>
+                                        <span class="track-name">The Dreamer</span>
+                                        <span class="track-spotify" title="Open on Spotify"><svg viewBox="0 0 24 24"
+                                                fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="12" cy="12" r="12" fill="#1DB954" />
+                                                <path
+                                                    d="M17.25 16.15a.72.72 0 01-1 .24c-2.72-1.66-6.14-2.04-10.17-1.12a.72.72 0 01-.32-1.4c4.41-1 8.2-.57 11.25 1.3a.72.72 0 01.24.98zm1.35-2.97a.9.9 0 01-1.24.3C14.54 11.5 10.72 11 7.2 12.03a.9.9 0 01-.52-1.72c3.93-1.19 8.2-.61 11.63 1.63a.9.9 0 01.3 1.24zm.12-3.1C15.14 7.94 9.73 7.75 6.08 8.85a1.08 1.08 0 01-.63-2.07C9.73 5.59 15.7 5.8 19.6 8.08a1.08 1.08 0 01-1.08 1.86-.9.9 0 01.2-.06z"
+                                                    fill="white" />
+                                            </svg></span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="playlist-item"
+                                        href="https://open.spotify.com/album/6Sqo0Q2SjbpMrUxrP3lGw3" target="_blank"
+                                        rel="noopener noreferrer">
+                                        <span class="track-num">04</span>
+                                        <span class="track-name">7 Is Calling</span>
+                                        <span class="track-spotify" title="Open on Spotify"><svg viewBox="0 0 24 24"
+                                                fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="12" cy="12" r="12" fill="#1DB954" />
+                                                <path
+                                                    d="M17.25 16.15a.72.72 0 01-1 .24c-2.72-1.66-6.14-2.04-10.17-1.12a.72.72 0 01-.32-1.4c4.41-1 8.2-.57 11.25 1.3a.72.72 0 01.24.98zm1.35-2.97a.9.9 0 01-1.24.3C14.54 11.5 10.72 11 7.2 12.03a.9.9 0 01-.52-1.72c3.93-1.19 8.2-.61 11.63 1.63a.9.9 0 01.3 1.24zm.12-3.1C15.14 7.94 9.73 7.75 6.08 8.85a1.08 1.08 0 01-.63-2.07C9.73 5.59 15.7 5.8 19.6 8.08a1.08 1.08 0 01-1.08 1.86-.9.9 0 01.2-.06z"
+                                                    fill="white" />
+                                            </svg></span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="playlist-item"
+                                        href="https://open.spotify.com/album/4Fv5DHKl8zdosiQrwx5UqJ?si=gCi1kL_pTRSIZfNiBRErxA"
+                                        target="_blank" rel="noopener noreferrer">
+                                        <span class="track-num">05</span>
+                                        <span class="track-name">The Exile and the Gift</span>
+                                        <span class="track-spotify" title="Open on Spotify"><svg viewBox="0 0 24 24"
+                                                fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="12" cy="12" r="12" fill="#1DB954" />
+                                                <path
+                                                    d="M17.25 16.15a.72.72 0 01-1 .24c-2.72-1.66-6.14-2.04-10.17-1.12a.72.72 0 01-.32-1.4c4.41-1 8.2-.57 11.25 1.3a.72.72 0 01.24.98zm1.35-2.97a.9.9 0 01-1.24.3C14.54 11.5 10.72 11 7.2 12.03a.9.9 0 01-.52-1.72c3.93-1.19 8.2-.61 11.63 1.63a.9.9 0 01.3 1.24zm.12-3.1C15.14 7.94 9.73 7.75 6.08 8.85a1.08 1.08 0 01-.63-2.07C9.73 5.59 15.7 5.8 19.6 8.08a1.08 1.08 0 01-1.08 1.86-.9.9 0 01.2-.06z"
+                                                    fill="white" />
+                                            </svg></span>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <div class="h-px my-4" style="background:rgba(255,255,255,0.08)"></div>
+
+                            <!-- Spotify artist link -->
+                            <a href="https://open.spotify.com/artist/297RvgooWnmjmFl7lWpQkj" target="_blank"
+                                rel="noopener noreferrer" class="spotify-link" id="spotify-link">
+                                <svg class="spotify-icon" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1DB954" />
+                                    <path
+                                        d="M17.25 16.15a.72.72 0 01-1 .24c-2.72-1.66-6.14-2.04-10.17-1.12a.72.72 0 01-.32-1.4c4.41-1 8.2-.57 11.25 1.3a.72.72 0 01.24.98zm1.35-2.97a.9.9 0 01-1.24.3C14.54 11.5 10.72 11 7.2 12.03a.9.9 0 01-.52-1.72c3.93-1.19 8.2-.61 11.63 1.63a.9.9 0 01.3 1.24zm.12-3.1C15.14 7.94 9.73 7.75 6.08 8.85a1.08 1.08 0 01-.63-2.07C9.73 5.59 15.7 5.8 19.6 8.08a1.08 1.08 0 01-1.08 1.86-.9.9 0 01.2-.06z"
+                                        fill="white" />
+                                </svg>
+                                <span>All on Spotify</span>
+                                <svg class="spotify-arrow" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </a>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </section>
@@ -316,7 +891,7 @@
     </main>
 
     <!-- Dynamic Footer via layout.js -->
-    <div data-include="includes/footer.html"></div>
+    <div data-include="assets/includes/footer.html"></div>
 
     <!-- Three.js Implementation -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -635,6 +1210,7 @@
             if (state !== "SHY_REACTION" && state !== "WALK_OUT") {
                 armL.rotation.x *= 0.9; armR.rotation.x *= 0.9;
             }
+
         }
 
         animate();
@@ -690,6 +1266,89 @@
             });
         }
     </script>
+
+    <!-- Premonition Video Play Logic -->
+    <script>
+        (function () {
+            const video = document.getElementById('premonition-video');
+            const overlay = document.getElementById('premonition-overlay');
+            const bigBtn = document.getElementById('premonition-play-btn');
+            const ctrlBtn = document.getElementById('premonition-ctrl-play');
+            const slider = document.getElementById('premonition-slider');
+            const timeDisp = document.getElementById('premonition-time');
+            const iconPlay = document.getElementById('ctrl-icon-play');
+            const iconPause = document.getElementById('ctrl-icon-pause');
+            if (!video) return;
+
+            // Start paused at frame 0
+            video.currentTime = 0;
+            video.pause();
+
+            /* ---- helpers ---- */
+            function fmt(s) {
+                var m = Math.floor(s / 60);
+                var ss = Math.floor(s % 60);
+                return m + ':' + (ss < 10 ? '0' : '') + ss;
+            }
+
+            function setPlayingUI(playing) {
+                if (overlay) overlay.classList.toggle('playing', playing);
+                if (iconPlay) iconPlay.style.display = playing ? 'none' : 'block';
+                if (iconPause) iconPause.style.display = playing ? 'block' : 'none';
+            }
+
+            function togglePlay() {
+                if (video.paused) { video.play(); }
+                else { video.pause(); }
+            }
+
+            /* ---- video events ---- */
+            video.addEventListener('play', function () { setPlayingUI(true); });
+            video.addEventListener('pause', function () { setPlayingUI(false); });
+            video.addEventListener('ended', function () {
+                setPlayingUI(false);
+                video.currentTime = 0;
+                if (slider) slider.value = 0;
+            });
+
+            video.addEventListener('timeupdate', function () {
+                if (!video.duration) return;
+                var pct = (video.currentTime / video.duration) * 100;
+                if (slider && !slider._dragging) slider.value = pct;
+                if (timeDisp) timeDisp.textContent = fmt(video.currentTime) + ' / ' + fmt(video.duration);
+            });
+
+            video.addEventListener('loadedmetadata', function () {
+                if (timeDisp) timeDisp.textContent = '0:00 / ' + fmt(video.duration);
+            });
+
+            /* ---- controls ---- */
+            if (bigBtn) bigBtn.addEventListener('click', function (e) { e.stopPropagation(); togglePlay(); });
+            if (ctrlBtn) ctrlBtn.addEventListener('click', togglePlay);
+
+            // Clicking overlay while playing → pause
+            if (overlay) overlay.addEventListener('click', function () {
+                if (!video.paused) togglePlay();
+            });
+
+            /* ---- slider scrubbing ---- */
+            if (slider) {
+                slider.addEventListener('mousedown', function () { slider._dragging = true; });
+                slider.addEventListener('touchstart', function () { slider._dragging = true; }, { passive: true });
+
+                slider.addEventListener('input', function () {
+                    if (video.duration) {
+                        video.currentTime = (slider.value / 100) * video.duration;
+                        if (timeDisp) timeDisp.textContent = fmt(video.currentTime) + ' / ' + fmt(video.duration);
+                    }
+                });
+
+                slider.addEventListener('mouseup', function () { slider._dragging = false; });
+                slider.addEventListener('touchend', function () { slider._dragging = false; });
+            }
+        })();
+    </script>
+
 </body>
 
 </html>
