@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hue Shift Animation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background-color: #0a0a0c;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'JetBrains+Mono', monospace;
+        }
+
+        #stage {
+            height: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #030305;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 12px;
+            padding: 24px;
+            box-sizing: border-box;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        #stage:hover {
+            animation: berzerk 0.1s linear infinite, flicker 0.05s infinite alternate;
+        }
+
+        @keyframes berzerk {
+            0% { filter: hue-rotate(0deg) brightness(1.2) contrast(1.2); transform: translate(1px, 1px); }
+            25% { filter: hue-rotate(90deg) brightness(1.8) contrast(1.5); transform: translate(-1px, -1px); }
+            50% { filter: hue-rotate(180deg) brightness(1.2) contrast(1.2); transform: translate(-2px, 1px); }
+            75% { filter: hue-rotate(270deg) brightness(1.8) contrast(1.5); transform: translate(1px, -2px); }
+            100% { filter: hue-rotate(360deg) brightness(1.2) contrast(1.2); transform: translate(1px, 1px); }
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .color-box {
+            flex: 1;
+            transition: background-color 0.8s ease-in-out;
+            min-height: 60%;
+        }
+
+        .info-box {
+            padding: 4px;
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-top: 1px solid #222;
+        }
+
+        .title {
+            font-size: 8px;
+            font-weight: 700;
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sub {
+            display: none;
+        }
+
+        .btn-mock {
+            align-self: flex-start;
+            border: 1px solid currentColor;
+            font-size: 6px;
+            padding: 1px 4px;
+            margin-top: 4px;
+            cursor: default;
+        }
+
+        /* Glitchy TV distortion overlay */
+        #stage::after {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                /* Horizontal Scanlines */
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
+                /* Vertical RGB Subpixels */
+                linear-gradient(90deg, rgba(255, 0, 0, 0.08), rgba(0, 255, 0, 0.05), rgba(0, 0, 255, 0.08)),
+                /* Deeper Vignette */
+                radial-gradient(circle, transparent 20%, rgba(0, 0, 0, 0.6) 100%);
+            background-size: 100% 2px, 3px 100%, 100% 100%;
+            pointer-events: none;
+            z-index: 10;
+            animation: flicker 0.1s infinite alternate;
+        }
+
+        /* Moving signal pulse */
+        #stage::before {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.08);
+            z-index: 11;
+            pointer-events: none;
+            animation: scanline 4s linear infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.98; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes scanline {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="stage">
+        <!-- 9 Panels will be generated here -->
+    </div>
+
+    <script>
+        const stage = document.getElementById('stage');
+        const panelCount = 9;
+
+        const phrases = [
+            { t: "VISUAL", s: "" },
+            { t: "ROTHKO", s: "" },
+            { t: "BEYOND", s: "" },
+            { t: "INTENT", s: "" },
+            { t: "BOOGIE", s: "" },
+            { t: "JUNGLE", s: "" },
+            { t: "EXPAND", s: "" },
+            { t: "SOLARIS", s: "" },
+            { t: "AILISH", s: "" },
+            { t: "LOGIC", s: "" },
+            { t: "TONIC", s: "" },
+            { t: "DREAMS", s: "" },
+            { t: "BINARY", s: "" },
+            { t: "NEON", s: "" },
+            { t: "WEIGHT", s: "" }
+        ];
+
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#!?@";
+
+        class Panel {
+            constructor(index) {
+                this.index = index;
+                this.element = this.createMarkup();
+                this.colorBox = this.element.querySelector('.color-box');
+                this.titleEl = this.element.querySelector('.title');
+                this.subEl = this.element.querySelector('.sub');
+                this.btnEl = this.element.querySelector('.btn-mock');
+
+                this.hue = Math.random() * 360;
+                this.targetHue = this.hue;
+                this.phraseIndex = Math.floor(Math.random() * phrases.length);
+
+                this.updateDisplay(true);
+                this.scheduleNextUpdate();
+            }
+
+            createMarkup() {
+                const div = document.createElement('div');
+                div.className = 'panel';
+                div.innerHTML = `
+                <div class="color-box"></div>
+                <div class="info-box">
+                    <div>
+                        <div class="title"></div>
+                        <div class="sub"></div>
+                    </div>
+                    <div class="btn-mock">INITIALIZE</div>
+                </div>
+            `;
+                stage.appendChild(div);
+                return div;
+            }
+
+            scrambleText(element, finalString, duration = 800) {
+                let start = null;
+                const originalText = element.innerText;
+
+                const step = (timestamp) => {
+                    if (!start) start = timestamp;
+                    const progress = timestamp - start;
+
+                    if (progress < duration) {
+                        let result = "";
+                        for (let i = 0; i < finalString.length; i++) {
+                            if (Math.random() > progress / duration) {
+                                result += chars[Math.floor(Math.random() * chars.length)];
+                            } else {
+                                result += finalString[i];
+                            }
+                        }
+                        element.innerText = result;
+                        requestAnimationFrame(step);
+                    } else {
+                        element.innerText = finalString;
+                    }
+                };
+                requestAnimationFrame(step);
+            }
+
+            updateDisplay(immediate = false) {
+                this.hue = (this.hue + 40 + Math.random() * 60) % 360;
+                const color = `hsl(${this.hue}, 90%, 50%)`;
+                this.colorBox.style.backgroundColor = color;
+                this.titleEl.style.color = color;
+                this.btnEl.style.color = color;
+                this.btnEl.style.borderColor = color;
+
+                const nextPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+                if (immediate) {
+                    this.titleEl.innerText = nextPhrase.t;
+                    this.subEl.innerText = nextPhrase.s;
+                } else {
+                    this.scrambleText(this.titleEl, nextPhrase.t);
+                    this.scrambleText(this.subEl, nextPhrase.s, 1200);
+                }
+            }
+
+            scheduleNextUpdate() {
+                const baseDelay = isHovered ? 100 : 3000;
+                const varDelay = isHovered ? 200 : 5000;
+                const delay = baseDelay + Math.random() * varDelay;
+                
+                setTimeout(() => {
+                    this.updateDisplay();
+                    this.scheduleNextUpdate();
+                }, delay);
+            }
+        }
+
+        // Interactivity
+        let isHovered = false;
+        document.body.addEventListener('mouseenter', () => isHovered = true);
+        document.body.addEventListener('mouseleave', () => isHovered = false);
+        
+        // Clicks maintain the parent link
+        document.body.onclick = (e) => {
+            e.preventDefault();
+            window.top.location.href = '/folio/';
+        };
+
+        const panels = [];
+        for (let i = 0; i < panelCount; i++) {
+            panels.push(new Panel(i));
+        }
+
+        // Occasional "Global Intermission"
+        setInterval(() => {
+            const chance = isHovered ? 0.3 : 0.7;
+            if (Math.random() > chance) {
+                panels.forEach(p => p.updateDisplay());
+            }
+        }, 3000);
+
+    </script>
+</body>
+
+</html>

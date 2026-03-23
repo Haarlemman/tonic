@@ -5,12 +5,7 @@
  */
 
 (function () {
-    // 1. Inject Fonts & Icons
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Montserrat:wght@200;300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Glass+Antiqua&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Lato:wght@300;400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&display=swap';
-    document.head.appendChild(fontLink);
-
+    // 1. Inject Icons
     if (!document.querySelector('script[src*="lucide"]')) {
         const iconScript = document.createElement('script');
         iconScript.src = 'https://unpkg.com/lucide@latest';
@@ -48,7 +43,7 @@
     // 3. Define HTML Templates
     const HEADER_HTML = `
 		<header class="sticky top-0 z-50 flex flex-col font-sans">
-            <div id="header-content" class="w-full transition-all duration-500 ease-in-out max-h-40 py-1 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-2 border-black overflow-visible">
+            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-0 border-black overflow-hidden house-style-force">
                 <div class="flex flex-row items-center gap-2">
                     <a href="https://tonic.davidenker.com/" class="bg-black text-white px-2 py-0 text-base uppercase border-2 border-black hover:bg-white hover:text-black transition-colors z-10 relative" style="font-family: 'Share Tech Mono', monospace;">TONIC</a>
                     <span class="text-[14px] md:text-xs tracking-wide text-black" style="font-family: 'Share Tech Mono', monospace;">multi media defiance</span>
@@ -77,7 +72,6 @@
                         </li>
                     </ul>
                 </nav>
-            </div>
             </div>
             <div id="pixel-band" class="w-full h-[9px] bg-[#09826a] flex items-center overflow-hidden border-b border-black cursor-pointer" title="Click to toggle header"></div>
         </header>`;
@@ -125,10 +119,13 @@
         // Setup Resize Observer for Header Height
         const headerElement = document.getElementById('header-content');
 
-        // Restore Collapsed State
-        if (headerElement && localStorage.getItem('headerCollapsed') === 'true') {
-            headerElement.classList.remove('max-h-40', 'py-1', 'border-b-2', 'overflow-visible');
-            headerElement.classList.add('max-h-0', 'py-0', 'border-b-0', 'overflow-hidden');
+        // Force it to be collapsed initially for robustness
+        if (headerElement) {
+            headerElement.style.maxHeight = '0px';
+            headerElement.style.paddingTop = '0px';
+            headerElement.style.paddingBottom = '0px';
+            headerElement.style.overflow = 'hidden';
+            headerElement.style.borderBottomWidth = '0px';
         }
 
         const pixelBand = document.getElementById('pixel-band');
