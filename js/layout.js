@@ -119,13 +119,22 @@
         // Setup Resize Observer for Header Height
         const headerElement = document.getElementById('header-content');
 
-        // Force it to be collapsed initially for robustness
+        // Open by default; only collapse if user previously closed it
+        const wasCollapsed = localStorage.getItem('headerCollapsed') === 'true';
         if (headerElement) {
-            headerElement.style.maxHeight = '0px';
-            headerElement.style.paddingTop = '0px';
-            headerElement.style.paddingBottom = '0px';
-            headerElement.style.overflow = 'hidden';
-            headerElement.style.borderBottomWidth = '0px';
+            if (wasCollapsed) {
+                headerElement.style.maxHeight = '0px';
+                headerElement.style.paddingTop = '0px';
+                headerElement.style.paddingBottom = '0px';
+                headerElement.style.overflow = 'hidden';
+                headerElement.style.borderBottomWidth = '0px';
+            } else {
+                headerElement.style.maxHeight = '160px';
+                headerElement.style.paddingTop = '0.25rem';
+                headerElement.style.paddingBottom = '0.25rem';
+                headerElement.style.overflow = 'visible';
+                headerElement.style.borderBottomWidth = '2px';
+            }
         }
 
         const pixelBand = document.getElementById('pixel-band');

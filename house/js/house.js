@@ -2002,7 +2002,7 @@ function createIntroSign() {
 
 function startInteractiveIntro() {
     // 1. Play Audio (Immediately)
-    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.tension : '/assets/audio/Tension_Short_07.mp3';
+    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.tension : '/assets/audio/drone.mp3';
     const audio = new Audio(audioPath);
     audio.volume = 0.8;
     audio.play().catch(() => { });
@@ -4890,7 +4890,7 @@ function exitRoom() {
 
         if (window.parent) window.parent.postMessage({ type: 'EXITED_ROOM' }, '*');
         if (window.parent) window.parent.postMessage({ type: 'SHOW_HEADER' }, '*');
-        
+
         // Restore the local reset button
         const _rvBtnExit = document.getElementById('reset-view-btn');
         if (_rvBtnExit) {
@@ -6589,6 +6589,29 @@ function createDistantBuildings(scene) {
 
             buildingGroup.add(building);
         }
+    }
+
+    // --- SKY MOON (Davicon 3-Coloured Disc) ---
+    // Place a giant, distant version of the 3-coloured davicon in the sky behind the skyscrapers
+    if (window.textureLoader) {
+        // Using /house/assets/images/davicon.png as per final clarification
+        const davTex = window.textureLoader.load('assets/images/davicon.png');
+        const davMat = new THREE.SpriteMaterial({ 
+            map: davTex, 
+            transparent: true,
+            opacity: 0.5, // Reduced opacity to blend better
+            blending: THREE.AdditiveBlending,
+            color: 0xffffff,
+            depthWrite: false, // Ensures it sits well behind translucent things
+            fog: true // Allow fog to blend it into the atmospheric background
+        });
+        const davMoon = new THREE.Sprite(davMat);
+        davMoon.name = 'skyMoonDavicon';
+        
+        // Centered (x: 0), Lower near horizon (y: 30), Safe Depth (z: -180)
+        davMoon.position.set(0, 30, -180); 
+        davMoon.scale.set(65, 65, 1); 
+        buildingGroup.add(davMoon);
     }
 
     // V-FIX: Ensure buildings are inside worldGroup so they hide during room transitions

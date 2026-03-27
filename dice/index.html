@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMS "Flat Landing" Cube</title>
+    <style>
+        :root {
+            --cube-size: 45px;
+            
+            /* Primary and requested colors */
+            --red: #FF0000;
+            --yellow: #FFFF00;
+            --blue: #0000FF;
+            --white: #FFFFFF;
+            --black: #000000;
+            
+            /* Camera tilt to see 3 sides while cube stays "flat" */
+            --camera-tilt: rotateX(-30deg) rotateY(-45deg);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            font-family: 'Arial Black', Gadget, sans-serif;
+            overflow: hidden;
+        }
+
+        .scene {
+            width: var(--cube-size);
+            height: var(--cube-size);
+            perspective: 1200px;
+            cursor: pointer;
+        }
+
+        .camera-offset {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transform: var(--camera-tilt);
+            transition: transform 0.5s ease;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes shiver {
+            0% { transform: translate(0, 0) rotateX(var(--curr-rx)) rotateY(var(--curr-ry)); }
+            25% { transform: translate(4px, -4px) rotateX(var(--curr-rx)) rotateY(var(--curr-ry)); }
+            50% { transform: translate(-4px, 4px) rotateX(var(--curr-rx)) rotateY(var(--curr-ry)); }
+            75% { transform: translate(3px, 3px) rotateX(var(--curr-rx)) rotateY(var(--curr-ry)); }
+            100% { transform: translate(0, 0) rotateX(var(--curr-rx)) rotateY(var(--curr-ry)); }
+        }
+
+        .shivering {
+            animation: shiver 0.08s infinite;
+            transition: none !important;
+        }
+
+        .face {
+            position: absolute;
+            width: var(--cube-size);
+            height: var(--cube-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(0,0,0,0.15);
+            box-sizing: border-box;
+            text-align: center;
+            padding: 10px;
+            word-wrap: break-word;
+            backface-visibility: hidden;
+            user-select: none;
+        }
+
+        /* PAIR 1: BODY (Top) vs ART (Bottom) */
+        .face-body { 
+            background-color: var(--red); 
+            color: var(--white);
+            transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); 
+            font-size: 13px;
+            text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+        }
+        .face-art { 
+            background-color: var(--white); 
+            color: var(--red);
+            transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); 
+            font-size: 14px;
+        }
+
+        /* PAIR 2: SOUL (Front) vs SPIRIT (Back) */
+        .face-soul { 
+            background-color: var(--blue); 
+            color: var(--white);
+            transform: translateZ(calc(var(--cube-size) / 2)); 
+            font-size: 13px;
+            text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+        }
+        .face-spirit { 
+            background-color: var(--white); 
+            color: var(--blue);
+            transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); 
+            font-size: 10px;
+        }
+
+        /* PAIR 3: MIND (Left) vs SCIENCE (Right) */
+        .face-mind { 
+            background-color: var(--yellow); 
+            color: var(--black);
+            transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); 
+            font-size: 12px;
+
+        }
+        .face-science { 
+            background-color: var(--white); 
+            color: var(--black);
+            transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); 
+            font-size: 8px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scene" id="scene">
+        <div class="camera-offset">
+            <div class="cube" id="cube">
+                <!-- Pair 1 -->
+                <div class="face face-body">BODY</div>
+                <div class="face face-art">ART</div>
+                
+                <!-- Pair 2 -->
+                <div class="face face-soul">SOUL</div>
+                <div class="face face-spirit">SPIRIT</div>
+                
+                <!-- Pair 3 -->
+                <div class="face face-mind">MIND</div>
+                <div class="face face-science">SCIENCE</div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const cube = document.getElementById('cube');
+        const scene = document.getElementById('scene');
+        
+        let currentRX = 0;
+        let currentRY = 0;
+        let isMoving = false;
+
+        // Orientations to land each face at the top (flat)
+        const snapPoints = [
+            { x: 0, y: 0 },       // SOUL (Front)
+            { x: 0, y: 180 },     // SPIRIT (Back)
+            { x: -90, y: 0 },     // BODY (Top)
+            { x: 90, y: 0 },      // ART (Bottom)
+            { x: 0, y: 90 },      // MIND (Left)
+            { x: 0, y: -90 }      // SCIENCE (Right)
+        ];
+
+        function updateTransform() {
+            cube.style.setProperty('--curr-rx', currentRX + 'deg');
+            cube.style.setProperty('--curr-ry', currentRY + 'deg');
+            cube.style.transform = `rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
+        }
+
+        function rollCube() {
+            if (isMoving) return;
+            isMoving = true;
+
+            updateTransform();
+            cube.classList.add('shivering');
+
+            setTimeout(() => {
+                cube.classList.remove('shivering');
+                
+                const target = snapPoints[Math.floor(Math.random() * snapPoints.length)];
+                
+                const spinsX = (Math.floor(Math.random() * 3) + 1) * 360;
+                const spinsY = (Math.floor(Math.random() * 3) + 1) * 360;
+
+                currentRX = target.x + spinsX;
+                currentRY = target.y + spinsY;
+                
+                updateTransform();
+
+                setTimeout(() => { isMoving = false; }, 650);
+            }, 350);
+        }
+
+        scene.addEventListener('mouseenter', rollCube);
+
+        window.addEventListener('message', (event) => {
+            if (event.data === 'roll') {
+                rollCube();
+            }
+        });
+
+        updateTransform();
+    </script>
+
+</body>
+</html>

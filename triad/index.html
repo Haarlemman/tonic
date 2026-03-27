@@ -1,94 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tonic for the Bones - Triangular Bipyramids</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050505; font-family: ui-monospace, monospace; }
-        #canvas-container { width: 100vw; height: 100vh; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: ui-monospace, monospace;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
     </style>
 </head>
+
 <body>
 
     <div id="canvas-container"></div>
 
     <script>
-        let scene, camera, renderer, objects = [];
-        let targetRotationX = 0.2, targetRotationY = 0;
-        let isMouseDown = false;
-        let lastMouseX = 0, lastMouseY = 0;
+        let scene, camera, renderer, controls, objects = [];
+
+        function createBackgroundTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 512);
+            grad.addColorStop(0, '#1c283a'); // Dark top
+            grad.addColorStop(0.5, '#0d5a4a'); // Mid-point
+            grad.addColorStop(0.66, '#dfe0cc'); // Ground transition
+            grad.addColorStop(1, '#fbffa7'); // Bright bottom
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1, 512);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const backgroundTexture = createBackgroundTexture();
 
         const data = [
             {
                 title: "Adversaries & Viewpoints",
-                position: [-10, 0, 0],
+                position: [-7, 0, 0],
                 faces: [
-                    // Top (Bright)
-                    { label: "Parkinson", color: "#FF1F1F", textColor: "black" }, 
-                    { label: "Jewish", color: "#FFD600", textColor: "black" },    
-                    { label: "Adoption", color: "#00FFFF", textColor: "black" },  
-                    // Bottom (Darker)
-                    { label: "Paradox", color: "#8B0000", textColor: "white" }, 
-                    { label: "Question", color: "#9B870C", textColor: "white" }, 
-                    { label: "Outsider", color: "#00008B", textColor: "white" }   
+                    // Top (Bright/Adversaries)
+                    { label: "Disease", color: "#1FFF1F", textColor: "black", lineSizes: [80] },
+                    { label: "Exile", color: "#FF9900", textColor: "black", lineSizes: [100] },
+                    { label: "War", color: "#00FFFF", textColor: "black", lineSizes: [140] },
+                    // Bottom (Reflected/Viewpoints)
+                    { label: "Paradox", color: "#008B00", textColor: "white", lineSizes: [86] },
+                    { label: "Distance", color: "#9B6700", textColor: "white", lineSizes: [58] },
+                    { label: "Mindful", color: "#00808B", textColor: "white", lineSizes: [80] }
                 ]
             },
             {
-                title: "Vantage Points",
-                position: [0, 0, 0],
+                title: "Aspects & Vantage Points",
+                position: [7, 0, 0],
                 faces: [
                     // Top (Bright)
-                    { label: "Body", color: "#00E676", textColor: "black" },      
-                    { label: "Mind", color: "#2979FF", textColor: "black" },   
-                    { label: "Soul", color: "#D500F9", textColor: "black" }, 
+                    { label: "Body", color: "#ff5531", textColor: "black" },
+                    { label: "Mind", color: "#FFFF33", textColor: "black" },
+                    { label: "Soul", color: "#6510F9", textColor: "black" },
                     // Bottom (Darker)
-                    { label: "Beauty", color: "#006400", textColor: "white" }, 
-                    { label: "Knowledge", color: "#191970", textColor: "white" }, 
-                    { label: "Wisdom", color: "#4B0082", textColor: "white" }    
-                ]
-            },
-            {
-                title: "Duality",
-                position: [10, 0, 0],
-                faces: [
-                    // Top (Light/Tonic)
-                    { label: "Tonic", color: "#FFFFFF", textColor: "black" },      
-                    { label: "Light", color: "#FFF9C4", textColor: "black" },   
-                    { label: "Vision", color: "#E1F5FE", textColor: "black" }, 
-                    // Bottom (Dark/Bones)
-                    { label: "Bones", color: "#111111", textColor: "white" }, 
-                    { label: "Darkness", color: "#212121", textColor: "white" }, 
-                    { label: "Void", color: "#333333", textColor: "white" }    
+                    { label: "Beauty", color: "#990000", textColor: "white" },
+                    { label: "Knowledge", color: "#999900", textColor: "white" },
+                    { label: "Wisdom", color: "#4B0082", textColor: "white" }
                 ]
             }
         ];
 
-        function createLabelTexture(text, bgColor, textColor, isBottom) {
+        function createLabelTexture(text, bgColor, textColor, isBottom, customLineSizes, yOffset = 0, lineOffsets = []) {
             const canvas = document.createElement('canvas');
             canvas.width = 512;
             canvas.height = 512;
             const ctx = canvas.getContext('2d');
-            
+
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
+            // Add subtle noise/texture (3D lighting texture feel)
+            ctx.globalAlpha = 0.05;
+            for (let i = 0; i < 5000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#fff' : '#000';
+                ctx.fillRect(Math.random() * 512, Math.random() * 512, 1, 1);
+            }
+            ctx.globalAlpha = 1.0;
+
             if (text) {
+                // Split by comma first, then by space if needed (basic wrapping)
+                const lines = text.includes(',') ? text.split(',').map(s => s.trim()) : [text];
+
                 ctx.fillStyle = textColor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                const fontSize = 58;
-                ctx.font = `bold ${fontSize}px ui-monospace, monospace`;
-                
-                // Position text near the base of the triangle.
-                // For the top pyramid, base is at UV (v=0), so text is at y=0.8 on canvas.
-                // For the bottom pyramid, base is at UV (v=1), so text is at y=0.2 on canvas.
-                const drawY = isBottom ? canvas.height * 0.18 : canvas.height * 0.82;
-                ctx.fillText(text.toUpperCase(), canvas.width / 2, drawY);
+
+                // Base calculation (fallback if customLineSizes aren't comprehensive)
+                let baseFontSize = 76;
+                if (lines.length > 1) baseFontSize = 52;
+
+                // More nuanced scaling to let short/medium words be even bigger
+                const maxLen = Math.max(...lines.map(l => l.length));
+                if (maxLen > 18) baseFontSize *= 0.65;
+                else if (maxLen > 14) baseFontSize *= 0.75;
+                else if (maxLen > 10) baseFontSize *= 0.88;
+
+                ctx.font = `bold ${baseFontSize}px ui-monospace, monospace`;
+
+                const lineHeight = baseFontSize * 1.05;
+                const totalHeight = lines.length * lineHeight;
+
+                // Position text block to be even closer to the "equator" (the base edge)
+                // Anchor text directly to the "equator" (the widest base edge)
+                let startY = isBottom
+                    ? (canvas.height * 0.1) + (lineHeight / 2) // Bottom pyramid: equator is at the top
+                    : (canvas.height * 0.9) - (totalHeight) + (lineHeight / 2); // Top pyramid: equator is at the bottom
+
+                // Allow manual fine-tuning with yOffset
+                if (isBottom) startY += yOffset;
+                else startY -= yOffset;
+
+                lines.forEach((line, i) => {
+                    let currentFontSize = baseFontSize;
+
+                    // Individual control: use lineSizes if provided in the data
+                    if (customLineSizes && customLineSizes[i]) {
+                        currentFontSize = customLineSizes[i];
+                    }
+
+                    // Individual line-by-line offset
+                    const individualLineOffset = (lineOffsets && lineOffsets[i]) ? lineOffsets[i] : 0;
+
+                    ctx.font = `bold ${currentFontSize}px ui-monospace, monospace`;
+                    ctx.fillText(line.toUpperCase(), canvas.width / 2, startY + (i * lineHeight) + individualLineOffset);
+                });
             }
-            
+
             const texture = new THREE.CanvasTexture(canvas);
             texture.anisotropy = 16;
             return texture;
@@ -96,27 +151,26 @@
 
         function createBipyramid(item) {
             const group = new THREE.Group();
-            const radius = 3.8; 
-            const h = 6.2;      
-            
+            const radius = 3.8;
+            const h = 3.2; // Flattened height
             const top = new THREE.Vector3(0, h, 0);
             const bottom = new THREE.Vector3(0, -h, 0);
-            
+
             // Base vertices
             const v1 = new THREE.Vector3(radius, 0, 0);
-            const v2 = new THREE.Vector3(radius * Math.cos(Math.PI * 2/3), 0, radius * Math.sin(Math.PI * 2/3));
-            const v3 = new THREE.Vector3(radius * Math.cos(Math.PI * 4/3), 0, radius * Math.sin(Math.PI * 4/3));
+            const v2 = new THREE.Vector3(radius * Math.cos(Math.PI * 2 / 3), 0, radius * Math.sin(Math.PI * 2 / 3));
+            const v3 = new THREE.Vector3(radius * Math.cos(Math.PI * 4 / 3), 0, radius * Math.sin(Math.PI * 4 / 3));
 
             const faces = [
                 // Top Faces: peak is top point. UV: Peak(0.5, 1), BaseLeft(0, 0), BaseRight(1, 0)
-                { verts: [top, v2, v1], isTop: true, uv: [0.5, 1, 0, 0, 1, 0] },    
-                { verts: [top, v3, v2], isTop: true, uv: [0.5, 1, 0, 0, 1, 0] },    
-                { verts: [top, v1, v3], isTop: true, uv: [0.5, 1, 0, 0, 1, 0] },    
-                
+                { verts: [top, v2, v1], isTop: true, uv: [0.5, 1, 0, 0, 1, 0] },
+                { verts: [top, v3, v2], isTop: true, uv: [0.5, 1, 0, 0, 1, 0] },
+                { verts: [top, v1, v3], isTop: true, uv: [0.5, 1, 0, 0, 1, 0] },
+
                 // Bottom Faces: peak is bottom point. UV: Peak(0.5, 0), BaseRight(1, 1), BaseLeft(0, 1)
-                { verts: [bottom, v1, v2], isTop: false, uv: [0.5, 0, 1, 1, 0, 1] }, 
-                { verts: [bottom, v2, v3], isTop: false, uv: [0.5, 0, 1, 1, 0, 1] }, 
-                { verts: [bottom, v3, v1], isTop: false, uv: [0.5, 0, 1, 1, 0, 1] }  
+                { verts: [bottom, v1, v2], isTop: false, uv: [0.5, 0, 1, 1, 0, 1] },
+                { verts: [bottom, v2, v3], isTop: false, uv: [0.5, 0, 1, 1, 0, 1] },
+                { verts: [bottom, v3, v1], isTop: false, uv: [0.5, 0, 1, 1, 0, 1] }
             ];
 
             faces.forEach((face, i) => {
@@ -127,37 +181,39 @@
                     verts[1].x, verts[1].y, verts[1].z,
                     verts[2].x, verts[2].y, verts[2].z
                 ]);
-                
+
                 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                 geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(face.uv), 2));
                 geometry.computeVertexNormals();
-                
+
                 const material = new THREE.MeshPhongMaterial({
-                    map: createLabelTexture(item.faces[i].label, item.faces[i].color, item.faces[i].textColor, !face.isTop),
+                    map: createLabelTexture(item.faces[i].label, item.faces[i].color, item.faces[i].textColor, !face.isTop, item.faces[i].lineSizes, item.faces[i].yOffset, item.faces[i].lineOffsets),
                     side: THREE.FrontSide,
-                    shininess: 40,
+                    shininess: 30,
                     flatShading: true
                 });
-                
+
                 const mesh = new THREE.Mesh(geometry, material);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
                 group.add(mesh);
             });
 
             const labelCanvas = document.createElement('canvas');
             labelCanvas.width = 512; labelCanvas.height = 100;
             const lCtx = labelCanvas.getContext('2d');
-            lCtx.fillStyle = 'white';
+            lCtx.fillStyle = '#000000'; // Black labels
             lCtx.font = 'bold 32px ui-monospace, monospace';
             lCtx.textAlign = 'center';
             lCtx.fillText(item.title.toUpperCase(), 256, 50);
-            
+
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(labelCanvas) }));
             sprite.position.y = -h - 3;
             sprite.scale.set(8.5, 1.6, 1);
             group.add(sprite);
 
             group.position.set(...item.position);
-            
+
             group.userData = {
                 phase: Math.random() * Math.PI * 2,
                 rotSpeed: 0.005,
@@ -175,57 +231,53 @@
 
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 35;
+            camera.position.z = 24;
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setClearColor(0x000000, 1);
+            renderer.setClearColor(0x000000, 1); // Background is now in the 3D scene
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const light = new THREE.DirectionalLight(0xffffff, 0.6);
-            light.position.set(10, 20, 10);
+            // Add dynamic 3D background sphere
+            const bgGeo = new THREE.SphereGeometry(300, 64, 32);
+            const bgMat = new THREE.MeshBasicMaterial({
+                map: backgroundTexture,
+                side: THREE.BackSide,
+                depthWrite: false
+            });
+            const bgSphere = new THREE.Mesh(bgGeo, bgMat);
+            scene.add(bgSphere);
+
+            // OrbitControls for touch support (pinch/zoom/pan/rotate)
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = false;
+            controls.enablePan = true;
+            controls.minDistance = 10;
+            controls.maxDistance = 50;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const light = new THREE.DirectionalLight(0xffffff, 0.7);
+            light.position.set(0, 20, 0);
             scene.add(light);
 
             data.forEach((d, i) => {
                 const b = createBipyramid(d);
                 if (hideLabels) {
-                    // Find and remove the sprite
                     const sprite = b.children.find(child => child.type === 'Sprite');
                     if (sprite) b.remove(sprite);
                 }
                 objects.push(b);
                 scene.add(b);
+
             });
 
             window.addEventListener('resize', () => {
-                const aspect = window.innerWidth / window.innerHeight;
-                camera.aspect = aspect;
-                
-                // Bring camera closer to make objects bigger in a flat container
-                // Default dist was 35, now using 24 for a "bigger" look
-                const defaultZ = 24;
-                if (aspect < 1.5) {
-                    camera.position.z = defaultZ / Math.max(0.6, aspect / 1.5);
-                } else {
-                    camera.position.z = defaultZ;
-                }
-                
+                camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-            window.dispatchEvent(new Event('resize'));
-
-            document.addEventListener('mousedown', () => isMouseDown = true);
-            document.addEventListener('mouseup', () => isMouseDown = false);
-            document.addEventListener('mousemove', (e) => {
-                if (isMouseDown) {
-                    targetRotationY += (e.clientX - lastMouseX) * 0.008;
-                    targetRotationX += (e.clientY - lastMouseY) * 0.008;
-                }
-                lastMouseX = e.clientX;
-                lastMouseY = e.clientY;
             });
 
             animate();
@@ -233,25 +285,24 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            
-            scene.rotation.y += (targetRotationY - scene.rotation.y) * 0.1;
-            scene.rotation.x += (targetRotationX - scene.rotation.x) * 0.1;
+
+            if (controls) controls.update();
 
             const time = Date.now() * 0.001;
-            
+
             objects.forEach((obj, i) => {
                 const state = obj.userData;
                 state.timer--;
 
                 if (state.timer <= 0) {
                     const r = Math.random();
-                    if (r < 0.15) { 
+                    if (r < 0.15) {
                         state.targetRotSpeed = 0.5 + Math.random() * 0.4;
                         state.timer = 30 + Math.random() * 40;
-                    } else if (r < 0.6) { 
+                    } else if (r < 0.6) {
                         state.targetRotSpeed = 0.01 + (i * 0.005) + Math.random() * 0.01;
                         state.timer = 150 + Math.random() * 200;
-                    } else { 
+                    } else {
                         state.targetRotSpeed = 0.002;
                         state.timer = 100 + Math.random() * 150;
                     }
@@ -269,4 +320,5 @@
         window.onload = init;
     </script>
 </body>
+
 </html>

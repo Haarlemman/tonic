@@ -1,6 +1,6 @@
 const houseConfig = {
     audio: {
-        tension: "assets/audio/Tension_Short_07.mp3",
+        tension: "assets/audio/drone.mp3",
         intro: "assets/audio/premonition.mp3",
         victory: "assets/audio/victory.wav",
         squeak: "assets/audio/squeak.mp3"

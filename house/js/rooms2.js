@@ -253,6 +253,15 @@ function addReflectionMarker(roomKey, x, y, z) {
     };
 
     group.scale.set(0.75, 0.75, 0.75);
+
+    // Invisible hit-sphere — gives the nugget a generous, reliable click target
+    // so the raycaster can find it before the BB8 hitbox when clicking above BB8.
+    const hitSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8, 8, 8),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    group.add(hitSphere);
+
     interiorGroup.add(group);
     if (window.interiorClickables) window.interiorClickables.push(group);
 
@@ -877,11 +886,15 @@ function createBB8ForHall() {
     // stabilizedGroup.add(instructions);
 
     // 7. Hitbox
+    // Height reduced from 4.5 → 2.8 and centred lower so the cylinder top
+    // stays well below the nugget that floats above BB8's head.
+    // Old span in hoverGroup-local Y: [-1.25, +3.25]  ← overlapped the nugget
+    // New span:                       [-0.4,  +2.4]   ← clears the nugget
     const hitBox = new THREE.Mesh(
-        new THREE.CylinderGeometry(2.5, 2.5, 4.5, 16),
+        new THREE.CylinderGeometry(2.5, 2.5, 2.8, 16),
         new THREE.MeshBasicMaterial({ visible: false })
     );
-    hitBox.position.y = 1.0; // V-ADJUST: Lowered to prevent blocking the nugget above
+    hitBox.position.y = 1.0; // centre of body+head region
     hitBox.userData = { type: 'bb8', name: 'BB8' };
     hoverGroup.add(hitBox);
     interiorClickables.push(hitBox);
