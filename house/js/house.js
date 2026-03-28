@@ -6599,18 +6599,18 @@ function createDistantBuildings(scene) {
         const davMat = new THREE.SpriteMaterial({ 
             map: davTex, 
             transparent: true,
-            opacity: 0.75, // Soften the sticker-like edges
-            blending: THREE.NormalBlending, // Use normal blending so atmospheric fog obscures it naturally
+            opacity: 0.3, // Greatly reduced opacity for a faint sky blend
+            blending: THREE.NormalBlending, // Normal blend to interact with the environment
             color: 0xffffff,
-            depthWrite: false, // Ensures it sits well behind translucent things
-            fog: true // Allow fog to blend it into the atmospheric background
+            depthWrite: false,
+            fog: true 
         });
         const davMoon = new THREE.Sprite(davMat);
         davMoon.name = 'skyMoonDavicon';
         
-        // Centered (x: 0), Much lower at horizon (y: 12), Safe Depth (z: -180)
-        davMoon.position.set(0, 12, -180); 
-        davMoon.scale.set(25, 25, 1); 
+        // Dropped almost to world zero (y: 4), pushed deeper into fog (z: -220)
+        davMoon.position.set(0, 4, -220); 
+        davMoon.scale.set(20, 20, 1); // Slightly smaller
         buildingGroup.add(davMoon);
     }
 
