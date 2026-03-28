@@ -6599,7 +6599,7 @@ function createDistantBuildings(scene) {
         const davMat = new THREE.SpriteMaterial({ 
             map: davTex, 
             transparent: true,
-            opacity: 0.75, // Semi-transparent to blend, but retains color
+            opacity: 0.35, // Very high transparency to smoothly blend directly into the sky backdrop
             blending: THREE.NormalBlending, 
             color: 0xffffff,
             depthWrite: false, // Ensures it sits well behind translucent things
