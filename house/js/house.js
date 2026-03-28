@@ -6591,13 +6591,21 @@ function createDistantBuildings(scene) {
         }
     }
 
-    // --- SKY MOON (Davicon 3-Coloured Disc) ---
-    // Place a giant, distant version of the 3-coloured davicon in the sky behind the skyscrapers
+    // --- SKY MOON (Red Disc) ---
+    // Place a distant, faint red disc in the sky behind the skyscrapers
     if (window.textureLoader) {
-        // Using /house/assets/images/davicon.png as per final clarification
-        const davTex = window.textureLoader.load('assets/images/davicon.png');
+        // Generate a red circle texture dynamically
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc(256, 256, 250, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff2211'; // Warm vibrant red
+        ctx.fill();
+        const redMoonTex = new THREE.CanvasTexture(canvas);
+
         const davMat = new THREE.SpriteMaterial({ 
-            map: davTex, 
+            map: redMoonTex, 
             transparent: true,
             opacity: 0.35, // Very high transparency to smoothly blend directly into the sky backdrop
             blending: THREE.NormalBlending, 
