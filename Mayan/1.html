@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mayan Machine</title>
+<style>
+  body {
+    background: #0e0e11;
+    color: #fff;
+    text-align: center;
+    font-family: sans-serif;
+  }
+  canvas {
+    background: #15151a;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Mayan Time Machine ⚙️</h2>
+<canvas id="canvas" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let t = 0;
+
+function drawGear(x, y, radius, teeth, rotation, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+
+  ctx.beginPath();
+  for (let i = 0; i < teeth * 2; i++) {
+    let angle = (i * Math.PI) / teeth;
+    let r = (i % 2 === 0) ? radius : radius * 1.1;
+    ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+  }
+  ctx.closePath();
+
+  ctx.strokeStyle = color;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Tzolk'in
+  drawGear(200, 300, 60, 13, t * 0.05, "#00ffc3");
+  drawGear(300, 300, 90, 20, -t * 0.0325, "#ffcc00");
+
+  // Haab
+  drawGear(450, 300, 120, 40, t * 0.01, "#ff5c8a"); // reduced teeth for performance
+
+  // Long Count
+  drawGear(300, 150, 30, 20, t * 0.08, "#8a7dff");
+  drawGear(300, 100, 40, 18, t * 0.04, "#a0a0ff");
+  drawGear(300, 40, 50, 20, t * 0.02, "#c0c0ff");
+
+  t++;
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>

@@ -486,7 +486,7 @@ let animationId;
 const clock = new THREE.Clock();
 // HOUSE MUSIC STATE
 let houseMusicTime = 0;
-const HOUSE_TRACK = "/assets/audio/premonition.mp3";
+const HOUSE_TRACK = "/assets/audio/quantumleap.mp3";
 
 // -- LIGHTS --
 let dirLight, rimLight, ambientLight, hemiLight;
@@ -524,10 +524,10 @@ const HOUSE_DEFAULTS = {
     hemiIntensity: 0.25,
     dirIntensity: 0.4,
     rimIntensity: 0.4,
-    fogColor: 0x3a2560,
-    bgColor: 0x25232d,
-    fogNear: 80,
-    fogFar: 700
+    fogColor: 0x564a77,
+    bgColor: 0x29233b,
+    fogNear: 40,
+    fogFar: 320
 };
 
 // Wrapped Init
@@ -539,13 +539,13 @@ scene.add(worldGroup);
 scene.add(interiorGroup);
 scene.add(foregroundGroup);
 // Clarity Boost (V-SYNC to Housedev Preferred)
-scene.fog = new THREE.Fog(HOUSE_DEFAULTS.fogColor, HOUSE_DEFAULTS.fogNear, HOUSE_DEFAULTS.fogFar);
+scene.fog = new THREE.Fog(HOUSE_DEFAULTS.fogColor, HOUSE_DEFAULTS.fogNear, 500); // Start with misty fog
 openingFog = scene.fog;
 scene.background = new THREE.Color(HOUSE_DEFAULTS.bgColor);
 
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000); // FAR PLANE 2000 for Space Room
-camera.position.set(-2.8, 51.9, 175.9); // Match Flight Start to prevent Jump
-camera.lookAt(-1.94, -20.5, -0.94);
+camera.position.set(0, 20, 85);
+camera.lookAt(0, 0, 0);
 window.camera = camera;
 scene.add(camera);
 
@@ -561,6 +561,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap; // V-FIX: Soft Shadows
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, _isMobileDevice ? 1.5 : 2));
 
 document.getElementById('canvas-container').appendChild(renderer.domElement);
+
 
 // --- WebGL context loss / restore recovery ---
 renderer.domElement.addEventListener('webglcontextlost', function (e) {
@@ -646,7 +647,7 @@ controls.panSpeed = 1.0;
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2;
-controls.target.set(-1.94, -20.5, -0.94);
+controls.target.set(0, 0, 0);
 
 worldGroup = new THREE.Group();
 window.worldGroup = worldGroup;
@@ -2001,11 +2002,18 @@ function createIntroSign() {
 }
 
 function startInteractiveIntro() {
-    // 1. Play Audio (Immediately)
-    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.tension : '/assets/audio/drone.mp3';
-    const audio = new Audio(audioPath);
-    audio.volume = 0.8;
-    audio.play().catch(() => { });
+    // 1. Play Audio (Immediately) - unless already prepared
+    if (!window.introAudio) {
+        const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.intro : '/assets/audio/intro.mp3';
+        const audio = new Audio(audioPath);
+        audio.volume = 0.8;
+        window.introAudio = audio;
+        audio.play().catch(() => { });
+    } else {
+        if (window.introAudio.paused) {
+            window.introAudio.play().catch(() => { });
+        }
+    }
 
     // 2. Animate Sign GROW (Bigger), DROP (Below Screen), FADE
     const sign = worldGroup.children.find(c => {
@@ -3265,12 +3273,12 @@ function startOpeningAnimation() {
     };
 
     const animState = {
-        px: getVal('fc-sx', -2.8),
-        py: getVal('fc-sy', 51.9),
-        pz: getVal('fc-sz', 175.9),
-        tx: getVal('fc-slx', -1.94),
-        ty: getVal('fc-sly', -20.5),
-        tz: getVal('fc-slz', -0.94),
+        px: getVal('fc-sx', camera.position.x),
+        py: getVal('fc-sy', camera.position.y),
+        pz: getVal('fc-sz', camera.position.z),
+        tx: getVal('fc-slx', controls.target.x),
+        ty: getVal('fc-sly', controls.target.y),
+        tz: getVal('fc-slz', controls.target.z),
         fogFar: 500
     };
 
@@ -3286,10 +3294,10 @@ function startOpeningAnimation() {
         tx: getVal('fc-elx', 0),
         ty: getVal('fc-ely', 0),
         tz: getVal('fc-elz', 0),
-        fogFar: 300 // V-SYNC
+        fogFar: 500 // Maintain misty atmosphere
     };
 
-    const duration = getVal('fc-dur', 6000);
+    const duration = getVal('fc-dur', 7500);
 
     // 1. Mist Animation REMOVED (V130)
 
@@ -3313,12 +3321,35 @@ function startOpeningAnimation() {
             if (scene.fog) scene.fog.far = animState.fogFar;
         })
 
-        // V-REFINE: Smoother Landing (Cubic Out) vs Quadratic InOut
-        .easing(TWEEN.Easing.Cubic.Out)
+        // Slower start, then build speed, then ease into the landing.
+        .easing(TWEEN.Easing.Cubic.InOut)
         .onComplete(() => {
             controls.enabled = true;
             window.introFinished = true;
             window.isZoomingToRoom = false;
+
+            // Fade out intro audio gracefully instead of cutting it off
+            const fadeOutIntroAudio = (audioRef, propName) => {
+                if (!audioRef) return;
+                const fadeMs = 4000;
+                const startVol = audioRef.volume;
+                const fadeStart = performance.now();
+                const doFade = () => {
+                    const elapsed = performance.now() - fadeStart;
+                    const progress = Math.min(1, elapsed / fadeMs);
+                    audioRef.volume = Math.max(0, startVol * (1 - progress));
+                    if (progress < 1 && !audioRef.paused) {
+                        requestAnimationFrame(doFade);
+                    } else {
+                        audioRef.pause();
+                        if (propName) window[propName] = null;
+                    }
+                };
+                requestAnimationFrame(doFade);
+            };
+            fadeOutIntroAudio(window._experienceIntroAudio, '_experienceIntroAudio');
+            fadeOutIntroAudio(window.introAudio, 'introAudio');
+            playOutsideIdleAudio();
 
             // Trigger Narrative Prompt (Name entry) — shortly after flight lands & settles
 
@@ -3420,10 +3451,212 @@ function startHeaderAnimation() {
     if (btnContainer) btnContainer.style.opacity = '0';
 }
 
+function playOutsideIdleAudio() {
+    if (!window.audioPlayer || window.currentRoom) return;
+
+    window.audioPlayer.pause();
+    window.audioPlayer.src = houseConfig.audio.outside;
+    window.audioPlayer.currentTime = 0;
+    window.audioPlayer.loop = true;
+    window.audioPlayer.volume = 0.5;
+    window.audioPlayer.play().then(() => {
+        window.isMusicPlaying = true;
+    }).catch(() => {
+        window.isMusicPlaying = true;
+    });
+}
+
+const INTRO_TOTAL_VIEW_HOLD_MS = 3500;
+
+function drawSpacedCenteredText(ctx, text, centerX, y, letterSpacing) {
+    const chars = text.split('');
+    let totalWidth = 0;
+
+    chars.forEach((char, index) => {
+        totalWidth += ctx.measureText(char).width;
+        if (index < chars.length - 1) totalWidth += letterSpacing;
+    });
+
+    let x = centerX - (totalWidth / 2);
+    chars.forEach((char, index) => {
+        ctx.fillText(char, x, y);
+        x += ctx.measureText(char).width;
+        if (index < chars.length - 1) x += letterSpacing;
+    });
+}
+
+function runCircularMaskReveal() {
+    const canvas = document.getElementById('pixel-reveal-canvas');
+    if (!canvas) {
+        console.warn('Pixel reveal canvas not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.warn('Could not get 2d context for pixel reveal canvas');
+        return;
+    }
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Use viewport CSS units so it always fills the screen (even during fullscreen transition)
+    canvas.style.display = 'block';
+    canvas.style.opacity = '1';
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.zIndex = '99999';
+    canvas.style.pointerEvents = 'none';
+
+    // Initial internal resolution
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Timing configuration
+    const textDelay = 0; // Show title immediately on fullscreen black
+    const textFadeInDuration = 1000; // 1 second to fade in text
+    const textHoldDuration = 2000; // 2 seconds holding text
+    const textFadeOutDuration = 1000; // 1 second to fade out text
+    const revealDelay = 500; // 0.5 second pause before reveal starts
+    const revealDuration = 3500; // 3.5 seconds for slower reveal
+
+    if (window._circularMaskFrame) {
+        cancelAnimationFrame(window._circularMaskFrame);
+        window._circularMaskFrame = null;
+    }
+
+    const start = performance.now();
+    const render = (now) => {
+        const elapsed = now - start;
+
+        // Recalculate dimensions every frame to handle fullscreen resize
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const maxRadius = Math.sqrt(width * width + height * height) * 0.8;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw black background
+        ctx.fillStyle = 'rgba(2, 4, 10, 1)';
+        ctx.fillRect(0, 0, width, height);
+
+        // Calculate text opacity
+        let textOpacity = 0;
+        const textStart = textDelay;
+        const textFadeInEnd = textStart + textFadeInDuration;
+        const textHoldEnd = textFadeInEnd + textHoldDuration;
+        const textFadeOutEnd = textHoldEnd + textFadeOutDuration;
+
+        if (elapsed >= textStart && elapsed < textFadeInEnd) {
+            // Fade in
+            textOpacity = (elapsed - textStart) / textFadeInDuration;
+        } else if (elapsed >= textFadeInEnd && elapsed < textHoldEnd) {
+            // Hold
+            textOpacity = 1;
+        } else if (elapsed >= textHoldEnd && elapsed < textFadeOutEnd) {
+            // Fade out
+            textOpacity = 1 - ((elapsed - textHoldEnd) / textFadeOutDuration);
+        }
+
+        // Draw title text
+        if (textOpacity > 0) {
+            ctx.save();
+            ctx.globalAlpha = textOpacity;
+            ctx.fillStyle = 'white';
+            const isMobile = width < 768;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Subtle glow
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+            ctx.shadowBlur = 40;
+            const bigFontSize = Math.min(width / 7.2, height / 5.4);
+            const largeSize = isMobile ? bigFontSize * 0.8 : bigFontSize;
+            const smallSize = largeSize * 0.38;
+            const lineGap = largeSize * 0.2;
+            const lines = [
+                { text: 'THE', size: smallSize, spacing: smallSize * 0.18 },
+                { text: 'HOUSE', size: largeSize, spacing: largeSize * 0.12 },
+                { text: 'OF', size: smallSize, spacing: smallSize * 0.18 },
+                { text: 'AWE', size: largeSize, spacing: largeSize * 0.12 }
+            ];
+            const totalHeight = lines.reduce((sum, line) => sum + line.size, 0) + (lineGap * (lines.length - 1));
+            let y = centerY - (totalHeight / 2);
+
+            lines.forEach((line) => {
+                ctx.font = `300 ${line.size}px 'Lato', sans-serif`;
+                drawSpacedCenteredText(ctx, line.text, centerX, y + (line.size / 2), line.spacing);
+                y += line.size + lineGap;
+            });
+            ctx.restore();
+        }
+
+        // Start reveal after text sequence
+        const revealStart = textFadeOutEnd + revealDelay;
+        if (elapsed >= revealStart) {
+            const revealElapsed = elapsed - revealStart;
+            const progress = Math.min(1, revealElapsed / revealDuration);
+
+            // Create circular reveal - white circle expands, cutting out the black
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * progress, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Start intro audio as soon as the title appears
+        if (textOpacity > 0 && !window._introAudioStarted) {
+            window._introAudioStarted = true;
+            if (window.introAudio) {
+                window.introAudio.play().catch(() => { });
+            }
+        }
+
+        const totalDuration = textFadeOutEnd + revealDelay + revealDuration;
+        if (elapsed < totalDuration) {
+            window._circularMaskFrame = requestAnimationFrame(render);
+        } else {
+            // Animation complete - fade out canvas
+            canvas.style.transition = 'opacity 240ms ease';
+            canvas.style.opacity = '0';
+            setTimeout(() => {
+                canvas.style.display = 'none';
+                canvas.style.transition = '';
+                // Signal that reveal is complete - music and flight can start now
+                if (window.parent) {
+                    window.parent.postMessage({ type: 'REVEAL_COMPLETE' }, '*');
+                }
+            }, 260);
+        }
+    };
+
+    window._introAudioStarted = false;
+    window._circularMaskFrame = requestAnimationFrame(render);
+}
+
 // --- 3D INTRO TRIGGER (V1950) ---
 window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'START_EXPERIENCE') {
         window.enterExperience();
+    }
+    if (event.data && event.data.type === 'START_MUSIC_AND_FLIGHT') {
+        // Start the intro music and flight animation
+        startInteractiveIntro();
     }
 });
 
@@ -3448,42 +3681,14 @@ window.enterExperience = function () {
         topLeftControls.style.pointerEvents = 'auto';
     }
 
-    // 2. Play Tension Audio
-    const audio = new Audio(houseConfig.audio.tension);
-    audio.volume = 0.8;
-    audio.currentTime = 0.5;
-    audio.play().catch(() => { });
+    // Prepare intro audio for delayed start
+    const audioPath = (window.houseConfig && window.houseConfig.audio) ? window.houseConfig.audio.intro : '/assets/audio/intro.mp3';
+    window.introAudio = new Audio(audioPath);
+    window.introAudio.volume = 0.8;
 
-    setTimeout(() => {
-        const fadeOut = setInterval(() => {
-            if (audio.volume > 0.05) audio.volume -= 0.05;
-            else {
-                audio.pause();
-                clearInterval(fadeOut);
-            }
-        }, 100);
-    }, 6000);
+    runCircularMaskReveal();
 
-    // Chain Main Music
-    audio.onended = () => {
-        // V-FIX: ONLY play intro music if we are NOT already in a room
-        if (window.audioPlayer && !window.currentRoom) {
-            setTimeout(() => {
-                if (window.currentRoom) return; // double check
-                window.audioPlayer.src = houseConfig.audio.intro;
-                window.audioPlayer.loop = true; // Intro should loop
-                window.audioPlayer.play().then(() => {
-                    window.isMusicPlaying = true;
-                }).catch(() => {
-                    window.isMusicPlaying = true; // Still mark as wanting to play for global click recovery
-                });
-            }, 2000);
-        }
-    };
-
-    // 4. Start Flight Immediately
-    startOpeningAnimation();
-
+    // 2. Play intro flight audio AFTER reveal completes (triggered by REVEAL_COMPLETE message)
 };
 
 
@@ -4808,14 +5013,7 @@ function exitRoom() {
     stopAllAudio();
     isMusicPlaying = false;
 
-    if (audioPlayer) {
-        audioPlayer.src = houseConfig.audio.intro;
-        audioPlayer.currentTime = houseMusicTime || 0;
-        audioPlayer.loop = true;
-        audioPlayer.volume = 0.5; // Default volume
-        audioPlayer.play().catch(() => { });
-        window.isMusicPlaying = true;
-    }
+    playOutsideIdleAudio();
 
     // Clear any pending info panel minimize timeout
     if (infoTimeout) clearTimeout(infoTimeout);
@@ -4921,7 +5119,7 @@ function exitRoom() {
         scene.background = new THREE.Color(0x2d1b4e);
         if (scene.fog) {
             scene.fog.color.setHex(0x2d1b4e);
-            scene.fog.far = 300;
+            scene.fog.far = 500;
         }
 
         state = 'HOUSE';
@@ -6604,21 +6802,21 @@ function createDistantBuildings(scene) {
         ctx.fill();
         const redMoonTex = new THREE.CanvasTexture(canvas);
 
-        const davMat = new THREE.SpriteMaterial({ 
-            map: redMoonTex, 
+        const davMat = new THREE.SpriteMaterial({
+            map: redMoonTex,
             transparent: true,
             opacity: 0.35, // Very high transparency to smoothly blend directly into the sky backdrop
-            blending: THREE.NormalBlending, 
+            blending: THREE.NormalBlending,
             color: 0xffffff,
             depthWrite: false, // Ensures it sits well behind translucent things
             fog: false // CRITICAL: Stop the deep purple distance mist from washing out its original colors!
         });
         const davMoon = new THREE.Sprite(davMat);
         davMoon.name = 'skyMoonDavicon';
-        
+
         // Lower to horizon (y: 30), pushed back comfortably
-        davMoon.position.set(0, 30, -180); 
-        davMoon.scale.set(30, 30, 1); 
+        davMoon.position.set(0, 30, -180);
+        davMoon.scale.set(30, 30, 1);
         buildingGroup.add(davMoon);
     }
 
@@ -6981,7 +7179,6 @@ function createGarageDoor(parentGroup, position) {
 }
 
 // --- TOILET EXTERIOR (The "Little Room") ---
-// --- TOILET EXTERIOR (The "Little Room") ---
 function createToiletExterior(parentGroup, position) {
     const toiletGroup = new THREE.Group();
     if (position) toiletGroup.position.copy(position);
@@ -7234,3 +7431,48 @@ if (document.readyState === 'loading') {
 } else {
     window.initInfoPanelToggle();
 }
+
+
+// ===============================================
+//  INITIAL TITLE SCREEN - FIXED FOR FULLSCREEN
+// ===============================================
+
+window.showInitialTitle = function () {
+    const overlay = document.getElementById('room-title-overlay');
+    const titleText = document.getElementById('room-title-text');
+
+    if (!overlay || !titleText) return;
+
+    // Force full coverage
+    overlay.style.width = '100%';
+    overlay.style.height = '100dvh';
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+
+    overlay.style.opacity = '0';
+    overlay.style.display = 'flex';
+
+    // Fade in
+    setTimeout(() => {
+        overlay.style.transition = 'opacity 2.8s cubic-bezier(0.23, 1, 0.32, 1)';
+        overlay.style.opacity = '1';
+    }, 50);
+
+    // Auto hide after 4.8 seconds
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            if (window.hideLoader) window.hideLoader();
+            if (typeof buildWorld === 'function' && !window.worldBuilt) {
+                buildWorld();
+            }
+        }, 2800);
+    }, 4800);
+};
+
+// NOTE: showInitialTitle auto-start removed — the runCircularMaskReveal()
+// canvas handles the fullscreen black + title text + circle reveal sequence.
+// showInitialTitle is still available for manual invocation if needed.
+
+

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones // Geometric Traversal</title>
+    <style>
+        :root {
+            --bg: #010102;
+            --bone: #ece9d8;
+            --accent: rgba(255, 255, 255, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #start-button {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--bone);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6em;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(15px);
+        }
+
+        #start-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--bone);
+            letter-spacing: 0.7em;
+        }
+
+        #start-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+
+        #metadata {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="audio-element" src="seven.mp3" loop crossorigin="anonymous"></audio>
+
+    <div id="ui-container">
+        <button id="start-button">Begin Traversal</button>
+    </div>
+
+    <div id="metadata">
+        Source: seven.mp3 // Geometry: Spectral 3x2 Grid // Mode: Independent Morph
+    </div>
+
+    <canvas id="glCanvas"></canvas>
+
+    <script id="vs" type="x-shader/x-vertex">
+        attribute vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+        precision highp float;
+        uniform vec2 u_resolution;
+        uniform float u_time;
+        uniform float u_grid_morphs[6];
+        uniform float u_vol;
+
+        mat2 rotate(float a) {
+            float s = sin(a);
+            float c = cos(a);
+            return mat2(c, -s, s, c);
+        }
+
+        float sdBox(vec2 p, vec2 b) {
+            vec2 d = abs(p)-b;
+            return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+        }
+
+        void main() {
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.y, u_resolution.x);
+            
+            vec3 boneColor = vec3(0.92, 0.90, 0.85);
+            vec3 charcoal = vec3(0.01, 0.01, 0.012);
+
+            // --- 3x2 INDEPENDENT SPECTRAL GRID ---
+            float gridScale = 3.5;
+            vec2 gridUv = uv * gridScale;
+            vec2 centeredGrid = gridUv + vec2(0.0, 0.5);
+            vec2 cellId = floor(centeredGrid + 0.5);
+            
+            float gridMask = 0.0;
+            vec3 cellColor = vec3(0.0);
+            if (abs(cellId.x) <= 1.0 && cellId.y >= 0.0 && cellId.y <= 1.0) {
+                vec2 localPos = fract(centeredGrid + 0.5) - 0.5;
+                
+                int idx = int((cellId.x + 1.0) + (cellId.y * 3.0));
+                
+                float mVal = 0.0;
+                if (idx == 0) { mVal = u_grid_morphs[0]; cellColor = vec3(1.0, 0.1, 0.1); } // Red
+                else if (idx == 1) { mVal = u_grid_morphs[1]; cellColor = vec3(1.0, 0.8, 0.1); } // Yellow
+                else if (idx == 2) { mVal = u_grid_morphs[2]; cellColor = vec3(0.1, 0.4, 1.0); } // Blue
+                else if (idx == 3) { mVal = u_grid_morphs[3]; cellColor = vec3(1.0, 0.5, 0.0); } // Orange
+                else if (idx == 4) { mVal = u_grid_morphs[4]; cellColor = vec3(0.1, 0.8, 0.2); } // Green
+                else if (idx == 5) { mVal = u_grid_morphs[5]; cellColor = vec3(0.6, 0.1, 0.9); } // Purple
+
+                // Shape scale pulsates with audio mVal
+                float pulse = 1.0 + mVal * 1.5 + u_vol * 0.4;
+                localPos /= pulse;
+
+                // Much smaller default shapes to prevent them from looking bloated
+                float dBox = sdBox(localPos, vec2(0.08)); 
+                float dCircle = length(localPos) - 0.11;
+                
+                // Snappy morphing
+                float dist = mix(dBox, dCircle, mVal);
+                gridMask = smoothstep(0.01, -0.01, dist);
+            }
+
+            // --- CALM BACKGROUND FRACTAL ---
+            vec2 fUv = uv * rotate(u_time * 0.01);
+            float r = length(fUv);
+            float angle = atan(fUv.y, fUv.x);
+            
+            float logR = log(r) - u_time * 0.6;
+            float spiral = angle / 6.28318 + logR * 0.04;
+            
+            float repeat = 1.0;
+            vec2 p = vec2(mod(logR, repeat) - repeat * 0.5, mod(spiral * 4.0, 1.0) - 0.5);
+            
+            float shiftX = 0.45 + sin(u_time * 0.1) * 0.03;
+            
+            float d = 1e10;
+            vec2 z = p;
+            float scale = 1.0;
+            
+            for(float i=0.0; i<5.0; i++) {
+                z = abs(z) - shiftX;
+                z *= rotate(u_time * 0.01 + i * 0.4);
+                float s = 1.7 / clamp(dot(z,z), 0.25, 2.5);
+                z *= s;
+                scale *= s;
+                d = min(d, length(z.x * z.y) / scale);
+            }
+
+            // Stable, constantly visible glow without global fading
+            float glow = 0.004 / (d + 0.0001); 
+            
+            // Raise the base brightness so it's never completely dark
+            vec3 fractalBase = mix(charcoal + vec3(0.05, 0.05, 0.08), boneColor * 0.5, clamp(glow, 0.0, 1.0));
+
+            // --- COMPOSITING ---
+            // Solid Grid with subtle volume-based brightness flicker
+            vec3 gridCol = cellColor * gridMask * (0.8 + u_vol * 0.4);
+            vec3 finalCol = fractalBase + gridCol;
+
+            // Softening the edges but keeping the center visible
+            finalCol *= smoothstep(1.5, 0.3, length(uv));
+
+            gl_FragColor = vec4(finalCol, 1.0);
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl');
+        const startBtn = document.getElementById('start-button');
+        const audioElement = document.getElementById('audio-element');
+
+        let analyser, dataArray;
+        let audioStarted = false;
+
+        async function initAudio() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaElementSource(audioElement);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.6; 
+                
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                audioElement.play();
+                audioStarted = true;
+                startBtn.classList.add('hidden');
+            } catch (err) {
+                console.error("Audio init error", err);
+            }
+        }
+
+        startBtn.addEventListener('click', initAudio);
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vs').text));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fs').text));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const posAttrib = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(posAttrib);
+        gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
+
+        const uniforms = {
+            res: gl.getUniformLocation(program, "u_resolution"),
+            time: gl.getUniformLocation(program, "u_time"),
+            gridMorphs: gl.getUniformLocation(program, "u_grid_morphs"),
+            vol: gl.getUniformLocation(program, "u_vol")
+        };
+
+        function render(time) {
+            let morphs = [0, 0, 0, 0, 0, 0];
+            let vol = 0;
+
+            if (audioStarted && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                const getBand = (start, end) => {
+                    let sum = 0;
+                    for (let i = start; i < end; i++) sum += dataArray[i];
+                    return (sum / (end - start)) / 255.0;
+                };
+
+                // Highly responsive band mapping
+                morphs[0] = Math.min(getBand(1, 4) * 2.0, 1.0);     
+                morphs[1] = Math.min(getBand(4, 10) * 2.5, 1.0);    
+                morphs[2] = Math.min(getBand(10, 25) * 3.0, 1.0);   
+                morphs[3] = Math.min(getBand(25, 60) * 3.5, 1.0);   
+                morphs[4] = Math.min(getBand(60, 120) * 4.5, 1.0);  
+                morphs[5] = Math.min(getBand(120, 200) * 5.5, 1.0); 
+
+                let vSum = 0, maxVol = 0;
+                for(let i=0; i<dataArray.length; i++) {
+                    vSum += dataArray[i];
+                    if (dataArray[i] > maxVol) maxVol = dataArray[i];
+                }
+                
+                let avgVol = (vSum / dataArray.length) / 255.0;
+                let peakVol = maxVol / 255.0;
+                vol = (avgVol * 1.5 + peakVol * 0.5) * 2.0;
+            }
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.uniform2f(uniforms.res, canvas.width, canvas.height);
+            gl.uniform1f(uniforms.time, time * 0.001);
+            gl.uniform1fv(uniforms.gridMorphs, new Float32Array(morphs));
+            gl.uniform1f(uniforms.vol, Math.min(vol, 1.0));
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>

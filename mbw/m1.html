@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondriaan Boogie Woogie</title>
+    <meta name="description" content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836;
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 100%; height: 100%;
+            background: #020404;
+            overflow: hidden;
+            font-family: 'Poiret One', cursive;
+        }
+
+        /* ── LANDING ─────────────────────────────────────────────── */
+        #landing {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 1000;
+            background: radial-gradient(ellipse at center, #1a2a26 0%, #090f0e 60%, #020404 100%);
+            transition: opacity 1.4s ease, visibility 1.4s ease;
+            cursor: pointer;
+        }
+        #landing.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .landing-title {
+            color: #e6dec8;
+            font-size: clamp(22px, 4.5vw, 68px);
+            letter-spacing: 8px; text-transform: uppercase;
+            text-align: center; line-height: 1.15; margin-bottom: 8px;
+            text-shadow: 0 0 60px rgba(248,216,54,.18);
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 1.2s ease, transform 1.2s ease;
+        }
+        .landing-title.show { opacity: 1; transform: translateY(0); }
+
+        .landing-stripe {
+            width: clamp(180px, 36vw, 440px); height: 5px;
+            background: linear-gradient(90deg,#D22626 0% 33%,#285495 33% 66%,#F8D836 66% 100%);
+            margin: 24px 0 48px;
+            opacity: 0; transition: opacity 1.2s ease 0.4s;
+        }
+        .landing-stripe.show { opacity: .85; }
+
+        #enter-btn {
+            background: transparent;
+            border: 2px solid var(--m-yellow);
+            color: var(--m-yellow);
+            font-family: 'Poiret One', cursive;
+            font-size: clamp(13px,1.8vw,20px);
+            letter-spacing: 8px; text-transform: uppercase;
+            padding: 16px 50px; cursor: pointer;
+            transition: all 0.35s ease;
+            opacity: 0;
+        }
+        #enter-btn.show { opacity: 1; }
+        #enter-btn:hover {
+            background: var(--m-yellow); color: #1a1a1a;
+            box-shadow: 0 0 50px rgba(248,216,54,.4);
+        }
+
+        /* ── STAGE ───────────────────────────────────────────────── */
+        #stage {
+            position: absolute; inset: 0;
+            background-color: var(--m-white);
+            /* Use visibility trick: block always, fade via opacity */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease, background-color 3s ease;
+            overflow: hidden;
+        }
+        #stage.active { opacity: 1; pointer-events: all; }
+
+        /* All layers fill the stage */
+        #composition-layer, #block-layer, #grid-layer,
+        #traffic-layer, #letter-layer, #texture-layer {
+            position: absolute; inset: 0;
+        }
+
+        /* z-index stack */
+        #block-layer   { z-index: 5;  }
+        #letter-layer  { z-index: 20; }
+        #grid-layer    { z-index: 30; }
+        #traffic-layer { z-index: 40; }
+        #texture-layer { z-index: 250; pointer-events: none; }
+
+        #texture-layer {
+            opacity: .12; mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* ── GRID LINES ──────────────────────────────────────────── */
+        .grid-line {
+            position: absolute;
+            background-color: var(--m-yellow);
+            z-index: 10;
+            will-change: transform, box-shadow;
+        }
+        .grid-line.v  { top: 0; height: 100%; transform-origin: top;  transform: scaleY(0); transition: transform 1.2s cubic-bezier(.16,1,.3,1); }
+        .grid-line.h  { left: 0; width: 100%;  transform-origin: left; transform: scaleX(0); transition: transform 1.2s cubic-bezier(.16,1,.3,1); }
+        .grid-line.visible { transform: scale(1) !important; }
+
+        /* ── STATIC BLOCKS ───────────────────────────────────────── */
+        .static-block {
+            position: absolute; z-index: 5;
+            opacity: 0;
+            transition: opacity 1.5s ease, filter .08s linear;
+            will-change: filter;
+        }
+        .static-block.visible { opacity: 1; }
+
+        /* ── LETTER BLOCKS ───────────────────────────────────────── */
+        .letter-block {
+            position: absolute; z-index: 20;
+            opacity: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Montserrat', sans-serif; font-weight: 900;
+            color: rgba(255,255,255,.95);
+            text-transform: uppercase;
+            transition: opacity 1s ease, transform .08s linear;
+            user-select: none; overflow: hidden;
+            will-change: transform;
+        }
+        .letter-block.visible { opacity: 1; }
+
+        .bg-red    { background-color: #D22626; }
+        .bg-blue   { background-color: #285495; }
+        .bg-yellow { background-color: #F8D836; }
+        .bg-grey   { background-color: #C8C8C8; }
+        .bg-white  { background-color: #f4f4f4; }
+
+        .letter-block.bg-red    { background-color: #B21B1B; }
+        .letter-block.bg-blue   { background-color: #1F4278; }
+        .letter-block.bg-yellow { background-color: #D6B928; }
+
+        /* ── CARS ────────────────────────────────────────────────── */
+        .car {
+            position: absolute; z-index: 15;
+            opacity: 0;
+            will-change: transform;
+            /* 
+             * Glow vars — set to 0 by default, elevated at night via JS.
+             * Using CSS variables means a single style update per car, no class thrash.
+             */
+            --glow-r: 0; --glow-g: 0; --glow-b: 0; --glow-a: 0;
+            box-shadow: 0 0 0 0 rgba(0,0,0,0);
+            transition: opacity 1s ease, box-shadow .4s ease;
+        }
+        .car.visible { opacity: 1; }
+
+        /* Night glow colours — applied as box-shadow via JS */
+        /* (kept here purely for reference; actual glow set in JS) */
+
+        /* ── DRIVE ANIMATIONS ────────────────────────────────────── */
+        @keyframes driveH    { from { left: -15%; } to { left: 115%; } }
+        @keyframes driveHRev { from { left: 115%; } to { left: -15%; } }
+        @keyframes driveV    { from { top:  -15%; } to { top:  115%; } }
+        @keyframes driveVRev { from { top:  115%; } to { top:  -15%; } }
+
+        /* ── HUD ─────────────────────────────────────────────────── */
+        #vignette {
+            position: absolute; inset: 0; z-index: 200;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,.6) 100%);
+            mix-blend-mode: multiply;
+            transition: background .15s ease;
+        }
+
+        #audio-ctrl {
+            position: fixed; top: 24px; right: 24px; z-index: 300;
+            display: flex; align-items: center; gap: 15px;
+            color: rgba(0,0,0,.5); cursor: pointer;
+            background: rgba(255,255,255,.4);
+            backdrop-filter: blur(5px);
+            padding: 8px 16px; border-radius: 30px;
+            transition: all .3s ease;
+        }
+        #audio-ctrl:hover { color: var(--m-red); background: rgba(255,255,255,.7); }
+
+        #vu-meter { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
+        .vu-bin {
+            width: 3px; background: var(--m-red); height: 2px;
+            transition: height .05s ease;
+        }
+
+        #beat-flash {
+            position: absolute; inset: 0; z-index: 190;
+            pointer-events: none; opacity: 0;
+            background: rgba(248,216,54,.15);
+            transition: opacity .04s ease;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── LANDING ─────────────────────────────────────────────── -->
+<div id="landing">
+    <h1 class="landing-title" id="landing-title">Mondriaan<br>Boogie Woogie</h1>
+    <div class="landing-stripe" id="landing-stripe"></div>
+    <button id="enter-btn">ENTER</button>
+</div>
+
+<!-- ── STAGE ──────────────────────────────────────────────── -->
+<div id="stage">
+    <div id="beat-flash"></div>
+    <div id="composition-layer">
+        <div id="block-layer"></div>
+        <div id="letter-layer"></div>
+        <div id="grid-layer"></div>
+    </div>
+    <div id="traffic-layer"></div>
+    <div id="texture-layer"></div>
+    <div id="vignette"></div>
+
+    <div id="audio-ctrl">
+        <span style="font-size:10px;letter-spacing:2px;font-weight:bold;">AUDIO</span>
+        <div id="vu-meter"></div>
+        <i id="volume-icon" class="fa-solid fa-volume-high"></i>
+    </div>
+</div>
+
+<!-- Audio — src set to same folder as HTML -->
+<audio id="bg-music" loop crossorigin="anonymous">
+    <source src="ParadoxPrime-MBW.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ────────────────────────────────────────────────────────────
+   DOM REFS
+──────────────────────────────────────────────────────────── */
+const landing   = document.getElementById('landing');
+const enterBtn  = document.getElementById('enter-btn');
+const stage     = document.getElementById('stage');
+const blockLayer   = document.getElementById('block-layer');
+const gridLayer    = document.getElementById('grid-layer');
+const trafficLayer = document.getElementById('traffic-layer');
+const letterLayer  = document.getElementById('letter-layer');
+const audio        = document.getElementById('bg-music');
+const volIcon      = document.getElementById('volume-icon');
+const beatFlash    = document.getElementById('beat-flash');
+const vignette     = document.getElementById('vignette');
+const vuMeterEl    = document.getElementById('vu-meter');
+
+/* ────────────────────────────────────────────────────────────
+   GRID DATA  (1000-unit coordinate space)
+──────────────────────────────────────────────────────────── */
+const vLines = [
+    { x:  15, w: 12 }, { x:  45, w:  6 }, { x:  80, w: 10 }, { x: 130, w:  6 },
+    { x: 200, w:  8 }, { x: 265, w:  6 }, { x: 380, w: 14 }, { x: 480, w:  6 },
+    { x: 540, w:  8 }, { x: 650, w: 10 }, { x: 710, w:  6 }, { x: 760, w:  8 },
+    { x: 830, w:  6 }, { x: 880, w: 10 }, { x: 940, w:  8 }, { x: 980, w: 12 },
+];
+const hLines = [
+    { y:  15, h: 12 }, { y:  50, h:  6 }, { y:  90, h: 10 }, { y: 160, h:  8 },
+    { y: 220, h:  6 }, { y: 310, h: 14 }, { y: 420, h:  6 }, { y: 500, h:  8 },
+    { y: 580, h: 10 }, { y: 640, h:  6 }, { y: 700, h:  8 }, { y: 770, h:  6 },
+    { y: 820, h: 10 }, { y: 870, h:  8 }, { y: 940, h: 12 }, { y: 975, h:  6 },
+];
+const staticBlocks = [
+    { x: 390, y:  60, w:  80, h:  40, c: 'bg-red'    },
+    { x: 565, y: 225, w:  60, h: 100, c: 'bg-blue'   },
+    { x: 580, y: 260, w:  30, h:  50, c: 'bg-red'    },
+    { x: 130, y: 320, w:  70, h:  40, c: 'bg-red'    },
+    { x: 660, y: 510, w:  50, h:  50, c: 'bg-blue'   },
+    { x: 660, y: 560, w:  50, h:  10, c: 'bg-yellow' },
+    { x: 660, y: 570, w:  50, h:  40, c: 'bg-red'    },
+    { x: 770, y: 600, w:  40, h:  50, c: 'bg-red'    },
+    { x: 130, y: 100, w:  70, h:  80, c: 'bg-grey'   },
+    { x: 206, y: 430, w:  60, h:  90, c: 'bg-white'  },
+    { x: 486, y: 320, w:  55, h:  90, c: 'bg-yellow' },
+    { x: 270, y: 580, w: 110, h:  50, c: 'bg-grey'   },
+    { x: 835, y: 160, w:  45, h:  60, c: 'bg-blue'   },
+    { x: 850, y: 830, w:  90, h:  50, c: 'bg-red'    },
+    { x:  50, y: 700, w:  80, h:  70, c: 'bg-blue'   },
+    { x: 420, y: 820, w:  60, h:  50, c: 'bg-yellow' },
+];
+
+/* Car glow colours per class */
+const CAR_GLOW = {
+    'bg-red':    '0 0 18px 4px rgba(210, 38, 38,  .9)',
+    'bg-blue':   '0 0 18px 4px rgba( 40, 84,149,  .9)',
+    'bg-yellow': '0 0 18px 4px rgba(248,216, 54,  .9)',
+    'bg-white':  '0 0 18px 4px rgba(244,244,244,  .9)',
+    'bg-grey':   '0 0 18px 4px rgba(200,200,200,  .85)',
+};
+
+/* ────────────────────────────────────────────────────────────
+   STATE
+──────────────────────────────────────────────────────────── */
+let audioCtx, analyser, dataArray, srcNode;
+let startTime = 0;
+const gridEls   = [];
+const blockEls  = [];
+const letterEls = [];
+const cars      = [];
+let allV = [], allH = [];
+
+/* VU bins – cached after DOM build */
+let vuBins = [];
+
+/* Smoothed audio values */
+let smoothBass   = 0;
+let smoothEnergy = 0;
+
+/* Reveal state machine */
+let buildStarted  = false;
+let revealStage   = 0;
+let revealIdx     = 0;
+let lastHitTime   = 0;
+let trafficStallUntil = 0;
+
+/* Beat flash state — no setTimeout, purely rAF-driven */
+let flashOpacity = 0;
+
+/* Night state */
+let isNight = false;
+
+const REF = 1000;
+function getS() { return Math.min(window.innerWidth, window.innerHeight); }
+function u(v) { return `calc(50% + (${v - 500} * (min(100vw, 100vh) / ${REF})))`; }
+function sz(v) { return `calc(${v} * (min(100vw, 100vh) / ${REF}))`; }
+
+/* ────────────────────────────────────────────────────────────
+   GRID CELL HELPER
+──────────────────────────────────────────────────────────── */
+function getInnerCell(rx, ry) {
+    let vL = allV[0], vR = allV[allV.length - 1];
+    let hT = allH[0], hB = allH[allH.length - 1];
+    for (let i = 0; i < allV.length - 1; i++) {
+        if (rx >= allV[i].x && rx < allV[i+1].x) { vL = allV[i]; vR = allV[i+1]; break; }
+    }
+    for (let i = 0; i < allH.length - 1; i++) {
+        if (ry >= allH[i].y && ry < allH[i+1].y) { hT = allH[i]; hB = allH[i+1]; break; }
+    }
+    if (!vL || !vR || !hT || !hB) return null;
+    return {
+        x: vL.x + vL.w,
+        y: hT.y + hT.h,
+        w: Math.max(0, vR.x - (vL.x + vL.w)),
+        h: Math.max(0, hB.y - (hT.y + hT.h))
+    };
+}
+
+/* ────────────────────────────────────────────────────────────
+   INIT GRID
+──────────────────────────────────────────────────────────── */
+function initGrid() {
+    gridLayer.innerHTML  = '';
+    blockLayer.innerHTML = '';
+    gridEls.length   = 0;
+    blockEls.length  = 0;
+
+    const S = getS();
+    const unitsX = (window.innerWidth  / S) * REF;
+    const unitsY = (window.innerHeight / S) * REF;
+    const xMin = 500 - unitsX / 2;
+    const xMax = 500 + unitsX / 2;
+    const yMin = 500 - unitsY / 2;
+    const yMax = 500 + unitsY / 2;
+
+    allV = [...vLines];
+    let currX = vLines[0].x;
+    while (currX > xMin - 100) {
+        currX -= (35 + Math.random() * 40);
+        allV.unshift({ x: currX, w: 6 + Math.random() * 6 });
+    }
+    currX = vLines[vLines.length - 1].x;
+    while (currX < xMax + 100) {
+        currX += (35 + Math.random() * 40);
+        allV.push({ x: currX, w: 6 + Math.random() * 6 });
+    }
+
+    allH = [...hLines];
+    let currY = hLines[0].y;
+    while (currY > yMin - 100) {
+        currY -= (40 + Math.random() * 50);
+        allH.unshift({ y: currY, h: 6 + Math.random() * 6 });
+    }
+    currY = hLines[hLines.length - 1].y;
+    while (currY < yMax + 100) {
+        currY += (40 + Math.random() * 50);
+        allH.push({ y: currY, h: 6 + Math.random() * 6 });
+    }
+
+    /* Vertical lines */
+    allV.forEach(l => {
+        const el = document.createElement('div');
+        el.className = 'grid-line v';
+        el.style.left  = u(l.x);
+        el.style.width = sz(l.w);
+        gridLayer.appendChild(el);
+        gridEls.push(el);
+    });
+
+    /* Horizontal lines */
+    allH.forEach(l => {
+        const el = document.createElement('div');
+        el.className = 'grid-line h';
+        el.style.top    = u(l.y);
+        el.style.height = sz(l.h);
+        gridLayer.appendChild(el);
+        gridEls.push(el);
+    });
+
+    /* Composed static blocks */
+    staticBlocks.forEach(b => {
+        const el = document.createElement('div');
+        el.className = `static-block ${b.c}`;
+        el.style.left   = u(b.x);
+        el.style.top    = u(b.y);
+        el.style.width  = sz(b.w);
+        el.style.height = sz(b.h);
+        blockLayer.appendChild(el);
+        blockEls.push(el);
+    });
+
+    /* Random extra blocks outside main composition */
+    for (let i = 0; i < 20; i++) {
+        let rx = xMin + Math.random() * (xMax - xMin);
+        let ry = yMin + Math.random() * (yMax - yMin);
+        if (rx > 50 && rx < 950 && ry > 50 && ry < 950) continue;
+
+        const cell = getInnerCell(rx, ry);
+        if (!cell || cell.w <= 0 || cell.h <= 0) continue;
+
+        const col = ['bg-red','bg-blue','bg-yellow'][Math.floor(Math.random() * 3)];
+        const el = document.createElement('div');
+        el.className = `static-block ${col}`;
+        el.style.left   = u(cell.x);
+        el.style.top    = u(cell.y);
+        el.style.width  = sz(cell.w);
+        el.style.height = sz(cell.h);
+        blockLayer.appendChild(el);
+        blockEls.push(el);
+    }
+}
+
+/* ────────────────────────────────────────────────────────────
+   RENDER LETTERS
+──────────────────────────────────────────────────────────── */
+function renderLetters() {
+    letterLayer.innerHTML = '';
+    letterEls.length = 0;
+
+    const words = [
+        { text: 'MONDRIAAN', yIndex: 4, xIndex: 1, color: 'bg-red'    },
+        { text: 'BOOGIE',    yIndex: 7, xIndex: 1, color: 'bg-blue'   },
+        { text: 'WOOGIE',    yIndex: 7, xIndex: 8, color: 'bg-yellow' },
+    ];
+
+    words.forEach(word => {
+        word.text.split('').forEach((ch, ci) => {
+            const vL = vLines[word.xIndex + ci];
+            const vR = vLines[word.xIndex + ci + 1];
+            const hT = hLines[word.yIndex];
+            const hB = hLines[word.yIndex + 1];
+            if (!vL || !vR || !hT || !hB) return;
+
+            const cell = {
+                x: vL.x + vL.w, y: hT.y + hT.h,
+                w: Math.max(0, vR.x - (vL.x + vL.w)),
+                h: Math.max(0, hB.y - (hT.y + hT.h))
+            };
+
+            const el = document.createElement('div');
+            el.className = `letter-block ${word.color}`;
+            el.style.left   = u(cell.x);
+            el.style.top    = u(cell.y);
+            el.style.width  = sz(cell.w);
+            el.style.height = sz(cell.h);
+            el.style.fontSize = sz(Math.min(cell.w, cell.h) * 0.68);
+            el.innerHTML = `<span>${ch}</span>`;
+            letterLayer.appendChild(el);
+            letterEls.push(el);
+        });
+    });
+}
+
+/* ────────────────────────────────────────────────────────────
+   CREATE TRAFFIC
+   Key fix: width/height always use sz() — no raw `px` sizing.
+   Cars store their colour class for night-glow lookup.
+──────────────────────────────────────────────────────────── */
+function createTraffic() {
+    trafficLayer.innerHTML = '';
+    cars.length = 0;
+
+    const colorPool = ['bg-red','bg-blue','bg-grey','bg-white','bg-red','bg-yellow'];
+    const speedFactor = 0.42;
+
+    function makeCar(isHoriz, line) {
+        const count = 10;
+        const dir   = Math.random() > 0.5;
+
+        for (let i = 0; i < count; i++) {
+            const speed = (Math.random() * 20 + 10) * speedFactor;
+            const carLen = Math.random() * 40 + 20;   /* long dimension */
+            const carW   = line.w || line.h;           /* road width (same as line thickness) */
+            const col    = colorPool[Math.floor(Math.random() * colorPool.length)];
+
+            const car = document.createElement('div');
+            car.className = `car ${col}`;
+
+            if (isHoriz) {
+                car.style.top    = u(line.y);
+                car.style.height = sz(carW);
+                car.style.width  = sz(carLen);
+                car.style.animation = `${dir ? 'driveH' : 'driveHRev'} ${speed}s linear infinite`;
+            } else {
+                car.style.left   = u(line.x);
+                car.style.width  = sz(carW);
+                car.style.height = sz(carLen);
+                car.style.animation = `${dir ? 'driveV' : 'driveVRev'} ${speed}s linear infinite`;
+            }
+
+            car.style.animationDelay = `-${(Math.random() * speed).toFixed(3)}s`;
+            car.dataset.baseSpeed = speed;
+            car.dataset.colorClass = col;
+            /* Store night glow string for quick lookup */
+            car.dataset.nightGlow = CAR_GLOW[col] || 'none';
+
+            trafficLayer.appendChild(car);
+            cars.push(car);
+        }
+    }
+
+    hLines.forEach(l => makeCar(true,  l));
+    vLines.forEach(l => makeCar(false, l));
+}
+
+/* ────────────────────────────────────────────────────────────
+   AUDIO INIT
+──────────────────────────────────────────────────────────── */
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    analyser  = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    srcNode   = audioCtx.createMediaElementSource(audio);
+    srcNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    /* Build VU bins once */
+    for (let i = 0; i < 12; i++) {
+        const b = document.createElement('div');
+        b.className = 'vu-bin';
+        vuMeterEl.appendChild(b);
+    }
+    vuBins = Array.from(vuMeterEl.querySelectorAll('.vu-bin'));
+}
+
+/* ────────────────────────────────────────────────────────────
+   REVEAL TRIGGER
+──────────────────────────────────────────────────────────── */
+function startBuild() {
+    if (buildStarted) return;
+    buildStarted = true;
+    revealStage = 1;
+    revealIdx   = 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   NIGHT GLOW — update cars' box-shadow in one pass
+──────────────────────────────────────────────────────────── */
+function applyNightGlow(night) {
+    cars.forEach(car => {
+        if (!car.classList.contains('visible')) return;
+        car.style.boxShadow = night ? car.dataset.nightGlow : 'none';
+    });
+}
+
+/* ────────────────────────────────────────────────────────────
+   MAIN LOOP
+──────────────────────────────────────────────────────────── */
+function update() {
+    requestAnimationFrame(update);
+
+    const elapsed = (Date.now() - startTime) / 1000;
+    if (buildStarted || elapsed > 0) startBuild();
+
+    /* Only run audio-reactive logic when analyser is ready and audio plays */
+    if (!analyser || audio.paused || audio.muted) {
+        /* Still tick beat flash decay */
+        flashOpacity = Math.max(0, flashOpacity - 0.04);
+        beatFlash.style.opacity = flashOpacity.toFixed(3);
+        return;
+    }
+
+    analyser.getByteFrequencyData(dataArray);
+
+    /* ── Audio feature extraction ── */
+    let bass = 0;
+    for (let i = 0; i < 8;  i++) bass   += dataArray[i]; bass   /= 8;
+    let energy = 0;
+    for (let i = 0; i < 32; i++) energy += dataArray[i]; energy /= 32;
+
+    const SK = 0.14;
+    smoothBass   += SK * (bass   / 255 - smoothBass);
+    smoothEnergy += SK * (energy / 255 - smoothEnergy);
+
+    const responseScale = Math.min(1, elapsed / 10);
+    const hasBeat = elapsed >= 12;
+
+    /* ── Day / Night cycle (60s total: 30s day + 30s night) ── */
+    const cycleDuration = 30;
+    const cyclePhase    = elapsed % (cycleDuration * 2);
+    const nowNight      = cyclePhase > cycleDuration;
+
+    if (nowNight !== isNight) {
+        isNight = nowNight;
+        stage.style.backgroundColor = isNight ? '#143b40' : '#f4f4f4';
+        applyNightGlow(isNight);
+    }
+
+    /* ── Rhythm-driven reveal ── */
+    const now = Date.now();
+    if (smoothBass > 0.45 && now - lastHitTime > 100) {
+        lastHitTime = now;
+        if      (revealStage === 1 && revealIdx < gridEls.length)   { gridEls[revealIdx++].classList.add('visible');   if (revealIdx >= gridEls.length)   { revealStage = 2; revealIdx = 0; } }
+        else if (revealStage === 2 && revealIdx < blockEls.length)  { blockEls[revealIdx++].classList.add('visible');  if (revealIdx >= blockEls.length)  { revealStage = 3; revealIdx = 0; } }
+        else if (revealStage === 3 && revealIdx < letterEls.length) { letterEls[revealIdx++].classList.add('visible'); if (revealIdx >= letterEls.length) { revealStage = 4; revealIdx = 0; } }
+        else if (revealStage === 4 && revealIdx < cars.length) {
+            const batch = Math.min(6, cars.length - revealIdx);
+            for (let i = 0; i < batch; i++) {
+                const car = cars[revealIdx++];
+                car.classList.add('visible');
+                if (isNight) car.style.boxShadow = car.dataset.nightGlow;
+            }
+            if (revealIdx >= cars.length) revealStage = 5;
+        }
+    }
+
+    /* ── Block colour flash on hard kick ── */
+    const rawBassNorm = bass / 255;
+    const isStalled   = now < trafficStallUntil;
+    const tfPeriod    = 60;
+    const tfPhase     = elapsed % tfPeriod;
+    const isContinuousFlow = tfPhase >= (tfPeriod - 20);
+
+    let justHit = false;
+    if (hasBeat && (rawBassNorm > 0.85 || rawBassNorm - smoothBass > 0.06) && !isContinuousFlow && now > trafficStallUntil + 180) {
+        trafficStallUntil = now + 180;
+        justHit = true;
+    }
+
+    if (justHit) {
+        const colPool = ['bg-red','bg-blue','bg-yellow'];
+        const n = 3 + Math.floor(Math.random() * 3);
+        for (let k = 0; k < n; k++) {
+            const idx = Math.floor(Math.random() * blockEls.length);
+            const b   = blockEls[idx];
+            b.className = `static-block ${colPool[Math.floor(Math.random() * 3)]} visible`;
+        }
+    }
+
+    /* ── Block brightness pulse ── */
+    const brightnessVal = (1 + smoothBass * 0.38 * responseScale).toFixed(3);
+    blockEls.forEach(b => { b.style.filter = `brightness(${brightnessVal})`; });
+
+    /* ── Letter scale pump ── */
+    const scaleVal = (1 + smoothEnergy * 0.16 * responseScale).toFixed(4);
+    letterEls.forEach(b => { b.style.transform = `scale(${scaleVal})`; });
+
+    /* ── Grid line glow ── */
+    const glowI = smoothEnergy * 22 * responseScale;
+    if (glowI > 2) {
+        const gStr = `0 0 ${glowI.toFixed(1)}px rgba(248,216,54,${(smoothEnergy * .5).toFixed(3)})`;
+        gridEls.forEach(el => { el.style.boxShadow = gStr; });
+    } else {
+        gridEls.forEach(el => { el.style.boxShadow = 'none'; });
+    }
+
+    /* ── Traffic speed & stall ──
+       Instead of changing animationDuration (which resets the animation),
+       we use animationPlayState only. Speed modulation preserved from baseline.
+    ── */
+    if (justHit || (!isStalled && (isContinuousFlow !== (cars[0]?.dataset.inFlow === '1')))) {
+        cars.forEach(car => {
+            const base = parseFloat(car.dataset.baseSpeed);
+            if (isContinuousFlow) {
+                if (car.dataset.inFlow !== '1') {
+                    /* Smooth speedup: only change duration once per mode switch */
+                    const mod = 1.5 + Math.random() * 0.7;
+                    car.style.animationDuration = `${(base / mod).toFixed(3)}s`;
+                    car.dataset.inFlow = '1';
+                }
+            } else {
+                if (car.dataset.inFlow !== '0') {
+                    car.style.animationDuration = `${base}s`;
+                    car.dataset.inFlow = '0';
+                }
+            }
+        });
+    }
+    cars.forEach(car => {
+        car.style.animationPlayState = isStalled ? 'paused' : 'running';
+    });
+
+    /* ── Beat flash — no setTimeout ── */
+    if (hasBeat && smoothBass > 0.65) {
+        flashOpacity = smoothBass * 0.22 * responseScale;
+    }
+    flashOpacity = Math.max(0, flashOpacity - 0.025);
+    beatFlash.style.opacity = flashOpacity.toFixed(3);
+
+    /* ── Vignette ── */
+    const vInt = (0.58 + smoothEnergy * 0.22 * responseScale).toFixed(3);
+    vignette.style.background = `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${vInt}) 100%)`;
+
+    /* ── VU meter (cached bins) ── */
+    vuBins.forEach((bin, i) => {
+        const val = (dataArray[i * 4] / 255) * 20;
+        bin.style.height  = `${val.toFixed(1)}px`;
+        bin.style.opacity = (0.4 + (val / 20) * 0.6).toFixed(3);
+    });
+}
+
+/* ────────────────────────────────────────────────────────────
+   ENTER
+──────────────────────────────────────────────────────────── */
+enterBtn.addEventListener('click', () => {
+    startTime = Date.now();
+    landing.classList.add('hidden');
+    stage.style.display = 'block';   /* ensure it's in layout */
+    /* rAF delay so opacity transition fires after display:block */
+    requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.add('active')));
+
+    initAudio();
+    audio.play().catch(() => {});
+    initGrid();
+    renderLetters();
+    createTraffic();
+    update();
+});
+
+/* ── AUDIO CTRL ── */
+document.getElementById('audio-ctrl').addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    volIcon.className = audio.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+});
+
+/* ── LANDING ENTRANCE ANIMATION ── */
+setTimeout(() => document.getElementById('landing-title').classList.add('show'),  400);
+setTimeout(() => document.getElementById('landing-stripe').classList.add('show'), 800);
+setTimeout(() => enterBtn.classList.add('show'), 1200);
+</script>
+</body>
+</html>

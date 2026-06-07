@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mondriaan Boogie Woogie</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden
+    }
+
+    body {
+      background: #060808;
+      font-family: 'Poiret One', cursive
+    }
+
+    /* LANDING */
+    #landing {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, #18261f 0%, #080e0c 60%, #020404 100%);
+      transition: opacity 1.6s ease, visibility 1.6s ease;
+    }
+
+    #landing.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none
+    }
+
+    .lt {
+      color: #e8e0c8;
+      font-size: clamp(26px, 5vw, 74px);
+      letter-spacing: 10px;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.1;
+      margin-bottom: 10px;
+      text-shadow: 0 0 80px rgba(248, 216, 54, .22);
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 1.3s ease, transform 1.3s ease
+    }
+
+    .lt.show {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .ls {
+      color: rgba(210, 210, 210, .5);
+      font-size: clamp(9px, 1.1vw, 14px);
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      opacity: 0;
+      transition: opacity 1.2s ease .3s
+    }
+
+    .ls.show,
+    .li.show,
+    .lbar.show {
+      opacity: 1
+    }
+
+    .li {
+      color: rgba(248, 216, 54, .5);
+      font-size: clamp(8px, .9vw, 12px);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 50px;
+      opacity: 0;
+      transition: opacity 1.2s ease .5s
+    }
+
+    .lbar {
+      width: clamp(180px, 36vw, 460px);
+      height: 5px;
+      background: linear-gradient(90deg, #D22626 0% 33%, #285495 33% 66%, #F8D836 66% 100%);
+      margin-bottom: 50px;
+      opacity: 0;
+      transition: opacity 1.2s ease .4s
+    }
+
+    #ebtn {
+      background: transparent;
+      border: 2px solid #F8D836;
+      color: #F8D836;
+      font-family: 'Poiret One', cursive;
+      font-size: clamp(13px, 1.8vw, 20px);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      padding: 16px 52px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 1.2s ease .7s, color .3s, box-shadow .3s, transform .12s;
+    }
+
+    #ebtn.show {
+      opacity: 1
+    }
+
+    #ebtn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #F8D836;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform .35s ease;
+      z-index: 0
+    }
+
+    #ebtn:hover::before {
+      transform: scaleX(1)
+    }
+
+    #ebtn:hover {
+      color: #111;
+      box-shadow: 0 0 60px rgba(248, 216, 54, .5)
+    }
+
+    #ebtn:active {
+      transform: scale(.97)
+    }
+
+    #ebtn span {
+      position: relative;
+      z-index: 1
+    }
+
+    /* EXPERIENCE */
+    #xp {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .8s ease
+    }
+
+    #xp.on {
+      opacity: 1;
+      visibility: visible
+    }
+
+    #cv {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #e8e4d4;
+      transition: background-color .06s linear
+    }
+
+    /* Grid lines */
+    .gl {
+      position: absolute;
+      background: #F8D836;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity .6s ease
+    }
+
+    .gl.on {
+      opacity: 1
+    }
+
+    /* Colour blocks */
+    .cb {
+      position: absolute;
+      z-index: 8;
+      opacity: 0;
+      transition: opacity .4s ease
+    }
+
+    .cb.on {
+      opacity: 1
+    }
+
+    /* Traffic cars */
+    .car {
+      position: absolute;
+      z-index: 12;
+      opacity: 0;
+      transition: opacity .3s ease
+    }
+
+    .car.on {
+      opacity: 1
+    }
+
+    /* Pause all car animations when music is off */
+    #tl-layer.paused .car {
+      animation-play-state: paused !important;
+    }
+
+    /* Beat flash */
+    #bf {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0
+    }
+
+    /* Vignette */
+    #vig {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      background: radial-gradient(ellipse at 50% 50%, transparent 15%, rgba(0, 0, 0, .22) 55%, rgba(0, 0, 0, .72) 100%);
+      transition: opacity .15s ease;
+    }
+
+    /* LETTERS — rendered as font text, readable left-to-right */
+    .letter {
+      position: absolute;
+      z-index: 15;
+      font-family: 'Poiret One', cursive;
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1;
+      opacity: 0;
+      transform-origin: center center;
+      will-change: transform, opacity, color, text-shadow;
+      transition: opacity .4s ease;
+      pointer-events: none;
+      user-select: none;
+      letter-spacing: 2px;
+    }
+
+    .letter.on {
+      opacity: 1
+    }
+
+    /* HUD */
+    #hud {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .6s ease 1.4s
+    }
+
+    #hud.on {
+      opacity: 1
+    }
+
+    #ac {
+      position: absolute;
+      top: 22px;
+      right: 26px;
+      pointer-events: all;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .abtn {
+      background: rgba(0, 0, 0, .55);
+      border: 1px solid rgba(248, 216, 54, .45);
+      border-radius: 50%;
+      cursor: pointer;
+      color: #F8D836;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      transition: transform .3s, border-color .3s, color .3s;
+      backdrop-filter: blur(4px);
+    }
+
+    .abtn:hover {
+      transform: scale(1.12);
+      border-color: #D22626;
+      color: #D22626
+    }
+
+    .abtn.muted {
+      color: #555;
+      border-color: #333
+    }
+
+    #vub {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 28px;
+      opacity: .7
+    }
+
+    .vs {
+      width: 4px;
+      border-radius: 2px;
+      transition: height .04s ease
+    }
+
+    .albl {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(200, 200, 200, .4)
+    }
+
+    @keyframes dH {
+      from {
+        left: -5%
+      }
+
+      to {
+        left: 105%
+      }
+    }
+
+    @keyframes dHr {
+      from {
+        left: 105%
+      }
+
+      to {
+        left: -5%
+      }
+    }
+
+    @keyframes dV {
+      from {
+        top: -5%
+      }
+
+      to {
+        top: 105%
+      }
+    }
+
+    @keyframes dVr {
+      from {
+        top: 105%
+      }
+
+      to {
+        top: -5%
+      }
+    }
+
+    @keyframes blk {
+
+      0%,
+      50% {
+        opacity: 1
+      }
+
+      51%,
+      100% {
+        opacity: 0
+      }
+    }
+
+    @keyframes crb {
+
+      0%,
+      45% {
+        background: #D22626
+      }
+
+      50%,
+      95% {
+        background: #285495
+      }
+    }
+
+    @keyframes cyw {
+
+      0%,
+      45% {
+        background: #F8D836
+      }
+
+      50%,
+      95% {
+        background: #f0ece0
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="landing">
+    <div class="lt" id="lt">Mondriaan<br>Boogie Woogie</div>
+    <div class="ls" id="ls">Piet Mondrian &nbsp;·&nbsp; 1942–43</div>
+    <div class="li" id="li">A Modern Interpretation</div>
+    <div class="lbar" id="lbar"></div>
+    <button id="ebtn"><span>ENTER</span></button>
+  </div>
+
+  <div id="xp">
+    <div id="cv">
+      <div id="bf"></div>
+      <div id="gl-layer"></div>
+      <div id="cb-layer"></div>
+      <div id="letter-layer"></div>
+      <div id="tl-layer"></div>
+    </div>
+    <div id="vig"></div>
+  </div>
+
+  <div id="hud">
+    <div id="ac">
+      <button id="mtgl" class="abtn muted"><i id="mic" class="fa-solid fa-volume-xmark"></i></button>
+      <div id="vub"></div>
+      <span class="albl">Soundtrack</span>
+    </div>
+  </div>
+
+  <audio id="aud" loop crossorigin="anonymous">
+    <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    /* ============================================================
+       COORDINATE SPACE  (1000×1000 virtual, scaled to screen)
+    ============================================================ */
+    const V = 1000; let SC = 1, OX = 0, OY = 0;
+    function calcLayout() { SC = Math.min(innerWidth, innerHeight) / V; OX = (innerWidth - V * SC) / 2; OY = (innerHeight - V * SC) / 2; }
+    const px = v => OX + v * SC, py = v => OY + v * SC, ps = v => v * SC;
+
+    /* ============================================================
+       DATA
+    ============================================================ */
+    const VL = [
+      // Core composition
+      { x: 18, w: 11 }, { x: 48, w: 6 }, { x: 82, w: 9 }, { x: 133, w: 6 },
+      { x: 202, w: 8 }, { x: 268, w: 6 }, { x: 383, w: 13 },
+      { x: 483, w: 6 }, { x: 543, w: 8 }, { x: 653, w: 9 }, { x: 713, w: 6 },
+      { x: 763, w: 8 }, { x: 833, w: 6 }, { x: 883, w: 9 }, { x: 943, w: 8 }, { x: 982, w: 11 },
+      // Margin extension — fill screen left/right of square
+      { x: -390, w: 9 }, { x: -240, w: 6 }, { x: -115, w: 8 }, { x: -48, w: 6 },
+      { x: 1022, w: 6 }, { x: 1088, w: 8 }, { x: 1168, w: 9 }, { x: 1258, w: 6 }, { x: 1335, w: 11 },
+    ];
+    const HL = [
+      // Core composition
+      { y: 18, h: 11 }, { y: 52, h: 6 }, { y: 92, h: 9 }, { y: 163, h: 8 }, { y: 223, h: 6 },
+      { y: 313, h: 13 }, { y: 423, h: 6 }, { y: 503, h: 8 }, { y: 583, h: 9 }, { y: 643, h: 6 },
+      { y: 703, h: 8 }, { y: 773, h: 6 }, { y: 823, h: 9 }, { y: 873, h: 8 }, { y: 943, h: 11 }, { y: 977, h: 6 },
+      // Margin extension — fill screen top/bottom of square
+      { y: -390, h: 9 }, { y: -240, h: 6 }, { y: -115, h: 8 }, { y: -48, h: 6 },
+      { y: 1022, h: 6 }, { y: 1088, h: 8 }, { y: 1168, h: 9 }, { y: 1258, h: 6 }, { y: 1335, h: 11 },
+    ];
+    const BLOCKS = [
+      { x: 390, y: 62, w: 80, h: 40, c: '#D22626', ext: 'w', maxE: 650 },
+      { x: 565, y: 227, w: 60, h: 100, c: '#285495', ext: 'h', maxE: 580 },
+      { x: 583, y: 262, w: 28, h: 50, c: '#D22626', ext: 'ht', maxE: 300 },
+      { x: 133, y: 322, w: 68, h: 40, c: '#D22626', ext: 'w', maxE: 900 },
+      { x: 663, y: 513, w: 48, h: 50, c: '#285495', ext: 'h', maxE: 520 },
+      { x: 663, y: 563, w: 48, h: 10, c: '#F8D836', ext: 'w', maxE: 380 },
+      { x: 663, y: 573, w: 48, h: 40, c: '#D22626', ext: 'wl', maxE: 700 },
+      { x: 773, y: 603, w: 38, h: 50, c: '#D22626', ext: 'h', maxE: 420 },
+      { x: 133, y: 103, w: 68, h: 78, c: '#C8C8C8', ext: 'w', maxE: 850 },
+      { x: 208, y: 433, w: 58, h: 88, c: '#f0ece0', ext: 'h', maxE: 600 },
+      { x: 488, y: 323, w: 53, h: 88, c: '#F8D836', ext: 'ht', maxE: 360 },
+      { x: 272, y: 583, w: 108, h: 48, c: '#C8C8C8', ext: 'w', maxE: 750 },
+      { x: 837, y: 163, w: 43, h: 58, c: '#285495', ext: 'h', maxE: 880 },
+      { x: 852, y: 833, w: 88, h: 48, c: '#D22626', ext: 'wl', maxE: 900 },
+      { x: 52, y: 703, w: 78, h: 68, c: '#285495', ext: 'w', maxE: 980 },
+      { x: 422, y: 823, w: 58, h: 48, c: '#F8D836', ext: 'h', maxE: 220 },
+      // Edge blocks — grow inward, fill corners at full energy
+      { x: -20, y: 18, w: 42, h: 44, c: '#285495', ext: 'w', maxE: 220 },
+      { x: -20, y: 313, w: 42, h: 40, c: '#D22626', ext: 'w', maxE: 300 },
+      { x: -20, y: 583, w: 42, h: 48, c: '#F8D836', ext: 'w', maxE: 280 },
+      { x: -20, y: 823, w: 42, h: 48, c: '#D22626', ext: 'w', maxE: 350 },
+      { x: 982, y: 92, w: 40, h: 46, c: '#F8D836', ext: 'wl', maxE: 240 },
+      { x: 982, y: 423, w: 40, h: 44, c: '#285495', ext: 'wl', maxE: 310 },
+      { x: 982, y: 703, w: 40, h: 40, c: '#D22626', ext: 'wl', maxE: 280 },
+      { x: 202, y: -20, w: 80, h: 42, c: '#D22626', ext: 'h', maxE: 100 },
+      { x: 483, y: -20, w: 60, h: 42, c: '#285495', ext: 'h', maxE: 120 },
+      { x: 763, y: -20, w: 60, h: 42, c: '#F8D836', ext: 'h', maxE: 110 },
+      { x: 133, y: 977, w: 68, h: 42, c: '#F8D836', ext: 'ht', maxE: 130 },
+      { x: 483, y: 977, w: 60, h: 42, c: '#D22626', ext: 'ht', maxE: 140 },
+      { x: 833, y: 977, w: 68, h: 42, c: '#285495', ext: 'ht', maxE: 120 },
+    ];
+    const BASE = 52; // letter virtual font-size
+    const LETTERS = [
+      { ch: 'M', ax: 65, ay: 435 }, { ch: 'O', ax: 164, ay: 435 }, { ch: 'N', ax: 237, ay: 435 },
+      { ch: 'D', ax: 328, ay: 435 }, { ch: 'R', ax: 440, ay: 435 }, { ch: 'I', ax: 517, ay: 435 },
+      { ch: 'A', ax: 598, ay: 435 }, { ch: 'A', ax: 685, ay: 435 }, { ch: 'N', ax: 790, ay: 435 },
+      { ch: 'B', ax: 28, ay: 618 }, { ch: 'O', ax: 97, ay: 618 }, { ch: 'O', ax: 166, ay: 618 },
+      { ch: 'G', ax: 235, ay: 618 }, { ch: 'I', ax: 304, ay: 618 }, { ch: 'E', ax: 357, ay: 618 },
+      { ch: 'W', ax: 454, ay: 618 }, { ch: 'O', ax: 533, ay: 618 }, { ch: 'O', ax: 602, ay: 618 },
+      { ch: 'G', ax: 671, ay: 618 }, { ch: 'I', ax: 740, ay: 618 }, { ch: 'E', ax: 793, ay: 618 },
+    ];
+    const LCOLS = ['#D22626', '#285495', '#F8D836', '#101010', '#C8C8C8'];
+
+    /* ============================================================
+       DOM
+    ============================================================ */
+    const cvEl = document.getElementById('cv');
+    const glLay = document.getElementById('gl-layer');
+    const cbLay = document.getElementById('cb-layer');
+    const llLay = document.getElementById('letter-layer');
+    const tlLay = document.getElementById('tl-layer');
+    const vigEl = document.getElementById('vig');
+    const bfEl = document.getElementById('bf');
+
+    /* ============================================================
+       BUILD GRID
+    ============================================================ */
+    const glEls = [], cbEls = [], cbMeta = [];
+    function buildGrid() {
+      calcLayout();
+      VL.forEach(l => {
+        const el = document.createElement('div'); el.className = 'gl';
+        el.style.cssText = `left:${px(l.x)}px;top:0;width:${ps(l.w)}px;height:100%`;
+        glLay.appendChild(el); glEls.push(el);
+      });
+      HL.forEach(l => {
+        const el = document.createElement('div'); el.className = 'gl';
+        el.style.cssText = `top:${py(l.y)}px;left:0;height:${ps(l.h)}px;width:100%`;
+        glLay.appendChild(el); glEls.push(el);
+      });
+      BLOCKS.forEach(b => {
+        const el = document.createElement('div'); el.className = 'cb';
+        el.style.cssText = `left:${px(b.x)}px;top:${py(b.y)}px;width:${ps(b.w)}px;height:${ps(b.h)}px;background:${b.c}`;
+        cbLay.appendChild(el); cbEls.push(el);
+        cbMeta.push({
+          bl: px(b.x), bt: py(b.y), bw: ps(b.w), bh: ps(b.h),
+          maxE: ps(b.maxE), ext: b.ext, phase: Math.random() * Math.PI * 2,
+          sens: 0.5 + Math.random() * 0.7, cur: 0,
+          thresh: Math.random() * 0.55,   // energy threshold before this block wakes
+          maxD: 0.3 + Math.random() * 0.7, // max drive cap — many blocks stay partial
+        });
+      });
+    }
+    function fadeInGrid() { [...glEls, ...cbEls].forEach((el, i) => setTimeout(() => el.classList.add('on'), i * 9 + 40)); }
+
+    /* ============================================================
+       BUILD LETTERS
+    ============================================================ */
+    const lEls = [], lMeta = [];
+    function buildLetters() {
+      calcLayout();
+      LETTERS.forEach((def, i) => {
+        const el = document.createElement('div'); el.className = 'letter';
+        el.textContent = def.ch;
+        const fsPx = ps(BASE);
+        const left = px(def.ax) - fsPx * 0.34, top = py(def.ay) - fsPx * 0.78;
+        const col = LCOLS[i % LCOLS.length];
+        el.style.cssText = `left:${left}px;top:${top}px;font-size:${fsPx}px;color:${col}`;
+        llLay.appendChild(el); lEls.push(el);
+        // Freq band: 'bass' = only hard bass hits, 'mid' = subtler/random, 'full' = everything
+        const BANDS = ['bass', 'bass', 'bass', 'full', 'full', 'full', 'full', 'mid', 'mid'];
+        const band = BANDS[Math.floor(Math.random() * BANDS.length)];
+        lMeta.push({
+          fsPx, left, top, colIdx: i % LCOLS.length,
+          band,
+          beatDelay: Math.round(Math.random() * 90), // 0-90ms individual offset
+          // Personal beat state
+          lBeatT: 0,    // when this letter's beat fires
+          lBeatStr: 0,    // its personal strength
+          schedBeat: null, // scheduled fire time
+          schedStr: 0,
+          // Colour lerp
+          rgbFrom: hexRgb(LCOLS[i % LCOLS.length]),
+          rgbTo: hexRgb(LCOLS[i % LCOLS.length]),
+          rgbT: 1,
+          colIdx2: i % LCOLS.length,
+        });
+      });
+    }
+    function fadeInLetters() { lEls.forEach((el, i) => setTimeout(() => el.classList.add('on'), i * 45 + 200)); }
+
+    /* ============================================================
+       BUILD TRAFFIC
+    ============================================================ */
+    const cars = [], speeds = [];
+    function buildTraffic() {
+      const blinks = ['blk', 'crb', 'cyw', 'none'];
+      const cols = ['#D22626', '#285495', '#C8C8C8', '#f0ece0', '#D22626'];
+      function makeCar(isH, trackPx, thkPx) {
+        const spd = Math.random() * 10 + 5;
+        const dir = isH ? (Math.random() > .5 ? 'dH' : 'dHr') : (Math.random() > .5 ? 'dV' : 'dVr');
+        const bl = blinks[Math.floor(Math.random() * blinks.length)];
+        let anim = `${dir} ${spd}s linear infinite`;
+        if (bl !== 'none') anim += `, ${bl} ${(Math.random() * .5 + .2).toFixed(2)}s steps(1) infinite`;
+        const c = document.createElement('div'); c.className = 'car';
+        const bg = cols[Math.floor(Math.random() * cols.length)];
+        if (isH) {
+          const cw = Math.round(ps(Math.random() * 14 + 5)), ch = Math.max(2, Math.round(thkPx * (.4 + Math.random() * .6)));
+          c.style.cssText = `height:${ch}px;width:${cw}px;top:${trackPx}px;left:-5%;background:${bg};animation:${anim};animation-delay:${-(Math.random() * spd)}s`;
+        } else {
+          const ch = Math.round(ps(Math.random() * 14 + 5)), cw = Math.max(2, Math.round(thkPx * (.4 + Math.random() * .6)));
+          c.style.cssText = `width:${cw}px;height:${ch}px;left:${trackPx}px;top:-5%;background:${bg};animation:${anim};animation-delay:${-(Math.random() * spd)}s`;
+        }
+        tlLay.appendChild(c); cars.push(c); speeds.push(spd);
+      }
+      HL.forEach(l => { for (let i = 0; i < 16; i++) makeCar(true, py(l.y), ps(l.h)); });
+      VL.forEach(l => { for (let i = 0; i < 16; i++) makeCar(false, px(l.x), ps(l.w)); });
+    }
+    function fadeInTraffic() { cars.forEach((c, i) => setTimeout(() => c.classList.add('on'), i * 2 + 300)); }
+
+    /* ============================================================
+       VU BAR
+    ============================================================ */
+    const vus = [];
+    ['#F8D836', '#F8D836', '#F8D836', '#F8D836', '#D22626', '#D22626', '#D22626', '#285495'].forEach(col => {
+      const s = document.createElement('div'); s.className = 'vs';
+      s.style.cssText = `background:${col};height:4px`;
+      document.getElementById('vub').appendChild(s); vus.push(s);
+    });
+
+    /* ============================================================
+       AUDIO
+    ============================================================ */
+    const audEl = document.getElementById('aud');
+    const tglBtn = document.getElementById('mtgl');
+    const micEl = document.getElementById('mic');
+    let playing = false, actx, anlz, adata;
+
+    function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)] }
+
+    function initA() {
+      if (actx) return;
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      anlz = actx.createAnalyser(); anlz.fftSize = 256;
+      adata = new Uint8Array(anlz.frequencyBinCount);
+      actx.createMediaElementSource(audEl).connect(anlz);
+      anlz.connect(actx.destination);
+    }
+    function play() {
+      initA(); if (actx.state === 'suspended') actx.resume();
+      audEl.play().then(() => {
+        playing = true;
+        micEl.className = 'fa-solid fa-music'; tglBtn.classList.remove('muted');
+        tlLay.classList.remove('paused'); // resume traffic
+      }).catch(e => console.log(e));
+    }
+    function pause() {
+      audEl.pause();
+      micEl.className = 'fa-solid fa-volume-xmark'; tglBtn.classList.add('muted');
+      playing = false;
+      tlLay.classList.add('paused'); // freeze traffic
+    }
+    tglBtn.addEventListener('click', () => { if (playing) pause(); else play(); });
+
+    /* ============================================================
+       HELPERS
+    ============================================================ */
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const map = (v, a, b, c, d) => c + (d - c) * clamp((v - a) / (b - a), 0, 1);
+
+    /* ============================================================
+       VISUALISER STATE
+    ============================================================ */
+    let smE = 0, smB = 0, smM = 0, smT = 0;
+    let smPeak = 0, lastBeatTime = 0;
+    let beatFlashOn = false;
+
+    const MAX_SCALE = 0.9;  // max scale boost on hard beat
+    const BEAT_RISE = 80;   // ms attack
+    const BEAT_FALL = 480;  // ms decay
+    const MIN_BEAT_GAP = 160;
+
+    // Per-letter beat envelope (personal beat state stored in lMeta[i])
+    function getLetterScale(m, now) {
+      const el = now - m.lBeatT;
+      if (el > BEAT_RISE + BEAT_FALL || m.lBeatT === 0) return 1.0;
+      if (el < BEAT_RISE) {
+        return 1.0 + m.lBeatStr * MAX_SCALE * (el / BEAT_RISE);
+      } else {
+        const t = (el - BEAT_RISE) / BEAT_FALL;
+        return 1.0 + m.lBeatStr * MAX_SCALE * (1 - t) * (1 - t);
+      }
+    }
+
+    function triggerBeat(strength) {
+      const now = performance.now();
+      if (now - lastBeatTime < MIN_BEAT_GAP) return;
+      lastBeatTime = now;
+
+      // Schedule each letter individually — off-sync, band-filtered
+      lMeta.forEach((m) => {
+        let str = 0;
+        if (m.band === 'bass') {
+          // Full punch, fires every beat, small jitter
+          str = clamp(strength, 0, 1);
+        } else if (m.band === 'full') {
+          // Slightly softer, occasionally skips
+          if (Math.random() < 0.18) return;
+          str = clamp(strength * 0.75, 0, 1);
+        } else { // 'mid'
+          // Subtle, skips often, only fires on strong beats
+          if (strength < 0.55 || Math.random() < 0.45) return;
+          str = clamp(strength * 0.45, 0, 1);
+        }
+        m.schedBeat = now + m.beatDelay;
+        m.schedStr = str;
+        // Colour shift — not every letter every beat
+        if (Math.random() < 0.65) {
+          m.rgbFrom = [...m.rgbTo];
+          m.colIdx2 = (m.colIdx2 + 1 + Math.floor(Math.random() * (LCOLS.length - 1))) % LCOLS.length;
+          m.rgbTo = hexRgb(LCOLS[m.colIdx2]);
+          m.rgbT = 0;
+        }
+      });
+
+      // Beat flash
+      if (!beatFlashOn) {
+        beatFlashOn = true;
+        const a = clamp(strength * 0.22, 0.03, 0.25);
+        bfEl.style.cssText = `position:absolute;inset:0;z-index:20;pointer-events:none;opacity:${a};background:rgba(248,216,54,${a})`;
+        setTimeout(() => { bfEl.style.opacity = '0'; beatFlashOn = false; }, 55);
+      }
+    }
+
+    /* ============================================================
+       REST STATE  — applied when music is paused
+    ============================================================ */
+    function applyRest() {
+      // Decay smoothed values
+      smB *= 0.88; smM *= 0.88; smT *= 0.88; smE *= 0.88;
+      if (smE < 0.005) {
+        smB = smM = smT = smE = 0;
+      }
+      // Background: warm parchment
+      cvEl.style.backgroundColor = '#e8e4d4';
+      // Vignette: normal
+      vigEl.style.opacity = '0.55';
+      // Grid: no glow
+      glEls.forEach(el => { el.style.boxShadow = 'none'; });
+      // Blocks: return to base
+      cbEls.forEach((el, i) => {
+        const d = cbMeta[i];
+        d.cur += (0 - d.cur) * 0.08;
+        const ext = d.cur * d.maxE;
+        let l = d.bl, tp = d.bt, w = d.bw, h = d.bh;
+        if (d.ext === 'w') w = d.bw + ext;
+        if (d.ext === 'wl') { l = d.bl - ext; w = d.bw + ext; }
+        if (d.ext === 'h') h = d.bh + ext;
+        if (d.ext === 'ht') { tp = d.bt - ext; h = d.bh + ext; }
+        el.style.left = l + 'px'; el.style.top = tp + 'px';
+        el.style.width = w + 'px'; el.style.height = h + 'px';
+        el.style.filter = '';
+      });
+      // Letters: decay to rest; per-letter beat tails still play out
+      const now = performance.now();
+      lEls.forEach((el, i) => {
+        const m = lMeta[i];
+        // Fire any scheduled beat that has arrived
+        if (m.schedBeat !== null && now >= m.schedBeat) {
+          m.lBeatT = now;
+          m.lBeatStr = m.schedStr;
+          m.schedBeat = null;
+        }
+        const bs = getLetterScale(m, now);
+        if (bs > 1.001) {
+          const fsPx = m.fsPx * bs;
+          el.style.fontSize = fsPx.toFixed(1) + 'px';
+          el.style.left = (m.left + m.fsPx * 0.34 - fsPx * 0.34).toFixed(1) + 'px';
+          el.style.top = (m.top + m.fsPx * 0.78 - fsPx * 0.78).toFixed(1) + 'px';
+        } else {
+          el.style.fontSize = m.fsPx + 'px';
+          el.style.left = m.left + 'px'; el.style.top = m.top + 'px';
+          el.style.textShadow = 'none';
+        }
+        el.style.opacity = '0.78';
+      });
+      vus.forEach(s => { s.style.height = '4px'; });
+    }
+
+    /* ============================================================
+       TICK  — runs every animation frame
+    ============================================================ */
+    function tick() {
+      requestAnimationFrame(tick);
+
+      if (!anlz || !playing) {
+        applyRest();
+        return;
+      }
+
+      anlz.getByteFrequencyData(adata);
+
+      // Raw frequency band levels — raw = 0..1 before smoothing
+      let bS = 0, mS = 0, tS = 0;
+      for (let i = 0; i < 10; i++) bS += adata[i];
+      for (let i = 10; i < 41; i++) mS += adata[i];
+      for (let i = 41; i < 101; i++) tS += adata[i];
+      const bR = clamp(bS / (10 * 255) * 2.8, 0, 1);  // bass
+      const mR = clamp(mS / (31 * 255) * 2.0, 0, 1);  // mids
+      const tR = clamp(tS / (60 * 255) * 2.4, 0, 1);  // treble
+      const eR = clamp(bR * .55 + mR * .3 + tR * .15, 0, 1);
+
+      // Smooth: fast attack (SK), slower decay (DK) — asymmetric
+      const SK = 0.22, DK = 0.10;
+      smB += (bR > smB ? SK : DK) * (bR - smB);
+      smM += (mR > smM ? SK : DK) * (mR - smM);
+      smT += (tR > smT ? SK : DK) * (tR - smT);
+      smE += (eR > smE ? SK : DK) * (eR - smE);
+
+      // Peak follower for beat detection: attack=instant, decay=slow
+      if (bR > smPeak) smPeak = bR; else smPeak *= 0.96;
+
+      // Energy gate — effects ramp in from zero at very low energy
+      const gate = clamp(map(smE, 0.04, 0.30, 0, 1), 0, 1);
+
+      /* 1. BACKGROUND — canvas colour: dark at silence → warm cream at full energy */
+      const Lv = Math.round(lerp(18, 228, Math.pow(smE * gate, 0.45)));
+      cvEl.style.backgroundColor = `rgb(${Lv},${Math.round(Lv * 0.97)},${Math.round(Lv * 0.90)})`;
+
+      /* 2. VIGNETTE — lifts as music gets louder */
+      vigEl.style.opacity = lerp(0.90, 0.05, Math.pow(smE * gate, 0.4)).toFixed(3);
+
+      /* 3. GRID LINE GLOW — treble makes yellow lines shine */
+      const gi = map(smT * gate, 0, 0.85, 0, 48);
+      const gg = gi > 2
+        ? `0 0 ${gi.toFixed(1)}px rgba(248,216,54,${(gi / 58).toFixed(2)}),`
+        + `0 0 ${(gi * 2).toFixed(1)}px rgba(248,216,54,${(gi / 130).toFixed(2)})`
+        : 'none';
+      glEls.forEach(el => { el.style.boxShadow = gg; });
+
+      /* 4. BEAT DETECTION
+         A beat fires when bass spikes significantly above the recent average.
+         We intentionally use a lenient threshold so it catches real musical beats. */
+      if (bR > 0.38 && bR > smPeak * 0.80 && gate > 0.12) triggerBeat(bR);
+
+      /* 5. COLOUR BLOCKS — sparse, each with its own activation threshold */
+      cbEls.forEach((el, i) => {
+        const d = cbMeta[i];
+        // Block only wakes when current bass×gate exceeds its personal threshold
+        const energyHere = smB * gate;
+        const active = energyHere > d.thresh;
+        // drive is capped by maxD so many blocks only ever partially extend
+        const rawDrive = active ? clamp(energyHere * d.sens * 1.6, 0, 1) * d.maxD : 0;
+        // Asymmetric smoothing: snap out faster than it retreats
+        const extSK = rawDrive > d.cur ? 0.18 : 0.06;
+        d.cur += extSK * (rawDrive - d.cur);
+        const ext = d.cur * d.maxE;
+
+        let l = d.bl, tp = d.bt, w = d.bw, h = d.bh;
+        if (d.ext === 'w') w = d.bw + ext;
+        if (d.ext === 'wl') { l = d.bl - ext; w = d.bw + ext; }
+        if (d.ext === 'h') h = d.bh + ext;
+        if (d.ext === 'ht') { tp = d.bt - ext; h = d.bh + ext; }
+        el.style.left = l + 'px'; el.style.top = tp + 'px';
+        el.style.width = w + 'px'; el.style.height = h + 'px';
+        const br = active ? 1 + smB * gate * 0.45 * (d.sens - 0.4) * 0.7 : 1;
+        el.style.filter = active && smB > 0.06 ? `brightness(${br.toFixed(3)})` : '';
+      });
+
+      /* 6. LETTERS — per-letter beat envelope, off-sync, band-filtered */
+      const now = performance.now();
+
+      lEls.forEach((el, i) => {
+        const m = lMeta[i];
+
+        // Fire any scheduled beat that has now arrived
+        if (m.schedBeat !== null && now >= m.schedBeat) {
+          m.lBeatT = now;
+          m.lBeatStr = m.schedStr;
+          m.schedBeat = null;
+        }
+
+        // Per-letter beat scale
+        const bs = getLetterScale(m, now);
+        const fsPx = m.fsPx * bs;
+
+        // Colour lerp
+        if (m.rgbT < 1) {
+          m.rgbT = Math.min(1, m.rgbT + 0.10);
+          const r = Math.round(lerp(m.rgbFrom[0], m.rgbTo[0], m.rgbT));
+          const g = Math.round(lerp(m.rgbFrom[1], m.rgbTo[1], m.rgbT));
+          const b = Math.round(lerp(m.rgbFrom[2], m.rgbTo[2], m.rgbT));
+          el.style.color = `rgb(${r},${g},${b})`;
+        }
+
+        // Opacity — rises on beat, low at rest
+        const opacity = clamp(lerp(0.72, 1.0, bs - 1.0), 0.55, 1.0);
+
+        // Glow on beat peak
+        const glowR = map(bs, 1, 1 + MAX_SCALE, 0, 30);
+        const shadow = glowR > 3 ? `0 0 ${glowR.toFixed(1)}px currentColor` : 'none';
+
+        // Reposition centred
+        el.style.fontSize = fsPx.toFixed(1) + 'px';
+        el.style.opacity = opacity.toFixed(3);
+        el.style.left = (m.left + m.fsPx * 0.34 - fsPx * 0.34).toFixed(1) + 'px';
+        el.style.top = (m.top + m.fsPx * 0.78 - fsPx * 0.78).toFixed(1) + 'px';
+        el.style.textShadow = shadow;
+        el.style.transform = 'none';
+      });
+
+      /* 7. VU bar */
+      vus.forEach((s, i) => {
+        s.style.height = Math.max(4, Math.round(adata[Math.floor(i / 8 * 60)] / 255 * 28)) + 'px';
+      });
+
+      /* 8. TRAFFIC speed — scales with energy; faster during loud parts */
+      const spd = map(smE * gate, 0, 0.65, 1.0, 0.25);
+      cars.forEach((c, i) => {
+        const base = speeds[i], nxt = (base * spd).toFixed(2);
+        if (Math.abs(parseFloat(c.dataset.cs || base) - parseFloat(nxt)) > 0.1) {
+          c.dataset.cs = nxt;
+          const upd = c.style.animation.replace(/\b(\d+\.?\d*)s linear/, `${nxt}s linear`);
+          if (upd !== c.style.animation) c.style.animation = upd;
+        }
+      });
+    }
+
+    /* ============================================================
+       ENTER
+    ============================================================ */
+    const landEl = document.getElementById('landing');
+    const xpEl = document.getElementById('xp');
+    const hudEl = document.getElementById('hud');
+    const eBtn = document.getElementById('ebtn');
+
+    buildGrid(); buildTraffic(); buildLetters();
+
+    setTimeout(() => document.getElementById('lt').classList.add('show'), 80);
+    setTimeout(() => {
+      document.getElementById('ls').classList.add('show');
+      document.getElementById('li').classList.add('show');
+      document.getElementById('lbar').classList.add('show');
+    }, 260);
+    setTimeout(() => eBtn.classList.add('show'), 520);
+
+    let entered = false;
+    function enter() {
+      if (entered) return; entered = true;
+      landEl.classList.add('hidden');
+      xpEl.classList.add('on');
+      hudEl.classList.add('on');
+      fadeInLetters();
+      setTimeout(fadeInGrid, 600);
+      setTimeout(fadeInTraffic, 1000);
+      play(); tick();
+    }
+    eBtn.addEventListener('click', enter);
+    landEl.addEventListener('click', e => { if (!eBtn.contains(e.target)) enter(); });
+  </script>
+</body>
+
+</html>

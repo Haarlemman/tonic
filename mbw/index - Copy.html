@@ -5,15 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mondriaan Boogie Woogie</title>
-    <meta name="description"
-        content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+    <meta name="description" content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
 
-    <meta name="keywords"
-        content="Animation, Music, Mondriaan, Mondrian, David Enker, Paradox Prime, art, Digital Art, music, video, Virtual Environment">
-    <meta name="author" content="David Enker">
+	<meta name="keywords" content="Animation, Music, Mondriaan, Mondrian, David Enker, Paradox Prime, art, Digital Art, music, video, Virtual Environment">
+    <meta name="author"   content="David Enker">
 
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://tonic.davidenker.com/mbw/index.html">
+    <meta property="og:type"  content="website">
+    <meta property="og:url"   content="https://tonic.davidenker.com/mbw/index.html">
     <meta property="og:title" content="Mondriaan Boogie Woogie">
     <meta property="og:description" content="A digital animated interpretation of Mondriaan's last work">
     <meta property="og:image" content="https://tonic.davidenker.com/assets/images/mbw.jpg">
@@ -28,16 +26,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&family=Tilt+Neon&display=swap">
+	
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&family=Tilt+Neon&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <link rel="apple-touch-icon" sizes="120x120" href="icon-120.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
 
     <style>
         :root {
@@ -396,11 +387,6 @@
             --neon-glow: #cccccc;
         }
 
-        #stage.night .letter-block.off-beat {
-            background-color: transparent !important;
-            box-shadow: none !important;
-        }
-
         /* Neon letter spans — Tilt Neon always, colour/glow added in night mode */
         .letter-block span {
             font-family: 'Tilt Neon', sans-serif;
@@ -436,21 +422,10 @@
             transition: none;
         }
 
-        .letter-block span.beat-sm {
-            transform: scale(0.62);
-        }
-
-        .letter-block span.beat-md {
-            transform: scale(0.9);
-        }
-
-        .letter-block span.beat-lg {
-            transform: scale(1.28);
-        }
-
-        .letter-block span.beat-xl {
-            transform: scale(1.55);
-        }
+        .letter-block span.beat-sm {transform: scale(0.62);}
+        .letter-block span.beat-md {transform: scale(0.9);}
+        .letter-block span.beat-lg {transform: scale(1.28);}
+        .letter-block span.beat-xl {transform: scale(1.55);}
 
         /* Looping on/off strobe for fast/med */
         @keyframes neon-loop {
@@ -1256,11 +1231,9 @@
 
         let smoothBass = 0, smoothEnergy = 0, buildStarted = false, lastHitTime = 0;
         let revealStage = 0, revealIdx = 0, letterRevealIdx = 0;
-        let burst1Fired = false, burst131Fired = false, burst176Fired = false, burstEndFired = false;
+        let burst1Fired = false, burst131Fired = false, burst176Fired = false;
         let currentDarkState = -1;
         let lastBeatStep = 0; // throttle for night beat-step letter sizing
-        let lastFlickerBeat = 0;
-        let flickerBeatCount = 0;
 
         function fireBurst() {
             const steps = ['#D22626', '#285495', '#F8D836'];
@@ -1351,9 +1324,7 @@
 
             // ── Neon flicker — only reclassify when the zone changes (not every frame) ──
             let neonClass = '';
-            if (elapsed >= 242) {
-                neonClass = ''; // Keep letters hidden in final dark section
-            } else if (cyclePos >= 30 && cyclePos < 33) neonClass = 'neon-fast';
+            if (cyclePos >= 30 && cyclePos < 33) neonClass = 'neon-fast';
             else if (cyclePos >= 33 && cyclePos < 36) neonClass = 'neon-med';
             else if (cyclePos >= 36 && cyclePos < 56) neonClass = 'neon-slow';
             else if (cyclePos >= 56 && cyclePos < 58) neonClass = 'neon-med';
@@ -1404,27 +1375,6 @@
                 trafficLayer.style.opacity = trafficOp;
             }
 
-            // ── Real beat detection for letter block background flicker ────────
-            if (smoothBass > 0.35 && now - lastFlickerBeat > 350) {
-                lastFlickerBeat = now;
-                flickerBeatCount++;
-                if (elapsed >= 242 && elapsed < 288.5) {
-                    const blockPat = [
-                        [1, 1, 1, 0],
-                        [1, 0, 1, 1],
-                        [1, 1, 0, 1],
-                        [0, 1, 1, 1],
-                        [1, 0, 1, 0],
-                        [0, 1, 0, 1]
-                    ];
-                    letterEls.forEach((lb, i) => {
-                        const pat = blockPat[i % blockPat.length];
-                        if (pat[flickerBeatCount % pat.length]) lb.classList.remove('off-beat');
-                        else lb.classList.add('off-beat');
-                    });
-                }
-            }
-
             // ── Stage 1: grid lines, 1 per bass hit ──────────────────────────
             if (revealStage === 0 && smoothBass > 0.3 && now - lastHitTime > 100) {
                 lastHitTime = now;
@@ -1462,12 +1412,6 @@
             if (!burst176Fired && elapsed >= 174 && smoothBass > 0.45) {
                 burst176Fired = true;
                 fireBurst();
-            }
-            if (!burstEndFired && elapsed >= 283) {
-                if (smoothBass > 0.35 || elapsed >= 285) {
-                    burstEndFired = true;
-                    fireBurst();
-                }
             }
 
             // ── Traffic trickle from 9s ─────────────────────────────────────

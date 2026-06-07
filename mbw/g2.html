@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mondriaan Boogie Woogie – Debug Version</title>
+  <style>
+    body { margin:0; background:#000; overflow:hidden; font-family:sans-serif; color:#fff; }
+    #container {
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(#001122, #000);
+    }
+    #mondrian {
+      width: 90vmin;
+      height: 90vmin;
+      max-width: 1200px;
+      max-height: 1200px;
+      position: relative;
+      background: #111;
+      border: 2px solid #F8D836;
+      box-shadow: 0 0 40px #F8D83633;
+      overflow: hidden;
+    }
+    .line-v { position:absolute; top:0; bottom:0; width:4px; background:#F8D836; box-shadow:0 0 12px #F8D836; }
+    .line-h { position:absolute; left:0; right:0; height:4px; background:#F8D836; box-shadow:0 0 12px #F8D836; }
+    .block { position:absolute; }
+    .pixel { position:absolute; background:#F8D836; box-shadow:0 0 8px currentColor; }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div id="mondrian">
+    <!-- Will be filled by JS -->
+  </div>
+</div>
+
+<div style="position:fixed; bottom:20px; left:20px; font-size:1.2rem; opacity:0.8;">
+  If you see yellow lines + colored squares → success! Check console (F12) for logs.
+</div>
+
+<script>
+console.log("Script started – attempting to draw Mondrian grid & letters");
+
+const mondrian = document.getElementById('mondrian');
+
+function draw() {
+  const w = mondrian.clientWidth;
+  const h = mondrian.clientHeight;
+  console.log(`Container size: ${w}px × ${h}px`);
+
+  // Vertical lines (hard-coded positions as fraction of width)
+  [0.1, 0.2, 0.35, 0.5, 0.65, 0.8].forEach(frac => {
+    const line = document.createElement('div');
+    line.className = 'line-v';
+    line.style.left = (frac * w) + 'px';
+    mondrian.appendChild(line);
+    console.log("Added vertical line at " + frac);
+  });
+
+  // Horizontal lines
+  [0.1, 0.25, 0.4, 0.55, 0.7, 0.85].forEach(frac => {
+    const line = document.createElement('div');
+    line.className = 'line-h';
+    line.style.top = (frac * h) + 'px';
+    mondrian.appendChild(line);
+    console.log("Added horizontal line at " + frac);
+  });
+
+  // Some colored blocks (like original painting)
+  const blocks = [
+    {l:0.38, t:0.08, w:0.12, h:0.10, c:'#D22626'},
+    {l:0.55, t:0.22, w:0.08, h:0.18, c:'#285495'},
+    {l:0.12, t:0.32, w:0.10, h:0.08, c:'#D22626'},
+    {l:0.65, t:0.52, w:0.07, h:0.12, c:'#285495'},
+    {l:0.20, t:0.58, w:0.14, h:0.09, c:'#C8C8C8'},
+  ];
+  blocks.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'block';
+    div.style.left   = (b.l * w) + 'px';
+    div.style.top    = (b.t * h) + 'px';
+    div.style.width  = (b.w * w) + 'px';
+    div.style.height = (b.h * h) + 'px';
+    div.style.background = b.c;
+    mondrian.appendChild(div);
+  });
+
+  // Big centered "letters" (simple rectangles for visibility)
+  const texts = [
+    {y:0.35, word:"MONDRIAAN", color:"#F8D836"},
+    {y:0.65, word:"BOOGIE WOOGIE", color:"#F8D836"}
+  ];
+  texts.forEach(t => {
+    const y = t.y * h;
+    const charW = w * 0.06;
+    t.word.split('').forEach((ch, i) => {
+      if (ch === ' ') return;
+      const pix = document.createElement('div');
+      pix.className = 'pixel';
+      pix.style.left = (w*0.15 + i * charW * 1.05) + 'px';
+      pix.style.top  = (y + (Math.random()*40 - 20)) + 'px';
+      pix.style.width = charW + 'px';
+      pix.style.height = charW * 1.4 + 'px';
+      pix.style.background = t.color;
+      mondrian.appendChild(pix);
+    });
+  });
+
+  console.log("Drawing complete – should see yellow grid, colors & text now");
+}
+
+window.addEventListener('load', draw);
+window.addEventListener('resize', draw); // redraw on resize
+</script>
+</body>
+</html>

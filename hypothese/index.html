@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hypothese — David Enker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0f0e0c;
+    --parchment: #f5f0e8;
+    --red: #c0392b;
+    --mid: #6b6560;
+    --line: #d4cfc7;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 18px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+  header {
+    padding: 80px 40px 60px;
+    max-width: 760px;
+    margin: 0 auto;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 0.2s;
+  }
+  .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 32px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .meta span::before { content: '— '; color: var(--red); }
+  h1 {
+    font-size: clamp(26px, 4vw, 42px);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    max-width: 640px;
+  }
+  h1 em { font-style: italic; font-weight: 300; color: var(--mid); }
+  .rule { width: 60px; height: 2px; background: var(--red); margin: 40px 0 32px; }
+
+  .addressees { margin-bottom: 8px; }
+  .addr-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 14px;
+  }
+  .addr-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .addr-list span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 4px 12px;
+    border-radius: 2px;
+  }
+  .addr-note {
+    font-size: 16px;
+    color: var(--mid);
+    line-height: 1.65;
+    max-width: 580px;
+    font-style: italic;
+  }
+
+  /* DAY ARC DIAGRAM */
+  .arc-wrap {
+    max-width: 760px;
+    margin: 0 auto 60px;
+    padding-inline: 40px;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 0.4s;
+  }
+  .arc-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 12px;
+  }
+  .arc-bar {
+    display: flex;
+    height: 36px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .arc-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s;
+    cursor: default;
+    position: relative;
+    font-size: 0;
+  }
+  .arc-seg:hover { opacity: 0.82; }
+  .arc-seg .tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--parchment);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .arc-seg .tip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ink);
+  }
+  .arc-seg:hover .tip,
+  .arc-seg.tapped .tip { display: block; }
+  .seg-calm    { background: #7a9e7e; flex: 2; }
+  .seg-build   { background: #c8956c; flex: 2; }
+  .seg-evening { background: #b5624a; flex: 1.5; }
+  .seg-night1  { background: #8b3a3a; flex: 1.5; }
+  .seg-night2  { background: #5c1a1a; flex: 2; }
+  .seg-morning { background: #a04040; flex: 1; }
+  .arc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    margin-top: 12px;
+  }
+  .arc-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--mid);
+  }
+  .arc-dot {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+
+  .intro {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-inline: 40px;
+    margin-bottom: 80px;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 0.6s;
+  }
+  .intro p { font-size: 20px; line-height: 1.8; color: #2a2825; }
+  .intro p + p { margin-top: 20px; }
+
+  .sections { max-width: 760px; margin: 0 auto; padding-inline: 40px; }
+
+  .section {
+    border-top: 1px solid var(--line);
+    padding: 56px 0;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0 40px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .section.visible { opacity: 1; transform: none; }
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    padding-top: 6px;
+  }
+  .section.highlight .section-num { color: #8b3a3a; }
+  .section.highlight { background: linear-gradient(to right, rgba(139,58,58,0.03), transparent); border-radius: 4px; padding-inline: 16px; margin-inline: -16px; }
+
+  .section-body h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 20px; }
+  .section-body p { color: #2a2825; margin-bottom: 16px; }
+  .section-body ul { list-style: none; margin: 16px 0; padding: 0; }
+  .section-body ul li { padding: 6px 0 6px 20px; position: relative; color: #2a2825; }
+  .section-body ul li::before { content: '—'; position: absolute; left: 0; color: var(--red); font-size: 14px; }
+
+  /* Timeline list for section 5 */
+  .timeline { list-style: none; margin: 20px 0; padding: 0; border-left: 2px solid var(--line); }
+  .timeline li {
+    padding: 10px 0 10px 24px;
+    position: relative;
+    color: #2a2825;
+    border-bottom: 1px solid var(--line);
+  }
+  .timeline li:last-child { border-bottom: none; }
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 18px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+  .tl-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--red);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .conclusion {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+    border-top: 1px solid var(--line);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .conclusion.visible { opacity: 1; transform: none; }
+  .conclusion h2 { font-size: 22px; font-weight: 600; margin-bottom: 24px; }
+  .conclusion p { color: #2a2825; margin-bottom: 16px; }
+  .conclusion .closing {
+    font-style: italic;
+    font-size: 20px;
+    color: var(--mid);
+    margin-top: 32px;
+    padding-left: 24px;
+    border-left: 2px solid var(--red);
+  }
+
+  footer {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 48px 40px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 600px) {
+    header, .intro, .sections, .conclusion, .arc-wrap { padding-inline: 24px; }
+    .section { grid-template-columns: 1fr; gap: 8px; }
+    .section-num { padding-top: 0; }
+    .arc-seg .tip { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="meta">
+    <span>David Enker</span>
+    <span>1 juni 2026</span>
+    <span>Persoonlijk medisch document</span>
+  </div>
+  <h1>Hypothese: <em>de samenhang tussen vroegkinderlijk hechtingstrauma, chronische stressrespons</em> en de ziekte van Parkinson</h1>
+  <div class="rule"></div>
+  <div class="addressees">
+    <div class="addr-label">Gericht aan</div>
+    <div class="addr-list">
+      <span>Neuroloog</span>
+      <span>Huisarts</span>
+      <span>Psycholoog</span>
+      <span>Psychiater</span>
+      <span>Fysiotherapeut</span>
+      <span>Diëtist</span>
+    </div>
+    <p class="addr-note">Dit document is bedoeld als basis voor een multidisciplinair gesprek. De symptomen die ik beschrijf raken tegelijk aan het zenuwstelsel, de psyche, het lichaam en de voeding — en vragen om een geïntegreerde, afgestemde aanpak tussen alle betrokken behandelaars.</p>
+  </div>
+</header>
+
+<div class="arc-wrap">
+  <div class="arc-label">Dagelijks angstritme</div>
+  <div class="arc-bar">
+    <div class="arc-seg seg-calm"><span class="tip">Relatief rustig</span></div>
+    <div class="arc-seg seg-build"><span class="tip">Anticipatie-angst bouwt op</span></div>
+    <div class="arc-seg seg-evening"><span class="tip">Avondangst</span></div>
+    <div class="arc-seg seg-night1"><span class="tip">Moeizaam inslapen</span></div>
+    <div class="arc-seg seg-night2"><span class="tip">Vroeg nachtelijk ontwaken</span></div>
+    <div class="arc-seg seg-morning"><span class="tip">Ochtendpaniek</span></div>
+  </div>
+  <div class="arc-legend">
+    <div class="arc-legend-item"><div class="arc-dot" style="background:#7a9e7e"></div>Relatief rustig</div>
+    <div class="arc-legend-item"><div class="arc-dot" style="background:#c8956c"></div>Anticipatie-angst bouwt op</div>
+    <div class="arc-legend-item"><div class="arc-dot" style="background:#b5624a"></div>Avondangst</div>
+    <div class="arc-legend-item"><div class="arc-dot" style="background:#8b3a3a"></div>Moeizaam inslapen</div>
+    <div class="arc-legend-item"><div class="arc-dot" style="background:#5c1a1a"></div>Vroeg nachtelijk ontwaken</div>
+    <div class="arc-legend-item"><div class="arc-dot" style="background:#a04040"></div>Ochtendpaniek</div>
+  </div>
+</div>
+
+<div class="intro">
+  <p>Ik ben geboren in 1970 en op de leeftijd van drie maanden ter adoptie afgestaan. Dit verlies vond plaats in de pre-verbale fase — vóór de ontwikkeling van narratief geheugen, maar niet vóór de vorming van het zenuwstelsel. Het lichaam registreerde het verlies van de primaire hechtingsfiguur als een existentiële bedreiging, zonder dat er een cognitief kader beschikbaar was om dit te verwerken.</p>
+  <p>De hypothese die ik hieronder uiteenzet, is mijn poging om de verbindende lijn zichtbaar te maken tussen mijn vroegste levensgeschiedenis en mijn huidige neurologische en psychologische situatie. Ik leg dit voor niet als zelfdiagnose, maar als een uitnodiging tot een geïntegreerde benadering van mijn behandeling.</p>
+</div>
+
+<div class="sections">
+
+  <div class="section">
+    <div class="section-num">01</div>
+    <div class="section-body">
+      <h2>Pre-verbaal hechtingstrauma</h2>
+      <p>Afstand op drie maanden betekent dat het zenuwstelsel <em>'veiligheid is voorlopig'</em> als basisinstelling heeft gecodeerd. Dit is niet cognitief bereikbaar — het verlies werd geregistreerd vóór taal, vóór geheugen, vóór het vermogen om te redeneren. De gevolgen zijn onder andere:</p>
+      <ul>
+        <li>Chronische hypervigilantie als overlevingsstrategie</li>
+        <li>Verhoogde basisangst zonder aanwijsbare aanleiding</li>
+        <li>Ochtendpaniek als heractivering van vroege onveiligheidssignalen</li>
+        <li>Akathisie als lichamelijke uiting van chronische stressactivatie</li>
+      </ul>
+      <p>Ik volg momenteel EMDR-therapie bij een gespecialiseerde traumapsycholoog. EMDR is bijzonder geschikt voor pre-verbaal trauma omdat het werkt op het niveau waar het trauma daadwerkelijk is opgeslagen: somatisch en subcorticaal, niet als narratief.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-num">02</div>
+    <div class="section-body">
+      <h2>Transgenerationeel trauma</h2>
+      <p>Mijn biologische moedersfamilie is Joods met een directe Holocaust-geschiedenis. Epigenetisch onderzoek — met name studies onder nakomelingen van Holocaustoverlevenden — toont aan dat traumatische stressrespons biologisch overdraagbaar is via veranderingen in genexpressie.</p>
+      <p>Dit voegt een extra laag toe aan mijn basale angstrespons die buiten mijn persoonlijke levensgeschiedenis valt, en die niet louter psychologisch van aard is.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-num">03</div>
+    <div class="section-body">
+      <h2>Chronische stress en dopaminerge kwetsbaarheid</h2>
+      <p>Decennialange hypervigilantie betekent decennialange verhoogde cortisolspiegels en chronische neuroinflammatie. Er is groeiend wetenschappelijk bewijs voor een verband tussen:</p>
+      <ul>
+        <li>Vroegkinderlijke traumatische stress</li>
+        <li>Aanhoudende HPA-as dysregulatie</li>
+        <li>Verhoogde kwetsbaarheid voor dopaminerge degeneratie later in het leven</li>
+      </ul>
+      <p>Mijn hypothese is dat het vroege hechtingstrauma een bijdragende factor kan zijn geweest in de ontwikkeling van mijn parkinsonisme — niet als enige oorzaak, maar als een van de condities die de grond hebben voorbereid.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-num">04</div>
+    <div class="section-body">
+      <h2>Medicatie en akathisie</h2>
+      <p>De huidige medicamenteuze behandeling van de ziekte van Parkinson beïnvloedt het dopaminesysteem direct — hetzelfde systeem dat al decennialang onder druk staat. Dit kan de bestaande angst- en paniekreacties versterken, en draagt mogelijk bij aan de akathisie die ik ervaar en die de afgelopen periode toeneemt.</p>
+      <p>Ik verzoek om een herbeoordeling van de huidige medicatie in dit licht, en om afstemming met mijn behandelend psycholoog.</p>
+    </div>
+  </div>
+
+  <div class="section highlight">
+    <div class="section-num">05</div>
+    <div class="section-body">
+      <h2>Het dagelijkse angstritme: van anticipatie tot nachtelijk ontwaken</h2>
+      <p>De dysregulatie beperkt zich niet tot de ochtend. Er is een herkenbaar patroon dat zich over het gehele etmaal uitstrekt:</p>
+
+      <ul class="timeline">
+        <li>
+          <span class="tl-time">Vroege avond</span>
+          Anticipatie-angst begint op te bouwen zodra de avond nadert — het zenuwstelsel anticipeert de nacht als bedreiging, lang voordat die is aangebroken.
+        </li>
+        <li>
+          <span class="tl-time">Inslapen</span>
+          Moeizaam: het loslaten van waakzaamheid voelt neurobiologisch onveilig. Slaap vereist overgave — precies wat het vroeg geprogrammeerde zenuwstelsel weigert.
+        </li>
+        <li>
+          <span class="tl-time">Tweede helft van de nacht</span>
+          Het zwaarste deel. Vroeg ontwaken met angst en/of akathisie die niet meer verdwijnt. Mogelijk versterkt door een dal in de parkinsonmedicatie (off-periode).
+        </li>
+        <li>
+          <span class="tl-time">Ochtend</span>
+          Begint vanuit een reeds uitgeput en geactiveerd zenuwstelsel — wat de ochtendpaniek verder intensiveert.
+        </li>
+      </ul>
+
+      <p>Dit is geen psychologische zwakte, maar een diepgewortelde somatische respons: het moment van inslapen activeert neurobiologisch het vroegste overlevingsmechanisme. De anticipatie-angst die al bij het naderen van de avond begint, vergroot de totale dagelijkse angstlast aanzienlijk.</p>
+      <p>Het vroege nachtelijke ontwaken correleert mogelijk ook met een off-periode in de parkinsonmedicatie, wat specifieke aandacht vraagt bij de medicatietiming.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="conclusion">
+  <h2>Conclusie</h2>
+  <p>Wat ik beschrijf is geen losse verzameling symptomen, maar een samenhangend patroon waarbij psychologische, epigenetische en neurologische factoren elkaar versterken — en waarbij de dysregulatie zich uitstrekt over het gehele etmaal: van anticipatie-angst bij het invallen van de avond, via moeizaam inslapen, tot vroeg nachtelijk ontwaken en ochtendpaniek.</p>
+  <p>Een geïntegreerde benadering — waarbij neuroloog, huisarts en psycholoog met elkaar in gesprek gaan over dit totaalbeeld, inclusief herbeoordeling van de medicatietiming — lijkt mij essentieel voor een effectieve behandeling.</p>
+  <p class="closing">Ik leg dit voor niet als zelfdiagnose, maar als een poging om de verbindende lijn zichtbaar te maken die anders misschien over het hoofd wordt gezien.</p>
+</div>
+
+<footer>
+  <p>David Enker &nbsp;·&nbsp; 1 juni 2026 &nbsp;·&nbsp; Persoonlijk medisch document</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.section, .conclusion').forEach(el => observer.observe(el));
+
+  // Mobile tap for arc tooltips
+  document.querySelectorAll('.arc-seg').forEach(seg => {
+    seg.addEventListener('click', () => {
+      const wasActive = seg.classList.contains('tapped');
+      document.querySelectorAll('.arc-seg').forEach(s => s.classList.remove('tapped'));
+      if (!wasActive) seg.classList.add('tapped');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.arc-seg')) {
+      document.querySelectorAll('.arc-seg').forEach(s => s.classList.remove('tapped'));
+    }
+  });
+
+  // Tap to show tooltip on mobile
+  document.querySelectorAll('.arc-seg').forEach(seg => {
+    seg.addEventListener('click', () => {
+      const wasOn = seg.classList.contains('tapped');
+      document.querySelectorAll('.arc-seg').forEach(s => s.classList.remove('tapped'));
+      if (!wasOn) seg.classList.add('tapped');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.arc-seg')) {
+      document.querySelectorAll('.arc-seg').forEach(s => s.classList.remove('tapped'));
+    }
+  });
+</script>
+</body>
+</html>

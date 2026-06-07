@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Israel Timeline</title>
+  <style>
+    :root {
+      --bg: #000;
+      --text: #fff;
+      --line: rgba(255,255,255,0.2);
+      --font: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow: hidden;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: rgba(0,0,0,0.85);
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .toolbar button {
+      background: #111;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .toolbar button:hover {
+      background: #222;
+    }
+
+    .viewport {
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+      cursor: grab;
+      background: #000;
+    }
+
+    .viewport:active {
+      cursor: grabbing;
+    }
+
+    .wrapper {
+      width: 5200px;
+      min-height: 100vh;
+      padding: 80px 40px 40px;
+      background: #000;
+      transform-origin: top left;
+      transition: transform 0.2s ease;
+    }
+
+    .timeline {
+      position: relative;
+      width: 5000px;
+      height: 1200px;
+      margin: 0 auto;
+      background: #000;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .track-label {
+      position: absolute;
+      left: -10px;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      width: 160px;
+      text-align: right;
+    }
+
+    .era {
+      position: absolute;
+      top: 10px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(255,255,255,0.15);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.2s ease;
+    }
+
+    .era:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.15);
+    }
+
+    .node {
+      position: absolute;
+      background: white;
+      color: black;
+      padding: 2px 6px;
+      font-size: 10px;
+      line-height: 1.1;
+      border-radius: 2px;
+      white-space: nowrap;
+      transition: transform 0.15s ease;
+    }
+
+    .node:hover {
+      transform: scale(1.08);
+      z-index: 100;
+    }
+
+    .connector {
+      position: absolute;
+      background: rgba(255,255,255,0.7);
+      transform-origin: left center;
+      height: 1px;
+    }
+
+    .section-title {
+      position: absolute;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #000;
+      border: 1px solid rgba(0,0,0,0.25);
+    }
+
+    .gridline {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: white;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      max-width: 240px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 9999;
+    }
+
+    .legend {
+      max-width: 1400px;
+      margin: 40px auto 0;
+      color: #ccc;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .hidden-track {
+      opacity: 0.08;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <button onclick="zoomIn()">＋ Zoom</button>
+    <button onclick="zoomOut()">－ Zoom</button>
+    <button onclick="toggleTrack('patriarchs')">Patriarchs</button>
+    <button onclick="toggleTrack('tribes')">Tribes</button>
+    <button onclick="toggleTrack('temples')">Temples</button>
+    <button onclick="toggleTrack('empires')">Empires</button>
+    <button onclick="toggleTrack('diaspora')">Diaspora</button>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <div class="viewport" id="viewport">
+  <div class="wrapper" id="wrapper">
+    <div class="timeline" id="timeline">
+
+      <!-- GRIDLINES -->
+      <script>
+        const timeline = document.currentScript.parentElement;
+
+        for (let i = 0; i < 50; i++) {
+          const line = document.createElement('div');
+          line.className = 'gridline';
+          line.style.left = `${i * 100}px`;
+          timeline.appendChild(line);
+        }
+      </script>
+
+      <!-- TRACK LABELS -->
+      <div class="track-label" style="top:20px;">Empires</div>
+      <div class="track-label" style="top:110px;">Patriarchs</div>
+      <div class="track-label" style="top:280px;">Kingdoms</div>
+      <div class="track-label" style="top:430px;">Temple Periods</div>
+      <div class="track-label" style="top:580px;">Diaspora</div>
+
+      <!-- EMPIRES -->
+      <div class="era" data-track="empires" style="left:0px;width:850px;background:#d9d9d9;color:#000;">Ancient Israel</div>
+      <div class="era" data-track="empires" style="left:850px;width:250px;background:#f08a00;">Kingdom of Israel</div>
+      <div class="era" data-track="empires" style="left:1100px;width:260px;background:#ffb000;">Kingdom of Judah</div>
+      <div class="era" data-track="empires" style="left:1500px;width:350px;background:#8c7b24;">Persian Empire</div>
+      <div class="era" data-track="empires" style="left:1850px;width:450px;background:#8e53a1;">Hellenistic / Hasmonean</div>
+      <div class="era" data-track="empires" style="left:2300px;width:550px;background:#4f7d4d;">Roman / Byzantine</div>
+      <div class="era" data-track="empires" style="left:2850px;width:700px;background:#7b451d;">Caliphates</div>
+      <div class="era" data-track="empires" style="left:3550px;width:700px;background:#d4b30d;color:#000;">Ottoman</div>
+      <div class="era" data-track="empires" style="left:4250px;width:300px;background:#3b8ed4;">Modern Israel</div>
+
+      <!-- PATRIARCHS -->
+      <svg width="5000" height="220" style="position:absolute;left:0;top:100px;overflow:visible;">
+        <rect x="50" y="10" width="650" height="26" rx="6" fill="#f2f2f2"></rect>
+        <text x="65" y="28" fill="#000" font-size="13">Abraham</text>
+
+        <rect x="250" y="60" width="560" height="26" rx="6" fill="#ffffff"></rect>
+        <text x="265" y="78" fill="#000" font-size="13">Isaac</text>
+
+        <rect x="430" y="110" width="500" height="26" rx="6" fill="#e8e8e8"></rect>
+        <text x="445" y="128" fill="#000" font-size="13">Jacob / Israel</text>
+
+        <line x1="300" y1="36" x2="300" y2="60" stroke="white"></line>
+        <line x1="500" y1="86" x2="500" y2="110" stroke="white"></line>
+      </svg>
+
+      <!-- TEMPLE PERIODS -->
+      <div class="section-title" data-track="temples" style="left:1200px;top:430px;width:520px;background:#ffef00;">FIRST TEMPLE</div>
+      <div class="section-title" data-track="temples" style="left:1750px;top:430px;width:620px;background:#ffee00;">SECOND TEMPLE</div>
+
+      <!-- DIASPORA -->
+      <div class="node" data-track="diaspora" style="left:1450px;top:600px;">Babylonian Exile</div>
+      <div class="node" data-track="diaspora" style="left:2400px;top:640px;">Roman Exile</div>
+      <div class="node" data-track="diaspora" style="left:4200px;top:680px;">Zionism</div>
+
+      <!-- YEAR AXIS -->
+      <div id="axis" style="position:absolute;left:0;top:1020px;width:5000px;height:80px;"></div>
+
+    </div>
+
+    <div class="legend">
+      <p>This is now a functional interactive prototype with zooming, dragging, layered tracks and scalable SVG lifespans.</p>
+    </div>
+
+  </div>
+  </div>
+
+<script>
+  let scale = 1;
+  const wrapper = document.getElementById('wrapper');
+  const tooltip = document.getElementById('tooltip');
+
+  function zoomIn() {
+    scale *= 1.12;
+    wrapper.style.transform = `scale(${scale})`;
+  }
+
+  function zoomOut() {
+    scale /= 1.12;
+    wrapper.style.transform = `scale(${scale})`;
+  }
+
+  function toggleTrack(name) {
+    document.querySelectorAll(`[data-track="${name}"]`).forEach(el => {
+      el.classList.toggle('hidden-track');
+    });
+  }
+
+  document.querySelectorAll('.node, .era, .section-title').forEach(el => {
+    el.addEventListener('mousemove', e => {
+      tooltip.style.opacity = '1';
+      tooltip.style.left = e.clientX + 14 + 'px';
+      tooltip.style.top = e.clientY + 14 + 'px';
+      tooltip.innerHTML = el.innerText;
+    });
+
+    el.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+    });
+  });
+
+  const axis = document.getElementById('axis');
+
+  for(let y = -2000; y <= 2000; y += 100) {
+    const tick = document.createElement('div');
+    tick.style.position = 'absolute';
+    tick.style.left = ((y + 2200) / 4225 * 5000) + 'px';
+    tick.style.top = '0';
+    tick.style.width = '1px';
+    tick.style.height = '20px';
+    tick.style.background = 'rgba(255,255,255,0.4)';
+
+    const label = document.createElement('div');
+    label.style.position = 'absolute';
+    label.style.left = '-28px';
+    label.style.top = '24px';
+    label.style.width = '60px';
+    label.style.fontSize = '10px';
+    label.style.color = 'rgba(255,255,255,0.5)';
+    label.style.textAlign = 'center';
+    label.innerText = y < 0 ? Math.abs(y) + ' BCE' : y + ' CE';
+
+    tick.appendChild(label);
+    axis.appendChild(tick);
+  }
+
+  const viewport = document.getElementById('viewport');
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  viewport.addEventListener('mousedown', (e) => {
+    isDown = true;
+    startX = e.pageX - viewport.offsetLeft;
+    scrollLeft = viewport.scrollLeft;
+  });
+
+  viewport.addEventListener('mouseup', () => isDown = false);
+  viewport.addEventListener('mouseleave', () => isDown = false);
+
+  viewport.addEventListener('mousemove', (e) => {
+    if(!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - viewport.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    viewport.scrollLeft = scrollLeft - walk;
+  });
+</script>
+
+</body>
+</html>

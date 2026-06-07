@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONDRIAAN BOOGIE WOOGIE - Fullscreen</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836; 
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+            --bg-intro: #1a1a1a;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-intro);
+            font-family: 'Poiret One', cursive;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- INTRO OVERLAY --- */
+        #intro-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background-color: var(--bg-intro);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease, visibility 1s;
+        }
+
+        #intro-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .intro-title {
+            color: var(--m-white);
+            font-size: clamp(2rem, 8vw, 5rem);
+            letter-spacing: 15px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .start-btn {
+            background: none;
+            border: 2px solid var(--m-yellow);
+            color: var(--m-yellow);
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .start-btn:hover {
+            background: var(--m-yellow);
+            color: var(--bg-intro);
+            box-shadow: 0 0 30px rgba(248, 216, 54, 0.4);
+        }
+
+        /* --- MAIN VIEWPORT --- */
+        #viewport {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f0f0;
+            display: none; /* Shown after click */
+            opacity: 0;
+            transition: opacity 2s ease;
+            filter: contrast(1.1) brightness(1.05);
+        }
+
+        #viewport.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* --- GRID COMPONENTS --- */
+        .grid-line {
+            position: absolute;
+            background-color: var(--m-yellow);
+            z-index: 1;
+        }
+
+        .static-block {
+            position: absolute;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            user-select: none;
+        }
+
+        /* Letter Styling */
+        .grid-letter {
+            font-size: 24px;
+            pointer-events: none;
+        }
+
+        .bg-red    { background-color: var(--m-red); }
+        .bg-blue   { background-color: var(--m-blue); }
+        .bg-grey   { background-color: var(--m-grey); }
+        .bg-white  { background-color: var(--m-white); }
+        .bg-yellow { background-color: var(--m-yellow); }
+
+        /* --- TRAFFIC --- */
+        .car {
+            position: absolute;
+            z-index: 3;
+        }
+
+        /* Animations */
+        @keyframes driveH { from { left: -5%; } to { left: 105%; } }
+        @keyframes driveHRev { from { left: 105%; } to { left: -5%; } }
+        @keyframes driveV { from { top: -5%; } to { top: 105%; } }
+        @keyframes driveVRev { from { top: 105%; } to { top: -5%; } }
+
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+        /* Noise Texture Overlay */
+        #noise-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Audio Control Button (UI) */
+        #audio-ui {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            color: rgba(0,0,0,0.4);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        #audio-ui:hover { color: var(--m-red); }
+
+    </style>
+</head>
+<body>
+
+    <div id="intro-overlay">
+        <h1 class="intro-title">Mondriaan<br>Boogie Woogie</h1>
+        <button id="start-btn" class="start-btn">Enter Metropolis</button>
+    </div>
+
+    <div id="viewport">
+        <div id="grid-layer"></div>
+        <div id="traffic-layer"></div>
+        <div id="noise-overlay"></div>
+        <div id="audio-ui" title="Mute/Unmute">
+            <i id="volume-icon" class="fa-solid fa-volume-high"></i>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop>
+        <!-- Using a generic high-energy jazz/boogie placeholder since assets are external -->
+        <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const intro = document.getElementById('intro-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const viewport = document.getElementById('viewport');
+        const gridLayer = document.getElementById('grid-layer');
+        const trafficLayer = document.getElementById('traffic-layer');
+        const audio = document.getElementById('bg-music');
+        const audioUi = document.getElementById('audio-ui');
+        const volIcon = document.getElementById('volume-icon');
+
+        let isMuted = false;
+
+        // --- GRID CONFIGURATION ---
+        // Percentages for a responsive grid
+        const vLines = [5, 12, 18, 25, 38, 45, 55, 68, 75, 82, 90, 95];
+        const hLines = [8, 15, 25, 35, 48, 55, 65, 78, 85, 92];
+
+        // The Text Data
+        const words = [
+            { text: "MONDRIAAN", startX: 18, startY: 15, color: 'bg-red' },
+            { text: "BOOGIE",    startX: 55, startY: 48, color: 'bg-blue' },
+            { text: "WOOGIE",    startX: 12, startY: 78, color: 'bg-grey' }
+        ];
+
+        function initGrid() {
+            // Draw Vertical Lines
+            vLines.forEach(x => {
+                const el = document.createElement('div');
+                el.className = 'grid-line';
+                el.style.left = `${x}%`;
+                el.style.top = '0';
+                el.style.width = '12px';
+                el.style.height = '100%';
+                gridLayer.appendChild(el);
+            });
+
+            // Draw Horizontal Lines
+            hLines.forEach(y => {
+                const el = document.createElement('div');
+                el.className = 'grid-line';
+                el.style.top = `${y}%`;
+                el.style.left = '0';
+                el.style.height = '12px';
+                el.style.width = '100%';
+                gridLayer.appendChild(el);
+            });
+
+            // Place Text as Blocks
+            words.forEach(word => {
+                const chars = word.text.split('');
+                chars.forEach((char, i) => {
+                    const block = document.createElement('div');
+                    block.className = `static-block ${word.color}`;
+                    // Offset based on index to space them out across the grid intersections
+                    block.style.left = `${word.startX + (i * 7)}%`;
+                    block.style.top = `${word.startY}%`;
+                    block.style.width = '50px';
+                    block.style.height = '50px';
+                    block.innerHTML = `<span class="grid-letter">${char}</span>`;
+                    gridLayer.appendChild(block);
+                });
+            });
+
+            // Add some random Mondrian squares
+            for(let i=0; i<15; i++) {
+                const block = document.createElement('div');
+                const colors = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white'];
+                block.className = `static-block ${colors[Math.floor(Math.random()*colors.length)]}`;
+                block.style.left = `${Math.random()*90}%`;
+                block.style.top = `${Math.random()*90}%`;
+                const size = Math.random() * 60 + 20;
+                block.style.width = `${size}px`;
+                block.style.height = `${size}px`;
+                gridLayer.appendChild(block);
+            }
+        }
+
+        function createTraffic() {
+            const carsPerLine = 8;
+            const colors = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white'];
+
+            // Horizontal Traffic
+            hLines.forEach(y => {
+                const speed = Math.random() * 10 + 5;
+                const dir = Math.random() > 0.5;
+                for(let i=0; i<carsPerLine; i++) {
+                    const car = document.createElement('div');
+                    car.className = `car ${colors[Math.floor(Math.random()*colors.length)]}`;
+                    car.style.top = `${y}%`;
+                    car.style.height = '12px';
+                    car.style.width = `${Math.random()*20 + 10}px`;
+                    
+                    const anim = dir ? 'driveH' : 'driveHRev';
+                    const delay = -(Math.random() * speed);
+                    car.style.animation = `${anim} ${speed}s linear infinite`;
+                    car.style.animationDelay = `${delay}s`;
+                    
+                    if(Math.random() > 0.7) {
+                        car.style.animation += `, blink ${Math.random()*0.5 + 0.1}s steps(1) infinite`;
+                    }
+                    trafficLayer.appendChild(car);
+                }
+            });
+
+            // Vertical Traffic
+            vLines.forEach(x => {
+                const speed = Math.random() * 10 + 5;
+                const dir = Math.random() > 0.5;
+                for(let i=0; i<carsPerLine; i++) {
+                    const car = document.createElement('div');
+                    car.className = `car ${colors[Math.floor(Math.random()*colors.length)]}`;
+                    car.style.left = `${x}%`;
+                    car.style.width = '12px';
+                    car.style.height = `${Math.random()*20 + 10}px`;
+                    
+                    const anim = dir ? 'driveV' : 'driveVRev';
+                    const delay = -(Math.random() * speed);
+                    car.style.animation = `${anim} ${speed}s linear infinite`;
+                    car.style.animationDelay = `${delay}s`;
+                    trafficLayer.appendChild(car);
+                }
+            });
+        }
+
+        // --- INTERACTION ---
+        startBtn.addEventListener('click', () => {
+            intro.classList.add('hidden');
+            viewport.classList.add('active');
+            
+            // Start audio
+            audio.play().catch(e => console.log("Audio requires user interaction first."));
+            
+            initGrid();
+            createTraffic();
+        });
+
+        audioUi.addEventListener('click', () => {
+            if (isMuted) {
+                audio.muted = false;
+                volIcon.className = 'fa-solid fa-volume-high';
+            } else {
+                audio.muted = true;
+                volIcon.className = 'fa-solid fa-volume-xmark';
+            }
+            isMuted = !isMuted;
+        });
+
+    </script>
+</body>
+</html>

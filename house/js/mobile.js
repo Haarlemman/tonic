@@ -267,25 +267,23 @@
     document.head.appendChild(fsStyle);
 
     if (IS_IOS) {
-        window.toggleGlobalFullscreen = function () {
-            const docEl   = document.documentElement;
-            const iconOn  = document.getElementById('icon-fullscreen-on');
-            const iconOff = document.getElementById('icon-fullscreen-off');
-            const isFs    = docEl.classList.contains(FS_CLASS);
+    window.toggleGlobalFullscreen = function () {
+        const docEl = document.documentElement;
+        const isFs = docEl.classList.contains(FS_CLASS);
 
-            if (!isFs) {
-                docEl.classList.add(FS_CLASS);
-                // Also scroll to top so the 3D canvas fills from y=0
-                window.scrollTo(0, 0);
-                if (iconOn)  iconOn.classList.add('hidden');
-                if (iconOff) iconOff.classList.remove('hidden');
-            } else {
-                docEl.classList.remove(FS_CLASS);
-                if (iconOn)  iconOn.classList.remove('hidden');
-                if (iconOff) iconOff.classList.add('hidden');
-            }
-        };
-    }
+        if (!isFs) {
+            docEl.classList.add(FS_CLASS);
+            window.scrollTo(0, 0);
+        } else {
+            docEl.classList.remove(FS_CLASS);
+        }
+
+        // Trigger our unified handler
+        setTimeout(() => {
+            if (window.handleFullscreenChange) window.handleFullscreenChange();
+        }, 100);
+    };
+}
 
 
     // ── 4. AUDIO UNLOCK ON FIRST TOUCH ──────────────────────

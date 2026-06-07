@@ -585,6 +585,9 @@
 
 <body class="text-white text-[11px] selection:bg-white selection:text-black">
 
+    <!-- Pixel reveal canvas for circular transition -->
+    <canvas id="pixel-reveal-canvas" class="fixed inset-0 w-full h-full z-50 pointer-events-none" style="display: none;"></canvas>
+
 
 
     <style>
@@ -667,7 +670,7 @@
     ====================================================== -->
     <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-8 mt-4">
 
-        <!-- Left column: Simulation + Guide + Music -->
+        <!-- Left column: Simulation + Meaning of Life -->
         <div class="lg:col-span-8 space-y-8">
 
             <!-- Simulation viewport -->
@@ -681,7 +684,7 @@
                     class="absolute inset-0 flex items-center justify-center overflow-hidden z-20 bg-[#030308]">
 
                     <!-- Wireframe canvas fills the entire container -->
-                    <canvas id="wireframe-canvas" class="absolute inset-0 w-full h-full"
+                    <canvas id="wireframe-canvas" class="absolute inset-0 w-full h-full z-10"
                         style="display:block;"></canvas>
 
                     <!-- Boot sequence content -->
@@ -692,16 +695,24 @@
                             style="letter-spacing:0.2em; background:#ffcc00; color:#000000; border:2px solid #ffcc00; cursor:pointer;"
                             onmouseenter="this.style.background='#000000';this.style.color='#ffcc00';this.style.borderColor='#ffcc00';"
                             onmouseleave="this.style.background='#ffcc00';this.style.color='#000000';this.style.borderColor='#ffcc00';">
-                            INITIALIZE &nbsp;<span style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>
+                            INITIALIZE &nbsp;<span
+                                style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>
                         </button>
                     </div>
 
                     <script>
                         document.addEventListener("DOMContentLoaded", () => {
-                            // Show INITIALIZE right away (skip LOADING/INITIALIZING text)
+                            // Auto-boot: skip the INITIALIZE button, go straight to LOADING
                             setTimeout(() => {
                                 const bootBtn = document.getElementById('boot-btn');
-                                if (bootBtn) bootBtn.classList.remove('hidden');
+                                if (bootBtn) {
+                                    // Make it visible so bootExperience can render the LOADING bar into it
+                                    bootBtn.classList.remove('hidden');
+                                    bootBtn.style.display = 'flex';
+                                }
+                                if (typeof bootExperience === 'function') {
+                                    bootExperience();
+                                }
                             }, 800);
                         });
                     </script>
@@ -1004,10 +1015,10 @@
         </div>
 
         <!-- Right sidebar -->
-        <div class="lg:col-span-4 space-y-8">
+        <div class="lg:col-span-4 flex flex-col h-full space-y-8">
 
             <!-- About blurb -->
-            <div class="text-black p-6 relative overflow-hidden border border-[#333]"
+            <div class="flex-1 text-black p-6 relative overflow-hidden border border-[#333]"
                 style="background-color: #ccbb00;">
 
                 <!-- TRON GRID ANIMATION -->
@@ -1041,41 +1052,54 @@
                 <div class="relative z-10">
                     <h3 class="uppercase font-bold text-[15px] mb-4 tracking-[0.2em]" style="color: #CC0000" ;
                         data-i18n="manual_title">MANUAL</h3>
-                    <p class="leading-relaxed text-black text-xs mb-6" data-i18n="manual_text">
+                    <p id="manual-text" class="leading-relaxed text-black text-xs mb-6" data-i18n="manual_text"
+                        data-typewriter="4000">
                         You are invited to explore this 3D house, and discover nothing less than
                         <span style="color: aqua; background-color: navy">the meaning of life</span>.
                         Click 'INITIALIZE' to start, then explore 10 rooms.
-                        You can follow the lead, or just pick any room. Click on the "Orb" for a question.
+                        You can follow the lead, or just pick any room. Click on the "Nugget" for a question.
                         Answer all the questions and discover the meaning of life!
                     </p>
                     <div class="mt-8 mb-8">
                         <h4 class="uppercase font-bold text-[10px] tracking-[0.2em] mb-4" style="color: #cc0000;"
                             data-i18n="nuggets_title">Nuggets</h4>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <!-- Unanswered -->
-                            <div class="flex items-stretch h-9">
-                                <div
-                                    class="bg-black/20 px-3 flex items-center justify-center border-l border-t border-b border-black/20 rounded-l-sm">
-                                    <div class="nugget-preview default"></div>
+                        <div class="flex flex-row gap-6">
+                            <!-- Unanswered nugget -->
+                            <div class="flex flex-col items-center gap-1.5 border border-black/40 py-2 px-2 hover:bg-black/10 transition-all cursor-pointer rounded-sm">
+                                <div style="position:relative;width:48px;height:48px;">
+                                    <svg viewBox="-1 -1 2 2" width="48" height="48" xmlns="http://www.w3.org/2000/svg"
+                                        style="display:block;position:relative;z-index:1;">
+
+                                        <!-- inner solid core (smaller) -->
+                                        <polygon points="0,-0.42 0.36,0 0,-0.08" fill="#00ff00" />
+                                        <polygon points="0,-0.42 -0.36,0 0,-0.08" fill="#00cc00" />
+                                        <polygon points="0,0.42 0.36,0 0,-0.08" fill="#009900" />
+                                        <polygon points="0,0.42 -0.36,0 0,-0.08" fill="#007700" />
+                                        <!-- highlight -->
+                                        <ellipse cx="-0.08" cy="-0.28" rx="0.10" ry="0.06" fill="white" opacity="0.5"
+                                            transform="rotate(-20,-0.08,-0.28)" />
+                                    </svg>
                                 </div>
-                                <div
-                                    class="bg-black/10 px-3 flex items-center border border-black/20 rounded-r-sm min-w-[100px]">
-                                    <span class="text-[9px] uppercase tracking-widest font-bold opacity-80"
-                                        data-i18n="to_answer">question</span>
-                                </div>
+                                <span class="text-[8px] uppercase tracking-widest font-bold opacity-70"
+                                    data-i18n="to_answer">question</span>
                             </div>
 
-                            <!-- Answered -->
-                            <div class="flex items-stretch h-9">
-                                <div
-                                    class="bg-black/20 px-3 flex items-center justify-center border-l border-t border-b border-black/20 rounded-l-sm">
-                                    <div class="nugget-preview answered"></div>
+                            <!-- Answered nugget -->
+                            <div class="flex flex-col items-center gap-1.5 border border-black/40 py-2 px-2 hover:bg-black/10 transition-all cursor-pointer rounded-sm">
+                                <div style="position:relative;width:48px;height:48px;">
+                                    <svg viewBox="-1 -1 2 2" width="48" height="48" xmlns="http://www.w3.org/2000/svg"
+                                        style="display:block;position:relative;z-index:1;">
+
+                                        <polygon points="0,-0.42 0.36,0 0,-0.08" fill="#ff2200" />
+                                        <polygon points="0,-0.42 -0.36,0 0,-0.08" fill="#cc1a00" />
+                                        <polygon points="0,0.42 0.36,0 0,-0.08" fill="#991300" />
+                                        <polygon points="0,0.42 -0.36,0 0,-0.08" fill="#770e00" />
+                                        <ellipse cx="-0.08" cy="-0.28" rx="0.10" ry="0.06" fill="white" opacity="0.4"
+                                            transform="rotate(-20,-0.08,-0.28)" />
+                                    </svg>
                                 </div>
-                                <div
-                                    class="bg-black/10 px-3 flex items-center border border-black/20 rounded-r-sm min-w-[100px]">
-                                    <span class="text-[9px] uppercase tracking-widest font-bold opacity-80"
-                                        data-i18n="answered">answered</span>
-                                </div>
+                                <span class="text-[8px] uppercase tracking-widest font-bold opacity-70"
+                                    data-i18n="answered">answered</span>
                             </div>
                         </div>
                     </div>
@@ -1146,8 +1170,8 @@
                             <span id="reset-btn-text"
                                 class="text-[8px] uppercase tracking-widest font-bold">Reset</span>
                         </div>
-                        <div class="flex flex-col items-center gap-1.5 border border-black/40 py-2 rounded-sm hover:bg-white/10 transition-all cursor-default"
-                            title="Fullscreen">
+                        <div class="flex flex-col items-center gap-1.5 border border-black/40 py-2 rounded-sm hover:bg-white/10 transition-all cursor-pointer"
+                            title="Fullscreen" onclick="toggleImmersion()">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="black" viewBox="0 0 16 16">
                                 <path
                                     d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zM10 15.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 1 0v4A1.5 1.5 0 0 1 14.5 16h-4a.5.5 0 0 1-.5-.5z" />
@@ -1322,10 +1346,10 @@
                 mol_according: "ACCORDING TO",
                 mol_placeholder: "Complete all 10 reflections to reveal the meaning of life.<br>Look for instructions in the yellow box.",
                 manual_title: "WHAT DO I DO?",
-                manual_text: "You are invited to explore this 3D house, and discover nothing less than <span style='color: aqua; background-color: navy'>the meaning of life</span>. Click <b>INITIALIZE</b> to start, then explore 10 rooms. You can follow the lead, or just pick any room. Click on the \"Orb\" for a question. Answer all the questions and discover the meaning of life!",
+                manual_text: "You are invited to explore this 3D house, and discover nothing less than <pause> <slow><span style='color: aqua; background-color: navy'>the meaning of life</span></slow> <pause duration=\"1500\">. Click <b>INITIALIZE</b> to start, wait for the LOADING, then click <b>JUMP IN</b>. You can then explore 10 rooms. <pause> You can follow the lead, <pause> or just pick any room. <pause> Click on the \"Nugget\" for a question. Answer all the questions and discover the meaning of life!",
                 book_title: "TONIC FOR THE BONES",
                 book_subtitle: "The Book",
-                book_text: "More than a memoir about illness, 'TftB' is a reflection on how adversity (more paricular, Parkinson Disease) can become an unexpected teacher that reveals truths aand beauty at unexpected places and moments",
+                book_text: "More than a memoir about illness, 'TftB' is a reflection on how adversity (more particular, Parkinson Disease) can become an unexpected teacher that reveals truths and beauty at unexpected places and moments",
                 book_btn: "MORE INFO",
                 name_question: "WHAT IS YOUR NAME?",
                 name_hint: "Identify yourself to enter the House of Awe.",
@@ -1372,7 +1396,7 @@
                 mol_according: "VOLGENS",
                 mol_placeholder: "Voltooi alle 10 reflecties om de betekenis van het leven te onthullen.<br>Kijk voor instructies in het gele blok.",
                 manual_title: "GEBRUIKSAANWIJZING",
-                manual_text: "Je bent uitgenodigd om dit 3D-huis te verkennen en niets minder dan <span style='color: aqua; background-color: navy'>de zin van het leven</span> te ontdekken. Je kunt de aanwijzingen volgen, of naar buiten gaan en gewoon een willekeurige \"kamer\" kiezen. Je moet 10 kamers bezoeken. Klik op de \"Nugget\" voor een vraag. Beantwoord alle vragen en ontdek de zin van het leven!",
+                 manual_text: "Je bent uitgenodigd om dit 3D-huis te verkennen en niets minder dan <pause> <slow><span style='color: aqua; background-color: navy'>de zin van het leven</span></slow> <pause duration=\"1500\"> te ontdekken. Klik op <b>INITIALISEER</b> om te beginnen, wacht tot het LADEN klaar is, klik dan op <b>SPRING ERIN</b>. Je kunt dan 10 kamers verkennen. <pause> Je kunt de aanwijzingen volgen, <pause> of naar buiten gaan en gewoon een willekeurige \"kamer\" kiezen. <pause> Klik op de \"Nugget\" voor een vraag. Beantwoord alle vragen en ontdek de zin van het leven!",
                 to_answer: "vraag",
                 answered: "beantwoord",
                 nuggets_title: "Nuggets",
@@ -1439,7 +1463,11 @@
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (i18n[lang][key]) {
-                    el.innerHTML = i18n[lang][key];
+                    if (el.hasAttribute('data-typewriter')) {
+                        runTypewriter(el, i18n[lang][key], parseInt(el.getAttribute('data-typewriter')));
+                    } else {
+                        el.innerHTML = i18n[lang][key];
+                    }
                 }
             });
 
@@ -1457,6 +1485,67 @@
 
             // Specific updates
             updateSectionName();
+        }
+
+        function runTypewriter(el, html, duration) {
+            if (el._typewriterFrame) cancelAnimationFrame(el._typewriterFrame);
+            el.innerHTML = "";
+            let tokens = [];
+            let isTag = false;
+            let tag = "";
+            let slowMode = false;
+            for (let char of html) {
+                if (char === '<') { isTag = true; tag = char; }
+                else if (char === '>') {
+                    tag += char;
+                    if (tag.startsWith('<pause')) {
+                        const m = tag.match(/duration="(\d+)"/);
+                        tokens.push({ type: 'pause', duration: m ? parseInt(m[1]) : 500 });
+                    } else if (tag === '<slow>') {
+                        slowMode = true;
+                    } else if (tag === '</slow>') {
+                        slowMode = false;
+                    } else {
+                        tokens.push({ type: 'tag', content: tag, slow: slowMode });
+                    }
+                    isTag = false;
+                    tag = "";
+                }
+                else if (isTag) { tag += char; }
+                else { tokens.push({ type: 'char', content: char, slow: slowMode }); }
+            }
+
+            const SLOW_MULT = 12;
+            const weightedCount = tokens.reduce((acc, t) => {
+                if (t.type === 'pause') return acc;
+                return acc + (t.slow ? SLOW_MULT : 1);
+            }, 0);
+            const baseTime = duration / Math.max(weightedCount, 1);
+
+            let time = 0;
+            tokens.forEach(t => {
+                t.start = time;
+                t.end = time + (t.type === 'pause' ? t.duration : (t.slow ? SLOW_MULT : 1) * baseTime);
+                time = t.end;
+            });
+
+            const totalAnimTime = time;
+            const startTime = performance.now();
+
+            function update(now) {
+                const elapsed = now - startTime;
+                let currentContent = "";
+                for (let t of tokens) {
+                    if (elapsed >= t.start) {
+                        if (t.type !== 'pause') currentContent += t.content;
+                    } else break;
+                }
+                el.innerHTML = currentContent;
+                if (elapsed < totalAnimTime) {
+                    el._typewriterFrame = requestAnimationFrame(update);
+                }
+            }
+            el._typewriterFrame = requestAnimationFrame(update);
         }
 
         function closeOverlay(id) {
@@ -1551,7 +1640,7 @@
 
             // Start iframe load (placeholder stays visible until EXPERIENCE_LOADED event)
             iframe.classList.remove('hidden');
-            iframe.src = 'house.html?v=' + Date.now();
+            iframe.src = 'house.html';
 
             // Keep header visible during boot
             if (mainHeader) mainHeader.style.opacity = '1';
@@ -1603,59 +1692,25 @@
                         container.appendChild(retryEl);
                     }
                 }
-            }, 30000);
+            }, 60000);
         }
 
         // ---- Enter: animate title away and start flight ----
-        window.enterExperience = function () {
-            // PERF: kill the wireframe Three.js loop — no longer needed once experience starts
-            if (window._stopWireframe) window._stopWireframe();
-            const iframe = document.getElementById('experience-iframe');
-            const introUI = document.getElementById('ui-wrapper');
-            const mainHeader = document.getElementById('landing-header');
-            const startBtn = document.getElementById('start-btn');
+        function toggleImmersion() {
             const container = document.getElementById('simulation-container');
-            const placeholder = document.getElementById('sim-placeholder');
-
-            // Hide placeholder
-            if (placeholder) {
-                placeholder.classList.add('opacity-0');
-                setTimeout(() => {
-                    placeholder.style.display = 'none';
-                }, 400);
+            if (document.fullscreenElement || container.classList.contains('ios-fullscreen')) {
+                exitImmersion();
+            } else {
+                enterImmersion();
             }
+        }
 
-            // Keep landing header visible (title/subtitle at top of page)
-            // if (mainHeader) mainHeader.classList.add('header-move-up');
-            if (startBtn) {
-                // Ensure it's visible initially (in case of re-entry or weird state)
-                startBtn.style.display = 'inline-block';
-                startBtn.classList.add('btn-out');
-                setTimeout(() => { startBtn.style.display = 'none'; }, 1000);
-            }
-
-            setTimeout(() => {
-                if (introUI) {
-                    introUI.style.opacity = '0';
-                    setTimeout(() => { introUI.style.display = 'none'; }, 1000);
-                }
-            }, 3000);
-
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({ type: 'SET_LANGUAGE', lang: currentLang }, '*');
-                iframe.contentWindow.postMessage({ type: 'START_EXPERIENCE' }, '*');
-            }
-
+        function enterImmersion() {
+            const container = document.getElementById('simulation-container');
             const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
-            const isMobile = isIos || /Android/i.test(navigator.userAgent);
             const fsSupported = document.fullscreenEnabled || document.webkitFullscreenEnabled;
 
-            if (isMobile) {
-                document.body.classList.add('mobile-experience-active');
-            }
-
             if (isIos || !fsSupported) {
-                // iOS: expand the container manually
                 container.classList.add('ios-fullscreen');
                 document.body.classList.add('mobile-experience-active');
                 document.body.style.overflow = 'hidden';
@@ -1672,17 +1727,13 @@
                         cursor: pointer; display: flex; align-items: center; justify-content: center;
                         padding: 0; line-height: 1;
                     `;
-                    exitBtn.onclick = function () {
-                        container.classList.remove('ios-fullscreen');
-                        document.body.style.overflow = '';
-                        exitBtn.style.display = 'none';
-                    };
+                    exitBtn.onclick = exitImmersion;
                     document.body.appendChild(exitBtn);
                 } else {
                     exitBtn.style.display = 'flex';
                 }
+                updateIframeFullscreenStatus(true);
             } else {
-                // Desktop/Android: try real Fullscreen API
                 try {
                     if (container.requestFullscreen) {
                         container.requestFullscreen();
@@ -1693,6 +1744,69 @@
                     console.warn("Fullscreen request failed", e);
                 }
             }
+        }
+
+        function exitImmersion() {
+            const container = document.getElementById('simulation-container');
+            if (document.fullscreenElement) {
+                document.exitFullscreen && document.exitFullscreen();
+            } else if (document.webkitFullscreenElement) {
+                document.webkitExitFullscreen && document.webkitExitFullscreen();
+            }
+
+            container.classList.remove('ios-fullscreen');
+            document.body.classList.remove('mobile-experience-active');
+            document.body.style.overflow = '';
+            const exitBtn = document.getElementById('ios-exit-fullscreen-btn');
+            if (exitBtn) exitBtn.style.display = 'none';
+
+            updateIframeFullscreenStatus(false);
+        }
+
+        function updateIframeFullscreenStatus(active) {
+            const iframe = document.getElementById('experience-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'FULLSCREEN_STATUS', active: active }, '*');
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            updateIframeFullscreenStatus(!!document.fullscreenElement);
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            updateIframeFullscreenStatus(!!document.webkitFullscreenElement);
+        });
+
+        // Use the new enterImmersion in enterExperience
+        window.enterExperience = function () {
+            if (window._stopWireframe) window._stopWireframe();
+            const placeholder = document.getElementById('sim-placeholder');
+            const startBtn = document.getElementById('start-btn');
+            const introUI = document.getElementById('ui-wrapper');
+
+            if (placeholder) {
+                placeholder.classList.add('opacity-0');
+                setTimeout(() => { placeholder.style.display = 'none'; }, 400);
+            }
+            if (startBtn) {
+                startBtn.style.display = 'inline-block';
+                startBtn.classList.add('btn-out');
+                setTimeout(() => { startBtn.style.display = 'none'; }, 1000);
+            }
+            setTimeout(() => {
+                if (introUI) {
+                    introUI.style.opacity = '0';
+                    setTimeout(() => { introUI.style.display = 'none'; }, 1000);
+                }
+            }, 3000);
+
+            const iframe = document.getElementById('experience-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'SET_LANGUAGE', lang: currentLang }, '*');
+                iframe.contentWindow.postMessage({ type: 'START_EXPERIENCE' }, '*');
+            }
+
+            enterImmersion();
         };
 
         // ---- Message handler: receive events from iframe ----
@@ -1876,17 +1990,23 @@
             }
 
             if (d.type === 'EXIT_EXPERIENCE') {
-                window.location.href = 'index.html';
+                // Modified: Just exit immersion mode instead of a hard reload
+                exitImmersion();
             }
 
-            if (d.type === 'TOGGLE_FULLSCREEN') {
-                const container = document.getElementById('simulation-container');
-                if (container) {
-                    container.classList.toggle('ios-fullscreen');
+            if (d.type === 'TOGGLE_IMMERSION') {
+                toggleImmersion();
+            }
+
+            if (d.type === 'REVEAL_COMPLETE') {
+                // Start the intro music and flight animation now that reveal is done
+                const iframe = document.getElementById('experience-iframe');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'START_MUSIC_AND_FLIGHT' }, '*');
                 }
             }
 
-        });
+        }); // end window.addEventListener('message', ...)
 
         function markRoomReflected(roomKey, answer, reflectionLabel) {
             const item = document.querySelector('#reflection-list [data-room="' + roomKey + '"]');
@@ -2105,6 +2225,8 @@
                     }
                 }
                 updateSectionName();
+                // Start typewriter on load
+                setLanguage(currentLang);
             } catch (e) { }
         });
     </script>

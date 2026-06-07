@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mondriaan Boogie Woogie</title>
+<link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#e8e4d4;font-family:'Poiret One',cursive}
+
+/* LANDING */
+#landing{
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#18261f 0%,#080e0c 60%,#020404 100%);
+  cursor:pointer;transition:opacity 1.6s ease,visibility 1.6s ease;
+}
+#landing.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.lt{color:#e8e0c8;font-size:clamp(24px,5vw,72px);letter-spacing:10px;text-transform:uppercase;
+  text-align:center;line-height:1.12;margin-bottom:10px;
+  text-shadow:0 0 80px rgba(248,216,54,.22);
+  opacity:0;transform:translateY(14px);transition:opacity 1.3s ease,transform 1.3s ease}
+.lt.show{opacity:1;transform:translateY(0)}
+.ls{color:rgba(210,210,210,.5);font-size:clamp(9px,1.1vw,14px);letter-spacing:5px;
+  text-transform:uppercase;margin-bottom:6px;opacity:0;transition:opacity 1.2s ease .3s}
+.ls.show{opacity:1}
+.li{color:rgba(248,216,54,.5);font-size:clamp(8px,.9vw,12px);letter-spacing:4px;
+  text-transform:uppercase;margin-bottom:50px;opacity:0;transition:opacity 1.2s ease .5s}
+.li.show{opacity:1}
+.lbar{width:clamp(180px,36vw,460px);height:5px;
+  background:linear-gradient(90deg,#D22626 0% 33%,#285495 33% 66%,#F8D836 66% 100%);
+  margin-bottom:50px;opacity:0;transition:opacity 1.2s ease .4s}
+.lbar.show{opacity:.88}
+#ebtn{
+  background:transparent;border:2px solid #F8D836;color:#F8D836;
+  font-family:'Poiret One',cursive;font-size:clamp(13px,1.8vw,20px);
+  letter-spacing:8px;text-transform:uppercase;padding:16px 52px;cursor:pointer;
+  position:relative;overflow:hidden;opacity:0;
+  transition:opacity 1.2s ease .7s,color .3s,box-shadow .3s,transform .12s;
+}
+#ebtn.show{opacity:1}
+#ebtn::before{content:'';position:absolute;inset:0;background:#F8D836;
+  transform:scaleX(0);transform-origin:left;transition:transform .35s ease;z-index:0}
+#ebtn:hover::before{transform:scaleX(1)}
+#ebtn:hover{color:#111;box-shadow:0 0 60px rgba(248,216,54,.5)}
+#ebtn:active{transform:scale(.97)}
+#ebtn span{position:relative;z-index:1}
+
+/* EXPERIENCE */
+#xp{position:fixed;inset:0;z-index:50;opacity:0;visibility:hidden;transition:opacity .8s ease}
+#xp.on{opacity:1;visibility:visible}
+#cv{position:absolute;inset:0;overflow:hidden;background:#e8e4d4;transition:background-color .08s ease}
+
+/* GRID */
+.gl{position:absolute;background:#F8D836;z-index:10;opacity:0;transition:opacity .5s ease}
+.gl.on{opacity:1}
+
+/* COLOUR BLOCKS — transition width/height for extension */
+.cb{
+  position:absolute;z-index:8;opacity:0;
+  transition:opacity .4s ease, width .18s ease, height .18s ease,
+             left .18s ease, top .18s ease;
+}
+.cb.on{opacity:1}
+
+/* TRAFFIC */
+.car{position:absolute;z-index:12;opacity:0;transition:opacity .3s ease}
+.car.on{opacity:1}
+
+/* LETTER PIXELS — behind yellow lines, z:5 */
+.lb{position:absolute;z-index:5;opacity:0;transform-origin:center;will-change:transform,opacity,background-color}
+
+/* BEAT FLASH */
+#bf{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;background:rgba(248,216,54,.1)}
+
+/* VIGNETTE */
+#vig{
+  position:fixed;inset:0;z-index:60;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,transparent 20%,rgba(0,0,0,.28) 62%,rgba(0,0,0,.7) 100%);
+  transition:opacity .2s ease;
+}
+
+/* HUD — just audio control, no title */
+#hud{position:fixed;inset:0;z-index:300;pointer-events:none;opacity:0;transition:opacity .6s ease 1.4s}
+#hud.on{opacity:1}
+#ac{position:absolute;top:22px;right:26px;pointer-events:all;display:flex;align-items:center;gap:10px}
+.abtn{
+  background:rgba(0,0,0,.55);border:1px solid rgba(248,216,54,.45);border-radius:50%;
+  cursor:pointer;color:#F8D836;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+  transition:transform .3s,border-color .3s,color .3s;backdrop-filter:blur(4px);
+}
+.abtn:hover{transform:scale(1.12);border-color:#D22626;color:#D22626}
+.abtn.muted{color:#555;border-color:#333}
+#vub{display:flex;align-items:flex-end;gap:2px;height:28px;opacity:.7}
+.vs{width:4px;border-radius:2px;transition:height .05s ease}
+.albl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(200,200,200,.4)}
+
+/* TRAFFIC KEYFRAMES */
+@keyframes dH {from{left:-4%}to{left:104%}}
+@keyframes dHr{from{left:104%}to{left:-4%}}
+@keyframes dV {from{top:-4%}to{top:104%}}
+@keyframes dVr{from{top:104%}to{top:-4%}}
+@keyframes blk{0%,50%{opacity:1}51%,100%{opacity:0}}
+@keyframes crb{0%,45%{background:#D22626}50%,95%{background:#285495}}
+@keyframes cyw{0%,45%{background:#F8D836}50%,95%{background:#f0ece0}}
+</style>
+</head>
+<body>
+
+<div id="landing">
+  <div class="lt" id="lt">Mondriaan<br>Boogie Woogie</div>
+  <div class="ls" id="ls">Piet Mondrian &nbsp;·&nbsp; 1942–43</div>
+  <div class="li" id="li">A Modern Interpretation</div>
+  <div class="lbar" id="lb"></div>
+  <button id="ebtn"><span>ENTER</span></button>
+</div>
+
+<div id="xp">
+  <div id="cv">
+    <div id="bf"></div>
+    <div id="ll"></div><!-- letter layer -->
+    <div id="gl"></div><!-- grid layer -->
+    <div id="tl"></div><!-- traffic layer -->
+  </div>
+  <div id="vig"></div>
+</div>
+
+<div id="hud">
+  <div id="ac">
+    <button id="mtgl" class="abtn muted"><i id="mic" class="fa-solid fa-volume-xmark"></i></button>
+    <div id="vub"></div>
+    <span class="albl">Soundtrack</span>
+  </div>
+</div>
+
+<audio id="aud" loop crossorigin="anonymous">
+  <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ── FONT ───────────────────────────────────────── */
+const F={
+  M:[[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+  O:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+  N:[[1,0,0,0,1],[1,1,0,0,1],[1,0,1,0,1],[1,0,0,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+  D:[[1,1,1,0,0],[1,0,0,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,1,0],[1,1,1,0,0]],
+  R:[[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]],
+  I:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[1,1,1,1,1]],
+  A:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+  B:[[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0]],
+  G:[[0,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,0,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,1]],
+  E:[[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
+  W:[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,1,0,1],[1,1,0,1,1],[1,0,0,0,1]],
+  ' ':[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+};
+
+/* ── COMPOSITION in virtual 1000×1000 ──────────────
+   Scale = min(vw,vh)/1000. Offset centres it.
+   Lines extend FULL viewport width/height.
+─────────────────────────────────────────────────── */
+const V=1000;
+let SC=1, OX=0, OY=0;
+function calcSC(){
+  SC=Math.min(innerWidth,innerHeight)/V;
+  OX=(innerWidth -V*SC)/2;
+  OY=(innerHeight-V*SC)/2;
+}
+const px=v=>OX+v*SC, py=v=>OY+v*SC, ps=v=>v*SC;
+
+/* Grid lines (virtual coords) */
+const VL=[
+  {x:18,w:11},{x:48,w:6},{x:82,w:9},{x:133,w:6},
+  {x:202,w:8},{x:268,w:6},{x:383,w:13},
+  {x:483,w:6},{x:543,w:8},{x:653,w:9},{x:713,w:6},
+  {x:763,w:8},{x:833,w:6},{x:883,w:9},{x:943,w:8},{x:982,w:11},
+];
+const HL=[
+  {y:18,h:11},{y:52,h:6},{y:92,h:9},{y:163,h:8},{y:223,h:6},
+  {y:313,h:13},{y:423,h:6},{y:503,h:8},{y:583,h:9},{y:643,h:6},
+  {y:703,h:8},{y:773,h:6},{y:823,h:9},{y:873,h:8},{y:943,h:11},{y:977,h:6},
+];
+
+/* Colour blocks — base geometry + extendAxis for music-driven stretch */
+/* extendAxis: 'w' stretches right, 'h' stretches down, 'wl' stretches left, 'ht' stretches up */
+const BLOCKS=[
+  {x:390,y:62, w:80, h:40, c:'#D22626', ext:'w',  maxExt:320},
+  {x:565,y:227,w:60, h:100,c:'#285495', ext:'h',  maxExt:280},
+  {x:583,y:262,w:28, h:50, c:'#D22626', ext:'ht', maxExt:200},
+  {x:133,y:322,w:68, h:40, c:'#D22626', ext:'w',  maxExt:240},
+  {x:663,y:513,w:48, h:50, c:'#285495', ext:'h',  maxExt:200},
+  {x:663,y:563,w:48, h:10, c:'#F8D836', ext:'w',  maxExt:180},
+  {x:663,y:573,w:48, h:40, c:'#D22626', ext:'wl', maxExt:220},
+  {x:773,y:603,w:38, h:50, c:'#D22626', ext:'h',  maxExt:180},
+  {x:133,y:103,w:68, h:78, c:'#C8C8C8', ext:'w',  maxExt:200},
+  {x:208,y:433,w:58, h:88, c:'#f0ece0', ext:'h',  maxExt:160},
+  {x:488,y:323,w:53, h:88, c:'#F8D836', ext:'ht', maxExt:260},
+  {x:272,y:583,w:108,h:48, c:'#C8C8C8', ext:'w',  maxExt:220},
+  {x:837,y:163,w:43, h:58, c:'#285495', ext:'h',  maxExt:300},
+  {x:852,y:833,w:88, h:48, c:'#D22626', ext:'wl', maxExt:280},
+  {x:52, y:703,w:78, h:68, c:'#285495', ext:'w',  maxExt:260},
+  {x:422,y:823,w:58, h:48, c:'#F8D836', ext:'h',  maxExt:200},
+  /* extra blocks in the "fringe" area so it looks continuous */
+  {x:-80,y:310,w:68, h:55, c:'#D22626', ext:'w',  maxExt:120},
+  {x:-80,y:620,w:58, h:45, c:'#285495', ext:'w',  maxExt:100},
+  {x:1010,y:180,w:68,h:50, c:'#F8D836', ext:'wl', maxExt:120},
+  {x:1010,y:680,w:58,h:45, c:'#D22626', ext:'wl', maxExt:100},
+  {x:200,y:-60, w:80,h:45, c:'#285495', ext:'h',  maxExt:120},
+  {x:600,y:-60, w:60,h:45, c:'#F8D836', ext:'h',  maxExt:100},
+  {x:300,y:1010,w:70,h:45, c:'#D22626', ext:'ht', maxExt:120},
+  {x:700,y:1010,w:65,h:45, c:'#285495', ext:'ht', maxExt:100},
+];
+
+/* Letter rows in virtual coords (centred) */
+/* Row 1: MONDRIAAN at y≈200 (upper third), Row 2: BOOGIE WOOGIE at y≈800 (lower third) */
+const ROWS=[{text:'MONDRIAAN',vy:200},{text:'BOOGIE WOOGIE',vy:800}];
+
+/* ── DOM ────────────────────────────────────────── */
+const cvEl=document.getElementById('cv');
+const glEl=document.getElementById('gl');
+const tlEl=document.getElementById('tl');
+const llEl=document.getElementById('ll');
+const vigEl=document.getElementById('vig');
+const bfEl=document.getElementById('bf');
+
+/* ── BUILD GRID ─────────────────────────────────── */
+const glEls=[], cbEls=[], cbData=[];
+
+function buildGrid(){
+  calcSC();
+  // Vertical lines: full height, x from virtual
+  VL.forEach(l=>{
+    const el=document.createElement('div'); el.className='gl';
+    el.style.cssText=`left:${px(l.x)}px;top:0;width:${ps(l.w)}px;height:100%`;
+    glEl.appendChild(el); glEls.push(el);
+  });
+  // Horizontal lines: full width, y from virtual
+  HL.forEach(l=>{
+    const el=document.createElement('div'); el.className='gl';
+    el.style.cssText=`top:${py(l.y)}px;left:0;height:${ps(l.h)}px;width:100%`;
+    glEl.appendChild(el); glEls.push(el);
+  });
+  // Colour blocks
+  BLOCKS.forEach((b,i)=>{
+    const el=document.createElement('div'); el.className='cb';
+    el.style.cssText=`left:${px(b.x)}px;top:${py(b.y)}px;width:${ps(b.w)}px;height:${ps(b.h)}px;background:${b.c}`;
+    glEl.appendChild(el); cbEls.push(el);
+    // Store base sizes in px for animation
+    cbData.push({
+      baseLpx: px(b.x), baseTopx: py(b.y),
+      baseWpx: ps(b.w), baseHpx: ps(b.h),
+      maxExtpx: ps(b.maxExt), ext: b.ext,
+      phase: Math.random()*Math.PI*2,
+      sensitivity: 0.4+Math.random()*0.8, // how strongly this block responds
+    });
+  });
+}
+
+function fadeInGrid(){
+  [...glEls,...cbEls].forEach((el,i)=>setTimeout(()=>el.classList.add('on'),i*12+60));
+}
+
+/* ── BUILD LETTERS ──────────────────────────────── */
+const lEls=[], lMeta=[];
+const PAL0=['#D22626','#285495','#F8D836','#F8D836','#F8D836','#D22626'];
+const PALS=[
+  ['#F8D836','#F8D836','#D22626','#D22626','#285495','#F8D836'],
+  ['#285495','#D22626','#F8D836','#285495','#D22626','#F8D836'],
+  ['#D22626','#F8D836','#285495','#F8D836','#D22626','#285495'],
+  ['#F8D836','#285495','#F8D836','#D22626','#F8D836','#285495'],
+];
+
+function buildLetters(){
+  calcSC();
+  // Cell size in virtual units — chosen so MONDRIAAN fills ~60% of width
+  const CW=8, CH=9, LW=5*CW+3, LH=7*CH;
+  ROWS.forEach(({text,vy})=>{
+    const tw=text.length*LW;
+    const startX=(V-tw)/2, startY=vy-LH/2;
+    text.split('').forEach((ch,ci)=>{
+      const bm=F[ch]||F[' '];
+      bm.forEach((row,ri)=>row.forEach((cell,pi)=>{
+        if(!cell) return;
+        const vx=startX+ci*LW+pi*CW, vyr=startY+ri*CH;
+        const el=document.createElement('div'); el.className='lb';
+        const col=PAL0[Math.floor(Math.random()*PAL0.length)];
+        el.style.cssText=`left:${px(vx)}px;top:${py(vyr)}px;width:${ps(CW-1)}px;height:${ps(CH-1)}px;background:${col};opacity:0`;
+        llEl.appendChild(el); lEls.push(el);
+        lMeta.push({
+          phase: Math.random()*Math.PI*2,
+          freq:  0.6+Math.random()*1.8,
+          amp:   0.5+Math.random()*1.0,
+          // base px position for jitter reference
+          bx: px(vx), by: py(vyr),
+        });
+      }));
+    });
+  });
+}
+
+function fadeInLetters(){
+  const ord=lEls.map((_,i)=>i).sort(()=>Math.random()-.5);
+  ord.forEach((idx,pos)=>setTimeout(()=>{ lEls[idx].style.opacity='0.92'; },pos*2));
+}
+
+/* ── BUILD TRAFFIC ──────────────────────────────── */
+const cars=[], speeds=[];
+function buildTraffic(){
+  const blinks=['blk','crb','cyw','none'];
+  const cols=['#D22626','#285495','#C8C8C8','#f0ece0','#D22626'];
+  function makeCar(isH,trackPx,thkPx){
+    const spd=Math.random()*10+5;
+    const dir=isH?(Math.random()>.5?'dH':'dHr'):(Math.random()>.5?'dV':'dVr');
+    const bl=blinks[Math.floor(Math.random()*blinks.length)];
+    let anim=`${dir} ${spd}s linear infinite`;
+    if(bl!=='none') anim+=`, ${bl} ${(Math.random()*.5+.2).toFixed(2)}s steps(1) infinite`;
+    const c=document.createElement('div'); c.className='car';
+    const bg=cols[Math.floor(Math.random()*cols.length)];
+    if(isH){
+      const cw=Math.round(ps(Math.random()*14+5)), ch=Math.max(2,Math.round(thkPx*(.5+Math.random()*.5)));
+      c.style.cssText=`height:${ch}px;width:${cw}px;top:${trackPx}px;left:-4%;background:${bg};animation:${anim};animation-delay:${-(Math.random()*spd)}s`;
+    } else {
+      const ch=Math.round(ps(Math.random()*14+5)), cw=Math.max(2,Math.round(thkPx*(.5+Math.random()*.5)));
+      c.style.cssText=`width:${cw}px;height:${ch}px;left:${trackPx}px;top:-4%;background:${bg};animation:${anim};animation-delay:${-(Math.random()*spd)}s`;
+    }
+    tlEl.appendChild(c); cars.push(c); speeds.push(spd);
+  }
+  HL.forEach(l=>{ for(let i=0;i<18;i++) makeCar(true, py(l.y),ps(l.h)); });
+  VL.forEach(l=>{ for(let i=0;i<18;i++) makeCar(false,px(l.x),ps(l.w)); });
+}
+function fadeInTraffic(){ cars.forEach((c,i)=>setTimeout(()=>c.classList.add('on'),i*2+300)); }
+
+/* ── VU ─────────────────────────────────────────── */
+const vus=[];
+['#F8D836','#F8D836','#F8D836','#F8D836','#D22626','#D22626','#D22626','#285495'].forEach(col=>{
+  const s=document.createElement('div'); s.className='vs';
+  s.style.cssText=`background:${col};height:4px`;
+  document.getElementById('vub').appendChild(s); vus.push(s);
+});
+
+/* ── AUDIO ──────────────────────────────────────── */
+const audEl=document.getElementById('aud');
+const tglBtn=document.getElementById('mtgl');
+const micEl=document.getElementById('mic');
+let playing=false, actx, anlz, adata;
+function initA(){
+  if(actx) return;
+  actx=new(window.AudioContext||window.webkitAudioContext)();
+  anlz=actx.createAnalyser(); anlz.fftSize=256;
+  adata=new Uint8Array(anlz.frequencyBinCount);
+  actx.createMediaElementSource(audEl).connect(anlz);
+  anlz.connect(actx.destination);
+}
+function play(){
+  initA(); if(actx.state==='suspended') actx.resume();
+  audEl.play().then(()=>{ playing=true; micEl.className='fa-solid fa-music'; tglBtn.classList.remove('muted'); }).catch(e=>console.log(e));
+}
+tglBtn.addEventListener('click',()=>{
+  if(playing){ audEl.pause(); micEl.className='fa-solid fa-volume-xmark'; tglBtn.classList.add('muted'); playing=false; }
+  else play();
+});
+
+/* ── VISUALISER ─────────────────────────────────── */
+let smE=0,smB=0,smM=0,smT=0,lastBeat=0,palIdx=0;
+let palTarget=PALS[0],palCur=PALS[0].slice(),palT=1,beatOn=false;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const map=(v,a,b,c,d)=>c+(d-c)*clamp((v-a)/(b-a),0,1);
+const hRgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+
+function beat(bn){
+  const now=performance.now();
+  if(now-lastBeat<185) return; lastBeat=now;
+  palIdx=(palIdx+1)%PALS.length; palTarget=PALS[palIdx]; palT=0;
+  if(!beatOn){
+    beatOn=true;
+    const a=map(bn,.45,1,.02,.16);
+    bfEl.style.opacity=a; bfEl.style.background=`rgba(248,216,54,${a})`;
+    setTimeout(()=>{ bfEl.style.opacity='0'; beatOn=false; },60);
+  }
+}
+
+function tick(){
+  requestAnimationFrame(tick);
+  if(!anlz||!playing){ vus.forEach(s=>{ s.style.height='4px'; }); return; }
+  anlz.getByteFrequencyData(adata);
+  let bS=0,mS=0,tS=0;
+  for(let i=0;i<10;i++) bS+=adata[i];
+  for(let i=10;i<41;i++) mS+=adata[i];
+  for(let i=41;i<101;i++) tS+=adata[i];
+  const bR=clamp(bS/(10*255)*2.6,0,1);
+  const mR=clamp(mS/(31*255)*1.7,0,1);
+  const tR=clamp(tS/(60*255)*2.3,0,1);
+  const eR=clamp(bR*.5+mR*.3+tR*.2,0,1);
+  const SK=0.15;
+  smB+=SK*(bR-smB); smM+=SK*(mR-smM); smT+=SK*(tR-smT); smE+=SK*(eR-smE);
+  const t=Date.now()*.001;
+
+  /* Background */
+  const L=Math.round(lerp(20,230,Math.pow(smE,.55)));
+  cvEl.style.backgroundColor=`rgb(${L},${Math.round(L*.98)},${Math.round(L*.93)})`;
+
+  /* Vignette */
+  vigEl.style.opacity=lerp(1.0,.15,Math.pow(smE,.38)).toFixed(3);
+
+  /* Grid glow (treble) */
+  const gi=Math.round(map(smT,0,1,0,42));
+  const gg=gi>2?`0 0 ${gi}px rgba(248,216,54,${(gi/50).toFixed(2)}),0 0 ${gi*2}px rgba(248,216,54,${(gi/120).toFixed(2)})`:'none';
+  glEls.forEach(el=>{ el.style.boxShadow=gg; });
+
+  /* Beat detect */
+  if(bR>0.5) beat(bR);
+
+  /* Palette lerp */
+  if(palT<1){
+    palT=Math.min(1,palT+0.13);
+    lEls.forEach((el,i)=>{
+      const idx=i%palTarget.length;
+      const fr=hRgb(palCur[idx]),to=hRgb(palTarget[idx]);
+      el.style.background=`rgb(${Math.round(lerp(fr[0],to[0],palT))},${Math.round(lerp(fr[1],to[1],palT))},${Math.round(lerp(fr[2],to[2],palT))})`;
+    });
+    if(palT>=1) palCur=palTarget.slice();
+  }
+
+  /* ── COLOUR BLOCK EXTENSION ────────────────────────────────────
+     Each block can stretch in its designated axis.
+     Drive: combination of smoothed bass + a per-block oscillator
+     tied to mid frequencies. The result: blocks breathe and lunge
+     across adjacent grid cells in time with the music.
+  ─────────────────────────────────────────────────────────────── */
+  cbEls.forEach((el,i)=>{
+    const d=cbData[i];
+    // Per-block drive: bass * sensitivity + mid oscillator
+    const osc=Math.sin(t*2.2+d.phase)*0.5+0.5; // 0..1
+    const drive=clamp(smB*d.sensitivity*1.4 + smM*osc*d.sensitivity*0.8, 0, 1);
+    const ext=drive*d.maxExtpx;
+
+    let l=d.baseLpx, tp=d.baseTopx, w=d.baseWpx, h=d.baseHpx;
+    if(d.ext==='w')  { w=d.baseWpx+ext; }
+    if(d.ext==='wl') { l=d.baseLpx-ext; w=d.baseWpx+ext; }
+    if(d.ext==='h')  { h=d.baseHpx+ext; }
+    if(d.ext==='ht') { tp=d.baseTopx-ext; h=d.baseHpx+ext; }
+
+    el.style.left  =l+'px';
+    el.style.top   =tp+'px';
+    el.style.width =w+'px';
+    el.style.height=h+'px';
+
+    // Also modulate brightness slightly
+    const br=1+smB*.4*(Math.sin(t*2.8+d.phase)*.5+.5);
+    el.style.filter=smB>.04?`brightness(${br.toFixed(3)})`:'';
+  });
+
+  /* ── PER-PIXEL LETTER ANIMATION ────────────────────────────────
+     Three layers per pixel: opacity shimmer, scale breath, translate jitter.
+     Letters remain behind the yellow grid lines at all times.
+  ─────────────────────────────────────────────────────────────── */
+  const bA=smB*2.1, mA=smM*1.7, tA=smT*1.5;
+  lEls.forEach((el,i)=>{
+    const m=lMeta[i];
+    // Opacity: layered oscillators
+    const o1=Math.sin(t*4.6*m.freq+m.phase);
+    const o2=Math.cos(t*3.0*m.freq+m.phase*1.4);
+    const o3=Math.sin(t*8.0*m.freq+m.phase*.5);
+    const opacity=clamp(
+      .58+o1*.22*m.amp*(.15+mA)+o2*.15*m.amp*(.1+bA)+o3*.13*m.amp*tA+smB*.22,
+      .05,1.0
+    );
+    // Scale: bass breathing
+    const sc=1.0+bA*0.30*m.amp*(.4+.6*Math.sin(t*3.4*m.freq+m.phase+1.2));
+    // Translate: treble jitter + bass lurch
+    const jx=Math.sin(t*6.3*m.freq+m.phase*.9)*tA*2.0*m.amp
+             +Math.sin(t*1.7+m.phase*1.7)*bA*2.8*m.amp;
+    const jy=Math.cos(t*5.7*m.freq+m.phase*1.1)*tA*2.0*m.amp
+             +Math.cos(t*2.0+m.phase*.8)*bA*2.8*m.amp;
+    el.style.opacity=opacity.toFixed(3);
+    el.style.transform=`translate(${jx.toFixed(2)}px,${jy.toFixed(2)}px) scale(${sc.toFixed(3)})`;
+  });
+
+  /* VU bar */
+  vus.forEach((s,i)=>{ s.style.height=Math.max(4,Math.round(adata[Math.floor(i/8*60)]/255*28))+'px'; });
+
+  /* Traffic speed */
+  const sm=map(smE,0,.7,1.0,.28);
+  cars.forEach((c,i)=>{
+    const base=speeds[i],nxt=(base*sm).toFixed(2);
+    if(Math.abs(parseFloat(c.dataset.cs||base)-parseFloat(nxt))>.1){
+      c.dataset.cs=nxt;
+      const upd=c.style.animation.replace(/\b\d+(\.\d+)?s\b/g,m=>parseFloat(m)===base?`${nxt}s`:m);
+      if(upd!==c.style.animation) c.style.animation=upd;
+    }
+  });
+}
+
+/* ── ENTER ──────────────────────────────────────── */
+const landEl=document.getElementById('landing');
+const xpEl=document.getElementById('xp');
+const hudEl=document.getElementById('hud');
+const eBtn=document.getElementById('ebtn');
+
+buildGrid(); buildTraffic(); buildLetters();
+
+setTimeout(()=>document.getElementById('lt').classList.add('show'),80);
+setTimeout(()=>{
+  document.getElementById('ls').classList.add('show');
+  document.getElementById('li').classList.add('show');
+  document.getElementById('lb').classList.add('show');
+},260);
+setTimeout(()=>eBtn.classList.add('show'),520);
+
+let entered=false;
+function enter(){
+  if(entered) return; entered=true;
+  landEl.classList.add('hidden');
+  xpEl.classList.add('on');
+  hudEl.classList.add('on');
+  fadeInLetters();                  // letters scatter in first
+  setTimeout(fadeInGrid,   600);    // grid fades in after
+  setTimeout(fadeInTraffic,1000);   // traffic last
+  play(); tick();
+}
+eBtn.addEventListener('click',enter);
+landEl.addEventListener('click',e=>{ if(!eBtn.contains(e.target)) enter(); });
+</script>
+</body>
+</html>

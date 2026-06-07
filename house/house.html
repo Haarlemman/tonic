@@ -62,8 +62,9 @@
          LOADING SCREEN
     ====================================================== -->
     <div id="loading">
+
         <!-- Animated loading bar — no text, no button styling -->
-        <div style="width: 220px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <div style="width: 220px; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; z-index: 2;">
 
             <!-- Indeterminate shimmer bar (shows while % is unknown) -->
             <div id="loading-shimmer" style="
@@ -168,7 +169,8 @@
             class="opacity-90 hover:opacity-100 transition-opacity p-2 text-white" title="Back to Home">
             <!-- House icon: unambiguous "go back to landing page" -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h4a.5.5 0 0 0 .5-.5v-4h1v4a.5.5 0 0 0 .5.5h4a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/>
+                <path
+                    d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h4a.5.5 0 0 0 .5-.5v-4h1v4a.5.5 0 0 0 .5.5h4a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z" />
             </svg>
         </button>
 
@@ -267,7 +269,7 @@
     </div>
 
     <!-- Back (exit room) button -->
-    <button id="back-btn" onclick="exitRoom()" 
+    <button id="back-btn" onclick="exitRoom()"
         style="display:none; top: max(12px, env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); background:transparent !important; border:none !important;
                    outline:none !important; box-shadow:none !important; padding:8px !important; min-width:44px; min-height:44px;"
         class="fixed z-[110] text-white opacity-90 hover:opacity-100 transition-opacity flex items-center justify-center"
@@ -330,12 +332,28 @@
         </div>
     </div>
 
-    <div id="room-title-overlay"
-        style="display: none; position: fixed; inset: 0; z-index: 1000; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 1.5s ease;">
-        <h1 id="room-title-text"
-            style="font-family: 'Inter', sans-serif; font-size: clamp(2.5rem, 9vw, 7rem); font-weight: 500; color: #fff; text-align: center; text-transform: uppercase; letter-spacing: 0.12em; text-shadow: 0 4px 28px rgba(0,0,0,0.9); width: 100%;">
-            ROOM</h1>
-    </div>
+    <!-- INITIAL TITLE OVERLAY - FULLSCREEN SAFE -->
+<div id="room-title-overlay" 
+     style="display: none; position: fixed; inset: 0; z-index: 2000; 
+            background: rgba(0,0,0,0.98); 
+            align-items: center; justify-content: center; 
+            width: 100%; height: 100dvh; 
+            pointer-events: none; opacity: 0; transition: opacity 2s ease;">
+    
+    <h1 id="room-title-text" 
+        style="font-family: 'Lato', sans-serif; font-weight: 300;
+               color: #ffffff; 
+               text-align: center; 
+               letter-spacing: 0.12em; 
+               text-shadow: 0 0 80px rgba(255,255,255,0.7), 
+                           0 0 160px rgba(180,80,255,0.4); 
+               line-height: 0.9; margin: 0; padding: 0 5vw;">
+        <span class="intro-title-word intro-title-word-small">THE</span>
+        <span class="intro-title-word intro-title-word-large">HOUSE</span>
+        <span class="intro-title-word intro-title-word-small">OF</span>
+        <span class="intro-title-word intro-title-word-large">AWE</span>
+    </h1>
+</div>
 
 
     <!-- Notepad overlay -->
@@ -360,6 +378,16 @@
          3D CANVAS
     ====================================================== -->
     <div id="canvas-container" class="w-full block outline-none cursor-move" style="height:100dvh;"></div>
+    <canvas id="pixel-reveal-canvas" style="
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 35;
+        display: none;
+        opacity: 0;
+    "></canvas>
 
     <!-- Firebase SDK (compat) for Visitor Gallery -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -379,13 +407,13 @@
         }
     </script>
 
-    <script src="js/storage.js?v=20260327-1830"></script>
-    <script src="js/data.js?v=20260327-1830"></script>
-    <script src="js/cars.js?v=20260327-1830"></script>
-    <script src="js/house.js?v=20260328-1214"></script>
-    <script src="js/rooms.js?v=20260327-1830"></script>
-    <script src="js/ui.js?v=20260327-1830"></script>
-    <script src="js/mobile.js?v=20260327-1830"></script>
+    <script src="js/storage.js?v=20260410-1524"></script>
+    <script src="js/data.js?v=20260410-1524"></script>
+    <script src="js/cars.js?v=20260410-1524"></script>
+    <script src="js/house.js?v=20260410-1600"></script>
+    <script src="js/rooms.js?v=20260410-1524"></script>
+    <script src="js/ui.js?v=20260410-1524"></script>
+    <script src="js/mobile.js?v=20260410-1524"></script>
 
     <script>
         // Refresh hardcoded UI strings that live in HTML rather than JS templates.
@@ -418,14 +446,51 @@
         };
 
         // Exit Application Logic — always return to landing page
-        window.exitApplication = function() {
+        window.exitApplication = function () {
             if (window.parent && window.parent !== window) {
-                // Embedded in iframe: tell the parent to navigate
-                window.parent.postMessage({ type: 'EXIT_EXPERIENCE' }, '*');
+                // Modified: Toggle immersion instead of navigating away
+                window.parent.postMessage({ type: 'TOGGLE_IMMERSION' }, '*');
+            } else {
+                // Standalone fallback
+                window.toggleGlobalFullscreen();
             }
-            // Navigate directly (works both standalone PWA and normal browser)
-            window.location.href = 'index.html';
         };
+
+        // --- Immersion State UI ---
+        const HOME_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h4a.5.5 0 0 0 .5-.5v-4h1v4a.5.5 0 0 0 .5.5h4a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z" /></svg>`;
+        const MAXIMIZE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zM10 15.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 1 0v4A1.5 1.5 0 0 1 14.5 16h-4a.5.5 0 0 1-.5-.5z"/></svg>`;
+
+        function updateImmersionUI(isImmersive) {
+            const btn = document.getElementById('exit-app-btn');
+            if (!btn) return;
+
+            if (isImmersive) {
+                // Currently in Fullscreen: Show "Home" to exit
+                btn.innerHTML = HOME_SVG;
+                btn.title = "Back to Home";
+                btn.style.color = "white";
+                btn.style.filter = "none";
+            } else {
+                // Currently Windowed: Show "Maximize" to enter immersive 3D
+                btn.innerHTML = MAXIMIZE_SVG;
+                btn.title = "Enter Immersive 3D View";
+                btn.style.color = "#ffcc00"; // Golden / Amber for emphasis
+                btn.style.filter = "drop-shadow(0 0 8px rgba(255, 204, 0, 0.4))";
+            }
+        }
+
+        window.addEventListener('message', (event) => {
+            const d = event.data;
+            if (d.type === 'FULLSCREEN_STATUS') {
+                updateImmersionUI(d.active);
+            }
+        });
+
+        // Initialize (default to immersive if started from parent enterExperience)
+        document.addEventListener('DOMContentLoaded', () => {
+             // We start fullscreen in most cases, but let's sync with button existing status
+             updateImmersionUI(true); 
+        });
 
         // toggleGlobalFullscreen is defined in mobile.js for iOS;
         // stub it for desktop so any lingering references don't throw.

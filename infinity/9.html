@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones // Geometric Traversal</title>
+    <style>
+        :root {
+            --bg: #010102;
+            --bone: #ece9d8;
+            --accent: rgba(255, 255, 255, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #start-button {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--bone);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6em;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(15px);
+        }
+
+        #start-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--bone);
+            letter-spacing: 0.7em;
+        }
+
+        #start-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+
+        #metadata {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="audio-element" src="seven.mp3" loop crossorigin="anonymous"></audio>
+
+    <div id="ui-container">
+        <button id="start-button">Begin Traversal</button>
+    </div>
+
+    <div id="metadata">
+        Source: seven.mp3 // Geometry: 3x2 Spectral Morph // Mode: Dancing Figure
+    </div>
+
+    <canvas id="glCanvas"></canvas>
+
+    <script id="vs" type="x-shader/x-vertex">
+        attribute vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+        precision highp float;
+        uniform vec2 u_resolution;
+        uniform float u_time;
+        uniform float u_grid_morphs[6];
+        uniform float u_vol;
+        uniform float u_bass;
+        uniform float u_treble;
+
+        mat2 rotate(float a) {
+            float s = sin(a);
+            float c = cos(a);
+            return mat2(c, -s, s, c);
+        }
+
+        float sdBox(vec2 p, vec2 b) {
+            vec2 d = abs(p)-b;
+            return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+        }
+
+        float sdTriangle(vec2 p, float r) {
+            const float k = 1.73205; // sqrt(3)
+            p.x = abs(p.x) - r;
+            p.y = p.y + r/k;
+            if( p.x+k*p.y>0.0 ) p = vec2(p.x-k*p.y,-k*p.x-p.y)/2.0;
+            p.x -= clamp( p.x, -2.0*r, 0.0 );
+            return -length(p)*sign(p.y);
+        }
+
+        float sdCapsule(vec2 p, vec2 a, vec2 b, float r) {
+            vec2 pa = p - a, ba = b - a;
+            float h = clamp(dot(pa,ba)/dot(ba,ba), 0.0, 1.0);
+            return length(pa - ba*h) - r;
+        }
+
+        // Dancing figure SDF
+        float getFigure(vec2 p) {
+            float t = u_time * 2.0;
+            float b = u_bass * 0.5;
+            
+            // Movement logic
+            vec2 bodyCenter = vec2(0.0, -0.1 + sin(t)*0.05 + b*0.1);
+            
+            // Torso
+            float d = sdCapsule(p, bodyCenter + vec2(0.0, 0.1), bodyCenter + vec2(0.0, -0.2), 0.02);
+            // Head
+            d = min(d, length(p - (bodyCenter + vec2(0.0, 0.18))) - 0.04);
+            
+            // Arms
+            float armAngle = sin(t * 1.5) * 0.5 + b;
+            vec2 lHand = bodyCenter + vec2(0.0, 0.08) + vec2(cos(3.14 + armAngle), sin(3.14 + armAngle)) * 0.2;
+            vec2 rHand = bodyCenter + vec2(0.0, 0.08) + vec2(cos(-armAngle), sin(-armAngle)) * 0.2;
+            d = min(d, sdCapsule(p, bodyCenter + vec2(0.0, 0.08), lHand, 0.015));
+            d = min(d, sdCapsule(p, bodyCenter + vec2(0.0, 0.08), rHand, 0.015));
+            
+            // Legs
+            float legMove = sin(t * 1.2) * 0.3;
+            vec2 lFoot = bodyCenter + vec2(-0.02, -0.2) + vec2(-0.1 + legMove, -0.25);
+            vec2 rFoot = bodyCenter + vec2(0.02, -0.2) + vec2(0.1 - legMove, -0.25);
+            d = min(d, sdCapsule(p, bodyCenter + vec2(-0.02, -0.2), lFoot, 0.015));
+            d = min(d, sdCapsule(p, bodyCenter + vec2(0.02, -0.2), rFoot, 0.015));
+            
+            return d;
+        }
+
+        vec3 spectralPalette(float t, float seed) {
+            vec3 a = vec3(0.5, 0.5, 0.5);
+            vec3 b = vec3(0.5, 0.5, 0.5);
+            vec3 c = vec3(1.0, 1.0, 1.0);
+            vec3 d = vec3(0.0 + seed * 0.05, 0.2, 0.5);
+            return a + b * cos(6.28318 * (c * t + d + u_time * 0.2));
+        }
+
+        void main() {
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.y, u_resolution.x);
+            
+            vec3 boneColor = vec3(0.92, 0.90, 0.85);
+            vec3 bloodColor = vec3(0.7, 0.05, 0.05);
+            vec3 charcoal = vec3(0.01, 0.01, 0.012);
+
+            // --- 3x2 INDEPENDENT SPECTRAL GRID ---
+            float gridScale = 3.5;
+            vec2 gridUv = uv * gridScale;
+            vec2 centeredGrid = gridUv + vec2(0.0, 0.5);
+            vec2 cellId = floor(centeredGrid + 0.5);
+            
+            vec3 gridCol = vec3(0.0);
+            float gridMask = 0.0;
+            
+            if (abs(cellId.x) <= 1.0 && cellId.y >= 0.0 && cellId.y <= 1.0) {
+                vec2 localPos = fract(centeredGrid + 0.5) - 0.5;
+                int idx = int((cellId.x + 1.0) + (cellId.y * 3.0));
+                
+                float mVal = 0.0;
+                if (idx == 0) mVal = u_grid_morphs[0];
+                else if (idx == 1) mVal = u_grid_morphs[1];
+                else if (idx == 2) mVal = u_grid_morphs[2];
+                else if (idx == 3) mVal = u_grid_morphs[3];
+                else if (idx == 4) mVal = u_grid_morphs[4];
+                else if (idx == 5) mVal = u_grid_morphs[5];
+
+                float sizeScale = 1.0 + mVal * 0.35;
+                vec2 p = localPos / sizeScale;
+
+                float dBox = sdBox(p, vec2(0.18)); 
+                float dTri = sdTriangle(p, 0.26);
+                float dCirc = length(p) - 0.26;
+                
+                float dist;
+                if(mVal < 0.5) dist = mix(dBox, dTri, mVal * 2.0);
+                else dist = mix(dTri, dCirc, (mVal - 0.5) * 2.0);
+                
+                gridMask = smoothstep(0.01, -0.01, dist);
+                vec3 hitColor = spectralPalette(float(idx) * 0.15, float(idx));
+                hitColor = mix(hitColor, bloodColor, 0.4);
+                gridCol = mix(boneColor * 0.85, hitColor, pow(mVal, 1.2));
+            }
+
+            // --- CONSTANT BACKGROUND FRACTAL + DANCER ---
+            vec2 fUv = uv * rotate(u_time * 0.008);
+            float r = length(fUv);
+            float angle = atan(fUv.y, fUv.x);
+            
+            float logR = log(r) - u_time * 0.5;
+            float spiral = angle / 6.28318 + logR * 0.04;
+            
+            float repeat = 1.0;
+            vec2 p = vec2(mod(logR, repeat) - repeat * 0.5, mod(spiral * 4.0, 1.0) - 0.5);
+            float shiftX = 0.48 + sin(u_time * 0.05) * 0.02;
+            
+            float d = 1e10;
+            vec2 z = p;
+            float scale = 1.0;
+            
+            for(float i=0.0; i<6.0; i++) {
+                z = abs(z) - shiftX;
+                z *= rotate(u_time * 0.005 + i * 0.4);
+                float s = 1.7 / clamp(dot(z,z), 0.2, 3.0);
+                z *= s;
+                scale *= s;
+                d = min(d, length(z.x * z.y) / scale);
+            }
+
+            float glow = abs(d * 8.0 / 8.0);
+            glow = pow(0.003 / glow, 1.4); 
+            vec3 fractalBase = mix(charcoal, boneColor * 0.25, glow);
+
+            // Dancing Figure silhouette
+            float figureDist = getFigure(uv * 1.5);
+            float figureMask = smoothstep(0.02, 0.0, figureDist);
+            float figureGlow = smoothstep(0.2, 0.0, figureDist);
+            
+            vec3 figureCol = mix(charcoal, boneColor * 0.6, figureMask);
+            figureCol += bloodColor * figureGlow * u_bass * 0.8;
+            
+            // Composite Background
+            vec3 backCol = mix(fractalBase, figureCol, figureMask + figureGlow * 0.2);
+
+            // --- FINAL COMPOSITING ---
+            vec3 finalCol = backCol + (gridCol * gridMask);
+
+            finalCol *= smoothstep(0.02, 0.4, r);
+            finalCol *= 1.4 - length(uv) * 1.1;
+
+            gl_FragColor = vec4(finalCol, 1.0);
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl');
+        const startBtn = document.getElementById('start-button');
+        const statusText = document.getElementById('status-text');
+        const audioElement = document.getElementById('audio-element');
+
+        let analyser, dataArray;
+        let audioStarted = false;
+
+        async function initAudio() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaElementSource(audioElement);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.45; 
+                
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                audioElement.play();
+                audioStarted = true;
+                startBtn.classList.add('hidden');
+                statusText.innerText = "System Immersive: Figure Detected";
+            } catch (err) {
+                console.error("Audio init error", err);
+                statusText.innerText = "Error";
+            }
+        }
+
+        startBtn.addEventListener('click', initAudio);
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                return null;
+            }
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vs').text));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fs').text));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const posAttrib = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(posAttrib);
+        gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
+
+        const uniforms = {
+            res: gl.getUniformLocation(program, "u_resolution"),
+            time: gl.getUniformLocation(program, "u_time"),
+            gridMorphs: gl.getUniformLocation(program, "u_grid_morphs"),
+            vol: gl.getUniformLocation(program, "u_vol"),
+            bass: gl.getUniformLocation(program, "u_bass"),
+            treble: gl.getUniformLocation(program, "u_treble")
+        };
+
+        function render(time) {
+            let morphs = [0, 0, 0, 0, 0, 0];
+            let vol = 0, bass = 0, treble = 0;
+
+            if (audioStarted && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                bass = Math.min((dataArray[2] / 255.0) * 2.0, 1.0);
+                treble = Math.min((dataArray[150] / 255.0) * 3.0, 1.0);
+
+                morphs[0] = Math.min((dataArray[2] / 255.0) * 5.2, 1.0);  
+                morphs[1] = Math.min((dataArray[12] / 255.0) * 5.8, 1.0); 
+                morphs[2] = Math.min((dataArray[35] / 255.0) * 6.8, 1.0); 
+                morphs[3] = Math.min((dataArray[75] / 255.0) * 7.8, 1.0); 
+                morphs[4] = Math.min((dataArray[140] / 255.0) * 9.5, 1.0);
+                morphs[5] = Math.min((dataArray[200] / 255.0) * 12.0, 1.0);
+
+                let sum = 0;
+                for(let i=0; i<dataArray.length; i++) sum += dataArray[i];
+                vol = (sum / (dataArray.length * 255.0)) * 2.5;
+            }
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.uniform2f(uniforms.res, canvas.width, canvas.height);
+            gl.uniform1f(uniforms.time, time * 0.001);
+            gl.uniform1fv(uniforms.gridMorphs, new Float32Array(morphs));
+            gl.uniform1f(uniforms.vol, Math.min(vol, 1.0));
+            gl.uniform1f(uniforms.bass, bass);
+            gl.uniform1f(uniforms.treble, treble);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>

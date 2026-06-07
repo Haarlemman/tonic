@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondriaan Boogie Woogie</title>
+    <meta name="description"
+        content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&family=Tilt+Neon&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836;
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: #020404;
+            overflow: hidden;
+            font-family: 'Poiret One', cursive;
+        }
+
+        /* Texture and Vignette overlays */
+        #texture {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100; pointer-events: none; opacity: 0.15;
+            background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+        }
+
+        #vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 90; pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
+        }
+
+        /* Page Flash from c11.html */
+        #beat-flash {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; pointer-events: none; z-index: 200;
+        }
+
+        #landing {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #020404; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 1000;
+            color: white; transition: opacity 1s ease;
+        }
+
+        #landing.hidden { opacity: 0; pointer-events: none; }
+
+        #landing-title {
+            font-family: 'Montserrat', sans-serif; font-size: 4rem;
+            letter-spacing: -2px; text-transform: uppercase; margin-bottom: 20px;
+            opacity: 0; transform: translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #landing-title.show { opacity: 1; transform: translateY(0); }
+
+        #landing-stripe {
+            width: 0; height: 12px; background: var(--m-yellow);
+            margin-bottom: 40px; transition: width 1s ease 0.3s;
+        }
+
+        #landing-stripe.show { width: 200px; }
+
+        #enter-btn {
+            background: transparent; border: 2px solid white; color: white;
+            padding: 12px 30px; font-family: 'Montserrat', sans-serif;
+            font-weight: 900; font-size: 1rem; letter-spacing: 4px;
+            cursor: pointer; transition: all 0.3s ease; opacity: 0;
+        }
+
+        #enter-btn.show { opacity: 1; }
+        #enter-btn:hover { background: white; color: black; }
+
+        #stage {
+            width: 100vw; height: 100vh; position: relative;
+            background: #fff; display: none; overflow: hidden;
+        }
+
+        #stage.active { display: block; }
+
+        #grid-container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vmin; height: 90vmin; background: white;
+        }
+
+        .grid-line { position: absolute; background-color: var(--m-yellow); z-index: 1; }
+        .grid-line.h { height: 14px; width: 100%; }
+        .grid-line.v { width: 14px; height: 100%; }
+
+        .unit { position: absolute; width: 14px; height: 14px; z-index: 3; }
+        .unit.r { background-color: var(--m-red); }
+        .unit.b { background-color: var(--m-blue); }
+        .unit.w { background-color: var(--m-white); }
+
+        .car { position: absolute; width: 14px; height: 14px; background-color: #333; z-index: 5; }
+
+        #vu-meter {
+            position: fixed; bottom: 30px; left: 30px;
+            display: flex; align-items: flex-end; gap: 2px; height: 20px; z-index: 150;
+        }
+
+        .vu-bin { width: 3px; background: var(--m-grey); height: 2px; }
+    </style>
+</head>
+
+<body>
+    <div id="texture"></div>
+    <div id="vignette"></div>
+    <div id="beat-flash"></div>
+
+    <div id="landing">
+        <h1 id="landing-title">Tonic for the Bones</h1>
+        <div id="landing-stripe"></div>
+        <button id="enter-btn">ENTER BOOGIE</button>
+    </div>
+
+    <div id="stage">
+        <div id="grid-container"></div>
+    </div>
+
+    <div id="vu-meter"></div>
+
+    <audio id="bg-audio" src="ParadoxPrime-MBW.mp3" crossOrigin="anonymous" loop></audio>
+
+    <script>
+        const stage = document.getElementById('stage');
+        const landing = document.getElementById('landing');
+        const enterBtn = document.getElementById('enter-btn');
+        const gridContainer = document.getElementById('grid-container');
+        const beatFlash = document.getElementById('beat-flash');
+        const audio = document.getElementById('bg-audio');
+        const vuMeter = document.getElementById('vu-meter');
+
+        let audioCtx, analyser, dataArray;
+        let isPlaying = false;
+        let startTime = 0;
+        let cars = [];
+
+        // Smoothing for audio response
+        let smoothBass = 0;
+        let smoothEnergy = 0;
+
+        // Initialize VU Meter bins
+        for (let i = 0; i < 16; i++) {
+            const bin = document.createElement('div');
+            bin.className = 'vu-bin';
+            vuMeter.appendChild(bin);
+        }
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(audio);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+        }
+
+        function initGrid() {
+            const hLines = [10, 25, 40, 60, 85];
+            const vLines = [15, 35, 50, 70, 90];
+
+            hLines.forEach(top => {
+                const line = document.createElement('div');
+                line.className = 'grid-line h';
+                line.style.top = top + '%';
+                gridContainer.appendChild(line);
+            });
+
+            vLines.forEach(left => {
+                const line = document.createElement('div');
+                line.className = 'grid-line v';
+                line.style.left = left + '%';
+                gridContainer.appendChild(line);
+            });
+        }
+
+        function renderLetters() {
+            const hLines = [10, 25, 40, 60, 85];
+            const vLines = [15, 35, 50, 70, 90];
+            
+            // Increased numbers and random scattering
+            for (let i = 0; i < 150; i++) {
+                const unit = document.createElement('div');
+                const type = Math.random();
+                unit.className = `unit ${type > 0.6 ? 'r' : (type > 0.2 ? 'b' : 'w')}`;
+                
+                // Randomly scatter in slots or fringes
+                if (Math.random() > 0.3) {
+                    // Snap to grid
+                    const isOnH = Math.random() > 0.5;
+                    if (isOnH) {
+                        unit.style.top = hLines[Math.floor(Math.random() * hLines.length)] + '%';
+                        unit.style.left = (Math.random() * 100) + '%';
+                    } else {
+                        unit.style.left = vLines[Math.floor(Math.random() * vLines.length)] + '%';
+                        unit.style.top = (Math.random() * 100) + '%';
+                    }
+                } else {
+                    // Scatter in fringes
+                    unit.style.top = (Math.random() * 100) + '%';
+                    unit.style.left = (Math.random() * 100) + '%';
+                }
+                gridContainer.appendChild(unit);
+            }
+        }
+
+        function createTraffic() {
+            const vLines = [15, 35, 50, 70, 90];
+            for (let i = 0; i < 15; i++) {
+                const car = document.createElement('div');
+                car.className = 'car';
+                const lane = vLines[Math.floor(Math.random() * vLines.length)];
+                car.style.left = lane + '%';
+                gridContainer.appendChild(car);
+                cars.push({
+                    el: car,
+                    y: Math.random() * 100,
+                    speed: 0.1 + Math.random() * 0.4,
+                    lane: lane
+                });
+            }
+        }
+
+        function update() {
+            if (!isPlaying) return;
+            analyser.getByteFrequencyData(dataArray);
+
+            let bass = dataArray.slice(0, 8).reduce((a, b) => a + b) / 2040;
+            let energy = dataArray.reduce((a, b) => a + b) / (dataArray.length * 255);
+
+            // LERP Smoothing
+            smoothBass += (bass - smoothBass) * 0.15;
+            smoothEnergy += (energy - smoothEnergy) * 0.1;
+
+            const elapsed = Date.now() - startTime;
+
+            // Page Flash at ~18th second (c11.html logic)
+            if (elapsed >= 18000 && elapsed < 18150 && smoothBass > 0.6) {
+                beatFlash.style.opacity = (smoothBass * 0.4).toFixed(2);
+                setTimeout(() => beatFlash.style.opacity = '0', 60);
+            }
+
+            const losingControl = elapsed > 40000;
+
+            // Update Units
+            document.querySelectorAll('.unit').forEach((u, i) => {
+                const scale = 1 + (smoothBass * 0.6);
+                if (losingControl) {
+                    const jitter = Math.sin(elapsed * 0.01 + i) * 10 * smoothEnergy;
+                    u.style.transform = `scale(${scale}) translate(${jitter}px, ${jitter}px)`;
+                } else {
+                    u.style.transform = `scale(${scale})`;
+                }
+            });
+
+            // Update Traffic
+            cars.forEach(car => {
+                car.y += car.speed * (1 + smoothEnergy * 10);
+                if (car.y > 110) car.y = -10;
+                
+                if (losingControl) {
+                    const drift = Math.sin(elapsed * 0.002 + car.lane) * 40 * smoothEnergy;
+                    car.el.style.transform = `translate(${drift}px, ${car.y}vh)`;
+                } else {
+                    car.el.style.transform = `translateY(${car.y}vh)`;
+                }
+            });
+
+            // VU Meter
+            document.querySelectorAll('.vu-bin').forEach((bin, i) => {
+                bin.style.height = `${(dataArray[i * 4] / 255) * 20}px`;
+            });
+
+            requestAnimationFrame(update);
+        }
+
+        enterBtn.addEventListener('click', () => {
+            startTime = Date.now();
+            isPlaying = true;
+            landing.classList.add('hidden');
+            stage.classList.add('active');
+            initAudio();
+            audio.play();
+            initGrid();
+            renderLetters();
+            createTraffic();
+            update();
+        });
+
+        setTimeout(() => document.getElementById('landing-title').classList.add('show'), 400);
+        setTimeout(() => document.getElementById('landing-stripe').classList.add('show'), 800);
+        setTimeout(() => enterBtn.classList.add('show'), 1200);
+    </script>
+</body>
+
+</html>

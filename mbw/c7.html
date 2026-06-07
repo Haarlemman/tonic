@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mondriaan Boogie Woogie</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#e8e4d4;font-family:'Poiret One',cursive}
+
+/* ── LANDING ──────────────────────────────────────────── */
+#landing{
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#18261f 0%,#080e0c 60%,#020404 100%);
+  cursor:pointer;transition:opacity 1.8s ease,visibility 1.8s ease;
+}
+#landing.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.lt{color:#e8e0c8;font-size:clamp(26px,5vw,74px);letter-spacing:10px;
+  text-transform:uppercase;text-align:center;line-height:1.1;margin-bottom:10px;
+  text-shadow:0 0 80px rgba(248,216,54,.22);
+  opacity:0;transform:translateY(14px);transition:opacity 1.3s ease,transform 1.3s ease}
+.lt.show{opacity:1;transform:translateY(0)}
+.ls{color:rgba(210,210,210,.5);font-size:clamp(9px,1.1vw,14px);letter-spacing:5px;
+  text-transform:uppercase;margin-bottom:6px;opacity:0;transition:opacity 1.2s ease .3s}
+.ls.show,.li.show,.lbar.show{opacity:1}
+.li{color:rgba(248,216,54,.5);font-size:clamp(8px,.9vw,12px);letter-spacing:4px;
+  text-transform:uppercase;margin-bottom:50px;opacity:0;transition:opacity 1.2s ease .5s}
+.lbar{width:clamp(180px,36vw,460px);height:5px;
+  background:linear-gradient(90deg,#D22626 0% 33%,#285495 33% 66%,#F8D836 66% 100%);
+  margin-bottom:50px;opacity:0;transition:opacity 1.2s ease .4s}
+#ebtn{
+  background:transparent;border:2px solid #F8D836;color:#F8D836;
+  font-family:'Poiret One',cursive;font-size:clamp(13px,1.8vw,20px);
+  letter-spacing:8px;text-transform:uppercase;padding:16px 52px;cursor:pointer;
+  position:relative;overflow:hidden;opacity:0;
+  transition:opacity 1.2s ease .7s,color .3s,box-shadow .3s,transform .12s;
+}
+#ebtn.show{opacity:1}
+#ebtn::before{content:'';position:absolute;inset:0;background:#F8D836;
+  transform:scaleX(0);transform-origin:left;transition:transform .35s ease;z-index:0}
+#ebtn:hover::before{transform:scaleX(1)}
+#ebtn:hover{color:#111;box-shadow:0 0 60px rgba(248,216,54,.5)}
+#ebtn:active{transform:scale(.97)}
+#ebtn span{position:relative;z-index:1}
+
+/* ── EXPERIENCE ───────────────────────────────────────── */
+#xp{position:fixed;inset:0;z-index:50;opacity:0;visibility:hidden;transition:opacity .8s ease}
+#xp.on{opacity:1;visibility:visible}
+#cv{position:absolute;inset:0;overflow:hidden;background:#e8e4d4;transition:background-color .08s ease}
+
+/* Colour cells — fill between grid lines */
+.cb{
+  position:absolute;z-index:5;opacity:0;
+  transition:opacity .5s ease,
+             left .1s linear,top .1s linear,
+             width .1s linear,height .1s linear;
+}
+.cb.on{opacity:1}
+
+/* Yellow grid lines — on top of everything except letters/traffic */
+.gl{position:absolute;background:#F8D836;z-index:20;opacity:0;transition:opacity .6s ease}
+.gl.on{opacity:1}
+
+/* Traffic */
+.car{position:absolute;z-index:18;opacity:0;transition:opacity .3s ease}
+.car.on{opacity:1}
+
+/* Beat flash */
+#bf{position:absolute;inset:0;z-index:25;pointer-events:none;opacity:0;background:rgba(248,216,54,.08)}
+
+/* Letters — above blocks, below grid lines */
+.ltr{
+  position:absolute;z-index:15;
+  font-family:'Black Han Sans',sans-serif;
+  font-weight:900;
+  text-transform:uppercase;
+  line-height:1;
+  opacity:0;
+  transform-origin:center center;
+  will-change:transform,opacity,color;
+  pointer-events:none;user-select:none;
+  transition:opacity .4s ease;
+}
+.ltr.on{opacity:1}
+
+/* Vignette */
+#vig{
+  position:fixed;inset:0;z-index:60;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,transparent 15%,rgba(0,0,0,.18) 55%,rgba(0,0,0,.65) 100%);
+  transition:opacity .2s ease;
+}
+
+/* HUD */
+#hud{position:fixed;inset:0;z-index:300;pointer-events:none;opacity:0;transition:opacity .6s ease 1.4s}
+#hud.on{opacity:1}
+#ac{position:absolute;top:22px;right:26px;pointer-events:all;display:flex;align-items:center;gap:10px}
+.abtn{
+  background:rgba(0,0,0,.55);border:1px solid rgba(248,216,54,.45);border-radius:50%;
+  cursor:pointer;color:#F8D836;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+  transition:transform .3s,border-color .3s,color .3s;backdrop-filter:blur(4px);
+}
+.abtn:hover{transform:scale(1.12);border-color:#D22626;color:#D22626}
+.abtn.muted{color:#555;border-color:#333}
+#vub{display:flex;align-items:flex-end;gap:2px;height:28px;opacity:.7}
+.vs{width:4px;border-radius:2px;transition:height .05s ease}
+.albl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(200,200,200,.4)}
+
+@keyframes dH {from{left:-5%}to{left:105%}}
+@keyframes dHr{from{left:105%}to{left:-5%}}
+@keyframes dV {from{top:-5%}to{top:105%}}
+@keyframes dVr{from{top:105%}to{top:-5%}}
+@keyframes blk{0%,50%{opacity:1}51%,100%{opacity:0}}
+@keyframes crb{0%,45%{background:#D22626}50%,95%{background:#285495}}
+@keyframes cyw{0%,45%{background:#F8D836}50%,95%{background:#f0ece0}}
+</style>
+</head>
+<body>
+
+<div id="landing">
+  <div class="lt" id="lt">Mondriaan<br>Boogie Woogie</div>
+  <div class="ls" id="ls">Piet Mondrian &nbsp;·&nbsp; 1942–43</div>
+  <div class="li" id="li">A Modern Interpretation</div>
+  <div class="lbar" id="lbar"></div>
+  <button id="ebtn"><span>ENTER</span></button>
+</div>
+
+<div id="xp">
+  <div id="cv">
+    <div id="bf"></div>
+    <div id="cb-layer"></div>
+    <div id="gl-layer"></div>
+    <div id="ltr-layer"></div>
+    <div id="tl-layer"></div>
+  </div>
+  <div id="vig"></div>
+</div>
+
+<div id="hud">
+  <div id="ac">
+    <button id="mtgl" class="abtn muted"><i id="mic" class="fa-solid fa-volume-xmark"></i></button>
+    <div id="vub"></div>
+    <span class="albl">Soundtrack</span>
+  </div>
+</div>
+
+<audio id="aud" loop crossorigin="anonymous">
+  <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ============================================================
+  GRID SYSTEM
+  
+  The grid is defined as a set of X positions and Y positions
+  in VIEWPORT PERCENTAGE (0–100). Lines go edge to edge always.
+  Cells are the rectangles between adjacent lines.
+  Everything — blocks, letters, traffic — snaps to this grid.
+============================================================ */
+
+// Grid line positions as percentages of viewport width/height
+// These are the CENTER of each line (line has a thickness too)
+const GX = [0, 4, 8, 14, 21, 28, 38, 48, 55, 62, 68, 74, 80, 86, 92, 96, 100];
+const GY = [0, 4, 9, 16, 22, 32, 42, 52, 60, 66, 72, 80, 86, 92, 97, 100];
+
+// Line thicknesses (px-ish, will be computed from vw)
+// Inner lines vary; edge lines are thin
+function lineThick(i, isX) {
+  const arr = isX ? GX : GY;
+  if (i===0 || i===arr.length-1) return 4;
+  const primes = [2,3,5,7,11]; // thicker lines at these indices
+  if ([2,4,6,8,12].includes(i)) return 12;
+  if ([3,5,9,11,13].includes(i)) return 7;
+  return 5;
+}
+
+// Get px position of a grid line
+function gxpx(i){ return GX[i]/100 * innerWidth; }
+function gypx(i){ return GY[i]/100 * innerHeight; }
+// Get cell interior bounds (between two lines)
+function cellX(i){ // left edge of cell i (between line i and i+1)
+  const th = lineThick(i,true);
+  return gxpx(i) + th/2;
+}
+function cellX2(i){ // right edge
+  const th = lineThick(i+1,true);
+  return gxpx(i+1) - th/2;
+}
+function cellY(i){
+  const th = lineThick(i,false);
+  return gypx(i) + th/2;
+}
+function cellY2(i){
+  const th = lineThick(i+1,false);
+  return gypx(i+1) - th/2;
+}
+function cellW(i){ return Math.max(0, cellX2(i)-cellX(i)); }
+function cellH(i){ return Math.max(0, cellY2(i)-cellY(i)); }
+function cellCX(i){ return (cellX(i)+cellX2(i))/2; }
+function cellCY(i){ return (cellY(i)+cellY2(i))/2; }
+
+/* ============================================================
+  COLOUR BLOCKS
+  Defined as [gx1, gy1, gx2, gy2] — spans from grid col gx1
+  to grid col gx2, row gy1 to gy2. Can span multiple cells.
+  ext: direction to grow on beats. maxSpan: extra cells to grow.
+============================================================ */
+const BLOCK_DEFS = [
+  // [cx1,cy1,cx2,cy2, color, extDir, maxExtraCells]
+  [6,0, 7,1, '#D22626', 'r', 3],
+  [9,1, 10,3,'#285495', 'd', 3],
+  [1,2, 2,4, '#D22626', 'r', 2],
+  [3,3, 4,4, '#F8D836', 'r', 3],
+  [11,2,12,3,'#285495','d', 2],
+  [13,1,14,2,'#D22626','r', 2],
+  [7,3, 8,5, '#C8C8C8','d', 2],
+  [4,5, 5,6, '#D22626','r', 3],
+  [10,4,11,6,'#F8D836','d', 3],
+  [2,6, 3,7, '#285495','r', 2],
+  [6,6, 7,7, '#D22626','d', 3],
+  [12,5,13,7,'#285495','r', 2],
+  [14,6,15,8,'#D22626','d', 2],
+  [1,8, 2,9, '#F8D836','r', 3],
+  [5,7, 6,9, '#D22626','r', 2],
+  [8,8, 9,9, '#285495','d', 3],
+  [11,8,12,10,'#D22626','r',2],
+  [3,9, 4,11,'#C8C8C8','d', 2],
+  [7,10,8,11,'#F8D836','r', 3],
+  [13,9,14,11,'#285495','d',2],
+  [0,11,1,12,'#D22626','r', 2],
+  [6,11,7,12,'#285495','r', 3],
+  [10,10,11,12,'#D22626','d',2],
+  [4,12,5,14,'#F8D836','d', 2],
+  [9,12,10,13,'#D22626','r', 2],
+  [14,12,15,14,'#C8C8C8','d',2],
+  [2,13,3,14,'#285495','r', 3],
+  [7,13,8,14,'#D22626','d', 2],
+  [12,13,13,14,'#F8D836','r',2],
+];
+
+/* ============================================================
+  LETTERS
+  Three rows in readable order.
+  Each letter anchored to a specific grid cell.
+  row1: MONDRIAAN — cells across roughly row 3-4
+  row2: BOOGIE    — cells across roughly row 7-8
+  row3: WOOGIE    — cells across roughly row 11-12
+  
+  [char, cellX, cellY, colorIdx]
+  colorIdx: 0=dark,1=red,2=blue,3=yellow
+============================================================ */
+const LETTER_COLORS = ['#1a1a1a','#D22626','#285495','#F8D836'];
+
+const LETTER_DEFS = [
+  // MONDRIAAN  — spread row 2–3
+  {ch:'M', cx:1,  cy:2, ci:1},
+  {ch:'O', cx:3,  cy:2, ci:2},
+  {ch:'N', cx:5,  cy:2, ci:0},
+  {ch:'D', cx:7,  cy:2, ci:3},
+  {ch:'R', cx:9,  cy:2, ci:1},
+  {ch:'I', cx:11, cy:2, ci:2},
+  {ch:'A', cx:12, cy:2, ci:0},
+  {ch:'A', cx:13, cy:2, ci:3},
+  {ch:'N', cx:14, cy:2, ci:1},
+  // BOOGIE — spread row 6–7
+  {ch:'B', cx:2,  cy:6, ci:2},
+  {ch:'O', cx:4,  cy:6, ci:1},
+  {ch:'O', cx:6,  cy:6, ci:3},
+  {ch:'G', cx:8,  cy:6, ci:0},
+  {ch:'I', cx:10, cy:6, ci:2},
+  {ch:'E', cx:12, cy:6, ci:1},
+  // WOOGIE — spread row 10–11
+  {ch:'W', cx:1,  cy:10, ci:3},
+  {ch:'O', cx:3,  cy:10, ci:0},
+  {ch:'O', cx:5,  cy:10, ci:1},
+  {ch:'G', cx:7,  cy:10, ci:2},
+  {ch:'I', cx:9,  cy:10, ci:3},
+  {ch:'E', cx:11, cy:10, ci:0},
+];
+
+/* ============================================================
+  DOM
+============================================================ */
+const cvEl   = document.getElementById('cv');
+const glLay  = document.getElementById('gl-layer');
+const cbLay  = document.getElementById('cb-layer');
+const ltrLay = document.getElementById('ltr-layer');
+const tlLay  = document.getElementById('tl-layer');
+const vigEl  = document.getElementById('vig');
+const bfEl   = document.getElementById('bf');
+
+/* ============================================================
+  BUILD GRID LINES
+  All lines span full width or full height — no clipping.
+============================================================ */
+const glEls = [];
+
+function buildGrid(){
+  glLay.innerHTML='';
+  glEls.length=0;
+  GX.forEach((xpct,i)=>{
+    const th=lineThick(i,true);
+    const el=document.createElement('div'); el.className='gl';
+    el.style.cssText=`left:calc(${xpct}% - ${th/2}px);top:0;width:${th}px;height:100%`;
+    glLay.appendChild(el); glEls.push(el);
+  });
+  GY.forEach((ypct,i)=>{
+    const th=lineThick(i,false);
+    const el=document.createElement('div'); el.className='gl';
+    el.style.cssText=`top:calc(${ypct}% - ${th/2}px);left:0;height:${th}px;width:100%`;
+    glLay.appendChild(el); glEls.push(el);
+  });
+}
+
+function fadeInGrid(){
+  glEls.forEach((el,i)=>setTimeout(()=>el.classList.add('on'),i*8+40));
+}
+
+/* ============================================================
+  BUILD COLOUR BLOCKS
+============================================================ */
+const cbEls=[], cbMeta=[];
+
+function buildBlocks(){
+  cbLay.innerHTML=''; cbEls.length=0; cbMeta.length=0;
+  BLOCK_DEFS.forEach(([cx1,cy1,cx2,cy2,col,extDir,maxEC])=>{
+    const el=document.createElement('div'); el.className='cb';
+    const l=cellX(cx1), t=cellY(cy1);
+    const w=cellX2(cx2-1)-cellX(cx1);
+    const h=cellY2(cy2-1)-cellY(cy1);
+    el.style.cssText=`left:${l}px;top:${t}px;width:${w}px;height:${h}px;background:${col}`;
+    cbLay.appendChild(el); cbEls.push(el);
+    // Precompute how far each block can extend
+    let maxExt=0;
+    if(extDir==='r') maxExt=cellX2(Math.min(cx2-1+maxEC,GX.length-2))-cellX2(cx2-1);
+    if(extDir==='l') maxExt=cellX(cx1)-cellX(Math.max(cx1-maxEC,0));
+    if(extDir==='d') maxExt=cellY2(Math.min(cy2-1+maxEC,GY.length-2))-cellY2(cy2-1);
+    if(extDir==='u') maxExt=cellY(cy1)-cellY(Math.max(cy1-maxEC,0));
+    cbMeta.push({
+      bl:l,bt:t,bw:w,bh:h,
+      maxExt:Math.max(0,maxExt), extDir,
+      phase:Math.random()*Math.PI*2,
+      sens:0.45+Math.random()*0.7,
+    });
+  });
+}
+
+function fadeInBlocks(){
+  cbEls.forEach((el,i)=>setTimeout(()=>el.classList.add('on'),i*18+200));
+}
+
+/* ============================================================
+  BUILD LETTERS
+============================================================ */
+const ltrEls=[], ltrMeta=[];
+
+function buildLetters(){
+  ltrLay.innerHTML=''; ltrEls.length=0; ltrMeta.length=0;
+  LETTER_DEFS.forEach((def,i)=>{
+    const el=document.createElement('div'); el.className='ltr';
+    // Letter lives in cell (def.cx, def.cy)
+    // Size: fit about 70% of the smaller cell dimension
+    const cw=cellW(def.cx), ch=cellH(def.cy);
+    const baseSz=Math.min(cw,ch)*0.72;
+    const col=LETTER_COLORS[def.ci];
+    // Centre in cell
+    const l=cellCX(def.cx)-baseSz*0.38;
+    const t=cellCY(def.cy)-baseSz*0.52;
+    el.style.cssText=`left:${l}px;top:${t}px;font-size:${baseSz}px;color:${col};opacity:0`;
+    el.textContent=def.ch;
+    ltrLay.appendChild(el); ltrEls.push(el);
+    ltrMeta.push({
+      def, baseSz, col,
+      baseLpx:l, baseTopx:t,
+      baseCX:cellCX(def.cx), baseCY:cellCY(def.cy),
+      phase:  i*0.72+Math.random()*0.5,
+      freq:   0.7+Math.random()*0.8,
+      sens:   0.6+Math.random()*0.6,
+      rgbFrom:[...hexRgb(col)],
+      rgbTo:  [...hexRgb(col)],
+      rgbT:   1,
+      colIdx: def.ci,
+    });
+  });
+}
+
+function fadeInLetters(){
+  // Reveal left-to-right in order, small stagger
+  ltrEls.forEach((el,i)=>setTimeout(()=>el.classList.add('on'), i*45+100));
+}
+
+/* ============================================================
+  BUILD TRAFFIC
+============================================================ */
+const cars=[], speeds=[];
+function buildTraffic(){
+  tlLay.innerHTML=''; cars.length=0; speeds.length=0;
+  const blinks=['blk','crb','cyw','none'];
+  const cols=['#D22626','#285495','#C8C8C8','#f0ece0','#D22626'];
+  function makeCar(isH,trackPx,thkPx){
+    const spd=Math.random()*9+4;
+    const dir=isH?(Math.random()>.5?'dH':'dHr'):(Math.random()>.5?'dV':'dVr');
+    const bl=blinks[Math.floor(Math.random()*blinks.length)];
+    let anim=`${dir} ${spd}s linear infinite`;
+    if(bl!=='none') anim+=`, ${bl} ${(Math.random()*.5+.15).toFixed(2)}s steps(1) infinite`;
+    const c=document.createElement('div'); c.className='car';
+    const bg=cols[Math.floor(Math.random()*cols.length)];
+    const thk=Math.max(3,thkPx*(.4+Math.random()*.55));
+    if(isH){
+      const cw=Math.round(thkPx*(1.5+Math.random()*3));
+      c.style.cssText=`height:${thk}px;width:${cw}px;top:${trackPx}px;left:-5%;background:${bg};position:absolute;animation:${anim};animation-delay:${-(Math.random()*spd)}s`;
+    } else {
+      const ch=Math.round(thkPx*(1.5+Math.random()*3));
+      c.style.cssText=`width:${thk}px;height:${ch}px;left:${trackPx}px;top:-5%;background:${bg};position:absolute;animation:${anim};animation-delay:${-(Math.random()*spd)}s`;
+    }
+    tlLay.appendChild(c); cars.push(c); speeds.push(spd);
+  }
+  // Cars on every grid line
+  GY.forEach((ypct,i)=>{
+    const th=lineThick(i,false);
+    for(let j=0;j<14;j++) makeCar(true, gypx(i)-th/2+Math.random()*th, th);
+  });
+  GX.forEach((xpct,i)=>{
+    const th=lineThick(i,true);
+    for(let j=0;j<14;j++) makeCar(false, gxpx(i)-th/2+Math.random()*th, th);
+  });
+}
+function fadeInTraffic(){ cars.forEach((c,i)=>setTimeout(()=>c.classList.add('on'),i+300)); }
+
+/* ============================================================
+  VU BAR
+============================================================ */
+const vus=[];
+['#F8D836','#F8D836','#F8D836','#F8D836','#D22626','#D22626','#D22626','#285495'].forEach(col=>{
+  const s=document.createElement('div'); s.className='vs';
+  s.style.cssText=`background:${col};height:4px`;
+  document.getElementById('vub').appendChild(s); vus.push(s);
+});
+
+/* ============================================================
+  AUDIO
+============================================================ */
+const audEl=document.getElementById('aud');
+const tglBtn=document.getElementById('mtgl');
+const micEl=document.getElementById('mic');
+let playing=false, actx, anlz, adata;
+function initA(){
+  if(actx) return;
+  actx=new(window.AudioContext||window.webkitAudioContext)();
+  anlz=actx.createAnalyser(); anlz.fftSize=256;
+  adata=new Uint8Array(anlz.frequencyBinCount);
+  actx.createMediaElementSource(audEl).connect(anlz);
+  anlz.connect(actx.destination);
+}
+function play(){
+  initA(); if(actx.state==='suspended') actx.resume();
+  audEl.play().then(()=>{ playing=true; micEl.className='fa-solid fa-music'; tglBtn.classList.remove('muted'); }).catch(e=>console.log(e));
+}
+tglBtn.addEventListener('click',()=>{
+  if(playing){ audEl.pause(); micEl.className='fa-solid fa-volume-xmark'; tglBtn.classList.add('muted'); playing=false; }
+  else play();
+});
+
+/* ============================================================
+  VISUALISER
+============================================================ */
+let smE=0, smB=0, smM=0, smT=0;
+let lastBeat=0, beatOn=false;
+
+const lerp =(a,b,t)=>a+(b-a)*t;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const map  =(v,a,b,c,d)=>c+(d-c)*clamp((v-a)/(b-a),0,1);
+function hexRgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
+
+function triggerBeat(bn){
+  const now=performance.now();
+  if(now-lastBeat<175) return; lastBeat=now;
+  // Shift colour on ~60% of letters
+  ltrMeta.forEach((m,i)=>{
+    if(Math.random()<0.6){
+      m.rgbFrom=[...m.rgbTo];
+      const next=(m.colIdx+1+Math.floor(Math.random()*(LETTER_COLORS.length-1)))%LETTER_COLORS.length;
+      m.colIdx=next;
+      m.rgbTo=hexRgb(LETTER_COLORS[next]);
+      m.rgbT=0;
+    }
+  });
+  if(!beatOn){
+    beatOn=true;
+    const a=map(bn,.45,1,.02,.13);
+    bfEl.style.opacity=a; bfEl.style.background=`rgba(248,216,54,${a})`;
+    setTimeout(()=>{ bfEl.style.opacity='0'; beatOn=false; },55);
+  }
+}
+
+function tick(){
+  requestAnimationFrame(tick);
+  if(!anlz||!playing){ vus.forEach(s=>{s.style.height='4px';}); return; }
+  anlz.getByteFrequencyData(adata);
+  let bS=0,mS=0,tS=0;
+  for(let i=0;i<10;i++) bS+=adata[i];
+  for(let i=10;i<41;i++) mS+=adata[i];
+  for(let i=41;i<101;i++) tS+=adata[i];
+  const bR=clamp(bS/(10*255)*2.5,0,1);
+  const mR=clamp(mS/(31*255)*1.7,0,1);
+  const tR=clamp(tS/(60*255)*2.2,0,1);
+  const eR=clamp(bR*.5+mR*.3+tR*.2,0,1);
+  const SK=0.14;
+  smB+=SK*(bR-smB); smM+=SK*(mR-smM); smT+=SK*(tR-smT); smE+=SK*(eR-smE);
+  const t=Date.now()*.001;
+
+  /* Background */
+  const L=Math.round(lerp(18,228,Math.pow(smE,.55)));
+  cvEl.style.backgroundColor=`rgb(${L},${Math.round(L*.98)},${Math.round(L*.93)})`;
+
+  /* Vignette */
+  vigEl.style.opacity=lerp(1.0,.1,Math.pow(smE,.38)).toFixed(3);
+
+  /* Grid glow */
+  const gi=Math.round(map(smT,0,1,0,38));
+  const gg=gi>2?`0 0 ${gi}px rgba(248,216,54,${(gi/46).toFixed(2)}),0 0 ${gi*2}px rgba(248,216,54,${(gi/110).toFixed(2)})`:'none';
+  glEls.forEach(el=>el.style.boxShadow=gg);
+
+  /* Beat */
+  if(bR>0.48) triggerBeat(bR);
+
+  /* ── BLOCK EXTENSION ─────────────────────────────────────────
+     Blocks grow along their axis. The extension is smooth because
+     CSS transitions are applied. Drive is bass + per-block oscillator.
+  ──────────────────────────────────────────────────────────────*/
+  cbEls.forEach((el,i)=>{
+    const d=cbMeta[i];
+    const osc=(Math.sin(t*1.6+d.phase)*0.5+0.5);
+    const drive=clamp(smB*d.sens*1.6 + smM*osc*d.sens*0.6, 0, 1);
+    const ext=drive*d.maxExt;
+    let l=d.bl,tp=d.bt,w=d.bw,h=d.bh;
+    if(d.extDir==='r'){ w=d.bw+ext; }
+    if(d.extDir==='l'){ l=d.bl-ext; w=d.bw+ext; }
+    if(d.extDir==='d'){ h=d.bh+ext; }
+    if(d.extDir==='u'){ tp=d.bt-ext; h=d.bh+ext; }
+    el.style.left=l+'px'; el.style.top=tp+'px';
+    el.style.width=w+'px'; el.style.height=h+'px';
+    const br=1+smB*.4*(Math.sin(t*2.4+d.phase)*.5+.5);
+    el.style.filter=smB>.05?`brightness(${br.toFixed(3)})`:'';
+  });
+
+  /* ── LETTER ANIMATION ────────────────────────────────────────
+     Letters are in readable order. Each reacts to music:
+     1. COLOUR — lerps on beat triggers
+     2. SCALE  — punchy bass pump + slower mid breathe
+     3. OPACITY — always high but dips in quiet moments
+     No rotation — straight and readable as requested.
+  ─────────────────────────────────────────────────────────────*/
+  ltrEls.forEach((el,i)=>{
+    const m=ltrMeta[i];
+
+    // Colour lerp
+    if(m.rgbT<1){
+      m.rgbT=Math.min(1,m.rgbT+0.09);
+      const r=Math.round(lerp(m.rgbFrom[0],m.rgbTo[0],m.rgbT));
+      const g=Math.round(lerp(m.rgbFrom[1],m.rgbTo[1],m.rgbT));
+      const b=Math.round(lerp(m.rgbFrom[2],m.rgbTo[2],m.rgbT));
+      el.style.color=`rgb(${r},${g},${b})`;
+    }
+
+    // Scale: bass punch + individual mid oscillator
+    // Each letter has a slightly different phase so they don't all move identically
+    const bassOsc=Math.sin(t*0.8*m.freq+m.phase)*0.5+0.5;
+    const midOsc =Math.sin(t*2.2*m.freq+m.phase+1.4)*0.5+0.5;
+    const scale=1.0
+      + smB*m.sens*0.55*(0.3+0.7*bassOsc)   // bass: big punch
+      + smM*m.sens*0.12*midOsc;              // mid: gentle breathe
+
+    // Opacity: present and readable, slight breathe
+    const opacity=clamp(0.78 + smB*m.sens*0.18 + midOsc*0.06*(0.2+smM*0.8), 0.4, 1.0);
+
+    // Recentre after scale
+    const sz=m.baseSz*scale;
+    const l=(m.baseCX - sz*0.38).toFixed(1);
+    const tp=(m.baseCY - sz*0.52).toFixed(1);
+
+    el.style.fontSize=sz.toFixed(1)+'px';
+    el.style.opacity=opacity.toFixed(3);
+    el.style.left=l+'px';
+    el.style.top=tp+'px';
+  });
+
+  /* VU */
+  vus.forEach((s,i)=>{ s.style.height=Math.max(4,Math.round(adata[Math.floor(i/8*60)]/255*28))+'px'; });
+
+  /* Traffic speed */
+  const sm=map(smE,0,.7,1.0,.25);
+  cars.forEach((c,i)=>{
+    const base=speeds[i],nxt=(base*sm).toFixed(2);
+    if(Math.abs(parseFloat(c.dataset.cs||base)-parseFloat(nxt))>.1){
+      c.dataset.cs=nxt;
+      const upd=c.style.animation.replace(/\b\d+(\.\d+)?s\b/g,m=>parseFloat(m)===base?`${nxt}s`:m);
+      if(upd!==c.style.animation) c.style.animation=upd;
+    }
+  });
+}
+
+/* ============================================================
+  INIT + ENTER
+============================================================ */
+const landEl=document.getElementById('landing');
+const xpEl=document.getElementById('xp');
+const hudEl=document.getElementById('hud');
+const eBtn=document.getElementById('ebtn');
+
+// Build everything while user is on landing
+buildGrid(); buildBlocks(); buildTraffic(); buildLetters();
+
+setTimeout(()=>document.getElementById('lt').classList.add('show'),80);
+setTimeout(()=>{
+  document.getElementById('ls').classList.add('show');
+  document.getElementById('li').classList.add('show');
+  document.getElementById('lbar').classList.add('show');
+},260);
+setTimeout(()=>eBtn.classList.add('show'),520);
+
+let entered=false;
+function enter(){
+  if(entered) return; entered=true;
+  landEl.classList.add('hidden');
+  xpEl.classList.add('on');
+  hudEl.classList.add('on');
+  fadeInBlocks();              // blocks first
+  setTimeout(fadeInLetters, 400);   // letters next
+  setTimeout(fadeInGrid,    800);   // grid fades in last
+  setTimeout(fadeInTraffic, 1100);
+  play(); tick();
+}
+eBtn.addEventListener('click',enter);
+landEl.addEventListener('click',e=>{ if(!eBtn.contains(e.target)) enter(); });
+</script>
+</body>
+</html>

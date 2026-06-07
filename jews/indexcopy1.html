@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Jewish World — Tribes, Diasporas & Communities</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dark: #8a6a20;
+    --cream: #f5edd8;
+    --parchment: #e8d5a3;
+    --deep: #1a1208;
+    --ink: #2c1f08;
+    --red: #8b1a1a;
+    --blue: #1a3a5c;
+    --green: #1a4a2a;
+    --purple: #3a1a5c;
+    --orange: #7a3a0a;
+    --teal: #0a4a4a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--cream);
+    font-family: 'EB Garamond', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(201,168,76,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 42%, rgba(201,168,76,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 8%, rgba(201,168,76,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 60%, rgba(201,168,76,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 20%, rgba(201,168,76,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 75%, rgba(201,168,76,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 92% 35%, rgba(201,168,76,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 80%, rgba(201,168,76,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 90%, rgba(201,168,76,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 33% 55%, rgba(201,168,76,0.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    text-align: center;
+    padding: 3rem 2rem 2rem;
+    position: relative;
+    z-index: 1;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .star-of-david {
+    font-size: 3rem;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 1rem;
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from { text-shadow: 0 0 10px var(--gold-dark); }
+    to { text-shadow: 0 0 30px var(--gold), 0 0 60px var(--gold-dark); }
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(1.4rem, 4vw, 2.8rem);
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-family: 'Cinzel', serif;
+    color: var(--parchment);
+    font-size: 0.95rem;
+    margin-top: 0.7rem;
+    letter-spacing: 0.15em;
+    opacity: 0.8;
+  }
+
+  /* Tab navigation */
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 1.2rem;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--parchment);
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+  }
+
+  .tab-btn:hover, .tab-btn.active {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Main content area */
+  .view { display: none; position: relative; z-index: 1; padding: 1rem 1.5rem 3rem; }
+  .view.active { display: block; }
+
+  /* ===================== TREE VIEW ===================== */
+  .tree-container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .tree-level {
+    margin-bottom: 2rem;
+  }
+
+  .level-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--gold-dark);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--gold-dark);
+  }
+
+  .node-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    align-items: flex-start;
+    justify-content: center;
+    position: relative;
+  }
+
+  .node-row::before {
+    content: '';
+    position: absolute;
+    top: -1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 1rem;
+    background: rgba(201,168,76,0.3);
+  }
+
+  .node {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    text-align: center;
+    min-width: 130px;
+  }
+
+  .node:hover {
+    background: rgba(201,168,76,0.1);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
+
+  .node.root {
+    min-width: 200px;
+    padding: 1rem 1.5rem;
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+
+  .node-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    display: block;
+  }
+
+  .node.root .node-name { font-size: 1.1rem; }
+
+  .node-desc {
+    font-size: 0.75rem;
+    color: var(--parchment);
+    opacity: 0.7;
+    display: block;
+    margin-top: 0.2rem;
+    font-style: italic;
+  }
+
+  .node-tag {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    margin-top: 0.3rem;
+    font-family: 'Cinzel', serif;
+  }
+
+  .tag-ancient { background: rgba(138,26,26,0.3); color: #e88; border: 1px solid rgba(138,26,26,0.5); }
+  .tag-medieval { background: rgba(26,58,92,0.3); color: #88b; border: 1px solid rgba(26,58,92,0.5); }
+  .tag-modern { background: rgba(26,74,42,0.3); color: #8c8; border: 1px solid rgba(26,74,42,0.5); }
+  .tag-tribe { background: rgba(122,58,10,0.4); color: #e8a; border: 1px solid rgba(122,58,10,0.6); }
+
+  /* connector lines via SVG overlay */
+  .tree-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  /* ===================== COMMUNITIES VIEW ===================== */
+  .communities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .community-card {
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .community-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  }
+
+  .card-header {
+    padding: 0.9rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .card-emoji { font-size: 1.8rem; }
+
+  .card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    color: var(--gold);
+  }
+
+  .card-subtitle {
+    font-size: 0.75rem;
+    color: var(--parchment);
+    opacity: 0.6;
+    font-style: italic;
+  }
+
+  .card-body {
+    padding: 0.9rem 1.2rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--parchment);
+    opacity: 0.85;
+  }
+
+  .card-footer {
+    padding: 0.6rem 1.2rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .pill {
+    font-size: 0.65rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .pill-ashkenazi { background: rgba(26,58,92,0.25); color: #9ab; border-color: rgba(26,58,92,0.5); }
+  .pill-sephardic { background: rgba(122,58,10,0.25); color: #cb9; border-color: rgba(122,58,10,0.5); }
+  .pill-mizrahi { background: rgba(138,26,26,0.25); color: #e99; border-color: rgba(138,26,26,0.5); }
+  .pill-other { background: rgba(26,74,42,0.25); color: #9c9; border-color: rgba(26,74,42,0.5); }
+  .pill-tribe { background: rgba(58,26,92,0.35); color: #c9b; border-color: rgba(58,26,92,0.5); }
+
+  /* ===================== TIMELINE VIEW ===================== */
+  .timeline {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    padding: 1rem 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--gold-dark), var(--gold), var(--gold-dark), transparent);
+    transform: translateX(-50%);
+  }
+
+  @media (max-width: 600px) {
+    .timeline::before { left: 16px; }
+  }
+
+  .timeline-era {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+
+  .era-header {
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  .era-label {
+    display: inline-block;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    background: var(--deep);
+    padding: 0.3rem 1.2rem;
+    border: 1px solid var(--gold-dark);
+    border-radius: 20px;
+  }
+
+  .timeline-event {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .timeline-event:nth-child(odd) { flex-direction: row-reverse; }
+
+  .event-content {
+    width: calc(50% - 2rem);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
+    transition: all 0.3s;
+  }
+
+  .event-content:hover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+
+  .timeline-event:nth-child(odd) .event-content { text-align: right; }
+
+  .event-dot {
+    width: 10px; height: 10px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: 0.8rem;
+    transform: translateX(-50%);
+    box-shadow: 0 0 8px var(--gold);
+    z-index: 1;
+  }
+
+  .event-date {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    color: var(--gold-dark);
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .event-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold-light);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  .event-body {
+    font-size: 0.78rem;
+    color: var(--parchment);
+    opacity: 0.75;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 600px) {
+    .timeline::before { left: 16px; }
+    .timeline-event, .timeline-event:nth-child(odd) { flex-direction: row; padding-left: 2.5rem; }
+    .event-content, .timeline-event:nth-child(odd) .event-content { width: 100%; text-align: left; }
+    .event-dot { left: 16px; }
+  }
+
+  /* ===================== MAP VIEW ===================== */
+  .map-view {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .map-note {
+    text-align: center;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--parchment);
+    opacity: 0.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .world-map {
+    position: relative;
+    width: 100%;
+    padding-bottom: 50%;
+    background: rgba(26,74,42,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .world-map svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .map-dot {
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .map-dot circle {
+    transition: all 0.3s;
+  }
+
+  .map-dot:hover circle { r: 10; }
+  .map-dot:hover .map-label { font-size: 11px; font-weight: bold; }
+
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--parchment);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: linear-gradient(135deg, #1e1508, #0f0c04);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 2rem;
+    position: relative;
+    box-shadow: 0 0 60px rgba(201,168,76,0.2);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: none;
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+    cursor: pointer;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .modal-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+
+  .modal-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.3rem;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+
+  .modal-subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    color: var(--parchment);
+    opacity: 0.6;
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.1em;
+    font-style: italic;
+  }
+
+  .modal-section {
+    margin-bottom: 1rem;
+  }
+
+  .modal-section h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--gold-dark);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding-bottom: 0.3rem;
+  }
+
+  .modal-section p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--parchment);
+    opacity: 0.85;
+  }
+
+  .modal-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1rem; }
+
+  /* Section title */
+  .section-title {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    color: var(--gold-dark);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: var(--gold-dark);
+    margin: 0.5rem auto 1.5rem;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--deep); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+  .hebrew-accent {
+    font-family: serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    opacity: 0.4;
+    letter-spacing: 0.3em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="star-of-david">✡</span>
+  <h1>The Jewish World</h1>
+  <p class="subtitle">Tribes · Diasporas · Communities · Three Thousand Years</p>
+  <div class="hebrew-accent" style="margin-top:0.8rem">בְּנֵי יִשְׂרָאֵל</div>
+</header>
+
+<nav>
+  <button class="tab-btn active" onclick="showView('communities')">Communities</button>
+  <button class="tab-btn" onclick="showView('tree')">Family Tree</button>
+  <button class="tab-btn" onclick="showView('timeline')">Timeline</button>
+  <button class="tab-btn" onclick="showView('map')">World Map</button>
+</nav>
+
+<!-- COMMUNITIES VIEW -->
+<div id="view-communities" class="view active">
+  <div class="section-title">Major Jewish Communities & Diasporas</div>
+  <div class="divider"></div>
+  <div class="communities-grid" id="communities-grid"></div>
+</div>
+
+<!-- TREE VIEW -->
+<div id="view-tree" class="view">
+  <div class="section-title">Origin Tree</div>
+  <div class="divider"></div>
+  <div class="tree-container" id="tree-container"></div>
+</div>
+
+<!-- TIMELINE VIEW -->
+<div id="view-timeline" class="view">
+  <div class="section-title">Through the Centuries</div>
+  <div class="divider"></div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- MAP VIEW -->
+<div id="view-map" class="view">
+  <div class="section-title">Diaspora World Map</div>
+  <div class="divider"></div>
+  <div class="map-view">
+    <p class="map-note">Click a dot to learn about each community. Colour = branch (Ashkenazi · Sephardic · Mizrahi · Other)</p>
+    <div class="world-map" id="world-map"></div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#5588bb"></div> Ashkenazi</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#cc8844"></div> Sephardic</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#cc4444"></div> Mizrahi</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#44aa66"></div> Ancient / Other</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modal-inner"></div>
+  </div>
+</div>
+
+<script>
+const communities = [
+  {
+    id: 'ashkenazi',
+    name: 'Ashkenazi Jews',
+    emoji: '🕍',
+    subtitle: 'Central & Eastern Europe',
+    branch: 'ashkenazi',
+    origin: 'Rhine Valley, Germany (c. 900 CE), spreading east into Poland, Russia, Ukraine',
+    language: 'Yiddish (Judæo-German)',
+    history: 'Descendants of medieval Jewish communities along the Rhine. Expanded massively into Poland-Lithuania from the 13th century. Constituted ~90% of world Jewry by 1900. Devastated by the Holocaust (6 million killed). Major centres: Warsaw, Vilna ("Jerusalem of Lithuania"), Vienna, New York.',
+    notable: 'Hasidic movement, Yeshiva tradition, Klezmer music, Deli cuisine (bagels, lox, borscht). Produced Einstein, Freud, Kafka, Chagall, Mahler.',
+    approx: '~11 million today (majority in USA & Israel)',
+    tags: ['ashkenazi']
+  },
+  {
+    id: 'sephardic',
+    name: 'Sephardic Jews',
+    emoji: '🌊',
+    subtitle: 'Iberian Peninsula Diaspora',
+    branch: 'sephardic',
+    origin: 'Spain (Sepharad) & Portugal, expelled 1492 by Ferdinand & Isabella',
+    language: 'Ladino (Judæo-Spanish)',
+    history: 'The Reconquista expelled ~200,000 Jews from Spain in 1492. They dispersed to the Ottoman Empire (Salonika, Istanbul, Izmir), North Africa, the Netherlands, and the Americas. Salonika was 50% Jewish by 1550. Many became court Jews and merchant elites in Amsterdam and Hamburg.',
+    notable: 'Ladino literature, sophisticated legal tradition (Shulchan Aruch by Joseph Karo), kabbalah in Safed. Baruch Spinoza was Sephardic Dutch.',
+    approx: '~1-2 million today',
+    tags: ['sephardic']
+  },
+  {
+    id: 'mizrahi',
+    name: 'Mizrahi Jews',
+    emoji: '🌙',
+    subtitle: 'Middle East & North Africa',
+    branch: 'mizrahi',
+    origin: 'Indigenous communities of the Levant, Mesopotamia, Persia, and North Africa — pre-dating the Arab conquest',
+    language: 'Judæo-Arabic, Judæo-Persian, Aramaic dialects',
+    history: 'The broad family of Jewish communities that remained in or near the ancient Near East after the Babylonian exile. Never went through the European Diaspora. Lived largely under Islamic rule. Most emigrated to Israel 1948–1970s, fleeing Arab nationalism. Today ~50% of Israeli Jews are Mizrahi.',
+    notable: 'Ancient prayer rites, piyyut poetry, distinctive culinary traditions (shakshuka, kubbeh, masobacha). The Baba Sali and other great kabbalists.',
+    approx: '~4-5 million today',
+    tags: ['mizrahi']
+  },
+  {
+    id: 'yemenite',
+    name: 'Yemenite Jews',
+    emoji: '🏔️',
+    subtitle: 'Yemen — Teman',
+    branch: 'mizrahi',
+    origin: 'Yemen, possibly since the time of King Solomon or the destruction of the First Temple (6th century BCE)',
+    language: 'Judæo-Yemeni Arabic, Hebrew',
+    history: 'One of the most isolated and ancient Jewish communities. Lived under Zaydi Imams with periods of persecution. Famed for their distinct Torah scroll reading, unique prayer rite (Baladi), and extraordinary silverwork. Operation Magic Carpet (1949–50) airlifted nearly the entire community to Israel.',
+    notable: 'Unique cantillation (te\'amim), handwritten Torah scrolls without vowel-points, intricate silver jewelry, Diwan poetry. Chef Meir Adoni has brought Yemenite cuisine to international prominence.',
+    approx: '~400,000 (almost entirely in Israel)',
+    tags: ['mizrahi']
+  },
+  {
+    id: 'iraqi',
+    name: 'Iraqi Jews',
+    emoji: '⚱️',
+    subtitle: 'Babylon — Iraq',
+    branch: 'mizrahi',
+    origin: 'Babylonia — the oldest continuous Jewish community, since the exile of 586 BCE',
+    language: 'Judæo-Babylonian Arabic, Aramaic',
+    history: 'The Babylonian community produced the Babylonian Talmud (completed c. 500 CE), the most authoritative rabbinic text. Baghdad had 100,000+ Jews in 1900 — over a third of the city. The 1941 Farhud pogrom and 1948 independence of Israel triggered mass emigration. By 1970 nearly all had left.',
+    notable: 'The Babylonian Talmud (Talmud Bavli), Gaonic academies of Sura and Pumbedita. Sassoon merchant dynasty. Composer Salim Shabat.',
+    approx: '~200,000 (mostly in Israel)',
+    tags: ['mizrahi']
+  },
+  {
+    id: 'moroccan',
+    name: 'Moroccan Jews',
+    emoji: '🌿',
+    subtitle: 'North Africa — Al-Maghrib',
+    branch: 'sephardic',
+    origin: 'Morocco — possibly since Carthaginian times; reinforced by Iberian expulsion of 1492',
+    language: 'Haketia (Judæo-Spanish), Judæo-Moroccan Arabic, Berber',
+    history: 'Morocco\'s Jewish community was one of the largest in the Arab world — 250,000 in 1948. Under French protectorate they thrived; post-independence emigration to Israel, France, and Canada. The city of Fez and Mellah (Jewish quarter) were central hubs. Maintained distinct pre-expulsion Spanish-Jewish culture.',
+    notable: 'Rabbi Ovadia Yosef (a Yemenite raised in Mizrahi tradition), strong kabbalistic tradition, Mimouna Passover celebration, Atlas Berber Jewish communities.',
+    approx: '~600,000 (Israel, France, Canada)',
+    tags: ['sephardic', 'mizrahi']
+  },
+  {
+    id: 'ethiopian',
+    name: 'Ethiopian Jews',
+    emoji: '✡️',
+    subtitle: 'Beta Israel — Ethiopia',
+    branch: 'other',
+    origin: 'Ethiopia — possibly from the Tribe of Dan, or Yemenite Jews crossing into Africa, or converts in antiquity',
+    language: 'Ge\'ez (liturgical), Amharic',
+    history: 'Known as Beta Israel ("House of Israel") or Falasha (a pejorative). Practiced a form of Judaism based on the Hebrew Bible and Ge\'ez texts, without Talmud. Lived isolated from world Jewry for centuries. Recognised as Jews by Israel\'s Sephardic Chief Rabbi in 1973. Operations Moses (1984) and Solomon (1991) airlifted them to Israel.',
+    notable: 'Unique Orit scriptures, Sigd festival (now a national holiday in Israel), woven ceremonial cloth, the sacred Tablets of Moses tradition in Axum.',
+    approx: '~170,000 in Israel',
+    tags: ['other', 'tribe']
+  },
+  {
+    id: 'iranian',
+    name: 'Persian Jews',
+    emoji: '🏺',
+    subtitle: 'Iran — Persia',
+    branch: 'mizrahi',
+    origin: 'Persia — since at least the Babylonian captivity (6th century BCE), and referenced in the Book of Esther',
+    language: 'Judæo-Persian',
+    history: 'One of the oldest Diaspora communities. Under Cyrus the Great\'s tolerant rule many Jews stayed in Persia after being freed. Flourished under Safavid and early Qajar dynasties. After the 1979 Islamic Revolution, ~80% emigrated — mostly to Los Angeles ("Tehrangeles"), New York, and Israel.',
+    notable: 'Book of Esther set in Shushan (Susa). Judæo-Persian poetry (Shahin). The tomb of Esther and Mordecai in Hamadan is a pilgrimage site.',
+    approx: '~300,000 (mainly USA, Israel)',
+    tags: ['mizrahi']
+  },
+  {
+    id: 'russian',
+    name: 'Russian / Soviet Jews',
+    emoji: '❄️',
+    subtitle: 'Eastern Europe & Former USSR',
+    branch: 'ashkenazi',
+    origin: 'Pale of Settlement — a vast region of western Russia, Poland, Ukraine, Belarus, Moldova, Lithuania mandated for Jewish residence by Catherine the Great (1791)',
+    language: 'Yiddish, Russian',
+    history: 'The Pale confined 5 million Jews to shtetlakh (small towns). Pogroms (1881, 1903, 1905) and the Holocaust decimated this world. Soviet Jews faced state antisemitism and refusal of emigration rights — "Refuseniks." A million emigrated to Israel in 1990s after the USSR collapse, transforming Israeli society.',
+    notable: 'Chagall, Pasternak, Isaac Bashevis Singer, Sholem Aleichem (Fiddler on the Roof). Hasidic dynasties of Chabad (Lubavitch), Breslov.',
+    approx: '~1.5 million (Israel, USA, Germany)',
+    tags: ['ashkenazi']
+  },
+  {
+    id: 'indian',
+    name: 'Indian Jews',
+    emoji: '🪔',
+    subtitle: 'India — Three Ancient Communities',
+    branch: 'other',
+    origin: 'Three distinct communities: Bene Israel (Maharashtra coast, possibly since 175 BCE), Cochin Jews (Kerala, since Solomon\'s time?), and Baghdadi Jews (18th century merchants)',
+    language: 'Marathi, Malayalam, English',
+    history: 'The Bene Israel claim descent from shipwrecked Jews on the Konkan coast, maintaining Sabbath, dietary laws, and circumcision while adopting Indian customs. Cochin Jews built the oldest surviving synagogue in the Commonwealth (1568). Most emigrated to Israel after 1948. Extraordinary harmonious coexistence with Hindu and Muslim neighbours.',
+    notable: 'Paradesi Synagogue in Kochi, unique Indian-Jewish liturgical melodies, the Jew Town spice market in Cochin.',
+    approx: '~80,000 (mostly Israel, ~5,000 remain in India)',
+    tags: ['other']
+  },
+  {
+    id: 'bukharan',
+    name: 'Bukharan Jews',
+    emoji: '🧵',
+    subtitle: 'Central Asia — Silk Road',
+    branch: 'mizrahi',
+    origin: 'Uzbekistan, Tajikistan, Kyrgyzstan — ancient communities along the Silk Road',
+    language: 'Bukhori (Judæo-Tajik)',
+    history: 'Among the most remote Jewish communities. Merchants and craftsmen who connected China to Europe. Under Russian rule from 1860s, then Soviet suppression. Bukhara and Samarkand had large Jewish quarters. Mass emigration to Israel and New York (Queens) after 1991.',
+    notable: 'Vibrant embroidery and textile tradition, unique Shashmaqam music, the tomb of Daniel in Samarkand venerated by Jews and Muslims alike.',
+    approx: '~250,000 (Israel, USA)',
+    tags: ['mizrahi']
+  },
+  {
+    id: 'georgian',
+    name: 'Georgian Jews',
+    emoji: '🏔️',
+    subtitle: 'Caucasus — Georgia',
+    branch: 'mizrahi',
+    origin: 'Georgia — possibly since the Babylonian exile (6th century BCE), or after the fall of the First Temple',
+    language: 'Georgian (Judæo-Georgian dialect)',
+    history: 'One of the oldest communities outside the Land of Israel. Georgian Jews were farmers — unusual among Diaspora Jews. Protected by Georgian kingdoms. Maintained separate synagogues and traditions. Stalin (himself Georgian) ironically was born near a Jewish quarter. Most emigrated to Israel after 1991.',
+    notable: 'Unique Rite, medieval Jewish inscriptions in Mtskheta. Georgian Jewish warriors served in Georgian royal armies.',
+    approx: '~100,000 (Israel)',
+    tags: ['mizrahi']
+  },
+  {
+    id: 'tribes',
+    name: 'The Twelve Tribes',
+    emoji: '🗺️',
+    subtitle: 'Biblical Origin — c. 1200 BCE',
+    branch: 'ancient',
+    origin: 'Canaan — Sons of Jacob (Israel): Reuben, Simeon, Levi, Judah, Dan, Naphtali, Gad, Asher, Issachar, Zebulun, Ephraim, Manasseh',
+    language: 'Biblical Hebrew',
+    history: 'After the Exodus and conquest of Canaan, Israel divided into twelve tribal territories. The kingdom split (931 BCE) into Israel (north, 10 tribes) and Judah (south, 2 tribes). The Assyrian conquest (722 BCE) exiled the northern ten tribes — the "Lost Tribes of Israel." Only Judah (and Levi/Benjamin) maintained continuity. All modern Jews descend primarily from Judah.',
+    notable: 'The Lost Tribes became one of history\'s great mysteries. Claimed descendants: Beta Israel (Dan), Bnei Menashe of India (Manasseh), Pashtuns of Afghanistan (various), Lemba of Zimbabwe (priestly lineage). Modern DNA research has confirmed some links.',
+    approx: 'The tribe of Judah → all modern Jews. Other tribes: disputed/scattered.',
+    tags: ['tribe']
+  },
+  {
+    id: 'conversos',
+    name: 'Crypto-Jews / Conversos',
+    emoji: '🕯️',
+    subtitle: 'Hidden Jews of the Inquisition',
+    branch: 'sephardic',
+    origin: 'Iberian Peninsula — Jews forced to convert to Christianity, many secretly maintaining Jewish practice',
+    language: 'Spanish, Portuguese',
+    history: 'The Spanish Inquisition targeted "New Christians" suspected of secretly practising Judaism. Many Marranos (a pejorative) preserved Shabbat candles, dietary laws, and Hebrew prayers in secret for generations. Their descendants today include communities in New Mexico, Portugal, Brazil, and the Caribbean. Some "return" to Judaism centuries later.',
+    notable: 'Secret Passover seders across Latin America. New Mexico\'s "crypto-Jews" kept lit Friday candles without knowing why. DNA studies have revealed Jewish ancestry in millions of Latino families.',
+    approx: 'Millions of descendants worldwide, most unaware',
+    tags: ['sephardic']
+  },
+  {
+    id: 'karaite',
+    name: 'Karaite Jews',
+    emoji: '📜',
+    subtitle: 'Scripture-Only — A Distinct Branch',
+    branch: 'other',
+    origin: 'Baghdad — founded 8th century CE by Anan ben David, rejecting the Oral Torah (Talmud)',
+    language: 'Hebrew, Judæo-Arabic',
+    history: 'Karaites follow only the written Torah, rejecting rabbinic tradition. A major intellectual schism in medieval Judaism. Strong communities in Cairo, Constantinople, Crimea, and Lithuania. Their interpretation of Jewish law often differs radically — stricter in some areas, more lenient in others. Today they are a tiny but proud distinct community.',
+    notable: 'The Cairo Geniza (a treasure trove of medieval manuscripts) was found in a Karaite synagogue. A small Karaite community has existed continuously in Israel for centuries.',
+    approx: '~50,000 worldwide',
+    tags: ['other']
+  },
+  {
+    id: 'samaritan',
+    name: 'Samaritans',
+    emoji: '⛰️',
+    subtitle: 'The Forgotten Cousins',
+    branch: 'ancient',
+    origin: 'Mount Gerizim, Samaria (northern Israel/West Bank) — descendants of northern Israelite tribes and Assyrian settlers',
+    language: 'Samaritan Hebrew, Samaritan Aramaic',
+    history: 'Samaritans trace themselves to the tribes of Ephraim and Manasseh who were not exiled. The rift with Judah is ancient. They accept only the Pentateuch (five books of Moses), not the rest of the Hebrew Bible. They still offer the Passover sacrifice on Mount Gerizim. One of the world\'s smallest and oldest religious communities.',
+    notable: 'Passover sacrifice ritual (the only one still performed in the world). Unique priestly lineage. Population nearly vanished — only ~800 remain today.',
+    approx: '~800 (Holon, Israel + Nablus)',
+    tags: ['tribe', 'other']
+  },
+];
+
+const timelineData = [
+  { era: 'Biblical Era', events: [
+    { date: 'c. 1800 BCE', title: 'Abraham, Isaac, Jacob', body: 'The Patriarchs. Covenant with God. Migration to Canaan. Joseph sold to Egypt.' },
+    { date: 'c. 1250 BCE', title: 'The Exodus', body: 'Moses leads the Israelites from Egypt. Receiving of the Torah at Sinai.' },
+    { date: 'c. 1200 BCE', title: 'Twelve Tribes of Israel', body: 'Settlement of Canaan. Period of the Judges. Tribal confederation.' },
+    { date: '1000 BCE', title: 'United Kingdom', body: 'Saul, David, Solomon. First Temple built in Jerusalem. Height of Israelite power.' },
+  ]},
+  { era: 'Exile & Return', events: [
+    { date: '931 BCE', title: 'Kingdom Splits', body: 'Israel (north, 10 tribes) vs. Judah (south). Beginning of the end for tribal unity.' },
+    { date: '722 BCE', title: 'Assyrian Exile', body: '10 northern tribes deported — the "Lost Tribes." Only Judah survives as a coherent entity.' },
+    { date: '586 BCE', title: 'Babylonian Exile', body: 'Nebuchadnezzar destroys First Temple. Judean elite exiled to Babylon — including roots of Iraqi Jewry.' },
+    { date: '538 BCE', title: 'Return from Babylon', body: 'Cyrus the Great allows Jews to return. Second Temple built. Many stay in Persia (Persian Jews).' },
+  ]},
+  { era: 'Hellenistic & Roman', events: [
+    { date: '175–164 BCE', title: 'Maccabean Revolt', body: 'Antiochus IV desecrates Temple. Hasmoneans restore Jewish rule. Hanukkah.' },
+    { date: '70 CE', title: 'Destruction of Second Temple', body: 'Romans under Titus destroy Jerusalem. The Great Diaspora begins in earnest.' },
+    { date: '135 CE', title: 'Bar Kokhba Revolt', body: 'Final Jewish rebellion. Jews banned from Jerusalem. Judea renamed "Syria Palaestina."' },
+  ]},
+  { era: 'Diaspora Foundations', events: [
+    { date: 'c. 500 CE', title: 'Babylonian Talmud Completed', body: 'The Talmud Bavli codifies Jewish law and becomes the anchor of Diaspora Jewish life worldwide.' },
+    { date: '711 CE', title: 'Golden Age in Spain', body: 'Muslim conquest of Iberia opens centuries of Jewish intellectual flourishing — Maimonides, Ibn Ezra, Judah Halevi.' },
+    { date: '900 CE', title: 'Ashkenazi Communities Form', body: 'Jewish communities establish along the Rhine — precursors of Ashkenazi civilisation.' },
+  ]},
+  { era: 'Medieval & Early Modern', events: [
+    { date: '1096', title: 'Rhineland Massacres', body: 'Crusaders massacre Jewish communities in Worms, Mainz, Speyer. Beginning of European persecution.' },
+    { date: '1492', title: 'Expulsion from Spain', body: 'Ferdinand & Isabella expel Jews. Sephardic diaspora to Ottoman Empire, North Africa, Amsterdam.' },
+    { date: '1648–49', title: 'Chmielnicki Massacres', body: 'Cossack uprising in Ukraine kills 100,000–500,000 Jews. Devastating blow to Eastern European Jewry.' },
+  ]},
+  { era: 'Modern Era', events: [
+    { date: '1880–1924', title: 'Great Migration to America', body: '2+ million Jews flee pogroms for USA. Yiddish culture blooms in New York, Chicago, Philadelphia.' },
+    { date: '1933–45', title: 'The Holocaust — Shoah', body: 'Nazi Germany systematically murders 6 million Jews — 1/3 of world Jewry. The Ashkenazi world is shattered.' },
+    { date: '1948', title: 'State of Israel Founded', body: 'Israel declares independence. Mass immigration: Holocaust survivors, Iraqi Jews, Yemenite Jews, Moroccan Jews.' },
+    { date: '1984–91', title: 'Ethiopian Jews Airlifted', body: 'Operations Moses and Solomon bring ~80,000 Beta Israel to Israel.' },
+    { date: '1990s', title: 'Soviet Aliyah', body: 'Fall of USSR — over 1 million Russian and FSU Jews immigrate to Israel, transforming the country.' },
+  ]},
+];
+
+const mapDots = [
+  { name: 'Eastern Europe\n(Ashkenazi)', x: 51, y: 22, color: '#5588bb', id: 'russian' },
+  { name: 'Germany\n(Ashkenazi)', x: 47, y: 21, color: '#5588bb', id: 'ashkenazi' },
+  { name: 'Morocco', x: 41, y: 32, color: '#cc8844', id: 'moroccan' },
+  { name: 'Ethiopia', x: 57, y: 45, color: '#44aa66', id: 'ethiopian' },
+  { name: 'Yemen', x: 61, y: 40, color: '#cc4444', id: 'yemenite' },
+  { name: 'Iraq / Babylon', x: 62, y: 32, color: '#cc4444', id: 'iraqi' },
+  { name: 'Iran / Persia', x: 65, y: 30, color: '#cc4444', id: 'iranian' },
+  { name: 'India', x: 71, y: 38, color: '#44aa66', id: 'indian' },
+  { name: 'Spain\n(Sephardic)', x: 41, y: 25, color: '#cc8844', id: 'sephardic' },
+  { name: 'Uzbekistan\n(Bukharan)', x: 69, y: 25, color: '#cc4444', id: 'bukharan' },
+  { name: 'Georgia', x: 60, y: 24, color: '#cc4444', id: 'georgian' },
+  { name: 'Israel / Canaan\n(Tribes)', x: 58, y: 32, color: '#ccaa44', id: 'tribes' },
+  { name: 'Samaritans\n(Mt. Gerizim)', x: 58.5, y: 33, color: '#44aa66', id: 'samaritan' },
+];
+
+// Render communities
+function renderCommunities() {
+  const grid = document.getElementById('communities-grid');
+  communities.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'community-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-emoji">${c.emoji}</span>
+        <div>
+          <div class="card-title">${c.name}</div>
+          <div class="card-subtitle">${c.subtitle}</div>
+        </div>
+      </div>
+      <div class="card-body">${c.history.substring(0, 160)}…</div>
+      <div class="card-footer">
+        ${c.tags.map(t => `<span class="pill pill-${t}">${t}</span>`).join('')}
+      </div>
+    `;
+    card.addEventListener('click', () => openModal(c));
+    grid.appendChild(card);
+  });
+}
+
+// Render tree
+function renderTree() {
+  const container = document.getElementById('tree-container');
+  const levels = [
+    {
+      label: 'Origin — Biblical Israel (c. 1000 BCE)',
+      nodes: [{ name: 'בְּנֵי יִשְׂרָאֵל · Bnei Yisrael', desc: 'Children of Israel — the twelve tribes', tag: 'ancient', id: 'tribes' }]
+    },
+    {
+      label: 'First split — after Assyrian conquest (722 BCE)',
+      nodes: [
+        { name: 'Tribe of Judah + Benjamin + Levi', desc: 'Survived → all modern Jews', tag: 'ancient', id: 'tribes' },
+        { name: 'Ten Lost Tribes', desc: 'Dan, Naphtali, Ephraim… disputed descendants', tag: 'tribe', id: 'tribes' },
+        { name: 'Samaritans', desc: 'Ephraim/Manasseh + settlers', tag: 'ancient', id: 'samaritan' },
+      ]
+    },
+    {
+      label: 'Medieval branching (7th–15th century CE)',
+      nodes: [
+        { name: 'Ashkenazi', desc: 'Rhine → Eastern Europe', tag: 'medieval', id: 'ashkenazi' },
+        { name: 'Sephardic', desc: 'Spain → Ottoman, Americas', tag: 'medieval', id: 'sephardic' },
+        { name: 'Mizrahi', desc: 'Middle East & N. Africa', tag: 'medieval', id: 'mizrahi' },
+        { name: 'Karaite', desc: 'Scripture-only branch', tag: 'medieval', id: 'karaite' },
+      ]
+    },
+    {
+      label: 'Sub-communities & modern diasporas',
+      nodes: [
+        { name: 'Russian / Soviet', desc: 'Pale of Settlement', tag: 'modern', id: 'russian' },
+        { name: 'German (Yekke)', desc: 'Rhine → Reform movement', tag: 'modern', id: 'ashkenazi' },
+        { name: 'Moroccan', desc: 'N. Africa → France, Israel', tag: 'modern', id: 'moroccan' },
+        { name: 'Yemenite', desc: 'Arabian Peninsula', tag: 'modern', id: 'yemenite' },
+        { name: 'Iraqi / Babylonian', desc: 'Mesopotamia → Israel', tag: 'modern', id: 'iraqi' },
+        { name: 'Persian / Iranian', desc: 'Persia → USA, Israel', tag: 'modern', id: 'iranian' },
+        { name: 'Ethiopian (Beta Israel)', desc: 'Horn of Africa', tag: 'modern', id: 'ethiopian' },
+        { name: 'Indian (Bene Israel)', desc: 'Konkan coast & Cochin', tag: 'modern', id: 'indian' },
+        { name: 'Bukharan', desc: 'Central Asia Silk Road', tag: 'modern', id: 'bukharan' },
+        { name: 'Georgian', desc: 'Caucasus', tag: 'modern', id: 'georgian' },
+        { name: 'Conversos / Crypto-Jews', desc: 'Hidden → Latin America', tag: 'modern', id: 'conversos' },
+      ]
+    }
+  ];
+
+  levels.forEach(level => {
+    const div = document.createElement('div');
+    div.className = 'tree-level';
+    const label = document.createElement('div');
+    label.className = 'level-label';
+    label.textContent = level.label;
+    div.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'node-row';
+    level.nodes.forEach(n => {
+      const node = document.createElement('div');
+      node.className = 'node' + (n.id === 'tribes' && level.label.includes('Origin') ? ' root' : '');
+      node.innerHTML = `<span class="node-name">${n.name}</span><span class="node-desc">${n.desc}</span><span class="node-tag tag-${n.tag}">${n.tag}</span>`;
+      const comm = communities.find(c => c.id === n.id);
+      if (comm) node.addEventListener('click', () => openModal(comm));
+      row.appendChild(node);
+    });
+    div.appendChild(row);
+    container.appendChild(div);
+  });
+}
+
+// Render timeline
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  timelineData.forEach(era => {
+    const eraDiv = document.createElement('div');
+    eraDiv.className = 'timeline-era';
+
+    const header = document.createElement('div');
+    header.className = 'era-header';
+    header.innerHTML = `<span class="era-label">${era.era}</span>`;
+    eraDiv.appendChild(header);
+
+    era.events.forEach((ev, i) => {
+      const evDiv = document.createElement('div');
+      evDiv.className = 'timeline-event';
+      evDiv.innerHTML = `
+        <div class="event-content">
+          <span class="event-date">${ev.date}</span>
+          <span class="event-title">${ev.title}</span>
+          <span class="event-body">${ev.body}</span>
+        </div>
+        <div class="event-dot"></div>
+        <div style="width:calc(50% - 2rem)"></div>
+      `;
+      eraDiv.appendChild(evDiv);
+    });
+    tl.appendChild(eraDiv);
+  });
+}
+
+// Render map
+function renderMap() {
+  const mapDiv = document.getElementById('world-map');
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 52');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  // Simplified world outline paths (rough continents)
+  const continents = [
+    // Europe
+    'M 39,14 L 55,13 L 58,18 L 56,22 L 52,24 L 47,23 L 43,20 Z',
+    // Africa
+    'M 44,28 L 56,28 L 60,35 L 58,45 L 52,50 L 46,48 L 43,40 L 43,32 Z',
+    // Asia
+    'M 56,13 L 90,12 L 92,20 L 85,28 L 75,32 L 68,30 L 62,25 L 58,20 Z',
+    // Americas
+    'M 10,15 L 22,13 L 25,20 L 22,28 L 18,35 L 15,45 L 12,50 L 8,48 L 6,38 L 7,25 Z',
+    // Australia
+    'M 78,38 L 88,36 L 90,42 L 86,46 L 80,45 L 77,42 Z',
+  ];
+
+  continents.forEach(d => {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'rgba(26,74,42,0.2)');
+    path.setAttribute('stroke', 'rgba(201,168,76,0.15)');
+    path.setAttribute('stroke-width', '0.3');
+    svg.appendChild(path);
+  });
+
+  // Ocean label
+  const ocean = document.createElementNS(svgNS, 'text');
+  ocean.setAttribute('x', '28');
+  ocean.setAttribute('y', '30');
+  ocean.setAttribute('fill', 'rgba(201,168,76,0.1)');
+  ocean.setAttribute('font-size', '3');
+  ocean.setAttribute('text-anchor', 'middle');
+  ocean.textContent = 'Atlantic';
+  svg.appendChild(ocean);
+
+  mapDots.forEach(dot => {
+    const g = document.createElementNS(svgNS, 'g');
+    g.setAttribute('class', 'map-dot');
+    g.style.cursor = 'pointer';
+
+    const pulse = document.createElementNS(svgNS, 'circle');
+    pulse.setAttribute('cx', dot.x);
+    pulse.setAttribute('cy', dot.y);
+    pulse.setAttribute('r', '4');
+    pulse.setAttribute('fill', 'none');
+    pulse.setAttribute('stroke', dot.color);
+    pulse.setAttribute('stroke-width', '0.5');
+    pulse.setAttribute('opacity', '0.4');
+    svg.appendChild(pulse);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', dot.x);
+    circle.setAttribute('cy', dot.y);
+    circle.setAttribute('r', '2.2');
+    circle.setAttribute('fill', dot.color);
+    circle.setAttribute('opacity', '0.85');
+
+    const lines = dot.name.split('\n');
+    const textEls = lines.map((line, i) => {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', dot.x);
+      t.setAttribute('y', dot.y - 3.5 - (lines.length - 1 - i) * 2.5);
+      t.setAttribute('fill', dot.color);
+      t.setAttribute('font-size', '1.8');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', 'Cinzel, serif');
+      t.textContent = line;
+      return t;
+    });
+
+    g.appendChild(circle);
+    textEls.forEach(t => g.appendChild(t));
+
+    const comm = communities.find(c => c.id === dot.id);
+    if (comm) g.addEventListener('click', () => openModal(comm));
+
+    svg.appendChild(g);
+  });
+
+  mapDiv.appendChild(svg);
+}
+
+// Modal
+function openModal(c) {
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-icon">${c.emoji}</div>
+    <div class="modal-title">${c.name}</div>
+    <div class="modal-subtitle">${c.subtitle}</div>
+    <div class="modal-section">
+      <h3>Origin</h3>
+      <p>${c.origin}</p>
+    </div>
+    ${c.language ? `<div class="modal-section"><h3>Language(s)</h3><p>${c.language}</p></div>` : ''}
+    <div class="modal-section">
+      <h3>History</h3>
+      <p>${c.history}</p>
+    </div>
+    <div class="modal-section">
+      <h3>Notable</h3>
+      <p>${c.notable}</p>
+    </div>
+    <div class="modal-section">
+      <h3>Population Today</h3>
+      <p>${c.approx}</p>
+    </div>
+    <div class="modal-tags">${c.tags.map(t => `<span class="pill pill-${t}">${t}</span>`).join('')}</div>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay') || e.target.classList.contains('modal-close')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// Init
+renderCommunities();
+renderTree();
+renderTimeline();
+renderMap();
+</script>
+</body>
+</html>

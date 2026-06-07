@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe Portal Narrative</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; }
+        
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            color: cyan;
+            cursor: pointer;
+            transition: opacity 1s;
+        }
+        
+        h1 { text-shadow: 0 0 20px cyan; letter-spacing: 5px; text-align: center;}
+        p { opacity: 0.8; margin-top: 10px; }
+        .instructions { font-size: 0.8em; opacity: 0.6; margin-top: 20px; }
+
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Fullscreen Video Overlay for transition */
+        #fs-video-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 15; /* Behind start screen, above canvas */
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s; 
+        }
+        
+        #fs-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: center;
+        }
+        
+        /* Hint when close to portal */
+        #portal-hint {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff00ff;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff00ff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 12;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>TONIC FOR THE BONES</h1>
+        <p>[ CLICK TO INITIALIZE ]</p>
+        <p class="instructions">SCROLL TO EXPLORE</p>
+    </div>
+
+    <div class="scanlines"></div>
+    <div id="portal-hint">[ CLICK TO ENTER ]</div>
+    
+    <!-- Fullscreen takeover video -->
+    <div id="fs-video-container">
+        <video id="fs-video" muted playsinline></video>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Hidden source video -->
+    <video id="source-video" loop muted playsinline crossOrigin="anonymous" style="display:none;">
+        <source src="https://tonic.davidenker.com/house/video/tron-space.mp4" type="video/mp4">
+    </video>
+
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Configuration ---
+        const CONFIG = {
+            // Normal World
+            bgNormal: 0x050505,
+            gridNormal: 0x00ffff, // Cyan
+            fogNormalStart: 100,
+            fogNormalEnd: 3500,
+
+            // Inverted World
+            bgInverted: 0x00ffff, // Cyan Background
+            gridInverted: 0x000000, // Black Grid
+            fogInvertedStart: 100,
+            fogInvertedEnd: 3500,
+
+            portalColor: 0xff00ff,
+            portalPositionZ: -800, // Distance to scroll to find it
+            activationDistance: 150,
+            
+            scrollSpeed: 0.5,
+            keySpeed: 8.0,
+        };
+
+        // --- State Machine ---
+        const STATE = {
+            PHASE_1: 'PHASE_1',         // Dark world, searching
+            TRANSITION_IN: 'TRANSITION_IN', // Portal expanding
+            FULLSCREEN: 'FULLSCREEN',   // Video playing full screen
+            TRANSITION_OUT: 'TRANSITION_OUT', // Fading to inverted
+            PHASE_2: 'PHASE_2',         // Inverted world, searching
+            RETURNING: 'RETURNING'      // Returning to normal
+        };
+        
+        let currentState = STATE.PHASE_1;
+        
+        let scene, camera, renderer, composer, bloomPass;
+        let terrainMesh, portalGroup, portalRing, hologramMesh, hitboxMesh;
+        let glitchMaterial, videoMaterial;
+        let clock = new THREE.Clock();
+        let scrollPos = 0; // Current scroll Z position
+        let targetScrollPos = 0; // Smooth scrolling target
+        let interactionActive = false; // Prevents premature clicking
+
+        // Keys
+        const keys = { ArrowUp: false, ArrowDown: false, w: false, s: false };
+
+        // Interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isHovering = false;
+        const portalHint = document.getElementById('portal-hint');
+
+        // Video
+        const sourceVideo = document.getElementById('source-video');
+        const fsVideo = document.getElementById('fs-video');
+        const fsContainer = document.getElementById('fs-video-container');
+
+        // --- Glitch Shader (Vertex & Fragment) ---
+        const glitchVertexShader = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        const glitchFragmentShader = `
+            uniform float time;
+            uniform float intensity;
+            varying vec2 vUv;
+
+            // Simple noise function
+            float random (vec2 st) {
+                return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+            }
+
+            void main() {
+                // Glitchy stripes
+                float stripe = step(0.9, random(vec2(0.0, vUv.y * 50.0 + time * 10.0)));
+                float noiseVal = random(vUv * time);
+                
+                vec3 color = vec3(0.0, 1.0, 1.0); // Cyan base
+                
+                // Mix noise
+                float alpha = (stripe * 0.5 + noiseVal * 0.2) * intensity;
+                
+                gl_FragColor = vec4(color, alpha);
+            }
+        `;
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            setWorldTheme(false); // Set Normal Theme
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 5, 0); // Start at 0
+            
+            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            container.appendChild(renderer.domElement);
+
+            // 2. Post Processing
+            const renderScene = new RenderPass(scene, camera);
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0;
+            bloomPass.strength = 1.5;
+            bloomPass.radius = 0.5;
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // 3. Objects
+            createTerrain();
+            createPortal(CONFIG.portalPositionZ);
+
+            // 4. Lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            // 5. Events
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onMouseClick);
+            window.addEventListener('wheel', onScroll, { passive: false });
+            window.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+            window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+            
+            // Enable interaction after a delay to prevent accidental start clicks
+            setTimeout(() => {
+                interactionActive = true;
+            }, 1000);
+
+            animate();
+        }
+
+        function setWorldTheme(inverted) {
+            const bg = inverted ? CONFIG.bgInverted : CONFIG.bgNormal;
+            const grid = inverted ? CONFIG.gridInverted : CONFIG.gridNormal;
+            const fogStart = inverted ? CONFIG.fogInvertedStart : CONFIG.fogNormalStart;
+            const fogEnd = inverted ? CONFIG.fogInvertedEnd : CONFIG.fogNormalEnd;
+
+            scene.background = new THREE.Color(bg);
+            scene.fog = new THREE.Fog(bg, fogStart, fogEnd);
+            
+            if (terrainMesh) {
+                terrainMesh.material.color.setHex(grid);
+            }
+
+            // Adjust bloom for bright world
+            if(bloomPass) {
+                if(inverted) {
+                    bloomPass.strength = 0.5; // Less bloom on cyan
+                    bloomPass.threshold = 0.5;
+                } else {
+                    bloomPass.strength = 1.5;
+                    bloomPass.threshold = 0;
+                }
+            }
+
+            // UI Styling
+            if (inverted) document.body.classList.add('inverted');
+            else document.body.classList.remove('inverted');
+        }
+
+        function createTerrain() {
+            // Very long terrain for scrolling (4000 units)
+            const geometry = new THREE.PlaneGeometry(300, 4000, 100, 200);
+            
+            const material = new THREE.MeshBasicMaterial({ 
+                color: CONFIG.gridNormal, 
+                wireframe: true,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+
+            terrainMesh = new THREE.Mesh(geometry, material);
+            terrainMesh.rotation.x = -Math.PI / 2; 
+            terrainMesh.position.y = -10; 
+            terrainMesh.position.z = -2000; // Center it so it stretches far back
+            scene.add(terrainMesh);
+        }
+
+        function createPortal(zPos) {
+            if (portalGroup) scene.remove(portalGroup);
+
+            portalGroup = new THREE.Group();
+            
+            const radius = 8;
+            
+            // Ring
+            const ringGeo = new THREE.TorusGeometry(radius, 0.3, 16, 100);
+            const ringMat = new THREE.MeshBasicMaterial({ color: CONFIG.portalColor });
+            portalRing = new THREE.Mesh(ringGeo, ringMat);
+            portalGroup.add(portalRing);
+
+            // 1. Glitch Material (Default State)
+            glitchMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    intensity: { value: 0.8 }
+                },
+                vertexShader: glitchVertexShader,
+                fragmentShader: glitchFragmentShader,
+                transparent: true,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
+            });
+
+            // 2. Video Material (Active State)
+            const texture = new THREE.VideoTexture(sourceVideo);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            
+            videoMaterial = new THREE.MeshBasicMaterial({ 
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            // Mesh
+            const geo = new THREE.CircleGeometry(radius - 0.2, 64);
+            hologramMesh = new THREE.Mesh(geo, glitchMaterial); // Start with glitch
+            portalGroup.add(hologramMesh);
+            
+            // 3. INVISIBLE HITBOX (Sphere)
+            const hitGeo = new THREE.SphereGeometry(radius * 2.0, 32, 32);
+            const hitMat2 = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+            hitboxMesh = new THREE.Mesh(hitGeo, hitMat2);
+            portalGroup.add(hitboxMesh);
+
+            portalGroup.position.set(0, 0, zPos);
+            scene.add(portalGroup);
+        }
+
+        // --- Scroll Logic ---
+        function onScroll(event) {
+            if (currentState !== STATE.PHASE_1 && currentState !== STATE.PHASE_2) return;
+            event.preventDefault();
+            
+            // Move target position
+            targetScrollPos -= event.deltaY * CONFIG.scrollSpeed;
+            clampScroll();
+        }
+
+        // Simple Touch Scroll
+        let touchStart = 0;
+        window.addEventListener('touchstart', (e) => touchStart = e.touches[0].clientY);
+        function onTouchMove(e) {
+            if (currentState !== STATE.PHASE_1 && currentState !== STATE.PHASE_2) return;
+            const touchY = e.touches[0].clientY;
+            const delta = touchStart - touchY;
+            touchStart = touchY;
+            
+            targetScrollPos -= delta * 1.5; 
+            clampScroll();
+        }
+        
+        function clampScroll() {
+            if (targetScrollPos > 50) targetScrollPos = 50;
+            // Allow scrolling far back
+            if (targetScrollPos < -3000) targetScrollPos = -3000;
+        }
+
+        // --- Interaction Logic ---
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onMouseClick(event) {
+            if (!interactionActive) return; 
+
+            // Distance Check
+            const dist = camera.position.distanceTo(portalGroup.position);
+            const inRange = dist < CONFIG.activationDistance;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects([hitboxMesh]);
+            
+            // Click allowed if hovering OR simply very close
+            if (intersects.length > 0 || (inRange && dist < 50)) {
+                if (inRange) {
+                    if (currentState === STATE.PHASE_1) {
+                        activatePortalTransition();
+                    } else if (currentState === STATE.PHASE_2) {
+                        activateReturnTransition();
+                    }
+                }
+            }
+        }
+
+        function activatePortalTransition() {
+            currentState = STATE.TRANSITION_IN;
+            portalHint.style.opacity = '0';
+            
+            // 1. Play Texture Video
+            sourceVideo.play().catch(e => console.log("Source play failed", e));
+            sourceVideo.currentTime = 0;
+            hologramMesh.material = videoMaterial;
+            
+            // 2. Prepare FS Video
+            fsVideo.src = sourceVideo.src;
+            fsVideo.load();
+            
+            // Check orientation for mobile
+            if (window.innerHeight > window.innerWidth) {
+                fsVideo.style.transform = "rotate(90deg) scale(1.5)"; 
+            } else {
+                fsVideo.style.transform = "none";
+            }
+        }
+
+        function activateReturnTransition() {
+            currentState = STATE.RETURNING;
+            portalHint.style.opacity = '0';
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            // Keyboard Movement
+            if (currentState === STATE.PHASE_1 || currentState === STATE.PHASE_2) {
+                if (keys.ArrowUp || keys.w) targetScrollPos -= CONFIG.keySpeed;
+                if (keys.ArrowDown || keys.s) targetScrollPos += CONFIG.keySpeed;
+                clampScroll();
+            }
+
+            // 1. Smooth Scroll Camera
+            scrollPos += (targetScrollPos - scrollPos) * 0.1;
+            
+            // If in normal exploration mode, camera follows scroll
+            if (currentState === STATE.PHASE_1 || currentState === STATE.PHASE_2) {
+                camera.position.z = scrollPos;
+                
+                // Update Terrain Waves (Visual only)
+                updateTerrain(time);
+                
+                // Update Glitch Shader
+                if (glitchMaterial) glitchMaterial.uniforms.time.value = time;
+                
+                // Check Hover
+                checkHover();
+            }
+
+            // 2. Transition: Portal Expands
+            if (currentState === STATE.TRANSITION_IN) {
+                // Lerp Camera INTO the portal
+                const target = portalGroup.position.clone();
+                camera.position.lerp(target, 0.08); // Faster lerp
+                
+                // Scale Portal Up Massively
+                hologramMesh.scale.multiplyScalar(1.2);
+                portalRing.scale.multiplyScalar(1.05);
+                
+                // If camera is very close, switch to Fullscreen
+                if (camera.position.distanceTo(portalGroup.position) < 10) {
+                    currentState = STATE.FULLSCREEN;
+                    startFullscreenVideo();
+                }
+            }
+            
+            // 3. Return Logic
+            if (currentState === STATE.RETURNING) {
+                setWorldTheme(false); // Normal
+                
+                // Reset Position & Portal
+                portalGroup.scale.set(1,1,1);
+                hologramMesh.scale.set(1,1,1);
+                portalRing.scale.set(1,1,1);
+                
+                targetScrollPos = 0;
+                scrollPos = 0;
+                camera.position.z = 0;
+                portalGroup.position.z = CONFIG.portalPositionZ; // Reset portal pos
+                
+                // Reset Portal Mesh
+                hologramMesh.material = glitchMaterial;
+                
+                currentState = STATE.PHASE_1;
+            }
+
+            composer.render();
+        }
+        
+        function updateTerrain(time) {
+            if (!terrainMesh) return;
+            const pos = terrainMesh.geometry.attributes.position;
+            const v = new THREE.Vector3();
+            
+            for(let i=0; i<pos.count; i++){
+                v.fromBufferAttribute(pos, i);
+                // Simple rolling wave
+                const wave = Math.sin((v.x * 0.1) + (time * 0.5)) * Math.sin((v.y * 0.05) + (time * 0.5));
+                pos.setZ(i, wave * 5); // Height
+            }
+            pos.needsUpdate = true;
+        }
+
+        function checkHover() {
+            if (!portalGroup) return;
+            if (!interactionActive) return;
+
+            const dist = camera.position.distanceTo(portalGroup.position);
+            const inRange = dist < CONFIG.activationDistance;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects([hitboxMesh]);
+            
+            if (inRange) {
+                portalHint.style.opacity = '1';
+                
+                if (intersects.length > 0) {
+                    isHovering = true;
+                    document.body.style.cursor = 'pointer';
+                    portalRing.material.color.setHex(0xffffff);
+                    // Intense Glitch
+                    glitchMaterial.uniforms.intensity.value = 1.0 + Math.sin(Date.now() * 0.01);
+                } else {
+                    isHovering = false;
+                    document.body.style.cursor = 'default';
+                    portalRing.material.color.setHex(CONFIG.portalColor);
+                    glitchMaterial.uniforms.intensity.value = 0.5;
+                }
+            } else {
+                portalHint.style.opacity = '0';
+                isHovering = false;
+            }
+        }
+
+        function startFullscreenVideo() {
+            fsContainer.style.display = 'block';
+            
+            setTimeout(() => {
+                fsContainer.style.opacity = '1';
+                fsVideo.play().catch(e => console.log("FS Play failed", e));
+            }, 50);
+
+            // Play for 2 seconds then fade to Inverted World
+            setTimeout(() => {
+                // Pre-emptively switch the world theme so it's ready when fade happens
+                enterInvertedWorld();
+                
+                // Then fade out the video container
+                fsContainer.style.opacity = '0';
+                
+                setTimeout(() => {
+                    fsContainer.style.display = 'none';
+                    fsVideo.pause();
+                }, 1000); // Wait for opacity transition
+            }, 2000);
+        }
+
+        function enterInvertedWorld() {
+            setWorldTheme(true); // Invert
+            currentState = STATE.PHASE_2;
+            
+            // Reset Camera for phase 2 search
+            targetScrollPos = 0;
+            scrollPos = 0;
+            camera.position.z = 0;
+            
+            // Move Portal to new location
+            portalGroup.position.z = CONFIG.portalPositionZ;
+            portalGroup.scale.set(1, 1, 1);
+            hologramMesh.scale.set(1,1,1);
+            portalRing.scale.set(1,1,1);
+            
+            // Reset material to glitch 
+            hologramMesh.material = glitchMaterial;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Init Helpers ---
+        const startScreen = document.getElementById('start-screen');
+        startScreen.addEventListener('click', () => {
+            startScreen.style.opacity = '0';
+            setTimeout(() => startScreen.style.display = 'none', 1000);
+            
+            // Warm up video for mobile
+            sourceVideo.play().then(() => { sourceVideo.pause(); }).catch(()=>{});
+            fsVideo.play().then(() => {
+                fsVideo.pause();
+                fsVideo.currentTime = 0;
+            }).catch(() => {});
+
+            init();
+        });
+
+    </script>
+</body>
+</html>

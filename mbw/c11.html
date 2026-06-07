@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondriaan Boogie Woogie</title>
+    <meta name="description" content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&family=Tilt+Neon&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --m-yellow: #F8D836;
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; background: #020404; overflow: hidden; font-family: 'Poiret One', cursive; }
+
+        /* LANDING */
+        #landing {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 1000;
+            background: radial-gradient(ellipse at center, #1a2a26 0%, #090f0e 60%, #020404 100%);
+            transition: opacity 1.4s ease, visibility 1.4s ease; cursor: pointer;
+        }
+        #landing.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .landing-title {
+            color: #e6dec8; font-size: clamp(22px, 4.5vw, 68px); letter-spacing: 8px;
+            text-transform: uppercase; text-align: center; line-height: 1.15; margin-bottom: 8px;
+            text-shadow: 0 0 60px rgba(248,216,54,0.18);
+            opacity: 0; transform: translateY(12px); transition: opacity 1.2s ease, transform 1.2s ease;
+        }
+        .landing-title.show { opacity: 1; transform: translateY(0); }
+        .landing-stripe {
+            width: clamp(180px, 36vw, 440px); height: 5px;
+            background: linear-gradient(90deg, #D22626 0% 33%, #285495 33% 66%, #F8D836 66% 100%);
+            margin: 24px 0 48px; opacity: 0; transition: opacity 1.2s ease 0.4s;
+        }
+        .landing-stripe.show { opacity: 0.85; }
+        #enter-btn {
+            background: transparent; border: 2px solid var(--m-yellow);
+            color: var(--m-yellow); font-family: 'Poiret One', cursive;
+            font-size: clamp(13px, 1.8vw, 20px); letter-spacing: 8px; text-transform: uppercase;
+            padding: 16px 50px; cursor: pointer; overflow: hidden;
+            transition: all 0.35s ease; opacity: 0;
+        }
+        #enter-btn.show { opacity: 1; }
+        #enter-btn:hover { background: var(--m-yellow); color: #1a1a1a; box-shadow: 0 0 50px rgba(248,216,54,0.4); }
+
+        /* STAGE */
+        #stage {
+            position: absolute; inset: 0; background-color: var(--m-white);
+            display: none; opacity: 0; transition: opacity 3s ease, background-color 3s ease;
+            overflow: hidden; filter: contrast(1.05) brightness(0.98);
+        }
+        #stage.active { display: block; opacity: 1; }
+        #viewport-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #composition-layer, #block-layer, #grid-layer, #traffic-layer, #letter-layer, #texture-layer { position: absolute; inset: 0; }
+        #composition-layer { transition: filter 3s ease; }
+        #stage.night #composition-layer { filter: brightness(0.35); }
+        #texture-layer {
+            z-index: 250; pointer-events: none; opacity: 0.12; mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .grid-line {
+            position: absolute; background-color: var(--m-yellow); z-index: 10; opacity: 1;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        }
+        .grid-line.v { transform-origin: top; transform: scaleY(0); }
+        .grid-line.h { transform-origin: left; transform: scaleX(0); }
+        .grid-line.visible { transform: scale(1) !important; }
+
+        .static-block {
+            position: absolute; z-index: 5; opacity: 0;
+            transition: opacity 1.5s ease, filter 0.1s ease, background-color 0.5s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .static-block.visible { opacity: 1; }
+
+        .letter-block {
+            position: absolute; z-index: 20; opacity: 0; display: flex; align-items: center; justify-content: center;
+            font-family: 'Montserrat', sans-serif; font-weight: 900; color: rgba(255,255,255,0.95);
+            text-transform: uppercase; box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transition: opacity 1s ease, transform 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            user-select: none; overflow: hidden;
+        }
+        .letter-block.visible { opacity: 1; }
+
+        #stage.night .letter-block { background-color: #111 !important; box-shadow: none !important; transition: background-color 1.5s ease, box-shadow 1.5s ease, transform 0.1s ease; }
+        #stage.night .letter-block.bg-red span { --neon-color: #ff3131; --neon-glow: #d22626; }
+        #stage.night .letter-block.bg-blue span { --neon-color: #2b7fff; --neon-glow: #285495; }
+        #stage.night .letter-block.bg-yellow span { --neon-color: #fdfd01; --neon-glow: #f8d836; }
+        #stage.night .letter-block span { font-family: 'Tilt Neon', sans-serif; font-weight: normal; color: transparent; animation: neon-flicker 2.5s forwards; animation-delay: 1.2s; }
+
+        @keyframes neon-flicker {
+            0% { color: transparent; text-shadow: none; }
+            5% { color: var(--neon-color); text-shadow: 0 0 5px var(--neon-color), 0 0 10px var(--neon-glow); }
+            10% { color: transparent; text-shadow: none; }
+            15% { color: var(--neon-color); text-shadow: 0 0 5px var(--neon-color), 0 0 15px var(--neon-glow); }
+            20% { color: transparent; text-shadow: none; }
+            25% { color: var(--neon-color); text-shadow: 0 0 8px var(--neon-color), 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow); }
+            35% { color: transparent; text-shadow: none; }
+            45% { color: var(--neon-color); text-shadow: 0 0 8px var(--neon-color), 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow); }
+            100% { color: var(--neon-color); text-shadow: 0 0 5px #fff, 0 0 10px var(--neon-color), 0 0 20px var(--neon-color), 0 0 40px var(--neon-glow), 0 0 80px var(--neon-glow); }
+        }
+
+        .bg-red { background-color: #D22626; }
+        .bg-blue { background-color: #285495; }
+        .bg-yellow { background-color: #F8D836; }
+        .bg-grey { background-color: #C8C8C8; }
+        .bg-white { background-color: #f4f4f4; }
+
+        /* TRAFFIC — JS-driven, no CSS keyframes */
+        .car { position: absolute; z-index: 15; opacity: 0; transition: opacity 1s ease; border-radius: 1px; }
+        .car.visible { opacity: 1; }
+        #stage.night .car.bg-red   { box-shadow: 0 0 15px rgba(210,38,38,0.8); }
+        #stage.night .car.bg-blue  { box-shadow: 0 0 15px rgba(40,84,149,0.8); }
+        #stage.night .car.bg-yellow { box-shadow: 0 0 15px rgba(248,216,54,0.8); }
+        #stage.night .car.bg-white { box-shadow: 0 0 15px rgba(244,244,244,0.8); }
+        #stage.night .car.bg-grey  { box-shadow: 0 0 15px rgba(200,200,200,0.8); }
+
+        /* HUD */
+        #vignette {
+            position: absolute; inset: 0; z-index: 200; pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%);
+            mix-blend-mode: multiply; transition: background 0.2s ease;
+        }
+        #audio-ctrl {
+            position: fixed; top: 24px; right: 24px; z-index: 300; display: flex;
+            align-items: center; gap: 15px; color: rgba(0,0,0,0.5); cursor: pointer;
+            background: rgba(255,255,255,0.4); backdrop-filter: blur(5px);
+            padding: 8px 16px; border-radius: 30px; transition: all 0.3s ease;
+        }
+        #audio-ctrl:hover { color: var(--m-red); background: rgba(255,255,255,0.7); }
+        #vu-meter { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
+        .vu-bin { width: 3px; background: var(--m-red); height: 2px; transition: height 0.05s ease; }
+        #beat-flash { position: absolute; inset: 0; z-index: 190; pointer-events: none; opacity: 0; background: rgba(248,216,54,0.15); transition: opacity 0.05s ease; }
+
+        /* Mode indicator */
+        #mode-indicator {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 300; font-family: 'Poiret One', cursive; letter-spacing: 4px;
+            font-size: 11px; text-transform: uppercase; opacity: 0;
+            padding: 6px 18px; border-radius: 20px;
+            transition: opacity 0.8s ease, background 0.8s ease, color 0.8s ease;
+        }
+        #mode-indicator.show { opacity: 0.7; }
+        #mode-indicator.respond { background: rgba(248,216,54,0.15); color: #F8D836; border: 1px solid rgba(248,216,54,0.3); }
+        #mode-indicator.freeride { background: rgba(40,84,149,0.15); color: #6fa3e0; border: 1px solid rgba(40,84,149,0.3); }
+    </style>
+</head>
+<body>
+
+<div id="landing">
+    <h1 class="landing-title" id="landing-title">Mondriaan<br>Boogie Woogie</h1>
+    <div class="landing-stripe" id="landing-stripe"></div>
+    <button id="enter-btn">ENTER</button>
+</div>
+
+<div id="stage">
+    <div id="beat-flash"></div>
+    <div id="viewport-wrap">
+        <div id="composition-layer">
+            <div id="block-layer" style="z-index:10;"></div>
+        </div>
+        <div id="letter-layer" style="z-index:20;"></div>
+        <div id="grid-layer" style="z-index:30;"></div>
+    </div>
+    <div id="traffic-layer" style="z-index:40; position:absolute; inset:0; pointer-events:none;"></div>
+    <div id="texture-layer"></div>
+    <div id="vignette"></div>
+    <div id="audio-ctrl">
+        <span style="font-size:10px;letter-spacing:2px;font-weight:bold;">AUDIO</span>
+        <div id="vu-meter"></div>
+        <i id="volume-icon" class="fa-solid fa-volume-high"></i>
+    </div>
+    <div id="mode-indicator">● RESPONDING TO MUSIC</div>
+</div>
+
+<audio id="bg-music" loop crossorigin="anonymous">
+    <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const landing    = document.getElementById('landing');
+const enterBtn   = document.getElementById('enter-btn');
+const stage      = document.getElementById('stage');
+const blockLayer = document.getElementById('block-layer');
+const gridLayer  = document.getElementById('grid-layer');
+const trafficLayer = document.getElementById('traffic-layer');
+const letterLayer  = document.getElementById('letter-layer');
+const audio      = document.getElementById('bg-music');
+const volIcon    = document.getElementById('volume-icon');
+const beatFlash  = document.getElementById('beat-flash');
+const modeIndicator = document.getElementById('mode-indicator');
+
+// ─── GRID DEFINITION ─────────────────────────────────────────────────────────
+// Vertical lines (x=position, w=thickness) in a 1000×1000 reference space
+const vLines = [
+    { x: 15, w: 12 }, { x: 45, w: 6 }, { x: 80, w: 10 }, { x: 130, w: 6 },
+    { x: 200, w: 8 }, { x: 265, w: 6 }, { x: 380, w: 14 }, { x: 480, w: 6 },
+    { x: 540, w: 8 }, { x: 650, w: 10 }, { x: 710, w: 6 }, { x: 760, w: 8 },
+    { x: 830, w: 6 }, { x: 880, w: 10 }, { x: 940, w: 8 }, { x: 980, w: 12 },
+];
+const hLines = [
+    { y: 15, h: 12 }, { y: 50, h: 6 }, { y: 90, h: 10 }, { y: 160, h: 8 },
+    { y: 220, h: 6 }, { y: 310, h: 14 }, { y: 420, h: 6 }, { y: 500, h: 8 },
+    { y: 580, h: 10 }, { y: 640, h: 6 }, { y: 700, h: 8 }, { y: 770, h: 6 },
+    { y: 820, h: 10 }, { y: 870, h: 8 }, { y: 940, h: 12 }, { y: 975, h: 6 },
+];
+
+// ─── Compute all grid cells once ─────────────────────────────────────────────
+// Returns {x, y, w, h} of the inner space between two consecutive v/h lines
+function cellBetween(vi, hi) {
+    // vi = left vLine index, hi = top hLine index
+    const vL = allV[vi], vR = allV[vi + 1];
+    const hT = allH[hi], hB = allH[hi + 1];
+    if (!vL || !vR || !hT || !hB) return null;
+    return {
+        x: vL.x + vL.w,
+        y: hT.y + hT.h,
+        w: Math.max(0, vR.x - (vL.x + vL.w)),
+        h: Math.max(0, hB.y - (hT.y + hT.h))
+    };
+}
+
+// ─── Static coloured blocks (manually placed + extra ones) ───────────────────
+// Format: { vi: leftVLineIndex, hi: topHLineIndex, spanV: cols, spanH: rows, c: colorClass }
+// Using allV/allH indices so they snap exactly to grid cells
+const blockDefs = [
+    // -- ORIGINAL ZONE (vi ~1-14, hi ~0-15) --
+    // small accent blocks
+    { vi:5,  hi:0,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:7,  hi:3,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:8,  hi:3,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:2,  hi:4,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:9,  hi:7,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:9,  hi:8,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:9,  hi:9,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:11, hi:9,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:2,  hi:2,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:3,  hi:6,  spanV:1, spanH:1, c:'bg-white'  },
+    { vi:7,  hi:5,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:4,  hi:8,  spanV:2, spanH:1, c:'bg-grey'   },
+    { vi:13, hi:2,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:13, hi:13, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:1,  hi:10, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:6,  hi:12, spanV:1, spanH:1, c:'bg-yellow' },
+
+    // -- MORE CENTRAL BLOCKS (denser interior) --
+    { vi:1,  hi:1,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:3,  hi:1,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:5,  hi:2,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:6,  hi:1,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:10, hi:1,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:12, hi:1,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:1,  hi:3,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:4,  hi:3,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:6,  hi:3,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:11, hi:3,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:13, hi:4,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:2,  hi:5,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:5,  hi:5,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:10, hi:5,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:12, hi:5,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:1,  hi:6,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:6,  hi:6,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:11, hi:6,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:13, hi:6,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:3,  hi:7,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:5,  hi:7,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:12, hi:7,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:1,  hi:8,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:4,  hi:9,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:6,  hi:9,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:10, hi:9,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:13, hi:9,  spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:2,  hi:10, spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:5,  hi:10, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:8,  hi:10, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:11, hi:10, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:1,  hi:11, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:4,  hi:11, spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:7,  hi:11, spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:12, hi:11, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:3,  hi:12, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:5,  hi:12, spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:9,  hi:12, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:11, hi:12, spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:2,  hi:13, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:7,  hi:13, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:10, hi:13, spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:1,  hi:14, spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:5,  hi:14, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:8,  hi:14, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:12, hi:14, spanV:1, spanH:1, c:'bg-grey'   },
+
+    // -- OUTSIDE / PERIPHERY: vi 0 or 14, or hi 0 or 14 --
+    // These land on the outermost cells (edge columns / rows)
+    // Left column (vi=0) — allV[0] is the leftmost edge line
+    { vi:0,  hi:2,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:0,  hi:5,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:0,  hi:8,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:0,  hi:11, spanV:1, spanH:1, c:'bg-grey'   },
+    // Right column (vi=14)
+    { vi:14, hi:1,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:14, hi:4,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:14, hi:7,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:14, hi:10, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:14, hi:13, spanV:1, spanH:1, c:'bg-grey'   },
+    // Top row (hi=0)
+    { vi:2,  hi:0,  spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:6,  hi:0,  spanV:1, spanH:1, c:'bg-yellow' },
+    { vi:10, hi:0,  spanV:1, spanH:1, c:'bg-red'    },
+    { vi:13, hi:0,  spanV:1, spanH:1, c:'bg-grey'   },
+    // Bottom row (hi=14)
+    { vi:1,  hi:14, spanV:1, spanH:1, c:'bg-grey'   },
+    { vi:4,  hi:14, spanV:1, spanH:1, c:'bg-red'    },
+    { vi:8,  hi:14, spanV:1, spanH:1, c:'bg-blue'   },
+    { vi:11, hi:14, spanV:1, spanH:1, c:'bg-yellow' },
+];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let isPlaying = false, wakeLock = null;
+let audioCtx, analyser, dataArray, srcNode;
+let startTime = 0;
+const gridEls = [], blockEls = [], letterEls = [];
+let allV = [], allH = [];
+let smoothBass = 0, smoothEnergy = 0;
+let revealStage = 0, revealIdx = 0, lastHitTime = 0;
+
+// Car data (JS-driven sinusoidal motion)
+const carData = [];
+
+const REF = 1000;
+
+// ─── Wake Lock ───────────────────────────────────────────────────────────────
+const requestWakeLock = async () => {
+    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+};
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock && document.visibilityState === 'visible' && isPlaying) await requestWakeLock();
+});
+
+// ─── Grid / blocks init ──────────────────────────────────────────────────────
+function initGrid() {
+    gridLayer.innerHTML = ''; blockLayer.innerHTML = '';
+    gridEls.length = 0; blockEls.length = 0;
+
+    const S = Math.min(window.innerWidth, window.innerHeight);
+    const unitsX = (window.innerWidth / S) * REF;
+    const unitsY = (window.innerHeight / S) * REF;
+    const xMin = 500 - unitsX / 2;
+    const xMax = 500 + unitsX / 2;
+    const yMin = 500 - unitsY / 2;
+    const yMax = 500 + unitsY / 2;
+
+    allV = [...vLines];
+    let cx = vLines[0].x;
+    while (cx > xMin - 100) { cx -= (35 + Math.random() * 40); allV.unshift({ x: cx, w: 6 + Math.random() * 6 }); }
+    cx = vLines[vLines.length - 1].x;
+    while (cx < xMax + 100) { cx += (35 + Math.random() * 40); allV.push({ x: cx, w: 6 + Math.random() * 6 }); }
+
+    allH = [...hLines];
+    let cy = hLines[0].y;
+    while (cy > yMin - 100) { cy -= (40 + Math.random() * 50); allH.unshift({ y: cy, h: 6 + Math.random() * 6 }); }
+    cy = hLines[hLines.length - 1].y;
+    while (cy < yMax + 100) { cy += (40 + Math.random() * 50); allH.push({ y: cy, h: 6 + Math.random() * 6 }); }
+
+    allV.forEach(l => {
+        const el = document.createElement('div');
+        el.className = 'grid-line v';
+        el.style.cssText = `left:calc(50% + (${l.x - 500} * (min(100vw,100vh) / ${REF})));width:calc(${l.w} * (min(100vw,100vh) / ${REF}));top:0;height:100%;`;
+        gridLayer.appendChild(el); gridEls.push(el);
+    });
+    allH.forEach(l => {
+        const el = document.createElement('div');
+        el.className = 'grid-line h';
+        el.style.cssText = `top:calc(50% + (${l.y - 500} * (min(100vw,100vh) / ${REF})));height:calc(${l.h} * (min(100vw,100vh) / ${REF}));left:0;width:100%;`;
+        gridLayer.appendChild(el); gridEls.push(el);
+    });
+
+    // Place static blocks — snap to grid cells defined by allV/allH indices
+    // We need to map blockDefs vi/hi to the allV/allH arrays
+    // The original vLines start at index offset_v inside allV; same for hLines
+    // Compute the offset: find where vLines[0] appears in allV
+    const vOffset = allV.findIndex(l => Math.abs(l.x - vLines[0].x) < 1);
+    const hOffset = allH.findIndex(l => Math.abs(l.y - hLines[0].y) < 1);
+
+    blockDefs.forEach(b => {
+        const vi0 = (vOffset >= 0 ? vOffset : 0) + b.vi;
+        const hi0 = (hOffset >= 0 ? hOffset : 0) + b.hi;
+        const vi1 = vi0 + b.spanV;
+        const hi1 = hi0 + b.spanH;
+
+        const vL = allV[vi0], vR = allV[vi1];
+        const hT = allH[hi0], hB = allH[hi1];
+        if (!vL || !vR || !hT || !hB) return;
+
+        // Inner cell = space between the lines (not overlapping line thickness)
+        const cellX = vL.x + vL.w;
+        const cellY = hT.y + hT.h;
+        const cellW = Math.max(0, vR.x - (vL.x + vL.w));
+        const cellH = Math.max(0, hB.y - (hT.y + hT.h));
+        if (cellW < 2 || cellH < 2) return;
+
+        const el = document.createElement('div');
+        el.className = `static-block ${b.c}`;
+        el.style.cssText = `
+            left:calc(50% + (${cellX - 500} * (min(100vw,100vh) / ${REF})));
+            top:calc(50% + (${cellY - 500} * (min(100vw,100vh) / ${REF})));
+            width:calc(${cellW} * (min(100vw,100vh) / ${REF}));
+            height:calc(${cellH} * (min(100vw,100vh) / ${REF}));
+        `;
+        blockLayer.appendChild(el); blockEls.push(el);
+    });
+}
+
+// ─── Letters ─────────────────────────────────────────────────────────────────
+function renderLetters() {
+    letterLayer.innerHTML = ''; letterEls.length = 0;
+    const words = [
+        { text: 'MONDRIAAN', yIndex: 4, xIndex: 1, color: 'bg-red' },
+        { text: 'BOOGIE',    yIndex: 7, xIndex: 1, color: 'bg-blue' },
+        { text: 'WOOGIE',   yIndex: 7, xIndex: 8, color: 'bg-yellow' }
+    ];
+    words.forEach(word => {
+        const chars = word.text.split('');
+        const hT = hLines[word.yIndex], hB = hLines[word.yIndex + 1];
+        chars.forEach((ch, ci) => {
+            const vL = vLines[word.xIndex + ci], vR = vLines[word.xIndex + ci + 1];
+            const cell = {
+                x: vL.x + vL.w, y: hT.y + hT.h,
+                w: Math.max(0, vR.x - (vL.x + vL.w)),
+                h: Math.max(0, hB.y - (hT.y + hT.h))
+            };
+            const el = document.createElement('div');
+            el.className = `letter-block ${word.color}`;
+            el.style.cssText = `
+                left:calc(50% + (${cell.x - 500} * (min(100vw,100vh) / ${REF})));
+                top:calc(50% + (${cell.y - 500} * (min(100vw,100vh) / ${REF})));
+                width:calc(${cell.w} * (min(100vw,100vh) / ${REF}));
+                height:calc(${cell.h} * (min(100vw,100vh) / ${REF}));
+                font-size:calc(${Math.min(cell.w, cell.h) * 0.7} * (min(100vw,100vh) / ${REF}));
+            `;
+            el.innerHTML = `<span>${ch}</span>`;
+            letterLayer.appendChild(el); letterEls.push(el);
+        });
+    });
+}
+
+// ─── Traffic — JS sinusoidal motion ──────────────────────────────────────────
+function createTraffic() {
+    trafficLayer.innerHTML = ''; carData.length = 0;
+    const colors = ['bg-red','bg-blue','bg-grey','bg-white','bg-red','bg-yellow'];
+
+    // For each grid line we create cars that travel along it
+    hLines.forEach(l => {
+        const count = 10;
+        for (let i = 0; i < count; i++) {
+            const el = document.createElement('div');
+            const dir = Math.random() > 0.5 ? 1 : -1; // +1=right, -1=left
+            const baseSpeed  = (Math.random() * 0.06 + 0.03); // units/ms in REF space
+            const carLenRef  = Math.random() * 40 + 20;       // length in ref units
+            const carThkRef  = l.h;                            // thickness = line thickness
+            const colorClass = colors[Math.floor(Math.random() * colors.length)];
+
+            el.className = `car ${colorClass}`;
+            // Height = line thickness, width = car length
+            el.style.cssText = `
+                height:calc(${carThkRef} * (min(100vw,100vh) / ${REF}));
+                width:calc(${carLenRef} * (min(100vw,100vh) / ${REF}));
+                top:calc(50% + (${l.y - 500} * (min(100vw,100vh) / ${REF})));
+                position:absolute;
+            `;
+            trafficLayer.appendChild(el);
+
+            carData.push({
+                el, axis: 'h',
+                linePos: l.y,    // y position in ref space
+                dir,
+                pos: Math.random() * 1200 - 100,  // x in ref space [-100..1100]
+                speed: baseSpeed,
+                baseSpeed,
+                sinPhase: Math.random() * Math.PI * 2,   // for gentle oscillation
+                carLen: carLenRef,
+                isH: true,
+                visible: false
+            });
+        }
+    });
+
+    vLines.forEach(l => {
+        const count = 10;
+        for (let i = 0; i < count; i++) {
+            const el = document.createElement('div');
+            const dir = Math.random() > 0.5 ? 1 : -1;
+            const baseSpeed  = (Math.random() * 0.06 + 0.03);
+            const carLenRef  = Math.random() * 40 + 20;
+            const carThkRef  = l.w;
+            const colorClass = colors[Math.floor(Math.random() * colors.length)];
+
+            el.className = `car ${colorClass}`;
+            el.style.cssText = `
+                width:calc(${carThkRef} * (min(100vw,100vh) / ${REF}));
+                height:calc(${carLenRef} * (min(100vw,100vh) / ${REF}));
+                left:calc(50% + (${l.x - 500} * (min(100vw,100vh) / ${REF})));
+                position:absolute;
+            `;
+            trafficLayer.appendChild(el);
+
+            carData.push({
+                el, axis: 'v',
+                linePos: l.x,
+                dir,
+                pos: Math.random() * 1200 - 100,
+                speed: baseSpeed,
+                baseSpeed,
+                sinPhase: Math.random() * Math.PI * 2,
+                carLen: carLenRef,
+                isH: false,
+                visible: false
+            });
+        }
+    });
+}
+
+// ─── Audio ───────────────────────────────────────────────────────────────────
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    srcNode = audioCtx.createMediaElementSource(audio);
+    srcNode.connect(analyser); analyser.connect(audioCtx.destination);
+    const vuMeter = document.getElementById('vu-meter');
+    for (let i = 0; i < 12; i++) {
+        const b = document.createElement('div'); b.className = 'vu-bin'; vuMeter.appendChild(b);
+    }
+}
+
+// ─── Easing helpers ──────────────────────────────────────────────────────────
+// Ease in-out cubic — maps t∈[0,1] to smooth 0→1
+function easeInOut(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// ─── Main loop state ─────────────────────────────────────────────────────────
+const RESPOND_DUR = 40000;  // 40s responding to music
+const FREERIDE_DUR = 20000; // 20s free ride
+const CYCLE = RESPOND_DUR + FREERIDE_DUR; // 60s loop
+
+let lastT = null;
+let lastRevealHit = 0;
+let modeShown = false;
+
+function update(now) {
+    requestAnimationFrame(update);
+    if (!isPlaying) return;
+    const dt = lastT ? now - lastT : 16;
+    lastT = now;
+
+    const elapsed = now - startTime;
+    const cycleT  = elapsed % CYCLE;
+    const inFreeRide = cycleT > RESPOND_DUR;
+
+    // Mode indicator
+    if (modeShown) {
+        if (inFreeRide) {
+            modeIndicator.textContent = '~ FREE RIDE';
+            modeIndicator.className = 'show freeride';
+        } else {
+            modeIndicator.textContent = '● RESPONDING TO MUSIC';
+            modeIndicator.className = 'show respond';
+        }
+    }
+
+    // Audio analysis
+    let bass = 0, energy = 0;
+    if (analyser && !audio.paused && !audio.muted) {
+        analyser.getByteFrequencyData(dataArray);
+        for (let i = 0; i < 8; i++)  bass   += dataArray[i]; bass /= 8;
+        for (let i = 0; i < 32; i++) energy += dataArray[i]; energy /= 32;
+    }
+    const SK = 0.15;
+    smoothBass   = smoothBass   + SK * (bass   / 255 - smoothBass);
+    smoothEnergy = smoothEnergy + SK * (energy / 255 - smoothEnergy);
+
+    // Night cycle
+    const isNight = (elapsed % 60000) > 30000;
+    stage.style.backgroundColor = isNight ? '#143b40' : '#f4f4f4';
+    if (isNight) stage.classList.add('night'); else stage.classList.remove('night');
+
+    // Reveal on beat
+    if (smoothBass > 0.45 && now - lastRevealHit > 100) {
+        lastRevealHit = now;
+        if (revealStage === 0) revealStage = 1;
+        if      (revealStage === 1) { if (revealIdx < gridEls.length)   { gridEls[revealIdx].classList.add('visible');   revealIdx++; } else { revealStage = 2; revealIdx = 0; } }
+        else if (revealStage === 2) { if (revealIdx < blockEls.length)  { blockEls[revealIdx].classList.add('visible');  revealIdx++; } else { revealStage = 3; revealIdx = 0; } }
+        else if (revealStage === 3) { if (revealIdx < letterEls.length) { letterEls[revealIdx].classList.add('visible'); revealIdx++; } else { revealStage = 4; revealIdx = 0; } }
+        else if (revealStage === 4) {
+            for (let i = 0; i < 5 && revealIdx < carData.length; i++) {
+                carData[revealIdx].el.classList.add('visible');
+                carData[revealIdx].visible = true;
+                revealIdx++;
+            }
+            if (revealIdx >= carData.length) { revealStage = 5; modeShown = true; }
+        }
+    }
+
+    // ── Car motion ────────────────────────────────────────────────────────────
+    // During respond phase: speed & small sinusoidal wobble react to music
+    // During free ride: cars glide at natural baseSpeed with gentle sin easing
+    const S = Math.min(window.innerWidth, window.innerHeight);
+    const scale = S / REF; // px per ref-unit
+
+    carData.forEach(car => {
+        if (!car.visible) return;
+
+        let speedMult;
+        if (inFreeRide) {
+            // Smooth glide — vary slightly with sin, no music link
+            speedMult = 0.7 + 0.3 * Math.sin(car.sinPhase + elapsed * 0.0003);
+        } else {
+            // Music-reactive: bass pumps speed, energy adds wobble
+            speedMult = 0.4 + smoothBass * 1.8 + smoothEnergy * 0.5;
+            // Ease-in at start of respond phase to avoid jerk
+            const respondT = Math.min(cycleT / 3000, 1); // 3s ease-in
+            speedMult *= easeInOut(respondT);
+            speedMult = Math.max(0.2, speedMult);
+        }
+
+        car.pos += car.dir * car.speed * dt * speedMult;
+
+        // Wrap around
+        if (car.dir > 0 && car.pos > 1100) car.pos = -car.carLen - 10;
+        if (car.dir < 0 && car.pos < -car.carLen - 10) car.pos = 1100;
+
+        // Sinusoidal lateral micro-drift (perpendicular to travel axis, within line thickness)
+        // It's very subtle — just a fraction of the line thickness
+        const drift = Math.sin(car.sinPhase + elapsed * 0.0008 + car.pos * 0.005) * 0.3;
+
+        if (car.isH) {
+            // Travelling horizontally — set CSS left
+            const pxX = (car.pos - 500) * scale + window.innerWidth  * 0.5;
+            const pxY = (car.linePos - 500) * scale + window.innerHeight * 0.5 + drift * scale;
+            car.el.style.transform = `translate(${pxX}px, ${pxY}px)`;
+            car.el.style.left = '0';
+            car.el.style.top  = '0';
+        } else {
+            // Travelling vertically — set CSS top
+            const pxX = (car.linePos - 500) * scale + window.innerWidth  * 0.5 + drift * scale;
+            const pxY = (car.pos - 500) * scale + window.innerHeight * 0.5;
+            car.el.style.transform = `translate(${pxX}px, ${pxY}px)`;
+            car.el.style.left = '0';
+            car.el.style.top  = '0';
+        }
+    });
+
+    // ── Visual reactions ──────────────────────────────────────────────────────
+    const responseScale = Math.min(elapsed / 10000, 1);
+    blockEls.forEach(b => {
+        b.style.filter = `brightness(${1 + smoothBass * 0.4 * responseScale})`;
+    });
+    letterEls.forEach(b => {
+        b.style.transform = `scale(${1.0 + smoothEnergy * 0.18 * responseScale})`;
+    });
+    gridEls.forEach(el => {
+        el.style.boxShadow = smoothEnergy > 0.1
+            ? `0 0 ${smoothEnergy * 20}px rgba(248,216,54,0.5)` : 'none';
+    });
+
+    // Beat flash
+    if (elapsed >= 12000 && smoothBass > 0.65) {
+        beatFlash.style.opacity = (smoothBass * 0.2).toFixed(2);
+        setTimeout(() => beatFlash.style.opacity = '0', 50);
+    }
+
+    // Vignette
+    document.getElementById('vignette').style.background =
+        `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${0.6 + smoothEnergy * 0.25}) 100%)`;
+
+    // VU
+    document.querySelectorAll('.vu-bin').forEach((bin, i) => {
+        bin.style.height = `${(dataArray ? dataArray[i * 4] / 255 : 0) * 20}px`;
+    });
+}
+
+// ─── Entry ───────────────────────────────────────────────────────────────────
+enterBtn.addEventListener('click', () => {
+    startTime = Date.now(); isPlaying = true;
+    landing.classList.add('hidden');
+    stage.classList.add('active');
+    requestWakeLock();
+    initAudio();
+    audio.play();
+    initGrid();
+    renderLetters();
+    createTraffic();
+    requestAnimationFrame(update);
+});
+
+// Landing animations
+setTimeout(() => document.getElementById('landing-title').classList.add('show'), 400);
+setTimeout(() => document.getElementById('landing-stripe').classList.add('show'), 800);
+setTimeout(() => enterBtn.classList.add('show'), 1200);
+
+document.getElementById('audio-ctrl').addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    volIcon.className = audio.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+});
+</script>
+</body>
+</html>

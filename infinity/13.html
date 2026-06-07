@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones // VHS Video Integration</title>
+    <style>
+        :root {
+            --bg: #010102;
+            --bone: #ece9d8;
+            --accent: rgba(255, 255, 255, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #start-button {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--bone);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6em;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(15px);
+        }
+
+        #start-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--bone);
+            letter-spacing: 0.7em;
+        }
+
+        #start-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+
+        #metadata {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+
+        video {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="audio-element" src="seven.mp3" loop crossorigin="anonymous"></audio>
+    <video id="video-element" src="video.mp4" loop muted playsinline crossorigin="anonymous"></video>
+
+    <div id="ui-container">
+        <button id="start-button">Begin Traversal</button>
+    </div>
+
+    <div id="metadata">
+        Source: seven.mp3 & video.mp4 // Geometry: Spectral Morph // Mode: Stabilized VHS Fractal
+    </div>
+
+    <canvas id="glCanvas"></canvas>
+
+    <script id="vs" type="x-shader/x-vertex">
+        attribute vec2 position;
+        varying vec2 v_uv;
+        void main() {
+            v_uv = position * 0.5 + 0.5;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+        precision highp float;
+        varying vec2 v_uv;
+        uniform vec2 u_resolution;
+        uniform vec2 u_videoRes;
+        uniform float u_time;
+        uniform float u_grid_morphs[6];
+        uniform float u_vol;
+        uniform float u_bass;
+        uniform float u_treble;
+        uniform sampler2D u_video;
+
+        mat2 rotate(float a) {
+            float s = sin(a);
+            float c = cos(a);
+            return mat2(c, -s, s, c);
+        }
+
+        float sdBox(vec2 p, vec2 b) {
+            vec2 d = abs(p)-b;
+            return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+        }
+
+        float sdTriangle(vec2 p, float r) {
+            const float k = 1.73205; 
+            p.x = abs(p.x) - r;
+            p.y = p.y + r/k;
+            if( p.x+k*p.y>0.0 ) p = vec2(p.x-k*p.y,-k*p.x-p.y)/2.0;
+            p.x -= clamp( p.x, -2.0*r, 0.0 );
+            return -length(p)*sign(p.y);
+        }
+
+        vec3 spectralPalette(float t, float seed) {
+            vec3 a = vec3(0.5, 0.5, 0.5);
+            vec3 b = vec3(0.5, 0.5, 0.5);
+            vec3 c = vec3(1.0, 1.0, 1.0);
+            vec3 d = vec3(0.0 + seed * 0.05, 0.2, 0.5);
+            return a + b * cos(6.28318 * (c * t + d + u_time * 0.2));
+        }
+
+        float random(vec2 p) {
+            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        void main() {
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.y, u_resolution.x);
+            
+            vec3 boneColor = vec3(0.92, 0.90, 0.85);
+            vec3 bloodColor = vec3(0.7, 0.05, 0.05);
+            vec3 charcoal = vec3(0.01, 0.01, 0.012);
+
+            // --- 3x2 INDEPENDENT SPECTRAL GRID ---
+            float gridScale = 3.5;
+            vec2 gridUv = uv * gridScale;
+            vec2 centeredGrid = gridUv + vec2(0.0, 0.5);
+            vec2 cellId = floor(centeredGrid + 0.5);
+            
+            vec3 gridCol = vec3(0.0);
+            float gridMask = 0.0;
+            
+            if (abs(cellId.x) <= 1.0 && cellId.y >= 0.0 && cellId.y <= 1.0) {
+                vec2 localPos = fract(centeredGrid + 0.5) - 0.5;
+                int idx = int((cellId.x + 1.0) + (cellId.y * 3.0));
+                
+                float mVal = 0.0;
+                if (idx == 0) mVal = u_grid_morphs[0];
+                else if (idx == 1) mVal = u_grid_morphs[1];
+                else if (idx == 2) mVal = u_grid_morphs[2];
+                else if (idx == 3) mVal = u_grid_morphs[3];
+                else if (idx == 4) mVal = u_grid_morphs[4];
+                else if (idx == 5) mVal = u_grid_morphs[5];
+
+                float sizeScale = 1.0 + mVal * 0.35;
+                vec2 p = localPos / sizeScale;
+
+                float dBox = sdBox(p, vec2(0.18)); 
+                float dTri = sdTriangle(p, 0.26);
+                float dCirc = length(p) - 0.26;
+                
+                float dist;
+                if(mVal < 0.5) dist = mix(dBox, dTri, mVal * 2.0);
+                else dist = mix(dTri, dCirc, (mVal - 0.5) * 2.0);
+                
+                gridMask = smoothstep(0.01, -0.01, dist);
+                vec3 hitColor = spectralPalette(float(idx) * 0.15, float(idx));
+                hitColor = mix(hitColor, bloodColor, 0.4);
+                gridCol = mix(boneColor * 0.85, hitColor, pow(mVal, 1.2));
+            }
+
+            // --- INTENSIFIED FRACTAL BACKGROUND ---
+            vec2 fUv = uv * rotate(u_time * 0.01);
+            float r_dist = length(fUv);
+            float angle = atan(fUv.y, fUv.x);
+            
+            float logR = log(r_dist + 0.001) - u_time * 0.5;
+            float spiral = angle / 6.28318 + logR * 0.05;
+            
+            float repeat = 1.0;
+            vec2 p_fract = vec2(mod(logR, repeat) - repeat * 0.5, mod(spiral * 4.0, 1.0) - 0.5);
+            float shiftX = 0.45 + sin(u_time * 0.1) * 0.03 + u_bass * 0.05;
+            
+            float d_fract = 1e10;
+            vec2 z_fract = p_fract;
+            float scale_fract = 1.0;
+            
+            for(float i=0.0; i<14.0; i++) {
+                z_fract = abs(z_fract) - shiftX;
+                z_fract *= rotate(u_time * 0.01 + i * 0.4 + u_vol * 0.1);
+                float s = 1.8 / clamp(dot(z_fract,z_fract), 0.2, 2.5);
+                z_fract *= s;
+                scale_fract *= s;
+                d_fract = min(d_fract, abs(z_fract.x * z_fract.y) / scale_fract);
+            }
+
+            // Background visibility: Use distance directly to prevent oscillating flashes
+            float glow = pow(0.01 / (d_fract + 0.005), 1.25); 
+            vec3 fractalBase = mix(charcoal, boneColor * 0.4, clamp(glow, 0.0, 1.0));
+
+            // --- VHS VIDEO DANCER INTEGRATION ---
+            // Simplified centered aspect ratio logic
+            vec2 v_pos = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y; 
+            v_pos /= (u_videoRes.x / u_videoRes.y);
+            v_pos += 0.5;
+            
+            // VHS DISTORTION
+            float jitter = (random(vec2(u_time, floor(v_pos.y * 150.0))) - 0.5) * 0.006 * u_bass;
+            v_pos.x += jitter;
+            v_pos.x += sin(v_pos.y * 30.0 + u_time * 15.0) * 0.002 * (0.5 + u_vol);
+
+            vec4 videoColor = vec4(0.0);
+            if (v_pos.x >= 0.0 && v_pos.x <= 1.0 && v_pos.y >= 0.0 && v_pos.y <= 1.0) {
+                float shift = 0.004 + u_treble * 0.02;
+                videoColor.r = texture2D(u_video, v_pos + vec2(shift, 0.0)).r;
+                videoColor.g = texture2D(u_video, v_pos).g;
+                videoColor.b = texture2D(u_video, v_pos - vec2(shift, 0.0)).b;
+                videoColor.a = 1.0;
+            }
+            
+            videoColor.rgb -= sin(v_pos.y * u_resolution.y * 1.2) * 0.08; 
+            videoColor.rgb += random(v_pos + u_time) * 0.12; 
+
+            float luma = dot(videoColor.rgb, vec3(0.299, 0.587, 0.114));
+            float figureMask = smoothstep(0.12, 0.45, luma);
+            
+            vec3 figureTint = mix(boneColor * 0.6, bloodColor, u_bass);
+            vec3 figureCol = videoColor.rgb * figureTint * (1.2 + u_vol);
+
+            vec3 backCol = mix(fractalBase, figureCol, figureMask);
+            backCol += bloodColor * figureMask * u_bass * 0.5;
+
+            // --- FINAL COMPOSITING ---
+            vec3 finalCol = backCol + (gridCol * gridMask);
+
+            finalCol *= smoothstep(0.02, 0.4, r_dist);
+            finalCol *= 1.4 - length(uv) * 1.1;
+
+            gl_FragColor = vec4(finalCol, 1.0);
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl');
+        const startBtn = document.getElementById('start-button');
+        const statusText = document.getElementById('status-text');
+        const audioElement = document.getElementById('audio-element');
+        const videoElement = document.getElementById('video-element');
+
+        let analyser, dataArray;
+        let audioStarted = false;
+        let videoTexture;
+
+        function setupVideoTexture() {
+            videoTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        }
+
+        async function initAudio() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaElementSource(audioElement);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.45; 
+                
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                videoElement.currentTime = 9;
+                
+                audioElement.play();
+                videoElement.play();
+                audioStarted = true;
+                startBtn.classList.add('hidden');
+                statusText.innerText = "System Synced // T-Minus 9s";
+            } catch (err) {
+                console.error("Initialization error", err);
+                statusText.innerText = "Check HTTPS / Assets";
+            }
+        }
+
+        startBtn.addEventListener('click', initAudio);
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vs').text));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fs').text));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const posAttrib = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(posAttrib);
+        gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
+
+        const uniforms = {
+            res: gl.getUniformLocation(program, "u_resolution"),
+            videoRes: gl.getUniformLocation(program, "u_videoRes"),
+            time: gl.getUniformLocation(program, "u_time"),
+            gridMorphs: gl.getUniformLocation(program, "u_grid_morphs"),
+            vol: gl.getUniformLocation(program, "u_vol"),
+            bass: gl.getUniformLocation(program, "u_bass"),
+            treble: gl.getUniformLocation(program, "u_treble"),
+            video: gl.getUniformLocation(program, "u_video")
+        };
+
+        setupVideoTexture();
+
+        function render(time) {
+            let morphs = [0, 0, 0, 0, 0, 0];
+            let vol = 0, bass = 0, treble = 0;
+
+            if (audioStarted && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                bass = Math.min((dataArray[2] / 255.0) * 2.0, 1.0);
+                treble = Math.min((dataArray[150] / 255.0) * 3.5, 1.0);
+
+                morphs[0] = Math.min((dataArray[2] / 255.0) * 5.2, 1.0);  
+                morphs[1] = Math.min((dataArray[12] / 255.0) * 5.8, 1.0); 
+                morphs[2] = Math.min((dataArray[35] / 255.0) * 6.8, 1.0); 
+                morphs[3] = Math.min((dataArray[75] / 255.0) * 7.8, 1.0); 
+                morphs[4] = Math.min((dataArray[140] / 255.0) * 9.5, 1.0);
+                morphs[5] = Math.min((dataArray[200] / 255.0) * 12.0, 1.0);
+
+                let sum = 0;
+                for(let i=0; i<dataArray.length; i++) sum += dataArray[i];
+                vol = (sum / (dataArray.length * 255.0)) * 2.5;
+
+                gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoElement);
+            }
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.uniform2f(uniforms.res, canvas.width, canvas.height);
+            
+            gl.uniform2f(uniforms.videoRes, videoElement.videoWidth || 640, videoElement.videoHeight || 360);
+
+            gl.uniform1f(uniforms.time, time * 0.001);
+            gl.uniform1fv(uniforms.gridMorphs, new Float32Array(morphs));
+            gl.uniform1f(uniforms.vol, Math.min(vol, 1.0));
+            gl.uniform1f(uniforms.bass, bass);
+            gl.uniform1f(uniforms.treble, treble);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+            gl.uniform1i(uniforms.video, 0);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>

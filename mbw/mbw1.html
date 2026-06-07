@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadway Boogie Woogie</title>
+    <meta name="description"
+        content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836;
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #020404;
+            overflow: hidden;
+            font-family: 'Poiret One', cursive;
+        }
+
+        /* ============================================================
+           LANDING SCREEN
+        ============================================================ */
+        #landing {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: radial-gradient(ellipse at center, #1a2a26 0%, #090f0e 60%, #020404 100%);
+            transition: opacity 1.4s ease, visibility 1.4s ease;
+        }
+
+        #landing.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .landing-title {
+            color: #e6dec8;
+            font-size: clamp(28px, 5vw, 72px);
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.1;
+            margin-bottom: 14px;
+            text-shadow: 0 0 60px rgba(248, 216, 54, 0.18);
+        }
+
+        .landing-sub {
+            color: rgba(200, 200, 200, 0.5);
+            font-size: clamp(10px, 1.2vw, 15px);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+        }
+
+        .landing-stripe {
+            width: clamp(200px, 40vw, 480px);
+            height: 6px;
+            background: linear-gradient(90deg, #D22626 0% 33%, #285495 33% 66%, #F8D836 66% 100%);
+            margin-bottom: 50px;
+            opacity: 0.85;
+        }
+
+        #enter-btn {
+            background: transparent;
+            border: 2px solid var(--m-yellow);
+            color: var(--m-yellow);
+            font-family: 'Poiret One', cursive;
+            font-size: clamp(14px, 2vw, 22px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            padding: 18px 54px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.35s ease, box-shadow 0.35s ease, transform 0.15s ease;
+        }
+
+        #enter-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--m-yellow);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.35s ease;
+            z-index: 0;
+        }
+
+        #enter-btn:hover::before {
+            transform: scaleX(1);
+        }
+
+        #enter-btn:hover {
+            color: #1a1a1a;
+            box-shadow: 0 0 50px rgba(248, 216, 54, 0.4);
+        }
+
+        #enter-btn:active {
+            transform: scale(0.97);
+        }
+
+        #enter-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================================
+           FULLSCREEN EXPERIENCE
+        ============================================================ */
+        #experience {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.9s ease 0.5s;
+        }
+
+        #experience.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* The Mondrian canvas — fills screen */
+        #canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            filter: url(#canvas-texture) contrast(1.1) brightness(0.98);
+            /* background transitions driven by JS */
+            transition: background-color 0.12s ease;
+        }
+
+        /* Vignette overlay */
+        #vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 200;
+            /* radial-gradient updated by JS */
+            background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.6) 100%);
+            transition: background 0.15s ease;
+            mix-blend-mode: multiply;
+        }
+
+        /* ============================================================
+           GRID ELEMENTS
+        ============================================================ */
+        .grid-line {
+            position: absolute;
+            background-color: var(--m-yellow);
+            z-index: 1;
+            /* glow driven by JS */
+        }
+
+        .static-block {
+            position: absolute;
+            z-index: 2;
+        }
+
+        .bg-red {
+            background-color: #D22626;
+        }
+
+        .bg-blue {
+            background-color: #285495;
+        }
+
+        .bg-yellow {
+            background-color: #F8D836;
+        }
+
+        .bg-grey {
+            background-color: #C8C8C8;
+        }
+
+        .bg-white {
+            background-color: #f4f4f4;
+        }
+
+        .car {
+            position: absolute;
+            z-index: 3;
+            image-rendering: pixelated;
+        }
+
+        .letter-block {
+            position: absolute;
+            z-index: 4;
+            transition: background-color 0.06s ease;
+        }
+
+        /* Beat flash overlay — briefly brightens the whole canvas */
+        #beat-flash {
+            position: absolute;
+            inset: 0;
+            z-index: 190;
+            pointer-events: none;
+            opacity: 0;
+            background: rgba(248, 216, 54, 0.18);
+        }
+
+        @keyframes driveHorizontal {
+            from {
+                left: -10%;
+            }
+
+            to {
+                left: 110%;
+            }
+        }
+
+        @keyframes driveHorizontalRev {
+            from {
+                left: 110%;
+            }
+
+            to {
+                left: -10%;
+            }
+        }
+
+        @keyframes driveVertical {
+            from {
+                top: -10%;
+            }
+
+            to {
+                top: 110%;
+            }
+        }
+
+        @keyframes driveVerticalRev {
+            from {
+                top: 110%;
+            }
+
+            to {
+                top: -10%;
+            }
+        }
+
+        @keyframes blinkOpacity {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes shiftColorRedBlue {
+
+            0%,
+            45% {
+                background-color: #D22626;
+            }
+
+            50%,
+            95% {
+                background-color: #285495;
+            }
+        }
+
+        @keyframes shiftColorYellowWt {
+
+            0%,
+            45% {
+                background-color: #F8D836;
+            }
+
+            50%,
+            95% {
+                background-color: #f4f4f4;
+            }
+        }
+
+        /* ============================================================
+           HUD
+        ============================================================ */
+        #hud {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 300;
+            opacity: 0;
+            transition: opacity 0.6s ease 1.4s;
+        }
+
+        #hud.visible {
+            opacity: 1;
+        }
+
+        #audio-ctrl {
+            position: absolute;
+            top: 22px;
+            right: 26px;
+            pointer-events: all;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .audio-toggle-btn {
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(248, 216, 54, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            color: #F8D836;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .audio-toggle-btn:hover {
+            transform: scale(1.12);
+            border-color: #D22626;
+            color: #D22626;
+        }
+
+        .audio-toggle-btn.muted {
+            color: #555;
+            border-color: #333;
+        }
+
+        /* Mini VU bar beside the button */
+        #vu-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 28px;
+            opacity: 0.7;
+        }
+
+        .vu-seg {
+            width: 4px;
+            border-radius: 2px;
+            transition: height 0.05s ease;
+        }
+
+        .audio-label {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(200, 200, 200, 0.5);
+        }
+
+        #meta-label {
+            position: absolute;
+            bottom: 24px;
+            left: 28px;
+            pointer-events: none;
+        }
+
+        #meta-label h1 {
+            color: rgba(230, 222, 200, 0.8);
+            font-size: clamp(11px, 1.4vw, 20px);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.9);
+            line-height: 1.2;
+            margin-bottom: 2px;
+        }
+
+        #meta-label .sub {
+            font-size: clamp(8px, 0.8vw, 12px);
+            letter-spacing: 2.5px;
+            color: rgba(180, 170, 145, 0.6);
+        }
+
+        .texture-svg {
+            height: 0;
+            width: 0;
+            position: absolute;
+            visibility: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LANDING -->
+    <div id="landing">
+        <div class="landing-title">Broadway<br>Boogie Woogie</div>
+        <div class="landing-sub">Piet Mondrian &nbsp;·&nbsp; 1942–43</div>
+        <div class="landing-stripe"></div>
+        <button id="enter-btn" aria-label="Enter the experience"><span>ENTER</span></button>
+    </div>
+
+    <!-- EXPERIENCE -->
+    <div id="experience">
+        <div id="canvas">
+            <svg class="texture-svg">
+                <filter id="canvas-texture" x="0%" y="0%" width="100%" height="100%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="4" stitchTiles="stitch"
+                        result="noise" />
+                    <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.28 0" in="noise"
+                        result="cn" />
+                    <feBlend in="SourceGraphic" in2="cn" mode="multiply" />
+                </filter>
+            </svg>
+            <div id="beat-flash"></div>
+            <div id="grid-layer"></div>
+            <div id="traffic-layer"></div>
+            <div id="letter-layer"></div>
+            <div id="vignette"></div>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="audio-ctrl">
+            <button id="music-toggle" class="audio-toggle-btn muted" aria-label="Toggle Music">
+                <i id="music-icon" class="fa-solid fa-volume-xmark"></i>
+            </button>
+            <div id="vu-bar"></div>
+            <span class="audio-label">Soundtrack</span>
+        </div>
+        <div id="meta-label">
+            <h1>Broadway<br>Boogie Woogie</h1>
+            <div class="sub">Piet Mondrian &nbsp;·&nbsp; 1942–43</div>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop crossorigin="anonymous">
+        <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        /* ================================================================
+           PIXEL-FONT  5×7 bitmaps
+        ================================================================ */
+        const FONT = {
+            M: [[1, 0, 0, 0, 1], [1, 1, 0, 1, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            O: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 0]],
+            N: [[1, 0, 0, 0, 1], [1, 1, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            D: [[1, 1, 1, 0, 0], [1, 0, 0, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 1, 0], [1, 1, 1, 0, 0]],
+            R: [[1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0], [1, 0, 1, 0, 0], [1, 0, 0, 1, 0], [1, 0, 0, 0, 1]],
+            I: [[1, 1, 1, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [1, 1, 1, 1, 1]],
+            A: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            B: [[1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0]],
+            G: [[0, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 1]],
+            E: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
+            W: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 1, 0, 1], [1, 1, 0, 1, 1], [1, 0, 0, 0, 1]],
+            ' ': [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
+        };
+
+        const ROW1 = 'MONDRIAAN';
+        const ROW2 = 'BOOGIE WOOGIE';
+
+        /* ================================================================
+           COMPOSITION  (virtual 1000×1000 space)
+        ================================================================ */
+        const REF = 1000;
+        function pct(v) { return (v / REF * 100) + '%'; }
+
+        const vLines = [
+            { x: 15, w: 12 }, { x: 45, w: 6 }, { x: 80, w: 10 }, { x: 130, w: 6 },
+            { x: 200, w: 8 }, { x: 265, w: 6 },
+            { x: 380, w: 14 },
+            { x: 480, w: 6 }, { x: 540, w: 8 },
+            { x: 650, w: 10 }, { x: 710, w: 6 }, { x: 760, w: 8 },
+            { x: 830, w: 6 }, { x: 880, w: 10 }, { x: 940, w: 8 }, { x: 980, w: 12 },
+        ];
+
+        const hLines = [
+            { y: 15, h: 12 }, { y: 50, h: 6 }, { y: 90, h: 10 },
+            { y: 160, h: 8 }, { y: 220, h: 6 },
+            { y: 310, h: 14 },
+            { y: 420, h: 6 }, { y: 500, h: 8 },
+            { y: 580, h: 10 }, { y: 640, h: 6 }, { y: 700, h: 8 },
+            { y: 770, h: 6 }, { y: 820, h: 10 }, { y: 870, h: 8 }, { y: 940, h: 12 }, { y: 975, h: 6 },
+        ];
+
+        const staticBlocks = [
+            { x: 390, y: 60, w: 80, h: 40, c: 'bg-red' },
+            { x: 565, y: 225, w: 60, h: 100, c: 'bg-blue' },
+            { x: 580, y: 260, w: 30, h: 50, c: 'bg-red' },
+            { x: 130, y: 320, w: 70, h: 40, c: 'bg-red' },
+            { x: 660, y: 510, w: 50, h: 50, c: 'bg-blue' },
+            { x: 660, y: 560, w: 50, h: 10, c: 'bg-yellow' },
+            { x: 660, y: 570, w: 50, h: 40, c: 'bg-red' },
+            { x: 770, y: 600, w: 40, h: 50, c: 'bg-red' },
+            { x: 130, y: 100, w: 70, h: 80, c: 'bg-grey' },
+            { x: 206, y: 430, w: 60, h: 90, c: 'bg-white' },
+            { x: 486, y: 320, w: 55, h: 90, c: 'bg-yellow' },
+            { x: 270, y: 580, w: 110, h: 50, c: 'bg-grey' },
+            { x: 835, y: 160, w: 45, h: 60, c: 'bg-blue' },
+            { x: 850, y: 830, w: 90, h: 50, c: 'bg-red' },
+            { x: 50, y: 700, w: 80, h: 70, c: 'bg-blue' },
+            { x: 420, y: 820, w: 60, h: 50, c: 'bg-yellow' },
+        ];
+
+        /* ================================================================
+           DOM REFERENCES
+        ================================================================ */
+        const gridLayer = document.getElementById('grid-layer');
+        const trafficLayer = document.getElementById('traffic-layer');
+        const letterLayer = document.getElementById('letter-layer');
+        const canvasEl = document.getElementById('canvas');
+        const vignette = document.getElementById('vignette');
+        const beatFlash = document.getElementById('beat-flash');
+
+        /* ================================================================
+           RENDER GRID
+        ================================================================ */
+        const gridLineEls = []; // keep refs for glow animation
+
+        function renderGrid() {
+            vLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line';
+                el.style.cssText = `left:${pct(l.x)};top:0;width:${pct(l.w)};height:100%;`;
+                gridLayer.appendChild(el);
+                gridLineEls.push(el);
+            });
+            hLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line';
+                el.style.cssText = `top:${pct(l.y)};left:0;height:${pct(l.h)};width:100%;`;
+                gridLayer.appendChild(el);
+                gridLineEls.push(el);
+            });
+            staticBlocks.forEach(b => {
+                const el = document.createElement('div');
+                el.className = `static-block ${b.c}`;
+                el.style.cssText = `left:${pct(b.x)};top:${pct(b.y)};width:${pct(b.w)};height:${pct(b.h)};`;
+                gridLayer.appendChild(el);
+            });
+        }
+
+        /* ================================================================
+           RENDER LETTERS  (pixel blocks — stored for reactive coloring)
+        ================================================================ */
+        const letterEls = []; // all letter pixel divs
+        const LETTER_COLORS_BASE = ['#D22626', '#285495', '#F8D836', '#F8D836', '#F8D836', '#D22626'];
+        // Pulsation palettes cycling through on beats
+        const PULSE_PALETTES = [
+            ['#F8D836', '#F8D836', '#D22626', '#D22626', '#285495', '#F8D836'],
+            ['#285495', '#D22626', '#F8D836', '#285495', '#D22626', '#F8D836'],
+            ['#D22626', '#F8D836', '#285495', '#F8D836', '#D22626', '#285495'],
+            ['#F8D836', '#285495', '#F8D836', '#D22626', '#F8D836', '#285495'],
+        ];
+
+        function renderLetters() {
+            const CELL_W = 7;
+            const CELL_H = 8;
+            const LETTER_W = 5 * CELL_W + 2;
+            const LETTER_H = 7 * CELL_H;
+            const pool = LETTER_COLORS_BASE;
+
+            function placeRow(text, yCenter) {
+                const totalW = text.length * LETTER_W;
+                const startX = (REF - totalW) / 2;
+                const startY = yCenter - LETTER_H / 2;
+                text.split('').forEach((ch, ci) => {
+                    const bitmap = FONT[ch] || FONT[' '];
+                    const letterX = startX + ci * LETTER_W;
+                    bitmap.forEach((row, ri) => {
+                        row.forEach((cell, pi) => {
+                            if (!cell) return;
+                            const el = document.createElement('div');
+                            el.className = 'letter-block';
+                            const chosenColor = pool[Math.floor(Math.random() * pool.length)];
+                            el.style.cssText = `left:${pct(letterX + pi * CELL_W)};top:${pct(startY + ri * CELL_H)};width:${pct(CELL_W - 1)};height:${pct(CELL_H - 1)};background:${chosenColor};opacity:0.95;`;
+                            letterLayer.appendChild(el);
+                            letterEls.push(el);
+                        });
+                    });
+                });
+            }
+
+            placeRow(ROW1, 155);
+            placeRow(ROW2, 855);
+        }
+
+        /* ================================================================
+           RENDER TRAFFIC
+        ================================================================ */
+        const trafficCars = [];
+        const trafficBaseSpeeds = [];
+
+        function createTraffic() {
+            const carsPerLine = 18;
+            const blinks = ['blinkOpacity', 'shiftColorRedBlue', 'shiftColorYellowWt', 'none'];
+            const colorCls = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white', 'bg-red'];
+
+            function makeCar(isH, track) {
+                const speed = Math.random() * 10 + 5;
+                const dir = isH
+                    ? (Math.random() > 0.5 ? 'driveHorizontal' : 'driveHorizontalRev')
+                    : (Math.random() > 0.5 ? 'driveVertical' : 'driveVerticalRev');
+                const blink = blinks[Math.floor(Math.random() * blinks.length)];
+                let anim = `${dir} ${speed}s linear infinite`;
+                if (blink !== 'none') anim += `, ${blink} ${(Math.random() * 0.5 + 0.2).toFixed(2)}s steps(1) infinite`;
+
+                const car = document.createElement('div');
+                const cls = colorCls[Math.floor(Math.random() * colorCls.length)];
+                car.className = `car ${cls}`;
+
+                if (isH) {
+                    const h = track.h, w = Math.floor(Math.random() * 14) + 6;
+                    car.style.cssText = `height:${pct(h)};width:${pct(w)};top:${pct(track.y)};left:-10%;animation:${anim};animation-delay:${-(Math.random() * speed)}s;`;
+                } else {
+                    const w = track.w, h = Math.floor(Math.random() * 14) + 6;
+                    car.style.cssText = `width:${pct(w)};height:${pct(h)};left:${pct(track.x)};top:-10%;animation:${anim};animation-delay:${-(Math.random() * speed)}s;`;
+                }
+                trafficLayer.appendChild(car);
+                trafficCars.push(car);
+                trafficBaseSpeeds.push(speed);
+            }
+
+            hLines.forEach(t => { for (let i = 0; i < carsPerLine; i++) makeCar(true, t); });
+            vLines.forEach(t => { for (let i = 0; i < carsPerLine; i++) makeCar(false, t); });
+        }
+
+        /* ================================================================
+           BUILD MINI VU BAR
+        ================================================================ */
+        const VU_COUNT = 8;
+        const vuSegs = [];
+        const vuColors = ['#F8D836', '#F8D836', '#F8D836', '#F8D836', '#D22626', '#D22626', '#D22626', '#285495'];
+        const vuBar = document.getElementById('vu-bar');
+        for (let i = 0; i < VU_COUNT; i++) {
+            const s = document.createElement('div');
+            s.className = 'vu-seg';
+            s.style.cssText = `background:${vuColors[i]};height:4px;`;
+            vuBar.appendChild(s);
+            vuSegs.push(s);
+        }
+
+        /* ================================================================
+           AUDIO  (Web Audio API analyser)
+        ================================================================ */
+        const audioEl = document.getElementById('bg-music');
+        const toggleBtn = document.getElementById('music-toggle');
+        const iconEl = document.getElementById('music-icon');
+        let isPlaying = false;
+        let audioCtx, analyser, srcNode, dataArray;
+        let BUFF_LEN;
+
+        function initAudioContext() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            BUFF_LEN = analyser.frequencyBinCount; // 128
+            dataArray = new Uint8Array(BUFF_LEN);
+
+            srcNode = audioCtx.createMediaElementSource(audioEl);
+            srcNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+        }
+
+        function playMusic() {
+            initAudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            audioEl.play().then(() => {
+                isPlaying = true;
+                iconEl.className = 'fa-solid fa-music';
+                toggleBtn.classList.remove('muted');
+            }).catch(e => console.log('Audio play failed:', e));
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audioEl.pause();
+                iconEl.className = 'fa-solid fa-volume-xmark';
+                toggleBtn.classList.add('muted');
+                isPlaying = false;
+            } else {
+                playMusic();
+            }
+        });
+
+        /* ================================================================
+           VISUALISER LOOP
+        ================================================================ */
+        // Smoothed values (avoid jitter)
+        let smoothEnergy = 0;
+        let smoothBass = 0;
+        let smoothMid = 0;
+        let smoothTreble = 0;
+        let lastBeatTime = 0;
+        let beatPaletteIdx = 0;
+
+        // Beat-based letter palette cycling
+        let letterPaletteTarget = PULSE_PALETTES[0];
+        let letterPaletteCurrent = PULSE_PALETTES[0].slice();
+        let lerpT = 1; // 1 = done lerping
+
+        // Helper: map value n from [a,b] to [c,d]
+        function mapRange(n, a, b, c, d) {
+            return c + (d - c) * Math.max(0, Math.min(1, (n - a) / (b - a)));
+        }
+
+        // Lerp helper
+        function lerp(a, b, t) { return a + (b - a) * t; }
+
+        // Parse hex color → [r,g,b]
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return [r, g, b];
+        }
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+        }
+
+        // Night → day canvas BG colour palette (energy 0→1)
+        // Night: dark slate / Day: warm creamy canvas
+        function energyToCanvasBg(e) {
+            // 0 = very dark night, 1 = full day warm white
+            const r = Math.round(lerp(20, 244, e));
+            const g = Math.round(lerp(22, 240, e));
+            const b = Math.round(lerp(22, 228, e));
+            return `rgb(${r},${g},${b})`;
+        }
+
+        // Vignette darkness — less dark in the day mode
+        function energyToVignette(e) {
+            const opacity = lerp(0.72, 0.18, e);
+            return `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,${opacity.toFixed(2)}) 100%)`;
+        }
+
+        // Grid line glow with treble
+        function applyGridGlow(t) {
+            const intensity = Math.round(mapRange(t, 0, 1, 0, 22));
+            const glow = intensity > 2
+                ? `0 0 ${intensity}px rgba(248,216,54,${(intensity / 28).toFixed(2)})`
+                : 'none';
+            gridLineEls.forEach(el => { el.style.boxShadow = glow; });
+        }
+
+        // Flash on beat
+        let beatFlashActive = false;
+        function triggerBeat(bassNorm) {
+            const now = performance.now();
+            if (now - lastBeatTime < 280) return; // min 280ms between beats
+            lastBeatTime = now;
+
+            // Cycle letter palette
+            beatPaletteIdx = (beatPaletteIdx + 1) % PULSE_PALETTES.length;
+            letterPaletteTarget = PULSE_PALETTES[beatPaletteIdx];
+            lerpT = 0;
+
+            // Beat flash
+            if (!beatFlashActive) {
+                beatFlashActive = true;
+                const flashAlpha = mapRange(bassNorm, 0.65, 1.0, 0.06, 0.28);
+                beatFlash.style.opacity = flashAlpha.toFixed(2);
+                beatFlash.style.background = `rgba(248,216,54,${flashAlpha.toFixed(2)})`;
+                setTimeout(() => {
+                    beatFlash.style.opacity = '0';
+                    beatFlashActive = false;
+                }, 90);
+            }
+        }
+
+        function visualiserFrame() {
+            requestAnimationFrame(visualiserFrame);
+
+            if (!analyser || !isPlaying) {
+                // idle: gentle HUD VU bars
+                vuSegs.forEach(s => { s.style.height = '4px'; });
+                return;
+            }
+
+            analyser.getByteFrequencyData(dataArray);
+
+            // --- Frequency band averages (bins 0-127 span 0–Nyquist) ---
+            // Bass: bins 0-9 (~0–345 Hz at 44100Hz)
+            // Mid:  bins 10-40
+            // Treble: bins 41-100
+            let bassSum = 0, midSum = 0, trebleSum = 0;
+            for (let i = 0; i < 10; i++) bassSum += dataArray[i];
+            for (let i = 10; i < 41; i++) midSum += dataArray[i];
+            for (let i = 41; i < 101; i++) trebleSum += dataArray[i];
+
+            const bassRaw = bassSum / (10 * 255);
+            const midRaw = midSum / (31 * 255);
+            const trebleRaw = trebleSum / (60 * 255);
+            const energyRaw = (bassRaw * 0.5 + midRaw * 0.3 + trebleRaw * 0.2);
+
+            // Smooth all values
+            const SK = 0.15; // smoothing coefficient (lower = smoother)
+            smoothBass = smoothBass + SK * (bassRaw - smoothBass);
+            smoothMid = smoothMid + SK * (midRaw - smoothMid);
+            smoothTreble = smoothTreble + SK * (trebleRaw - smoothTreble);
+            smoothEnergy = smoothEnergy + SK * (energyRaw - smoothEnergy);
+
+            /* 1. CANVAS BACKGROUND — night (low energy) → day (high energy) */
+            canvasEl.style.backgroundColor = energyToCanvasBg(Math.pow(smoothEnergy, 0.6));
+
+            /* 2. VIGNETTE — fades as energy grows */
+            vignette.style.background = energyToVignette(Math.pow(smoothEnergy, 0.5));
+
+            /* 3. GRID LINE GLOW — driven by treble */
+            applyGridGlow(smoothTreble * 1.4);
+
+            /* 4. BEAT DETECTION — bass spike above threshold */
+            if (bassRaw > 0.62) triggerBeat(bassRaw);
+
+            /* 5. LETTER COLOR PULSATION — lerp toward new palette on each beat */
+            if (lerpT < 1) {
+                lerpT = Math.min(1, lerpT + 0.08);
+                letterEls.forEach((el, i) => {
+                    const idxInPalette = i % letterPaletteTarget.length;
+                    const fromColor = hexToRgb(letterPaletteCurrent[idxInPalette]);
+                    const toColor = hexToRgb(letterPaletteTarget[idxInPalette]);
+                    const r = lerp(fromColor[0], toColor[0], lerpT);
+                    const g = lerp(fromColor[1], toColor[1], lerpT);
+                    const b = lerp(fromColor[2], toColor[2], lerpT);
+                    el.style.background = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+                });
+                if (lerpT >= 1) {
+                    letterPaletteCurrent = letterPaletteTarget.slice();
+                }
+            }
+
+            // Extra: mid-frequency ripple — subtly modulate letter opacity in waves
+            const midMod = mapRange(smoothMid, 0, 0.5, 0.88, 1.0);
+            letterEls.forEach((el, i) => {
+                el.style.opacity = (0.92 + Math.sin(Date.now() * 0.003 + i * 0.7) * 0.08 * smoothMid * 3).toFixed(3);
+            });
+
+            /* 6. VU BAR */
+            for (let i = 0; i < VU_COUNT; i++) {
+                const binIdx = Math.floor((i / VU_COUNT) * 60); // spread across first 60 bins
+                const h = Math.max(4, Math.round((dataArray[binIdx] / 255) * 28));
+                vuSegs[i].style.height = h + 'px';
+            }
+
+            /* 7. TRAFFIC SPEED — scale animation duration with energy */
+            // Faster traffic at high energy (boost = 0.6 at full, 1.0 at silence)
+            const speedMult = mapRange(smoothEnergy, 0, 0.7, 1.0, 0.45);
+            trafficCars.forEach((car, idx) => {
+                const baseSpeed = trafficBaseSpeeds[idx];
+                const newSpeed = (baseSpeed * speedMult).toFixed(2);
+                // Only update if meaningfully changed (avoid style thrash)
+                const cur = parseFloat(car.dataset.curSpeed || baseSpeed);
+                if (Math.abs(cur - newSpeed) > 0.1) {
+                    car.dataset.curSpeed = newSpeed;
+                    // Inject a modified animation-duration (keeps name/delay intact)
+                    const style = car.style.animation;
+                    const updated = style.replace(/\b\d+(\.\d+)?s\b/g, (match, _, offset) => {
+                        // Only replace the first numeric duration (the driving one, not tiny blink durations)
+                        return match === `${baseSpeed}s` || parseFloat(match) === baseSpeed
+                            ? `${newSpeed}s` : match;
+                    });
+                    if (updated !== style) car.style.animation = updated;
+                }
+            });
+        }
+
+        /* ================================================================
+           ENTER BUTTON
+        ================================================================ */
+        const landing = document.getElementById('landing');
+        const experience = document.getElementById('experience');
+        const hud = document.getElementById('hud');
+        const enterBtn = document.getElementById('enter-btn');
+
+        // Pre-build while user reads landing
+        renderGrid();
+        createTraffic();
+        renderLetters();
+
+        enterBtn.addEventListener('click', () => {
+            landing.classList.add('hidden');
+            experience.classList.add('visible');
+            hud.classList.add('visible');
+            playMusic();
+            visualiserFrame(); // start the loop
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones // Geometric Traversal</title>
+    <style>
+        :root {
+            --bg: #020203;
+            --bone: #ece9d8;
+            --accent: rgba(255, 255, 255, 0.15);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #start-button {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--bone);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        #start-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--bone);
+            letter-spacing: 0.6em;
+        }
+
+        #start-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9);
+        }
+
+        #metadata {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="audio-element" src="seven.mp3" loop crossorigin="anonymous"></audio>
+
+    <div id="ui-container">
+        <button id="start-button">Begin Traversal</button>
+    </div>
+
+    <div id="metadata">
+        Audio Source: <span id="status-text">seven.mp3</span> // Mode: Syncopated Morphology // Palette: Bone
+    </div>
+
+    <canvas id="glCanvas"></canvas>
+
+    <script id="vs" type="x-shader/x-vertex">
+        attribute vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+        precision highp float;
+        uniform vec2 u_resolution;
+        uniform float u_time;
+        uniform float u_bass;
+        uniform float u_treble;
+        uniform float u_vol;
+
+        mat2 rotate(float a) {
+            float s = sin(a);
+            float c = cos(a);
+            return mat2(c, -s, s, c);
+        }
+
+        float sdBox(vec2 p, vec2 b) {
+            vec2 d = abs(p)-b;
+            return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+        }
+
+        void main() {
+            // Fix aspect ratio
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.y, u_resolution.x);
+            
+            vec3 boneColor = vec3(0.92, 0.90, 0.85);
+            vec3 charcoal = vec3(0.012, 0.012, 0.015);
+
+            // --- 3x2 SYNC-GRID ---
+            float gridScale = 3.5;
+            vec2 gridUv = uv * gridScale;
+            // Aligning 3 columns and 2 rows
+            vec2 centeredGrid = gridUv + vec2(0.0, 0.5);
+            vec2 cellId = floor(centeredGrid + 0.5);
+            
+            float gridMask = 0.0;
+            if (abs(cellId.x) <= 1.0 && cellId.y >= 0.0 && cellId.y <= 1.0) {
+                vec2 localPos = fract(centeredGrid + 0.5) - 0.5;
+                
+                // Unique behavior per cell
+                float cellSeed = cellId.x * 2.5 + cellId.y * 4.1;
+                
+                // Syncopated Morphology Logic:
+                // We combine a cell-specific threshold with the global bass pulse.
+                // Added a snappy smoothstep to ensure it's either square or circle, not stuck in between.
+                float threshold = 0.2 + fract(cellSeed * 0.54) * 0.3;
+                float snappyBass = smoothstep(threshold, threshold + 0.15, u_bass);
+                
+                // Independent "breath" rhythm
+                float rhythm = sin(u_time * 0.8 + cellSeed) * 0.5 + 0.5;
+                float morphVal = clamp(snappyBass + rhythm * 0.2, 0.0, 1.0);
+                
+                // Snappy morph between hard box and soft circle
+                float dBox = sdBox(localPos, vec2(0.2)); 
+                float dCircle = length(localPos) - 0.28;
+                float dist = mix(dBox, dCircle, morphVal);
+                
+                gridMask = smoothstep(0.01, -0.01, dist);
+            }
+
+            // --- CALM FRACTAL BONES (BACKGROUND) ---
+            // Extremely slow and minimal to prevent "psychotic" look
+            vec2 fUv = uv * rotate(u_time * 0.01 + u_vol * 0.04);
+            float r = length(fUv);
+            float angle = atan(fUv.y, fUv.x);
+            
+            float logR = log(r) - u_time * 0.8;
+            float spiral = angle / 6.28318 + logR * 0.05;
+            
+            float repeat = 1.0;
+            vec2 p = vec2(mod(logR, repeat) - repeat * 0.5, mod(spiral * 4.0, 1.0) - 0.5);
+            
+            float m = sin(u_time * 0.1 + logR * 0.2) * 0.04 + u_bass * 0.05;
+            float shiftX = 0.45 + m;
+            
+            float d = 1e10;
+            vec2 z = p;
+            float scale = 1.0;
+            
+            // Reduced iterations for a cleaner visual
+            for(float i=0.0; i<6.0; i++) {
+                z = abs(z) - shiftX;
+                z *= rotate(u_time * 0.015 + i * 0.4);
+                float s = 1.8 / clamp(dot(z,z), 0.2, 2.5);
+                z *= s;
+                scale *= s;
+                d = min(d, length(z.x * z.y) / scale);
+            }
+
+            float glow = abs(sin(d * 12.0 + u_time * 1.0) / 12.0);
+            glow = pow(0.0025 / glow, 1.5); 
+            
+            vec3 fractalBase = mix(charcoal, boneColor * 0.25, glow);
+
+            // --- COMPOSITING ---
+            // Solid Grid
+            vec3 gridCol = boneColor * gridMask * (0.8 + u_treble * 0.2);
+            
+            vec3 finalCol = fractalBase + gridCol;
+
+            // Soft Vignette
+            finalCol *= smoothstep(0.02, 0.4, r);
+            finalCol *= 1.4 - length(uv) * 1.1;
+
+            gl_FragColor = vec4(finalCol, 1.0);
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl');
+        const startBtn = document.getElementById('start-button');
+        const statusText = document.getElementById('status-text');
+        const audioElement = document.getElementById('audio-element');
+
+        let analyser, dataArray;
+        let audioStarted = false;
+
+        async function initAudio() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaElementSource(audioElement);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                // High smoothing for consistent morphology
+                analyser.smoothingTimeConstant = 0.7; 
+                
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                audioElement.play();
+                audioStarted = true;
+                startBtn.classList.add('hidden');
+                statusText.innerText = "Syncopation Active";
+            } catch (err) {
+                console.error("Audio init error", err);
+                statusText.innerText = "Error: Use HTTPS";
+            }
+        }
+
+        startBtn.addEventListener('click', initAudio);
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                return null;
+            }
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vs').text));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fs').text));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const posAttrib = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(posAttrib);
+        gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
+
+        const uniforms = {
+            res: gl.getUniformLocation(program, "u_resolution"),
+            time: gl.getUniformLocation(program, "u_time"),
+            bass: gl.getUniformLocation(program, "u_bass"),
+            treble: gl.getUniformLocation(program, "u_treble"),
+            vol: gl.getUniformLocation(program, "u_vol")
+        };
+
+        function render(time) {
+            let bass = 0, treble = 0, vol = 0;
+            if (audioStarted && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Bass (first 8 bins) - Boosted gain for better trigger
+                let bSum = 0;
+                for(let i=0; i<8; i++) bSum += dataArray[i];
+                bass = (bSum / (8.0 * 255.0)) * 2.8; 
+                
+                // Treble (higher spectrum)
+                let tSum = 0;
+                for(let i=140; i<200; i++) tSum += dataArray[i];
+                treble = (tSum / (60.0 * 255.0)) * 5.0;
+                
+                // Overall Energy
+                let vSum = 0;
+                for(let i=0; i<dataArray.length; i++) vSum += dataArray[i];
+                vol = (vSum / (dataArray.length * 255.0)) * 2.5;
+            }
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.uniform2f(uniforms.res, canvas.width, canvas.height);
+            gl.uniform1f(uniforms.time, time * 0.001);
+            gl.uniform1f(uniforms.bass, Math.min(bass, 1.0));
+            gl.uniform1f(uniforms.treble, Math.min(treble, 1.0));
+            gl.uniform1f(uniforms.vol, Math.min(vol, 1.0));
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>

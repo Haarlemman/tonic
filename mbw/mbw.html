@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadway Boogie Woogie</title>
+    <meta name="description" content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie.">
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --yr: #F8D836;
+            --rd: #D22626;
+            --bl: #285495;
+            --gy: #C8C8C8;
+            --wt: #f4f4f4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #060808;
+            overflow: hidden;
+            font-family: 'Poiret One', cursive;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* ── LANDING ── */
+        #landing {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, #1a2a26 0%, #060c0a 65%, #020404 100%);
+            transition: opacity 1.3s ease, visibility 1.3s ease;
+        }
+
+        #landing.gone {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .l-title {
+            color: #e6dec8;
+            font-size: clamp(26px, 5vw, 68px);
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            text-shadow: 0 0 60px rgba(248, 216, 54, .15);
+        }
+
+        .l-sub {
+            color: rgba(200, 200, 200, .45);
+            font-size: clamp(9px, 1.1vw, 14px);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 55px;
+        }
+
+        .l-stripe {
+            width: clamp(180px, 38vw, 440px);
+            height: 5px;
+            margin-bottom: 48px;
+            background: linear-gradient(90deg, #D22626 0 33%, #285495 33% 66%, #F8D836 66% 100%);
+        }
+
+        #enter-btn {
+            background: transparent;
+            border: 2px solid var(--yr);
+            color: var(--yr);
+            font-family: 'Poiret One', cursive;
+            font-size: clamp(13px, 1.8vw, 20px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            padding: 17px 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: color .35s, box-shadow .35s, transform .15s;
+        }
+
+        #enter-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--yr);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .35s;
+            z-index: 0;
+        }
+
+        #enter-btn:hover::before {
+            transform: scaleX(1);
+        }
+
+        #enter-btn:hover {
+            color: #111;
+            box-shadow: 0 0 50px rgba(248, 216, 54, .4);
+        }
+
+        #enter-btn:active {
+            transform: scale(.97);
+        }
+
+        #enter-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── EXPERIENCE WRAPPER ── */
+        #exp {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #040606;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .9s ease .5s;
+        }
+
+        #exp.on {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ── SQUARE CANVAS ── */
+        #canvas {
+            /* Square: takes the smaller of vw/vh */
+            width: min(100vw, 100vh);
+            height: min(100vw, 100vh);
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            background-color: #f0ebe0;
+            filter: url(#ctex) contrast(1.08) brightness(.97);
+            transition: background-color .08s linear;
+        }
+
+        /* Vignette */
+        #vign {
+            position: absolute;
+            inset: 0;
+            z-index: 500;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 38%, rgba(0, 0, 0, .65) 100%);
+            transition: opacity .12s linear;
+        }
+
+        /* Beat flash */
+        #bflash {
+            position: absolute;
+            inset: 0;
+            z-index: 490;
+            pointer-events: none;
+            opacity: 0;
+            background: rgba(248, 216, 54, .22);
+            transition: opacity .05s linear;
+        }
+
+        /* Grid elements */
+        .gl {
+            position: absolute;
+            background: var(--yr);
+            z-index: 1;
+        }
+
+        .sb {
+            position: absolute;
+            z-index: 2;
+        }
+
+        .car {
+            position: absolute;
+            z-index: 3;
+            image-rendering: pixelated;
+        }
+
+        .bg-red {
+            background: #D22626;
+        }
+
+        .bg-blue {
+            background: #285495;
+        }
+
+        .bg-yellow {
+            background: #F8D836;
+        }
+
+        .bg-grey {
+            background: #C8C8C8;
+        }
+
+        .bg-white {
+            background: #f4f4f4;
+        }
+
+        /* Text bands — overflow:hidden clips internal lines to band height */
+        .tband {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            z-index: 4;
+            overflow: hidden;
+            /* KEY: column lines clipped to band */
+        }
+
+        /* Column separator lines within a band */
+        .tcol {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: var(--yr);
+            z-index: 5;
+        }
+
+        /* Letter pixel blocks */
+        .lpx {
+            position: absolute;
+            z-index: 6;
+            transition: background .07s linear;
+        }
+
+        /* Traffic animations */
+        @keyframes dH {
+            from {
+                left: -10%
+            }
+
+            to {
+                left: 110%
+            }
+        }
+
+        @keyframes dHr {
+            from {
+                left: 110%
+            }
+
+            to {
+                left: -10%
+            }
+        }
+
+        @keyframes dV {
+            from {
+                top: -10%
+            }
+
+            to {
+                top: 110%
+            }
+        }
+
+        @keyframes dVr {
+            from {
+                top: 110%
+            }
+
+            to {
+                top: -10%
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1
+            }
+
+            51%,
+            100% {
+                opacity: 0
+            }
+        }
+
+        @keyframes crb {
+
+            0%,
+            45% {
+                background: #D22626
+            }
+
+            50%,
+            95% {
+                background: #285495
+            }
+        }
+
+        @keyframes cyw {
+
+            0%,
+            45% {
+                background: #F8D836
+            }
+
+            50%,
+            95% {
+                background: #f4f4f4
+            }
+        }
+
+        /* ── HUD ── */
+        #hud {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .6s ease 1.4s;
+        }
+
+        #hud.on {
+            opacity: 1;
+        }
+
+        #actrl {
+            position: absolute;
+            top: 20px;
+            right: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: all;
+        }
+
+        .atbtn {
+            background: rgba(0, 0, 0, .55);
+            border: 1px solid rgba(248, 216, 54, .45);
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--yr);
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all .3s;
+            backdrop-filter: blur(4px);
+        }
+
+        .atbtn:hover {
+            transform: scale(1.12);
+            border-color: #D22626;
+            color: #D22626;
+        }
+
+        .atbtn.muted {
+            color: #444;
+            border-color: #333;
+        }
+
+        #vu {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 26px;
+            opacity: .65;
+        }
+
+        .vs {
+            width: 4px;
+            border-radius: 2px;
+            height: 4px;
+        }
+
+        .albl {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(180, 180, 180, .45);
+        }
+
+        .tsv {
+            height: 0;
+            width: 0;
+            position: absolute;
+            visibility: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LANDING -->
+    <div id="landing">
+        <div class="l-title">Broadway<br>Boogie Woogie</div>
+        <div class="l-sub">Piet Mondrian &nbsp;·&nbsp; 1942–43</div>
+        <div class="l-stripe"></div>
+        <button id="enter-btn"><span>ENTER</span></button>
+    </div>
+
+    <!-- EXPERIENCE -->
+    <div id="exp">
+        <div id="canvas">
+            <svg class="tsv">
+                <filter id="ctex" x="0%" y="0%" width="100%" height="100%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="4" stitchTiles="stitch"
+                        result="n" />
+                    <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .25 0" in="n"
+                        result="cn" />
+                    <feBlend in="SourceGraphic" in2="cn" mode="multiply" />
+                </filter>
+            </svg>
+            <div id="bflash"></div>
+            <div id="glayer"></div> <!-- main grid lines + static blocks -->
+            <div id="tlayer"></div> <!-- traffic -->
+            <!-- Text bands — clipped to their height -->
+            <div id="tb1" class="tband"></div>
+            <div id="tb2" class="tband"></div>
+            <div id="vign"></div>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="actrl">
+            <button id="mtbtn" class="atbtn muted"><i id="micon" class="fa-solid fa-volume-xmark"></i></button>
+            <div id="vu"></div>
+            <span class="albl">Soundtrack</span>
+        </div>
+    </div>
+
+    <audio id="bgm" loop crossorigin="anonymous">
+        <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        /* =====================================================================
+           PIXEL FONT  5×7 bitmaps
+        ===================================================================== */
+        const F = {
+            M: [[1, 0, 0, 0, 1], [1, 1, 0, 1, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            O: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 0]],
+            N: [[1, 0, 0, 0, 1], [1, 1, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            D: [[1, 1, 1, 0, 0], [1, 0, 0, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 1, 0], [1, 1, 1, 0, 0]],
+            R: [[1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0], [1, 0, 1, 0, 0], [1, 0, 0, 1, 0], [1, 0, 0, 0, 1]],
+            I: [[1, 1, 1, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [1, 1, 1, 1, 1]],
+            A: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            B: [[1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0]],
+            G: [[0, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 1]],
+            E: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
+            W: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 1, 0, 1], [1, 1, 0, 1, 1], [1, 0, 0, 0, 1]],
+            ' ': [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
+        };
+
+        /* =====================================================================
+           LAYOUT  (virtual 1000×1000 coords, mapped to %)
+        ===================================================================== */
+        const REF = 1000;
+        const p = v => (v / REF * 100) + '%';   // to percentage
+
+        /* Text-band pixel params */
+        const CW = 8;   // cell width
+        const CH = 9;   // cell height  (no horiz separator lines within band)
+        const LW = 3;   // column-line width
+        const CG = 4;   // extra char-gap (between letter groups)
+        // Per-char interior width: 5 cells + 4 col-lines = 5*CW + 4*LW = 40+12 = 52
+        const CI = 5 * CW + 4 * LW;  // 52
+        // Separator between chars: one col-line + extra gap
+        const CS = LW + CG;       // 7
+        // Band total height: border(LW) + 7*CH + border(LW) = 3+63+3 = 69
+        const BH = LW + 7 * CH + LW; // 69
+
+        /* Compute text band layout
+           Returns { bandX (left border x), bandW, colLines[], pixels[] }
+           pixels[i] = {bx, by, colors_idx} where bx,by are %strings within band */
+        function computeBand(text) {
+            const n = text.length;
+            // total width = LW + n*CI + (n-1)*CS + LW  [border,chars,seps,border]
+            const totalW = LW + n * CI + (n - 1) * CS + LW;
+            const startX = Math.round((REF - totalW) / 2);  // left border x in virtual units
+
+            const colLines = [];   // {x, w} in virtual units (full canvas, clipped by band overflow)
+            const pixels = [];  // {x_pct, y_pct, col_idx} — within band container
+
+            // Left border line
+            colLines.push({ x: startX, w: LW });
+
+            text.split('').forEach((ch, ci) => {
+                const charStartX = startX + LW + ci * (CI + CS); // x of first cell of char ci
+                const bitmap = F[ch] || F[' '];
+
+                // 4 internal column separator lines (between the 5 cols of this char)
+                for (let j = 1; j <= 4; j++) {
+                    const lx = charStartX + j * (CW + LW) - LW;
+                    colLines.push({ x: lx, w: LW });
+                }
+
+                // Separator line after char (except after last char — that's the right border)
+                if (ci < n - 1) {
+                    colLines.push({ x: charStartX + CI, w: LW });
+                }
+
+                // Pixel cells
+                bitmap.forEach((row, ri) => {
+                    row.forEach((cell, pi) => {
+                        if (!cell) return;
+                        const bx = (charStartX + pi * (CW + LW)) / REF * 100;  // % of full canvas
+                        const by = (LW + ri * CH) / BH * 100;                // % within band
+                        pixels.push({ bx: bx + '%', by: by + '%', cw: CW / REF * 100 + '%', ch: CH / BH * 100 + '%' });
+                    });
+                });
+            });
+
+            // Right border
+            colLines.push({ x: startX + totalW - LW, w: LW });
+
+            return { startX, bandW: totalW, colLines, pixels };
+        }
+
+        /* =====================================================================
+           MAIN MONDRIAN GRID LINES (run full height/width)
+           These run through but AROUND the text bands (bands use overflow:hidden
+           so they only show in the non-band area for main grid lines)
+        ===================================================================== */
+        const vLines = [
+            { x: 10, w: 10 }, { x: 50, w: 5 }, { x: 95, w: 8 }, { x: 165, w: 5 },
+            { x: 240, w: 7 }, { x: 315, w: 5 },
+            // gap 315-725 is dominated by text column lines
+            { x: 725, w: 5 }, { x: 785, w: 7 },
+            { x: 840, w: 5 }, { x: 895, w: 9 }, { x: 945, w: 6 }, { x: 985, w: 10 },
+        ];
+        const hLines = [
+            { y: 10, h: 10 }, { y: 45, h: 5 }, { y: 68, h: 5 },   // above top band
+            // top band borders are at y≈76 and y≈145 (see below)
+            { y: 200, h: 7 }, { y: 265, h: 5 }, { y: 330, h: 12 }, { y: 410, h: 5 },
+            { y: 480, h: 8 }, { y: 555, h: 5 }, { y: 610, h: 10 }, { y: 680, h: 5 }, { y: 740, h: 8 },
+            // bottom band borders at y≈840 and y≈909 (see below)
+            { y: 930, h: 5 }, { y: 960, h: 8 }, { y: 985, h: 10 },
+        ];
+        const staticBlocks = [
+            { x: 170, y: 80, w: 70, h: 70, c: 'bg-red' },
+            { x: 330, y: 215, w: 55, h: 45, c: 'bg-blue' },
+            { x: 600, y: 270, w: 90, h: 60, c: 'bg-red' },
+            { x: 790, y: 200, w: 45, h: 55, c: 'bg-blue' },
+            { x: 50, y: 340, w: 55, h: 90, c: 'bg-grey' },
+            { x: 240, y: 490, w: 70, h: 110, c: 'bg-white' },
+            { x: 500, y: 420, w: 55, h: 85, c: 'bg-yellow' },
+            { x: 720, y: 490, w: 55, h: 55, c: 'bg-blue' },
+            { x: 720, y: 545, w: 55, h: 12, c: 'bg-yellow' },
+            { x: 720, y: 557, w: 55, h: 43, c: 'bg-red' },
+            { x: 860, y: 560, w: 40, h: 55, c: 'bg-red' },
+            { x: 40, y: 680, w: 75, h: 65, c: 'bg-blue' },
+            { x: 820, y: 750, w: 80, h: 50, c: 'bg-red' },
+            { x: 380, y: 800, w: 65, h: 40, c: 'bg-yellow' },
+        ];
+
+        /* =====================================================================
+           DOM + BUILD
+        ===================================================================== */
+        const glayer = document.getElementById('glayer');
+        const tlayer = document.getElementById('tlayer');
+        const tb1el = document.getElementById('tb1');
+        const tb2el = document.getElementById('tb2');
+        const canvasEl = document.getElementById('canvas');
+        const vignEl = document.getElementById('vign');
+        const bflash = document.getElementById('bflash');
+
+        // Text band vertical positions
+        const BAND1_Y = 76;   // top of band 1 (MONDRIAAN)
+        const BAND2_Y = 840;  // top of band 2 (BOOGIE WOOGIE)
+
+        // Add horizontal border lines for text bands (full-width, like main hLines)
+        hLines.push({ y: BAND1_Y, h: LW });  // top border band 1
+        hLines.push({ y: BAND1_Y + BH - LW, h: LW });  // bottom border band 1
+        hLines.push({ y: BAND2_Y, h: LW });  // top border band 2
+        hLines.push({ y: BAND2_Y + BH - LW, h: LW });  // bottom border band 2
+
+        // Build main grid
+        function renderGrid() {
+            vLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'gl';
+                el.style.cssText = `left:${p(l.x)};top:0;width:${p(l.w)};height:100%;`;
+                glayer.appendChild(el);
+            });
+            hLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'gl';
+                el.style.cssText = `top:${p(l.y)};left:0;height:${p(l.h)};width:100%;`;
+                glayer.appendChild(el);
+            });
+            staticBlocks.forEach(b => {
+                const el = document.createElement('div');
+                el.className = `sb ${b.c}`;
+                el.style.cssText = `left:${p(b.x)};top:${p(b.y)};width:${p(b.w)};height:${p(b.h)};`;
+                glayer.appendChild(el);
+            });
+        }
+
+        // Color palettes for letter pixels
+        const PAL = [
+            ['#D22626', '#F8D836', '#285495', '#F8D836', '#D22626', '#F8D836'],
+            ['#F8D836', '#285495', '#F8D836', '#D22626', '#F8D836', '#285495'],
+            ['#285495', '#D22626', '#F8D836', '#285495', '#F8D836', '#D22626'],
+            ['#F8D836', '#F8D836', '#D22626', '#285495', '#F8D836', '#F8D836'],
+        ];
+        let palIdx = 0;
+
+        // Build text band: container is positioned absolutely within #canvas
+        let allLetterEls = [];
+
+        function buildBand(containerEl, text, bandY) {
+            // Position the band container
+            containerEl.style.cssText = `top:${p(bandY)};height:${p(BH)};`;
+
+            const { colLines, pixels } = computeBand(text);
+            const pal = PAL[0];
+
+            // Column separator lines (clipped to band by overflow:hidden)
+            colLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'tcol';
+                el.style.left = p(l.x);
+                el.style.width = p(l.w);
+                containerEl.appendChild(el);
+            });
+
+            // Letter pixels
+            pixels.forEach((px, i) => {
+                const el = document.createElement('div');
+                el.className = 'lpx';
+                el.style.cssText = `left:${px.bx};top:${px.by};width:${px.cw};height:${px.ch};background:${pal[i % pal.length]};`;
+                containerEl.appendChild(el);
+                allLetterEls.push(el);
+            });
+        }
+
+        /* =====================================================================
+           TRAFFIC
+        ===================================================================== */
+        const cars = [], baseSpeeds = [];
+        function buildTraffic() {
+            const COLS = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white', 'bg-red'];
+            const ANIMS = ['blink', 'crb', 'cyw', ''];
+            const CPL = 16;
+
+            function makeCar(isH, track) {
+                const spd = Math.random() * 9 + 5;
+                const rev = Math.random() > .5;
+                const anim = isH ? (rev ? 'dHr' : 'dH') : (rev ? 'dVr' : 'dV');
+                const blink = ANIMS[Math.floor(Math.random() * ANIMS.length)];
+                let style = `${anim} ${spd}s linear infinite`;
+                if (blink) style += `, ${blink} ${(.2 + Math.random() * .4).toFixed(2)}s steps(1) infinite`;
+
+                const car = document.createElement('div');
+                car.className = `car ${COLS[Math.floor(Math.random() * COLS.length)]}`;
+                if (isH) {
+                    car.style.cssText = `height:${p(track.h)};width:${p(Math.floor(Math.random() * 12) + 5)};top:${p(track.y)};left:-10%;animation:${style};animation-delay:${-(Math.random() * spd).toFixed(2)}s`;
+                } else {
+                    car.style.cssText = `width:${p(track.w)};height:${p(Math.floor(Math.random() * 12) + 5)};left:${p(track.x)};top:-10%;animation:${style};animation-delay:${-(Math.random() * spd).toFixed(2)}s`;
+                }
+                tlayer.appendChild(car);
+                cars.push(car); baseSpeeds.push(spd);
+            }
+            hLines.forEach(t => { for (let i = 0; i < CPL; i++) makeCar(true, t); });
+            vLines.forEach(t => { for (let i = 0; i < CPL; i++) makeCar(false, t); });
+        }
+
+        /* =====================================================================
+           VU METER
+        ===================================================================== */
+        const VU_N = 8;
+        const vuEls = [];
+        const vuCols = ['#F8D836', '#F8D836', '#F8D836', '#D22626', '#D22626', '#285495', '#D22626', '#F8D836'];
+        const vuDiv = document.getElementById('vu');
+        for (let i = 0; i < VU_N; i++) {
+            const s = document.createElement('div'); s.className = 'vs';
+            s.style.background = vuCols[i]; s.style.height = '4px';
+            vuDiv.appendChild(s); vuEls.push(s);
+        }
+
+        /* =====================================================================
+           AUDIO + WEB AUDIO API
+        ===================================================================== */
+        const bgm = document.getElementById('bgm');
+        const mtbtn = document.getElementById('mtbtn');
+        const micon = document.getElementById('micon');
+        let playing = false;
+        let actx, analyser, src, fdata;
+
+        function initAudio() {
+            if (actx) return;
+            actx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = actx.createAnalyser();
+            analyser.fftSize = 512;
+            fdata = new Uint8Array(analyser.frequencyBinCount); // 256
+            src = actx.createMediaElementSource(bgm);
+            src.connect(analyser);
+            analyser.connect(actx.destination);
+        }
+        function playMusic() {
+            initAudio();
+            if (actx.state === 'suspended') actx.resume();
+            bgm.play().then(() => {
+                playing = true;
+                micon.className = 'fa-solid fa-music';
+                mtbtn.classList.remove('muted');
+            }).catch(e => console.log(e));
+        }
+        mtbtn.addEventListener('click', () => {
+            if (playing) { bgm.pause(); micon.className = 'fa-solid fa-volume-xmark'; mtbtn.classList.add('muted'); playing = false; }
+            else { playMusic(); }
+        });
+
+        /* =====================================================================
+           VISUALISER
+        ===================================================================== */
+        // Smoothed values
+        let sBass = 0, sMid = 0, sTreb = 0, sEnergy = 0, sPeak = 0;
+        let lastBeat = 0, beatCooldown = 260;
+
+        // Color lerp helpers
+        const hexRgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+        const rgbHex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+        function lerpHex(a, b, t) { const A = hexRgb(a), B = hexRgb(b); return rgbHex(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t); }
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const clamp01 = v => Math.max(0, Math.min(1, v));
+        const mapR = (v, a, b, c, d) => c + (d - c) * clamp01((v - a) / (b - a));
+
+        // Letter palette transition
+        let lerpT = 1;
+        let palFrom = PAL[0].slice(), palTo = PAL[0].slice();
+
+        function onBeat(bassNorm) {
+            const now = performance.now();
+            if (now - lastBeat < beatCooldown) return;
+            lastBeat = now;
+            // Cycle palette
+            palFrom = palTo.slice();
+            palIdx = (palIdx + 1) % PAL.length;
+            palTo = PAL[palIdx];
+            lerpT = 0;
+            // Flash (intensity gated by energy)
+            const flashA = mapR(bassNorm, .6, 1, .04, .32) * sEnergy;
+            bflash.style.opacity = flashA.toFixed(3);
+            setTimeout(() => { bflash.style.opacity = '0'; }, 80);
+        }
+
+        let rafId;
+        function visualise() {
+            rafId = requestAnimationFrame(visualise);
+
+            if (!analyser || !playing) {
+                vuEls.forEach(s => { s.style.height = '4px'; });
+                return;
+            }
+            analyser.getByteFrequencyData(fdata);
+            const N = fdata.length; // 256
+
+            // Band averages (normalised 0-1)
+            let bSum = 0, mSum = 0, tSum = 0;
+            for (let i = 0; i < 12; i++)  bSum += fdata[i];
+            for (let i = 12; i < 60; i++) mSum += fdata[i];
+            for (let i = 60; i < 140; i++) tSum += fdata[i];
+            const bRaw = bSum / (12 * 255);
+            const mRaw = mSum / (48 * 255);
+            const tRaw = tSum / (80 * 255);
+            const eRaw = bRaw * .55 + mRaw * .3 + tRaw * .15;
+
+            // Smoothing — fast attack, slow decay for bass peak; gentler for others
+            const SK = .18;
+            sBass = sBass + SK * (bRaw - sBass);
+            sMid = sMid + SK * (mRaw - sMid);
+            sTreb = sTreb + SK * (tRaw - sTreb);
+            sEnergy = sEnergy + SK * (eRaw - sEnergy);
+            // Peak follower for beat detection: fast attack, slow decay
+            if (bRaw > sPeak) sPeak = bRaw;
+            else sPeak *= .96;
+
+            // Gate: below this energy level, effects are almost invisible
+            const gate = clamp01(mapR(sEnergy, .04, .35, 0, 1));
+
+            /* 1. BACKGROUND — very dark (night) to warm cream (day) */
+            const bgR = Math.round(lerp(8, 240, Math.pow(sEnergy, .55) * gate));
+            const bgG = Math.round(lerp(10, 235, Math.pow(sEnergy, .55) * gate));
+            const bgB = Math.round(lerp(10, 218, Math.pow(sEnergy, .65) * gate));
+            canvasEl.style.backgroundColor = `rgb(${bgR},${bgG},${bgB})`;
+
+            /* 2. VIGNETTE — deep at silence, lifts as energy rises */
+            const vigOp = lerp(.92, .12, Math.pow(sEnergy, .45) * gate);
+            vignEl.style.opacity = vigOp.toFixed(3);
+
+            /* 3. GRID GLOW — driven by treble, gated */
+            const glowI = mapR(sTreb * gate, 0, .6, 0, 28);
+            const glowStr = glowI > 2 ? `0 0 ${glowI.toFixed(1)}px rgba(248,216,54,${(glowI / 32).toFixed(2)})` : 'none';
+            // Apply to main grid lines only (first N elements rendered)
+            glayer.querySelectorAll('.gl').forEach(el => { el.style.boxShadow = glowStr; });
+
+            /* 4. BEAT detection — bass peaks above 75% that exceed recent average */
+            if (bRaw > .62 && bRaw > sPeak * .88 && gate > .2) onBeat(bRaw);
+
+            /* 5. LETTER PALETTE LERP */
+            if (lerpT < 1) {
+                lerpT = Math.min(1, lerpT + .1 + gate * .08);
+                const pal = palFrom.map((f, i) => lerpHex(f, palTo[i], lerpT));
+                allLetterEls.forEach((el, i) => {
+                    el.style.background = pal[i % pal.length];
+                });
+            }
+
+            /* 6. LETTER PULSATION — size + brightness ripple gated by mid energy */
+            const midGated = sMid * gate;
+            const now = performance.now();
+            allLetterEls.forEach((el, i) => {
+                // Size pulse: each letter pixel swells slightly on beats/mid energy
+                const phase = Math.sin(now * .003 + i * .55) * .5 + .5;  // 0-1 oscillation
+                const scale = lerp(1, 1 + .18 * midGated * gate, phase);
+                // Opacity: base .88, peaks at 1.0 with energy
+                const opac = lerp(.88, 1.0, midGated * .8 + phase * .15 * gate);
+                el.style.transform = `scale(${scale.toFixed(3)})`;
+                el.style.opacity = opac.toFixed(3);
+            });
+
+            /* 7. TRAFFIC SPEED — energy speeds up traffic */
+            const speedMul = mapR(sEnergy * gate, 0, .7, 1.0, .38);
+            cars.forEach((car, idx) => {
+                const tgt = (baseSpeeds[idx] * speedMul).toFixed(2);
+                const cur = car.dataset.spd || baseSpeeds[idx];
+                if (Math.abs(cur - tgt) > .12) {
+                    car.dataset.spd = tgt;
+                    const anim = car.style.animation;
+                    car.style.animation = anim.replace(/(\d+\.?\d*)s linear/, tgt + 's linear');
+                }
+            });
+
+            /* 8. VU BAR */
+            for (let i = 0; i < VU_N; i++) {
+                const bin = Math.floor(i / VU_N * 70);
+                vuEls[i].style.height = Math.max(4, Math.round(fdata[bin] / 255 * 26)) + 'px';
+            }
+        }
+
+        /* =====================================================================
+           ENTER
+        ===================================================================== */
+        const landing = document.getElementById('landing');
+        const exp = document.getElementById('exp');
+        const hud = document.getElementById('hud');
+
+        // Pre-build while user sees landing
+        renderGrid();
+        buildBand(tb1el, 'MONDRIAAN', BAND1_Y);
+        buildBand(tb2el, 'BOOGIE WOOGIE', BAND2_Y);
+        buildTraffic();
+
+        document.getElementById('enter-btn').addEventListener('click', () => {
+            landing.classList.add('gone');
+            exp.classList.add('on');
+            hud.classList.add('on');
+            playMusic();
+            visualise();
+        });
+    </script>
+</body>
+
+</html>

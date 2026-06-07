@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondriaan Boogie Woogie</title>
+    <meta name="description"
+        content="An interactive digital reimagining of Piet Mondrian's Broadway Boogie Woogie — a living, breathing grid of color and motion.">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Montserrat:wght@900&family=Tilt+Neon&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836;
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: #020404;
+            overflow: hidden;
+            font-family: 'Poiret One', cursive;
+        }
+
+        /* ============================================================
+           LANDING SCREEN
+        ============================================================ */
+        #landing {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            background: radial-gradient(ellipse at center, #1a2a26 0%, #090f0e 60%, #020404 100%);
+            transition: opacity 1.4s ease, visibility 1.4s ease;
+            cursor: pointer;
+        }
+
+        #landing.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .landing-title {
+            color: #e6dec8;
+            font-size: clamp(22px, 4.5vw, 68px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.15;
+            margin-bottom: 8px;
+            text-shadow: 0 0 60px rgba(248, 216, 54, 0.18);
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 1.2s ease, transform 1.2s ease;
+        }
+
+        .landing-title.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .landing-stripe {
+            width: clamp(180px, 36vw, 440px);
+            height: 5px;
+            background: linear-gradient(90deg, #D22626 0% 33%, #285495 33% 66%, #F8D836 66% 100%);
+            margin: 24px 0 48px;
+            opacity: 0;
+            transition: opacity 1.2s ease 0.4s;
+        }
+
+        .landing-stripe.show {
+            opacity: 0.85;
+        }
+
+        #enter-btn {
+            background: transparent;
+            border: 2px solid var(--m-yellow);
+            color: var(--m-yellow);
+            font-family: 'Poiret One', cursive;
+            font-size: clamp(13px, 1.8vw, 20px);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            padding: 16px 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s ease;
+            opacity: 0;
+        }
+
+        #enter-btn.show {
+            opacity: 1;
+        }
+
+        #enter-btn:hover {
+            background: var(--m-yellow);
+            color: #1a1a1a;
+            box-shadow: 0 0 50px rgba(248, 216, 54, 0.4);
+        }
+
+        /* ============================================================
+           MAIN STAGE (SCREEN FILLER)
+        ============================================================ */
+        #stage {
+            position: absolute;
+            inset: 0;
+            background-color: var(--m-white);
+            display: none;
+            opacity: 0;
+            transition: opacity 3s ease, background-color 3s ease;
+            overflow: hidden;
+            filter: contrast(1.05) brightness(0.98);
+        }
+
+        #stage.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Viewport wrap keeps composition centered while lines extend */
+        #viewport-wrap {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #composition-layer,
+        #block-layer,
+        #grid-layer,
+        #traffic-layer,
+        #letter-layer,
+        #texture-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        #block-layer,
+        #grid-layer {
+            transition: filter 3s ease;
+        }
+
+        #stage.night #block-layer,
+        #stage.night #grid-layer {
+            filter: brightness(0.35);
+            /* Darkens mostly grid and blocks during night */
+        }
+
+        #texture-layer {
+            z-index: 250;
+            pointer-events: none;
+            opacity: 0.12;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .grid-line {
+            position: absolute;
+            background-color: var(--m-yellow);
+            z-index: 10;
+            opacity: 1;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        }
+
+        .grid-line.v {
+            transform-origin: top;
+            transform: scaleY(0);
+        }
+
+        .grid-line.h {
+            transform-origin: left;
+            transform: scaleX(0);
+        }
+
+        .grid-line.visible {
+            transform: scale(1) !important;
+        }
+
+        .static-block {
+            position: absolute;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 1.5s ease, transform 0.1s ease, filter 0.1s ease, background-color 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .static-block.visible {
+            opacity: 1;
+        }
+
+        .letter-block {
+            position: absolute;
+            z-index: 20;
+            /* Above grid lines */
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.95);
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transition: opacity 1s ease, transform 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .letter-block.visible {
+            opacity: 1;
+        }
+
+        /* Night Mode Letters */
+        #stage.night .letter-block {
+            filter: brightness(0.35);
+            transition: filter 3s ease;
+        }
+
+        #stage.night .letter-block.bg-red span {
+            --neon-color: #ff4d4d;
+            --neon-glow: #ff0000;
+        }
+
+        #stage.night .letter-block.bg-blue span {
+            --neon-color: #80b3ff;
+            --neon-glow: #0066ff;
+        }
+
+        #stage.night .letter-block.bg-yellow span {
+            --neon-color: #ffeb80;
+            --neon-glow: #ffcc00;
+        }
+
+        #stage.night .letter-block span {
+            font-family: 'Tilt Neon', sans-serif;
+            font-weight: normal;
+            animation: text-fade-then-neon 3s forwards;
+            animation-delay: 0s;
+        }
+
+        @keyframes text-fade-then-neon {
+            0% {
+                color: rgba(255, 255, 255, 0.95);
+                text-shadow: none;
+                opacity: 1;
+            }
+
+            30% {
+                color: transparent;
+                text-shadow: none;
+                opacity: 0;
+            }
+
+            40% {
+                color: transparent;
+                text-shadow: none;
+                opacity: 0;
+            }
+
+            45% {
+                color: var(--neon-color);
+                text-shadow: 0 0 5px var(--neon-color), 0 0 10px var(--neon-glow);
+                opacity: 1;
+            }
+
+            50% {
+                color: transparent;
+                text-shadow: none;
+                opacity: 0;
+            }
+
+            55% {
+                color: var(--neon-color);
+                text-shadow: 0 0 10px var(--neon-color), 0 0 20px var(--neon-glow);
+                opacity: 1;
+            }
+
+            60% {
+                color: transparent;
+                text-shadow: none;
+                opacity: 0;
+            }
+
+            65% {
+                color: var(--neon-color);
+                text-shadow: 0 0 10px var(--neon-color), 0 0 30px var(--neon-glow);
+                opacity: 1;
+            }
+
+            75% {
+                color: transparent;
+                text-shadow: none;
+                opacity: 0;
+            }
+
+            100% {
+                color: #fff;
+                text-shadow: 0 0 4px #fff, 0 0 10px var(--neon-color), 0 0 30px var(--neon-glow), 0 0 60px var(--neon-glow);
+                opacity: 1;
+            }
+        }
+
+        .bg-red {
+            background-color: #D22626;
+        }
+
+        .bg-blue {
+            background-color: #285495;
+        }
+
+        .bg-yellow {
+            background-color: #F8D836;
+        }
+
+        .letter-block.bg-red {
+            background-color: #B21B1B;
+        }
+
+        /* Slightly darker */
+        .letter-block.bg-blue {
+            background-color: #1F4278;
+        }
+
+        .letter-block.bg-yellow {
+            background-color: #D6B928;
+        }
+
+        .bg-grey {
+            background-color: #C8C8C8;
+        }
+
+        .bg-white {
+            background-color: #f4f4f4;
+        }
+
+        /* --- TRAFFIC --- */
+        .car {
+            position: absolute;
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .car.visible {
+            opacity: 1;
+        }
+
+        #stage.night .car.bg-red {
+            box-shadow: 0 0 15px rgba(210, 38, 38, 0.8);
+        }
+
+        #stage.night .car.bg-blue {
+            box-shadow: 0 0 15px rgba(40, 84, 149, 0.8);
+        }
+
+        #stage.night .car.bg-yellow {
+            box-shadow: 0 0 15px rgba(248, 216, 54, 0.8);
+        }
+
+        #stage.night .car.bg-white {
+            box-shadow: 0 0 15px rgba(244, 244, 244, 0.8);
+        }
+
+        #stage.night .car.bg-grey {
+            box-shadow: 0 0 15px rgba(200, 200, 200, 0.8);
+        }
+
+        @keyframes driveH {
+            from {
+                left: -15%;
+            }
+
+            to {
+                left: 115%;
+            }
+        }
+
+        @keyframes driveHRev {
+            from {
+                left: 115%;
+            }
+
+            to {
+                left: -15%;
+            }
+        }
+
+        @keyframes driveV {
+            from {
+                top: -15%;
+            }
+
+            to {
+                top: 115%;
+            }
+        }
+
+        @keyframes driveVRev {
+            from {
+                top: 115%;
+            }
+
+            to {
+                top: -15%;
+            }
+        }
+
+        /* --- HUD & FX --- */
+        #vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
+            mix-blend-mode: multiply;
+            transition: background 0.2s ease;
+        }
+
+        #audio-ctrl {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            pointer-events: all;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(5px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        #audio-ctrl:hover {
+            color: var(--m-red);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        #vu-meter {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 18px;
+        }
+
+        .vu-bin {
+            width: 3px;
+            background: var(--m-red);
+            height: 2px;
+            transition: height 0.05s ease;
+        }
+
+        #beat-flash {
+            position: absolute;
+            inset: 0;
+            z-index: 190;
+            pointer-events: none;
+            opacity: 0;
+            background: rgba(248, 216, 54, 0.15);
+            transition: opacity 0.05s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="landing">
+        <h1 class="landing-title" id="landing-title">Mondriaan<br>Boogie Woogie</h1>
+        <div class="landing-stripe" id="landing-stripe"></div>
+        <button id="enter-btn">ENTER</button>
+    </div>
+
+    <div id="stage">
+        <div id="beat-flash"></div>
+        <div id="viewport-wrap">
+            <div id="composition-layer">
+                <div id="block-layer" style="z-index: 10;"></div>
+                <div id="letter-layer" style="z-index: 20;"></div>
+                <div id="grid-layer" style="z-index: 30;"></div>
+            </div>
+        </div>
+        <div id="traffic-layer" style="z-index: 40;"></div>
+        <div id="texture-layer"></div>
+        <div id="vignette"></div>
+
+        <div id="audio-ctrl">
+            <span style="font-size: 10px; letter-spacing: 2px; font-weight: bold;">AUDIO</span>
+            <div id="vu-meter"></div>
+            <i id="volume-icon" class="fa-solid fa-volume-high"></i>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop crossorigin="anonymous">
+        <source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const landing = document.getElementById('landing');
+        const enterBtn = document.getElementById('enter-btn');
+        const stage = document.getElementById('stage');
+        const blockLayer = document.getElementById('block-layer');
+        const gridLayer = document.getElementById('grid-layer');
+        const trafficLayer = document.getElementById('traffic-layer');
+        const letterLayer = document.getElementById('letter-layer');
+        const audio = document.getElementById('bg-music');
+        const volIcon = document.getElementById('volume-icon');
+        const beatFlash = document.getElementById('beat-flash');
+
+        // FONT removed, using squares with letters instead
+
+        // --- GRID CONFIG (from c1.html normalized to 1000) ---
+        const vLines = [
+            { x: 15, w: 12 }, { x: 45, w: 6 }, { x: 80, w: 10 }, { x: 130, w: 6 },
+            { x: 200, w: 8 }, { x: 265, w: 6 }, { x: 380, w: 14 }, { x: 480, w: 6 },
+            { x: 540, w: 8 }, { x: 650, w: 10 }, { x: 710, w: 6 }, { x: 760, w: 8 },
+            { x: 830, w: 6 }, { x: 880, w: 10 }, { x: 940, w: 8 }, { x: 980, w: 12 },
+        ];
+        const hLines = [
+            { y: 15, h: 12 }, { y: 50, h: 6 }, { y: 90, h: 10 }, { y: 160, h: 8 },
+            { y: 220, h: 6 }, { y: 310, h: 14 }, { y: 420, h: 6 }, { y: 500, h: 8 },
+            { y: 580, h: 10 }, { y: 640, h: 6 }, { y: 700, h: 8 }, { y: 770, h: 6 },
+            { y: 820, h: 10 }, { y: 870, h: 8 }, { y: 940, h: 12 }, { y: 975, h: 6 },
+        ];
+        const staticBlocks = [
+            { x: 390, y: 60, w: 80, h: 40, c: 'bg-red' },
+            { x: 565, y: 225, w: 60, h: 100, c: 'bg-blue' },
+            { x: 580, y: 260, w: 30, h: 50, c: 'bg-red' },
+            { x: 130, y: 320, w: 70, h: 40, c: 'bg-red' },
+            { x: 660, y: 510, w: 50, h: 50, c: 'bg-blue' },
+            { x: 660, y: 560, w: 50, h: 10, c: 'bg-yellow' },
+            { x: 660, y: 570, w: 50, h: 40, c: 'bg-red' },
+            { x: 770, y: 600, w: 40, h: 50, c: 'bg-red' },
+            { x: 130, y: 100, w: 70, h: 80, c: 'bg-grey' },
+            { x: 206, y: 430, w: 60, h: 90, c: 'bg-white' },
+            { x: 486, y: 320, w: 55, h: 90, c: 'bg-yellow' },
+            { x: 270, y: 580, w: 110, h: 50, c: 'bg-grey' },
+            { x: 835, y: 160, w: 45, h: 60, c: 'bg-blue' },
+            { x: 850, y: 830, w: 90, h: 50, c: 'bg-red' },
+            { x: 50, y: 700, w: 80, h: 70, c: 'bg-blue' },
+            { x: 420, y: 820, w: 60, h: 50, c: 'bg-yellow' },
+        ];
+
+        let isPlaying = false;
+        let wakeLock = null;
+
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+            }
+        };
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible' && isPlaying) {
+                await requestWakeLock();
+            }
+        });
+
+        let audioCtx, analyser, dataArray, srcNode;
+        let startTime = 0;
+        const gridEls = [];
+        const blockEls = [];
+        const letterEls = [];
+        const cars = [];
+        let allV = [], allH = [];
+
+        const REF = 1000;
+        function getS() { return Math.min(window.innerWidth, window.innerHeight); }
+
+        function getInnerCell(rx, ry) {
+            let vL = allV[0], vR = allV[allV.length - 1];
+            let hT = allH[0], hB = allH[allH.length - 1];
+            for (let i = 0; i < allV.length - 1; i++) {
+                if (rx >= allV[i].x && rx < allV[i + 1].x) { vL = allV[i]; vR = allV[i + 1]; break; }
+            }
+            for (let i = 0; i < allH.length - 1; i++) {
+                if (ry >= allH[i].y && ry < allH[i + 1].y) { hT = allH[i]; hB = allH[i + 1]; break; }
+            }
+            if (!vL || !vR || !hT || !hB) return null;
+            return {
+                x: vL.x + vL.w,
+                y: hT.y + hT.h,
+                w: Math.max(0, vR.x - (vL.x + vL.w)),
+                h: Math.max(0, hB.y - (hT.y + hT.h))
+            };
+        }
+
+        function initGrid() {
+            gridLayer.innerHTML = '';
+            blockLayer.innerHTML = '';
+            gridEls.length = 0;
+            blockEls.length = 0;
+
+            const S = getS();
+            const unitsX = (window.innerWidth / S) * REF;
+            const unitsY = (window.innerHeight / S) * REF;
+            const xMin = 500 - unitsX / 2;
+            const xMax = 500 + unitsX / 2;
+            const yMin = 500 - unitsY / 2;
+            const yMax = 500 + unitsY / 2;
+
+            // --- Fullscreen Vertical Lines ---
+            allV = [...vLines];
+            // Fill left
+            let currX = vLines[0].x;
+            while (currX > xMin - 100) {
+                currX -= (35 + Math.random() * 40);
+                allV.unshift({ x: currX, w: 6 + Math.random() * 6 });
+            }
+            // Fill right
+            currX = vLines[vLines.length - 1].x;
+            while (currX < xMax + 100) {
+                currX += (35 + Math.random() * 40);
+                allV.push({ x: currX, w: 6 + Math.random() * 6 });
+            }
+
+            // --- Fullscreen Horizontal Lines ---
+            allH = [...hLines];
+            // Fill top
+            let currY = hLines[0].y;
+            while (currY > yMin - 100) {
+                currY -= (40 + Math.random() * 50);
+                allH.unshift({ y: currY, h: 6 + Math.random() * 6 });
+            }
+            // Fill bottom
+            currY = hLines[hLines.length - 1].y;
+            while (currY < yMax + 100) {
+                currY += (40 + Math.random() * 50);
+                allH.push({ y: currY, h: 6 + Math.random() * 6 });
+            }
+
+            allV.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line v';
+                el.style.left = `calc(50% + (${l.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.width = `calc(${l.w} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.top = '0';
+                el.style.height = '100%';
+                gridLayer.appendChild(el);
+                gridEls.push(el);
+            });
+            allH.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line h';
+                el.style.top = `calc(50% + (${l.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.height = `calc(${l.h} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.left = '0';
+                el.style.width = '100%';
+                gridLayer.appendChild(el);
+                gridEls.push(el);
+            });
+
+            const extraBlocks = [];
+            for (let i = 0; i < 20; i++) {
+                let rx = xMin + Math.random() * (xMax - xMin);
+                let ry = yMin + Math.random() * (yMax - yMin);
+                if (rx > 50 && rx < 950 && ry > 50 && ry < 950) continue; // Outside composed area
+
+                extraBlocks.push({
+                    x: rx, y: ry,
+                    w: 10, h: 10, // Doesn't matter, we use the center point to snap
+                    c: ['bg-red', 'bg-blue', 'bg-yellow'][Math.floor(Math.random() * 3)]
+                });
+            }
+
+            staticBlocks.forEach(b => {
+                const el = document.createElement('div');
+                el.className = `static-block ${b.c}`;
+                el.style.left = `calc(50% + (${b.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.top = `calc(50% + (${b.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.width = `calc(${b.w} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.height = `calc(${b.h} * (min(100vw, 100vh) / ${REF}))`;
+                blockLayer.appendChild(el);
+                blockEls.push(el);
+            });
+
+            extraBlocks.forEach(b => {
+                const cell = getInnerCell(b.x + b.w / 2, b.y + b.h / 2);
+                if (!cell || cell.w <= 0 || cell.h <= 0) return;
+
+                const el = document.createElement('div');
+                el.className = `static-block ${b.c}`;
+                el.style.left = `calc(50% + (${cell.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.top = `calc(50% + (${cell.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                el.style.width = `calc(${cell.w} * (min(100vw, 100vh) / ${REF}))`;
+                el.style.height = `calc(${cell.h} * (min(100vw, 100vh) / ${REF}))`;
+                blockLayer.appendChild(el);
+                blockEls.push(el);
+            });
+        }
+
+        function renderLetters() {
+            letterLayer.innerHTML = '';
+            letterEls.length = 0;
+
+            // Map each word to exact grid cells to prevent overlapping and guarantee a perfect snap
+            const words = [
+                { text: 'MONDRIAAN', yIndex: 4, xIndex: 1, color: 'bg-red' }, // Moved 1 slot left
+                { text: 'BOOGIE', yIndex: 7, xIndex: 1, color: 'bg-blue' },
+                { text: 'WOOGIE', yIndex: 7, xIndex: 8, color: 'bg-yellow' } // Same line as BOOGIE
+            ];
+
+            words.forEach(word => {
+                const chars = word.text.split('');
+                const hT = hLines[word.yIndex];
+                const hB = hLines[word.yIndex + 1];
+
+                chars.forEach((ch, ci) => {
+                    const vL = vLines[word.xIndex + ci];
+                    const vR = vLines[word.xIndex + ci + 1];
+
+                    if (!vL || !vR || !hT || !hB) return;
+
+                    const cell = {
+                        x: vL.x + vL.w,
+                        y: hT.y + hT.h,
+                        w: Math.max(0, vR.x - (vL.x + vL.w)),
+                        h: Math.max(0, hB.y - (hT.y + hT.h))
+                    };
+
+                    const el = document.createElement('div');
+                    el.className = `letter-block ${word.color}`;
+
+                    el.style.left = `calc(50% + (${cell.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    el.style.top = `calc(50% + (${cell.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    el.style.width = `calc(${cell.w} * (min(100vw, 100vh) / ${REF}))`;
+                    el.style.height = `calc(${cell.h} * (min(100vw, 100vh) / ${REF}))`;
+
+                    // Scale font to uniquely fit the irregular proportions of each target cell
+                    const minDim = Math.min(cell.w, cell.h) * 0.7;
+                    el.style.fontSize = `calc(${minDim} * (min(100vw, 100vh) / ${REF}))`;
+                    el.innerHTML = `<span>${ch}</span>`;
+
+                    letterLayer.appendChild(el);
+                    letterEls.push(el);
+                });
+            });
+        }
+
+        function createTraffic() {
+            const colors = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white', 'bg-red'];
+            // Faster base speed (cars take 4 to 12s)
+            const speedFactor = 0.4;
+
+            hLines.forEach(l => {
+                const count = 6; // Reduced from 12 to 6
+                const dir = Math.random() > 0.5;
+                for (let i = 0; i < count; i++) {
+                    const car = document.createElement('div');
+                    // Base generation speed between 5s and 15s to traverse screen
+                    const speed = (Math.random() * 20 + 10) * speedFactor;
+                    car.className = `car ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    car.style.top = `calc(50% + (${l.y - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    car.style.height = `calc(${l.h} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.width = `calc(${(Math.random() * 40 + 20)} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.animation = `${dir ? 'driveH' : 'driveHRev'} ${speed}s ease-in-out infinite`;
+                    car.style.animationDelay = `-${Math.random() * speed}s`;
+                    car.dataset.baseSpeed = speed;
+                    trafficLayer.appendChild(car);
+                    cars.push(car);
+                }
+            });
+
+            vLines.forEach(l => {
+                const count = 6; // Reduced from 12 to 6
+                const dir = Math.random() > 0.5;
+                for (let i = 0; i < count; i++) {
+                    const car = document.createElement('div');
+                    const speed = (Math.random() * 20 + 10) * speedFactor;
+                    car.className = `car ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    car.style.left = `calc(50% + (${l.x - 500} * (min(100vw, 100vh) / ${REF})))`;
+                    car.style.width = `calc(${l.w} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.height = `calc(${(Math.random() * 40 + 20)} * (min(100vw, 100vh) / ${REF}))`;
+                    car.style.animation = `${dir ? 'driveV' : 'driveVRev'} ${speed}s ease-in-out infinite`;
+                    car.style.animationDelay = `-${Math.random() * speed}s`;
+                    car.dataset.baseSpeed = speed;
+                    trafficLayer.appendChild(car);
+                    cars.push(car);
+                }
+            });
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            srcNode = audioCtx.createMediaElementSource(audio);
+            srcNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            const vuMeter = document.getElementById('vu-meter');
+            for (let i = 0; i < 12; i++) {
+                const b = document.createElement('div');
+                b.className = 'vu-bin';
+                vuMeter.appendChild(b);
+                vuBins.push(b); // Cache reference
+            }
+        }
+
+        let smoothBass = 0;
+        let smoothEnergy = 0;
+        let globalTrafficRate = 1.0;
+        let vuBins = []; // Cached reference, populated after initAudio
+
+        let buildStarted = false;
+        let revealStage = 0;
+        let revealIdx = 0;
+        let lastHitTime = 0;
+        let trafficStallUntil = 0;
+        let lastTrafficSpeedMod = null; // Track last applied speed to avoid redundant style writes
+
+        function startBuild() {
+            if (buildStarted) return;
+            buildStarted = true;
+            revealStage = 1; // 1: Grid, 2: Blocks, 3: Letters, 4: Traffic
+            revealIdx = 0;
+        }
+
+        function update() {
+            requestAnimationFrame(update);
+            const elapsed = (Date.now() - startTime) / 1000;
+
+            if (isPlaying) startBuild();
+
+            if (!analyser || audio.paused || audio.muted) return;
+
+            analyser.getByteFrequencyData(dataArray);
+
+            let bass = 0; for (let i = 0; i < 8; i++) bass += dataArray[i]; bass /= 8;
+            let energy = 0; for (let i = 0; i < 32; i++) energy += dataArray[i]; energy /= 32;
+
+            const SK = 0.15;
+            smoothBass = smoothBass + SK * (bass / 255 - smoothBass);
+            smoothEnergy = smoothEnergy + SK * (energy / 255 - smoothEnergy);
+
+            // Day / Night cycle (more frequent)
+            const cycleDuration = 30;
+            const cyclePhase = elapsed % (cycleDuration * 2);
+            const isNight = cyclePhase > cycleDuration;
+            stage.style.backgroundColor = isNight ? '#143b40' : '#f4f4f4';
+            if (isNight) {
+                stage.classList.add('night');
+            } else {
+                stage.classList.remove('night');
+            }
+
+            // --- RHYTHM-DRIVEN REVEAL (lower threshold, larger batches = faster build) ---
+            const now = Date.now();
+            const threshold = 0.25; // Was 0.45 — lower means reveals trigger much more readily
+            if (smoothBass > threshold && now - lastHitTime > 80) {
+                lastHitTime = now;
+                if (revealStage === 1) {
+                    const batch = 8; // Was 4
+                    for (let i = 0; i < batch; i++) {
+                        if (revealIdx < gridEls.length) {
+                            gridEls[revealIdx].classList.add('visible');
+                            revealIdx++;
+                        }
+                    }
+                    if (revealIdx >= gridEls.length) { revealStage = 2; revealIdx = 0; }
+                } else if (revealStage === 2) {
+                    const batch = 5; // Was 3
+                    for (let i = 0; i < batch; i++) {
+                        if (revealIdx < blockEls.length) {
+                            blockEls[revealIdx].classList.add('visible');
+                            revealIdx++;
+                        }
+                    }
+                    if (revealIdx >= blockEls.length) { revealStage = 3; revealIdx = 0; }
+                } else if (revealStage === 3) {
+                    const batch = 5; // Was 3
+                    for (let i = 0; i < batch; i++) {
+                        if (revealIdx < letterEls.length) {
+                            letterEls[revealIdx].classList.add('visible');
+                            revealIdx++;
+                        }
+                    }
+                    if (revealIdx >= letterEls.length) { revealStage = 4; revealIdx = 0; }
+                } else if (revealStage === 4) {
+                    if (revealIdx < cars.length) {
+                        const batch = Math.min(12, cars.length - revealIdx);
+                        for (let i = 0; i < batch; i++) {
+                            cars[revealIdx].classList.add('visible');
+                            revealIdx++;
+                        }
+                    } else { revealStage = 5; }
+                }
+            }
+
+            const responseScale = elapsed < 10 ? 0.3 + (elapsed / 10) * 0.7 : 1.0;
+            const hasBeat = elapsed >= 12;
+
+            // Traffic speed modulation & Stall
+            const tfPeriod = 60;
+            const tfPhase = elapsed % tfPeriod;
+            const isContinuousFlow = tfPhase >= (tfPeriod - 20);
+
+            const rawBassNorm = bass / 255;
+
+            let justHit = false;
+            if (hasBeat && (rawBassNorm > 0.85 || rawBassNorm - smoothBass > 0.06) && !isContinuousFlow && (now > trafficStallUntil + 180)) {
+                trafficStallUntil = now + 180;
+                justHit = true;
+            }
+
+            const isStalled = now < trafficStallUntil;
+            const targetRate = isStalled ? 0.05 : 1.0;
+            globalTrafficRate += (targetRate - globalTrafficRate) * 0.15;
+
+            // Static blocks: only update filter, skip redundant scale(1) writes
+            const brightnessVal = (1 + smoothBass * 0.4 * responseScale).toFixed(2);
+            const blockFilter = `brightness(${brightnessVal})`;
+            blockEls.forEach(b => {
+                b.style.filter = blockFilter; // Same string for all — browser dedupes
+            });
+
+            // Beat-driven color change
+            if (justHit) {
+                const colors = ['bg-red', 'bg-blue', 'bg-yellow'];
+                const numToChange = 3 + Math.floor(Math.random() * 3);
+                for (let k = 0; k < numToChange; k++) {
+                    const idx = Math.floor(Math.random() * blockEls.length);
+                    const b = blockEls[idx];
+                    b.className = `static-block ${colors[Math.floor(Math.random() * 3)]} visible`;
+                }
+            }
+
+            // Letter blocks scale pump
+            const letterScale = (1.0 + (smoothEnergy * 0.18 * responseScale)).toFixed(3);
+            const letterTransform = `scale(${letterScale})`;
+            letterEls.forEach(b => {
+                b.style.transform = letterTransform;
+            });
+
+            // Grid lines glow — only update when value actually changes meaningfully
+            const glowIntensity = Math.round(smoothEnergy * 20 * responseScale);
+            const glowChanged = Math.abs(glowIntensity - (update._lastGlow || 0)) > 1;
+            if (glowChanged) {
+                update._lastGlow = glowIntensity;
+                const shadow = glowIntensity > 2
+                    ? `0 0 ${glowIntensity}px rgba(248, 216, 54, ${(smoothEnergy * 0.5).toFixed(2)})`
+                    : 'none';
+                gridEls.forEach(el => { el.style.boxShadow = shadow; });
+            }
+
+            // Traffic: batch playback rate update only when globalTrafficRate changed meaningfully
+            const rateChanged = Math.abs(globalTrafficRate - (update._lastRate || 1)) > 0.01;
+            if (rateChanged) {
+                update._lastRate = globalTrafficRate;
+                const rate = globalTrafficRate;
+                cars.forEach(car => {
+                    car.getAnimations().forEach(anim => { anim.playbackRate = rate; });
+                });
+            }
+
+            // Continuous flow mode — set animation durations once per mode change
+            if (isContinuousFlow !== update._lastFlowMode) {
+                update._lastFlowMode = isContinuousFlow;
+                cars.forEach(car => {
+                    const base = parseFloat(car.dataset.baseSpeed);
+                    const mod = isContinuousFlow ? 1.5 + (Math.random() * 0.8) : 1.0;
+                    car.style.animationDuration = `${base / mod}s`;
+                });
+            }
+
+            // Beat flash
+            if (hasBeat && smoothBass > 0.65) {
+                beatFlash.style.opacity = (smoothBass * 0.2).toFixed(2);
+                setTimeout(() => { beatFlash.style.opacity = '0'; }, 50);
+            }
+
+            // Vignette — throttle to every 3 frames
+            update._vignetteFrame = ((update._vignetteFrame || 0) + 1) % 3;
+            if (update._vignetteFrame === 0) {
+                const vIntensity = (0.6 + (smoothEnergy * 0.25 * responseScale)).toFixed(2);
+                document.getElementById('vignette').style.background =
+                    `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${vIntensity}) 100%)`;
+            }
+
+            // VU Meter — use cached vuBins array
+            vuBins.forEach((bin, i) => {
+                const val = (dataArray[i * 4] / 255) * 20;
+                bin.style.height = `${val.toFixed(1)}px`;
+                bin.style.opacity = (0.4 + (val / 20) * 0.6).toFixed(2);
+            });
+        }
+
+        enterBtn.addEventListener('click', () => {
+            startTime = Date.now();
+            isPlaying = true; // Added to trigger build
+            requestWakeLock();
+            landing.classList.add('hidden');
+            stage.classList.add('active');
+            initAudio();
+            audio.play().catch(e => console.log("Audio gesture required"));
+            initGrid();
+            renderLetters();
+            createTraffic();
+            update();
+        });
+
+        setTimeout(() => document.getElementById('landing-title').classList.add('show'), 400);
+        setTimeout(() => document.getElementById('landing-stripe').classList.add('show'), 800);
+        setTimeout(() => enterBtn.classList.add('show'), 1200);
+
+        document.getElementById('audio-ctrl').addEventListener('click', () => {
+            audio.muted = !audio.muted;
+            volIcon.className = audio.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mondriaan Boogie Woogie</title>
+
+<style>
+
+/* --- colors --- */
+
+:root{
+--yellow:#F8D836;
+--red:#D22626;
+--blue:#285495;
+--grey:#C8C8C8;
+--white:#f4f4f4;
+}
+
+body{
+margin:0;
+background:#020404;
+overflow:hidden;
+font-family:sans-serif;
+}
+
+/* stage */
+
+#stage{
+position:absolute;
+inset:0;
+background:#f4f4f4;
+overflow:hidden;
+}
+
+/* layers */
+
+.layer{
+position:absolute;
+inset:0;
+}
+
+.grid-line{
+position:absolute;
+background:var(--yellow);
+z-index:10;
+}
+
+.static-block{
+position:absolute;
+z-index:5;
+opacity:.9;
+transition:transform .2s ease, filter .2s ease;
+}
+
+.car{
+position:absolute;
+z-index:20;
+transition:transform .15s linear;
+}
+
+/* colors */
+
+.bg-red{background:var(--red);}
+.bg-blue{background:var(--blue);}
+.bg-yellow{background:var(--yellow);}
+.bg-grey{background:var(--grey);}
+.bg-white{background:var(--white);}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="stage">
+
+<div id="grid-layer" class="layer"></div>
+<div id="block-layer" class="layer"></div>
+<div id="traffic-layer" class="layer"></div>
+
+</div>
+
+<audio id="music" loop crossorigin="anonymous">
+<source src="../assets/audio/ParadoxPrime-MBW.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+
+/* --------------------------------------------------
+setup
+-------------------------------------------------- */
+
+const stage=document.getElementById("stage")
+const gridLayer=document.getElementById("grid-layer")
+const blockLayer=document.getElementById("block-layer")
+const trafficLayer=document.getElementById("traffic-layer")
+
+const audio=document.getElementById("music")
+
+const REF=1000
+
+let cars=[]
+let blocks=[]
+
+/* --------------------------------------------------
+grid
+-------------------------------------------------- */
+
+const vLines=[
+{ x:15,w:12 },{ x:45,w:6 },{ x:80,w:10 },{ x:130,w:6 },
+{ x:200,w:8 },{ x:265,w:6 },{ x:380,w:14 },{ x:480,w:6 },
+{ x:540,w:8 },{ x:650,w:10 },{ x:710,w:6 },{ x:760,w:8 },
+{ x:830,w:6 },{ x:880,w:10 },{ x:940,w:8 },{ x:980,w:12 }
+]
+
+const hLines=[
+{ y:15,h:12 },{ y:50,h:6 },{ y:90,h:10 },{ y:160,h:8 },
+{ y:220,h:6 },{ y:310,h:14 },{ y:420,h:6 },{ y:500,h:8 },
+{ y:580,h:10 },{ y:640,h:6 },{ y:700,h:8 },{ y:770,h:6 },
+{ y:820,h:10 },{ y:870,h:8 },{ y:940,h:12 },{ y:975,h:6 }
+]
+
+function scale(v){
+return `calc(${v}*(min(100vw,100vh)/${REF}))`
+}
+
+/* --------------------------------------------------
+draw grid
+-------------------------------------------------- */
+
+function drawGrid(){
+
+vLines.forEach(l=>{
+let el=document.createElement("div")
+el.className="grid-line"
+
+el.style.left=`calc(50% + (${l.x-500}*(min(100vw,100vh)/${REF})))`
+el.style.width=scale(l.w)
+el.style.height="100%"
+el.style.top="0"
+
+gridLayer.appendChild(el)
+})
+
+hLines.forEach(l=>{
+let el=document.createElement("div")
+el.className="grid-line"
+
+el.style.top=`calc(50% + (${l.y-500}*(min(100vw,100vh)/${REF})))`
+el.style.height=scale(l.h)
+el.style.width="100%"
+el.style.left="0"
+
+gridLayer.appendChild(el)
+})
+
+}
+
+/* --------------------------------------------------
+cells
+-------------------------------------------------- */
+
+function getCell(ix,iy){
+
+let vL=vLines[ix]
+let vR=vLines[ix+1]
+
+let hT=hLines[iy]
+let hB=hLines[iy+1]
+
+return{
+
+x:vL.x+vL.w,
+y:hT.y+hT.h,
+w:vR.x-(vL.x+vL.w),
+h:hB.y-(hT.y+hT.h)
+
+}
+
+}
+
+/* --------------------------------------------------
+blocks
+-------------------------------------------------- */
+
+function createBlock(){
+
+let ix=Math.floor(Math.random()*(vLines.length-1))
+let iy=Math.floor(Math.random()*(hLines.length-1))
+
+let cell=getCell(ix,iy)
+
+if(cell.w<15||cell.h<15)return
+
+const colors=["bg-red","bg-blue","bg-yellow","bg-grey","bg-white"]
+
+let el=document.createElement("div")
+
+el.className=`static-block ${colors[Math.floor(Math.random()*colors.length)]}`
+
+el.style.left=`calc(50% + (${cell.x-500}*(min(100vw,100vh)/${REF})))`
+el.style.top=`calc(50% + (${cell.y-500}*(min(100vw,100vh)/${REF})))`
+
+el.style.width=scale(cell.w)
+el.style.height=scale(cell.h)
+
+blockLayer.appendChild(el)
+
+blocks.push(el)
+
+}
+
+function seedBlocks(){
+
+for(let i=0;i<140;i++) createBlock()
+
+}
+
+/* --------------------------------------------------
+cars
+-------------------------------------------------- */
+
+function createCars(){
+
+const colors=["bg-red","bg-blue","bg-white","bg-grey"]
+
+hLines.forEach(l=>{
+
+for(let i=0;i<8;i++){
+
+let car=document.createElement("div")
+
+car.className=`car ${colors[Math.floor(Math.random()*colors.length)]}`
+
+car.style.top=`calc(50% + (${l.y-500}*(min(100vw,100vh)/${REF})))`
+car.style.height=scale(l.h)
+car.style.width=scale(30)
+
+trafficLayer.appendChild(car)
+
+cars.push({
+
+el:car,
+axis:"h",
+lane:l.y,
+t:Math.random()*500,
+speed:.3+Math.random()*.3
+
+})
+
+}
+
+})
+
+vLines.forEach(l=>{
+
+for(let i=0;i<8;i++){
+
+let car=document.createElement("div")
+
+car.className=`car ${colors[Math.floor(Math.random()*colors.length)]}`
+
+car.style.left=`calc(50% + (${l.x-500}*(min(100vw,100vh)/${REF})))`
+car.style.width=scale(l.w)
+car.style.height=scale(30)
+
+trafficLayer.appendChild(car)
+
+cars.push({
+
+el:car,
+axis:"v",
+lane:l.x,
+t:Math.random()*500,
+speed:.3+Math.random()*.3
+
+})
+
+}
+
+})
+
+}
+
+/* --------------------------------------------------
+audio
+-------------------------------------------------- */
+
+let audioCtx
+let analyser
+let dataArray
+
+function initAudio(){
+
+audioCtx=new AudioContext()
+
+let src=audioCtx.createMediaElementSource(audio)
+
+analyser=audioCtx.createAnalyser()
+analyser.fftSize=256
+
+dataArray=new Uint8Array(analyser.frequencyBinCount)
+
+src.connect(analyser)
+analyser.connect(audioCtx.destination)
+
+}
+
+/* --------------------------------------------------
+animation
+-------------------------------------------------- */
+
+let start=Date.now()
+
+function update(){
+
+requestAnimationFrame(update)
+
+analyser.getByteFrequencyData(dataArray)
+
+let bass=0
+for(let i=0;i<8;i++) bass+=dataArray[i]
+bass/=8
+bass/=255
+
+let elapsed=(Date.now()-start)/1000
+
+let cycle=elapsed%60
+let musicMode=cycle<40
+
+cars.forEach((c,i)=>{
+
+if(musicMode)
+c.speed=.3+bass*2
+else
+c.speed=.35
+
+c.t+=c.speed
+
+let wave=Math.sin(c.t*.12+i)*20
+
+if(c.axis==="h"){
+
+c.el.style.transform=
+`translateX(${c.t*30}px) translateY(${wave}px)`
+
+}else{
+
+c.el.style.transform=
+`translateY(${c.t*30}px) translateX(${wave}px)`
+
+}
+
+})
+
+blocks.forEach((b,i)=>{
+
+let pulse=1+bass*.35
+
+b.style.transform=`scale(${pulse})`
+
+})
+
+if(bass>.45 && Math.random()<.03){
+
+createBlock()
+
+}
+
+}
+
+/* --------------------------------------------------
+start
+-------------------------------------------------- */
+
+function startExperience(){
+
+audio.play()
+
+initAudio()
+
+drawGrid()
+
+seedBlocks()
+
+createCars()
+
+update()
+
+}
+
+stage.addEventListener("click",startExperience,{once:true})
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabinet of Impossible Figures</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { overflow:hidden; background:#fff; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; }
+canvas { display:block; width:100vw; height:100vh; cursor:crosshair; }
+
+#crosshair {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:16px; height:16px; pointer-events:none; z-index:20;
+}
+#crosshair::before, #crosshair::after {
+    content:''; position:absolute; background:#000;
+}
+#crosshair::before { width:1px; height:100%; left:50%; top:0; }
+#crosshair::after  { height:1px; width:100%; top:50%; left:0; }
+
+#hud {
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:#999; pointer-events:none; z-index:20;
+}
+
+#instructions {
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    background:#fff; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; z-index:100;
+}
+#instructions h1 {
+    font-size:13px; font-weight:400; letter-spacing:.2em;
+    text-transform:uppercase; margin-bottom:32px; color:#111;
+}
+#instructions p {
+    font-size:11px; color:#777; letter-spacing:.08em;
+    text-transform:uppercase; line-height:2.4; text-align:center;
+}
+#instructions button {
+    margin-top:40px; background:#000; color:#fff;
+    border:none; padding:12px 36px; font-family:inherit;
+    font-size:11px; letter-spacing:.15em; text-transform:uppercase;
+    cursor:pointer;
+}
+#instructions button:hover { background:#333; }
+
+/* Wall label — appears when near a piece */
+#walllabel {
+    position:absolute; bottom:60px; left:40px;
+    opacity:0; transition:opacity .4s;
+    pointer-events:none; z-index:20;
+    border-left:2px solid #000; padding-left:14px;
+}
+#walllabel.show { opacity:1; }
+#walllabel .title { font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#111; }
+#walllabel .desc  { font-size:11px; color:#666; margin-top:4px; letter-spacing:.03em; }
+#walllabel .num   { font-size:9px; color:#aaa; margin-top:6px; letter-spacing:.1em; text-transform:uppercase; }
+
+/* Mini-map */
+#minimap {
+    position:absolute; top:20px; right:20px;
+    width:120px; height:120px; border:1px solid #ccc;
+    background:#fafafa; z-index:20;
+}
+#minimap canvas { width:120px; height:120px; }
+</style>
+</head>
+<body>
+
+<div id="instructions">
+    <h1>Cabinet of Impossible Figures</h1>
+    <p>
+        W A S D — walk<br>
+        Mouse — look<br>
+        Walk close to a piece to read its label<br>
+        ESC — release mouse
+    </p>
+    <button id="enterBtn">Enter</button>
+</div>
+
+<div id="crosshair"></div>
+<div id="hud" id="hud">Cabinet of Impossible Figures</div>
+
+<div id="walllabel">
+    <div class="title" id="wl-title"></div>
+    <div class="desc"  id="wl-desc"></div>
+    <div class="num"   id="wl-num"></div>
+</div>
+
+<div id="minimap"><canvas id="mmCanvas" width="120" height="120"></canvas></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── RENDERER ──────────────────────────────────────────────────────────────────
+const scene    = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+scene.fog = new THREE.Fog(0xffffff, 30, 80);
+
+const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, 0.05, 200);
+camera.position.set(0, 1.65, 0);   // eye height
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+// ── MATERIALS ─────────────────────────────────────────────────────────────────
+const wh = () => new THREE.MeshBasicMaterial({ color:0xffffff, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1 });
+const lk = (c,w) => new THREE.LineBasicMaterial({ color:c||0x111111, linewidth:w||1.5 });
+
+function solid(geo, col, lw) {
+    const m = new THREE.Mesh(geo, wh());
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo,15), lk(col,lw)));
+    return m;
+}
+function sph(r,s,col){
+    const geo=new THREE.SphereGeometry(r,s,s), m=new THREE.Mesh(geo,wh());
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo,15),lk(col))); return m;
+}
+function cyl(rt,rb,h,s,col){
+    const geo=new THREE.CylinderGeometry(rt,rb,h,s), m=new THREE.Mesh(geo,wh());
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo,15),lk(col))); return m;
+}
+
+// ── GALLERY ARCHITECTURE ──────────────────────────────────────────────────────
+// Long rectangular gallery: one corridor, pieces on alternating walls
+// Corridor: 8 units wide, 5 units tall, 110 units long
+const GW=8, GH=5, GL=110;
+const wallMat = new THREE.MeshBasicMaterial({ color:0xfafafa, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1 });
+const lineMat = lk(0xdddddd, 1);
+
+function addPlane(w,h, pos, rotY, rotX) {
+    const geo = new THREE.PlaneGeometry(w,h);
+    const m   = new THREE.Mesh(geo, wallMat.clone());
+    m.position.set(...pos);
+    if(rotY) m.rotation.y = rotY;
+    if(rotX) m.rotation.x = rotX;
+    scene.add(m);
+    // Subtle grid lines
+    const grid = new THREE.GridHelper(Math.max(w,h), Math.max(w,h), 0xeeeeee, 0xeeeeee);
+    grid.position.set(...pos);
+    if(rotY) grid.rotation.y = rotY;
+    scene.add(grid);
+}
+
+// Floor
+addPlane(GW, GL, [0,0,-GL/2+GW/2], 0, -Math.PI/2);
+// Ceiling
+{
+    const geo=new THREE.PlaneGeometry(GW,GL);
+    const m=new THREE.Mesh(geo,wallMat.clone()); m.position.set(0,GH,-GL/2+GW/2); m.rotation.x=Math.PI/2; scene.add(m);
+}
+// Left wall
+addPlane(GL, GH, [-GW/2, GH/2, -GL/2+GW/2], Math.PI/2);
+// Right wall
+addPlane(GL, GH, [ GW/2, GH/2, -GL/2+GW/2], -Math.PI/2);
+// Back wall
+addPlane(GW, GH, [0, GH/2, -GL+GW], 0);
+// Entry wall
+addPlane(GW, GH, [0, GH/2, GW], Math.PI);
+
+// Skirting line along floor
+const skirtPts = [
+    new THREE.Vector3(-GW/2+.02,0,GW), new THREE.Vector3(-GW/2+.02,0,-GL+GW),
+    new THREE.Vector3( GW/2-.02,0,-GL+GW), new THREE.Vector3( GW/2-.02,0,GW),
+];
+const skirt=new THREE.Line(new THREE.BufferGeometry().setFromPoints(skirtPts),lk(0xcccccc,1));
+scene.add(skirt);
+
+// Ceiling trim line
+const ceilPts=skirtPts.map(p=>new THREE.Vector3(p.x,GH-.02,p.z));
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ceilPts),lk(0xcccccc,1)));
+
+// Spot-light circles on ceiling (decorative — just rings)
+for(let i=0;i<8;i++){
+    const ring=new THREE.Mesh(
+        new THREE.RingGeometry(.18,.22,24),
+        new THREE.MeshBasicMaterial({color:0xe0e0e0,side:THREE.DoubleSide})
+    );
+    ring.position.set(0,GH-.02,-4-i*13);
+    ring.rotation.x=Math.PI/2;
+    scene.add(ring);
+}
+
+// ── PIECE POSITIONS ───────────────────────────────────────────────────────────
+// 8 pieces alternating left/right walls, z spacing 13 units, starting at z=-6
+// Each piece: { pos:[x,y,z], wallSide: +1=right -1=left, facing: rotation.y }
+const pieces = [
+    { z:-6,   side:-1 },  // 0 staircase   — left
+    { z:-19,  side: 1 },  // 1 triangle     — right
+    { z:-32,  side:-1 },  // 2 belvedere    — left
+    { z:-45,  side: 1 },  // 3 waterfall    — right
+    { z:-58,  side:-1 },  // 4 cube         — left
+    { z:-71,  side: 1 },  // 5 dining room  — right
+    { z:-84,  side:-1 },  // 6 moebius      — left
+    { z:-97,  side: 1 },  // 7 infinity     — right
+];
+
+const PEDESTAL_X = 2.2;   // how far from wall centre
+const labels = [
+    { title:'Penrose Staircase', desc:'A loop of steps that ascends forever without gaining height.', num:'I' },
+    { title:'Penrose Triangle',  desc:'Three right angles meeting in a triangle that cannot exist.', num:'II' },
+    { title:'Belvedere',         desc:'A two-storey building whose columns connect impossible floors.', num:'III' },
+    { title:'Waterfall',         desc:'Water descends through three levels and returns to its source.', num:'IV' },
+    { title:'Impossible Cube',   desc:'A cube whose front face is simultaneously its back face.', num:'V' },
+    { title:'Inverted Room',     desc:'Gravity reversed: a dining room hanging from its own ceiling.', num:'VI' },
+    { title:'Möbius Knot',       desc:'A surface with one side, one edge, and no inside or outside.', num:'VII' },
+    { title:'Lemniscate',        desc:'One path crossing itself — no beginning, no end, always turning.', num:'VIII' },
+];
+
+// Pedestal builder
+function makePedestal(px, pz) {
+    const g = new THREE.Group();
+    g.position.set(px, 0, pz);
+    const base  = solid(new THREE.BoxGeometry(1.2, .08, 1.2), 0x222222);
+    base.position.y=.04;
+    const shaft = solid(new THREE.BoxGeometry(.55, .9,  .55),  0x222222);
+    shaft.position.y=.49;
+    const top   = solid(new THREE.BoxGeometry(1.1, .06, 1.1),  0x222222);
+    top.position.y=.97;
+    g.add(base,shaft,top);
+    scene.add(g);
+    return g;
+}
+
+// Wall label plane builder
+function makeWallLabel(px, pz, side, idx) {
+    // A thin white card on the wall
+    const g = new THREE.Group();
+    const wx = side * (GW/2 - .04);
+    g.position.set(wx, 1.5, pz);
+    g.rotation.y = side > 0 ? Math.PI/2 : -Math.PI/2;
+
+    const card = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.6, .55),
+        new THREE.MeshBasicMaterial({ color:0xfafafa })
+    );
+    card.position.z = .01;
+    g.add(card);
+
+    // Border lines
+    const border = [
+        new THREE.Vector3(-.8,-.275,0),new THREE.Vector3(.8,-.275,0),
+        new THREE.Vector3(.8,.275,0),new THREE.Vector3(-.8,.275,0),
+        new THREE.Vector3(-.8,-.275,0),
+    ];
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(border), lk(0x555555,1)));
+
+    // Roman numeral line
+    const numLine=[new THREE.Vector3(-.7,.18,0),new THREE.Vector3(.7,.18,0)];
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(numLine),lk(0xcccccc,1)));
+
+    scene.add(g);
+    return g;
+}
+
+// ── BUILD ALL PIECES ──────────────────────────────────────────────────────────
+const figureGroups = [];
+const pedestals    = [];
+
+pieces.forEach((p,i) => {
+    const px = p.side * PEDESTAL_X;
+    const ped = makePedestal(px, p.z);
+    pedestals.push(ped);
+    makeWallLabel(px, p.z, p.side, i);
+    const fg = new THREE.Group();
+    fg.position.set(px, 1.0, p.z);
+    scene.add(fg);
+    figureGroups.push(fg);
+});
+
+// ── FIGURE GEOMETRY ───────────────────────────────────────────────────────────
+
+// 0 — PENROSE STAIRCASE
+;(()=>{
+    const g=figureGroups[0], C=0x111111;
+    g.scale.setScalar(.35);
+    const SW=2.5,SH=0.40,SD=0.95,N=9,span=4.5;
+    function run(n,sx,sy,sz,dx,dz,dy){
+        for(let i=0;i<n;i++){
+            const s=solid(new THREE.BoxGeometry(SW,SH,SD),C);
+            s.position.set(sx+i*dx*SD,sy+i*dy,sz+i*dz*SD);
+            if(dx!==0) s.rotation.y=Math.PI/2; g.add(s);
+        }
+    }
+    run(N,-span,SH*.5,-span, 0, 1, SH);
+    run(N,-span,SH*.5+N*SH, span, 1, 0, SH);
+    run(N, span,SH*.5+N*SH*2, span, 0,-1, SH);
+    run(N, span,SH*.5+N*SH*3,-span,-1, 0,-SH);
+    g.rotation.y = Math.PI * .15;
+})();
+
+// 1 — PENROSE TRIANGLE
+;(()=>{
+    const g=figureGroups[1], C=0x1a3a8a;
+    g.scale.setScalar(.22);
+    g.position.y=1.5;
+    const B=0.55, L=9.0;
+    function beam(x1,y1,z1,x2,y2,z2){
+        const dx=x2-x1,dy=y2-y1,dz=z2-z1,len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+        const m=solid(new THREE.BoxGeometry(B,B,len),C,2);
+        m.position.set((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);
+        m.lookAt(m.position.clone().add(new THREE.Vector3(dx,dy,dz))); g.add(m);
+    }
+    const off=L/2;
+    beam(-off,-off*.58,0, off,-off*.58,0);
+    beam( off,-off*.58,0, 0,  off*.78, 0);
+    beam( 0,  off*.78, 0,-off,-off*.58,0);
+    [[-off,-off*.58,0],[off,-off*.58,0],[0,off*.78,0]].forEach(p=>{
+        const c=solid(new THREE.BoxGeometry(B*1.2,B*1.2,B*1.2),C,2); c.position.set(...p); g.add(c);
+    });
+    // Viewed from right wall — face it front-on
+    g.rotation.y = -Math.PI/2;
+})();
+
+// 2 — BELVEDERE
+;(()=>{
+    const g=figureGroups[2], C=0x111111;
+    g.scale.setScalar(.28);
+    const FW=6,FD=4.5,FH=0.32,CH=5.5,CW=0.38;
+    g.add(solid(new THREE.BoxGeometry(FW,FH,FD),C));
+    const uf=solid(new THREE.BoxGeometry(FD,FH,FW),C); uf.position.y=CH+FH; g.add(uf);
+    const rf=solid(new THREE.BoxGeometry(FD+.4,.22,FW+.4),C); rf.position.y=CH+FH*2+.15; g.add(rf);
+    [[- FW/2+.45,-FD/2+.45,-FD/2+.45,-FW/2+.45],
+     [  FW/2-.45,-FD/2+.45,-FD/2+.45, FW/2-.45],
+     [- FW/2+.45, FD/2-.45, FD/2-.45,-FW/2+.45],
+     [  FW/2-.45, FD/2-.45, FD/2-.45, FW/2-.45]].forEach(([gx,gz,ux,uz])=>{
+        const lo=solid(new THREE.BoxGeometry(CW,CH*.5,CW),C); lo.position.set(gx,CH*.25,gz); g.add(lo);
+        const hi=solid(new THREE.BoxGeometry(CW,CH*.5,CW),C); hi.position.set((gx+ux)/2,CH*.75+FH,(gz+uz)/2); g.add(hi);
+        const cap=solid(new THREE.BoxGeometry(CW*1.4,FH,CW*1.4),C); cap.position.set(ux,CH+FH*1.7,uz); g.add(cap);
+    });
+    for(let i=0;i<4;i++){const w=solid(new THREE.BoxGeometry(.7,1.1,.15),C);w.position.set(-FW/2+.08,CH*.5,-FD/2+.8+i*1.0);g.add(w);}
+})();
+
+// 3 — WATERFALL
+;(()=>{
+    const g=figureGroups[3], C=0x8a1a1a;
+    g.scale.setScalar(.3);
+    const wm=new THREE.MeshBasicMaterial({color:0x3a8fcc,transparent:true,opacity:.7});
+    function ch(x,y,z,len,ry){
+        const c=solid(new THREE.BoxGeometry(.65,.26,len),C); c.position.set(x,y,z); c.rotation.y=ry||0; g.add(c);
+        const w=new THREE.Mesh(new THREE.BoxGeometry(.52,.07,len-.18),wm.clone()); w.position.set(x,y+.11,z); w.rotation.y=ry||0; g.add(w);
+    }
+    ch(0,5,0,7,0); ch(0,4.1,0,7,Math.PI/2); ch(0,3.2,0,7,0);
+    for(let s of[-1,1]){
+        for(let h=0;h<8;h++){const b=solid(new THREE.BoxGeometry(.7,.7,.7),C);b.position.set(s*4.5,.35+h*.72,-3.6);g.add(b);}
+    }
+    for(let i=0;i<5;i++){const p=solid(new THREE.BoxGeometry(.32,2,.32),C);p.position.set(-2.4+i*1.2,3.9,-3.6);g.add(p);}
+    const drops=[];
+    for(let i=0;i<8;i++){
+        const d=new THREE.Mesh(new THREE.SphereGeometry(.1,6,6),wm.clone());
+        d.position.set(-.4+i*.12,5,-3.5); d._phase=i*.22; g.add(d); drops.push(d);
+    }
+    g._drops=drops;
+    g.rotation.y = Math.PI/2;
+})();
+
+// 4 — IMPOSSIBLE CUBE
+;(()=>{
+    const g=figureGroups[4], C=0x1a3a8a;
+    g.scale.setScalar(.5);
+    g.position.y=1.4;
+    const CS=2.6;
+    const v=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]
+        .map(([x,y,z])=>new THREE.Vector3(x*CS/2,y*CS/2,z*CS/2));
+    function wl(a,b,mat){ g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([v[a].clone(),v[b].clone()]),mat)); }
+    [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]].forEach(([a,b])=>wl(a,b,lk(C,2)));
+    wl(2,5,lk(0xcc1111,2.5)); wl(6,1,lk(0xcc1111,2.5));
+    g._cube=g;
+})();
+
+// 5 — INVERTED DINING ROOM (in a glass box so the inversion is legible)
+;(()=>{
+    const g=figureGroups[5], C=0x111111;
+    g.scale.setScalar(.28);
+
+    // Transparent box to frame the scene — makes the inversion readable
+    const boxFrame=new THREE.Mesh(
+        new THREE.BoxGeometry(10,10,8),
+        new THREE.MeshBasicMaterial({color:0xfafafa,transparent:true,opacity:.08,side:THREE.BackSide})
+    );
+    g.add(boxFrame);
+    const frameEdges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(10,10,8),15),lk(0xcccccc,1));
+    g.add(frameEdges);
+
+    // Right-side-up floor line
+    const fl=new THREE.Mesh(new THREE.PlaneGeometry(10,8),new THREE.MeshBasicMaterial({color:0xeeeeee}));
+    fl.rotation.x=-Math.PI/2; fl.position.y=-5; g.add(fl);
+    // Upside-down ceiling line
+    const cl=fl.clone(); cl.position.y=5; g.add(cl);
+
+    // Inverted table (top half of box)
+    const flip=new THREE.Group(); flip.position.y=2; g.add(flip);
+    const tt=solid(new THREE.BoxGeometry(5,.18,3),C); tt.position.y=1.5; flip.add(tt);
+    [[2.3,1.1,1.3],[-2.3,1.1,1.3],[2.3,1.1,-1.3],[-2.3,1.1,-1.3]].forEach(p=>{
+        const l=solid(new THREE.BoxGeometry(.15,2.2,.15),C); l.position.set(...p); flip.add(l);
+    });
+
+    // Normal table (bottom half)
+    const norm=new THREE.Group(); norm.position.y=-2; g.add(norm);
+    const tt2=solid(new THREE.BoxGeometry(5,.18,3),C); tt2.position.y=-1.5; norm.add(tt2);
+    [[2.3,-1.1,1.3],[-2.3,-1.1,1.3],[2.3,-1.1,-1.3],[-2.3,-1.1,-1.3]].forEach(p=>{
+        const l=solid(new THREE.BoxGeometry(.15,2.2,.15),C); l.position.set(...p); norm.add(l);
+    });
+    g.rotation.y = Math.PI/2;
+})();
+
+// 6 — MÖBIUS TORUS-KNOT
+;(()=>{
+    const g=figureGroups[6];
+    g.scale.setScalar(.42);
+    g.position.y=1.6;
+    const geo=new THREE.TorusKnotGeometry(2.2,.38,140,14,2,3);
+    const m=new THREE.Mesh(geo,wh());
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo,15),lk(0x1a3a8a,2)));
+    g.add(m);
+    g._moeb=g;
+})();
+
+// 7 — INFINITY / LEMNISCATE
+;(()=>{
+    const g=figureGroups[7];
+    g.position.y=1.8;
+    g.rotation.y=Math.PI/2;
+
+    class Lemn extends THREE.Curve {
+        getPoint(t,out=new THREE.Vector3()){
+            const a=t*Math.PI*2,d=1+Math.sin(a)*Math.sin(a);
+            return out.set(5.5*Math.cos(a)/d, 1.8*Math.sin(a)*Math.cos(a)/d, 0);
+        }
+    }
+    const LEMN=new Lemn(),LSEGS=240,LRAD=.18,NS=7;
+    const cols=[0x991111,0xbb1122,0xdd2233,0xcc3344,0xaa2244,0x882233,0x771122];
+    const lp=[],lt=[],ln=[],lb=[];
+    for(let i=0;i<=LSEGS;i++) lp.push(LEMN.getPoint(i/LSEGS));
+    for(let i=0;i<=LSEGS;i++){
+        const pr=lp[Math.max(0,i-1)],nx=lp[Math.min(LSEGS,i+1)];
+        lt.push(new THREE.Vector3().subVectors(nx,pr).normalize());
+    }
+    let n0=new THREE.Vector3().crossVectors(lt[0],new THREE.Vector3(0,0,1)).normalize();
+    if(n0.lengthSq()<.01) n0.crossVectors(lt[0],new THREE.Vector3(0,1,0)).normalize();
+    ln.push(n0.clone()); lb.push(new THREE.Vector3().crossVectors(lt[0],ln[0]).normalize());
+    for(let i=1;i<=LSEGS;i++){
+        const n=ln[i-1].clone().sub(lt[i].clone().multiplyScalar(lt[i].dot(ln[i-1]))).normalize();
+        ln.push(n); lb.push(new THREE.Vector3().crossVectors(lt[i],n).normalize());
+    }
+    const sGeos=[];
+    for(let si=0;si<NS;si++){
+        const pos=new Float32Array((LSEGS+1)*3);
+        const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+        g.add(new THREE.LineLoop(geo,lk(cols[si],1.5))); sGeos.push(geo);
+    }
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(lp),lk(0xbbbbbb,1)));
+    g._infData={lp,ln,lb,sGeos,LSEGS,LRAD,NS};
+})();
+
+// ── FIRST-PERSON CONTROLS ─────────────────────────────────────────────────────
+const keys = {};
+let yaw=0, pitch=0, locked=false;
+
+document.getElementById('enterBtn').addEventListener('click',()=>{
+    renderer.domElement.requestPointerLock();
+});
+document.addEventListener('pointerlockchange',()=>{
+    locked = document.pointerLockElement===renderer.domElement;
+    document.getElementById('instructions').style.display = locked ? 'none' : 'flex';
+});
+document.addEventListener('mousemove',e=>{
+    if(!locked) return;
+    yaw   -= e.movementX * .0018;
+    pitch -= e.movementY * .0018;
+    pitch  = Math.max(-Math.PI*.35, Math.min(Math.PI*.35, pitch));
+});
+document.addEventListener('keydown',e=>{ keys[e.code]=true; });
+document.addEventListener('keyup',  e=>{ keys[e.code]=false; });
+
+// Collision: stay inside gallery corridor
+function clamp(val,mn,mx){ return Math.max(mn,Math.min(mx,val)); }
+
+// ── MINIMAP ───────────────────────────────────────────────────────────────────
+const mmCtx = document.getElementById('mmCanvas').getContext('2d');
+function drawMinimap(){
+    mmCtx.clearRect(0,0,120,120);
+    mmCtx.fillStyle='#fafafa'; mmCtx.fillRect(0,0,120,120);
+    mmCtx.strokeStyle='#ccc'; mmCtx.lineWidth=1; mmCtx.strokeRect(0,0,120,120);
+
+    // Corridor outline
+    const scaleZ=120/GL, scaleX=120/GW;
+    const corrX0=0, corrZ0=0, corrW=GW*scaleX, corrH=GL*scaleZ;
+    mmCtx.fillStyle='#f0f0f0'; mmCtx.fillRect(corrX0,corrZ0,corrW,corrH);
+    mmCtx.strokeStyle='#bbb'; mmCtx.strokeRect(corrX0,corrZ0,corrW,corrH);
+
+    // Pieces as small dots
+    pieces.forEach((p,i)=>{
+        const mx=(p.side*PEDESTAL_X+GW/2)*scaleX;
+        const mz=(-p.z)*scaleZ;
+        mmCtx.fillStyle='#333'; mmCtx.beginPath(); mmCtx.arc(mx,mz,2,0,Math.PI*2); mmCtx.fill();
+    });
+
+    // Player
+    const px=(camera.position.x+GW/2)*scaleX;
+    const pz=(-camera.position.z)*scaleZ;
+    mmCtx.fillStyle='#000'; mmCtx.beginPath(); mmCtx.arc(px,pz,3.5,0,Math.PI*2); mmCtx.fill();
+    // Direction tick
+    const dx=Math.sin(yaw)*8, dz=-Math.cos(yaw)*8;
+    mmCtx.strokeStyle='#000'; mmCtx.lineWidth=1.5;
+    mmCtx.beginPath(); mmCtx.moveTo(px,pz); mmCtx.lineTo(px+dx,pz+dz); mmCtx.stroke();
+}
+
+// ── PROXIMITY LABEL ───────────────────────────────────────────────────────────
+let lastLabel=-1;
+function checkProximity(){
+    let nearest=-1, nearestDist=Infinity;
+    pieces.forEach((p,i)=>{
+        const dx=camera.position.x-p.side*PEDESTAL_X;
+        const dz=camera.position.z-p.z;
+        const dist=Math.sqrt(dx*dx+dz*dz);
+        if(dist<3.5 && dist<nearestDist){ nearest=i; nearestDist=dist; }
+    });
+    if(nearest!==lastLabel){
+        lastLabel=nearest;
+        const el=document.getElementById('walllabel');
+        if(nearest>=0){
+            document.getElementById('wl-title').textContent=labels[nearest].title;
+            document.getElementById('wl-desc').textContent=labels[nearest].desc;
+            document.getElementById('wl-num').textContent='No. '+labels[nearest].num;
+            el.classList.add('show');
+        } else {
+            el.classList.remove('show');
+        }
+    }
+}
+
+// ── ANIMATION LOOP ────────────────────────────────────────────────────────────
+const SPEED=4.5;
+let lastT=performance.now();
+
+function animate(){
+    requestAnimationFrame(animate);
+    const now=performance.now(), dt=Math.min((now-lastT)/1000,.05); lastT=now;
+    const t=now*.001;
+
+    // Movement
+    if(locked){
+        const fwd=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+        const rgt=new THREE.Vector3( Math.cos(yaw),0,-Math.sin(yaw));
+        if(keys['KeyW']||keys['ArrowUp'])    camera.position.addScaledVector(fwd, SPEED*dt);
+        if(keys['KeyS']||keys['ArrowDown'])  camera.position.addScaledVector(fwd,-SPEED*dt);
+        if(keys['KeyA']||keys['ArrowLeft'])  camera.position.addScaledVector(rgt,-SPEED*dt);
+        if(keys['KeyD']||keys['ArrowRight']) camera.position.addScaledVector(rgt, SPEED*dt);
+        // Constrain to corridor
+        camera.position.x = clamp(camera.position.x, -GW/2+.4, GW/2-.4);
+        camera.position.z = clamp(camera.position.z, -GL+GW+.4, GW-.4);
+        camera.position.y = 1.65;
+    }
+
+    // Camera orientation
+    camera.rotation.order='YXZ';
+    camera.rotation.y=yaw;
+    camera.rotation.x=pitch;
+
+    // Animate figures
+    figureGroups[1].rotation.y = -Math.PI/2 + Math.sin(t*.2)*.04;  // triangle breathe
+
+    figureGroups[4].rotation.y += dt*.3;   // cube spin
+    figureGroups[4].rotation.x  = Math.sin(t*.13)*.06;
+
+    figureGroups[6].rotation.x = t*.10;
+    figureGroups[6].rotation.y = t*.08;
+
+    // Waterfall drops
+    if(figureGroups[3]._drops){
+        figureGroups[3]._drops.forEach(d=>{
+            const prog=(t*.9+d._phase)%1.6;
+            d.position.y=5-prog*1.5; d.material.opacity=.65*(1-prog/1.6);
+        });
+    }
+
+    // Infinity twirl
+    if(figureGroups[7]._infData){
+        const {lp,ln,lb,sGeos,LSEGS,LRAD,NS}=figureGroups[7]._infData;
+        const phase=t*1.3;
+        for(let si=0;si<NS;si++){
+            const base=(si/NS)*Math.PI*2;
+            const pos=sGeos[si].attributes.position.array;
+            for(let i=0;i<=LSEGS;i++){
+                const ang=base+(i/LSEGS)*Math.PI*10+phase;
+                const p=lp[i],n=ln[i],b=lb[i];
+                pos[i*3  ]=p.x+(n.x*Math.cos(ang)+b.x*Math.sin(ang))*LRAD;
+                pos[i*3+1]=p.y+(n.y*Math.cos(ang)+b.y*Math.sin(ang))*LRAD;
+                pos[i*3+2]=p.z+(n.z*Math.cos(ang)+b.z*Math.sin(ang))*LRAD;
+            }
+            sGeos[si].attributes.position.needsUpdate=true;
+        }
+    }
+
+    checkProximity();
+    drawMinimap();
+    renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>

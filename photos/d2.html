@@ -1,0 +1,61 @@
+<!doctype html>
+<html style="overflow-x:hidden">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #111; color: #eee; font-family: monospace; font-size: 13px; padding: 16px; overflow-x: hidden; }
+
+#toggle-abs-parent { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#t1 { position: absolute; top: 60px; right: 0;   background: red;    color: white; padding: 8px 12px; font-size: 12px; }
+#t2 { position: absolute; top: 100px; right: 0;  background: blue;   color: white; padding: 8px 12px; font-size: 12px; }
+#t3 { position: fixed;    top: 140px; right: 0;  background: green;  color: white; padding: 8px 12px; font-size: 12px; }
+#t4 { position: fixed;    top: 180px; right: 0;  background: orange; color: black; padding: 8px 12px; font-size: 12px; }
+
+#out { margin-top: 20px; }
+.row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; font-size: 12px; }
+</style>
+</head>
+<body>
+<h3 style="color:#0ff;margin-bottom:8px">Toggle Position Debug</h3>
+<p style="color:#888;font-size:11px;margin-bottom:16px">All boxes should be flush to right edge</p>
+
+<!-- absolute inside fixed parent -->
+<div id="toggle-abs-parent">
+  <div id="t1">absolute right:0 in fixed parent</div>
+  <div id="t2">absolute right:0 — wider text to test overflow</div>
+</div>
+
+<!-- fixed directly on body -->
+<div id="t3">fixed right:0 on body</div>
+<div id="t4">fixed right:0 on body — wider text to test overflow</div>
+
+<div id="out"></div>
+
+<script>
+window.addEventListener('load', () => {
+    const els = {
+        't1 (abs in fixed)': t1,
+        't2 (abs in fixed)': t2,
+        't3 (fixed body)': t3,
+        't4 (fixed body)': t4,
+        'fixed-parent': document.getElementById('toggle-abs-parent'),
+        'body': document.body,
+        'html': document.documentElement,
+    };
+
+    let html = `<div class="row"><span>window.innerWidth</span><span>${window.innerWidth}</span></div>`;
+    html += `<div class="row"><span>body.scrollWidth</span><span>${document.body.scrollWidth}</span></div>`;
+    html += `<div class="row"><span>html.scrollWidth</span><span>${document.documentElement.scrollWidth}</span></div>`;
+
+    for (const [name, el] of Object.entries(els)) {
+        const r = el.getBoundingClientRect();
+        html += `<div class="row"><span>${name}</span><span>left:${Math.round(r.left)} right:${Math.round(r.right)} w:${Math.round(r.width)}</span></div>`;
+    }
+
+    document.getElementById('out').innerHTML = html;
+});
+</script>
+</body>
+</html>

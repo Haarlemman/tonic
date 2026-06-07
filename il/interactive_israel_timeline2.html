@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Israel Timeline</title>
+  <style>
+    :root {
+      --bg: #000;
+      --text: #fff;
+      --line: rgba(255,255,255,0.2);
+      --font: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow: hidden;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: rgba(0,0,0,0.85);
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .toolbar button {
+      background: #111;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .toolbar button:hover {
+      background: #222;
+    }
+
+    .viewport {
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+      cursor: grab;
+      background: #000;
+    }
+
+    .viewport:active {
+      cursor: grabbing;
+    }
+
+    .wrapper {
+      width: 5200px;
+      min-height: 100vh;
+      padding: 80px 40px 40px;
+      background: #000;
+      transform-origin: top left;
+      transition: transform 0.2s ease;
+    }
+
+    .timeline {
+      position: relative;
+      width: 5000px;
+      height: 1200px;
+      margin: 0 auto;
+      background: #000;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .track-label {
+      position: absolute;
+      left: -10px;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      width: 160px;
+      text-align: right;
+    }
+
+    .era {
+      position: absolute;
+      top: 10px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(255,255,255,0.15);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.2s ease;
+    }
+
+    .era:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.15);
+    }
+
+    .node {
+      position: absolute;
+      background: white;
+      color: black;
+      padding: 2px 6px;
+      font-size: 10px;
+      line-height: 1.1;
+      border-radius: 2px;
+      white-space: nowrap;
+      transition: transform 0.15s ease;
+    }
+
+    .node:hover {
+      transform: scale(1.08);
+      z-index: 100;
+    }
+
+    .connector {
+      position: absolute;
+      background: rgba(255,255,255,0.7);
+      transform-origin: left center;
+      height: 1px;
+    }
+
+    .section-title {
+      position: absolute;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #000;
+      border: 1px solid rgba(0,0,0,0.25);
+    }
+
+    .gridline {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: white;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      max-width: 240px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 9999;
+    }
+
+    .legend {
+      max-width: 1400px;
+      margin: 40px auto 0;
+      color: #ccc;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .hidden-track {
+      opacity: 0.08;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <button onclick="zoomIn()">＋ Zoom</button>
+    <button onclick="zoomOut()">－ Zoom</button>
+    <button onclick="toggleTrack('patriarchs')">Patriarchs</button>
+    <button onclick="toggleTrack('tribes')">Tribes</button>
+    <button onclick="toggleTrack('temples')">Temples</button>
+    <button onclick="toggleTrack('empires')">Empires</button>
+    <button onclick="toggleTrack('diaspora')">Diaspora</button>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <div class="viewport" id="viewport">
+  <div class="wrapper" id="wrapper">
+    <div class="timeline" id="timeline">
+
+      <!-- GRIDLINES -->
+      <script>
+  let scale = 1;
+  const wrapper = document.getElementById('wrapper');
+  const tooltip = document.getElementById('tooltip');
+  const svg = document.getElementById('svg-layer');
+
+  const YEAR_START = -2200;
+  const YEAR_END = 2025;
+  const WIDTH = 5000;
+
+  function yearToX(year) {
+    return ((year - YEAR_START) / (YEAR_END - YEAR_START)) * WIDTH;
+  }
+
+  const DATA = {
+    empires: [
+      { name:'Ancient Israel', start:-2000, end:-930, color:'#d9d9d9', text:'#000' },
+      { name:'Kingdom of Israel', start:-930, end:-722, color:'#f08a00' },
+      { name:'Kingdom of Judah', start:-930, end:-586, color:'#ffb000' },
+      { name:'Persian Empire', start:-539, end:-332, color:'#8c7b24' },
+      { name:'Hellenistic', start:-332, end:-167, color:'#8e53a1' },
+      { name:'Roman / Byzantine', start:-63, end:638, color:'#4f7d4d' },
+      { name:'Caliphates', start:638, end:1099, color:'#7b451d' },
+      { name:'Ottoman', start:1517, end:1917, color:'#d4b30d', text:'#000' },
+      { name:'Israel', start:1948, end:2025, color:'#3b8ed4' }
+    ],
+
+    patriarchs: [
+      { name:'Abraham', birth:-1948, death:-1773, y:120 },
+      { name:'Isaac', birth:-1848, death:-1668, y:170 },
+      { name:'Jacob / Israel', birth:-1808, death:-1661, y:220 }
+    ],
+
+    temples: [
+      { name:'First Temple', start:-957, end:-586, y:430 },
+      { name:'Second Temple', start:-516, end:70, y:470 }
+    ],
+
+    diaspora: [
+      { name:'Babylonian Exile', start:-586, end:-538, y:620 },
+      { name:'Roman Exile', start:70, end:1948, y:670 },
+      { name:'Modern Zionism', start:1882, end:1948, y:720 }
+    ]
+  };
+
+  function createSVG(tag, attrs={}) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k,v));
+    return el;
+  }
+
+  function renderEmpires() {
+    DATA.empires.forEach(empire => {
+      const x = yearToX(empire.start);
+      const w = yearToX(empire.end) - x;
+
+      const rect = createSVG('rect', {
+        x, y:20, width:w, height:40,
+        fill:empire.color,
+        rx:4
+      });
+
+      const text = createSVG('text', {
+        x:x+10,
+        y:45,
+        fill:empire.text || 'white',
+        'font-size':12,
+        'font-family':'Arial'
+      });
+
+      text.textContent = empire.name;
+
+      svg.appendChild(rect);
+      svg.appendChild(text);
+    });
+  }
+
+  function renderPatriarchs() {
+    DATA.patriarchs.forEach(p => {
+      const x = yearToX(p.birth);
+      const w = yearToX(p.death) - x;
+
+      const rect = createSVG('rect', {
+        x,
+        y:p.y,
+        width:w,
+        height:28,
+        rx:8,
+        fill:'#efefef'
+      });
+
+      const text = createSVG('text', {
+        x:x+12,
+        y:p.y+19,
+        fill:'#000',
+        'font-size':13,
+        'font-family':'Arial'
+      });
+
+      text.textContent = p.name;
+
+      rect.addEventListener('mousemove', e => {
+        tooltip.style.opacity = '1';
+        tooltip.style.left = e.clientX + 14 + 'px';
+        tooltip.style.top = e.clientY + 14 + 'px';
+        tooltip.innerHTML = `${p.name}<br>${Math.abs(p.birth)}–${Math.abs(p.death)} BCE`;
+      });
+
+      rect.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+      });
+
+      svg.appendChild(rect);
+      svg.appendChild(text);
+    });
+  }
+
+  function renderTemples() {
+    DATA.temples.forEach(t => {
+      const x = yearToX(t.start);
+      const w = yearToX(t.end) - x;
+
+      const rect = createSVG('rect', {
+        x,
+        y:t.y,
+        width:w,
+        height:24,
+        fill:'#ffe600'
+      });
+
+      const text = createSVG('text', {
+        x:x+10,
+        y:t.y+16,
+        fill:'#000',
+        'font-size':12
+      });
+
+      text.textContent = t.name;
+
+      svg.appendChild(rect);
+      svg.appendChild(text);
+    });
+  }
+
+  function renderDiaspora() {
+    DATA.diaspora.forEach(d => {
+      const x = yearToX(d.start);
+      const w = yearToX(d.end) - x;
+
+      const rect = createSVG('rect', {
+        x,
+        y:d.y,
+        width:w,
+        height:18,
+        fill:'#8bc5ff',
+        opacity:0.8
+      });
+
+      const text = createSVG('text', {
+        x:x+8,
+        y:d.y+13,
+        fill:'#000',
+        'font-size':11
+      });
+
+      text.textContent = d.name;
+
+      svg.appendChild(rect);
+      svg.appendChild(text);
+    });
+  }
+
+  renderEmpires();
+  renderPatriarchs();
+  renderTemples();
+  renderDiaspora();
+
+  function zoomIn() {
+    scale *= 1.12;
+    wrapper.style.transform = `scale(${scale})`;
+  }
+
+  function zoomOut() {
+    scale /= 1.12;
+    wrapper.style.transform = `scale(${scale})`;
+  }
+
+  function toggleTrack(name) {
+    console.log('toggle', name);
+  }
+
+  const axis = document.getElementById('axis');
+
+  for(let y = -2000; y <= 2000; y += 100) {
+    const tick = document.createElement('div');
+    tick.style.position = 'absolute';
+    tick.style.left = yearToX(y) + 'px';
+    tick.style.top = '0';
+    tick.style.width = '1px';
+    tick.style.height = '20px';
+    tick.style.background = 'rgba(255,255,255,0.4)';
+
+    const label = document.createElement('div');
+    label.style.position = 'absolute';
+    label.style.left = '-28px';
+    label.style.top = '24px';
+    label.style.width = '60px';
+    label.style.fontSize = '10px';
+    label.style.color = 'rgba(255,255,255,0.5)';
+    label.style.textAlign = 'center';
+    label.innerText = y < 0 ? Math.abs(y) + ' BCE' : y + ' CE';
+
+    tick.appendChild(label);
+    axis.appendChild(tick);
+  }
+
+  const viewport = document.getElementById('viewport');
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  viewport.addEventListener('mousedown', (e) => {
+    isDown = true;
+    startX = e.pageX - viewport.offsetLeft;
+    scrollLeft = viewport.scrollLeft;
+  });
+
+  viewport.addEventListener('mouseup', () => isDown = false);
+  viewport.addEventListener('mouseleave', () => isDown = false);
+
+  viewport.addEventListener('mousemove', (e) => {
+    if(!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - viewport.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    viewport.scrollLeft = scrollLeft - walk;
+  });
+</script>
+
+</body>
+</html>
