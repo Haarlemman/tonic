@@ -152,8 +152,8 @@ window.roomContent = {
     },
 
     annex: {
-        title: "The Annex",
-        title_nl: "De Annex",
+        title: "The Hidden Annex",
+        title_nl: "De verborgen kamer",
 
         hex: 0x1a1a1a,
         interiorWidth: 4,
