@@ -201,6 +201,41 @@
             }
         }
 
+        #header-visitor-name,
+        #section-visitor-name,
+        .visitor-name {
+            display: inline-block;
+            animation: visitor-name-blink 1.8s ease-in-out infinite;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.55), 0 0 20px rgba(255, 0, 255, 0.35);
+        }
+
+        @keyframes visitor-name-blink {
+            0%, 20% {
+                color: #ff4081;
+                text-shadow: 0 0 10px rgba(255, 64, 129, 0.8), 0 0 24px rgba(255, 64, 129, 0.45);
+                opacity: 1;
+            }
+
+            30%, 50% {
+                color: #00e5ff;
+                text-shadow: 0 0 10px rgba(0, 229, 255, 0.8), 0 0 24px rgba(0, 229, 255, 0.45);
+                opacity: 0.65;
+            }
+
+            60%, 80% {
+                color: #ffe57f;
+                text-shadow: 0 0 10px rgba(255, 229, 127, 0.8), 0 0 24px rgba(255, 229, 127, 0.35);
+                opacity: 1;
+            }
+
+            90%, 100% {
+                color: #b388ff;
+                text-shadow: 0 0 10px rgba(179, 136, 255, 0.8), 0 0 24px rgba(179, 136, 255, 0.45);
+                opacity: 0.8;
+            }
+        }
+
         /* Landing placeholder — isometric grid behind angled typography */
         #landing-iso-grid {
             position: absolute;
@@ -817,7 +852,7 @@
                                 <span class="tw-line" data-text-en="AND DISCOVER THE MEANING OF LIFE" data-text-nl="EN ONTDEK DE ZIN VAN HET LEVEN"></span>
                             </div>
                             <div class="landing-line landing-line-according">
-                                <span class="tw-line" data-text-en="ACCORDING TO YOU." data-text-nl="VOLGENS JOU."></span>
+                                <span class="tw-line" data-text-en="ACCORDING TO {YOU}." data-text-nl="VOLGENS {JOU}."></span>
                             </div>
                         </div>
                     </div>
@@ -865,15 +900,35 @@
                                 spans.forEach(function (span, lineIdx) {
                                     var lang = getLang();
                                     var key = 'dataText' + lang.charAt(0).toUpperCase() + lang.slice(1);
-                                    var full = span.dataset['text' + lang.charAt(0).toUpperCase() + lang.slice(1)]
+                                    var raw = span.dataset['text' + lang.charAt(0).toUpperCase() + lang.slice(1)]
                                                || span.dataset.textEn || '';
 
-                                    for (var i = 0; i <= full.length; i++) {
+                                    function escapeHTML(text) {
+                                        return text.replace(/&/g, '&amp;')
+                                                   .replace(/</g, '&lt;')
+                                                   .replace(/>/g, '&gt;')
+                                                   .replace(/"/g, '&quot;')
+                                                   .replace(/'/g, '&#39;');
+                                    }
+
+                                    function formatSlice(text) {
+                                        return text.split(/(\{YOU\}|\{JOU\})/).map(function(part) {
+                                            if (part === '{YOU}') {
+                                                return '<span class="visitor-name">YOU</span>';
+                                            }
+                                            if (part === '{JOU}') {
+                                                return '<span class="visitor-name">JOU</span>';
+                                            }
+                                            return escapeHTML(part);
+                                        }).join('');
+                                    }
+
+                                    for (var i = 0; i <= raw.length; i++) {
                                         (function (idx, delay) {
                                             setTimeout(function () {
-                                                span.textContent = full.slice(0, idx);
+                                                span.innerHTML = formatSlice(raw.slice(0, idx));
                                                 if (idx === 0)           span.classList.add('tw-active');
-                                                if (idx === full.length) span.classList.remove('tw-active');
+                                                if (idx === raw.length)  span.classList.remove('tw-active');
                                             }, delay);
                                         })(i, globalDelay + i * charDelay);
                                     }
