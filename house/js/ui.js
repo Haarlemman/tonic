@@ -836,6 +836,10 @@ window.skipNameEntry = function () {
         saveUserProgress(window.visitorData);
     }
 
+    if (window.parent) {
+        window.parent.postMessage({ type: 'VISITOR_NAME_CHANGED', name: 'Guest' }, '*');
+    }
+
     // Move to next step smoothly
     const overlay = document.getElementById('narrative-overlay');
     if (overlay) {
@@ -880,6 +884,10 @@ window.submitVisitorName = function () {
     // Persist to localStorage
     if (typeof saveUserProgress === 'function') {
         saveUserProgress(window.visitorData);
+    }
+
+    if (window.parent) {
+        window.parent.postMessage({ type: 'VISITOR_NAME_CHANGED', name: name }, '*');
     }
 
     // Transition within the SAME popup (Seamless)

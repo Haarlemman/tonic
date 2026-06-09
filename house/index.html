@@ -33,7 +33,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Baumans&family=Bitcount+Grid+Double:wght@300&family=Courier+Prime&family=Lexend:wght@400;700&family=Glass+Antiqua&family=JetBrains+Mono:wght@300;400;700&family=Lato:wght@300;400;700&family=Libre+Baskerville:ital@1&family=Orelega+One&family=Share+Tech+Mono&family=Special+Elite&family=Tilt+Neon&family=Fraunces:wght@400&display=swap">
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Baumans&family=Bitcount+Grid+Double:wght@300&family=Courier+Prime&family=Lexend:wght@400;700&family=Glass+Antiqua&family=JetBrains+Mono:wght@300;400;700&family=Lato:wght@300;400;700&family=Orelega+One&family=Share+Tech+Mono&family=Special+Elite&family=Tilt+Neon&family=Fraunces:wght@400&display=swap">
     <link rel="stylesheet" href="css/style.css?v=20260313-1653">
 
     <link rel="manifest" href="manifest.json">
@@ -682,11 +682,21 @@
 
                 <!-- Boot / idle placeholder — wireframe house animation replaces static image -->
                 <div id="sim-placeholder"
-                    class="absolute inset-0 flex items-center justify-center overflow-hidden z-20 bg-[#030308]">
+                    class="absolute inset-0 flex items-center justify-center overflow-hidden z-20"
+                    style="background: radial-gradient(circle at center, #191946 0%, #030308 100%);">
+
+                    <!-- Background text (behind wireframe canvas) -->
+                    <div id="landing-bg-text" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none text-center p-4 z-0" style="gap: 0.5rem; justify-content: center; align-items: center;">
+                        <div data-i18n="landing_explore" class="uppercase font-bold tracking-wider" style="font-family: 'Libre Baskerville', serif; font-weight: 700; font-size: clamp(1.1rem, 3.2vw, 2.8rem); color: rgba(255, 255, 255, 0.15); text-shadow: 0 0 10px rgba(255, 255, 255, 0.05);">EXPLORE THE HOUSE OF AWE</div>
+                        <div data-i18n="landing_discover" class="uppercase font-bold" style="font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.4rem, 6.5vw, 5.2rem); color: rgba(255, 255, 255, 0.3); line-height: 0.95; letter-spacing: 0.03em; text-shadow: 0 0 15px rgba(255, 255, 255, 0.1); margin: 4px 0;">and discover the meaning of life</div>
+                        <div class="uppercase font-bold" style="font-family: 'Libre Baskerville', serif; font-weight: 700; font-size: clamp(1.5rem, 4.2vw, 3.8rem); color: rgba(255, 255, 255, 0.15);">
+                            <span data-i18n="landing_according">According to</span> <span id="landing-visitor-name" style="font-family: 'Libre Baskerville', serif; font-style: italic; font-weight: 400; text-transform: none; color: #ffcc00; text-shadow: 0 0 10px rgba(255, 204, 0, 0.45);">YOU</span>?
+                        </div>
+                    </div>
 
                     <!-- Wireframe canvas fills the entire container -->
                     <canvas id="wireframe-canvas" class="absolute inset-0 w-full h-full z-10"
-                        style="display:block;"></canvas>
+                        style="display:block; background: transparent;"></canvas>
 
                     <!-- Boot sequence content -->
                     <div class="absolute inset-0 z-20 flex flex-col items-center justify-end pb-20 p-4">
@@ -763,7 +773,7 @@
 
                         function wInit() {
                             wScene = new THREE.Scene();
-                            wScene.background = new THREE.Color(0x191946);
+                            // wScene.background = new THREE.Color(0x191946);
 
                             const w = placeholder.clientWidth || 800;
                             const h = placeholder.clientHeight || 450;
@@ -773,7 +783,7 @@
                             wCamera.position.set(35, 28, 35);
                             wCamera.lookAt(0, 4, 0);
 
-                            wRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+                            wRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
                             wRenderer.setSize(w, h);
                             wRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -1389,7 +1399,10 @@
                 exit: "EXIT",
                 browse: "BROWSE",
                 browse_hint: "don't mind me, I'm just browsing.",
-                jump_in: "JUMP IN &nbsp;<span style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>"
+                jump_in: "JUMP IN &nbsp;<span style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>",
+                landing_explore: "EXPLORE THE HOUSE OF AWE",
+                landing_discover: "and discover the meaning of life",
+                landing_according: "According to"
             },
 
             nl: {
@@ -1441,7 +1454,10 @@
                 exit: "UIT",
                 browse: "KIJKEN",
                 browse_hint: "ik kom alleen even kijken.",
-                jump_in: "SPRING ERIN &nbsp;<span style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>"
+                jump_in: "SPRING ERIN &nbsp;<span style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>",
+                landing_explore: "VERKEN HET HUIS DER VERWONDERING",
+                landing_discover: "en ontdek de zin van het leven",
+                landing_according: "Volgens"
             }
 
         };
@@ -1564,6 +1580,9 @@
 
             const hel = document.getElementById('header-visitor-name');
             if (hel) hel.innerText = nameToDisplay;
+
+            const lel = document.getElementById('landing-visitor-name');
+            if (lel) lel.innerText = nameToDisplay;
         }
 
         function submitVisitorName() {
@@ -1862,6 +1881,12 @@
                         <path d="M3 3v5h5" />
                     </svg>`;
                 }
+            }
+
+            if (d.type === 'VISITOR_NAME_CHANGED') {
+                sessionVisitorName = d.name;
+                updateSectionName();
+                persistReflections();
             }
 
             if (d.type === 'EXPERIENCE_LOADED') {
@@ -2179,6 +2204,7 @@
         function clearResults() {
             if (confirm("Are you sure you want to clear your reflections? This cannot be undone.")) {
                 localStorage.removeItem('houseReflections');
+                localStorage.removeItem('userQuizProgress');
                 sessionReflections = {};
                 sessionVisitorName = '';
 
@@ -2214,7 +2240,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             try {
                 const saved = JSON.parse(localStorage.getItem('houseReflections') || '{}');
-                if (saved.name) sessionVisitorName = saved.name;
+                const savedQuiz = JSON.parse(localStorage.getItem('userQuizProgress') || '{}');
+                if (savedQuiz.name) {
+                    sessionVisitorName = savedQuiz.name;
+                } else if (saved.name) {
+                    sessionVisitorName = saved.name;
+                }
                 if (saved.answers) {
                     sessionReflections = saved.answers;
                     Object.keys(sessionReflections).forEach(room => {
