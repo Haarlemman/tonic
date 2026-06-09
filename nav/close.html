@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="title" content="Navigate the World">
+<meta name="description" content=" 'Navigate the World',a place to explore the World and beyond! ">
+<meta name="keywords" content="web, website, navigate, explore">
+<meta name="author" content="David Enker">
+<meta name="robots" content="index, follow">
+<meta name="language" content="English">
+<meta name="revisit-after" content="1 days">
+<meta name="generator" content="VS Code">
+<meta name="rating" content="general">
+<meta name="distribution" content="global">
+<meta name="theme-color" content="#032c5e">
+<meta name="msapplication-TileColor" content="#032c5e">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.davidenker.com/nav/">
+<meta property="og:title" content="Navigate the World">
+<meta property="og:description" content=" 'Navigate the World',a place to explore the World and beyond!">
+<meta property="og:image" content="images/navi.jpg">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://www.davidenker.com/nav/">
+<meta property="twitter:title" content="Navigate the World">
+<meta property="twitter:description" content=" 'Navigate the World',a place to explore the World and beyond!">
+<meta property="twitter:image" content="images/navi.jpg">
+
+<!-- Preload critical assets -->
+<link rel="canonical" href="https://www.davidenker.com/nav/">
+    
+<!-- More specific SEO and social meta tags -->
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+
+<link rel="icon" type="image/svg+xml" href="images/world.svg">
+<link rel="icon" type="image/png" href="images/world.png">
+<link rel="icon" type="image/x-icon" href="images/world.ico">
+
+	<title>Navigate the World</title>
+
+<style>				
+
+	body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        background-color: #233137;
+        font-family: 'Space Grotesk', Arial, serif;
+    }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: 1200px;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .grid-item-nav {
+        grid-column: span 2;
+        text-align: left;
+        font-size: 2.8em;
+        color: #e2dfb3;
+        font-family: 'Space Grotesk', Arial, serif;
+        padding: 10px 10px;
+        margin-bottom: 10px;
+		line-height: 1;
+		
+    }
+
+    .grid-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #d5d0c0, #e0e0e0);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .icon-circle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .icon-circle img {
+        width: 50px;
+        height: 50px;
+    }
+
+    .grid-item a {
+        text-decoration: none;
+        color: #e2dfb3;
+        font-weight: 600;
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+
+    .grid-item span {
+        margin-top: 5px;
+        word-wrap: break-word;
+        text-align: center;
+        color: #e2dfb3;
+        font-size: 15px;
+        transition: color 0.3s ease, font-size 0.3s ease;
+    }
+
+    .grid-item span:hover {
+        color: #d8ce2f;
+    }
+
+
+    @media (max-width: 768px) {
+        .grid-container {
+			grid-template-columns: repeat(4, 1fr); /* Sets 3 columns */
+      		grid-template-rows: auto; /* Adjusts dynamically */
+            gap: 15px;
+        }
+		
+		.icon-circle {
+        width: 60px; /* Smaller icons */
+        height: 60px;
+    }
+
+    .icon-circle img {
+        width: 40px; /* Smaller images inside icons */
+        height: 40px;
+    }
+
+    .grid-item span {
+        font-size: 13px; /* Reduce text size */
+    }
+
+    .grid-item-nav {
+        font-size: 2em; /* Adjust title size */
+    }
+		
+    }
+
+
+    #bg-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -1;
+    }
+</style>
+	
+	
+</head>
+
+<body>
+
+<video autoplay loop muted playsinline id="bg-video">
+    <source src="/nav/video/skaai.mp4" type="video/mp4"> 
+	Your browser does not support HTML5 video.
+</video>
+
+<script>
+function openWhatsApp() {
+    var mobileLink = "whatsapp://send?phone=+31624658222";
+    var desktopLink = "https://web.whatsapp.com";
+
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        window.location.href = mobileLink; // Opens WhatsApp app on mobile
+    } else {
+        window.open(desktopLink, "_blank"); // Opens WhatsApp Web on desktop
+    }
+}
+</script>
+
+
+<div class="grid-container">
+    <div class="grid-item-nav">Navigate<br>the World</div>
+
+    <div class="grid-item">
+        <a href="https://www.google.com/">
+            <div class="icon-circle">
+                <img src="images/google.svg" alt="Search">
+            </div>
+            <span>Google</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://drive.google.com/">
+            <div class="icon-circle">
+                <img src="images/Google_Drive.svg" alt="Google Drive">
+            </div>
+            <span>Drive</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://docs.google.com">
+            <div class="icon-circle">
+                <img src="images/Google_Docs.svg" alt="Google Docs">
+            </div>
+            <span>Docs</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://translate.google.com">
+            <div class="icon-circle">
+                <img src="images/Google_Translate.svg" alt="Google Translate">
+            </div>
+            <span>Translate</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://mail.google.com">
+            <div class="icon-circle">
+                <img src="images/Gmail_icon.svg" alt="Gmail">
+            </div>
+            <span>Gmail</span>
+        </a>
+    </div>
+    <div class="grid-item">
+        <a href="https://calendar.google.com">
+            <div class="icon-circle">
+                <img src="images/Google_Calendar.svg" alt="Google Calendar">
+            </div>
+            <span>Calendar</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://contacts.google.com">
+            <div class="icon-circle">
+                <img src="images/Google_Contacts.svg" alt="Google Contacts">
+            </div>
+            <span>Contacts</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://photos.google.com">
+            <div class="icon-circle">
+                <img src="images/Google_Photos.svg" alt="Google Photos">
+            </div>
+            <span>Photos</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.youtube.com">
+            <div class="icon-circle">
+                <img src="images/youtube.svg" alt="YouTube">
+            </div>
+            <span>YouTube</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://keep.google.com/">
+            <div class="icon-circle">
+                <img src="images/Google_Keep.svg" alt="Notes">
+            </div>
+            <span>Notes</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.google.com/maps/">
+            <div class="icon-circle">
+                <img src="images/Google_Maps_icon.svg" alt="Maps">
+            </div>
+            <span>Maps</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://earth.google.com/">
+            <div class="icon-circle">
+                <img src="images/Google_Earth.svg" alt="Earth">
+            </div>
+            <span>Earth</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://analytics.google.com/">
+            <div class="icon-circle">
+                <img src="images/GAnalytics.svg" alt="Analytics">
+            </div>
+            <span>Analytics</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://fonts.google.com/">
+            <div class="icon-circle">
+                <img src="images/google-fonts.svg" alt="Google Fonts">
+            </div>
+            <span>Google Fonts</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://fonts.adobe.com/">
+            <div class="icon-circle">
+                <img src="images/Adobe_Fonts.svg" alt="Adobe Fonts">
+            </div>
+            <span>Adobe Fonts</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://express.adobe.com">
+            <div class="icon-circle">
+                <img src="images/Adobe_Express_logo_CMYK.svg" alt="Adobe Express">
+            </div>
+            <span>Express</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://firefly.adobe.com/">
+            <div class="icon-circle">
+                <img src="images/Adobe_Firefly.svg" alt="Adobe Firefly">
+            </div>
+            <span>Firefly</span>
+        </a>
+    </div>
+
+
+    <div class="grid-item">
+        <a href="https://canva.com/">
+            <div class="icon-circle">
+                <img src="images/Canva.svg" alt="Canva">
+            </div>
+            <span>Canva</span>
+        </a>
+    </div>
+
+
+    <div class="grid-item">
+        <a href="https://capcut.com/">
+            <div class="icon-circle">
+                <img src="images/Capcut.svg" alt="Capcut">
+            </div>
+            <span>Capcut</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.facebook.com">
+            <div class="icon-circle">
+                <img src="images/Facebook_icon.svg" alt="Facebook">
+            </div>
+            <span>Facebook</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.instagram.com">
+            <div class="icon-circle">
+                <img src="images/Instagram.svg" alt="Instagram">
+            </div>
+            <span>Instagram</span>
+        </a>
+    </div>
+
+
+    <div class="grid-item">
+        <a href="https://www.x.com/">
+            <div class="icon-circle">
+                <img src="images/X_logo.svg" alt="X">
+            </div>
+            <span>X</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.linkedin.com">
+            <div class="icon-circle">
+                <img src="images/linkedin.svg" alt="LinkedIn">
+            </div>
+            <span>LinkedIn</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="#" onclick="openWhatsApp()">
+            <div class="icon-circle">
+                <img src="images/WhatsApp.svg" alt="WhatsApp">
+            </div>
+            <span>WhatsApp</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="spotify:app">
+            <div class="icon-circle">
+                <img src="images/Spotify.svg" alt="Spotify">
+            </div>
+            <span>Spotify</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://en.wikipedia.org/wiki/Main_Page">
+            <div class="icon-circle">
+                <img src="images/wikipedia-logo-black.svg" alt="Wikipedia">
+            </div>
+            <span>Wikipedia</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://nos.nl/teletekst/101/1">
+            <div class="icon-circle">
+                <img src="images/NOS.svg" alt="NOS Teletext">
+            </div>
+            <span>Teletext</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.geenstijl.nl">
+            <div class="icon-circle">
+                <img src="images/geenstijl.svg" alt="GeenStijl">
+            </div>
+            <span>GeenStijl</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.bbc.com/news">
+            <div class="icon-circle">
+                <img src="images/BBC-icon.svg" alt="BBC News">
+            </div>
+            <span>BBCNews</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.jpost.com/">
+            <div class="icon-circle">
+                <img src="images/jpost.svg" alt="Jerusalem Post">
+            </div>
+            <span>JPost</span>
+        </a>
+    </div>
+    <div class="grid-item">
+        <a href="https://www.timesofisrael.com">
+            <div class="icon-circle">
+                <img src="images/toi.svg" alt="Times of Israel">
+            </div>
+            <span>Times of IL</span>
+        </a>
+    </div>
+    <div class="grid-item">
+        <a href="https://www.ynetnews.com/">
+            <div class="icon-circle">
+                <img src="images/Ynet.svg" alt="Ynet">
+            </div>
+            <span>Ynet</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://buienradar.nl/">
+            <div class="icon-circle">
+                <img src="images/Buienradar.svg" alt="Buienradar">
+            </div>
+            <span>Buienradar</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://imdb.com/">
+            <div class="icon-circle">
+                <img src="images/IMDB.svg" alt="IMdb">
+            </div>
+            <span>IMdb</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://chat.openai.com">
+            <div class="icon-circle">
+                <img src="images/ChatGPT.svg" alt="ChatGPT">
+            </div>
+            <span>ChatGPT</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://gemini.google.com/">
+            <div class="icon-circle">
+                <img src="images/Gemini.svg" alt="Gemini">
+            </div>
+            <span>Gemini</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://claude.ai/">
+            <div class="icon-circle">
+                <img src="images/Claude_AI.svg" alt="Claude">
+            </div>
+            <span>Claude</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://perplexity.ai/">
+            <div class="icon-circle">
+                <img src="images/Perplexity.svg" alt="Perplexity">
+            </div>
+            <span>Perplexity</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://www.davidenker.com">
+            <div class="icon-circle">
+                <img src="images/de.svg" alt="David Enker">
+            </div>
+            <span>David Enker</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://davidenker.com/solar">
+            <div class="icon-circle">
+                <img src="images/ss.svg" alt="Solar">
+            </div>
+            <span>Solar Sprint</span>
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <a href="https://davidenker.com/planets/">
+            <div class="icon-circle">
+                <img src="images/sun.svg" alt="Planets">
+            </div>
+            <span>Planets</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>
