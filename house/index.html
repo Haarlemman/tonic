@@ -852,7 +852,9 @@
                                 <span class="tw-line" data-text-en="AND DISCOVER THE MEANING OF LIFE" data-text-nl="EN ONTDEK DE ZIN VAN HET LEVEN"></span>
                             </div>
                             <div class="landing-line landing-line-according">
-                                <span class="tw-line" data-text-en="ACCORDING TO {YOU}." data-text-nl="VOLGENS {JOU}."></span>
+                                <span class="tw-line" data-text-en="ACCORDING TO " data-text-nl="VOLGENS "></span>
+                                <span class="visitor-name">YOU</span>
+                                <span class="tw-line" data-text-en="." data-text-nl="."></span>
                             </div>
                         </div>
                     </div>
@@ -875,6 +877,27 @@
                             margin-left: 2px;
                             color: rgba(0, 242, 255, 0.9);
                             animation: tw-blink 0.7s step-end infinite;
+                        }
+
+                        /* Visitor name: hidden until typewriter completes, with 3D neon effect when shown */
+                        .visitor-name {
+                            display: inline-block;
+                            opacity: 0;
+                            transform: translateY(18px) scale(0.92);
+                            transition: opacity 420ms ease, transform 420ms cubic-bezier(.2,.9,.2,1);
+                            color: rgba(0, 242, 255, 0.9);
+                            text-shadow:
+                                -6px -6px 0px rgba(255, 0, 180, 0.65),
+                                -12px -12px 0px rgba(68, 100, 255, 0.45),
+                                0 0 18px rgba(0,242,255,0.25);
+                            letter-spacing: 0.06em;
+                            font-weight: 700;
+                            pointer-events: none;
+                        }
+
+                        .visitor-name.ready {
+                            opacity: 1;
+                            transform: translateY(0) scale(1);
                         }
 
                         @keyframes tw-blink {
@@ -932,8 +955,15 @@
                                             }, delay);
                                         })(i, globalDelay + i * charDelay);
                                     }
-                                    globalDelay += full.length * charDelay + lineGap;
+                                    globalDelay += raw.length * charDelay + lineGap;
                                 });
+
+                                // After all lines have been typed, reveal the visitor name with 3D effect
+                                setTimeout(function () {
+                                    document.querySelectorAll('.visitor-name').forEach(function (el) {
+                                        el.classList.add('ready');
+                                    });
+                                }, globalDelay + 80);
                             }
 
                             if (document.readyState === 'loading') {
@@ -947,6 +977,9 @@
                             window.setLanguage = function(lang) {
                                 if (_origSL) _origSL(lang);
                                 document.querySelectorAll('.tw-line').forEach(function(s){ s.textContent = ''; });
+                                document.querySelectorAll('.visitor-name').forEach(function(nameEl) {
+                                    nameEl.textContent = (lang === 'nl') ? 'JOU' : 'YOU';
+                                });
                                 runLandingTypewriter();
                             };
                         })();
@@ -961,7 +994,7 @@
                     <div id="landing-boot-controls">
 
                         <button id="boot-btn" onclick="bootExperience()" data-i18n="initialize"
-                            class="hidden px-4 md:px-8 py-2 transition-all uppercase font-bold tracking-[0.2em] shadow-2xl text-[10px] md:text-sm flex items-center gap-2"
+                            class="px-4 md:px-8 py-2 transition-all uppercase font-bold tracking-[0.2em] shadow-2xl text-[10px] md:text-sm flex items-center gap-2"
                             style="letter-spacing:0.2em; background:#000000; color:#ffcc00; border:2px solid #ffcc00; cursor:pointer;"
                             onmouseenter="this.style.background='#ffcc00';this.style.color='#000000';this.style.borderColor='#ffcc00';this.style.boxShadow='0 0 16px 4px rgba(255,204,0,0.7), 0 0 40px 8px rgba(255,204,0,0.35)';"
                             onmouseleave="this.style.background='#000000';this.style.color='#ffcc00';this.style.borderColor='#ffcc00';this.style.boxShadow='';">
@@ -972,18 +1005,19 @@
 
                     <script>
                         document.addEventListener("DOMContentLoaded", () => {
-                            // Auto-boot: skip the INITIALIZE button, go straight to LOADING
-                            setTimeout(() => {
-                                const bootBtn = document.getElementById('boot-btn');
-                                if (bootBtn) {
-                                    // Make it visible so bootExperience can render the LOADING bar into it
-                                    bootBtn.classList.remove('hidden');
-                                    bootBtn.style.display = 'flex';
-                                }
-                                if (typeof bootExperience === 'function') {
-                                    bootExperience();
-                                }
-                            }, 800);
+                            const bootBtn = document.getElementById('boot-btn');
+                            if (bootBtn) {
+                                bootBtn.style.display = 'flex';
+                                // Ensure button is interactive in case a previous run left it disabled
+                                bootBtn.style.pointerEvents = 'auto';
+                                bootBtn.style.opacity = '1';
+                                bootBtn.style.cursor = 'pointer';
+                            }
+
+                            // Make sure visitor-name starts hidden for immediate page loads
+                            document.querySelectorAll('.visitor-name').forEach(function (el) {
+                                el.classList.remove('ready');
+                            });
                         });
                     </script>
                 </div>
@@ -2160,25 +2194,14 @@
                     // Stop the loading animation
                     if (btn._loadInterval) clearInterval(btn._loadInterval);
 
-                    // Restore button for interaction
-                    btn.style.pointerEvents = 'auto';
-                    btn.style.opacity = '1';
-                    btn.style.cursor = 'pointer';
-                    btn.style.background = '#ffcc00';
-                    btn.style.color = '#000000';
-                    btn.style.border = '2px solid #ffcc00';
-                    btn.innerHTML = (i18n[currentLang].jump_in || 'JUMP IN &nbsp;<span style="font-size:1.4em; vertical-align:middle; line-height:0;">▶</span>');
-
-                    btn.onclick = function () {
-                        // Enter experience on click (allows audio/fullscreen)
-                        if (typeof enterExperience === 'function') enterExperience();
-                    };
-
-                    // Add a subtle pulse to indicate it's ready
-                    btn.classList.add('animate-pulse');
-                }
-            }
-
+                            // Restore button for interaction as yellow outline
+                            btn.style.pointerEvents = 'auto';
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                            btn.style.background = 'transparent';
+                            btn.style.color = '#ffcc00';
+                            btn.style.border = '2px solid #ffcc00';
+                            btn.style.boxShadow = '0 0 12px rgba(255,204,0,0.2)';
 
             if (d.type === 'ROOM_ANSWERED') {
                 sessionReflections[d.room] = d.answer;
