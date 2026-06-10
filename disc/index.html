@@ -1,553 +1,473 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script type="text/javascript" src="https://private-us-east-1.manuscdn.com/eO1aSVyNvwNsJyz7L0VZlYx1y6Dx7JJpsQsz4WhWu9xqNj2SfQ0wjG292q4YLqxw_0VS8t-poHuWi6aYRZw5wA=="></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Truth Disc</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Jost&family=Crimson+Pro&family=Cal+Sans&display=swap" rel="stylesheet">
+<head>
+  <script type="text/javascript" src="https://private-us-east-1.manuscdn.com/eO1aSVyNvwNsJyz7L0VZlYx1y6Dx7JJpsQsz4WhWu9xqNj2SfQ0wjG292q4YLqxw_0VS8t-poHuWi6aYRZw5wA=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Truth Disc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Cal+Sans&display=swap" rel="stylesheet">
 
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <style>
-        body {
-            background-color: #53523a;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
-            font-family: Arial, sans-serif;
-            overflow-y: auto;
-        }
+    :root {
+      --state-color: #00bce4;
+      --state-color-dim: rgba(0, 188, 228, 0.15);
+      --state-color-glow: rgba(0, 188, 228, 0.4);
+      --transition-speed: 0.9s;
+    }
 
-        .container {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 30px;
-            max-width: 100%;
-            width: 100%;
-            align-items: start;
-        }
+    body {
+      background: #050508;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Jost', sans-serif;
+      overflow-x: hidden;
+      color: #fff;
+    }
 
-        .left-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
-        }
+    /* ── Ambient background orb ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 40%,
+        var(--state-color-dim) 0%,
+        transparent 70%);
+      transition: background var(--transition-speed) ease;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        .disc-container {
-            position: relative;
-            width: 66vw;
-            height: 66vw;
-            max-width: 500px;
-            max-height: 500px;
-            flex-shrink: 0;
-            margin: 0;
-        }
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 960px;
+      padding: 40px 24px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 32px;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-        .background-layer {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 1;
-        }
+    /* ── Top: state label ── */
+    .state-label {
+      text-align: center;
+      letter-spacing: 0.35em;
+      font-size: clamp(10px, 1.8vw, 14px);
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      color: var(--state-color);
+      text-transform: uppercase;
+      opacity: 0.7;
+      transition: color var(--transition-speed) ease;
+    }
 
-        .disc {
-            width: 78%;
-            height: 78%;
-            transition: transform 0.8s ease-in-out;
-            transform-origin: center center;
-            position: absolute;
-            top: 52%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(0deg);
-            z-index: 2;
-            filter: drop-shadow(0 0 10px rgba(255, 235, 185, 0.8));
-        }
+    /* ── Center: disc + quote ── */
+    .center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
 
-        .envelope-layer {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 1;
-            z-index: 3;
-            pointer-events: none;
-        }
+    /* ── Disc ── */
+    .disc-wrap {
+      position: relative;
+      width: min(60vw, 380px);
+      height: min(60vw, 380px);
+      flex-shrink: 0;
+    }
 
-        .word-display {
-    position: absolute;
-    top: 39%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #ec3926;
-    font-family: 'Economica', sans-serif;
-    font-size: 24px;
-    font-weight: 700;
-    text-shadow: 0px 0px 0px rgba(236, 57, 38, 0.8);
-    z-index: 10;
-    text-align: center;
-    width: 100%;
-    pointer-events: none;
-}
+    /* Pulsing glow ring behind disc */
+    .disc-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--state-color-glow) 0%, transparent 70%);
+      animation: pulseGlow 3s ease-in-out infinite;
+      transition: background var(--transition-speed) ease;
+    }
 
-		
-		.word-display span {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  animation: fadeInOut 12.0s linear infinite;
-  white-space: nowrap;
-}
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50%       { opacity: 1;   transform: scale(1.06); }
+    }
 
+    .disc-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .disc-bg img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+      opacity: 0.25;
+    }
 
-        .word-display span:nth-child(1) { animation-delay: 0s; }
-        .word-display span:nth-child(2) { animation-delay: 0.8s; }
-        .word-display span:nth-child(3) { animation-delay: 1.6s; }
-        .word-display span:nth-child(4) { animation-delay: 2.4s; }
-        .word-display span:nth-child(5) { animation-delay: 3.2s; }
-        .word-display span:nth-child(6) { animation-delay: 4.0s; }
-        .word-display span:nth-child(7) { animation-delay: 4.8s; }
-        .word-display span:nth-child(8) { animation-delay: 5.6s; }
-        .word-display span:nth-child(9) { animation-delay: 6.4s; }
-        .word-display span:nth-child(10) { animation-delay: 7.2s; }
-        .word-display span:nth-child(11) { animation-delay: 8.0s; }
-        .word-display span:nth-child(12) { animation-delay: 8.8s; }
-		.word-display span:nth-child(13) { animation-delay: 9.6s; }
-		.word-display span:nth-child(14) { animation-delay: 10.4s; }
-		.word-display span:nth-child(15) { animation-delay: 11.2s; }
-		
-		@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 50px) scale(0.1);
-    color: #ec3926;
-    filter: drop-shadow(0 0 0 rgba(0,0,0,0));
-  }
-  10% {
-    opacity: 1;
-    transform: translate(-50%, 0px) scale(0.7);
-    color: #f81800;
-    filter: drop-shadow(0 0 5px rgba(236, 57, 38, 0.6));
-  }
-  40% {
-    opacity: 0.5;
-    transform: translate(-50%, -150px) scale(3);
-    color: #e0da58;
-    filter: drop-shadow(0 0 5px rgba(224, 218, 38, 0.8));
-  }
-  90% {
-    opacity: 0.7;
-    transform: translate(-50%, -300px) scale(7);
-    color: #006cff;
-    filter: drop-shadow(0 0 8px rgba(0, 222, 255, 0.8));
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -500px) scale(12);
-    color: #1844d0;
-    filter: drop-shadow(0 0 0 rgba(0,0,0,0));
-  }
-}
+    .disc-img {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 82%; height: 82%;
+      transform: translate(-50%, -50%) rotate(0deg);
+      transform-origin: center center;
+      transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 2;
+      filter: drop-shadow(0 0 18px var(--state-color-glow));
+      will-change: transform;
+    }
 
+    .envelop-img {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0.9;
+    }
 
+    .hal-img {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 88px; height: 88px;
+      object-fit: contain;
+      z-index: 6;
+      pointer-events: none;
+      filter: drop-shadow(0 0 8px var(--state-color));
+      transition: filter var(--transition-speed) ease;
+    }
 
-		
+    /* Floating word display */
+    .word-display {
+      position: absolute;
+      top: 36%; left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      width: 100%;
+      text-align: center;
+      pointer-events: none;
+      display: none;
+    }
 
-        .hal9000-layer {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
-            z-index: 6;
-            pointer-events: none;
-        }
+    .word-display span {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      font-family: 'Cal Sans', sans-serif;
+      font-size: clamp(16px, 4vw, 22px);
+      letter-spacing: 0.1em;
+      animation: floatWord 12s linear infinite;
+      white-space: nowrap;
+    }
 
-        .controls {
-            display: flex;
-            flex-direction: row;
-            gap: 15px;
-            justify-content: center;
-        }
+    .word-display span:nth-child(1)  { animation-delay: 0s; }
+    .word-display span:nth-child(2)  { animation-delay: 0.8s; }
+    .word-display span:nth-child(3)  { animation-delay: 1.6s; }
+    .word-display span:nth-child(4)  { animation-delay: 2.4s; }
+    .word-display span:nth-child(5)  { animation-delay: 3.2s; }
+    .word-display span:nth-child(6)  { animation-delay: 4.0s; }
+    .word-display span:nth-child(7)  { animation-delay: 4.8s; }
+    .word-display span:nth-child(8)  { animation-delay: 5.6s; }
+    .word-display span:nth-child(9)  { animation-delay: 6.4s; }
+    .word-display span:nth-child(10) { animation-delay: 7.2s; }
+    .word-display span:nth-child(11) { animation-delay: 8.0s; }
+    .word-display span:nth-child(12) { animation-delay: 8.8s; }
+    .word-display span:nth-child(13) { animation-delay: 9.6s; }
+    .word-display span:nth-child(14) { animation-delay: 10.4s; }
+    .word-display span:nth-child(15) { animation-delay: 11.2s; }
 
-        .text-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            min-height: 200px;
-            margin-top: 20px;
-        }
+    @keyframes floatWord {
+      0%   { opacity: 0; transform: translate(-50%, 30px) scale(0.2); color: var(--state-color); filter: blur(4px); }
+      8%   { opacity: 1; transform: translate(-50%, 0px)  scale(0.85); color: var(--state-color); filter: blur(0); }
+      40%  { opacity: 0.6; transform: translate(-50%, -120px) scale(2.5); color: #fff; filter: blur(1px); }
+      85%  { opacity: 0.3; transform: translate(-50%, -280px) scale(5); color: #aaa; filter: blur(3px); }
+      100% { opacity: 0; transform: translate(-50%, -420px) scale(9); filter: blur(8px); }
+    }
 
-        .state-title {
-		    font-family: 'Cal Sans', cursive;
-            font-size: 6vw;
-            font-weight: 700;
-            color: #d4d3b4;
-            opacity: 0.9;
-            white-space: nowrap;
-            letter-spacing: 2px;
-        }
+    /* ── Big state title ── */
+    .state-title {
+      font-family: 'Cal Sans', sans-serif;
+      font-size: clamp(52px, 14vw, 110px);
+      font-weight: 400;
+      color: var(--state-color);
+      letter-spacing: -0.01em;
+      line-height: 1;
+      text-align: center;
+      text-shadow: 0 0 60px var(--state-color-glow), 0 0 120px var(--state-color-dim);
+      transition: color var(--transition-speed) ease, text-shadow var(--transition-speed) ease;
+      animation: titlePulse 4s ease-in-out infinite;
+    }
 
-      .quote-container {
-  font-family: 'Crimson Pro', cursive;
-  font-size: 20px;
-  color: #201f04;
-  background-color: #d5d4b9;
-  opacity: 0.95;
-  line-height: 1.6;
-  padding: 24px;
-  border-radius: 10px;
-  backdrop-filter: blur(2px);
-  transition: opacity 0.5s ease;
-  height: 7.2em; /* Fixed height for ~4 lines at 1.6 line-height */
-  overflow-y: auto;
-  width: 80%;
-  margin: 0;
-}
+    @keyframes titlePulse {
+      0%, 100% { opacity: 0.95; }
+      50%       { opacity: 1; }
+    }
 
+    /* ── Quote card ── */
+    .quote-card {
+      width: min(580px, 100%);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 28px 32px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+      box-shadow: 0 0 40px var(--state-color-dim), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
 
+    .quote-text {
+      font-family: 'Crimson Pro', serif;
+      font-size: clamp(17px, 2.4vw, 21px);
+      font-style: italic;
+      font-weight: 300;
+      color: rgba(255,255,255,0.82);
+      line-height: 1.65;
+      text-align: center;
+      width: 100%;
+      transition: opacity 0.4s ease;
+      white-space: pre-line;
+    }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
+    .quote-text.fading { opacity: 0; }
 
-            .container {
-                grid-template-columns: 1fr;
-                align-items: center;
-            }
+    /* ── Bottom: controls ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-            .left-column {
-                order: 1;
-            }
+    .btn {
+      padding: 10px 26px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 100px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.7);
+      font-family: 'Jost', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
 
-            .disc-container {
-                width: 75vw;
-                height: 75vw;
-                max-width: 380px;
-                max-height: 380px;
-            }
+    .btn:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border-color: var(--state-color);
+      box-shadow: 0 0 16px var(--state-color-dim);
+      transform: translateY(-1px);
+    }
 
-            .disc {
-                width: 77%;
-                height: 77%;
-                position: absolute;
-                top: 53%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(0deg);
-                filter: drop-shadow(0 0 10px rgba(255, 242, 128, 0.8));
-            }
+    .btn:active { transform: translateY(0); }
 
-           .hal9000-layer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    z-index: 6;
-    pointer-events: none;
-}
+    .btn.btn-body:hover  { border-color: #cc1122; box-shadow: 0 0 16px rgba(204,17,34,0.3); }
+    .btn.btn-mind:hover  { border-color: #e8c840; box-shadow: 0 0 16px rgba(232,200,64,0.3); }
+    .btn.btn-soul:hover  { border-color: #00bce4; box-shadow: 0 0 16px rgba(0,188,228,0.3); }
+    .btn.btn-truth:hover { border-color: rgba(255,255,255,0.5); }
 
-            .word-display {
-                font-size: 16px;
-                top: 35%;
-                width: 100%;
-            }
+    .btn.active {
+      color: var(--state-color);
+      border-color: var(--state-color);
+      box-shadow: 0 0 20px var(--state-color-dim);
+    }
 
-          .text-content {
-  align-items: center;
-  text-align: center;
-}
+    /* ── Divider line ── */
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255,255,255,0.12);
+    }
 
-            .state-title {
-                font-size: 20vw;
-                margin-bottom: 10px;
-            }
-
-            .quote-container {
-  text-align: center;
-  margin: 10px auto 0 auto;
-}
-        }
-
-        .btn {
-            width: 80px;
-            height: 40px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-body {
-            background-color: #dc3545;
-        }
-
-        .btn-mind {
-            background-color: #ffc107;
-            color: #333;
-            text-shadow: none;
-        }
-
-        .btn-soul {
-            background-color: #007bff;
-        }
-		
-		.btn-toggle {
-		    background-color: white;
-    		color:  #000;
-			text-shadow: none;
-}
-
-        .state-indicator {
-            position: absolute;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            opacity: 0.8;
-            display: none;
-        }
-
-@media (min-width: 769px) {
-  .text-content {
-    align-items: flex-start;
-  }
-
-  .quote-container {
-    width: 60%;
-    text-align: left;
-    margin: 0; /* Ensures it's left-aligned under the title */
-  }
-}
-
-
-		
-}
-
-    </style>
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .page { padding: 28px 16px; gap: 24px; }
+      .disc-wrap { width: min(78vw, 300px); height: min(78vw, 300px); }
+      .hal-img { width: 64px; height: 64px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="left-column">
-            <div class="disc-container">
-                <div class="state-indicator" id="stateIndicator">AUTO</div>
-                <img src="assets/images/bgpaper.png" 
-                     alt="Background Paper" 
-                     class="background-layer">
-                <img src="assets/images/disc.png" 
-                     alt="Zen Disc" 
-                     class="disc" 
-                     id="disc">
-                <img src="assets/images/envelop.png" 
-                     alt="Envelope Overlay" 
-                     class="envelope-layer">
-<div id="wordDisplay" class="word-display" style="display: none;">
-<span>Dao</span>
-<span>God</span>
-<span>Zen</span>
-<span>Love</span>
-<span>Atman</span>
-<span>Ananda</span> 
-<span>Kenshō</span>
-<span>Ikigai</span>
-<span>Satori</span>
-<span>Nirvana</span>
-<span>Neshama</span>
-<span>Samsara</span>
-<span>Ein Sof</span>
-<span>Shekhinah</span>
-<span>Infinity</span>
-                </div>
-                <img src="assets/images/hal9000.png" 
-                     alt="HAL 9000 Overlay" 
-                     class="hal9000-layer">
-            </div>
-            <div class="controls">
-                <button class="btn btn-body" onclick="setState('body')">BODY</button>
-                <button class="btn btn-mind" onclick="setState('mind')">MIND</button>
-                <button class="btn btn-soul" onclick="setState('soul')">SOUL</button>
-				<button class="btn btn-toggle" onclick="toggleWords()">TRUTH</button>
-            </div>
-        </div>
-        <div class="text-content">
-            <div class="state-title" id="stateTitle">Body</div>
-            <div class="quote-container" id="quoteContainer"></div>
-        </div>
+
+<div class="page">
+
+  <!-- State micro-label -->
+  <div class="state-label" id="stateLabel">Soul · Mind · Body</div>
+
+  <!-- Center area -->
+  <div class="center">
+
+    <!-- Disc -->
+    <div class="disc-wrap" id="discWrap">
+      <div class="disc-bg">
+        <img src="images/bgpaper.png" alt="">
+      </div>
+
+      <img src="images/disc.png" alt="Truth Disc" class="disc-img" id="disc">
+      <img src="images/envelop.png" alt="" class="envelop-img">
+
+      <!-- Floating spiritual words -->
+      <div id="wordDisplay" class="word-display">
+        <span>Dao</span><span>God</span><span>Zen</span><span>Love</span>
+        <span>Atman</span><span>Ananda</span><span>Kenshō</span><span>Ikigai</span>
+        <span>Satori</span><span>Nirvana</span><span>Neshama</span><span>Samsara</span>
+        <span>Ein Sof</span><span>Shekhinah</span><span>Infinity</span>
+      </div>
+
+      <img src="images/hal9000.png" alt="" class="hal-img" id="hal">
     </div>
 
-	<script>
-  var currentRotation = 0;
-  var autoRotateInterval;
-  var isAutoMode = true;
-  var disc = document.getElementById('disc');
-  var stateIndicator = document.getElementById('stateIndicator');
-  var stateTitle = document.getElementById('stateTitle');
-  var quoteContainer = document.getElementById('quoteContainer');
+    <!-- State title -->
+    <div class="state-title" id="stateTitle">Soul</div>
 
-  var wisdomQuotes = [
-    "The only way to do great work is to love what you do. - Steve Jobs",
-    "Be yourself; everyone else is already taken. - Oscar Wilde",
-    "In the end, we will remember not the words of our enemies, but the silence of our friends. - Martin Luther King Jr.",
-    "The journey of a thousand miles begins with one step. - Lao Tzu",
-    "Life is what happens to you while you're busy making other plans. - John Lennon",
-    "The only impossible journey is the one you never begin. - Tony Robbins",
-    "Yesterday is history, tomorrow is a mystery, today is a gift. - Eleanor Roosevelt",
-    "It is during our darkest moments that we must focus to see the light. - Aristotle"
-  ];
+    <!-- Quote -->
+    <div class="quote-card">
+      <div class="quote-text" id="quoteText"></div>
+    </div>
 
-  var scienceFacts = [
-    "Your brain uses about 20% of your body's total energy, despite being only 2% of your body weight.",
-    "A single teaspoon of honey represents the life work of 12 bees.",
-    "Octopuses have three hearts and blue blood, and two hearts stop beating when they swim.",
-    "The human eye can distinguish approximately 10 million different colors.",
-    "A day on Venus is longer than its year - it takes 243 Earth days to rotate once.",
-    "Bananas are berries, but strawberries aren't. Botanically speaking, berries must have seeds inside their flesh.",
-    "The speed of light is so fast that it could circle the Earth 7.5 times in just one second.",
-    "Your stomach gets an entirely new lining every 3-4 days because stomach acid would otherwise digest it."
-  ];
+  </div>
 
-  var bodyPoems = [
-    "Breathe in strength,\nExhale the doubt,\nYour body knows\nWhat life's about.",
-    "Every step you take today\nBuilds the path to who you'll be,\nMovement is your body's way\nOf setting your spirit free.",
-    "Listen to your heartbeat's song,\nIt's been with you all along,\nA rhythm that will guide you through\nEverything you're meant to do.",
-    "Your hands can heal,\nYour feet can dance,\nYour body holds\nLife's every chance.",
-    "In rest you find your power,\nIn movement, find your grace,\nYour body is the temple\nWhere soul and mind embrace.",
-    "Strong like the mountains,\nFluid like the sea,\nYour body holds the wisdom\nOf who you're meant to be."
-  ];
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-body"  id="btnBody"  onclick="setState('body')">Body</button>
+    <button class="btn btn-mind"  id="btnMind"  onclick="setState('mind')">Mind</button>
+    <button class="btn btn-soul"  id="btnSoul"  onclick="setState('soul')">Soul</button>
+    <div class="divider"></div>
+    <button class="btn btn-truth" id="btnTruth" onclick="toggleWords()">Truth</button>
+  </div>
 
-  var states = {
-    soul: 0,
-    mind: 120,
-    body: 240
+</div>
+
+<script>
+  const STATES = {
+    soul: { rotation: 0,   color: '#00bce4', dim: 'rgba(0,188,228,0.13)',  glow: 'rgba(0,188,228,0.38)',  label: 'Soul' },
+    mind: { rotation: 120, color: '#e8c840', dim: 'rgba(232,200,64,0.13)', glow: 'rgba(232,200,64,0.38)', label: 'Mind' },
+    body: { rotation: 240, color: '#cc1122', dim: 'rgba(204,17,34,0.13)',  glow: 'rgba(204,17,34,0.38)',  label: 'Body' },
   };
 
-  function getRandomQuote(state) {
-    let quotes;
-    switch (state) {
-      case 'soul': quotes = wisdomQuotes; break;
-      case 'mind': quotes = scienceFacts; break;
-      case 'body': quotes = bodyPoems; break;
-      default: return '';
-    }
-    return quotes[Math.floor(Math.random() * quotes.length)];
-  }
+  const QUOTES = {
+    soul: [
+      "The Tao that can be named is not the eternal Tao.\n— Lao Tzu",
+      "Be yourself; everyone else is already taken.\n— Oscar Wilde",
+      "In the end, we will remember not the words of our enemies, but the silence of our friends.\n— Martin Luther King Jr.",
+      "Yesterday is history, tomorrow is a mystery, today is a gift.\n— Eleanor Roosevelt",
+      "It is during our darkest moments that we must focus to see the light.\n— Aristotle",
+      "The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.\n— Camus",
+    ],
+    mind: [
+      "Your brain uses about 20% of your body's total energy, despite being only 2% of your body weight.",
+      "A single teaspoon of honey represents the life work of 12 bees.",
+      "Octopuses have three hearts and blue blood — two of them stop beating when they swim.",
+      "The human eye can distinguish approximately 10 million different colours.",
+      "A day on Venus is longer than its year — it takes 243 Earth days to rotate once.",
+      "The speed of light could circle the Earth 7.5 times in a single second.",
+      "Your stomach gets an entirely new lining every 3–4 days, because stomach acid would otherwise digest it.",
+    ],
+    body: [
+      "Breathe in strength,\nexhale the doubt.\nYour body knows\nwhat life's about.",
+      "Every step you take today\nbuilds the path to who you'll be.\nMovement is your body's way\nof setting your spirit free.",
+      "Listen to your heartbeat's song —\nit's been with you all along,\na rhythm that will guide you through\neverything you're meant to do.",
+      "In rest you find your power,\nin movement, find your grace.\nYour body is the temple\nwhere soul and mind embrace.",
+      "Strong like the mountains,\nfluid like the sea —\nyour body holds the wisdom\nof who you're meant to be.",
+    ],
+  };
 
-  function updateQuoteDisplay(state) {
-    const quote = getRandomQuote(state);
-    if (quote) {
-      quoteContainer.innerText = quote;
-      quoteContainer.style.opacity = '0.95';
-    } else {
-      quoteContainer.style.opacity = '0';
-    }
-  }
+  let currentState = 'soul';
+  let currentRotation = 0;
+  let autoInterval = null;
+  let wordsVisible = false;
+  const stateOrder = ['soul', 'mind', 'body'];
 
-  function rotateDisc(targetRotation) {
-    disc.style.transform = 'translate(-50%, -50%) rotate(' + targetRotation + 'deg)';
-    currentRotation = targetRotation;
-  }
+  const disc      = document.getElementById('disc');
+  const stateTitle= document.getElementById('stateTitle');
+  const stateLabel= document.getElementById('stateLabel');
+  const quoteText = document.getElementById('quoteText');
+  const hal       = document.getElementById('hal');
 
-  function updateStateTitle() {
-    let currentState = 'body';
-    for (let key in states) {
-      if (states[key] === currentRotation) {
-        currentState = key;
-        break;
-      }
-    }
-    const capitalizedState = currentState.charAt(0).toUpperCase() + currentState.slice(1);
-    stateTitle.textContent = capitalizedState;
+  function applyState(key, animate = true) {
+    const s = STATES[key];
+    currentState = key;
+    currentRotation = s.rotation;
 
-    const stateColors = {
-      body: '#dd172a',
-      mind: '#dbdd17',
-      soul: '#00bce4'
-    };
-    stateTitle.style.color = stateColors[currentState];
+    // CSS custom properties for ambient effects
+    document.documentElement.style.setProperty('--state-color',     s.color);
+    document.documentElement.style.setProperty('--state-color-dim', s.dim);
+    document.documentElement.style.setProperty('--state-color-glow',s.glow);
 
-    updateQuoteDisplay(currentState);
-  }
+    // Rotate disc
+    disc.style.transform = `translate(-50%, -50%) rotate(${s.rotation}deg)`;
+    disc.style.filter    = `drop-shadow(0 0 18px ${s.glow})`;
 
-  function setState(state) {
-    clearInterval(autoRotateInterval);
-    isAutoMode = false;
+    // HAL glow
+    hal.style.filter = `drop-shadow(0 0 8px ${s.color})`;
 
-    stateIndicator.textContent = state.toUpperCase();
+    // State title + label
+    stateTitle.textContent = s.label;
+    stateLabel.textContent = s.label.toUpperCase();
 
-    const capitalizedState = state.charAt(0).toUpperCase() + state.slice(1);
-    stateTitle.textContent = capitalizedState;
-
-    const stateColors = {
-      body: '#dd172a',
-      mind: '#dbdd17',
-      soul: '#00bce4'
-    };
-    stateTitle.style.color = stateColors[state];
-
-    updateQuoteDisplay(state);
-    rotateDisc(states[state]);
-
+    // Quote with fade
+    quoteText.classList.add('fading');
     setTimeout(() => {
-      if (!isAutoMode) startAutoRotation();
-    }, 5000);
+      const pool = QUOTES[key];
+      quoteText.textContent = pool[Math.floor(Math.random() * pool.length)];
+      quoteText.classList.remove('fading');
+    }, 400);
+
+    // Active button
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    const btnMap = { soul: 'btnSoul', mind: 'btnMind', body: 'btnBody' };
+    document.getElementById(btnMap[key])?.classList.add('active');
   }
 
-  function startAutoRotation() {
-    isAutoMode = true;
-    stateIndicator.textContent = 'AUTO';
-    autoRotateInterval = setInterval(() => {
-      currentRotation += 120;
-      if (currentRotation >= 360) currentRotation = 0;
-      rotateDisc(currentRotation);
-      updateStateTitle();
-    }, 3500);
+  function setState(key) {
+    stopAuto();
+    applyState(key);
+    // Resume auto after 6s of no interaction
+    setTimeout(() => { if (!wordsVisible) startAuto(); }, 6000);
+  }
+
+  function startAuto() {
+    stopAuto();
+    autoInterval = setInterval(() => {
+      const idx = (stateOrder.indexOf(currentState) + 1) % stateOrder.length;
+      applyState(stateOrder[idx]);
+    }, 4000);
+  }
+
+  function stopAuto() {
+    if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
   }
 
   function toggleWords() {
-    const display = document.getElementById('wordDisplay');
-    display.style.display = (display.style.display === 'none') ? 'block' : 'none';
+    const wd = document.getElementById('wordDisplay');
+    wordsVisible = !wordsVisible;
+    wd.style.display = wordsVisible ? 'block' : 'none';
+    document.getElementById('btnTruth').classList.toggle('active', wordsVisible);
+    if (wordsVisible) stopAuto(); else startAuto();
   }
 
-  // Initialize
-  startAutoRotation();
-  updateStateTitle();
-  updateQuoteDisplay('body');
+  // Init
+  applyState('soul', false);
+  startAuto();
 </script>
-
-	
 </body>
 </html>
-
