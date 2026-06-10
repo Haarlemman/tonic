@@ -3468,29 +3468,20 @@ function playOutsideIdleAudio() {
 
 const INTRO_TOTAL_VIEW_HOLD_MS = 3500;
 
-function drawSpacedCenteredText(ctx, text, centerX, y, letterSpacing, kernPairs) {
+function drawSpacedCenteredText(ctx, text, centerX, y, letterSpacing) {
     const chars = text.split('');
-
-    // Gap after character at `index`, with optional per-pair kerning tweak
-    const gapAfter = (index) => {
-        if (index >= chars.length - 1) return 0;
-        let gap = letterSpacing;
-        if (kernPairs) {
-            const pair = chars[index] + chars[index + 1];
-            if (kernPairs[pair] !== undefined) gap += kernPairs[pair];
-        }
-        return gap;
-    };
-
     let totalWidth = 0;
+
     chars.forEach((char, index) => {
-        totalWidth += ctx.measureText(char).width + gapAfter(index);
+        totalWidth += ctx.measureText(char).width;
+        if (index < chars.length - 1) totalWidth += letterSpacing;
     });
 
     let x = centerX - (totalWidth / 2);
     chars.forEach((char, index) => {
         ctx.fillText(char, x, y);
-        x += ctx.measureText(char).width + gapAfter(index);
+        x += ctx.measureText(char).width;
+        if (index < chars.length - 1) x += letterSpacing;
     });
 }
 
@@ -3599,38 +3590,18 @@ function runCircularMaskReveal() {
                 { text: 'THE', size: smallSize, spacing: smallSize * 0.18 },
                 { text: 'HOUSE', size: largeSize, spacing: largeSize * 0.12 },
                 { text: 'OF', size: smallSize, spacing: smallSize * 0.18 },
+                { text: 'AWE', size: largeSize, spacing: largeSize * 0.12 }
             ];
-            const totalHeight = lines.reduce((sum, line) => sum + line.size, 0) + (lineGap * (lines.length - 1))
-                                + largeSize + lineGap; // +1 for AWE row
+            const totalHeight = lines.reduce((sum, line) => sum + line.size, 0) + (lineGap * (lines.length - 1));
             let y = centerY - (totalHeight / 2);
 
             lines.forEach((line) => {
                 ctx.font = `300 ${line.size}px 'Lato', sans-serif`;
-                drawSpacedCenteredText(ctx, line.text, centerX, y + (line.size / 2), line.spacing, line.kern);
+                drawSpacedCenteredText(ctx, line.text, centerX, y + (line.size / 2), line.spacing);
                 y += line.size + lineGap;
             });
-
-            // AWE — draw each letter individually for precise optical balance.
-            // A→W: wider gap (A's right leg optically closes with W's left leg)
-            // W→E: tighter gap (W's wide exit strokes push E away visually)
-            ctx.font = `300 ${largeSize}px 'Lato', sans-serif`;
-            const aweY = y + largeSize / 2;
-            const wA = ctx.measureText('A').width;
-            const wW = ctx.measureText('W').width;
-            const wE = ctx.measureText('E').width;
-            const gapAW = largeSize * 0.22;  // wider than standard 0.12
-            const gapWE = largeSize * 0.08;  // tighter than standard 0.12
-            const aweTotal = wA + gapAW + wW + gapWE + wE;
-            let ax = centerX - aweTotal / 2;
-            ctx.fillText('A', ax, aweY);
-            ax += wA + gapAW;
-            ctx.fillText('W', ax, aweY);
-            ax += wW + gapWE;
-            ctx.fillText('E', ax, aweY);
-
             ctx.restore();
         }
-
 
         // Start reveal after text sequence
         const revealStart = textFadeOutEnd + revealDelay;
