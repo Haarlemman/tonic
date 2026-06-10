@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Truth Disc — An Optical Instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:       #0e0d0b;
+    --ink-soft:  #1a1813;
+    --parchment: #e8e0cc;
+    --paper:     #ded5bd;
+    --body:      #d6232e;
+    --mind:      #e0a811;
+    --soul:      #1899b4;
+    --truth:     #f5f1e6;
+    --c:         var(--soul);            /* active state colour */
+    --c-dim:     rgba(24,153,180,.14);
+    --speed:     .9s;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--ink);
+    color: var(--parchment);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  /* ambient field — takes the active colour */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 60% 70% at 32% 45%, var(--c-dim) 0%, transparent 65%);
+    transition: background var(--speed) ease;
+    pointer-events: none;
+  }
+
+  /* instrument bezel — hairline frame */
+  body::after {
+    content: '';
+    position: fixed; inset: 14px;
+    border: 1px solid rgba(232,224,204,.10);
+    pointer-events: none;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1120px;
+    padding: 48px 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+
+  /* ── Disc ───────────────────────────────────── */
+  .disc-wrap {
+    position: relative;
+    width: min(100%, 560px);
+    aspect-ratio: 1;
+    margin-inline: auto;
+  }
+
+  .disc-wrap::before {           /* glow bed under disc */
+    content: '';
+    position: absolute; inset: -8%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--c-dim) 0%, transparent 68%);
+    transition: background var(--speed) ease;
+  }
+
+  svg.disc { position: relative; width: 100%; height: 100%; display: block; }
+
+  #rotor {
+    transform-origin: 300px 300px;
+    transition: transform 1.15s cubic-bezier(.34, 1.25, .64, 1);
+    will-change: transform;
+  }
+  #spinner { transform-origin: 300px 300px; will-change: transform; }
+
+  .sector { transition: opacity var(--speed) ease; }
+  .sector.is-off { opacity: .26; }
+  .sector .wedge { transition: fill-opacity var(--speed) ease; }
+
+  .disc-words text { font-kerning: normal; }
+
+  /* white-out — Newton's disc fusing to white */
+  #whiteout { opacity: 0; transition: opacity .5s linear; pointer-events: none; }
+
+  /* ── floating words (truth mode) ───────────── */
+  .float-words {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+  }
+  .float-words.on { opacity: 1; }
+
+  .float-words span {
+    position: absolute;
+    left: 50%; top: 56%;
+    transform: translateX(-50%);
+    opacity: 0;
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: clamp(15px, 2.2vw, 21px);
+    letter-spacing: .08em;
+    color: var(--truth);
+    white-space: nowrap;
+    animation: floatWord 11s linear infinite;
+    animation-play-state: paused;
+  }
+  .float-words.on span { animation-play-state: running; }
+
+  @keyframes floatWord {
+    0%   { opacity: 0; transform: translate(-50%,  20px) scale(.4);  filter: blur(4px); }
+    10%  { opacity: .95; transform: translate(-50%, -10px) scale(.9); filter: blur(0); }
+    45%  { opacity: .55; transform: translate(-50%,-150px) scale(2.1); filter: blur(1px); }
+    100% { opacity: 0; transform: translate(-50%,-340px) scale(4.5); filter: blur(7px); }
+  }
+
+  /* ── Right panel ────────────────────────────── */
+  .panel { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    color: rgba(232,224,204,.55);
+  }
+  .eyebrow b { color: var(--c); font-weight: 700; transition: color var(--speed) ease; }
+
+  h1.state-word {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: clamp(64px, 11vw, 132px);
+    line-height: .92;
+    letter-spacing: .015em;
+    text-transform: uppercase;
+    color: var(--c);
+    transition: color var(--speed) ease, text-shadow var(--speed) ease;
+    text-shadow: 0 0 70px var(--c-dim);
+  }
+
+  /* quote card — specimen label on parchment */
+  .card {
+    background: var(--paper);
+    color: var(--ink-soft);
+    padding: 22px 26px 26px;
+    max-width: 540px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .stamp {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--c);
+    border: 1.5px solid var(--c);
+    padding: 4px 9px 3px 11px;
+    transform: rotate(-2deg);
+    transition: color var(--speed) ease, border-color var(--speed) ease;
+  }
+
+  .card-no {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .28em;
+    color: rgba(14,13,11,.45);
+  }
+
+  blockquote.quote {
+    font-family: 'Crimson Pro', serif;
+    font-size: clamp(17px, 1.9vw, 21px);
+    font-style: italic;
+    line-height: 1.55;
+    white-space: pre-line;
+    min-height: 4.6em;
+    transition: opacity .35s ease;
+  }
+  blockquote.quote.fading { opacity: 0; }
+
+  /* controls — segmented dial */
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid rgba(232,224,204,.22);
+    color: rgba(232,224,204,.72);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    padding: 11px 22px 10px 24px;
+    cursor: pointer;
+    transition: color .25s, border-color .25s, box-shadow .25s, transform .12s;
+  }
+  .btn:hover { color: var(--parchment); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:focus-visible { outline: 2px solid var(--parchment); outline-offset: 3px; }
+
+  .btn[data-state="body"]:hover,  .btn[data-state="body"].active  { border-color: var(--body); color: var(--body); box-shadow: 0 0 18px rgba(214,35,46,.25); }
+  .btn[data-state="mind"]:hover,  .btn[data-state="mind"].active  { border-color: var(--mind); color: var(--mind); box-shadow: 0 0 18px rgba(224,168,17,.25); }
+  .btn[data-state="soul"]:hover,  .btn[data-state="soul"].active  { border-color: var(--soul); color: var(--soul); box-shadow: 0 0 18px rgba(24,153,180,.25); }
+  .btn[data-state="truth"]:hover, .btn[data-state="truth"].active { border-color: var(--truth); color: var(--truth); box-shadow: 0 0 18px rgba(245,241,230,.22); }
+
+  .divider { width: 1px; height: 22px; background: rgba(232,224,204,.18); }
+
+  .footnote {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 13.5px;
+    color: rgba(232,224,204,.42);
+    max-width: 480px;
+    line-height: 1.5;
+  }
+
+  /* ── responsive ─────────────────────────────── */
+  @media (max-width: 880px) {
+    .stage { grid-template-columns: 1fr; padding: 40px 22px 56px; gap: 30px; }
+    .disc-wrap { width: min(86vw, 440px); }
+    .panel { align-items: center; text-align: center; }
+    .card-head { justify-content: center; }
+    .controls { justify-content: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #rotor { transition: none; }
+    .float-words span { animation: none; opacity: .8; position: static; display: inline-block; margin: 0 8px; transform: none; }
+    .float-words { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; padding: 18%; }
+  }
+</style>
+</head>
+<body>
+
+<main class="stage">
+
+  <!-- ── The instrument ── -->
+  <div class="disc-wrap">
+    <svg class="disc" viewBox="0 0 600 600" role="img"
+         aria-label="A rotating disc divided into Body, Mind and Soul. Press Truth to spin it until the colours fuse to white.">
+      <defs>
+        <radialGradient id="lensGrad" cx="42%" cy="38%" r="75%">
+          <stop id="ls0" offset="0%"  stop-color="#fff" stop-opacity=".9"/>
+          <stop id="ls1" offset="22%" stop-color="#ff5340"/>
+          <stop id="ls2" offset="58%" stop-color="#8a0e10"/>
+          <stop offset="100%" stop-color="#0a0506"/>
+        </radialGradient>
+        <radialGradient id="bezelGrad" cx="50%" cy="32%" r="80%">
+          <stop offset="0%"  stop-color="#6b6a66"/>
+          <stop offset="45%" stop-color="#2b2a27"/>
+          <stop offset="100%" stop-color="#050505"/>
+        </radialGradient>
+        <radialGradient id="whiteGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#fbf8ef"/>
+          <stop offset="78%"  stop-color="#f5f1e6"/>
+          <stop offset="100%" stop-color="#f5f1e6" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <!-- static tick ring + index pointer -->
+      <g id="ticks" stroke="rgba(232,224,204,.30)" stroke-width="1"></g>
+      <polygon points="292,16 308,16 300,34" fill="#e8e0cc"/>
+
+      <!-- spinner (truth) wraps rotor (state) -->
+      <g id="spinner">
+        <g id="rotor">
+          <circle cx="300" cy="300" r="258" fill="#ded5bd"/>
+          <circle cx="300" cy="300" r="258" fill="none" stroke="rgba(14,13,11,.55)" stroke-width="2.5"/>
+          <!-- engraved hairlines -->
+          <circle cx="300" cy="300" r="222" fill="none" stroke="rgba(14,13,11,.10)" stroke-width="1"/>
+          <circle cx="300" cy="300" r="146" fill="none" stroke="rgba(14,13,11,.10)" stroke-width="1"/>
+          <circle cx="300" cy="300" r="72"  fill="none" stroke="rgba(14,13,11,.14)" stroke-width="1"/>
+          <g id="sectors"></g>
+        </g>
+      </g>
+
+      <!-- the fused-white state, driven by spin speed -->
+      <circle id="whiteout" cx="300" cy="300" r="259" fill="url(#whiteGrad)"/>
+
+      <!-- HAL eye — the observer, fixed at centre -->
+      <g id="eye">
+        <circle cx="300" cy="300" r="52" fill="url(#bezelGrad)"/>
+        <circle cx="300" cy="300" r="52" fill="none" stroke="rgba(232,224,204,.25)" stroke-width="1"/>
+        <circle cx="300" cy="300" r="42" fill="#070607"/>
+        <circle id="lens" cx="300" cy="300" r="30" fill="url(#lensGrad)"/>
+        <ellipse cx="290" cy="288" rx="7" ry="4.5" fill="rgba(255,255,255,.55)" transform="rotate(-28 290 288)"/>
+      </g>
+    </svg>
+
+    <!-- transcendent words, released in truth mode -->
+    <div class="float-words" id="floatWords" aria-hidden="true"></div>
+  </div>
+
+  <!-- ── Readout panel ── -->
+  <section class="panel">
+    <p class="eyebrow">The Truth Disc · <b id="eyebrowState">optical instrument</b></p>
+    <h1 class="state-word" id="stateWord">Soul</h1>
+
+    <figure class="card">
+      <div class="card-head">
+        <span class="stamp" id="cardKind">Voice</span>
+        <span class="card-no" id="cardNo">Nº 1 / 6</span>
+      </div>
+      <blockquote class="quote" id="quote" aria-live="polite"></blockquote>
+    </figure>
+
+    <div class="controls" role="group" aria-label="Select a state">
+      <button class="btn" data-state="body"  aria-pressed="false">Body</button>
+      <button class="btn" data-state="mind"  aria-pressed="false">Mind</button>
+      <button class="btn" data-state="soul"  aria-pressed="false">Soul</button>
+      <span class="divider" aria-hidden="true"></span>
+      <button class="btn" data-state="truth" aria-pressed="false">Truth</button>
+    </div>
+
+    <p class="footnote">After Newton's disc, 1672 — spin the colours fast enough and the eye can no longer tell them apart. It reads only white.</p>
+  </section>
+
+</main>
+
+<script>
+/* ───────────────────────────────────────────────
+   THE TRUTH DISC — everything below is editable.
+   The disc itself is drawn from the SECTORS data:
+   change a word here and it changes on the disc.
+   ─────────────────────────────────────────────── */
+
+const CX = 300, CY = 300, DISC_R = 256;
+
+const SECTORS = [
+  {
+    key: 'body', angle: 0, color: '#d6232e',
+    dim: 'rgba(214,35,46,.14)', lens: ['#ff6a55','#8a0e10'],
+    kind: 'Verse',
+    rings: [
+      { r: 234, text: 'BODY',                 font: 'Anton',        size: 30, ls: '.45em', fill: 'color' },
+      { r: 206, text: 'SENSES',               font: 'Space Grotesk',size: 14, ls: '.55em', weight: 700, fill: '#1a1813' },
+      { r: 182, text: 'art & design',         font: 'Crimson Pro',  size: 17, ls: '.06em', italic: true, fill: 'color' },
+      { r: 154, text: 'BEAUTY',               font: 'Anton',        size: 33, ls: '.14em', fill: 'color' },
+      { r: 126, text: 'feelings',             font: 'Crimson Pro',  size: 24, ls: '.08em', italic: true, fill: 'rgba(26,24,19,.78)' },
+      { r: 100, text: 'EXPERIENCE',           font: 'Space Grotesk',size: 15, ls: '.36em', weight: 600, fill: '#1a1813' },
+      { r: 79,  text: 'subjective',           font: 'Crimson Pro',  size: 16, ls: '.08em', italic: true, fill: 'rgba(26,24,19,.7)' },
+      { r: 61,  text: 'IDEALISM · JOY',       font: 'Space Grotesk',size: 10, ls: '.3em',  weight: 500, fill: 'rgba(26,24,19,.5)' },
+    ],
+  },
+  {
+    key: 'mind', angle: 120, color: '#e0a811',
+    dim: 'rgba(224,168,17,.14)', lens: ['#ffd34d','#7a5a05'],
+    kind: 'Fact',
+    rings: [
+      { r: 234, text: 'MIND',                 font: 'Anton',        size: 30, ls: '.45em', fill: 'color' },
+      { r: 206, text: 'LOGIC',                font: 'Space Grotesk',size: 14, ls: '.55em', weight: 700, fill: '#1a1813' },
+      { r: 182, text: 'science & technology', font: 'Crimson Pro',  size: 17, ls: '.06em', italic: true, fill: 'color' },
+      { r: 154, text: 'KNOWLEDGE',            font: 'Anton',        size: 33, ls: '.14em', fill: 'color' },
+      { r: 126, text: 'facts',                font: 'Crimson Pro',  size: 24, ls: '.08em', italic: true, fill: 'rgba(26,24,19,.78)' },
+      { r: 100, text: 'REASON',               font: 'Space Grotesk',size: 15, ls: '.36em', weight: 600, fill: '#1a1813' },
+      { r: 79,  text: 'objective',            font: 'Crimson Pro',  size: 16, ls: '.08em', italic: true, fill: 'rgba(26,24,19,.7)' },
+      { r: 61,  text: 'REALISM · ORDER',      font: 'Space Grotesk',size: 10, ls: '.3em',  weight: 500, fill: 'rgba(26,24,19,.5)' },
+    ],
+  },
+  {
+    key: 'soul', angle: 240, color: '#1899b4',
+    dim: 'rgba(24,153,180,.14)', lens: ['#4fd2ea','#0a4a58'],
+    kind: 'Voice',
+    rings: [
+      { r: 234, text: 'SOUL',                 font: 'Anton',        size: 30, ls: '.45em', fill: 'color' },
+      { r: 206, text: 'SPIRIT',               font: 'Space Grotesk',size: 14, ls: '.55em', weight: 700, fill: '#1a1813' },
+      { r: 182, text: 'religion & philosophy',font: 'Crimson Pro',  size: 17, ls: '.06em', italic: true, fill: 'color' },
+      { r: 154, text: 'WISDOM',               font: 'Anton',        size: 33, ls: '.14em', fill: 'color' },
+      { r: 126, text: 'faith',                font: 'Crimson Pro',  size: 24, ls: '.08em', italic: true, fill: 'rgba(26,24,19,.78)' },
+      { r: 100, text: 'MEANING',              font: 'Space Grotesk',size: 15, ls: '.36em', weight: 600, fill: '#1a1813' },
+      { r: 79,  text: 'transcendent',         font: 'Crimson Pro',  size: 16, ls: '.08em', italic: true, fill: 'rgba(26,24,19,.7)' },
+      { r: 61,  text: 'MYSTICISM · AWE',      font: 'Space Grotesk',size: 10, ls: '.3em',  weight: 500, fill: 'rgba(26,24,19,.5)' },
+    ],
+  },
+];
+
+const TRUTH = {
+  color: '#f5f1e6', dim: 'rgba(245,241,230,.12)',
+  lens: ['#0000ff','#ff0000'], kind: 'Paradox',
+  words: ['Dao','God','Zen','Love','Atman','Ananda','Kenshō','Ikigai','Satori',
+          'Nirvana','Neshama','Samsara','Ein Sof','Shekhinah','Infinity'],
+};
+
+const QUOTES = {
+  body: [
+    "Your hands can heal,\nyour feet can dance,\nyour body holds\nlife's every chance.",
+    "Breathe in strength,\nexhale the doubt.\nYour body knows\nwhat life's about.",
+    "In rest you find your power,\nin movement, find your grace.\nYour body is the temple\nwhere soul and mind embrace.",
+    "Strong like the mountains,\nfluid like the sea —\nyour body holds the wisdom\nof who you're meant to be.",
+  ],
+  mind: [
+    "Your brain uses about 20% of your body's energy, despite being only 2% of its weight.",
+    "A single teaspoon of honey represents the life work of twelve bees.",
+    "Octopuses have three hearts and blue blood — two of them stop beating when they swim.",
+    "A day on Venus is longer than its year: it takes 243 Earth days to rotate once.",
+    "Light could circle the Earth seven and a half times in a single second.",
+    "Your stomach grows an entirely new lining every few days — otherwise it would digest itself.",
+  ],
+  soul: [
+    "The Tao that can be named is not the eternal Tao.\n— Lao Tzu",
+    "Be yourself; everyone else is already taken.\n— Oscar Wilde",
+    "In the end, we will remember not the words of our enemies, but the silence of our friends.\n— Martin Luther King Jr.",
+    "It is during our darkest moments that we must focus to see the light.\n— Aristotle",
+    "The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.\n— Albert Camus",
+  ],
+  truth: [
+    "White is not a fourth colour.\nIt is all three, moving too fast to tell apart.",
+    "Stand still and you see a colour.\nLet go, and you see light.",
+    "Truth is not a place on the disc.\nIt is the spinning.",
+    "The eye cannot point at truth —\nit can only fail to separate it.",
+  ],
+};
+
+/* ── build the disc ────────────────────────────── */
+
+const SVG = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs = {}) => {
+  const el = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+};
+
+const sin60 = Math.sin(Math.PI / 3), cos60 = .5;
+
+// 120° arc centred on 12 o'clock, left → right (for curved text)
+function arcPath(r) {
+  const x1 = CX - sin60 * r, x2 = CX + sin60 * r, y = CY - cos60 * r;
+  return `M ${x1} ${y} A ${r} ${r} 0 0 1 ${x2} ${y}`;
+}
+
+// full 120° wedge from centre
+function wedgePath(R) {
+  const x1 = CX - sin60 * R, x2 = CX + sin60 * R, y = CY - cos60 * R;
+  return `M ${CX} ${CY} L ${x1} ${y} A ${R} ${R} 0 0 1 ${x2} ${y} Z`;
+}
+
+function buildDisc() {
+  const defs = document.querySelector('defs');
+  const host = document.getElementById('sectors');
+  const radii = new Set();
+  SECTORS.forEach(s => s.rings.forEach(w => radii.add(w.r)));
+  radii.forEach(r => defs.appendChild(svgEl('path', { id: `arc-${r}`, d: arcPath(r), fill: 'none' })));
+
+  SECTORS.forEach(s => {
+    const g = svgEl('g', { class: 'sector disc-words', 'data-key': s.key,
+                           transform: `rotate(${s.angle} ${CX} ${CY})` });
+    const wedge = svgEl('path', { d: wedgePath(DISC_R), fill: s.color,
+                                  'fill-opacity': '.07', class: 'wedge' });
+    g.appendChild(wedge);
+    // divider edges
+    [-60, 60].forEach(a => {
+      const rad = (a - 90) * Math.PI / 180;
+      g.appendChild(svgEl('line', {
+        x1: CX + 56 * Math.cos(rad), y1: CY + 56 * Math.sin(rad),
+        x2: CX + DISC_R * Math.cos(rad), y2: CY + DISC_R * Math.sin(rad),
+        stroke: 'rgba(14,13,11,.35)', 'stroke-width': '1.5',
+      }));
+    });
+    s.rings.forEach(w => {
+      const t = svgEl('text', {
+        'font-family': `'${w.font}', sans-serif`,
+        'font-size': w.size,
+        'text-anchor': 'middle',
+        fill: w.fill === 'color' ? s.color : w.fill,
+      });
+      t.style.letterSpacing = w.ls || '0';
+      if (w.weight) t.setAttribute('font-weight', w.weight);
+      if (w.italic) t.setAttribute('font-style', 'italic');
+      const tp = svgEl('textPath', { startOffset: '50%' });
+      tp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#arc-${w.r}`);
+      tp.setAttribute('href', `#arc-${w.r}`);
+      tp.textContent = w.text;
+      t.appendChild(tp);
+      g.appendChild(t);
+    });
+    host.appendChild(g);
+  });
+
+  // tick ring: 72 minor ticks, majors at the three sector centres
+  const ticks = document.getElementById('ticks');
+  for (let i = 0; i < 72; i++) {
+    const a = (i * 5 - 90) * Math.PI / 180;
+    const major = i % 24 === 0;
+    const r1 = 268, r2 = major ? 284 : 276;
+    ticks.appendChild(svgEl('line', {
+      x1: CX + r1 * Math.cos(a), y1: CY + r1 * Math.sin(a),
+      x2: CX + r2 * Math.cos(a), y2: CY + r2 * Math.sin(a),
+      'stroke-width': major ? 2 : 1,
+    }));
+  }
+
+  // floating words
+  const fw = document.getElementById('floatWords');
+  TRUTH.words.forEach((w, i) => {
+    const s = document.createElement('span');
+    s.textContent = w;
+    s.style.animationDelay = (i * .73) + 's';
+    fw.appendChild(s);
+  });
+}
+
+/* ── state machine ─────────────────────────────── */
+
+const rotor      = document.getElementById('rotor');
+const spinner    = document.getElementById('spinner');
+const whiteout   = document.getElementById('whiteout');
+const floatWords = document.getElementById('floatWords');
+const stateWord  = document.getElementById('stateWord');
+const eyebrow    = document.getElementById('eyebrowState');
+const quoteEl    = document.getElementById('quote');
+const cardKind   = document.getElementById('cardKind');
+const cardNo     = document.getElementById('cardNo');
+const buttons    = [...document.querySelectorAll('.btn')];
+const root       = document.documentElement;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let current = 'soul';
+let rotation = 0;
+let lastQuote = {};
+let autoTimer = null, resumeTimer = null;
+
+function setLens(bright, dark) {
+  document.getElementById('ls1').setAttribute('stop-color', bright);
+  document.getElementById('ls2').setAttribute('stop-color', dark);
+}
+
+function showQuote(key) {
+  quoteEl.classList.add('fading');
+  setTimeout(() => {
+    const pool = QUOTES[key];
+    let i;
+    do { i = Math.floor(Math.random() * pool.length); }
+    while (pool.length > 1 && i === lastQuote[key]);
+    lastQuote[key] = i;
+    quoteEl.textContent = pool[i];
+    cardNo.textContent = `Nº ${i + 1} / ${pool.length}`;
+    quoteEl.classList.remove('fading');
+  }, 350);
+}
+
+function applyState(key) {
+  const s = SECTORS.find(x => x.key === key);
+  current = key;
+
+  // shortest rotation path to bring sector under the index
+  const target = -s.angle;
+  let delta = ((target - rotation) % 360 + 540) % 360 - 180;
+  rotation += delta;
+  rotor.style.transform = `rotate(${rotation}deg)`;
+
+  root.style.setProperty('--c', s.color);
+  root.style.setProperty('--c-dim', s.dim);
+  setLens(...s.lens);
+
+  document.querySelectorAll('.sector').forEach(g => {
+    const on = g.dataset.key === key;
+    g.classList.toggle('is-off', !on);
+    g.querySelector('.wedge').setAttribute('fill-opacity', on ? '.16' : '.05');
+  });
+
+  stateWord.textContent = s.key;
+  eyebrow.textContent = s.key;
+  cardKind.textContent = s.kind;
+  showQuote(key);
+
+  buttons.forEach(b => {
+    const on = b.dataset.state === key;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+  });
+}
+
+/* ── truth: spin until the colours fuse ────────── */
+
+let truthOn = false, spinV = 0, spinA = 0, rafId = null;
+const MAX_V = 13;            // deg per frame ≈ 780°/s
+
+function spinLoop() {
+  spinV += truthOn ? (MAX_V - spinV) * .022 : -spinV * .045;
+  if (!truthOn && spinV < .05) {
+    spinV = 0; spinA = 0;
+    spinner.style.transform = '';
+    rotor.style.filter = '';
+    whiteout.style.opacity = 0;
+    rafId = null;
+    return;
+  }
+  spinA = (spinA + spinV) % 360;
+  const k = spinV / MAX_V;
+  spinner.style.transform = `rotate(${spinA}deg)`;
+  rotor.style.filter = `blur(${(k * 2.6).toFixed(2)}px)`;
+  whiteout.style.opacity = Math.min(.94, k * 1.05).toFixed(3);
+  floatWords.classList.toggle('on', truthOn && k > .55);
+  rafId = requestAnimationFrame(spinLoop);
+}
+
+function enterTruth() {
+  truthOn = true;
+  stopAuto();
+  root.style.setProperty('--c', TRUTH.color);
+  root.style.setProperty('--c-dim', TRUTH.dim);
+  setLens(...TRUTH.lens);
+  stateWord.textContent = 'truth';
+  eyebrow.textContent = 'truth';
+  cardKind.textContent = TRUTH.kind;
+  showQuote('truth');
+  buttons.forEach(b => {
+    const on = b.dataset.state === 'truth';
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+  });
+  if (reduceMotion) {
+    whiteout.style.opacity = .92;
+    floatWords.classList.add('on');
+  } else if (!rafId) {
+    rafId = requestAnimationFrame(spinLoop);
+  }
+}
+
+function exitTruth(nextKey) {
+  truthOn = false;
+  floatWords.classList.remove('on');
+  if (reduceMotion) whiteout.style.opacity = 0;
+  applyState(nextKey || current);
+}
+
+/* ── auto-cycle ────────────────────────────────── */
+
+const ORDER = ['body', 'mind', 'soul'];
+
+function startAuto() {
+  if (reduceMotion) return;
+  stopAuto();
+  autoTimer = setInterval(() => {
+    applyState(ORDER[(ORDER.indexOf(current) + 1) % 3]);
+  }, 5200);
+}
+function stopAuto() {
+  clearInterval(autoTimer); autoTimer = null;
+  clearTimeout(resumeTimer);
+}
+function pauseThenResume() {
+  stopAuto();
+  resumeTimer = setTimeout(() => { if (!truthOn) startAuto(); }, 9000);
+}
+
+/* ── wiring ────────────────────────────────────── */
+
+buttons.forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.state;
+  if (k === 'truth') {
+    truthOn ? (exitTruth(), pauseThenResume()) : enterTruth();
+  } else {
+    if (truthOn) exitTruth(k); else applyState(k);
+    pauseThenResume();
+  }
+}));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    if (truthOn) exitTruth();
+    const d = e.key === 'ArrowRight' ? 1 : 2;
+    applyState(ORDER[(ORDER.indexOf(current) + d) % 3]);
+    pauseThenResume();
+  }
+  if (e.key.toLowerCase() === 't') {
+    truthOn ? (exitTruth(), pauseThenResume()) : enterTruth();
+  }
+});
+
+/* init */
+buildDisc();
+applyState('body');
+startAuto();
+</script>
+</body>
+</html>
