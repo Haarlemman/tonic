@@ -860,14 +860,13 @@
                     </div>
 
                     <style>
-                        /* 3D offset ghost layers via text-shadow */
+                        /* 3D offset ghost layers via text-shadow — ONE layer only */
                         .tw-line {
                             position: relative;
                             display: inline-block;
                             color: rgba(0, 242, 255, 0.9);
                             text-shadow:
-                                -5px -5px 0px rgba(255, 0, 180, 0.65),
-                                -10px -10px 0px rgba(68, 100, 255, 0.45);
+                                -5px -5px 0px rgba(255, 0, 180, 0.65);
                         }
 
                         /* Blinking cursor on the active line */
@@ -879,25 +878,26 @@
                             animation: tw-blink 0.7s step-end infinite;
                         }
 
-                        /* Visitor name: hidden until typewriter completes, with 3D neon effect when shown */
+                        /* Visitor name: hidden until typewriter completes */
                         .visitor-name {
                             display: inline-block;
                             opacity: 0;
                             transform: translateY(18px) scale(0.92);
-                            transition: opacity 420ms ease, transform 420ms cubic-bezier(.2,.9,.2,1);
-                            color: rgba(0, 242, 255, 0.9);
+                            transition: opacity 500ms ease, transform 500ms cubic-bezier(.2,.9,.2,1);
+                            color: #ff4081;
                             text-shadow:
-                                -6px -6px 0px rgba(255, 0, 180, 0.65),
-                                -12px -12px 0px rgba(68, 100, 255, 0.45),
-                                0 0 18px rgba(0,242,255,0.25);
+                                -5px -5px 0px rgba(255, 0, 180, 0.65),
+                                0 0 18px rgba(255, 64, 129, 0.45);
                             letter-spacing: 0.06em;
                             font-weight: 700;
                             pointer-events: none;
                         }
 
+                        /* Once revealed: seamlessly start the colour-blink animation */
                         .visitor-name.ready {
                             opacity: 1;
                             transform: translateY(0) scale(1);
+                            animation: visitor-name-blink 1.8s ease-in-out infinite;
                         }
 
                         @keyframes tw-blink {
@@ -2194,14 +2194,31 @@
                     // Stop the loading animation
                     if (btn._loadInterval) clearInterval(btn._loadInterval);
 
-                            // Restore button for interaction as yellow outline
-                            btn.style.pointerEvents = 'auto';
-                            btn.style.opacity = '1';
-                            btn.style.cursor = 'pointer';
-                            btn.style.background = 'transparent';
-                            btn.style.color = '#ffcc00';
-                            btn.style.border = '2px solid #ffcc00';
-                            btn.style.boxShadow = '0 0 12px rgba(255,204,0,0.2)';
+                    // Transform into JUMP IN button
+                    const jumpLabel = (typeof i18n !== 'undefined' && i18n[currentLang] && i18n[currentLang].jump_in)
+                        ? i18n[currentLang].jump_in
+                        : "JUMP IN &nbsp;<span style='font-size:1.4em; vertical-align:middle; line-height:0;'>&#9654;</span>";
+                    btn.innerHTML = jumpLabel;
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btn.style.background = '#000000';
+                    btn.style.color = '#ffcc00';
+                    btn.style.border = '2px solid #ffcc00';
+                    btn.style.boxShadow = '0 0 16px 4px rgba(255,204,0,0.45)';
+                    btn.onclick = function() { enterImmersion(); };
+                    btn.onmouseenter = function() {
+                        this.style.background = '#ffcc00';
+                        this.style.color = '#000000';
+                        this.style.boxShadow = '0 0 24px 8px rgba(255,204,0,0.7)';
+                    };
+                    btn.onmouseleave = function() {
+                        this.style.background = '#000000';
+                        this.style.color = '#ffcc00';
+                        this.style.boxShadow = '0 0 16px 4px rgba(255,204,0,0.45)';
+                    };
+                }
+            }
 
             if (d.type === 'ROOM_ANSWERED') {
                 sessionReflections[d.room] = d.answer;
