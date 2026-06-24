@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>House of Awe — Casa</title>
+  <link rel="stylesheet" href="https://use.typekit.net/lcd0ood.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
+  <!-- Three.js CDN for background wireframe house -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- ── Prefetch: prime the browser cache for index.html + house.html ── -->
+  <!-- Scripts -->
+  <link rel="prefetch" href="https://cdn.tailwindcss.com" as="script">
+  <link rel="prefetch" href="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" as="script">
+  <link rel="prefetch" href="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js" as="script">
+  <link rel="prefetch" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" as="script">
+  <link rel="prefetch" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" as="script">
+  <!-- Local scripts (house.html) -->
+  <link rel="prefetch" href="js/storage.js" as="script">
+  <link rel="prefetch" href="js/data.js" as="script">
+  <link rel="prefetch" href="js/cars.js" as="script">
+  <link rel="prefetch" href="js/house.js?v=20260624-1517" as="script">
+  <link rel="prefetch" href="js/rooms.js" as="script">
+  <link rel="prefetch" href="js/ui.js" as="script">
+  <link rel="prefetch" href="js/mobile.js" as="script">
+  <!-- Local CSS -->
+  <link rel="prefetch" href="css/style.css" as="style">
+  <link rel="prefetch" href="css/mobile.css" as="style">
+  <!-- index.html itself + house.html (so navigation is instant) -->
+  <link rel="prefetch" href="index.html">
+  <link rel="prefetch" href="house.html">
+  <!-- Fonts: preconnect speeds up the DNS+TLS handshake -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Videos (prefetch only — don't preload full video, just prime the connection) -->
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <!-- ──────────────────────────────────────────────────────────────────── -->
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --navy: #010612;
+      --red: #e82030;
+      --red-dk: #6a0d16;
+      --yel: #f5c800;
+      --yel-dk: #6a5500;
+      --cyn: #00d0e8;
+      --cyn-dk: #004d58;
+      --gry: #8aa8c0;
+      --gry-dk: #2a3e50;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: var(--navy);
+      overflow: hidden;
+    }
+
+    /* ── Vignette ─────────────────────────────────────────── */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+      background: radial-gradient(ellipse 100% 100% at 50% 50%,
+          transparent 30%, rgba(10, 18, 30, .7) 100%);
+    }
+
+    /* ── Scanlines ────────────────────────────────────────── */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 201;
+      background: repeating-linear-gradient(to bottom, transparent 0, transparent 3px,
+          rgba(0, 0, 0, .05) 3px, rgba(0, 0, 0, .05) 4px);
+    }
+
+    /* ── Floating particles ───────────────────────────────── */
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .dot {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: drift linear infinite;
+    }
+
+    @keyframes drift {
+      0% {
+        opacity: 0;
+        transform: translateY(0) translateX(0);
+      }
+
+      10% {
+        opacity: .55;
+      }
+
+      90% {
+        opacity: .25;
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(-100vh) translateX(20px);
+      }
+    }
+
+    /* ── V-shape stage ────────────────────────────────────── */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 4vh;
+      z-index: 10;
+      pointer-events: none;
+      transform-style: preserve-3d;
+    }
+
+    .v-pivot {
+      position: relative;
+      width: 0;
+      height: 0;
+      margin-bottom: 0;
+    }
+
+    .arm {
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.6vh;
+      opacity: 0;
+      will-change: transform, opacity;
+      pointer-events: auto;
+      transform-style: preserve-3d;
+    }
+
+    .arm-left {
+      right: 12vw;
+      transform-origin: right bottom;
+      transform: skewY(17.5deg);
+    }
+
+
+
+    .tl {
+      display: block;
+      font-family: omnium, sans-serif;
+      text-transform: uppercase;
+      line-height: 1.0;
+      letter-spacing: -0.015em;
+      white-space: nowrap;
+      opacity: 0;
+      animation: line-pop .5s ease forwards;
+    }
+
+    .c-red {
+      color: var(--red);
+      text-shadow:
+        1px 1px 0 var(--red-dk), 2px 2px 0 var(--red-dk),
+        3px 3px 0 var(--red-dk), 4px 4px 0 var(--red-dk),
+        5px 5px 0 var(--red-dk), 6px 6px 0 var(--red-dk),
+        7px 7px 0 var(--red-dk), 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-yel {
+      color: var(--yel);
+      text-shadow:
+        1px 1px 0 var(--yel-dk), 2px 2px 0 var(--yel-dk),
+        3px 3px 0 var(--yel-dk), 4px 4px 0 var(--yel-dk),
+        5px 5px 0 var(--yel-dk), 6px 6px 0 var(--yel-dk),
+        7px 7px 0 var(--yel-dk), 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-cyn {
+      color: var(--cyn);
+      text-shadow:
+        1px 1px 0 var(--cyn-dk), 2px 2px 0 var(--cyn-dk),
+        3px 3px 0 var(--cyn-dk), 4px 4px 0 var(--cyn-dk),
+        5px 5px 0 var(--cyn-dk), 6px 6px 0 var(--cyn-dk),
+        7px 7px 0 var(--cyn-dk), 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-wht {
+      color: #ffffff;
+      text-shadow:
+        1px 1px 0 #8aa8c0, 2px 2px 0 #8aa8c0,
+        3px 3px 0 #8aa8c0, 4px 4px 0 #8aa8c0,
+        5px 5px 0 #8aa8c0, 6px 6px 0 #8aa8c0,
+        7px 7px 0 #8aa8c0, 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-gry {
+      color: var(--gry);
+      text-shadow:
+        1px 1px 0 var(--gry-dk), 2px 2px 0 var(--gry-dk),
+        3px 3px 0 var(--gry-dk), 4px 4px 0 var(--gry-dk),
+        5px 5px 0 var(--gry-dk), 6px 6px 0 var(--gry-dk),
+        7px 7px 0 var(--gry-dk), 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    /* Per-arm shadow direction overrides */
+    .arm-left .c-red { text-shadow: 1px -1px 0 var(--red-dk), 2px -2px 0 var(--red-dk), 3px -3px 0 var(--red-dk), 4px -4px 0 var(--red-dk), 5px -5px 0 var(--red-dk), 6px -6px 0 var(--red-dk), 7px -7px 0 var(--red-dk), 8px -8px 1px rgba(0,0,0,.45); }
+    .arm-left .c-yel { text-shadow: 1px -1px 0 var(--yel-dk), 2px -2px 0 var(--yel-dk), 3px -3px 0 var(--yel-dk), 4px -4px 0 var(--yel-dk), 5px -5px 0 var(--yel-dk), 6px -6px 0 var(--yel-dk), 7px -7px 0 var(--yel-dk), 8px -8px 1px rgba(0,0,0,.45); }
+    .arm-left .c-cyn { text-shadow: 1px -1px 0 var(--cyn-dk), 2px -2px 0 var(--cyn-dk), 3px -3px 0 var(--cyn-dk), 4px -4px 0 var(--cyn-dk), 5px -5px 0 var(--cyn-dk), 6px -6px 0 var(--cyn-dk), 7px -7px 0 var(--cyn-dk), 8px -8px 1px rgba(0,0,0,.45); }
+    .arm-left .c-wht { text-shadow: 1px -1px 0 #8aa8c0, 2px -2px 0 #8aa8c0, 3px -3px 0 #8aa8c0, 4px -4px 0 #8aa8c0, 5px -5px 0 #8aa8c0, 6px -6px 0 #8aa8c0, 7px -7px 0 #8aa8c0, 8px -8px 1px rgba(0,0,0,.45); }
+    .arm-left .c-gry { text-shadow: 1px -1px 0 var(--gry-dk), 2px -2px 0 var(--gry-dk), 3px -3px 0 var(--gry-dk), 4px -4px 0 var(--gry-dk), 5px -5px 0 var(--gry-dk), 6px -6px 0 var(--gry-dk), 7px -7px 0 var(--gry-dk), 8px -8px 1px rgba(0,0,0,.45); }
+
+
+    .sz-xl {font-size: clamp(2.0rem, 5.0vw, 4.0rem);}
+    .sz-lg {font-size: clamp(1.5rem, 3.6vw, 3.0rem);}
+    .sz-md {font-size: clamp(1.1rem, 2.6vw, 2.2rem);}
+    .sz-sm {font-size: clamp(0.8rem, 1.8vw, 1.5rem);}
+
+    @keyframes line-pop {
+      0% {
+        opacity: 0;
+        transform: translateY(14px) scale(.94);
+      }
+
+      65% {
+        opacity: 1;
+        transform: translateY(-3px) scale(1.02);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes arm-in-left {
+      from {
+        opacity: 0;
+        transform: skewY(17.5deg) translateX(-50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: skewY(17.5deg) translateX(0);
+      }
+    }
+
+    .arm-left.visible {animation: arm-in-left 1s cubic-bezier(.16, 1, .3, 1) forwards;}
+
+    @keyframes float-l {
+
+      0%,
+      100% {transform: skewY(17.5deg) translateY(0);}
+      50% {transform: skewY(17.5deg) translateY(-7px);}
+    }
+
+    .arm-left.floating {
+      opacity: 1;
+      animation: float-l 5s ease-in-out infinite;
+    }
+
+    .arm-left.floating .tl {
+      opacity: 1;
+      animation: none;
+    }
+
+    /* Glow wave animation on individual characters */
+    .char {
+      display: inline-block;
+      transition: filter 0.3s ease, transform 0.3s ease;
+      will-change: filter, transform;
+    }
+
+    .arm-left.floating .char {
+      animation: char-glow-wave 3.2s ease-in-out infinite;
+      animation-delay: var(--glow-delay, 0s);
+    }
+
+    @keyframes char-glow-wave {
+      0%, 100% {
+        filter: brightness(1);
+        transform: scale(1);
+      }
+      8% {
+        filter: brightness(1.7) drop-shadow(0 0 10px currentColor);
+        transform: scale(1.06);
+      }
+      16%, 90% {
+        filter: brightness(1);
+        transform: scale(1);
+      }
+    }
+
+    #wireframe-canvas {
+      position: fixed;
+      bottom: 12vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 52vh;
+      z-index: 5;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 1.2s ease, filter 0.3s ease, left 1.1s cubic-bezier(.16,1,.3,1), transform 1.1s cubic-bezier(.16,1,.3,1), bottom 1.1s cubic-bezier(.16,1,.3,1), height 1.1s cubic-bezier(.16,1,.3,1);
+    }
+
+    #wireframe-canvas:hover {
+      filter: brightness(1.1) drop-shadow(0 0 15px rgba(245, 200, 0, 0.25));
+    }
+
+    /* Responsive repositioning and scaling */
+    @media (max-width: 768px) {
+      .stage {
+        align-items: flex-end;
+        padding-top: 0;
+        padding-bottom: 50vh;
+      }
+      .arm-left {
+        right: auto;
+        left: 50%;
+        transform: translate3d(-50%, 0, 0) skewY(10deg) scale(0.8);
+        transform-origin: center bottom;
+      }
+      
+      .arm-left.visible {
+        animation: arm-in-left-mob 1s cubic-bezier(.16, 1, .3, 1) forwards;
+      }
+
+      .arm-left.floating {
+        opacity: 1;
+        animation: float-l-mob 5s ease-in-out infinite;
+      }
+
+      @keyframes arm-in-left-mob {
+        from {
+          opacity: 0;
+          transform: translate3d(-50%, 20px, 0) skewY(10deg) scale(0.7);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(-50%, 0, 0) skewY(10deg) scale(0.8);
+        }
+      }
+
+      @keyframes float-l-mob {
+        0%, 100% {
+          transform: translate3d(-50%, 0, 0) skewY(10deg) scale(0.8) translateY(0);
+        }
+        50% {
+          transform: translate3d(-50%, 0, 0) skewY(10deg) scale(0.8) translateY(-6px);
+        }
+      }
+
+      /* Bigger text on mobile */
+      .sz-xl { font-size: clamp(2.8rem, 10vw, 5.0rem); }
+      .sz-lg { font-size: clamp(2.0rem, 7.5vw, 3.8rem); }
+      .sz-md { font-size: clamp(1.4rem, 5vw,  2.6rem); }
+      .sz-sm { font-size: clamp(1.0rem, 3vw,  1.8rem); }
+
+      /* Default canvas position (centred, full-screen) on mobile */
+      #wireframe-canvas {
+        bottom: 2vh;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100vw;
+        height: 45vh;
+      }
+
+      /* After lights are on: slide house to bottom half */
+      #wireframe-canvas.shifted {
+        bottom: 2vh;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100vw;
+        height: 48vh;
+      }
+    }
+
+    @media (min-width: 769px) {
+      /* Default canvas position (centred) on desktop */
+      #wireframe-canvas {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 72vw;
+        height: 80vh;
+        bottom: 5vh;
+      }
+
+      /* After lights are on: slide house to the right */
+      #wireframe-canvas.shifted {
+        left: 72%;
+        transform: translateX(-50%);
+        width: 72vw;
+        height: 80vh;
+        bottom: 5vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="particles" id="pts"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+
+  <canvas id="wireframe-canvas"></canvas>
+
+  <div class="stage">
+    <div class="v-pivot">
+
+      <div class="arm arm-left" id="arm-left">
+        <span class="tl sz-sm c-gry">EXPLORE</span>
+        <span class="tl sz-lg c-red">THE HOUSE</span>
+        <span class="tl sz-xl c-red">OF AWE</span>
+        <span class="tl sz-sm c-gry">AND DISCOVER</span>
+        <span class="tl sz-sm c-yel">THE MEANING</span>
+        <span class="tl sz-xl c-yel">OF LIFE</span>
+        <span class="tl sz-md c-cyn">ACCORDING TO</span>
+        <span class="tl sz-lg c-wht" id="arm-name">YOU</span>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let nameToDisplay = 'YOU';
+    try {
+      const savedQuiz = JSON.parse(localStorage.getItem('userQuizProgress') || '{}');
+      const savedReflections = JSON.parse(localStorage.getItem('houseReflections') || '{}');
+      const savedName = savedQuiz.name || savedReflections.name;
+      if (savedName && savedName.trim() !== '') {
+        nameToDisplay = savedName.trim().toUpperCase();
+      }
+    } catch (e) {
+      console.error('Error reading localStorage for visitor name:', e);
+    }
+    const nameEl = document.getElementById('arm-name');
+    if (nameEl) {
+      nameEl.textContent = nameToDisplay;
+    }
+
+    // Split text of each line into accessible character spans
+    function splitLinesToCharacters() {
+      const container = document.getElementById('arm-left');
+      if (!container) return;
+      const lines = container.querySelectorAll('.tl');
+      lines.forEach(line => {
+        const text = line.textContent;
+        line.setAttribute('aria-label', text);
+        line.innerHTML = '';
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const span = document.createElement('span');
+          span.textContent = char;
+          span.setAttribute('aria-hidden', 'true');
+          if (char === ' ') {
+            span.innerHTML = '&nbsp;';
+          } else {
+            span.className = 'char';
+          }
+          line.appendChild(span);
+        }
+      });
+    }
+    splitLinesToCharacters();
+
+    function justifyPillar() {
+      const container = document.getElementById('arm-left');
+      if (!container) return;
+      const lines = Array.from(container.querySelectorAll('.tl'));
+      if (lines.length === 0) return;
+
+      // Temporarily clear transform and set letter-spacing to the base tight value to measure natural layout widths
+      lines.forEach(el => {
+        el.style.transform = 'none';
+        el.style.letterSpacing = '-0.015em';
+      });
+
+      let maxWidth = 0;
+      lines.forEach(el => {
+        const w = el.getBoundingClientRect().width;
+        if (w > maxWidth) maxWidth = w;
+      });
+
+      lines.forEach(el => {
+        const w = el.getBoundingClientRect().width;
+        const txt = el.textContent || '';
+        const charCount = txt.length;
+        if (charCount > 1 && w < maxWidth) {
+          const neededSpace = maxWidth - w;
+          const spacing = neededSpace / (charCount - 1);
+          el.style.letterSpacing = `calc(-0.015em + ${spacing}px)`;
+        } else {
+          el.style.letterSpacing = '-0.015em';
+        }
+        // Restore transform so CSS animations work normally
+        el.style.transform = '';
+      });
+    }
+
+    // Calculate layout-based delays for the character glow wave
+    function updateGlowWaveDelays() {
+      const container = document.getElementById('arm-left');
+      if (!container) return;
+      const lines = Array.from(container.querySelectorAll('.tl'));
+      const lineCount = lines.length || 1;
+
+      lines.forEach((line, lineIdx) => {
+        const chars = line.querySelectorAll('.char');
+        // Flat delay based strictly on the parent line's vertical index
+        const normalizedY = lineIdx / lineCount;
+        const delay = normalizedY * 1.8;
+        
+        chars.forEach(char => {
+          char.style.setProperty('--glow-delay', `${delay.toFixed(3)}s`);
+        });
+      });
+    }
+
+    function handleLayout() {
+      justifyPillar();
+      updateGlowWaveDelays();
+    }
+
+    // Run on load, resize, and font load
+    window.addEventListener('load', handleLayout);
+    window.addEventListener('resize', handleLayout);
+    if (document.fonts) {
+      document.fonts.ready.then(handleLayout);
+    }
+
+    // After casa is up and running, fetch the big Google Fonts bundle for
+    // index/house into the HTTP cache so it's ready when the user navigates.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        const fontUrl = 'https://fonts.googleapis.com/css2?family=Bebas+Neue'
+          + '&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400'
+          + '&family=Baumans&family=Bitcount+Grid+Double:wght@300'
+          + '&family=Courier+Prime&family=Lexend:wght@400;700'
+          + '&family=Glass+Antiqua&family=JetBrains+Mono:wght@300;400;700'
+          + '&family=Lato:wght@300;400;700&family=Orelega+One'
+          + '&family=Share+Tech+Mono&family=Special+Elite'
+          + '&family=Tilt+Neon&family=Fraunces:wght@400&display=swap';
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = fontUrl;
+        document.head.appendChild(link);
+
+        // fetch() actually warms the HTTP cache, unlike <link rel="prefetch">
+        // which browsers routinely skip. We fetch local assets quietly in the
+        // background — the response goes straight into cache, ignored otherwise.
+        const localAssets = [
+          'index.html',
+          'house.html',
+          'css/style.css',
+          'css/mobile.css',
+          'js/house.js?v=20260624-1517',
+          'js/rooms.js',
+          'js/ui.js',
+          'js/data.js',
+          'js/cars.js',
+          'js/storage.js',
+          'js/mobile.js',
+        ];
+        // Stagger the fetches so they don't all fire at once
+        localAssets.forEach((url, i) => {
+          setTimeout(() => {
+            fetch(url, { cache: 'force-cache', priority: 'low' }).catch(() => {});
+          }, i * 150);
+        });
+      }, 2000); // 2s delay — let casa's own animation settle first
+    });
+
+    (function () {
+      const c = document.getElementById('pts');
+      const cols = ['#004c80', '#ffa500', '#ffffff', '#002244'];
+      for (let i = 0; i < 50; i++) {
+        const d = document.createElement('div');
+        d.className = 'dot';
+        const s = Math.random() * 2.5 + .8;
+        d.style.cssText = `width:${s}px;height:${s}px;left:${Math.random() * 100}%;
+      bottom:${-Math.random() * 10}%;background:${cols[~~(Math.random() * 4)]};
+      animation-duration:${7 + Math.random() * 14}s;animation-delay:${Math.random() * 12}s`;
+        c.appendChild(d);
+      }
+    })();
+
+    function staggerLines(arm, baseDelay) {
+      arm.querySelectorAll('.tl').forEach((el, i) => {
+        el.style.animationDelay = (baseDelay + i * .13) + 's';
+      });
+    }
+
+    const armL = document.getElementById('arm-left');
+
+    // Text reveal is triggered externally once the lights sequence finishes
+    // (see window.triggerTextReveal below, called from the animate loop)
+    window._textRevealed = false;
+    window.triggerTextReveal = function() {
+      if (window._textRevealed) return;
+      window._textRevealed = true;
+
+      // Slide house to the right (desktop) / bottom (mobile)
+      document.getElementById('wireframe-canvas').classList.add('shifted');
+
+      // Bring in text after a short pause so the slide starts first
+      setTimeout(() => {
+        staggerLines(armL, .1);
+        armL.classList.add('visible');
+      }, 300);
+
+      setTimeout(() => {
+        armL.classList.remove('visible');
+        armL.classList.add('floating');
+      }, 2500);
+    };
+
+    (function () {
+      if (typeof THREE === 'undefined') return;
+
+      const canvas = document.getElementById('wireframe-canvas');
+      if (!canvas) return;
+
+      let wScene, wCamera, wRenderer, wHouseGroup;
+      const RS = 9, RH = 3.5;
+
+      function createNoiseTexture() {
+        const size = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#C0C0C0';
+        ctx.fillRect(0, 0, size, size);
+        const idata = ctx.getImageData(0, 0, size, size);
+        for (let i = 0; i < idata.data.length; i += 4) {
+          const grain = (Math.random() - 0.5) * 30;
+          idata.data[i] = Math.min(255, Math.max(0, 128 + grain));
+          idata.data[i + 1] = Math.min(255, Math.max(0, 128 + grain));
+          idata.data[i + 2] = Math.min(255, Math.max(0, 128 + grain));
+          idata.data[i + 3] = 255;
+        }
+        ctx.putImageData(idata, 0, 0);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        return tex;
+      }
+
+      function createBrickTexture(type) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        const isAmsterdam = (type === 'amsterdam');
+        const baseColor = isAmsterdam ? '#8b4513' : '#f0e68c';
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const rows = 16, cols = 8;
+        const h = 512 / rows, w = 512 / cols;
+
+        for (let r = 0; r < rows; r++) {
+          const offset = (r % 2) * (w / 2);
+          for (let c = -1; c < cols + 1; c++) {
+            const vari = Math.random() * 30 - 15;
+            if (isAmsterdam) {
+              const rVal = 139 + vari;
+              const gVal = 69 + vari * 0.5;
+              const bVal = 19 + vari * 0.2;
+              ctx.fillStyle = `rgb(${rVal}, ${gVal}, ${bVal})`;
+            } else {
+              const rVal = 240 + vari;
+              const gVal = 230 + vari;
+              const bVal = 140 + vari;
+              ctx.fillStyle = `rgb(${rVal}, ${gVal}, ${bVal})`;
+            }
+            ctx.fillRect(c * w + offset + 2, r * h + 2, w - 4, h - 4);
+            ctx.strokeStyle = isAmsterdam ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(c * w + offset + 2, r * h + 2, w - 4, h - 4);
+          }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(4, 8);
+        return tex;
+      }
+
+      function createHouseNumberTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128; canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 128, 128);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('42', 64, 64);
+        const tex = new THREE.CanvasTexture(canvas);
+        return tex;
+      }
+
+      function createRoofTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#5c0000'; ctx.fillRect(0, 0, 512, 512);
+        const rows = 10; const cols = 8;
+        const tileH = 512 / rows; const tileW = 512 / cols;
+        for (let r = 0; r < rows; r++) {
+          const offset = (r % 2) * (tileW / 2);
+          for (let c = -1; c < cols + 1; c++) {
+            const shade = Math.random() * 40;
+            const redVal = 100 + shade;
+            ctx.fillStyle = `rgb(${redVal}, 20, 20)`;
+            ctx.beginPath();
+            ctx.rect(c * tileW + offset + 2, r * tileH + 2, tileW - 4, tileH - 4);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+          }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 4);
+        return tex;
+      }
+
+      const brickAmsterdamTex = createBrickTexture('amsterdam');
+      const brickDudokTex = createBrickTexture('dudok');
+      const roofTex = createRoofTexture();
+      const numberTex = createHouseNumberTexture();
+      const noiseTex = createNoiseTexture();
+
+      function createCellTexture() {
+        const sc = document.createElement('canvas'); sc.width = 64; sc.height = 64;
+        const sctx = sc.getContext('2d');
+        sctx.fillStyle = '#0a2a55'; sctx.fillRect(0, 0, 64, 64);
+        sctx.strokeStyle = '#1a4a80'; sctx.lineWidth = 2;
+        for (let i = 1; i < 4; i++) {
+          sctx.beginPath(); sctx.moveTo(i * 16, 0); sctx.lineTo(i * 16, 64); sctx.stroke();
+          sctx.beginPath(); sctx.moveTo(0, i * 16); sctx.lineTo(64, i * 16); sctx.stroke();
+        }
+        return new THREE.CanvasTexture(sc);
+      }
+      const cellTex = createCellTexture();
+
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0xeeeeee,
+        roughness: 0.4,
+        metalness: 0.2
+      });
+
+      const amsterdamMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        bumpMap: noiseTex,
+        bumpScale: 0.02,
+        roughness: 0.8
+      });
+
+      const dudokMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        bumpMap: noiseTex,
+        bumpScale: 0.02,
+        roughness: 0.85
+      });
+
+      const planeMat = new THREE.MeshStandardMaterial({
+        color: 0xdddddd,
+        roughness: 0.6
+      });
+
+      const studioMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        bumpMap: noiseTex,
+        bumpScale: 0.02,
+        roughness: 0.75
+      });
+
+      const doorFacadeMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.7
+      });
+
+      const doorMat = new THREE.MeshStandardMaterial({
+        color: 0xdddddd,
+        roughness: 0.5
+      });
+
+      const winMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 6.0,
+        roughness: 0.05
+      });
+
+      const redRoofMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.8
+      });
+
+      const stepDarkMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+      const stepWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const stepMats = [
+        stepDarkMat,
+        stepDarkMat,
+        stepDarkMat,
+        stepDarkMat,
+        stepWhiteMat,
+        stepDarkMat
+      ];
+
+      const beamMeshes = [];
+      const windowObjects = [];
+
+      function createBeamTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        
+        // Gradient from top (V=1, y=0, transparent yellow) to bottom (V=0, y=256, bright yellow-white)
+        const grad = ctx.createLinearGradient(0, 0, 0, 256);
+        grad.addColorStop(0, 'rgba(255, 215, 0, 0.0)');    // V=1, far end, transparent yellow
+        grad.addColorStop(0.3, 'rgba(255, 220, 0, 0.04)');
+        grad.addColorStop(0.6, 'rgba(255, 230, 0, 0.18)');
+        grad.addColorStop(0.85, 'rgba(255, 240, 50, 0.45)');
+        grad.addColorStop(1, 'rgba(255, 245, 120, 0.75)');   // V=0, window, bright yellow-white
+        
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 32, 256);
+        
+        const tex = new THREE.CanvasTexture(canvas);
+        return tex;
+      }
+      
+      const beamTexture = createBeamTexture();
+
+      function attachBeam(parentMesh, width, height, localNormal = new THREE.Vector3(0, 0, 1), isRound = false) {
+        const length = 7.0; // length of the beam
+        const radiusNarrow = Math.min(width, height) * 0.42;
+        const radiusWide = radiusNarrow * 4.5; // spread out
+        
+        // 24 segments for circular/round, 4 for rectangular/square
+        const radialSegments = isRound ? 24 : 4;
+        const geom = new THREE.CylinderGeometry(radiusWide, radiusNarrow, length, radialSegments, 4, true);
+        
+        if (!isRound) {
+          // Rotate 45 degrees so flat faces align with the window frame edges
+          geom.rotateY(Math.PI / 4);
+          // Scale to match the aspect ratio of the window
+          const minDim = Math.min(width, height);
+          geom.scale(width / minDim, 1, height / minDim);
+        }
+        
+        // Translate geometry so bottom (Y = -length/2) is at Y = 0
+        geom.translate(0, length / 2, 0);
+        
+        const beamMat = new THREE.MeshBasicMaterial({
+          map: beamTexture,
+          transparent: true,
+          opacity: 0.55,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        
+        const beamMesh = new THREE.Mesh(geom, beamMat);
+        
+        // Store pulse info
+        beamMesh.userData = {
+          baseOpacity: 0.55,
+          pulseSpeed: 1.0 + Math.random() * 1.5,
+          pulsePhase: Math.random() * Math.PI * 2
+        };
+        
+        // Rotate local positive Y (0,1,0) to point along localNormal
+        beamMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), localNormal);
+        
+        parentMesh.add(beamMesh);
+        beamMeshes.push(beamMesh);
+
+        // Unique material clone per window to allow independent animation
+        const localGlassMat = winMat.clone();
+        parentMesh.material = localGlassMat;
+
+        windowObjects.push({
+          glassMesh: parentMesh,
+          glassMat: localGlassMat,
+          beamMesh: beamMesh
+        });
+      }
+
+      function wAddPart(w, h, d, x, y, z, mat) {
+        if (mat === winMat) {
+          // Determine thinnest axis
+          const isThinX = (w < d);
+          
+          // Create window group representing frame + glass
+          const winGroup = new THREE.Group();
+          winGroup.position.set(x, y, z);
+          
+          let frameW, frameH, frameD;
+          let glassW, glassH, glassD;
+          let glassLocalPos = new THREE.Vector3();
+          let localNormal = new THREE.Vector3();
+          
+          if (isThinX) {
+            // Window is in the Y-Z plane. X is thinnest.
+            frameW = 0.22;
+            frameH = h + 0.08;
+            frameD = d + 0.08;
+            
+            glassW = 0.02;
+            glassH = h;
+            glassD = d;
+            
+            // If x > 0, normal is along +X, so the glass is sunken back (-0.08 relative to +X)
+            const dirX = x > 0 ? 1 : -1;
+            glassLocalPos.set(-0.08 * dirX, 0, 0);
+            localNormal.set(dirX, 0, 0);
+            
+            // Offset winGroup slightly outward so the frame sticks out
+            winGroup.position.x += 0.05 * dirX;
+          } else {
+            // Window is in the X-Y plane. Z is thinnest.
+            frameW = w + 0.08;
+            frameH = h + 0.08;
+            frameD = 0.22;
+            
+            glassW = w;
+            glassH = h;
+            glassD = 0.02;
+            
+            // If z > 0, normal is along +Z, so the glass is sunken back (-0.08 relative to +Z)
+            const dirZ = z > 0 ? 1 : -1;
+            glassLocalPos.set(0, 0, -0.08 * dirZ);
+            localNormal.set(0, 0, dirZ);
+            
+            // Offset winGroup slightly outward so the frame sticks out
+            winGroup.position.z += 0.05 * dirZ;
+          }
+          
+          // Frame Mesh
+          const frameMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(frameW, frameH, frameD),
+            frameMat
+          );
+          frameMesh.castShadow = true;
+          frameMesh.receiveShadow = true;
+          
+          const frameEdges = new THREE.EdgesGeometry(frameMesh.geometry);
+          const frameLine = new THREE.LineSegments(frameEdges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 }));
+          frameMesh.add(frameLine);
+          winGroup.add(frameMesh);
+          
+          // Glass Mesh (sunken)
+          const glassMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(glassW, glassH, glassD),
+            winMat
+          );
+          glassMesh.position.copy(glassLocalPos);
+          winGroup.add(glassMesh);
+          
+          wHouseGroup.add(winGroup);
+          
+          // Attach beam to sunken glass
+          let winSizeW = isThinX ? glassD : glassW;
+          let winSizeH = glassH;
+          attachBeam(glassMesh, winSizeW, winSizeH, localNormal);
+          
+          return winGroup;
+        } else {
+          // Standard structural part
+          const geo = new THREE.BoxGeometry(w, h, d);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(x, y, z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          const edges = new THREE.EdgesGeometry(geo);
+          const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }));
+          mesh.add(line);
+
+          wHouseGroup.add(mesh);
+          return mesh;
+        }
+      }
+
+      function wAddRoomBlock(x, y, z, w, h, d, color, winConfigs = null) {
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const roomColor = new THREE.Color(color).addScalar(0.3);
+        const mat = new THREE.MeshStandardMaterial({
+          color: roomColor,
+          roughness: 0.9,
+          bumpMap: noiseTex,
+          bumpScale: 0.05,
+          map: noiseTex
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        const edges = new THREE.EdgesGeometry(geo);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 }));
+        mesh.add(line);
+
+        if (winConfigs) {
+          const configs = Array.isArray(winConfigs) ? winConfigs : [winConfigs];
+          configs.forEach(cfg => {
+            const s = cfg.scale || 1.0;
+            const frameW = (cfg.narrow ? 0.4 : 1.0) * s;
+            const frameH = cfg.height ? cfg.height : (1.0 * s);
+            const shift = cfg.shift || 0;
+            const frameDepth = 0.22;
+            const frameColor = cfg.type === 'white' ? 0xffffff : 0x222222;
+
+            const frame = new THREE.Mesh(
+              new THREE.BoxGeometry(frameW, frameH, frameDepth),
+              new THREE.MeshStandardMaterial({ color: frameColor })
+            );
+
+            const zOffset = d / 2 + 0.05;
+            const xOffset = w / 2 + 0.05;
+            const side = cfg.side || 'front';
+
+            if (side === 'front') frame.position.set(shift, 0, zOffset);
+            else if (side === 'back') {
+              frame.position.set(shift, 0, -zOffset);
+              frame.rotation.y = Math.PI;
+            } else if (side === 'left') {
+              frame.position.set(-xOffset, 0, shift);
+              frame.rotation.y = -Math.PI / 2;
+            } else if (side === 'right') {
+              frame.position.set(xOffset, 0, shift);
+              frame.rotation.y = Math.PI / 2;
+            }
+
+            const glass = new THREE.Mesh(
+              new THREE.PlaneGeometry(frameW * 0.85, frameH * 0.85),
+              winMat
+            );
+            glass.position.z = -0.08;
+            frame.add(glass);
+            mesh.add(frame);
+
+            attachBeam(glass, frameW * 0.85, frameH * 0.85, new THREE.Vector3(0, 0, 1));
+          });
+        }
+        wHouseGroup.add(mesh);
+        return mesh;
+      }
+
+      function wInit() {
+        wScene = new THREE.Scene();
+
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width || window.innerWidth;
+        const h = rect.height || window.innerHeight;
+        const aspect = w / h;
+        
+        const isDesktop = window.innerWidth > 768;
+        const d = isDesktop ? 6.8 : 7.5;
+
+        wCamera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+        wCamera.position.set(16, 12, 16);
+        wCamera.lookAt(0, 4.5, 0);
+
+        wRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        wRenderer.setSize(w, h, false);
+        wRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        wRenderer.shadowMap.enabled = true;
+        wRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const ambientLight = new THREE.AmbientLight(0x001026, 0.9);
+        wScene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0x004c80, 2.5);
+        dirLight1.position.set(20, 35, 20);
+        dirLight1.castShadow = true;
+        wScene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x002244, 1.2);
+        dirLight2.position.set(-20, -35, -20);
+        wScene.add(dirLight2);
+
+        wHouseGroup = new THREE.Group();
+        wHouseGroup.position.set(0, 0.5, 0);
+        wScene.add(wHouseGroup);
+
+        wBuild();
+
+        window.addEventListener('resize', wResize);
+
+        // ResizeObserver fires on every frame the canvas element changes size,
+        // including during CSS transitions — this eliminates the size glitch
+        // when the canvas slides/shifts position.
+        if (typeof ResizeObserver !== 'undefined') {
+          const ro = new ResizeObserver(() => { wResize(); });
+          ro.observe(canvas);
+        }
+
+        animate();
+
+        setTimeout(() => {
+          canvas.style.opacity = '1';
+        }, 300);
+      }
+
+      function wBuild() {
+        beamMeshes.length = 0;
+        windowObjects.length = 0;
+        while (wHouseGroup.children.length) wHouseGroup.remove(wHouseGroup.children[0]);
+
+        wAddPart(7.5, 0.8, 6.5, 0, 0.4, 0, dudokMat);
+        wAddPart(7.5, 0.1, 6.5, 0, 0.85, 0, planeMat);
+        wAddPart(7.5, 0.1, 6.5, 0, 3.25, 0, planeMat);
+
+        const livingX = -2.05, livingY = 2.1, livingZ = 0;
+        const livingW = 2.9, livingH = 2.4, livingD = 5;
+        wAddPart(livingW, livingH, livingD, livingX, livingY, livingZ, amsterdamMat);
+        wAddPart(1.5, 0.4, 0.1, livingX, livingY + 0.4, livingZ + 2.55, winMat);
+        wAddPart(1.5, 0.4, 0.1, livingX, livingY + 0.4, livingZ - 2.55, winMat);
+
+        const studioX = 2.0, studioY = 2.05, studioZ = 0;
+        const studioW = 2.8, studioH = 2.4, studioD = 5;
+        wAddPart(studioW, studioH, studioD, studioX, studioY, studioZ, studioMat);
+        wAddPart(1.5, 0.4, 0.1, studioX, studioY + 0.4, studioZ - 2.55, winMat);
+
+        const circWinGroup = new THREE.Group();
+        circWinGroup.position.set(studioX, studioY, studioZ + 2.55);
+        const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
+        circFrame.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.TorusGeometry(0.6, 0.05, 8, 32)), new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.3 })));
+        circWinGroup.add(circFrame);
+        const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), winMat);
+        circGlass.position.z = -0.08;
+        circWinGroup.add(circGlass);
+        wHouseGroup.add(circWinGroup);
+
+        attachBeam(circGlass, 1.2, 1.2, new THREE.Vector3(0, 0, 1), true);
+
+        const sWinSpan = 3.2;
+        for (let i = 0; i < 5; i++) {
+          const zPos = (studioZ - sWinSpan / 2) + (i * (sWinSpan / 4));
+          wAddPart(0.12, 0.5, 0.5, studioX + 1.42, studioY + 0.3, zPos, winMat);
+        }
+
+        wAddPart(2.8, 0.05, 5.0, studioX, studioY + studioH / 2 + 0.025, studioZ, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+
+        wAddPart(1.2, 1.8, 0.2, 0, 1.6, 2.45, doorFacadeMat);
+        const door = wAddPart(0.8, 1.6, 0.1, 0, 1.6, 2.57, doorMat);
+        const windowShape = new THREE.Shape();
+        windowShape.moveTo(0, 0.15);
+        windowShape.lineTo(-0.1, -0.05);
+        windowShape.lineTo(0.1, -0.05);
+        windowShape.lineTo(0, 0.15);
+        const triangularWindow = new THREE.Mesh(new THREE.ShapeGeometry(windowShape), winMat);
+        triangularWindow.position.set(0, 0.4, -0.04);
+        door.add(triangularWindow);
+
+        attachBeam(triangularWindow, 0.2, 0.2, new THREE.Vector3(0, 0, 1));
+        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04), new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.8, roughness: 0.2 }));
+        knob.position.set(0.3, 0, 0.08);
+        door.add(knob);
+
+        const numberMat = new THREE.MeshBasicMaterial({ map: numberTex, transparent: true });
+        const numberPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), numberMat);
+        numberPlane.position.set(0, 2.7, 2.56);
+        wHouseGroup.add(numberPlane);
+
+        wAddPart(1.25, 0.2, 5.0, 0, 3.15, 0, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        wAddPart(1.25, 2.4, 0.2, 0, 2.0, -2.4, doorFacadeMat);
+        wAddPart(1.2, 0.55, 0.2, 0, 2.775, 2.45, doorFacadeMat);
+
+        const bedX = -1.8, bedY = 4.5, bedZ = 0.5;
+        wAddRoomBlock(bedX, bedY, bedZ, 3.2, 2.4, 4.0, 0xffffff, [
+          { type: 'dark', side: 'front', scale: 0.8 },
+          { type: 'dark', side: 'back', scale: 0.4 }
+        ]);
+        wAddPart(0.1, 1.2, 1.5, bedX - 1.65, bedY, bedZ, winMat);
+
+        const bathX = 2.0, bathY = 5.05, bathZ = 0;
+        wAddPart(2.0, 6.0, 2.5, bathX, bathY, bathZ, amsterdamMat);
+        for (let i = 0; i < 3; i++) {
+          wAddPart(0.1, 1.0, 0.4, bathX + 1.03, bathY + i * 1.2 - 0.1, 0, winMat);
+        }
+        for (let i = 0; i < 3; i++) {
+          wAddPart(1.6, 1.0, 0.1, bathX, bathY + i * 1.2 - 0.1, bathZ - 1.27, winMat);
+        }
+        const bathRoofTopY = bathY + 3.0 + 0.06;
+        wAddPart(2.3, 0.12, 2.8, bathX, bathRoofTopY, bathZ, redRoofMat);
+
+        for (let r = 0; r < 2; r++) {
+          wAddPart(0.71, 0.06, 0.61, bathX, bathRoofTopY + 0.07, bathZ - 0.35 + r * 0.7, frameMat);
+          wAddPart(0.65, 0.04, 0.55, bathX, bathRoofTopY + 0.09, bathZ - 0.35 + r * 0.7, new THREE.MeshStandardMaterial({ color: 0x0a2a55, roughness: 0.2, metalness: 0.8, map: cellTex }));
+        }
+
+        const roofBaseY = 6.6;
+        wAddPart(7.5, 0.2, 6.0, 0, roofBaseY, 0, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+
+        const atticX = -1.2, atticY = roofBaseY + 1.25, atticZ = 0;
+        const atticW = 3.6, atticH = 2.4, atticD = 4.5;
+        wAddRoomBlock(atticX, atticY, atticZ, atticW, atticH, atticD, 0xffffff, { type: 'dark', side: 'back', scale: 0.8 });
+        for (let i = 0; i < 6; i++) {
+          wAddPart(0.12, 2.3, 0.1, atticX - 1.5 + i * 0.6, atticY, atticZ + 2.28, winMat);
+        }
+        wAddPart(atticW + 0.3, 0.12, atticD + 0.3, atticX, atticY + atticH / 2 + 0.06, atticZ, redRoofMat);
+
+        const _roofY = atticY + atticH / 2 + 0.13;
+        const _pW = 0.7, _pD = 0.55, _gap = 0.12;
+        const _sx = atticX - _pW / 2 - _gap / 2;
+        const _sz = atticZ - _pD - _gap;
+        for (let c = 0; c < 2; c++) {
+          for (let r = 0; r < 3; r++) {
+            const px = _sx + c * (_pW + _gap);
+            const pz = _sz + r * (_pD + _gap);
+            wAddPart(_pW + 0.06, 0.06, _pD + 0.06, px, _roofY, pz, frameMat);
+            wAddPart(_pW, 0.04, _pD, px, _roofY + 0.02, pz, new THREE.MeshStandardMaterial({ color: 0x0a2a55, roughness: 0.2, metalness: 0.8, map: cellTex }));
+          }
+        }
+
+        const stepW = livingW + studioW + 1.2; // match the full house front opening width
+        const stepD = 0.6; // deeper treads
+        for (let i = 0; i < 4; i++) {
+          wAddPart(stepW, 0.2, stepD, (livingX + studioX) / 2, 0.1 + i * 0.22, 4.95 - i * stepD, stepMats);
+        }
+      }
+
+      function wResize() {
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width || window.innerWidth;
+        const h = rect.height || window.innerHeight;
+        const aspect = w / h;
+        
+        const isDesktop = window.innerWidth > 768;
+        const d = isDesktop ? 6.8 : 7.5;
+
+        wCamera.left = -d * aspect;
+        wCamera.right = d * aspect;
+        wCamera.top = d;
+        wCamera.bottom = -d;
+        wCamera.updateProjectionMatrix();
+        wRenderer.setSize(w, h, false);
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        
+        const t = performance.now() * 0.001; // Time in seconds
+        const stepDuration = 0.45;
+        const totalWindows = windowObjects.length;
+        const sequenceEndTime = totalWindows * stepDuration;
+        // Fire only after the final 1.5s fade-in is complete + a small buffer,
+        // so text appears exactly when every light is fully lit.
+        const shiftTriggerTime = sequenceEndTime + 1.5 + 0.4;
+        
+        windowObjects.forEach((win, i) => {
+          const u = win.beamMesh.userData;
+          let targetIntensity = 0;
+          let targetOpacity = 0;
+          
+          if (t < sequenceEndTime) {
+            // Sequential phase: window i is on if t is within its window
+            const winStartTime = i * stepDuration;
+            const winEndTime = (i + 1) * stepDuration;
+            
+            if (t >= winStartTime && t < winEndTime) {
+              // Fade in and out quickly during its slot
+              const progress = (t - winStartTime) / stepDuration; // 0 to 1
+              // Smooth bell curve: sin(progress * PI)
+              const factor = Math.sin(progress * Math.PI);
+              
+              targetIntensity = factor * 6.0; // Max brightness
+              targetOpacity = factor * 0.55;
+            } else {
+              targetIntensity = 0;
+              targetOpacity = 0;
+            }
+          } else {
+            // Final phase: all windows are on and fade in together
+            const fadeInTime = 1.5;
+            const timeSinceEnd = t - sequenceEndTime;
+            const fadeFactor = Math.min(1.0, timeSinceEnd / fadeInTime);
+            
+            // Fluctuation factor
+            const pulse = Math.sin(t * u.pulseSpeed + u.pulsePhase) * 0.15;
+            const globalPulse = Math.sin(t * 2.2) * 1.5;
+            
+            targetIntensity = fadeFactor * (5.0 + globalPulse);
+            targetOpacity = fadeFactor * (u.baseOpacity + pulse);
+          }
+          
+          // Apply values
+          if (win.glassMat) {
+            win.glassMat.emissiveIntensity = targetIntensity;
+          }
+          if (win.beamMesh && win.beamMesh.material) {
+            win.beamMesh.material.opacity = targetOpacity;
+          }
+        });
+
+        // Once enough time has passed after the last light turns on, slide house
+        // and reveal text — triggered only once.
+        if (t >= shiftTriggerTime && typeof window.triggerTextReveal === 'function') {
+          window.triggerTextReveal();
+        }
+        
+        wRenderer.render(wScene, wCamera);
+      }
+
+      setTimeout(() => requestAnimationFrame(wInit), 100);
+
+      canvas.addEventListener('click', () => {
+        location.href = 'index.html';
+      });
+
+      document.addEventListener('keydown', e => {
+        if (['Enter', 'Space', 'ArrowRight'].includes(e.code)) {
+          e.preventDefault();
+          location.href = 'index.html';
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

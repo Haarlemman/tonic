@@ -3618,8 +3618,8 @@ function runCircularMaskReveal() {
             const wA = ctx.measureText('A').width;
             const wW = ctx.measureText('W').width;
             const wE = ctx.measureText('E').width;
-            const gapAW = largeSize * 0.22;  // wider than standard 0.12
-            const gapWE = largeSize * 0.08;  // tighter than standard 0.12
+            const gapAW = largeSize * 0.22;  // wider than standard 0.12 (A's right leg optically closes with W's left leg)
+            const gapWE = largeSize * 0.03;  // tight — moves AW right toward E
             const aweTotal = wA + gapAW + wW + gapWE + wE;
             let ax = centerX - aweTotal / 2;
             ctx.fillText('A', ax, aweY);
