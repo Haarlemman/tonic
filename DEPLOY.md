@@ -1,7 +1,11 @@
 # 🚀 Deployment — Tonic for the Bones
 
-## Live site
-**https://www.tonicforthebones.com**
+## Live sites
+
+| Path | URL | Host |
+|---|---|---|
+| `/` (root) | **https://www.tonicforthebones.com** | Vercel |
+| `/house/` | **https://house-of-awe.web.app** | Firebase |
 
 ## How deployment works
 
@@ -26,6 +30,21 @@ git push origin main             # ← this triggers the live Vercel deploy
 ```
 
 Vercel will auto-deploy within ~60 seconds of a push to `main`.
+
+---
+
+## `/house/` — Firebase (House of Awe)
+
+- Live URL: **https://house-of-awe.web.app**
+- Hosted on **Firebase Hosting** (separate from Vercel)
+- Deploy with the Firebase CLI from the `/house/` directory:
+
+```bash
+cd house
+firebase deploy
+```
+
+Changes to `/house/` do **not** auto-deploy via Vercel — you must run `firebase deploy` manually.
 
 ---
 

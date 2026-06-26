@@ -9,6 +9,12 @@ This project deploys via **Vercel** from the **`main`** branch only.
 - **ALWAYS push to `main` to deploy to production.** Other branches (e.g. `landing-iso-text`) are preview-only and do NOT update the live site.
 - After merging changes, run: `git checkout main && git merge <branch> && git push origin main`
 
+## `/house/` — Firebase (House of Awe)
+
+- Live URL: **https://house-of-awe.web.app**
+- Hosted on **Firebase Hosting** — separate from Vercel, does NOT auto-deploy on git push.
+- To deploy: `cd house && firebase deploy`
+
 ## Domain
 
 - Live domain: `tonicforthebones.com`
