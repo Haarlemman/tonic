@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The University of Free Will | Paradox Interface</title>
+<style>
+    /* --- THE AESTHETIC: DARK MODE KRAFTWERK --- */
+    :root {
+        --bg: #0a0a0a;       /* Deep Void Black */
+        --red: #ff3300;      /* The Body / Bass */
+        --blue: #0033cc;     /* The Mind / Treble */
+        --gold: #D4AF37;     /* The Tonic / Soul */
+        --white: #f0f0f0;
+    }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--white);
+        font-family: 'Courier New', Courier, monospace; /* The Data Stream */
+        overflow: hidden;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    /* UI LAYER (Top) */
+    header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        z-index: 10;
+        box-sizing: border-box;
+        pointer-events: none; /* Let clicks pass through */
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    .status-block {
+        text-align: right;
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .active-status {
+        color: var(--red);
+        animation: blink 1s infinite;
+    }
+
+    /* THE CANVAS (The Red/Blue Chaos) */
+    #chaosCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    /* THE CENTRAL SYMBOL (The Danger/Star) */
+    .symbol-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: 300px;
+        z-index: 5;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* The Triangles */
+    .triangle {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-left: 100px solid transparent;
+        border-right: 100px solid transparent;
+        border-bottom: 173.2px solid transparent; /* Defined by JS stroke now */
+        background: transparent;
+        transition: all 0.5s ease;
+        opacity: 0.8;
+    }
+
+    /* We use SVG for clean wireframes */
+    .wireframe-svg {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        animation: rotate-chaos 10s linear infinite;
+        transform-origin: center;
+    }
+    
+    .wireframe-svg.reverse {
+        animation: rotate-chaos-rev 15s linear infinite;
+    }
+
+    /* Hover Interaction Class */
+    .stabilized .wireframe-svg {
+        animation-play-state: paused;
+        stroke: var(--gold) !important;
+        filter: drop-shadow(0 0 10px var(--gold));
+        transform: rotate(0deg) !important; /* Force align to Star */
+        transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* MENU OVERLAY (Bottom) */
+    .menu-bar {
+        position: absolute;
+        bottom: 40px;
+        width: 100%;
+        text-align: center;
+        z-index: 10;
+        pointer-events: auto;
+    }
+
+    .nav-link {
+        color: var(--white);
+        text-decoration: none;
+        font-weight: bold;
+        margin: 0 20px;
+        font-size: 1.1rem;
+        border: 1px solid transparent;
+        padding: 10px 20px;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        background: rgba(0,0,0,0.5);
+    }
+
+    .nav-link:hover {
+        border-color: var(--white);
+        background: var(--white);
+        color: var(--bg);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+
+    /* ANIMATIONS */
+    @keyframes rotate-chaos {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes rotate-chaos-rev {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(-360deg); }
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Mobile tweak */
+    @media (max-width: 600px) {
+        .wireframe-svg { width: 200px; height: 200px; }
+        .nav-link { display: block; margin: 10px auto; width: 60%; }
+    }
+</style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>The University<br>of Free Will</h1>
+        </div>
+        <div class="status-block">
+            SYS: ONLINE<br>
+            <span id="status-text" class="active-status">/// DANGER DETECTED ///</span>
+        </div>
+    </header>
+
+    <!-- THE RED VS BLUE CHAOS -->
+    <canvas id="chaosCanvas"></canvas>
+
+    <!-- THE ROTATING SYMBOLS (Identity/Danger) -->
+    <div class="symbol-container" id="symbol-core">
+        
+        <!-- Triangle 1 (Points Up) -->
+        <svg class="wireframe-svg" viewBox="0 0 200 200" style="stroke: var(--blue); stroke-width: 2; fill: none;">
+            <polygon points="100,20 180,180 20,180" />
+        </svg>
+
+        <!-- Triangle 2 (Points Down - Creates Star when aligned) -->
+        <svg class="wireframe-svg reverse" viewBox="0 0 200 200" style="stroke: var(--red); stroke-width: 2; fill: none;">
+            <polygon points="100,180 180,20 20,20" />
+        </svg>
+
+        <!-- Center Gold Core (Hidden until hover) -->
+        <div id="tonic-glow" style="position: absolute; width: 20px; height: 20px; background: var(--gold); border-radius: 50%; opacity: 0; transition: opacity 1s; box-shadow: 0 0 20px var(--gold);"></div>
+
+    </div>
+
+    <!-- NAVIGATION (The Faculties) -->
+    <div class="menu-bar">
+        <a href="#body" class="nav-link" onmouseenter="highlightNode('red')" onmouseleave="resetNode()">Body</a>
+        <a href="#mind" class="nav-link" onmouseenter="highlightNode('blue')" onmouseleave="resetNode()">Mind</a>
+        <a href="#soul" class="nav-link" onmouseenter="stabilize()">The Soul</a>
+    </div>
+
+<script>
+    /* --- THE CHAOS ENGINE --- */
+    const canvas = document.getElementById('chaosCanvas');
+    const ctx = canvas.getContext('2d');
+    const symbolCore = document.getElementById('symbol-core');
+    const statusText = document.getElementById('status-text');
+    const tonicGlow = document.getElementById('tonic-glow');
+
+    let width, height;
+    let nodes = [];
+    let mouse = { x: -1000, y: -1000 };
+    
+    // Configuration
+    const NODE_COUNT = 60;
+    const CONNECT_DISTANCE = 150;
+    const MOUSE_DISTANCE = 200;
+
+    // The Node Class
+    class Node {
+        constructor(type) {
+            this.type = type; // 'red' or 'blue'
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 1.5;
+            this.vy = (Math.random() - 0.5) * 1.5;
+            this.radius = Math.random() * 3 + 1;
+        }
+
+        update() {
+            // Move
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Bounce off walls
+            if (this.x < 0 || this.x > width) this.vx *= -1;
+            if (this.y < 0 || this.y > height) this.vy *= -1;
+
+            // Mouse Interaction (Attract/Repel)
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < MOUSE_DISTANCE) {
+                const forceDirectionX = dx / distance;
+                const forceDirectionY = dy / distance;
+                const force = (MOUSE_DISTANCE - distance) / MOUSE_DISTANCE;
+                
+                // Red gets agitated (repelled), Blue gets curious (attracted)
+                // Reflecting the "Dance of Red & Blue" concept
+                const direction = this.type === 'red' ? -1 : 1; 
+                
+                this.vx += forceDirectionX * force * 0.05 * direction;
+                this.vy += forceDirectionY * force * 0.05 * direction;
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.type === 'red' ? '#ff3300' : '#0033cc';
+            ctx.fill();
+        }
+    }
+
+    function init() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        nodes = [];
+        
+        // Create Red (Body) and Blue (Mind) Nodes
+        for (let i = 0; i < NODE_COUNT; i++) {
+            nodes.push(new Node(i % 2 === 0 ? 'red' : 'blue'));
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        
+        // Update and Draw Nodes
+        nodes.forEach(node => {
+            node.update();
+            node.draw();
+        });
+
+        // Draw Connections
+        // Connecting Red to Blue creates "Tension" (Purple lines)
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                let dx = nodes[i].x - nodes[j].x;
+                let dy = nodes[i].y - nodes[j].y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+
+                if (distance < CONNECT_DISTANCE) {
+                    ctx.beginPath();
+                    
+                    // Style line based on types connecting
+                    if (nodes[i].type !== nodes[j].type) {
+                        // Red to Blue connection = Tension/Chaos
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance/CONNECT_DISTANCE})`;
+                        ctx.lineWidth = 0.5;
+                    } else {
+                        // Same type connection = Structure
+                        ctx.strokeStyle = nodes[i].type === 'red' 
+                            ? `rgba(255, 51, 0, ${0.5 - distance/CONNECT_DISTANCE})`
+                            : `rgba(0, 51, 204, ${0.5 - distance/CONNECT_DISTANCE})`;
+                        ctx.lineWidth = 0.2;
+                    }
+                    
+                    ctx.moveTo(nodes[i].x, nodes[i].y);
+                    ctx.lineTo(nodes[j].x, nodes[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // --- INTERACTION LOGIC ---
+
+    // Track Mouse
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+        
+        // Stabilize Symbol if mouse is near center (Finding the Tonic)
+        const dx = mouse.x - (width/2);
+        const dy = mouse.y - (height/2);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist < 150) {
+            stabilize();
+        } else {
+            destabilize();
+        }
+    });
+
+    function stabilize() {
+        symbolCore.classList.add('stabilized');
+        statusText.innerText = "/// ALIGNMENT: STAR OF DAVID ///";
+        statusText.style.color = "var(--gold)";
+        tonicGlow.style.opacity = 1;
+    }
+
+    function destabilize() {
+        symbolCore.classList.remove('stabilized');
+        statusText.innerText = "/// DANGER DETECTED ///";
+        statusText.style.color = "var(--red)";
+        tonicGlow.style.opacity = 0;
+    }
+
+    // Resize Handler
+    window.addEventListener('resize', init);
+
+    // Initialize
+    init();
+    animate();
+
+</script>
+</body>
+</html>

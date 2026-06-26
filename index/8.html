@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>David Enker - Paradox Prime</title>
+    <style>
+        /* --- 1. CORE VARIABLES --- */
+        :root {
+            --paper: #E8E6D9;
+            --black: #0F0F0F;    
+            --off-black: #1a1a1a;
+            
+            /* Initial colors (will shift via animation) */
+            --c-primary: #D9381E;  /* Red */
+            --c-secondary: #F2A900; /* Yellow */
+            --c-tertiary: #0097A7;  /* Teal */
+
+            /* CRT Colors */
+            --crt-bg: #0a1505;
+            --crt-green: #33ff00;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--paper);
+            color: var(--black);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            width: 100vw;
+            user-select: none;
+        }
+
+        /* --- 2. LAYOUT WRAPPERS --- */
+        
+        /* The Background Texture (Fixed so it doesn't scroll away) */
+        .texture {
+            position: fixed; inset: 0;
+            opacity: 0.2; pointer-events: none; z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            mix-blend-mode: multiply;
+        }
+
+        /* HERO SECTION: Holds the Art and Corners (100vh height) */
+        #hero-section {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* CONTROLS SECTION: Sits below the fold */
+        #control-section {
+            position: relative;
+            background: var(--off-black);
+            min-height: 50vh; /* Takes up half screen when scrolled to */
+            width: 100%;
+            z-index: 10;
+            border-top: 4px solid var(--black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* --- 3. CORNER WIDGETS --- */
+        .corner-widget {
+            position: absolute;
+            width: 80px; height: 80px;
+            z-index: 20;
+        }
+        .cw-tl { top: 20px; left: 20px; }
+        .cw-tr { top: 20px; right: 20px; }
+        .cw-bl { bottom: 20px; left: 20px; }
+        .cw-br { bottom: 20px; right: 20px; }
+
+        /* Crosshairs for all corners */
+        .crosshair {
+            position: absolute; width: 10px; height: 10px;
+            border-color: var(--black); border-style: solid; opacity: 0.5;
+        }
+        .ch-tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+        .ch-tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+        .ch-bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+        .ch-br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+        /* TL: RGB Spinner (Improved Visibility) */
+        .rgb-ring {
+            position: absolute; inset: 10px; border-radius: 50%;
+            border: 2px dashed; opacity: 0.7;
+        }
+        .rr-1 { border-color: red; animation: spin 4s linear infinite; width: 100%; height: 100%; }
+        .rr-2 { border-color: blue; animation: spin 6s linear infinite reverse; width: 70%; height: 70%; top: 15%; left: 15%; }
+        .rr-3 { border-color: lime; animation: spin 2s linear infinite; width: 40%; height: 40%; top: 30%; left: 30%; }
+
+        /* TR: Radar Sweep */
+        .radar-circle {
+            position: absolute; inset: 10px; border-radius: 50%;
+            border: 1px solid var(--black);
+            background: rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .radar-line {
+            position: absolute; top: 50%; left: 50%; width: 50%; height: 2px;
+            background: red; transform-origin: 0 0;
+            animation: spin 3s linear infinite;
+        }
+
+        /* BL: Data Bars */
+        .data-bars {
+            position: absolute; inset: 15px;
+            display: flex; gap: 4px; align-items: flex-end;
+        }
+        .bar { background: var(--black); width: 8px; animation: bounce 1s infinite ease-in-out; }
+        .bar:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+        .bar:nth-child(2) { height: 80%; animation-delay: 0.3s; }
+        .bar:nth-child(3) { height: 20%; animation-delay: 0.5s; }
+        .bar:nth-child(4) { height: 60%; animation-delay: 0.2s; }
+
+        /* BR: Target Reticle */
+        .reticle {
+            position: absolute; inset: 10px;
+            border: 1px solid var(--black);
+            animation: breathe 2s infinite;
+        }
+        .reticle::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px; height: 4px; background: red;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes bounce { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
+        @keyframes breathe { 0%, 100% { transform: scale(0.9); opacity: 0.5; } 50% { transform: scale(1); opacity: 1; } }
+
+
+        /* --- 4. THE CORE (SVG SYSTEM) --- */
+        #core-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85vmin; height: 85vmin; 
+            z-index: 5;
+            /* GLOBAL COLOR SHIFT: Rotates the hue of the entire container over 60s */
+            animation: slow-color-shift 60s linear infinite;
+        }
+
+        @keyframes slow-color-shift {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        svg.reel-system { width: 100%; height: 100%; overflow: visible; }
+        
+        .reel-group { transform-origin: center; cursor: pointer; }
+        
+        /* REVERTED TO "BERSERK" ANIMATIONS */
+        .anim-name { animation: rotate-slow 120s linear infinite; }
+        .anim-outer { animation: berserk-outer 14s linear infinite; }
+        .anim-mid { animation: berserk-mid 14s linear infinite; }
+        .anim-inner { animation: berserk-inner 14s linear infinite; }
+        
+        /* Pause on hover */
+        .reel-group:hover { animation-play-state: paused !important; }
+
+        @keyframes rotate-slow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @keyframes berserk-outer {
+            0% { transform: rotate(0deg); }   
+            20% { transform: rotate(180deg); } 
+            24% { transform: rotate(250deg); }
+            30% { transform: rotate(720deg); } 
+            50% { transform: rotate(360deg); } 
+            70% { transform: rotate(500deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes berserk-mid {
+            0% { transform: rotate(0deg); } 
+            25% { transform: rotate(-360deg); }
+            35% { transform: rotate(-500deg); }
+            75% { transform: rotate(120deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        @keyframes berserk-inner {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(400deg); }
+            30% { transform: rotate(600deg); }
+            75% { transform: rotate(-180deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- 5. CONTROL DECK --- */
+        .deck-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* Vintage Screen */
+        .crt-monitor {
+            width: 400px; height: 200px;
+            background: var(--crt-bg);
+            border: 8px solid #333;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,1);
+            flex-shrink: 0;
+        }
+        .crt-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none; z-index: 5;
+        }
+        .crt-content {
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            color: var(--crt-green);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            text-shadow: 0 0 5px var(--crt-green);
+            white-space: pre-wrap;
+        }
+        .crt-cursor { animation: blink 1s step-end infinite; background: var(--crt-green); color: black; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Buttons */
+        .btn-group { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+
+        .deck-btn {
+            background: #ccc;
+            border: none;
+            border-bottom: 6px solid #999;
+            padding: 15px 25px;
+            font-family: 'Impact', sans-serif;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-align: left;
+        }
+        .deck-btn:active {
+            transform: translateY(4px);
+            border-bottom: 2px solid #999;
+            background: #fff;
+        }
+        
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .deck-wrapper { flex-direction: column-reverse; gap: 20px; }
+            .crt-monitor { width: 100%; height: 160px; }
+            .deck-btn { text-align: center; font-size: 1.1rem; }
+            
+            /* Hide corner widgets on very small screens to save space? Or scale them */
+            .corner-widget { transform: scale(0.7); }
+            .cw-tl { top: 10px; left: 10px; }
+            .cw-tr { top: 10px; right: 10px; }
+            .cw-bl { bottom: 10px; left: 10px; }
+            .cw-br { bottom: 10px; right: 10px; }
+            
+            /* Adjust SVG text */
+            .text-name { font-size: 40px !important; }
+            .text-outer { font-size: 28px !important; }
+            .text-mid { font-size: 16px !important; }
+            .text-inner { font-size: 14px !important; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="texture"></div>
+
+    <section id="hero-section">
+        
+        <div class="corner-widget cw-tl">
+            <div class="crosshair ch-tl"></div><div class="crosshair ch-tr"></div>
+            <div class="crosshair ch-bl"></div><div class="crosshair ch-br"></div>
+            <div class="rgb-ring rr-1"></div>
+            <div class="rgb-ring rr-2"></div>
+            <div class="rgb-ring rr-3"></div>
+        </div>
+
+        <div class="corner-widget cw-tr">
+            <div class="crosshair ch-tl"></div><div class="crosshair ch-tr"></div>
+            <div class="crosshair ch-bl"></div><div class="crosshair ch-br"></div>
+            <div class="radar-circle">
+                <div class="radar-line"></div>
+            </div>
+        </div>
+
+        <div class="corner-widget cw-bl">
+            <div class="crosshair ch-tl"></div><div class="crosshair ch-tr"></div>
+            <div class="crosshair ch-bl"></div><div class="crosshair ch-br"></div>
+            <div class="data-bars">
+                <div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div>
+            </div>
+        </div>
+
+        <div class="corner-widget cw-br">
+            <div class="crosshair ch-tl"></div><div class="crosshair ch-tr"></div>
+            <div class="crosshair ch-bl"></div><div class="crosshair ch-br"></div>
+            <div class="reticle"></div>
+        </div>
+
+        <div id="core-container">
+            <svg class="reel-system" viewBox="0 0 600 600">
+                <defs>
+                    <path id="path-name" d="M 300, 300 m -300, 0 a 300,300 0 1,1 600,0 a 300,300 0 1,1 -600,0" />
+                    <path id="path-outer" d="M 300, 300 m -204, 0 a 204,204 0 1,1 408,0 a 204,204 0 1,1 -408,0" />
+                    <path id="path-mid" d="M 300, 300 m -170, 0 a 170,170 0 1,1 340,0 a 170,170 0 1,1 -340,0" />
+                    <path id="path-inner" d="M 300, 300 m -110, 0 a 110,110 0 1,1 220,0 a 110,110 0 1,1 -220,0" />
+                </defs>
+
+                <g class="reel-group anim-name" style="pointer-events: none; opacity: 1;">
+                    <text class="text-name" font-size="54" letter-spacing="8" fill="#111">
+                        <textPath href="#path-name" startOffset="0%">
+                            DAVID ENKER • PARADOX PRIME • HAARLEM • WRITER • DESIGNER •
+                        </textPath>
+                    </text>
+                </g>
+
+                <g class="reel-group anim-outer group-outer" style="color: var(--c-primary)">
+                    <path d="M300 300 L300 96 A204 204 0 0 1 476.6 198 Z" fill="currentColor" opacity="0.9" style="mix-blend-mode: multiply;" /> 
+                    <path d="M300 300 L476.6 402 A204 204 0 0 1 300 504 Z" fill="currentColor" opacity="0.9" style="mix-blend-mode: multiply;" /> 
+                    <path d="M300 300 L123.4 402 A204 204 0 0 1 123.4 198 Z" fill="currentColor" opacity="0.9" style="mix-blend-mode: multiply;" /> 
+                    <text class="text-outer" font-size="42" dy="-20" letter-spacing="5" fill="var(--paper)" style="font-weight: 900;">
+                        <textPath href="#path-outer" startOffset="6%">
+                            /// POLITICS /// FREE WILL
+                        </textPath>
+                    </text>
+                </g>
+
+                <g class="reel-group anim-mid group-mid" style="color: var(--c-secondary)">
+                    <polygon points="300,90 481,405 119,405" fill="currentColor" opacity="0.9" style="mix-blend-mode: multiply;" />
+                    <text class="text-mid" font-size="22" dy="-10" letter-spacing="2" fill="black" style="font-weight: bold;">
+                        <textPath href="#path-mid" startOffset="50%" text-anchor="middle">
+                            TONIC FOR THE BONES • MANUSCRIPT
+                        </textPath>
+                    </text>
+                </g>
+
+                <g class="reel-group anim-inner group-inner" style="color: var(--c-tertiary)">
+                    <polygon points="119,195 481,195 300,510" fill="currentColor" opacity="0.9" style="mix-blend-mode: multiply;" />
+                    <text class="text-inner" font-size="20" dy="-12" letter-spacing="2" fill="white" style="font-weight: bold;">
+                        <textPath href="#path-inner" startOffset="50%" text-anchor="middle">
+                            GRAPHIC DATA • JEWISH ICONOGRAPHY
+                        </textPath>
+                    </text>
+                </g>
+
+                <circle cx="300" cy="300" r="35" fill="#111" />
+            </svg>
+        </div>
+    </section>
+
+    <section id="control-section">
+        <div class="deck-wrapper">
+            <div class="crt-monitor">
+                <div class="crt-overlay"></div>
+                <div class="crt-content" id="crt-text"></div>
+            </div>
+
+            <div class="btn-group">
+                <button class="deck-btn" onclick="engageSystem('paradox')">1. PARADOX (PHILOSOPHY)</button>
+                <button class="deck-btn" onclick="engageSystem('tonic')">2. TONIC (MANUSCRIPT)</button>
+                <button class="deck-btn" onclick="engageSystem('art')">3. VISUAL DATA (ART)</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const sysData = {
+            'intro': "SYSTEM READY.\nSCROLL DOWN FOR MANUAL CONTROL.\n> WAITING FOR INPUT...",
+            'paradox': "LOADING: PHILOSOPHY_MODULE\n> The more you learn, the more you realise you know nothing.\n> Free will is a complex variable.\n> [ENTER SECTION] >>",
+            'tonic': "LOADING: MANUSCRIPT_V2\n> 'Tonic For The Bones'\n> Subject: Diagnosis 2021, Family, Survival.\n> Yaron (7) & Ailish archived.\n> [ENTER SECTION] >>",
+            'art': "LOADING: VISUAL_DB\n> Jewish Iconography.\n> Graphic Novels.\n> Structured Chaos.\n> [ENTER SECTION] >>"
+        };
+
+        const crtText = document.getElementById('crt-text');
+        let typeInterval;
+
+        function typeWriter(key) {
+            clearInterval(typeInterval);
+            const textToType = sysData[key];
+            let i = 0;
+            crtText.innerHTML = "> ";
+            
+            typeInterval = setInterval(() => {
+                if (i < textToType.length) {
+                    let char = textToType.charAt(i);
+                    if(char === '\n') char = '<br>> ';
+                    crtText.innerHTML += char;
+                    i++;
+                } else {
+                    clearInterval(typeInterval);
+                    crtText.innerHTML += "<span class='crt-cursor'>_</span>";
+                }
+            }, 30);
+        }
+
+        function engageSystem(key) {
+            // Scroll slightly to ensure screen is visible
+            document.getElementById('control-section').scrollIntoView({behavior: 'smooth'});
+            typeWriter(key);
+        }
+
+        // Init
+        typeWriter('intro');
+    </script>
+</body>
+</html>

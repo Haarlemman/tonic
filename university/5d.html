@@ -1,0 +1,446 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The 5th Dimension | Tonic for the Bones</title>
+    
+    <!-- --- SOCIAL MEDIA PREVIEW TAGS --- -->
+    <meta name="description" content="A visualization of the structural rhymes between the atom and the universe. Explore the paradox of scale, time, and probability.">
+    
+    <!-- Facebook / Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.tonicforthebones.com/5d">
+    <meta property="og:title" content="The 5th Dimension | Tonic for the Bones">
+    <meta property="og:description" content="Explore the paradox of scale, time, and probability. From the atom to the galaxy, from the Big Bang to the End of Time.">
+    <meta property="og:image" content="https://www.tonicforthebones.com/5d/preview.jpg">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.tonicforthebones.com/5d">
+    <meta name="twitter:title" content="The 5th Dimension | Tonic for the Bones">
+    <meta name="twitter:description" content="Explore the paradox of scale, time, and probability. From the atom to the galaxy, from the Big Bang to the End of Time.">
+    <meta name="twitter:image" content="https://www.tonicforthebones.com/5d/preview.jpg">
+
+    <!-- --- APP DEPENDENCIES --- -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: #a8a29e;
+            overflow: hidden;
+            margin: 0;
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .serif {
+            font-family: 'Cinzel', serif;
+        }
+        .glass-panel {
+            background: rgba(15, 15, 20, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+        .xy-pad {
+            background: linear-gradient(180deg, rgba(30,30,45,0.8) 0%, rgba(5,5,10,0.8) 100%);
+            position: relative;
+            cursor: crosshair;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        .z-slider-track {
+            background: linear-gradient(0deg, rgba(30,30,45,0.8) 0%, rgba(5,5,10,0.8) 100%);
+            position: relative;
+            cursor: ns-resize;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .xy-grid {
+            /* Dot grid */
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 15px 15px;
+            width: 100%;
+            height: 100%;
+        }
+        /* The Crosshairs */
+        .crosshair-x {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+        }
+        .crosshair-y {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+        }
+        .handle {
+            width: 20px; 
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 12px white;
+            pointer-events: none;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .handle-z {
+            left: 50%; 
+            transform: translate(-50%, -50%);
+        }
+        .axis-label {
+            font-size: 0.5rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #a8a29e;
+            position: absolute;
+            pointer-events: none;
+            text-shadow: 0 1px 2px black;
+            font-weight: 600;
+            opacity: 0.6;
+        }
+        .time-marker {
+            font-size: 0.45rem;
+            color: rgba(255,255,255,0.4);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const PARTICLE_COUNT = 350;
+
+        const App = () => {
+            const canvasRef = useRef(null);
+            
+            // Pos: X=Space, Y=Time, Z=Probability
+            const [pos, setPos] = useState({ x: 0.5, y: 0.5, z: 0.0 });
+            
+            // Interaction
+            const [activeControl, setActiveControl] = useState(null); 
+            const padRef = useRef(null);
+            const zSliderRef = useRef(null);
+            const requestRef = useRef();
+
+            // Particles
+            const particles = useRef(Array.from({ length: PARTICLE_COUNT }).map(() => ({
+                angle: Math.random() * Math.PI * 2,
+                dist: Math.random(), 
+                speedOffset: Math.random() * 0.5 + 0.5,
+                sizeBase: Math.random() * 1.5 + 0.5,
+                phase: Math.random() * Math.PI * 2,
+                ghostOffsets: Array.from({length: 3}).map(() => ({
+                    dx: (Math.random() - 0.5) * 2,
+                    dy: (Math.random() - 0.5) * 2
+                }))
+            })));
+
+            // --- Dynamic Narrative Logic ---
+            const getNarrative = (x, y, z) => {
+                // High Probability override
+                if (z > 0.8) return { title: "The Multiverse", subtitle: "Infinite Divergence" };
+                if (z > 0.4) return { title: "Quantum Superposition", subtitle: "Probability Cloud" };
+
+                // Time (Y) Dominant logic
+                if (y < 0.15) return { title: "The Big Bang", subtitle: "Primordial Chaos" };
+                if (y > 0.85) return { title: "The Big Crunch", subtitle: "Total Collapse" };
+                
+                // Combine Space (X) and Time (Y)
+                let scale = "";
+                if (x < 0.2) scale = "Subatomic";
+                else if (x < 0.4) scale = "Molecular";
+                else if (x < 0.6) scale = "The Scale of Man"; // The Sweet Spot
+                else if (x < 0.8) scale = "Solar System";
+                else scale = "Galactic";
+
+                let era = "";
+                if (y < 0.4) era = "Early Formation";
+                else if (y < 0.6) era = "The Golden Age"; // The Sweet Spot
+                else era = "Entropic Decay";
+
+                // Special case for the "Sweet Spot" (Center Center)
+                if (x > 0.4 && x < 0.6 && y > 0.4 && y < 0.6) {
+                    return { title: "The Present Moment", subtitle: "Consciousness & Control" };
+                }
+
+                return { title: scale, subtitle: era };
+            };
+
+            const narrative = getNarrative(pos.x, pos.y, pos.z);
+
+            // --- Animation Loop ---
+            const animate = (time) => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+                const cx = w / 2;
+                const cy = h / 2;
+
+                const t = time * 0.001;
+                const space = pos.x;      
+                const timeFlow = pos.y;   
+                const probability = pos.z; 
+
+                // Clear with trails
+                const trailAlpha = 0.15 + (timeFlow * 0.1) - (probability * 0.05); 
+                ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0.08, trailAlpha)})`;
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.globalCompositeOperation = 'screen';
+                const radialForce = (timeFlow - 0.5) * 2; 
+
+                particles.current.forEach(p => {
+                    // Physics
+                    const orbitalSpeed = (0.01 + (1 - space) * 0.05) * p.speedOffset;
+                    const collapseSpeedMult = 1 + (Math.max(0, radialForce) * 2);
+                    p.angle += orbitalSpeed * collapseSpeedMult;
+
+                    const breathe = Math.sin(t + p.phase) * 0.02;
+                    if (radialForce < -0.2) { // Expansion
+                        p.dist += 0.005 * Math.abs(radialForce);
+                        if (p.dist > 1.5) p.dist = 0; 
+                    } else if (radialForce > 0.2) { // Collapse
+                        p.dist -= 0.005 * radialForce;
+                        if (p.dist < 0.01) p.dist = 1.2; 
+                    }
+
+                    // Position Calculation
+                    const maxRadius = Math.min(w, h) * 0.45;
+                    const r = (p.dist + breathe) * maxRadius;
+
+                    const atomX = r * Math.sin(p.angle) * Math.cos(p.angle * 2.5); 
+                    const atomY = r * Math.cos(p.angle);
+                    
+                    const spiralTwist = p.dist * 12; 
+                    const galaxyX = r * Math.cos(p.angle + spiralTwist);
+                    const galaxyY = (r * 0.6) * Math.sin(p.angle + spiralTwist); 
+
+                    let px = cx + (atomX * (1 - space)) + (galaxyX * space);
+                    let py = cy + (atomY * (1 - space)) + (galaxyY * space);
+
+                    const heat = Math.max(0, 0.4 - timeFlow) * 5; 
+                    px += (Math.random() - 0.5) * heat;
+                    py += (Math.random() - 0.5) * heat;
+
+                    // Rendering
+                    let hue;
+                    if (timeFlow < 0.3) hue = 190 + (space * 40); 
+                    else if (timeFlow < 0.7) hue = 40 + (space * 20); 
+                    else hue = 340 + (space * 40); 
+
+                    const sat = 90 - (probability * 30); 
+                    const light = 80 - (timeFlow * 50);
+                    const mainAlpha = 0.9 - (probability * 0.4);
+                    const size = (p.sizeBase * (1 + space)) * (1 - probability * 0.3);
+
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${mainAlpha})`;
+                    ctx.fill();
+
+                    // Ghosts
+                    if (probability > 0.05) {
+                        p.ghostOffsets.forEach((g, i) => {
+                            const spread = probability * 60; 
+                            const angleShift = (i % 2 === 0 ? 1 : -1) * probability * 0.5;
+                            const gx_raw = px - cx;
+                            const gy_raw = py - cy;
+                            const gx_rot = gx_raw * Math.cos(angleShift) - gy_raw * Math.sin(angleShift);
+                            const gy_rot = gx_raw * Math.sin(angleShift) + gy_raw * Math.cos(angleShift);
+                            const ghostX = cx + gx_rot + (g.dx * spread);
+                            const ghostY = cy + gy_rot + (g.dy * spread);
+
+                            ctx.beginPath();
+                            ctx.arc(ghostX, ghostY, size * 0.8, 0, Math.PI * 2);
+                            const ghostHue = hue + (i * 30 * probability); 
+                            ctx.fillStyle = `hsla(${ghostHue}, ${sat}%, ${light}%, ${probability * 0.3})`;
+                            ctx.fill();
+                        });
+                    }
+                });
+
+                // Core
+                ctx.globalCompositeOperation = 'source-over'; 
+                const coreSize = 4 + (space * 10) + (probability * 5); 
+                ctx.beginPath();
+                ctx.arc(cx, cy, coreSize, 0, Math.PI * 2);
+                
+                if (probability > 0.8) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 50 * probability;
+                    ctx.shadowColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+                } else if (timeFlow < 0.2) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 40;
+                    ctx.shadowColor = '#aaf';
+                } else if (timeFlow > 0.8) {
+                    ctx.fillStyle = '#000';
+                    ctx.strokeStyle = '#f00';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#500';
+                } else {
+                    ctx.fillStyle = '#fcba03';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#fcba03';
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                requestRef.current = requestAnimationFrame(animate);
+            };
+
+            useEffect(() => {
+                const resize = () => {
+                    if (canvasRef.current) {
+                        canvasRef.current.width = window.innerWidth;
+                        canvasRef.current.height = window.innerHeight;
+                    }
+                };
+                window.addEventListener('resize', resize);
+                resize();
+                requestRef.current = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [pos]);
+
+            // Handlers
+            const updateXY = (e, bounds) => {
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let x = (clientX - bounds.left) / bounds.width;
+                let y = (clientY - bounds.top) / bounds.height;
+                setPos(p => ({ ...p, x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) }));
+            };
+
+            const updateZ = (e, bounds) => {
+                e.preventDefault();
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let z = 1 - ((clientY - bounds.top) / bounds.height);
+                setPos(p => ({ ...p, z: Math.max(0, Math.min(1, z)) }));
+            };
+
+            const handleStart = (e, type) => {
+                setActiveControl(type);
+                const bounds = (type === 'xy' ? padRef : zSliderRef).current.getBoundingClientRect();
+                type === 'xy' ? updateXY(e, bounds) : updateZ(e, bounds);
+            };
+
+            const handleMove = (e) => {
+                if (!activeControl) return;
+                e.preventDefault();
+                const bounds = (activeControl === 'xy' ? padRef : zSliderRef).current.getBoundingClientRect();
+                activeControl === 'xy' ? updateXY(e, bounds) : updateZ(e, bounds);
+            };
+
+            const handleEnd = () => setActiveControl(null);
+
+            return (
+                <div 
+                    className="relative w-full h-screen bg-black overflow-hidden select-none"
+                    onMouseMove={handleMove}
+                    onMouseUp={handleEnd}
+                    onMouseLeave={handleEnd}
+                    onTouchMove={handleMove}
+                    onTouchEnd={handleEnd}
+                >
+                    <canvas ref={canvasRef} className="absolute inset-0 block z-0" />
+
+                    {/* HEADER */}
+                    <div className="absolute top-6 left-6 pointer-events-none z-10 max-w-[80%]">
+                        <h1 className="text-xl serif text-white/90 leading-tight drop-shadow-md transition-all duration-300">
+                            {narrative.title}
+                        </h1>
+                        <div className="h-px w-8 bg-white/40 my-2"></div>
+                        <p className="text-[10px] text-stone-400 uppercase tracking-widest leading-relaxed transition-all duration-300">
+                            {narrative.subtitle}
+                        </p>
+                    </div>
+
+                    {/* CONTROLS */}
+                    <div className="absolute bottom-8 left-6 pointer-events-none z-10 w-full max-w-[90%] md:max-w-sm">
+                        <div className="flex gap-3 pointer-events-auto h-44">
+                            
+                            {/* XY PAD */}
+                            <div 
+                                ref={padRef}
+                                className="flex-1 glass-panel xy-pad"
+                                onMouseDown={(e) => handleStart(e, 'xy')}
+                                onTouchStart={(e) => handleStart(e, 'xy')}
+                            >
+                                <div className="xy-grid"></div>
+                                {/* Crosshairs */}
+                                <div className="crosshair-x"></div>
+                                <div className="crosshair-y"></div>
+
+                                {/* Handle */}
+                                <div className="handle" style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}></div>
+                                
+                                {/* Labels */}
+                                <span className="time-marker top-2 text-[0.4rem]">Big Bang</span>
+                                <span className="time-marker bottom-2 text-[0.4rem]">End of Time</span>
+
+                                <span className="axis-label top-1/2 left-2 -translate-y-1/2">Atom</span>
+                                <span className="axis-label top-1/2 right-2 -translate-y-1/2">Galaxy</span>
+                            </div>
+
+                            {/* Z SLIDER */}
+                            <div 
+                                ref={zSliderRef}
+                                className="w-12 glass-panel z-slider-track"
+                                onMouseDown={(e) => handleStart(e, 'z')}
+                                onTouchStart={(e) => handleStart(e, 'z')}
+                            >
+                                <div className="xy-grid opacity-50"></div>
+                                <div 
+                                    className="absolute bottom-0 w-full bg-white/10 transition-all duration-75"
+                                    style={{ height: `${pos.z * 100}%` }}
+                                ></div>
+                                <div className="handle handle-z" style={{ top: `${(1 - pos.z) * 100}%` }}></div>
+                                <span className="axis-label bottom-16 -rotate-90 origin-center whitespace-nowrap opacity-60 w-full text-center" style={{bottom: '50%'}}>Probability</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-3 text-[9px] text-stone-600 uppercase tracking-widest text-left pl-1">
+                            Tonic for the Bones v2.4
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+    <script src="nav.js"></script>
+</body>
+</html>

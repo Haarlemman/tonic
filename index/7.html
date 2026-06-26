@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones - Geometric Framework</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111111;
+            --text-main: #e0e0e0;
+            --tri-1-color: #00f2ff; /* Cyan for Disciplines */
+            --tri-2-color: #ff0055; /* Magenta for Time */
+            --rad-color: #ffcc00;   /* Yellow for Existence */
+            --dim-opacity: 0.15;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* SVG Styling */
+        svg {
+            width: 90%;
+            height: 90%;
+            max-width: 600px;
+            max-height: 600px;
+            transition: all 0.5s ease;
+        }
+
+        text {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 14px;
+            fill: currentColor;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none; /* Let clicks pass through text */
+            transition: opacity 0.3s ease;
+            /* Ensure text rotates around its own anchor point */
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+
+        /* Layer Groups */
+        .layer {
+            transition: opacity 0.4s ease, filter 0.4s ease;
+            cursor: pointer;
+            transform-box: fill-box;
+            transform-origin: center; /* 0,0 in the viewBox */
+        }
+
+        /* Animations */
+        @keyframes rotate-cw {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes rotate-ccw {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+
+        /* Apply Animations */
+        #layer-discipline {
+            animation: rotate-cw 60s linear infinite;
+        }
+        /* Counter-rotate the text inside the CW layer so it stays upright */
+        #layer-discipline text {
+            animation: rotate-ccw 60s linear infinite;
+        }
+
+        #layer-time {
+            animation: rotate-ccw 60s linear infinite;
+        }
+        /* Counter-rotate the text inside the CCW layer so it stays upright */
+        #layer-time text {
+            animation: rotate-cw 60s linear infinite;
+        }
+
+        #layer-being {
+            animation: rotate-cw 20s linear infinite;
+        }
+        /* The inner core is volatile; let the text spin with it? 
+           Or stabilize it? Let's stabilize it for readability. */
+        #layer-being text {
+            animation: rotate-ccw 20s linear infinite;
+        }
+
+        /* Hover Interaction: PAUSE EVERYTHING */
+        .diagram-wrapper:hover .layer,
+        .diagram-wrapper:hover text {
+            animation-play-state: paused;
+        }
+
+        /* Specific Colors */
+        .tri-up-path {
+            fill: none;
+            stroke: var(--tri-1-color);
+            stroke-width: 2;
+        }
+        .tri-up-text { fill: var(--tri-1-color); }
+
+        .tri-down-path {
+            fill: none;
+            stroke: var(--tri-2-color);
+            stroke-width: 2;
+        }
+        .tri-down-text { fill: var(--tri-2-color); }
+
+        .rad-path {
+            fill: var(--rad-color);
+            opacity: 0.8;
+        }
+        .rad-text { 
+            fill: #000; /* Contrast against yellow */
+            font-weight: 700;
+            font-size: 11px; 
+        }
+
+        /* Hover Highlighting */
+        .diagram-wrapper:hover .layer {
+            opacity: var(--dim-opacity);
+            filter: blur(2px);
+        }
+        
+        .diagram-wrapper:hover .layer:hover {
+            opacity: 1;
+            filter: blur(0);
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            margin-top: 2rem;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.9rem;
+            max-width: 600px;
+            padding: 0 20px;
+        }
+        
+        .info-panel h2 {
+            font-weight: 400;
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+        .legend span { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="diagram-wrapper container">
+        <svg viewBox="-250 -250 500 500" xmlns="http://www.w3.org/2000/svg">
+            
+            <!-- Defs for glow effects -->
+            <defs>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- Layer 1: Downward Triangle (Past, Present, Future) -->
+            <!-- Rotates CCW -->
+            <g class="layer" id="layer-time">
+                <polygon points="-173.2,-100 173.2,-100 0,200" class="tri-down-path" />
+                
+                <!-- Text elements rotate CW to stay upright -->
+                <text x="-190" y="-120" class="tri-down-text" text-anchor="end">Past</text>
+                <text x="190" y="-120" class="tri-down-text" text-anchor="start">Future</text>
+                <text x="0" y="230" class="tri-down-text">Present</text>
+            </g>
+
+            <!-- Layer 2: Upward Triangle (Art, Science, Spirit) -->
+            <!-- Rotates CW -->
+            <g class="layer" id="layer-discipline">
+                <polygon points="0,-200 -173.2,100 173.2,100" class="tri-up-path" />
+                
+                <!-- Text elements rotate CCW to stay upright -->
+                <text x="0" y="-220" class="tri-up-text">Spirit</text>
+                <text x="-190" y="120" class="tri-up-text" text-anchor="end">Art</text>
+                <text x="190" y="120" class="tri-up-text" text-anchor="start">Science</text>
+            </g>
+
+            <!-- Layer 3: Radioactive Symbol (Body, Mind, Soul) -->
+            <!-- Rotates CW (Faster) -->
+            <g class="layer" id="layer-being">
+                <circle cx="0" cy="0" r="15" fill="var(--rad-color)" />
+                
+                <!-- Blade 1 -->
+                <path d="M-20,-30 L-50,-100 A60,60 0 0,1 50,-100 L20,-30 Z" class="rad-path" transform="rotate(0)" />
+                <text x="0" y="-75" class="rad-text">Mind</text>
+
+                <!-- Blade 2 -->
+                <path d="M-20,-30 L-50,-100 A60,60 0 0,1 50,-100 L20,-30 Z" class="rad-path" transform="rotate(120)" />
+                <text x="65" y="40" class="rad-text">Body</text>
+
+                <!-- Blade 3 -->
+                <path d="M-20,-30 L-50,-100 A60,60 0 0,1 50,-100 L20,-30 Z" class="rad-path" transform="rotate(240)" />
+                <text x="-65" y="40" class="rad-text">Soul</text>
+            </g>
+
+        </svg>
+    </div>
+
+    <div class="info-panel">
+        <h2>Tonic for the Bones</h2>
+        <div class="legend">
+            <span style="color: var(--tri-1-color);"><div class="dot" style="background: var(--tri-1-color)"></div>Framework</span>
+            <span style="color: var(--rad-color);"><div class="dot" style="background: var(--rad-color)"></div>Vessel</span>
+            <span style="color: var(--tri-2-color);"><div class="dot" style="background: var(--tri-2-color)"></div>Timeline</span>
+        </div>
+        <p style="margin-top:15px; font-size: 0.75em; color: #666;">HOVER TO PAUSE SYSTEM</p>
+    </div>
+
+</body>
+</html>

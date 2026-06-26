@@ -1,836 +1,553 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <script type="text/javascript" src="https://private-us-east-1.manuscdn.com/eO1aSVyNvwNsJyz7L0VZlYx1y6Dx7JJpsQsz4WhWu9xqNj2SfQ0wjG292q4YLqxw_0VS8t-poHuWi6aYRZw5wA=="></script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Truth Disc</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;600&family=Crimson+Pro:ital,wght@0,300;1,300;1,400&family=Cal+Sans&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<head><script type="text/javascript" src="https://private-us-east-1.manuscdn.com/eO1aSVyNvwNsJyz7L0VZlYx1y6Dx7JJpsQsz4WhWu9xqNj2SfQ0wjG292q4YLqxw_0VS8t-poHuWi6aYRZw5wA=="></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truth Disc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Jost&family=Crimson+Pro&family=Cal+Sans&display=swap" rel="stylesheet">
 
-    :root {
-      --c1: #00cfff;
-      --c2: rgba(0,207,255,0.18);
-      --c3: rgba(0,207,255,0.06);
-      --bg: #03040e;
-      --trans: 0.8s;
-    }
 
-    html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: #fff;
-      font-family: 'Jost', sans-serif;
-      transition: background var(--trans) ease;
-    }
+    <style>
+        body {
+            background-color: #53523a;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            font-family: Arial, sans-serif;
+            overflow-y: auto;
+        }
 
-    /* ── Full-screen particle canvas ── */
-    #bgCanvas {
-      position: fixed; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
+        .container {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 30px;
+            max-width: 100%;
+            width: 100%;
+            align-items: start;
+        }
 
-    /* ── Flash overlay on state change ── */
-    #flash {
-      position: fixed; inset: 0;
-      background: var(--c1);
-      opacity: 0;
-      pointer-events: none;
-      z-index: 999;
-      transition: opacity 0.08s ease;
-    }
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
 
-    /* ── Scanline overlay ── */
-    body::after {
-      content: '';
-      position: fixed; inset: 0;
-      background: repeating-linear-gradient(
-        to bottom,
-        transparent 0px, transparent 3px,
-        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
-      );
-      pointer-events: none;
-      z-index: 998;
-    }
+        .disc-container {
+            position: relative;
+            width: 66vw;
+            height: 66vw;
+            max-width: 500px;
+            max-height: 500px;
+            flex-shrink: 0;
+            margin: 0;
+        }
 
-    /* ════════════════════════════════════════
-       LAYOUT — landscape (default)
-    ════════════════════════════════════════ */
-    .scene {
-      position: relative; z-index: 1;
-      width: 100vw; height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr;
-      align-items: center;
-      overflow: hidden;
-    }
+        .background-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
 
-    /* ════════════════════════════════════════
-       LEFT: DISC STAGE
-    ════════════════════════════════════════ */
-    .disc-stage {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      position: relative;
-    }
+        .disc {
+            width: 78%;
+            height: 78%;
+            transition: transform 0.8s ease-in-out;
+            transform-origin: center center;
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            z-index: 2;
+            filter: drop-shadow(0 0 10px rgba(255, 235, 185, 0.8));
+        }
 
-    .disc-wrap {
-      position: relative;
-      width: min(52vh, 42vw);
-      height: min(52vh, 42vw);
-      cursor: pointer;
-      transition: transform 0.6s ease;
-    }
-    .disc-wrap:hover { transform: scale(1.025); }
+        .envelope-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1;
+            z-index: 3;
+            pointer-events: none;
+        }
 
-    /* Orbital rings */
-    .ring {
-      position: absolute;
-      top: 50%; left: 50%;
-      border-radius: 50%;
-      border: 1px solid var(--c1);
-      transform-origin: center;
-      transition: border-color var(--trans) ease, opacity var(--trans) ease;
-    }
-    .ring-1 {
-      width: 112%; height: 112%;
-      margin: -56% 0 0 -56%;
-      border-style: solid;
-      opacity: 0.22;
-      animation: spin1 10s linear infinite;
-    }
-    .ring-2 {
-      width: 130%; height: 130%;
-      margin: -65% 0 0 -65%;
-      border-style: dashed;
-      opacity: 0.12;
-      animation: spin1 17s linear infinite reverse;
-    }
-    .ring-3 {
-      width: 155%; height: 155%;
-      margin: -77.5% 0 0 -77.5%;
-      border-style: dotted;
-      opacity: 0.07;
-      animation: spin1 28s linear infinite;
-    }
-    .ring-4 {
-      width: 185%; height: 185%;
-      margin: -92.5% 0 0 -92.5%;
-      border-style: solid;
-      opacity: 0.04;
-      animation: spin1 44s linear infinite reverse;
-    }
+        .word-display {
+    position: absolute;
+    top: 39%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ec3926;
+    font-family: 'Economica', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 0px 0px 0px rgba(236, 57, 38, 0.8);
+    z-index: 10;
+    text-align: center;
+    width: 100%;
+    pointer-events: none;
+}
 
-    @keyframes spin1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+		
+		.word-display span {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  animation: fadeInOut 12.0s linear infinite;
+  white-space: nowrap;
+}
 
-    /* Ambient glow beneath disc */
-    .disc-glow {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 100%; height: 100%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--c2) 0%, transparent 70%);
-      filter: blur(30px);
-      animation: glowPulse 3.5s ease-in-out infinite;
-      transition: background var(--trans) ease;
-      pointer-events: none;
-    }
-    @keyframes glowPulse {
-      0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
-      50%      { transform: translate(-50%,-50%) scale(1.2); opacity: 1; }
-    }
 
-    /* Disc images */
-    .disc-bg-img {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      opacity: 0.15;
-    }
+        .word-display span:nth-child(1) { animation-delay: 0s; }
+        .word-display span:nth-child(2) { animation-delay: 0.8s; }
+        .word-display span:nth-child(3) { animation-delay: 1.6s; }
+        .word-display span:nth-child(4) { animation-delay: 2.4s; }
+        .word-display span:nth-child(5) { animation-delay: 3.2s; }
+        .word-display span:nth-child(6) { animation-delay: 4.0s; }
+        .word-display span:nth-child(7) { animation-delay: 4.8s; }
+        .word-display span:nth-child(8) { animation-delay: 5.6s; }
+        .word-display span:nth-child(9) { animation-delay: 6.4s; }
+        .word-display span:nth-child(10) { animation-delay: 7.2s; }
+        .word-display span:nth-child(11) { animation-delay: 8.0s; }
+        .word-display span:nth-child(12) { animation-delay: 8.8s; }
+		.word-display span:nth-child(13) { animation-delay: 9.6s; }
+		.word-display span:nth-child(14) { animation-delay: 10.4s; }
+		.word-display span:nth-child(15) { animation-delay: 11.2s; }
+		
+		@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 50px) scale(0.1);
+    color: #ec3926;
+    filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0px) scale(0.7);
+    color: #f81800;
+    filter: drop-shadow(0 0 5px rgba(236, 57, 38, 0.6));
+  }
+  40% {
+    opacity: 0.5;
+    transform: translate(-50%, -150px) scale(3);
+    color: #e0da58;
+    filter: drop-shadow(0 0 5px rgba(224, 218, 38, 0.8));
+  }
+  90% {
+    opacity: 0.7;
+    transform: translate(-50%, -300px) scale(7);
+    color: #006cff;
+    filter: drop-shadow(0 0 8px rgba(0, 222, 255, 0.8));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -500px) scale(12);
+    color: #1844d0;
+    filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+  }
+}
 
-    .disc-img {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 83%; height: 83%;
-      transform: translate(-50%,-50%) rotate(0deg);
-      transform-origin: center;
-      transition: transform 1.1s cubic-bezier(0.34,1.3,0.64,1),
-                  filter var(--trans) ease;
-      z-index: 2;
-      filter: drop-shadow(0 0 20px var(--c1));
-      animation: discFloat 5s ease-in-out infinite;
-    }
-    @keyframes discFloat {
-      0%,100% { margin-top: 0; }
-      50%      { margin-top: -6px; }
-    }
 
-    .envelop-img {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      z-index: 3;
-      pointer-events: none;
-      opacity: 0.92;
-    }
 
-    .hal-img {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      width: 22%; height: 22%;
-      object-fit: contain;
-      z-index: 6;
-      pointer-events: none;
-      filter: drop-shadow(0 0 10px var(--c1)) drop-shadow(0 0 30px var(--c2));
-      animation: halBlink 6s ease-in-out infinite;
-      transition: filter var(--trans) ease;
-    }
-    @keyframes halBlink {
-      0%,45%,55%,100% { opacity: 1; }
-      49%,51% { opacity: 0.1; }
-    }
+		
 
-    /* Spiritual word float */
-    .word-display {
-      position: absolute;
-      top: 35%; left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      width: 100%;
-      text-align: center;
-      pointer-events: none;
-      display: none;
-    }
-    .word-display span {
-      position: absolute;
-      left: 50%;
-      opacity: 0;
-      font-family: 'Cal Sans', sans-serif;
-      font-size: clamp(14px, 2.5vw, 20px);
-      letter-spacing: 0.18em;
-      color: var(--c1);
-      text-shadow: 0 0 20px var(--c1);
-      animation: wordFloat 12s linear infinite;
-      white-space: nowrap;
-      transition: color var(--trans) ease, text-shadow var(--trans) ease;
-    }
-    .word-display span:nth-child(1)  { animation-delay:  0.0s; }
-    .word-display span:nth-child(2)  { animation-delay:  0.8s; }
-    .word-display span:nth-child(3)  { animation-delay:  1.6s; }
-    .word-display span:nth-child(4)  { animation-delay:  2.4s; }
-    .word-display span:nth-child(5)  { animation-delay:  3.2s; }
-    .word-display span:nth-child(6)  { animation-delay:  4.0s; }
-    .word-display span:nth-child(7)  { animation-delay:  4.8s; }
-    .word-display span:nth-child(8)  { animation-delay:  5.6s; }
-    .word-display span:nth-child(9)  { animation-delay:  6.4s; }
-    .word-display span:nth-child(10) { animation-delay:  7.2s; }
-    .word-display span:nth-child(11) { animation-delay:  8.0s; }
-    .word-display span:nth-child(12) { animation-delay:  8.8s; }
-    .word-display span:nth-child(13) { animation-delay:  9.6s; }
-    .word-display span:nth-child(14) { animation-delay: 10.4s; }
-    .word-display span:nth-child(15) { animation-delay: 11.2s; }
+        .hal9000-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            z-index: 6;
+            pointer-events: none;
+        }
 
-    @keyframes wordFloat {
-      0%   { opacity:0; transform:translate(-50%, 20px) scale(0.3) rotate(-5deg); filter:blur(6px); }
-      7%   { opacity:1; transform:translate(-50%, 0)    scale(0.9) rotate(0deg);  filter:blur(0); }
-      35%  { opacity:0.7; transform:translate(-53%, -110px) scale(2.2) rotate(2deg); filter:blur(1px); }
-      80%  { opacity:0.2; transform:translate(-48%, -260px) scale(4.5) rotate(-1deg); filter:blur(4px); }
-      100% { opacity:0;   transform:translate(-50%, -380px) scale(7)   rotate(0deg);  filter:blur(10px); }
-    }
+        .controls {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            justify-content: center;
+        }
 
-    /* ════════════════════════════════════════
-       RIGHT: CONTENT
-    ════════════════════════════════════════ */
-    .content {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: clamp(16px, 2.5vh, 28px);
-      padding: 5vh 6vw 5vh 2vw;
-      height: 100%;
-    }
+        .text-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            min-height: 200px;
+            margin-top: 20px;
+        }
 
-    /* State micro-label */
-    .state-label {
-      font-size: clamp(9px, 1vw, 11px);
-      font-weight: 300;
-      letter-spacing: 0.45em;
-      text-transform: uppercase;
-      color: var(--c1);
-      opacity: 0.55;
-      transition: color var(--trans) ease;
-    }
+        .state-title {
+		    font-family: 'Cal Sans', cursive;
+            font-size: 6vw;
+            font-weight: 700;
+            color: #d4d3b4;
+            opacity: 0.9;
+            white-space: nowrap;
+            letter-spacing: 2px;
+        }
 
-    /* Giant title with slot-machine letters */
-    .state-title {
-      font-family: 'Cal Sans', sans-serif;
-      font-size: clamp(72px, 13vw, 160px);
-      line-height: 0.88;
-      color: var(--c1);
-      text-shadow:
-        0 0 40px var(--c2),
-        0 0 100px var(--c3),
-        0 2px 0 rgba(0,0,0,0.5);
-      transition: color var(--trans) ease, text-shadow var(--trans) ease;
-      letter-spacing: -0.02em;
-      user-select: none;
-    }
+      .quote-container {
+  font-family: 'Crimson Pro', cursive;
+  font-size: 20px;
+  color: #201f04;
+  background-color: #d5d4b9;
+  opacity: 0.95;
+  line-height: 1.6;
+  padding: 24px;
+  border-radius: 10px;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.5s ease;
+  height: 7.2em; /* Fixed height for ~4 lines at 1.6 line-height */
+  overflow-y: auto;
+  width: 80%;
+  margin: 0;
+}
 
-    .state-title .char {
-      display: inline-block;
-      transition: transform 0.15s ease;
-    }
 
-    /* Divider line */
-    .divider {
-      width: min(280px, 60%);
-      height: 1px;
-      background: linear-gradient(to right, var(--c1), transparent);
-      opacity: 0.25;
-      transition: background var(--trans) ease;
-    }
 
-    /* Quote */
-    .quote-wrap {
-      position: relative;
-    }
-    .quote-cursor {
-      display: inline-block;
-      width: 2px; height: 1.1em;
-      background: var(--c1);
-      vertical-align: text-bottom;
-      margin-left: 2px;
-      animation: blink 1s step-end infinite;
-      transition: background var(--trans) ease;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
 
-    .quote-text {
-      font-family: 'Crimson Pro', serif;
-      font-style: italic;
-      font-weight: 300;
-      font-size: clamp(16px, 2vw, 22px);
-      line-height: 1.7;
-      color: rgba(255,255,255,0.75);
-      white-space: pre-line;
-      min-height: 4.5em;
-    }
+            .container {
+                grid-template-columns: 1fr;
+                align-items: center;
+            }
 
-    /* Visualizer bars */
-    .vis {
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 28px;
-      opacity: 0.3;
-    }
-    .vis-bar {
-      width: 3px;
-      background: var(--c1);
-      border-radius: 2px;
-      transition: background var(--trans) ease;
-      animation: visBar 0.7s ease-in-out infinite alternate;
-    }
-    .vis-bar:nth-child(1)  { animation-duration: 0.55s; animation-delay: 0.00s; }
-    .vis-bar:nth-child(2)  { animation-duration: 0.70s; animation-delay: 0.05s; }
-    .vis-bar:nth-child(3)  { animation-duration: 0.45s; animation-delay: 0.10s; }
-    .vis-bar:nth-child(4)  { animation-duration: 0.80s; animation-delay: 0.15s; }
-    .vis-bar:nth-child(5)  { animation-duration: 0.60s; animation-delay: 0.20s; }
-    .vis-bar:nth-child(6)  { animation-duration: 0.50s; animation-delay: 0.08s; }
-    .vis-bar:nth-child(7)  { animation-duration: 0.75s; animation-delay: 0.12s; }
-    .vis-bar:nth-child(8)  { animation-duration: 0.42s; animation-delay: 0.18s; }
-    .vis-bar:nth-child(9)  { animation-duration: 0.65s; animation-delay: 0.03s; }
-    .vis-bar:nth-child(10) { animation-duration: 0.58s; animation-delay: 0.22s; }
-    .vis-bar:nth-child(11) { animation-duration: 0.88s; animation-delay: 0.14s; }
-    .vis-bar:nth-child(12) { animation-duration: 0.47s; animation-delay: 0.07s; }
-    @keyframes visBar {
-      from { height: 3px; }
-      to   { height: 22px; }
-    }
+            .left-column {
+                order: 1;
+            }
 
-    /* Buttons */
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+            .disc-container {
+                width: 75vw;
+                height: 75vw;
+                max-width: 380px;
+                max-height: 380px;
+            }
 
-    .btn {
-      padding: 9px 22px;
-      border-radius: 100px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.5);
-      font-family: 'Jost', sans-serif;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.22s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    .btn::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: var(--c1);
-      opacity: 0;
-      transition: opacity 0.22s ease;
-    }
-    .btn:hover::before { opacity: 0.08; }
-    .btn:hover {
-      border-color: var(--c1);
-      color: rgba(255,255,255,0.9);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px var(--c3);
-    }
-    .btn.active {
-      border-color: var(--c1);
-      color: var(--c1);
-      box-shadow: 0 0 16px var(--c2);
-    }
-    .sep { width: 1px; height: 20px; background: rgba(255,255,255,0.1); }
+            .disc {
+                width: 77%;
+                height: 77%;
+                position: absolute;
+                top: 53%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(0deg);
+                filter: drop-shadow(0 0 10px rgba(255, 242, 128, 0.8));
+            }
 
-    /* ════════════════════════════════════════
-       PORTRAIT layout
-    ════════════════════════════════════════ */
-    @media (orientation: portrait), (max-aspect-ratio: 4/5) {
-      .scene {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
-        padding: 0;
-      }
-      .disc-stage {
-        padding-top: clamp(24px, 5vh, 48px);
-        height: auto;
-      }
-      .disc-wrap {
-        width: min(66vw, 340px);
-        height: min(66vw, 340px);
-      }
-      .content {
-        padding: 24px 7vw 0;
-        gap: 14px;
-        align-items: center;
-        text-align: center;
-      }
-      .state-title {
-        font-size: clamp(72px, 22vw, 140px);
-      }
-      .divider {
-        background: linear-gradient(to right, transparent, var(--c1), transparent);
-        width: 60%;
-        margin: 0 auto;
-      }
-      .controls {
-        justify-content: center;
-        padding-bottom: 24px;
-      }
-      .quote-text { font-size: clamp(15px, 3.5vw, 19px); }
-    }
+           .hal9000-layer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    z-index: 6;
+    pointer-events: none;
+}
 
-    /* Tall portrait monitor */
-    @media (min-width: 800px) and (orientation: portrait) {
-      .disc-wrap {
-        width: min(55vw, 480px);
-        height: min(55vw, 480px);
-      }
-      .state-title { font-size: clamp(100px, 18vw, 180px); }
-    }
-  </style>
+            .word-display {
+                font-size: 16px;
+                top: 35%;
+                width: 100%;
+            }
+
+          .text-content {
+  align-items: center;
+  text-align: center;
+}
+
+            .state-title {
+                font-size: 20vw;
+                margin-bottom: 10px;
+            }
+
+            .quote-container {
+  text-align: center;
+  margin: 10px auto 0 auto;
+}
+        }
+
+        .btn {
+            width: 80px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-body {
+            background-color: #dc3545;
+        }
+
+        .btn-mind {
+            background-color: #ffc107;
+            color: #333;
+            text-shadow: none;
+        }
+
+        .btn-soul {
+            background-color: #007bff;
+        }
+		
+		.btn-toggle {
+		    background-color: white;
+    		color:  #000;
+			text-shadow: none;
+}
+
+        .state-indicator {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            opacity: 0.8;
+            display: none;
+        }
+
+@media (min-width: 769px) {
+  .text-content {
+    align-items: flex-start;
+  }
+
+  .quote-container {
+    width: 60%;
+    text-align: left;
+    margin: 0; /* Ensures it's left-aligned under the title */
+  }
+}
+
+
+		
+}
+
+    </style>
 </head>
 <body>
-
-<canvas id="bgCanvas"></canvas>
-<div id="flash"></div>
-
-<div class="scene">
-
-  <!-- ── DISC STAGE ── -->
-  <div class="disc-stage" id="discStage">
-    <div class="disc-wrap" id="discWrap">
-      <div class="disc-glow"></div>
-      <div class="ring ring-1"></div>
-      <div class="ring ring-2"></div>
-      <div class="ring ring-3"></div>
-      <div class="ring ring-4"></div>
-
-      <img src="images/bgpaper.png" class="disc-bg-img" alt="">
-      <img src="images/disc.png"    class="disc-img"    id="disc" alt="Truth Disc">
-      <img src="images/envelop.png" class="envelop-img" alt="">
-
-      <div id="wordDisplay" class="word-display">
-        <span>Dao</span><span>God</span><span>Zen</span><span>Love</span>
-        <span>Atman</span><span>Ananda</span><span>Kenshō</span><span>Ikigai</span>
-        <span>Satori</span><span>Nirvana</span><span>Neshama</span><span>Samsara</span>
-        <span>Ein Sof</span><span>Shekhinah</span><span>Infinity</span>
-      </div>
-
-      <img src="images/hal9000.png" class="hal-img" id="hal" alt="HAL 9000">
-    </div>
-  </div>
-
-  <!-- ── CONTENT ── -->
-  <div class="content">
-    <div class="state-label" id="stateLabel">TRUTH DISC · MMXXVI</div>
-
-    <div class="state-title" id="stateTitle">SOUL</div>
-
-    <div class="divider"></div>
-
-    <div class="quote-wrap">
-      <div class="quote-text" id="quoteText"><span class="quote-cursor"></span></div>
-    </div>
-
-    <!-- Visualizer -->
-    <div class="vis" id="vis">
-      <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
-      <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
-      <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
-      <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
+    <div class="container">
+        <div class="left-column">
+            <div class="disc-container">
+                <div class="state-indicator" id="stateIndicator">AUTO</div>
+                <img src="images/bgpaper.png" 
+                     alt="Background Paper" 
+                     class="background-layer">
+                <img src="images/disc.png" 
+                     alt="Zen Disc" 
+                     class="disc" 
+                     id="disc">
+                <img src="images/envelop.png" 
+                     alt="Envelope Overlay" 
+                     class="envelope-layer">
+<div id="wordDisplay" class="word-display" style="display: none;">
+<span>Dao</span>
+<span>God</span>
+<span>Zen</span>
+<span>Love</span>
+<span>Atman</span>
+<span>Ananda</span> 
+<span>Kenshō</span>
+<span>Ikigai</span>
+<span>Satori</span>
+<span>Nirvana</span>
+<span>Neshama</span>
+<span>Samsara</span>
+<span>Ein Sof</span>
+<span>Shekhinah</span>
+<span>Infinity</span>
+                </div>
+                <img src="images/hal9000.png" 
+                     alt="HAL 9000 Overlay" 
+                     class="hal9000-layer">
+            </div>
+            <div class="controls">
+                <button class="btn btn-body" onclick="setState('body')">BODY</button>
+                <button class="btn btn-mind" onclick="setState('mind')">MIND</button>
+                <button class="btn btn-soul" onclick="setState('soul')">SOUL</button>
+				<button class="btn btn-toggle" onclick="toggleWords()">TRUTH</button>
+            </div>
+        </div>
+        <div class="text-content">
+            <div class="state-title" id="stateTitle">Body</div>
+            <div class="quote-container" id="quoteContainer"></div>
+        </div>
     </div>
 
-    <div class="controls">
-      <button class="btn" id="btnBody"  onclick="setState('body')">Body</button>
-      <button class="btn" id="btnMind"  onclick="setState('mind')">Mind</button>
-      <button class="btn active" id="btnSoul"  onclick="setState('soul')">Soul</button>
-      <div class="sep"></div>
-      <button class="btn" id="btnTruth" onclick="toggleWords()">Truth</button>
-    </div>
-  </div>
+	<script>
+  var currentRotation = 0;
+  var autoRotateInterval;
+  var isAutoMode = true;
+  var disc = document.getElementById('disc');
+  var stateIndicator = document.getElementById('stateIndicator');
+  var stateTitle = document.getElementById('stateTitle');
+  var quoteContainer = document.getElementById('quoteContainer');
 
-</div>
+  var wisdomQuotes = [
+    "The only way to do great work is to love what you do. - Steve Jobs",
+    "Be yourself; everyone else is already taken. - Oscar Wilde",
+    "In the end, we will remember not the words of our enemies, but the silence of our friends. - Martin Luther King Jr.",
+    "The journey of a thousand miles begins with one step. - Lao Tzu",
+    "Life is what happens to you while you're busy making other plans. - John Lennon",
+    "The only impossible journey is the one you never begin. - Tony Robbins",
+    "Yesterday is history, tomorrow is a mystery, today is a gift. - Eleanor Roosevelt",
+    "It is during our darkest moments that we must focus to see the light. - Aristotle"
+  ];
 
-<script>
-/* ═══════════════════════════════════════════════
-   STATE CONFIG
-═══════════════════════════════════════════════ */
-const STATES = {
-  soul: {
-    c1: '#00d4ff', c2: 'rgba(0,212,255,0.18)', c3: 'rgba(0,212,255,0.06)',
-    bg: '#02030e', rotation: 0,   label: 'SOUL', particle: 'cosmos',
-    quotes: [
-      "The Tao that can be named\nis not the eternal Tao.\n— Lao Tzu",
-      "The eye through which I see God\nis the same eye through which God sees me.\n— Meister Eckhart",
-      "You are not a drop in the ocean.\nYou are the entire ocean in a drop.\n— Rumi",
-      "We are not human beings having a spiritual experience.\nWe are spiritual beings having a human experience.\n— Teilhard de Chardin",
-      "In the beginning was the Word,\nand the Word was with God,\nand the Word was God.",
-    ]
-  },
-  mind: {
-    c1: '#ffe040', c2: 'rgba(255,224,64,0.18)', c3: 'rgba(255,224,64,0.06)',
-    bg: '#0d0900', rotation: 120, label: 'MIND', particle: 'neural',
-    quotes: [
-      "Your brain uses 20% of your body's total energy —\ndespite being only 2% of your body weight.",
-      "The speed of light could circle the Earth\n7.5 times in a single second.",
-      "Quantum entanglement allows particles to influence each other\ninstantly across any distance — Einstein called it\n'spooky action at a distance.'",
-      "Every atom in your body was forged inside a star.\nYou are, quite literally, made of stardust.",
-      "The universe is not only stranger than we suppose,\nbut stranger than we can suppose.\n— J.B.S. Haldane",
-    ]
-  },
-  body: {
-    c1: '#ff4422', c2: 'rgba(255,68,34,0.18)', c3: 'rgba(255,68,34,0.06)',
-    bg: '#0e0100', rotation: 240, label: 'BODY', particle: 'embers',
-    quotes: [
-      "Breathe in strength,\nexhale the doubt.\nYour body knows\nwhat life's about.",
-      "Listen to your heartbeat's song —\nit's been with you all along,\na rhythm that will guide you through\neverything you're meant to do.",
-      "In rest you find your power,\nin movement, find your grace.\nYour body is the temple\nwhere soul and mind embrace.",
-      "Strong like the mountains,\nfluid like the sea —\nyour body holds the wisdom\nof who you're meant to be.",
-      "Every step you take today\nbuilds the path to who you'll be.\nMovement is your body's way\nof setting your spirit free.",
-    ]
+  var scienceFacts = [
+    "Your brain uses about 20% of your body's total energy, despite being only 2% of your body weight.",
+    "A single teaspoon of honey represents the life work of 12 bees.",
+    "Octopuses have three hearts and blue blood, and two hearts stop beating when they swim.",
+    "The human eye can distinguish approximately 10 million different colors.",
+    "A day on Venus is longer than its year - it takes 243 Earth days to rotate once.",
+    "Bananas are berries, but strawberries aren't. Botanically speaking, berries must have seeds inside their flesh.",
+    "The speed of light is so fast that it could circle the Earth 7.5 times in just one second.",
+    "Your stomach gets an entirely new lining every 3-4 days because stomach acid would otherwise digest it."
+  ];
+
+  var bodyPoems = [
+    "Breathe in strength,\nExhale the doubt,\nYour body knows\nWhat life's about.",
+    "Every step you take today\nBuilds the path to who you'll be,\nMovement is your body's way\nOf setting your spirit free.",
+    "Listen to your heartbeat's song,\nIt's been with you all along,\nA rhythm that will guide you through\nEverything you're meant to do.",
+    "Your hands can heal,\nYour feet can dance,\nYour body holds\nLife's every chance.",
+    "In rest you find your power,\nIn movement, find your grace,\nYour body is the temple\nWhere soul and mind embrace.",
+    "Strong like the mountains,\nFluid like the sea,\nYour body holds the wisdom\nOf who you're meant to be."
+  ];
+
+  var states = {
+    soul: 0,
+    mind: 120,
+    body: 240
+  };
+
+  function getRandomQuote(state) {
+    let quotes;
+    switch (state) {
+      case 'soul': quotes = wisdomQuotes; break;
+      case 'mind': quotes = scienceFacts; break;
+      case 'body': quotes = bodyPoems; break;
+      default: return '';
+    }
+    return quotes[Math.floor(Math.random() * quotes.length)];
   }
-};
 
-let current = 'soul';
-let autoTimer = null;
-let wordsOn = false;
-let typeTimer = null;
-const ORDER = ['soul', 'mind', 'body'];
-
-const disc      = document.getElementById('disc');
-const stateTitle= document.getElementById('stateTitle');
-const stateLabel= document.getElementById('stateLabel');
-const quoteText = document.getElementById('quoteText');
-const flash     = document.getElementById('flash');
-const root      = document.documentElement;
-
-/* ─── Apply state ─── */
-function applyState(key) {
-  const s = STATES[key];
-  current = key;
-
-  root.style.setProperty('--c1', s.c1);
-  root.style.setProperty('--c2', s.c2);
-  root.style.setProperty('--c3', s.c3);
-  root.style.setProperty('--bg', s.bg);
-  document.body.style.background = s.bg;
-
-  disc.style.transform = `translate(-50%,-50%) rotate(${s.rotation}deg)`;
-  disc.style.filter    = `drop-shadow(0 0 20px ${s.c1})`;
-
-  ['btnBody','btnMind','btnSoul'].forEach(id => {
-    document.getElementById(id).classList.remove('active');
-  });
-  const btnMap = { soul:'btnSoul', mind:'btnMind', body:'btnBody' };
-  document.getElementById(btnMap[key]).classList.add('active');
-
-  slotMachineTitle(s.label);
-  typewriterQuote(s.quotes[Math.floor(Math.random() * s.quotes.length)]);
-  switchParticles(s.particle, s.c1);
-}
-
-function setState(key) {
-  doFlash();
-  stopAuto();
-  applyState(key);
-  setTimeout(() => { if (!wordsOn) startAuto(); }, 7000);
-}
-
-/* ─── Flash ─── */
-function doFlash() {
-  flash.style.opacity = '0.35';
-  setTimeout(() => { flash.style.opacity = '0'; }, 120);
-}
-
-/* ─── Auto-rotate ─── */
-function startAuto() {
-  stopAuto();
-  autoTimer = setInterval(() => {
-    doFlash();
-    const next = ORDER[(ORDER.indexOf(current) + 1) % 3];
-    applyState(next);
-  }, 5500);
-}
-function stopAuto() {
-  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-}
-
-/* ─── Truth words ─── */
-function toggleWords() {
-  wordsOn = !wordsOn;
-  document.getElementById('wordDisplay').style.display = wordsOn ? 'block' : 'none';
-  document.getElementById('btnTruth').classList.toggle('active', wordsOn);
-  if (wordsOn) stopAuto(); else startAuto();
-}
-
-/* ═══════════════════════════════════════════════
-   SLOT-MACHINE TITLE
-═══════════════════════════════════════════════ */
-const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#&';
-
-function slotMachineTitle(word) {
-  const el = stateTitle;
-  el.innerHTML = '';
-  word.split('').forEach((targetChar, ci) => {
-    const span = document.createElement('span');
-    span.className = 'char';
-    span.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
-    el.appendChild(span);
-
-    let count = 0;
-    const total = 10 + ci * 4;
-    const iv = setInterval(() => {
-      count++;
-      if (count < total) {
-        span.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
-        span.style.opacity = (0.4 + Math.random() * 0.6).toFixed(2);
-      } else {
-        span.textContent = targetChar;
-        span.style.opacity = '1';
-        clearInterval(iv);
-      }
-    }, 40);
-  });
-}
-
-/* ═══════════════════════════════════════════════
-   TYPEWRITER QUOTE
-═══════════════════════════════════════════════ */
-function typewriterQuote(text) {
-  if (typeTimer) clearTimeout(typeTimer);
-  quoteText.innerHTML = '';
-
-  const cursor = document.createElement('span');
-  cursor.className = 'quote-cursor';
-
-  let i = 0;
-  const speed = 22;
-
-  function tick() {
-    if (i < text.length) {
-      const node = document.createTextNode(text[i]);
-      quoteText.insertBefore(node, cursor);
-      i++;
-      typeTimer = setTimeout(tick, text[i-1] === '\n' ? speed * 5 : speed);
+  function updateQuoteDisplay(state) {
+    const quote = getRandomQuote(state);
+    if (quote) {
+      quoteContainer.innerText = quote;
+      quoteContainer.style.opacity = '0.95';
     } else {
-      setTimeout(() => cursor.remove(), 2500);
+      quoteContainer.style.opacity = '0';
     }
   }
-  quoteText.appendChild(cursor);
-  setTimeout(tick, 320);
-}
 
-/* ═══════════════════════════════════════════════
-   CANVAS PARTICLE SYSTEM
-═══════════════════════════════════════════════ */
-const canvas = document.getElementById('bgCanvas');
-const ctx = canvas.getContext('2d');
-let W, H, particles = [], pType = 'cosmos', pColor = '#00d4ff';
-let animFrame;
-
-function resize() {
-  W = canvas.width  = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-
-function switchParticles(type, color) {
-  pType = type; pColor = color;
-  buildParticles();
-}
-
-function buildParticles() {
-  particles = [];
-  const count = pType === 'neural' ? 55 : pType === 'embers' ? 70 : 90;
-  for (let i = 0; i < count; i++) particles.push(makeParticle());
-}
-
-function makeParticle() {
-  const p = {};
-  if (pType === 'cosmos') {
-    p.x = Math.random() * W;
-    p.y = Math.random() * H;
-    p.r = Math.random() * 1.6 + 0.3;
-    p.vx = (Math.random() - 0.5) * 0.15;
-    p.vy = (Math.random() - 0.5) * 0.15;
-    p.alpha = Math.random() * 0.7 + 0.2;
-    p.twinkleSpeed = Math.random() * 0.02 + 0.005;
-    p.twinklePhase = Math.random() * Math.PI * 2;
-  } else if (pType === 'neural') {
-    p.x = Math.random() * W;
-    p.y = Math.random() * H;
-    p.r = Math.random() * 2.5 + 1;
-    p.vx = (Math.random() - 0.5) * 0.3;
-    p.vy = (Math.random() - 0.5) * 0.3;
-    p.alpha = Math.random() * 0.5 + 0.2;
-    p.pulse = Math.random() * Math.PI * 2;
-  } else { // embers
-    p.x = Math.random() * W;
-    p.y = H + 20;
-    p.r = Math.random() * 2.5 + 0.5;
-    p.vx = (Math.random() - 0.5) * 0.8;
-    p.vy = -(Math.random() * 1.5 + 0.5);
-    p.alpha = Math.random() * 0.7 + 0.3;
-    p.life = 1;
-    p.decay = Math.random() * 0.004 + 0.002;
+  function rotateDisc(targetRotation) {
+    disc.style.transform = 'translate(-50%, -50%) rotate(' + targetRotation + 'deg)';
+    currentRotation = targetRotation;
   }
-  return p;
-}
 
-function drawParticles(ts) {
-  ctx.clearRect(0, 0, W, H);
-
-  if (pType === 'neural') {
-    // Draw connecting lines
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 130) {
-          ctx.beginPath();
-          ctx.strokeStyle = pColor;
-          ctx.globalAlpha = (1 - d / 130) * 0.12;
-          ctx.lineWidth = 0.5;
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.stroke();
-        }
+  function updateStateTitle() {
+    let currentState = 'body';
+    for (let key in states) {
+      if (states[key] === currentRotation) {
+        currentState = key;
+        break;
       }
     }
+    const capitalizedState = currentState.charAt(0).toUpperCase() + currentState.slice(1);
+    stateTitle.textContent = capitalizedState;
+
+    const stateColors = {
+      body: '#dd172a',
+      mind: '#dbdd17',
+      soul: '#00bce4'
+    };
+    stateTitle.style.color = stateColors[currentState];
+
+    updateQuoteDisplay(currentState);
   }
 
-  particles.forEach((p, i) => {
-    // Update
-    if (pType === 'cosmos') {
-      p.x += p.vx; p.y += p.vy;
-      p.twinklePhase += p.twinkleSpeed;
-      const twinkle = Math.sin(p.twinklePhase) * 0.35 + 0.65;
-      ctx.beginPath();
-      ctx.globalAlpha = p.alpha * twinkle;
-      ctx.fillStyle = pColor;
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-      if (p.x < -5) p.x = W+5;
-      if (p.x > W+5) p.x = -5;
-      if (p.y < -5) p.y = H+5;
-      if (p.y > H+5) p.y = -5;
-    } else if (pType === 'neural') {
-      p.x += p.vx; p.y += p.vy;
-      p.pulse += 0.03;
-      const pA = p.alpha * (0.6 + Math.sin(p.pulse) * 0.4);
-      ctx.beginPath();
-      ctx.globalAlpha = pA;
-      ctx.fillStyle = pColor;
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-      if (p.x < 0 || p.x > W) p.vx *= -1;
-      if (p.y < 0 || p.y > H) p.vy *= -1;
-    } else { // embers
-      p.x += p.vx + Math.sin(ts * 0.001 + i) * 0.3;
-      p.y += p.vy;
-      p.life -= p.decay;
-      ctx.beginPath();
-      ctx.globalAlpha = p.alpha * p.life;
-      // ember glow: orange → yellow at top
-      const pct = 1 - p.y / H;
-      ctx.fillStyle = pct > 0.5 ? '#ffcc44' : pColor;
-      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
-      ctx.fill();
-      if (p.life <= 0 || p.y < -20) {
-        particles[i] = makeParticle();
-        particles[i].x = Math.random() * W;
-      }
-    }
-  });
+  function setState(state) {
+    clearInterval(autoRotateInterval);
+    isAutoMode = false;
 
-  ctx.globalAlpha = 1;
-  animFrame = requestAnimationFrame(drawParticles);
-}
+    stateIndicator.textContent = state.toUpperCase();
 
-/* ═══════════════════════════════════════════════
-   MOUSE PARALLAX
-═══════════════════════════════════════════════ */
-let mx = 0, my = 0;
-document.addEventListener('mousemove', e => {
-  mx = (e.clientX / window.innerWidth  - 0.5) * 18;
-  my = (e.clientY / window.innerHeight - 0.5) * 18;
-  document.getElementById('discWrap').style.transform =
-    `translate(${mx * 0.4}px, ${my * 0.4}px) scale(1)`;
-});
+    const capitalizedState = state.charAt(0).toUpperCase() + state.slice(1);
+    stateTitle.textContent = capitalizedState;
 
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-window.addEventListener('resize', () => { resize(); buildParticles(); });
-resize();
-buildParticles();
-requestAnimationFrame(drawParticles);
-applyState('soul');
-startAuto();
+    const stateColors = {
+      body: '#dd172a',
+      mind: '#dbdd17',
+      soul: '#00bce4'
+    };
+    stateTitle.style.color = stateColors[state];
+
+    updateQuoteDisplay(state);
+    rotateDisc(states[state]);
+
+    setTimeout(() => {
+      if (!isAutoMode) startAutoRotation();
+    }, 5000);
+  }
+
+  function startAutoRotation() {
+    isAutoMode = true;
+    stateIndicator.textContent = 'AUTO';
+    autoRotateInterval = setInterval(() => {
+      currentRotation += 120;
+      if (currentRotation >= 360) currentRotation = 0;
+      rotateDisc(currentRotation);
+      updateStateTitle();
+    }, 3500);
+  }
+
+  function toggleWords() {
+    const display = document.getElementById('wordDisplay');
+    display.style.display = (display.style.display === 'none') ? 'block' : 'none';
+  }
+
+  // Initialize
+  startAutoRotation();
+  updateStateTitle();
+  updateQuoteDisplay('body');
 </script>
+
+	
 </body>
 </html>
+

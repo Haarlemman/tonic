@@ -1,4 +1,4 @@
-const { useState, useEffect, useRef, useLayoutEffect } = React;
+﻿const { useState, useEffect, useRef, useLayoutEffect } = React;
 
 // --- CONFIGURATION: EDIT HERE ---
 
@@ -336,7 +336,7 @@ const FolioMenu = ({ isOpen, onClose }) => {
                         <div className="grid gap-3">
                             {[
                                 { title: "Instagram", url: "http://instagram.com/davidje", icon: Icons.Instagram, desc: "@davidje" },
-                                { title: "The Folio", url: "https://tonic.davidenker.com/folio", icon: Icons.BookOpen, desc: "Archive" },
+                                { title: "The Folio", url: "https://www.tonicforthebones.com/folio", icon: Icons.BookOpen, desc: "Archive" },
                                 { title: "Photo Gallery", url: "https://photos.app.goo.gl/Qtdnqgy3bR4j61ut9", icon: Icons.Image, desc: "Visuals" },
                                 { title: "Spotify Playlist", url: "https://open.spotify.com/playlist/6fdgo7q6wuk9H0JZCYKUb6?si=fdd0e1b77fea43ce", icon: Icons.Play, desc: "Audio" },
                                 { title: "Paradox Prime", url: "https://open.spotify.com/artist/297RvgooWnmjmFl7lWpQkj", icon: Icons.Play, desc: "My music on Spotify" }

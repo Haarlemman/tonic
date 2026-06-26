@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>David Enker - Paradox Prime</title>
+    <style>
+        /* --- 1. CORE VARIABLES & RESET --- */
+        :root {
+            --paper: #E8E6D9;
+            /* Brighter Bauhaus/Signal Colors */
+            --red: #D9381E;      /* Bright Bauhaus Red */
+            --yellow: #F2A900;   /* Signal Yellow */
+            --teal: #0097A7;     /* LIGHTER TEAL requested */
+            --black: #0F0F0F;    
+            --white: #F5F5F0;
+            
+            /* Neon Colors */
+            --neon-blue: #0ff;
+            --neon-pink: #f0f;
+            --neon-green: #0f0;
+        }
+
+        * { box-sizing: border-box; cursor: default; }
+        
+        /* Ensure interactive elements still show pointer */
+        a, button, .reel-group, .close-btn { cursor: pointer; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--paper);
+            color: var(--black);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            height: 100vh; width: 100vw;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent; /* Mobile cleaner tap */
+        }
+
+        /* --- 2. BACKGROUNDS --- */
+        /* Texture */
+        .texture {
+            position: absolute; inset: 0;
+            opacity: 0.25; pointer-events: none; z-index: 2;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            mix-blend-mode: multiply;
+        }
+
+        /* Dynamic Images */
+        .bg-img {
+            position: absolute; inset: 0;
+            opacity: 0; transition: opacity 0.8s ease;
+            filter: grayscale(100%) contrast(1.5) brightness(0.8);
+            object-fit: cover; width: 100%; height: 100%; z-index: 0;
+        }
+        .bg-img.active { opacity: 0.1; }
+
+        /* --- 3. UI ELEMENTS --- */
+        .sys-status {
+            position: absolute; top: 2rem; right: 2rem; 
+            text-align: right; font-size: 0.7rem; opacity: 0.6;
+            z-index: 10; pointer-events: none;
+            font-weight: bold;
+        }
+        
+        /* --- CLASSIFIED DECODE PANEL (Top Left) --- */
+        #decode-panel {
+            position: absolute;
+            top: 2rem; left: 2rem;
+            width: 220px;
+            z-index: 20;
+            font-family: 'Courier New', monospace;
+            border: 2px solid var(--black);
+            background: rgba(232, 230, 217, 0.9);
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .decode-header {
+            background: var(--black);
+            color: var(--white);
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .decode-frame {
+            width: 100%;
+            height: 140px;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid var(--black);
+            background: #000;
+        }
+
+        .decode-img-display {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.2);
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        /* Scanline effect */
+        .scan-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        
+        .decode-text-area {
+            padding: 10px;
+            font-size: 0.65rem;
+            height: 100px;
+            overflow: hidden;
+            line-height: 1.4;
+            color: var(--black);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .cursor-blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- 4. THE CORE (SVG SYSTEM) --- */
+        #core-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85vmin; height: 85vmin; 
+            z-index: 5;
+        }
+
+        /* The SVG Canvas */
+        svg.reel-system {
+            width: 100%; height: 100%;
+            overflow: visible; /* Allows the massive name text to extend beyond container */
+        }
+
+        /* Groups (The Rotating Layers) */
+        .reel-group {
+            transform-origin: 50% 50%;
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+        }
+        
+        /* --- NEON / TRON MODE ON HOVER --- */
+        .reel-group:hover path,
+        .reel-group:hover polygon {
+            fill: rgba(0,0,0,0.9) !important; /* Almost black fill */
+            stroke-width: 3px;
+            vector-effect: non-scaling-stroke;
+        }
+        
+        /* Specific Neon Colors per Ring */
+        .group-outer:hover path { 
+            stroke: var(--neon-pink); 
+            filter: drop-shadow(0 0 20px var(--neon-pink));
+        }
+        .group-outer:hover text { 
+            fill: var(--neon-pink) !important; 
+            text-shadow: 0 0 15px var(--neon-pink);
+        }
+
+        .group-mid:hover polygon { 
+            stroke: var(--neon-blue); 
+            filter: drop-shadow(0 0 20px var(--neon-blue));
+        }
+        .group-mid:hover text { 
+            fill: var(--neon-blue) !important; 
+            text-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .group-inner:hover polygon { 
+            stroke: var(--neon-green); 
+            filter: drop-shadow(0 0 20px var(--neon-green));
+        }
+        .group-inner:hover text { 
+            fill: var(--neon-green) !important; 
+            text-shadow: 0 0 15px var(--neon-green);
+        }
+        
+        /* Text Styling */
+        text {
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+            fill: currentColor;
+            font-weight: normal; 
+            pointer-events: none; 
+        }
+
+        /* --- 5. ANIMATIONS (BERSERK MODE) --- */
+        
+        /* Name Ring - Very Slow */
+        .anim-name { animation: rotate-slow 120s linear infinite; }
+
+        /* Chaotic Animations */
+        .anim-outer { animation: berserk-outer 14s linear infinite; }
+        .anim-mid { animation: berserk-mid 14s linear infinite; }
+        .anim-inner { animation: berserk-inner 14s linear infinite; }
+
+        /* Pause on hover */
+        .reel-group:hover { animation-play-state: paused !important; }
+
+        @keyframes rotate-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes berserk-outer {
+            0% { transform: rotate(0deg); animation-timing-function: ease-in-out; }   
+            15% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }  
+            20% { transform: rotate(180deg); } 
+            22% { transform: rotate(100deg); }
+            24% { transform: rotate(250deg); }
+            30% { transform: rotate(720deg); animation-timing-function: ease-out; } 
+            50% { transform: rotate(360deg); animation-timing-function: ease-in-out; } 
+            65% { transform: rotate(360deg); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 
+            70% { transform: rotate(500deg); }
+            75% { transform: rotate(200deg); } 
+            80% { transform: rotate(450deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes berserk-mid {
+            0% { transform: rotate(0deg); animation-timing-function: ease-in-out; } 
+            15% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+            25% { transform: rotate(-360deg); }
+            28% { transform: rotate(-100deg); }
+            35% { transform: rotate(-500deg); animation-timing-function: ease-out; }
+            50% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
+            65% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+            75% { transform: rotate(120deg); }
+            80% { transform: rotate(-120deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        @keyframes berserk-inner {
+            0% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
+            15% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+            20% { transform: rotate(400deg); }
+            25% { transform: rotate(200deg); }
+            30% { transform: rotate(600deg); animation-timing-function: ease-out; }
+            50% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
+            65% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+            75% { transform: rotate(-180deg); }
+            85% { transform: rotate(180deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- 6. POPUP CARD --- */
+        #card {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -40%) scale(0.9);
+            opacity: 0; pointer-events: none;
+            width: 320px; 
+            max-width: 90vw; /* Responsive width */
+            background: rgba(240, 234, 214, 0.98);
+            border: 4px solid var(--black);
+            padding: 0; z-index: 100;
+            box-shadow: 20px 20px 0 rgba(0,0,0,0.25);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #card.visible {
+            opacity: 1; pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .card-head { background: var(--black); color: var(--white); padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 25px; }
+        .card-btn {
+            display: block; margin-top: 20px; padding: 15px;
+            background: transparent; border: 3px solid var(--black);
+            color: var(--black); text-align: center; text-decoration: none;
+            font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.1s;
+        }
+        .card-btn:hover { background: var(--black); color: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0 rgba(0,0,0,0.2); }
+
+        /* --- 7. RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            /* Shrink and move panel to bottom on mobile so it doesn't cover the rings */
+            #decode-panel {
+                top: auto; bottom: 2rem; left: 1rem;
+                transform: scale(0.85);
+                transform-origin: bottom left;
+                width: 200px;
+                box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
+            }
+            .decode-frame { height: 100px; }
+            .decode-text-area { height: 80px; }
+            
+            /* Move status */
+            .sys-status {
+                top: 1rem; right: 1rem;
+                font-size: 0.6rem;
+            }
+
+            /* Maximize container size on mobile */
+            #core-container {
+                width: 95vmin; height: 95vmin;
+            }
+            
+            /* Adjust SVG Text Sizes for Mobile via CSS Classes (Applied in HTML) */
+            .text-name { font-size: 44px !important; letter-spacing: 4px !important; } /* Big reduction */
+            .text-outer { font-size: 32px !important; }
+            .text-mid { font-size: 18px !important; }
+            .text-inner { font-size: 16px !important; }
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- VISUALS -->
+    <div class="texture"></div>
+    
+    <img id="img-paradox" class="bg-img" src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1000&auto=format&fit=crop">
+    <img id="img-books" class="bg-img" src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000&auto=format&fit=crop">
+    <img id="img-art" class="bg-img" src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop">
+
+    <!-- NEW: CLASSIFIED DECODE PANEL -->
+    <div id="decode-panel">
+        <div class="decode-header">
+            <span>SECURE.NET</span>
+            <span>V.4.0</span>
+        </div>
+        <div class="decode-frame">
+            <div class="scan-overlay"></div>
+            <img id="panel-img" class="decode-img-display" src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=500&auto=format&fit=crop">
+        </div>
+        <div class="decode-text-area" id="decode-text">
+            > INITIALIZING UPLINK...<br>
+            > AWAITING INPUT...<span class="cursor-blink">_</span>
+        </div>
+    </div>
+
+    <!-- STATUS INDICATOR -->
+    <div class="sys-status">
+        <p>SYS: ONLINE</p>
+        <p>LOC: HAARLEM / NL</p>
+        <p>USER: GUEST</p>
+    </div>
+
+    <!-- CORE SYSTEM -->
+    <div id="core-container">
+        <!-- viewBox increased to 800x800 to help calculations, but SVG style is overflow visible -->
+        <svg class="reel-system" viewBox="0 0 600 600">
+            
+            <!-- DEFINITIONS FOR TEXT PATHS -->
+            <defs>
+                <!-- Name Path (Smaller radius fits closer to main rings) -->
+                <!-- Radius 300 -->
+                <path id="path-name" d="M 300, 300 m -300, 0 a 300,300 0 1,1 600,0 a 300,300 0 1,1 -600,0" />
+                
+                <!-- Outer Ring Path (Radius ~204) -->
+                <path id="path-outer" d="M 300, 300 m -204, 0 a 204,204 0 1,1 408,0 a 204,204 0 1,1 -408,0" />
+                
+                <!-- Mid Ring Path -->
+                <path id="path-mid" d="M 300, 300 m -170, 0 a 170,170 0 1,1 340,0 a 170,170 0 1,1 -340,0" />
+                
+                <!-- Inner Ring Path -->
+                <path id="path-inner" d="M 300, 300 m -110, 0 a 110,110 0 1,1 220,0 a 110,110 0 1,1 -220,0" />
+            </defs>
+
+            <!-- 0. THE NAME ORBIT -->
+            <!-- Font Size 54px default, Class added for mobile override -->
+            <g class="reel-group anim-name" style="pointer-events: none; color: var(--black); opacity: 1;">
+                <text class="text-name" font-size="54" letter-spacing="8" fill="currentColor">
+                    <textPath href="#path-name" startOffset="0%">
+                        DAVID ENKER • PARADOX PRIME • HAARLEM • WRITER • DESIGNER •
+                    </textPath>
+                </text>
+            </g>
+
+            <!-- 1. OUTER RING (RADIOACTIVE SYMBOL) -->
+            <g class="reel-group anim-outer group-outer" onclick="activate('paradox')" style="color: var(--red)">
+                <path d="M300 300 L300 96 A204 204 0 0 1 476.6 198 Z" fill="currentColor" /> 
+                <path d="M300 300 L476.6 402 A204 204 0 0 1 300 504 Z" fill="currentColor" /> 
+                <path d="M300 300 L123.4 402 A204 204 0 0 1 123.4 198 Z" fill="currentColor" /> 
+                
+                <!-- Text size 42px -->
+                <text class="text-outer" font-size="42" dy="-20" letter-spacing="5" fill="var(--paper)" style="font-weight: 900;">
+                    <textPath href="#path-outer" startOffset="6%">
+                        /// POLITICS /// FREE WILL
+                    </textPath>
+                </text>
+            </g>
+
+            <!-- 2. MIDDLE RING (STAR PART A - TRIANGLE UP) -->
+            <g class="reel-group anim-mid group-mid" onclick="activate('books')" style="color: var(--yellow)">
+                <!-- Triangle Pointing UP -->
+
+                <polygon points="300,90 481,405 119,405" fill="currentColor" opacity="1" style="mix-blend-mode: multiply;" />
+                
+                <!-- Text -->
+                <text class="text-mid" font-size="22" dy="-10" letter-spacing="2" fill="black" style="font-weight: bold;">
+                    <textPath href="#path-mid" startOffset="50%" text-anchor="middle">
+                        TONIC FOR THE BONES • MANUSCRIPT
+                    </textPath>
+                </text>
+            </g>
+
+            <!-- 3. INNER RING (STAR PART B - TRIANGLE DOWN) -->
+            <g class="reel-group anim-inner group-inner" onclick="activate('art')" style="color: var(--teal)">
+                <!-- Triangle Pointing DOWN -->
+                <polygon points="119,195 481,195 300,510" fill="currentColor" opacity="1" style="mix-blend-mode: multiply;" />
+                
+                <!-- Text -->
+                <text class="text-inner" font-size="20" dy="-12" letter-spacing="2" fill="white" style="font-weight: bold;">
+                    <textPath href="#path-inner" startOffset="50%" text-anchor="middle">
+                        GRAPHIC DATA • JEWISH ICONOGRAPHY
+                    </textPath>
+                </text>
+            </g>
+
+            <!-- CENTRAL HUB -->
+            <circle cx="300" cy="300" r="35" fill="#111" stroke="#333" stroke-width="4" />
+            <circle cx="300" cy="300" r="8" fill="red">
+                <animate attributeName="opacity" values="1;0.4;1" dur="0.8s" repeatCount="indefinite" />
+            </circle>
+
+        </svg>
+    </div>
+
+    <!-- FLOATING CARD -->
+    <div id="card">
+        <div class="card-head">
+            <span id="c-id">SYS.DAT</span>
+            <span onclick="closeCard()" class="close-btn">[✕]</span>
+        </div>
+        <div class="card-body">
+            <h2 id="c-title" style="margin:0 0 15px 0; font-family:'Impact'; font-size:2rem; text-transform:uppercase; line-height:0.9">TITLE</h2>
+            <p id="c-desc" style="font-size:1rem; line-height:1.4; font-weight: 500;">Description goes here.</p>
+            <a id="c-link" href="#" class="card-btn">ENTER SECTION</a>
+        </div>
+    </div>
+
+    <script>
+        const data = {
+            'paradox': {
+                title: 'The Paradox',
+                desc: 'Reflections on the complexity of life. "The more you learn, the more you realise you know nothing."',
+                color: '#D9381E', 
+                img: 'https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1000&auto=format&fit=crop',
+                link: '/philosophy',
+                stream: 'ANALYZING... FREE WILL ALGORITHMS... POLITICAL SPECTRUM DEVIATION... CRITICAL ANALYSIS: LEFT/RIGHT PARADIGM...'
+            },
+            'books': {
+                title: 'Tonic For The Bones',
+                desc: 'My second book. A personal narrative on my 2021 diagnosis, my family (Ailish & Yaron), and the stories we tell to survive.',
+                color: '#F2A900', 
+                img: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000&auto=format&fit=crop',
+                link: '/books',
+                stream: 'DECODING MANUSCRIPT... DIAGNOSIS: 2021... RETRIEVING ARCHIVE: AILISH... RETRIEVING ARCHIVE: YARON (AGE 7)...'
+            },
+            'art': {
+                title: 'Visual Data',
+                desc: 'Experiments in structure, typography, and Jewish iconography.',
+                color: '#0097A7', 
+                img: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop',
+                link: '/art',
+                stream: 'RENDERING VECTORS... ISRAEL/JEWISH ARCHIVE... LOADING GRAPHIC NOVELS... TYPOGRAPHIC OVERLAY...'
+            }
+        };
+
+        const card = document.getElementById('card');
+        const decodePanelImg = document.getElementById('panel-img');
+        const decodeText = document.getElementById('decode-text');
+        let streamInterval;
+
+        function runTextStream(text) {
+            clearInterval(streamInterval);
+            let index = 0;
+            decodeText.innerHTML = "> DECRYPTING SOURCE...<br>> ";
+            
+            streamInterval = setInterval(() => {
+                if (index < text.length) {
+                    decodeText.innerHTML += text[index];
+                    index++;
+                } else {
+                    clearInterval(streamInterval);
+                    decodeText.innerHTML += "<span class='cursor-blink'>_</span>";
+                }
+            }, 30);
+        }
+        
+        // Random chatter when idle - tailored to David's profile
+        setInterval(() => {
+            if(!card.classList.contains('visible')) {
+                const randomMsg = [
+                    "> SCANNING FOR PARADOX...", "> DIAGNOSIS CONFIRMED...", 
+                    "> ROTATION SYNCED...", "> WAITING FOR INPUT...",
+                    "> CONTROL WITHIN FRAMEWORK...", "> LIFE IS COMPLICATED..."
+                ];
+                const rand = randomMsg[Math.floor(Math.random() * randomMsg.length)];
+                decodeText.innerHTML = rand + "<br> > <span class='cursor-blink'>_</span>";
+            }
+        }, 5000);
+
+        function activate(key) {
+            const item = data[key];
+            if(!item) return;
+
+            // Update Card
+            document.getElementById('c-id').innerText = `SYS.${key.toUpperCase()}`;
+            document.getElementById('c-title').innerText = item.title;
+            document.getElementById('c-title').style.color = item.color;
+            document.getElementById('c-desc').innerText = item.desc;
+            document.getElementById('c-link').href = item.link;
+            document.getElementById('c-link').style.borderColor = item.color;
+            
+            // Update Decode Panel
+            decodePanelImg.src = item.img;
+            runTextStream(item.stream);
+            
+            // Hover states
+            const btn = document.getElementById('c-link');
+            btn.style.color = 'black';
+            btn.style.background = 'transparent';
+            
+            btn.onmouseover = () => {
+                btn.style.background = item.color;
+                btn.style.color = 'white';
+            };
+            btn.onmouseout = () => {
+                btn.style.background = 'transparent';
+                btn.style.color = 'black';
+            };
+
+            // Show Card
+            card.classList.add('visible');
+
+            // Show BG
+            document.querySelectorAll('.bg-img').forEach(img => img.classList.remove('active'));
+            // document.getElementById(item.img).classList.add('active'); 
+        }
+
+        function closeCard() {
+            card.classList.remove('visible');
+            document.querySelectorAll('.bg-img').forEach(img => img.classList.remove('active'));
+            decodeText.innerHTML = "> CONNECTION TERMINATED.<br>> <span class='cursor-blink'>_</span>";
+        }
+
+        // Close on BG click
+        document.body.addEventListener('click', (e) => {
+            // Check if click is on SVG background (not on a group/path)
+            const isReelClick = e.target.closest('.reel-group');
+            const isCardClick = e.target.closest('#card');
+            
+            if(!isReelClick && !isCardClick) {
+                closeCard();
+            }
+        });
+    </script>
+    <script src="nav.js"></script>
+</body>
+</html>

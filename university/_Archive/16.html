@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>University of Free Will | Campus Model</title>
+<style>
+    /* --- THE PALETTE [Sources 1, 2, 17] --- */
+    :root {
+        --bg: #e6e6e6;        /* Industrial Grey */
+        --ink: #111111;       /* Deep Black */
+        --art-red: #ff3300;   /* Rothko Red */
+        --mind-yellow: #ffcc00; /* Science Yellow */
+        --soul-blue: #0033cc; /* Spirit Blue */
+        --tonic-gold: #D4AF37; /* The Light */
+    }
+
+    body {
+        margin: 0;
+        background-color: var(--bg);
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --- UI HEADER --- */
+    .header-ui {
+        position: absolute;
+        top: 30px; left: 40px;
+        z-index: 100; pointer-events: none;
+    }
+    h1 {
+        font-size: 3rem; text-transform: uppercase;
+        line-height: 0.9; color: var(--ink); margin: 0; letter-spacing: -2px;
+    }
+
+    /* --- ISOMETRIC SCENE --- */
+    .scene {
+        position: relative;
+        width: 800px; height: 800px;
+        transform: rotateX(60deg) rotateZ(-45deg);
+        transform-style: preserve-3d;
+        transition: transform 0.5s ease-out;
+    }
+
+    /* THE FLOOR [Source 165] */
+    .floor {
+        position: absolute;
+        width: 100%; height: 100%;
+        background-image: 
+            linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        background-color: #f4f4f0;
+        border: 10px solid var(--ink);
+        box-shadow: 30px 30px 0 rgba(0,0,0,0.1);
+    }
+
+    /* --- BUILDING BASE --- */
+    .building {
+        position: absolute;
+        transform-style: preserve-3d;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+    .building:hover { transform: translateZ(30px); }
+
+    .face { position: absolute; border: 1px solid rgba(0,0,0,0.1); }
+    .face-top { transform: rotateX(0deg) translateZ(var(--h)); transform-origin: top left; }
+    .face-front { transform: rotateX(-90deg) translateZ(var(--d)) translateY(var(--h)); transform-origin: bottom center; }
+    .face-side { transform: rotateY(90deg) translateX(var(--w)); transform-origin: top right; }
+
+    /* --- 1. RED: ART / ROTHKO [Source 2, 6] --- */
+    .art-block {
+        top: 500px; left: 200px;
+        width: 120px; height: 120px;
+        --h: 80px; --w: 120px; --d: 0px;
+    }
+    .art-block .face { background: var(--art-red); }
+    .art-block .face-top { background: #ff5522; }
+    
+    /* VISUAL: Yaron's Dancing Man */
+    .mural-art {
+        position: absolute; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 3rem; filter: grayscale(100%) contrast(150%);
+        opacity: 0.8;
+    }
+
+    /* --- 2. YELLOW: SCIENCE / MIND [Source 1, 154] --- */
+    .science-block {
+        top: 200px; left: 500px;
+        width: 100px; height: 100px;
+        --h: 180px; --w: 100px; --d: 0px;
+    }
+    .science-block .face { background: var(--mind-yellow); }
+    .science-block .face-top { background: #ffe066; }
+
+    /* VISUAL: Yaron's Glasses/Eyes */
+    .mural-mind {
+        position: absolute; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 3rem; filter: grayscale(100%);
+    }
+
+    /* --- 3. BLUE: SOUL / SPIRIT [Source 17, 151] --- */
+    .soul-block {
+        top: 400px; left: 400px;
+        width: 100px; height: 100px;
+        --h: 40px; --w: 100px; --d: 0px; /* Low platform */
+    }
+    .soul-block .face { background: var(--soul-blue); }
+    .soul-block .face-top { background: #3366ff; }
+
+    /* THE GOLDEN LIGHT (Tonic) */
+    .light-beam {
+        position: absolute;
+        top: 0; left: 0; width: 100px; height: 100px;
+        transform: translateZ(41px);
+        transform-style: preserve-3d;
+    }
+    .beam-core {
+        position: absolute;
+        width: 60px; height: 60px;
+        top: 20px; left: 20px;
+        background: var(--tonic-gold);
+        border-radius: 50%;
+        box-shadow: 0 0 40px var(--tonic-gold);
+        animation: pulse 3s infinite;
+    }
+    .beam-shaft {
+        position: absolute;
+        width: 60px; height: 400px; /* Tall light */
+        top: 20px; left: 20px;
+        background: linear-gradient(to top, rgba(212, 175, 55, 0.4), transparent);
+        transform: rotateX(-90deg);
+        transform-origin: bottom;
+        pointer-events: none;
+    }
+
+    /* --- TOOLTIPS (The "Info") --- */
+    .tooltip {
+        position: absolute;
+        width: 200px;
+        background: var(--ink);
+        color: white;
+        padding: 15px;
+        border-left: 4px solid white;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        /* Make tooltip stand up and face camera */
+        transform: rotateX(-90deg) translateY(-100px) rotateY(45deg);
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        z-index: 1000;
+        box-shadow: 10px 10px 20px rgba(0,0,0,0.3);
+    }
+
+    .tooltip h3 { margin: 0 0 5px 0; text-transform: uppercase; color: var(--bg); border-bottom: 1px solid #555; padding-bottom: 5px; }
+    .tooltip ul { padding: 0; margin: 0; list-style: none; }
+    .tooltip li { margin-bottom: 3px; }
+
+    /* Hover State */
+    .building:hover .tooltip {
+        opacity: 1;
+        transform: rotateX(-90deg) translateY(-140px) rotateY(45deg); /* Floats up */
+    }
+
+    /* Specific Border Colors for Tooltips */
+    .art-block:hover .tooltip { border-left-color: var(--art-red); }
+    .science-block:hover .tooltip { border-left-color: var(--mind-yellow); }
+    .soul-block:hover .tooltip { border-left-color: var(--soul-blue); }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* --- LOGIN GATE [Source 154] --- */
+    .gate {
+        position: absolute; bottom: 30px; right: 30px;
+        font-family: 'Courier New'; font-size: 0.8rem;
+        background: white; padding: 10px; border: 2px solid var(--ink);
+    }
+</style>
+</head>
+<body>
+
+    <div class="header-ui">
+        <h1>The University<br>of Free Will</h1>
+        <small style="font-family:'Courier New'; background:black; color:white; padding:2px;">EST. 2021 // HAARLEM</small>
+    </div>
+
+    <div class="scene" id="campus">
+        <div class="floor"></div>
+
+        <!-- 1. RED: ART / ROTHKO (Visual: Dancing Man) -->
+        <div class="building art-block" onclick="window.location.href='#art'">
+            <div class="face face-top"></div>
+            <div class="face face-side">
+                <!-- VISUAL: Replace emoji with <img src="dancing-man.png"> -->
+                <div class="mural-art">🕺</div>
+            </div>
+            <div class="face face-front"></div>
+
+            <!-- TOOLTIP: Source 6, 160 -->
+            <div class="tooltip">
+                <h3>Department of Art</h3>
+                <ul>
+                    <li>> The Rothko Experience</li>
+                    <li>> Ministry of Silly Walks</li>
+                    <li>> Solar Sprint [Game]</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 2. YELLOW: SCIENCE / MIND (Visual: Glasses) -->
+        <div class="building science-block" onclick="window.location.href='#science'">
+            <div class="face face-top"></div>
+            <div class="face face-side">
+                <!-- VISUAL: Replace emoji with <img src="glasses.png"> -->
+                <div class="mural-mind">👓</div>
+            </div>
+            <div class="face face-front">
+                <!-- VISUAL: Second angle -->
+                <div class="mural-mind">👁️</div>
+            </div>
+
+            <!-- TOOLTIP: Source 160, 161 -->
+            <div class="tooltip">
+                <h3>Faculty of Mind</h3>
+                <ul>
+                    <li>> The Meaning Machine</li>
+                    <li>> The 5th Dimension</li>
+                    <li>> Past/Present/Future AI</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 3. BLUE: SOUL / SPIRIT (Visual: Heart + Golden Light) -->
+        <div class="building soul-block" onclick="window.location.href='#soul'">
+            <div class="face face-top"></div>
+            <div class="face face-side"></div>
+            <div class="face face-front"></div>
+            
+            <!-- THE GOLDEN LIGHT (Source 151) -->
+            <div class="light-beam">
+                <div class="beam-core">
+                    <!-- VISUAL: Replace with <img src="heart.png" style="width:100%"> -->
+                    <div style="font-size: 2rem; text-align:center; line-height:60px;">❤️</div>
+                </div>
+                <div class="beam-shaft"></div>
+            </div>
+
+            <!-- TOOLTIP: Source 151, 160 -->
+            <div class="tooltip">
+                <h3>Sanctuary of Soul</h3>
+                <ul>
+                    <li>> A Chat with God</li>
+                    <li>> The Love Clouds</li>
+                    <li>> <strong>The Tonic</strong></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="gate">
+        STATUS: VISITOR<br>
+        <a href="#login" style="color: var(--ink); font-weight: bold;">[ INSERT STUDENT ID ]</a>
+    </div>
+
+    <script>
+        // Simple Interaction: Tilt Campus on Mouse Move
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.pageX) / 40;
+            const y = (window.innerHeight / 2 - e.pageY) / 40;
+            const scene = document.getElementById('campus');
+            scene.style.transform = `rotateX(${60 + y}deg) rotateZ(${-45 + x}deg)`;
+        });
+    </script>
+</body>
+</html>

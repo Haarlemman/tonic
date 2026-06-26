@@ -38,7 +38,355 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="shared.css?v=2.7.7">
+  <link rel="stylesheet" href="shared.css?v=2.7.8">
+  <style>
+    /* ─── ANTISEMITISM SECTION SPREAD LAYOUT ─── */
+    .antisemitism-split {
+      display: grid;
+      grid-template-columns: minmax(auto, 640px) auto;
+      justify-content: start;
+      gap: 3.5rem;
+      align-items: center;
+      margin-bottom: 4rem;
+    }
+
+    /* 3D Book Spread Container */
+    .book-spread {
+      position: relative;
+      display: flex;
+      width: 100%;
+      max-width: 260px;
+      margin: 0;
+      aspect-ratio: 1.414; /* Landscape aspect ratio for open book spread */
+      background: #111;
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.65), 
+        0 5px 15px rgba(0, 0, 0, 0.45),
+        inset 0 0 10px rgba(0, 0, 0, 0.8);
+      border-radius: 4px;
+      cursor: pointer;
+      perspective: 1500px;
+      transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
+      overflow: hidden;
+    }
+
+    .book-spread:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.75), 
+        0 10px 22px rgba(0, 0, 0, 0.55);
+    }
+
+    .book-page {
+      position: relative;
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ffffff;
+      transition: transform 0.4s ease;
+    }
+
+    .book-page img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background-color: #ffffff;
+    }
+
+    .page-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* 3D Page tilt effect & shadows */
+    .page-left {
+      transform-origin: right center;
+      transform: rotateY(5deg);
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .page-left .page-overlay {
+      background: linear-gradient(to right, rgba(0, 0, 0, 0) 65%, rgba(0, 0, 0, 0.12) 88%, rgba(0, 0, 0, 0.28) 100%);
+    }
+
+    .page-right {
+      transform-origin: left center;
+      transform: rotateY(-5deg);
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+
+    .page-right .page-overlay {
+      background: linear-gradient(to left, rgba(0, 0, 0, 0) 65%, rgba(0, 0, 0, 0.12) 88%, rgba(0, 0, 0, 0.28) 100%);
+    }
+
+    /* Central book crease */
+    .book-fold {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 4%;
+      height: 100%;
+      transform: translateX(-50%);
+      background: linear-gradient(to right, 
+        rgba(0,0,0,0) 0%, 
+        rgba(0,0,0,0.5) 42%, 
+        rgba(0,0,0,0.75) 50%, 
+        rgba(0,0,0,0.5) 58%, 
+        rgba(0,0,0,0) 100%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Hover enlarge button */
+    .book-enlarge-badge {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(10, 105, 242, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 20px;
+      color: #fff;
+      font-family: var(--ff-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .book-spread:hover .book-enlarge-badge {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .book-enlarge-badge svg {
+      display: block;
+    }
+
+    /* Book spread credit text */
+    .book-credit {
+      font-family: var(--ff-mono);
+      font-size: 0.6rem;
+      line-height: 1.45;
+      opacity: 0.5;
+      color: var(--parchment);
+      text-align: left;
+      margin: 1rem 0 0 0;
+      max-width: 260px;
+    }
+
+    @media (max-width: 991px) {
+      .book-credit {
+        margin: 1rem auto 0;
+        text-align: center;
+      }
+    }
+
+    /* --- FULLSCREEN LIGHTBOX --- */
+    .book-spread-lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 2, 2, 0.96);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .book-spread-lightbox.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .book-spread-lightbox .lightbox-content {
+      position: relative;
+      width: 90%;
+      max-width: 1100px;
+      aspect-ratio: 1.414;
+      background: #000;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+      border-radius: 4px;
+      overflow: hidden;
+      animation: lightboxSpreadZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes lightboxSpreadZoom {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .lightbox-spread {
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    .lightbox-page {
+      flex: 1;
+      height: 100%;
+      background-color: #f4f1ea;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-page img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .lightbox-fold {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 3%;
+      height: 100%;
+      transform: translateX(-50%);
+      background: linear-gradient(to right, 
+        rgba(0,0,0,0) 0%, 
+        rgba(0,0,0,0.4) 42%, 
+        rgba(0,0,0,0.6) 50%, 
+        rgba(0,0,0,0.4) 58%, 
+        rgba(0,0,0,0) 100%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 25px;
+      right: 30px;
+      background: none;
+      border: none;
+      color: var(--parchment);
+      font-size: 2.5rem;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 10005;
+      line-height: 1;
+    }
+
+    .lightbox-close:hover {
+      opacity: 1;
+      transform: scale(1.1);
+      color: #fff;
+    }
+
+    .lightbox-hint {
+      position: absolute;
+      bottom: 25px;
+      color: rgba(240, 230, 200, 0.35);
+      font-family: var(--ff-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 10000;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 991px) {
+      .antisemitism-split {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+        margin-bottom: 3rem;
+      }
+      
+      .book-spread {
+        max-width: 260px;
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .book-spread {
+        aspect-ratio: auto;
+        flex-direction: column;
+        max-width: 220px;
+        margin: 0 auto;
+      }
+
+      .book-page {
+        width: 100%;
+        aspect-ratio: 0.707;
+        transform: none !important;
+      }
+
+      .book-page.page-left {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-bottom-left-radius: 0;
+      }
+
+      .book-page.page-right {
+        border-top-right-radius: 0;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+      }
+
+      .book-fold {
+        display: none;
+      }
+
+      .book-spread-lightbox .lightbox-content {
+        aspect-ratio: auto;
+        height: 82%;
+        width: 95%;
+      }
+
+      .lightbox-spread {
+        flex-direction: column;
+        overflow-y: auto;
+        height: 100%;
+      }
+
+      .lightbox-page {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 0.707;
+        flex: none;
+      }
+
+      .lightbox-fold {
+        display: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -1752,11 +2100,36 @@
             </svg></a></div>
         <div class="section-label" data-i18n="navAntisemitism">Antisemitism</div>
         <h2 class="sub-chapter-title" data-i18n="antisemitismSub">Ancient Hatred in Modern Forms</h2>
-        <h2 class="sub-section-title" data-i18n="antisemitismTagline">Dark Currents</h2>
-        <p class="section-intro" data-i18n="antisemitismIntro">Antisemitism is the world's oldest hatred. It has
-          transformed across centuries—from religious persecution to racial pseudoscience to modern conspiracy theories.
-          In the 21st century, it persists in radicalized forms, including jihadist ideology and troubling left-wing
-          alliances.</p>
+        
+        <div class="antisemitism-split">
+          <div class="antisemitism-text">
+            <h2 class="sub-section-title" data-i18n="antisemitismTagline">Dark Currents</h2>
+            <p class="section-intro" data-i18n="antisemitismIntro">Antisemitism is the world's oldest hatred. It has
+              transformed across centuries—from religious persecution to racial pseudoscience to modern conspiracy theories.
+              In the 21st century, it persists in radicalized forms, including jihadist ideology and troubling left-wing
+              alliances, etc.</p>
+          </div>
+          <div class="antisemitism-graphic">
+            <div class="book-spread" id="book-spread" onclick="openBookSpread()" title="Click to view fullscreen">
+              <div class="book-page page-left">
+                <img src="images/Page1.jpg" alt="Page 1 of historical document spread">
+                <div class="page-overlay"></div>
+              </div>
+              <div class="book-page page-right">
+                <img src="images/Page2.jpg" alt="Page 2 of historical document spread">
+                <div class="page-overlay"></div>
+              </div>
+              <div class="book-fold"></div>
+              <div class="book-enlarge-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                </svg>
+                <span>Click to Enlarge</span>
+              </div>
+            </div>
+            <p class="book-credit" data-i18n="bookCredit">Adaptation from "The Plot: The Secret Story of The Protocols of the Elders of Zion" (2005, graphic novel, Will Eisner)</p>
+          </div>
+        </div>
 
         <div class="era-chart">
           <div class="era-band">
@@ -3232,7 +3605,7 @@
       </div>
     </div>
 
-    <script src="shared.js?v=2.0.4"></script>
+    <script src="shared.js?v=2.0.5"></script>
     <script>
       const infoModal = document.getElementById('info-modal');
       if (infoModal) {
@@ -3455,8 +3828,8 @@
         <p class="modal-text">${text}</p>
         <div style="clear:both;"></div>
         <div class="modal-nav" style="display:flex; justify-content:space-between; margin-top:2rem; padding-top:1rem; border-top:1px solid #eee;">
-          <button onclick="window.showPrevMapEntry()" style="background:none; border:1px solid var(--gold); color:var(--gold); padding:0.5rem 1rem; cursor:pointer; font-family:'DM Mono'; font-size:0.7rem; text-transform:uppercase;">← Previous</button>
-          <button onclick="window.showNextMapEntry()" style="background:none; border:1px solid var(--gold); color:var(--gold); padding:0.5rem 1rem; cursor:pointer; font-family:'DM Mono'; font-size:0.7rem; text-transform:uppercase;">Next →</button>
+          <button onclick="window.showPrevMapEntry()" style="background:none; border:1px solid var(--gold); color:var(--gold); padding:0.5rem 1rem; cursor:pointer; font-family:'DM Mono'; font-size:0.7rem; text-transform:uppercase;">${window.currentLang === 'nl' ? '← Vorige' : '← Previous'}</button>
+          <button onclick="window.showNextMapEntry()" style="background:none; border:1px solid var(--gold); color:var(--gold); padding:0.5rem 1rem; cursor:pointer; font-family:'DM Mono'; font-size:0.7rem; text-transform:uppercase;">${window.currentLang === 'nl' ? 'Volgende →' : 'Next →'}</button>
         </div>
       `;
 
@@ -3704,7 +4077,47 @@
         if (typeof renderMapLinks === 'function') renderMapLinks();
       });
 
+      // --- Book Spread Lightbox ---
+      function openBookSpread() {
+        const lightbox = document.getElementById('book-spread-lightbox');
+        if (lightbox) {
+          lightbox.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      }
+
+      function closeBookSpread() {
+        const lightbox = document.getElementById('book-spread-lightbox');
+        if (lightbox) {
+          lightbox.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeBookSpread();
+        }
+      });
+
     </script>
+
+  <!-- Lightbox Modal for Book Spread -->
+  <div id="book-spread-lightbox" class="book-spread-lightbox" onclick="closeBookSpread()">
+    <button class="lightbox-close" onclick="closeBookSpread()" aria-label="Close fullscreen view">&times;</button>
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <div class="lightbox-spread">
+        <div class="lightbox-page">
+          <img src="images/Page1.jpg" alt="Page 1 enlarged">
+        </div>
+        <div class="lightbox-page">
+          <img src="images/Page2.jpg" alt="Page 2 enlarged">
+        </div>
+        <div class="lightbox-fold"></div>
+      </div>
+    </div>
+    <div class="lightbox-hint">Click anywhere to close</div>
+  </div>
 
 </body>
 

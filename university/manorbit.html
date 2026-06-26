@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>♥ Body ▲ Mind ○ Soul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crushed&display=swap" rel="stylesheet">
+<style>
+    body { margin:0; background:#000; overflow:hidden; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .atom-container { position:relative; width:768px; height:768px; }
+    .nucleus {
+        position:absolute; top:50%; left:50%;
+        width:180px; height:180px; margin:-90px 0 0 -90px;
+        z-index:500;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        filter: drop-shadow(0 0 0.95rem rgb(255, 235, 68));
+
+
+    }
+    .nucleus img { width:100%; height:100%; object-fit:contain; }
+    .electron { position:absolute; width:40px; height:40px; border-radius:50%; margin:-20px 0 0 -20px; pointer-events:none; }
+    
+    canvas { position:absolute; inset:0; pointer-events:none; }
+    .trail-front { z-index:550; } /* In front of Face */
+
+    #e1 { background:radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow:0 0 55px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow:0 0 55px #55aa99, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow:0 0 55px #ffee66, inset -8px -8px 20px #ccaa00; }
+	
+.legend-container {
+    position: fixed;
+    bottom: 30px; 
+    left: 30px; 
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.85); /* Darker, less transparent background */
+    border: 1px solid #ccddee; /* White border */
+    border-radius: 12px; /* Rounded corners */
+    color: white;
+    font-family: 'Overpass Light', sans-serif; /* Apply the new font */
+    font-weight: 300; /* Use the Light weight */
+    font-size: 15px;
+    z-index: 1000; 
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-right: 10px;
+    border-radius: 4px; 
+    /* NEW: Add a glow effect based on the colors */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5); /* Base white glow */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+    position: relative; /* Needed for pseudo-element glow */
+}
+
+/* Specific color glows using pseudo-elements for better control */
+.legend-item:nth-child(1) .legend-swatch { 
+    /* Body (Red/Pink: #ff3355) */
+    box-shadow: 0 0 6px #ff3355, 0 0 10px #ff3355; 
+}
+.legend-item:nth-child(2) .legend-swatch { 
+    /* Mind (Yellow: #ffdd33) */
+    box-shadow: 0 0 6px #ffdd33, 0 0 10px #ffdd33; 
+}
+.legend-item:nth-child(3) .legend-swatch { 
+    /* Soul (Blue: #4488ff) */
+    box-shadow: 0 0 6px #4488ff, 0 0 10px #4488ff; 
+}
+	
+</style>
+	<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="starry-night.css">
+</head>
+<body>
+
+	<div class="legend-container">
+    <div class="legend-item">
+        <span class="legend-swatch" style="background-color: #ff3355;"></span>
+        Body
+    </div>
+    <div class="legend-item">
+        <span class="legend-swatch" style="background-color: #ffdd33;"></span>
+        Mind
+    </div>
+    <div class="legend-item">
+        <span class="legend-swatch" style="background-color: #4488ff;"></span>
+        Soul
+    </div>
+</div>
+	
+<!-- STARRY NIGHT BACKGROUND - just paste this once -->
+<div id="starry-bg"></div>
+
+<style>
+  #starry-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse at bottom, #000 50%, #410b4b 100%);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .star {
+    position: absolute;
+    background: #a200ff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px white;
+    animation: twinkle linear infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+  }
+</style>
+
+<script>
+  const container = document.getElementById('starry-bg');
+  const count = 300;  // change this number for more/fewer stars
+
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+
+    // Random size (1–3px)
+    const size = Math.random() * 2 + 1;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+
+    // Random position
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+
+    // Random twinkle speed
+    star.style.animationDuration = Math.random() * 4 + 3 + 's';
+    star.style.animationDelay = Math.random() * 5 + 's';
+
+    // Slow drifting motion (parallax feel)
+    const driftX = (Math.random() - 0.5) * 80;  // drift amount in vw
+    const driftY = (Math.random() - 0.5) * 80;
+    const driftTime = Math.random() * 80 + 60;  // 60–140 seconds
+    star.style.transform = `translate(${driftX}vw, ${driftY}vw)`;
+    star.style.transition = `transform ${driftTime}s linear infinite`;
+
+    container.appendChild(star);
+  }
+</script>
+	
+	
+<div class="atom-container">
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+
+    <canvas id="trailsBack"  width="768" height="768"></canvas>
+    <div class="nucleus">
+        <img src="images/ziel.png" alt="Face"> 
+    </div>
+    <canvas id="trailsFront" width="768" height="768" class="trail-front"></canvas>
+</div>
+
+<script>
+const baseSpeed      = 0.05;
+const trailThickness = 4;
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+ctxBack.lineCap = ctxFront.lineCap = 'round';
+
+const centerX = 384;
+const centerY = 384;
+const nucleusRadius = 90;
+
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff3355',
+      baseSpeed:1, speedAmp:0.15, speedFreq:0.0008,
+      baseRadius:180, radiusAmp:60, radiusFreq:0.09,
+      baseIncl:90, inclAmp:12, inclFreq:0.0007,
+      basePlane:7, planeAmp:20, planeFreq:0.0006,
+      baseRoll:0, rollAmp:25, rollFreq:0.01 },
+
+    { el: document.getElementById('e2'), color: '#4488ff',
+      baseSpeed:0.4, speedAmp:0.08, speedFreq:0.0013,
+      baseRadius:240, radiusAmp:80, radiusFreq:0.005,
+      baseIncl:15, inclAmp:8, inclFreq:0.01,
+      basePlane:95, planeAmp:30, planeFreq:0.0008,
+      baseRoll:90, rollAmp:35, rollFreq:0.0007 },
+
+    { el: document.getElementById('e3'), color: '#ffdd33',
+      baseSpeed:3, speedAmp:0.4, speedFreq:0.0011,
+      baseRadius:210, radiusAmp:15, radiusFreq:0.0014,
+      baseIncl:15, inclAmp:10, inclFreq:0.0009,
+      basePlane:110, planeAmp:25, planeFreq:0.0012,
+      baseRoll:-60, rollAmp:20, rollFreq:0.06 }
+];
+
+let time = 0;
+let frameCount = 0;
+
+function animate() {
+    time += baseSpeed;
+    frameCount++;
+
+    // --- FADE LOGIC (Eraser method) ---
+    // Applies a soft "erase" every 4th frame for a slow, clean fade
+    if (frameCount % 4 === 0) {
+        ctxBack.globalCompositeOperation = 'destination-out';
+        ctxFront.globalCompositeOperation = 'destination-out';
+
+        // 0.05 is the strength of the erase: lower for longer trails
+        ctxBack.fillStyle = 'rgba(0, 0, 0, 0.02)'; 
+        ctxFront.fillStyle = 'rgba(0, 0, 0, 0.02)';
+
+        ctxBack.fillRect(0, 0, 768, 768);
+        ctxFront.fillRect(0, 0, 768, 768);
+
+        // Reset back to normal drawing mode
+        ctxBack.globalCompositeOperation = 'source-over';
+        ctxFront.globalCompositeOperation = 'source-over';
+    }
+    // -----------------------------------
+
+    electrons.forEach(e => {
+        // ... (Movement Math remains the same)
+        const speed = e.baseSpeed + e.speedAmp * Math.sin(time * e.speedFreq);
+        const radius = e.baseRadius + e.radiusAmp * Math.sin(time * e.radiusFreq);
+        const inclinationDeg = e.baseIncl + e.inclAmp * Math.sin(time * e.inclFreq);
+        const planeRotDeg = e.basePlane + e.planeAmp * Math.sin(time * e.planeFreq);
+        const rollDeg = e.baseRoll + e.rollAmp * Math.sin(time * e.rollFreq);
+
+        const rad = deg => deg * Math.PI / 180;
+        const i = rad(inclinationDeg);
+        const r = rad(planeRotDeg);
+        const o = rad(rollDeg);
+        const a = time * speed;
+
+        let x = Math.cos(a) * radius;
+        let y = Math.sin(a) * radius;
+        let z = 0;
+
+        let tx = x * Math.cos(i) + z * Math.sin(i);
+        z = -x * Math.sin(i) + z * Math.cos(i);
+        x = tx;
+
+        tx = x * Math.cos(r) - z * Math.sin(r);
+        z = x * Math.sin(r) + z * Math.cos(r);
+        x = tx;
+
+        tx = x * Math.cos(o) - y * Math.sin(o);
+        const ty = x * Math.sin(o) + y * Math.cos(o);
+        x = tx; y = ty;
+
+        const scale = 1 + z * 0.0038;
+        const screenX = centerX + x;
+        const screenY = centerY + y;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x, y) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+    <script src="nav.js"></script>
+</body>
+</html>

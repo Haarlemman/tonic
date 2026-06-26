@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinFlow | Creative Finance Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .modal-active { display: flex !important; }
+        input[type="date"]::-webkit-inner-spin-button,
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 pb-20">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b sticky top-0 z-10 px-4 py-4 sm:px-8 flex justify-between items-center shadow-sm">
+        <div>
+            <h1 class="text-xl font-bold flex items-center gap-2 text-indigo-600">
+                <span>€</span> FinFlow
+            </h1>
+            <p class="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-semibold">IMPORT / EXPORT</p>
+        </div>
+        <div class="flex gap-2">
+            <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium border border-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="hidden sm:inline">Import CSV</span>
+                <input type="file" id="csvInput" accept=".csv" class="hidden">
+            </label>
+            <button onclick="toggleModal(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium shadow-md shadow-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Add Entry
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-4 sm:p-8 space-y-6">
+        
+        <!-- SUMMARY CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <span class="text-slate-500 text-sm font-medium">Net Balance</span>
+                <div class="mt-2">
+                    <span id="totalBalance" class="text-3xl font-bold">€0,00</span>
+                </div>
+            </div>
+            <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+                <span class="text-emerald-700 text-sm font-medium">Total Income</span>
+                <div class="mt-2 text-3xl font-bold text-emerald-900" id="totalIncome">€0,00</div>
+            </div>
+            <div class="bg-rose-50 p-6 rounded-2xl border border-rose-100 shadow-sm">
+                <span class="text-rose-700 text-sm font-medium">Total Expenses</span>
+                <div class="mt-2 text-3xl font-bold text-rose-900" id="totalExpense">€0,00</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- HISTORY -->
+            <div class="lg:col-span-2 space-y-4">
+                <h2 class="text-lg font-semibold">Transaction History</h2>
+                <div id="transactionList" class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm min-h-[200px]">
+                    <div class="p-12 text-center text-slate-400">
+                        <p>No transactions yet. Start by adding one!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI ADVISOR -->
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="indigo" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5Z"/><path d="M12.5 10a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/><path d="m15 15 5 5"/><path d="M11 17h2"/></svg>
+                    Smart Advisor
+                </h2>
+                <div class="bg-indigo-900 text-indigo-50 p-6 rounded-2xl shadow-xl">
+                    <p class="text-indigo-300 text-[10px] uppercase tracking-widest font-bold mb-4">Personalized Advice</p>
+                    <div id="aiContent" class="text-sm leading-relaxed mb-6 italic opacity-80">
+                        Add some transactions to get personalized financial insights from the AI.
+                    </div>
+                    <button id="aiBtn" onclick="getAIAdvice()" class="w-full py-3 bg-white text-indigo-900 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-50 transition-all disabled:opacity-50">
+                        Analyze My Spending
+                    </button>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h3 class="text-sm font-bold mb-2">CSV Help</h3>
+                    <p class="text-xs text-slate-500 mb-3">Ensure your columns are in this order:</p>
+                    <code class="block bg-slate-100 p-2 rounded text-[10px]">Date, Description, Amount, Type, Category</code>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+            <div class="p-6 bg-indigo-600 text-white">
+                <h2 class="text-xl font-bold">New Entry</h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                    <button onclick="setType('expense')" id="btnExp" class="flex-1 py-2 text-sm font-medium rounded-lg bg-white shadow-sm text-rose-600">Expense</button>
+                    <button onclick="setType('income')" id="btnInc" class="flex-1 py-2 text-sm font-medium rounded-lg text-slate-500">Income</button>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Description</label>
+                    <input type="text" id="desc" class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Amount (€)</label>
+                        <input type="number" id="amount" step="0.01" class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Category</label>
+                        <select id="cat" class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option>Salary</option><option>Freelance</option><option>Food</option><option>Housing</option><option>Transport</option><option>Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Date</label>
+                    <input type="date" id="date" class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="toggleModal(false)" class="flex-1 py-3 text-slate-500 font-medium">Cancel</button>
+                    <button onclick="saveEntry()" class="flex-[2] py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Save Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; // Runtime key
+        let transactions = [];
+        let currentType = 'expense';
+
+        // Set default date
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+        function toggleModal(show) {
+            const m = document.getElementById('modal');
+            m.classList.toggle('modal-active', show);
+        }
+
+        function setType(type) {
+            currentType = type;
+            document.getElementById('btnExp').className = type === 'expense' ? 'flex-1 py-2 text-sm font-medium rounded-lg bg-white shadow-sm text-rose-600' : 'flex-1 py-2 text-sm font-medium rounded-lg text-slate-500';
+            document.getElementById('btnInc').className = type === 'income' ? 'flex-1 py-2 text-sm font-medium rounded-lg bg-white shadow-sm text-emerald-600' : 'flex-1 py-2 text-sm font-medium rounded-lg text-slate-500';
+        }
+
+        function saveEntry() {
+            const desc = document.getElementById('desc').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('cat').value;
+            const date = document.getElementById('date').value;
+
+            if (!desc || isNaN(amount)) return;
+
+            transactions.unshift({ id: Date.now(), description: desc, amount, type: currentType, category, date });
+            render();
+            toggleModal(false);
+            
+            // Clear fields
+            document.getElementById('desc').value = '';
+            document.getElementById('amount').value = '';
+        }
+
+        function deleteEntry(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            render();
+        }
+
+        function formatEuro(val) {
+            return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(val);
+        }
+
+        function render() {
+            const list = document.getElementById('transactionList');
+            let inc = 0, exp = 0;
+
+            if (transactions.length === 0) {
+                list.innerHTML = '<div class="p-12 text-center text-slate-400"><p>No transactions yet.</p></div>';
+            } else {
+                list.innerHTML = transactions.map(t => {
+                    if (t.type === 'income') inc += t.amount; else exp += t.amount;
+                    return `
+                        <div class="p-4 flex items-center justify-between border-b border-slate-50 hover:bg-slate-50 group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}">
+                                    ${t.type === 'income' ? '+' : '-'}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-sm">${t.description}</p>
+                                    <p class="text-[10px] text-slate-400">${t.date} • ${t.category}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'}">
+                                    ${t.type === 'income' ? '+' : '-'} ${formatEuro(t.amount)}
+                                </span>
+                                <button onclick="deleteEntry(${t.id})" class="text-slate-300 hover:text-rose-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('totalIncome').innerText = formatEuro(inc);
+            document.getElementById('totalExpense').innerText = formatEuro(exp);
+            const bal = inc - exp;
+            const balEl = document.getElementById('totalBalance');
+            balEl.innerText = formatEuro(bal);
+            balEl.className = `text-3xl font-bold ${bal >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
+        }
+
+        // CSV UPLOAD
+        document.getElementById('csvInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const rows = evt.target.result.split('\n').slice(1);
+                rows.forEach(row => {
+                    const cols = row.split(',').map(c => c.trim());
+                    if (cols.length >= 3) {
+                        transactions.unshift({
+                            id: Math.random(),
+                            date: cols[0] || new Date().toISOString().split('T')[0],
+                            description: cols[1],
+                            amount: Math.abs(parseFloat(cols[2])),
+                            type: cols[3]?.toLowerCase() === 'income' ? 'income' : 'expense',
+                            category: cols[4] || 'Import'
+                        });
+                    }
+                });
+                render();
+            };
+            reader.readAsText(file);
+        });
+
+        // AI ADVISOR LOGIC
+        async function getAIAdvice() {
+            if (transactions.length === 0) return;
+            const btn = document.getElementById('aiBtn');
+            const content = document.getElementById('aiContent');
+            
+            btn.disabled = true;
+            content.innerHTML = '<div class="flex items-center gap-2">Thinking...</div>';
+
+            const summary = transactions.slice(0, 15).map(t => `${t.description}: ${t.type} €${t.amount}`).join(', ');
+            const prompt = `Recent transactions: ${summary}. Total balance: €${document.getElementById('totalBalance').innerText}. Give 3 quick financial tips for a creative professional in 50 words. Use Euros.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: "You are a warm financial advisor for writers." }] }
+                    })
+                });
+                const data = await response.json();
+                content.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Could not generate advice.";
+            } catch (err) {
+                content.innerText = "Connection error. Try again.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

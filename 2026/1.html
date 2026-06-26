@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonic for the Bones</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 1s ease-in-out, color 1s ease-in-out;
+        }
+        h1, h2, h3, .serif {
+            font-family: 'DM Serif Display', serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Entropy Mode Specifics */
+        .mode-entropy .spotlight {
+            opacity: 1;
+        }
+        .spotlight {
+            opacity: 0;
+            transition: opacity 1s ease;
+            background: radial-gradient(600px circle at var(--x) var(--y), rgba(249, 115, 22, 0.15), transparent 40%);
+        }
+        
+        /* Blur reveal effect */
+        .blur-text {
+            color: transparent;
+            background-clip: text;
+            -webkit-background-clip: text;
+            background-image: linear-gradient(to right, #f97316, #dc2626);
+            filter: blur(1px);
+        }
+
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-white text-black overflow-x-hidden relative transition-colors duration-1000">
+
+    <!-- Spotlight Layer (Controlled by JS) -->
+    <div id="spotlight" class="spotlight pointer-events-none fixed inset-0 z-0"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 p-6 flex justify-between items-center mix-blend-difference text-white">
+        <div id="nav-logo" class="text-xl font-bold tracking-tighter serif">T / B</div>
+        
+        <button id="toggle-btn" class="group flex items-center gap-3 px-4 py-2 border border-white/30 rounded-full hover:bg-white hover:text-black transition-all cursor-pointer">
+            <span id="toggle-text" class="text-xs uppercase tracking-widest font-bold">Enable Entropy</span>
+            <i data-lucide="zap" id="toggle-icon-order" class="w-4 h-4"></i>
+            <i data-lucide="anchor" id="toggle-icon-entropy" class="w-4 h-4 hidden"></i>
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center p-6 sm:p-12">
+        <!-- Hidden Layer -->
+        <div id="hidden-layer" class="absolute top-1/4 left-10 md:left-1/4 transition-opacity duration-1000 opacity-0">
+            <p class="serif text-6xl md:text-9xl text-stone-800 italic select-none">Paradox</p>
+        </div>
+
+        <div class="max-w-4xl z-10 relative">
+            <div id="hero-content" class="transition-all duration-1000">
+                <h1 class="text-6xl md:text-8xl font-black leading-[0.85] tracking-tight mb-8">
+                    CONTROL IS <br />
+                    <span id="hero-highlight" class="inline-block transition-all duration-700">A FRAMEWORK</span>
+                </h1>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-12 items-start">
+                <p id="hero-desc" class="text-lg md:text-xl max-w-md leading-relaxed transition-all duration-500 mono text-stone-600">
+                    Design. Writing. Architecture of thought. Exploring the structures we build to understand the world.
+                </p>
+                
+                <!-- Status Box -->
+                <div id="status-box" class="border border-stone-200 p-4 w-full md:w-64 transition-all duration-500">
+                    <div class="text-xs uppercase tracking-widest mb-2 opacity-50">Current Status</div>
+                    <div id="status-text" class="font-bold">Working on Book 2</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Split Layout -->
+    <section class="relative min-h-[80vh] w-full">
+        <div id="split-grid" class="grid grid-cols-1 md:grid-cols-2 h-full transition-all duration-1000 gap-0">
+            
+            <!-- Left: Public Persona -->
+            <div id="left-panel" class="p-12 flex flex-col justify-center transition-all duration-500 bg-stone-100 text-black">
+                <div class="mb-6">
+                    <i data-lucide="type" class="mb-4 w-8 h-8 text-blue-600 transition-colors duration-500" id="icon-left"></i>
+                    <h2 class="text-3xl font-bold mb-4">The Designer</h2>
+                </div>
+                <p class="mb-6">
+                    My work focuses on visual clarity. I build systems, identities, and narratives.
+                    <span id="design-extra" class="hidden text-orange-400"> (But even systems fail. That is where the art begins.)</span>
+                </p>
+                <ul class="space-y-2 mono text-sm opacity-70">
+                    <li>— Graphic Novels</li>
+                    <li>— Critical Theory</li>
+                    <li>— Political Commentary</li>
+                </ul>
+            </div>
+
+            <!-- Right: Personal Reality -->
+            <div id="right-panel" class="p-12 flex flex-col justify-center relative overflow-hidden transition-all duration-1000 bg-white">
+                <!-- Scrambled Text (Entropy only) -->
+                <div id="scrambled-bg" class="absolute top-0 right-0 p-4 opacity-10 mono text-xs break-all w-48 hidden">
+                    010101 CONTROL LOST 010101 REGAIN 010101 TONIC
+                </div>
+
+                <div class="relative z-10">
+                    <div class="mb-6">
+                        <i data-lucide="layers" class="mb-4 w-8 h-8 text-blue-600 transition-colors duration-500" id="icon-right"></i>
+                        <h2 class="text-3xl font-bold mb-4">The Writer</h2>
+                    </div>
+                    <p class="mb-6">
+                        I write about what happens when the slate isn't blank.
+                        <span id="writer-redacted" class="bg-black text-white px-1 ml-1 cursor-help" title="Switch modes to reveal">[REDACTED]</span>
+                        <span id="writer-revealed" class="text-orange-300 italic hidden"> About Parkinson's, about raising Yaron (7, smart, funny), and about Ailish. About finding control in a shaking hand.</span>
+                    </p>
+                    <div class="mt-4">
+                        <h3 class="font-bold serif text-lg mb-2">Key Themes:</h3>
+                        <div class="flex flex-wrap gap-2" id="tags-container">
+                            <!-- Tags injected by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Book Section -->
+    <section class="py-24 px-6 md:px-12 relative overflow-hidden">
+        <div id="book-container" class="max-w-5xl mx-auto transition-all duration-700">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="h-px flex-grow bg-stone-300 transition-colors duration-500 line-separator"></div>
+                <span class="text-sm tracking-widest uppercase">Upcoming Work</span>
+                <div class="h-px flex-grow bg-stone-300 transition-colors duration-500 line-separator"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+                <div class="md:col-span-5 relative group cursor-pointer">
+                    <!-- Book Cover -->
+                    <div id="book-cover" class="aspect-[3/4] border-2 flex items-center justify-center p-8 transition-transform duration-500 border-black bg-stone-100 hover:scale-[1.02]">
+                        <div class="text-center">
+                            <h3 class="text-4xl serif font-black mb-2">TONIC</h3>
+                            <span class="serif italic text-xl">for the</span>
+                            <h3 class="text-4xl serif font-black mt-2">BONES</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Hover element -->
+                    <div class="absolute -bottom-6 -right-6 bg-white border border-black p-4 opacity-0 group-hover:opacity-100 transition-opacity shadow-xl z-20 hidden md:block">
+                        <p class="mono text-xs text-black">
+                            "Resilience is not a shield.<br/>It's a structure."
+                        </p>
+                    </div>
+                </div>
+
+                <div class="md:col-span-7">
+                    <h2 id="book-title" class="text-5xl md:text-6xl font-black mb-8">The Second Act.</h2>
+                    <p class="text-xl leading-relaxed mb-6">
+                        <em>Tonic for the Bones</em> is an exploration of resilience. It asks: How do we maintain agency when biology dictates otherwise?
+                    </p>
+                    <p class="text-lg opacity-80 mb-8">
+                        Drawing on psychology, Jewish thought, and the hard-to-categorize political reality of our times, this book is a search for the "Tonic"—the thing that strengthens the structure when the foundation shakes.
+                    </p>
+                    
+                    <button id="book-btn" class="px-8 py-4 font-bold tracking-widest uppercase transition-all bg-black text-white hover:bg-stone-800">
+                        Read Excerpts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer" class="py-12 px-6 border-t border-stone-200 bg-stone-50 transition-colors duration-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end">
+            <div>
+                <h4 class="font-bold text-lg mb-4">Surprises within the framework</h4>
+                <ul class="space-y-2 text-sm opacity-70">
+                    <li>Yaron's Dad</li>
+                    <li>Critical Thinker</li>
+                    <li>Parkinson's Warrior</li>
+                </ul>
+            </div>
+
+            <div class="mt-8 md:mt-0 text-right">
+                <p class="text-xs opacity-50 mb-2">Designed with paradox in mind.</p>
+                <div class="mono text-xs">
+                    MODE: <span id="mode-display" class="text-blue-600">ORDER</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // State
+        let mode = 'order';
+        
+        // DOM Elements
+        const body = document.body;
+        const toggleBtn = document.getElementById('toggle-btn');
+        const toggleText = document.getElementById('toggle-text');
+        const iconOrder = document.getElementById('toggle-icon-order');
+        const iconEntropy = document.getElementById('toggle-icon-entropy');
+        const navLogo = document.getElementById('nav-logo');
+        const hiddenLayer = document.getElementById('hidden-layer');
+        const heroContent = document.getElementById('hero-content');
+        const heroHighlight = document.getElementById('hero-highlight');
+        const heroDesc = document.getElementById('hero-desc');
+        const statusBox = document.getElementById('status-box');
+        const statusText = document.getElementById('status-text');
+        
+        const splitGrid = document.getElementById('split-grid');
+        const leftPanel = document.getElementById('left-panel');
+        const rightPanel = document.getElementById('right-panel');
+        const iconLeft = document.getElementById('icon-left');
+        const iconRight = document.getElementById('icon-right');
+        
+        const designExtra = document.getElementById('design-extra');
+        const writerRedacted = document.getElementById('writer-redacted');
+        const writerRevealed = document.getElementById('writer-revealed');
+        const scrambledBg = document.getElementById('scrambled-bg');
+        const tagsContainer = document.getElementById('tags-container');
+        
+        const bookContainer = document.getElementById('book-container');
+        const bookCover = document.getElementById('book-cover');
+        const bookTitle = document.getElementById('book-title');
+        const bookBtn = document.getElementById('book-btn');
+        const lineSeparators = document.querySelectorAll('.line-separator');
+        
+        const footer = document.getElementById('footer');
+        const modeDisplay = document.getElementById('mode-display');
+
+        // Initial render of tags
+        const tags = ['Free Will', 'Judaism', 'Psychology', 'The Center'];
+        renderTags();
+
+        function renderTags() {
+            tagsContainer.innerHTML = tags.map(tag => `
+                <span class="text-xs border px-2 py-1 ${mode === 'order' ? 'border-black' : 'border-orange-500 text-orange-500'}">
+                    ${tag}
+                </span>
+            `).join('');
+        }
+
+        // Mouse Move for Spotlight
+        document.addEventListener('mousemove', (e) => {
+            const spotlight = document.getElementById('spotlight');
+            spotlight.style.setProperty('--x', e.clientX + 'px');
+            spotlight.style.setProperty('--y', e.clientY + 'px');
+        });
+
+        // Toggle Function
+        toggleBtn.addEventListener('click', () => {
+            mode = mode === 'order' ? 'entropy' : 'order';
+            updateUI();
+        });
+
+        function updateUI() {
+            if (mode === 'entropy') {
+                // Apply Entropy Styles
+                body.classList.remove('bg-white', 'text-black');
+                body.classList.add('bg-stone-900', 'text-stone-300', 'mode-entropy');
+                
+                toggleText.innerText = "Restore Order";
+                iconOrder.classList.add('hidden');
+                iconEntropy.classList.remove('hidden');
+                
+                navLogo.innerText = "TONIC / BONES";
+                hiddenLayer.classList.remove('opacity-0');
+                hiddenLayer.classList.add('opacity-40');
+                
+                heroContent.classList.add('translate-x-4', 'rotate-1');
+                heroHighlight.classList.add('blur-text');
+                
+                heroDesc.innerText = "Life is complicated. A diagnosis in 2021 changed the geometry. Now, I write about the twists, the tremors, and the truth.";
+                heroDesc.classList.remove('mono', 'text-stone-600');
+                heroDesc.classList.add('serif', 'italic', 'text-orange-200');
+                
+                statusBox.classList.remove('border-stone-200');
+                statusBox.classList.add('border-orange-500/50', 'rotate-3');
+                statusText.innerText = "Seeking Tonic for the Bones";
+                
+                splitGrid.classList.remove('gap-0');
+                splitGrid.classList.add('gap-8', 'px-8');
+                
+                leftPanel.classList.remove('bg-stone-100', 'text-black');
+                leftPanel.classList.add('bg-stone-800/50', 'text-stone-300', 'border', 'border-stone-700', 'rounded-lg');
+                iconLeft.classList.remove('text-blue-600');
+                iconLeft.classList.add('text-orange-500');
+                designExtra.classList.remove('hidden');
+                
+                rightPanel.classList.remove('bg-white');
+                rightPanel.classList.add('bg-stone-900', 'border', 'border-orange-900/30', 'rounded-lg', 'transform', 'md:translate-y-12');
+                iconRight.classList.remove('text-blue-600');
+                iconRight.classList.add('text-orange-500');
+                scrambledBg.classList.remove('hidden');
+                writerRedacted.classList.add('hidden');
+                writerRevealed.classList.remove('hidden');
+                
+                bookContainer.classList.add('blur-[0.5px]');
+                lineSeparators.forEach(el => {
+                    el.classList.remove('bg-stone-300');
+                    el.classList.add('bg-orange-900');
+                });
+                
+                bookCover.classList.remove('border-black', 'bg-stone-100', 'hover:scale-[1.02]');
+                bookCover.classList.add('border-orange-600', 'bg-stone-800', 'rotate-2', 'hover:rotate-0');
+                
+                bookTitle.innerText = "The Twist.";
+                bookBtn.classList.remove('bg-black', 'text-white', 'hover:bg-stone-800');
+                bookBtn.classList.add('bg-orange-700', 'text-white', 'hover:bg-orange-600');
+                
+                footer.classList.remove('border-stone-200', 'bg-stone-50');
+                footer.classList.add('border-stone-800', 'bg-black');
+                modeDisplay.innerText = "ENTROPY";
+                modeDisplay.classList.remove('text-blue-600');
+                modeDisplay.classList.add('text-orange-500');
+
+            } else {
+                // Restore Order Styles
+                body.classList.remove('bg-stone-900', 'text-stone-300', 'mode-entropy');
+                body.classList.add('bg-white', 'text-black');
+                
+                toggleText.innerText = "Enable Entropy";
+                iconOrder.classList.remove('hidden');
+                iconEntropy.classList.add('hidden');
+                
+                navLogo.innerText = "T / B";
+                hiddenLayer.classList.add('opacity-0');
+                hiddenLayer.classList.remove('opacity-40');
+                
+                heroContent.classList.remove('translate-x-4', 'rotate-1');
+                heroHighlight.classList.remove('blur-text');
+                
+                heroDesc.innerText = "Design. Writing. Architecture of thought. Exploring the structures we build to understand the world.";
+                heroDesc.classList.add('mono', 'text-stone-600');
+                heroDesc.classList.remove('serif', 'italic', 'text-orange-200');
+                
+                statusBox.classList.add('border-stone-200');
+                statusBox.classList.remove('border-orange-500/50', 'rotate-3');
+                statusText.innerText = "Working on Book 2";
+                
+                splitGrid.classList.add('gap-0');
+                splitGrid.classList.remove('gap-8', 'px-8');
+                
+                leftPanel.classList.add('bg-stone-100', 'text-black');
+                leftPanel.classList.remove('bg-stone-800/50', 'text-stone-300', 'border', 'border-stone-700', 'rounded-lg');
+                iconLeft.classList.add('text-blue-600');
+                iconLeft.classList.remove('text-orange-500');
+                designExtra.classList.add('hidden');
+                
+                rightPanel.classList.add('bg-white');
+                rightPanel.classList.remove('bg-stone-900', 'border', 'border-orange-900/30', 'rounded-lg', 'transform', 'md:translate-y-12');
+                iconRight.classList.add('text-blue-600');
+                iconRight.classList.remove('text-orange-500');
+                scrambledBg.classList.add('hidden');
+                writerRedacted.classList.remove('hidden');
+                writerRevealed.classList.add('hidden');
+                
+                bookContainer.classList.remove('blur-[0.5px]');
+                lineSeparators.forEach(el => {
+                    el.classList.add('bg-stone-300');
+                    el.classList.remove('bg-orange-900');
+                });
+                
+                bookCover.classList.add('border-black', 'bg-stone-100', 'hover:scale-[1.02]');
+
+                bookCover.classList.remove('border-orange-600', 'bg-stone-800', 'rotate-2', 'hover:rotate-0');
+                
+                bookTitle.innerText = "The Second Act.";
+                bookBtn.classList.add('bg-black', 'text-white', 'hover:bg-stone-800');
+                bookBtn.classList.remove('bg-orange-700', 'text-white', 'hover:bg-orange-600');
+                
+                footer.classList.add('border-stone-200', 'bg-stone-50');
+                footer.classList.remove('border-stone-800', 'bg-black');
+                modeDisplay.innerText = "ORDER";
+                modeDisplay.classList.add('text-blue-600');
+                modeDisplay.classList.remove('text-orange-500');
+            }
+            renderTags();
+        }
+    </script>
+</body>
+</html>

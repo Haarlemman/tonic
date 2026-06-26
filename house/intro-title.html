@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>House of Awe — Intro</title>
+  <link rel="stylesheet" href="https://use.typekit.net/lcd0ood.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
+  <!-- Three.js CDN for background wireframe house -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --navy: #192840;
+      --red: #e82030;
+      --red-dk: #6a0d16;
+      --yel: #f5c800;
+      --yel-dk: #6a5500;
+      --cyn: #00d0e8;
+      --cyn-dk: #004d58;
+      --gry: #8aa8c0;
+      --gry-dk: #2a3e50;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: var(--navy);
+      overflow: hidden;
+    }
+
+    /* ── Vignette ─────────────────────────────────────────── */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+      background: radial-gradient(ellipse 100% 100% at 50% 50%,
+          transparent 30%, rgba(10, 18, 30, .7) 100%);
+    }
+
+    /* ── Scanlines ────────────────────────────────────────── */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 201;
+      background: repeating-linear-gradient(to bottom, transparent 0, transparent 3px,
+          rgba(0, 0, 0, .05) 3px, rgba(0, 0, 0, .05) 4px);
+    }
+
+    /* ── Floating particles ───────────────────────────────── */
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .dot {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: drift linear infinite;
+    }
+
+    @keyframes drift {
+      0% {
+        opacity: 0;
+        transform: translateY(0) translateX(0);
+      }
+
+      10% {
+        opacity: .55;
+      }
+
+      90% {
+        opacity: .25;
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(-100vh) translateX(20px);
+      }
+    }
+
+    /* ── V-shape stage ────────────────────────────────────── */
+    /*
+      Strategy: place both arms absolutely, both anchored at the
+      same bottom-centre point, then rotate them outward.
+      Left arm: transform-origin bottom-right, rotated -28deg
+      Right arm: transform-origin bottom-left, rotated +28deg
+    */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+      transform-style: preserve-3d;
+    }
+
+    /* Shared pivot point — invisible anchor at bottom centre */
+    .v-pivot {
+      position: relative;
+      width: 0;
+      height: 0;
+      /* nudge the V up from the very bottom so all text fits */
+      margin-bottom: 46vh;
+    }
+
+    /* ── Arms ─────────────────────────────────────────────── */
+    .arm {
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      /* right-align so tip is at origin */
+      gap: 0;
+      opacity: 0;
+      will-change: transform, opacity;
+      pointer-events: auto;
+    }
+
+    /* Left arm: stacks its text left-to-right read order,
+       skews from its bottom-right corner */
+    .arm-left {
+      right: 0;
+      /* right edge sits at pivot */
+      transform-origin: right bottom;
+      transform-style: preserve-3d;
+      transform: skewY(17.5deg);
+    }
+
+    /* Right arm: mirror */
+    .arm-right {
+      left: 0;
+      align-items: flex-start;
+      transform-origin: left bottom;
+      transform-style: preserve-3d;
+      transform: skewY(-17.5deg);
+    }
+
+    /* ── Text lines ───────────────────────────────────────── */
+    .tl {
+      display: block;
+      font-family: omnium, sans-serif;
+      text-transform: uppercase;
+      line-height: .86;
+      letter-spacing: .04em;
+      white-space: nowrap;
+      opacity: 0;
+      animation: line-pop .5s ease forwards;
+    }
+
+    /* 3-D extrusion colours */
+    .c-red {
+      color: var(--red);
+      text-shadow:
+        1px 1px 0 var(--red-dk), 2px 2px 0 var(--red-dk),
+        3px 3px 0 var(--red-dk), 4px 4px 0 var(--red-dk),
+        5px 5px 0 var(--red-dk), 6px 6px 0 var(--red-dk),
+        7px 7px 0 var(--red-dk), 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-yel {
+      color: var(--yel);
+      text-shadow:
+        -1px 1px 0 var(--yel-dk), -2px 2px 0 var(--yel-dk),
+        -3px 3px 0 var(--yel-dk), -4px 4px 0 var(--yel-dk),
+        -5px 5px 0 var(--yel-dk), -6px 6px 0 var(--yel-dk),
+        -7px 7px 0 var(--yel-dk), -8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-cyn {
+      color: var(--cyn);
+      text-shadow:
+        -1px 1px 0 var(--cyn-dk), -2px 2px 0 var(--cyn-dk),
+        -3px 3px 0 var(--cyn-dk), -4px 4px 0 var(--cyn-dk),
+        -5px 5px 0 var(--cyn-dk), -6px 6px 0 var(--cyn-dk),
+        -7px 7px 0 var(--cyn-dk), -8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-wht {
+      color: #ffffff;
+      text-shadow:
+        -1px 1px 0 #8aa8c0, -2px 2px 0 #8aa8c0,
+        -3px 3px 0 #8aa8c0, -4px 4px 0 #8aa8c0,
+        -5px 5px 0 #8aa8c0, -6px 6px 0 #8aa8c0,
+        -7px 7px 0 #8aa8c0, -8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    .c-gry {
+      color: var(--gry);
+      text-shadow:
+        1px 1px 0 var(--gry-dk), 2px 2px 0 var(--gry-dk),
+        3px 3px 0 var(--gry-dk), 4px 4px 0 var(--gry-dk),
+        5px 5px 0 var(--gry-dk), 6px 6px 0 var(--gry-dk),
+        7px 7px 0 var(--gry-dk), 8px 8px 1px rgba(0, 0, 0, .45);
+    }
+
+    /* Sizes — relative so the V scales naturally */
+    .sz-xl {font-size: clamp(3.0rem, 7.5vw, 6.5rem);}
+    .sz-lg {font-size: clamp(2.2rem, 5.2vw, 4.5rem);}
+    .sz-md {font-size: clamp(1.6rem, 3.8vw, 3.2rem);}
+    .sz-sm {font-size: clamp(1.1rem, 2.6vw, 2.2rem);}
+
+    /* ── Line entrance ───────────────────────────────────── */
+    @keyframes line-pop {
+      0% {
+        opacity: 0;
+        transform: translateY(14px) scale(.94);
+      }
+
+      65% {
+        opacity: 1;
+        transform: translateY(-3px) scale(1.02);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* ── Arm entrance ─────────────────────────────────────── */
+    @keyframes arm-in-left {
+      from {
+        opacity: 0;
+        transform: skewY(17.5deg) translateX(-50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: skewY(17.5deg) translateX(0);
+      }
+    }
+
+    @keyframes arm-in-right {
+      from {
+        opacity: 0;
+        transform: skewY(-17.5deg) translateX(50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: skewY(-17.5deg) translateX(0);
+      }
+    }
+
+    .arm-left.visible {animation: arm-in-left 1s cubic-bezier(.16, 1, .3, 1) forwards;}
+
+    .arm-right.visible {animation: arm-in-right 1s cubic-bezier(.16, 1, .3, 1) forwards;}
+
+    /* ── Idle float ───────────────────────────────────────── */
+    @keyframes float-l {
+
+      0%,
+      100% {transform: skewY(17.5deg) translateY(0);}
+      50% {transform: skewY(17.5deg) translateY(-7px);}
+    }
+
+    @keyframes float-r {
+
+      0%,
+      100% {transform: skewY(-17.5deg) translateY(0);}
+      50% {transform: skewY(-17.5deg) translateY(-7px);}
+    }
+
+    .arm-left.floating {
+      opacity: 1;
+      animation: float-l 5s ease-in-out infinite;
+    }
+
+    .arm-right.floating {
+      opacity: 1;
+      animation: float-r 5s ease-in-out infinite .45s;
+    }
+
+    .arm-left.floating .tl,
+    .arm-right.floating .tl {
+      opacity: 1;
+      animation: none;
+    }
+
+    /* ── 3D Solid House Button & Staging ──────────────────── */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: flex-start; /* Aligns V text to the top */
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .v-pivot {
+      position: relative;
+      width: 0;
+      height: 0;
+      margin-top: 28vh; /* Nudges text arms down from top of screen */
+    }
+
+    .arm {
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0;
+      opacity: 0;
+      will-change: transform, opacity;
+      pointer-events: auto;
+    }
+
+    #wireframe-canvas {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 60vh; /* Occupies bottom 60% of viewport */
+      z-index: 5;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 1.2s ease, filter 0.3s ease;
+    }
+
+    #wireframe-canvas:hover {
+      filter: brightness(1.1) drop-shadow(0 0 15px rgba(245, 200, 0, 0.25));
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="particles" id="pts"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+
+  <!-- Background 3D Solid House Button -->
+  <canvas id="wireframe-canvas"></canvas>
+
+  <div class="stage">
+    <div class="v-pivot">
+
+      <!-- ───── LEFT ARM  (reads bottom-up → EXPLORE, THE HOUSE, OF AWE) ───── -->
+      <!-- Lines are listed top→bottom visually; bottom line = pivot tip -->
+      <div class="arm arm-left" id="arm-left">
+        <span class="tl sz-sm c-gry">EXPLORE</span>
+        <span class="tl sz-sm c-gry">AND DISCOVER</span>
+        <span class="tl sz-lg c-red">THE HOUSE</span>
+        <span class="tl sz-xl c-red">OF AWE</span>
+      </div>
+
+      <!-- ───── RIGHT ARM (THE MEANING OF LIFE / ACCORDING TO YARON) ─────── -->
+      <div class="arm arm-right" id="arm-right">
+        <span class="tl sz-sm c-yel">THE MEANING</span>
+        <span class="tl sz-xl c-yel">OF LIFE</span>
+        <span class="tl sz-md c-cyn">ACCORDING TO</span>
+        <span class="tl sz-lg c-wht" id="arm-name">YOU</span>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Set dynamic visitor name
+    let nameToDisplay = 'YOU';
+    try {
+      const savedQuiz = JSON.parse(localStorage.getItem('userQuizProgress') || '{}');
+      const savedReflections = JSON.parse(localStorage.getItem('houseReflections') || '{}');
+      const savedName = savedQuiz.name || savedReflections.name;
+      if (savedName && savedName.trim() !== '') {
+        nameToDisplay = savedName.trim().toUpperCase();
+      }
+    } catch (e) {
+      console.error('Error reading localStorage for visitor name:', e);
+    }
+    const nameEl = document.getElementById('arm-name');
+    if (nameEl) {
+      nameEl.textContent = nameToDisplay;
+    }
+
+    /* particles */
+    (function () {
+      const c = document.getElementById('pts');
+      const cols = ['#00d0e8', '#e82030', '#f5c800', '#8aa8c0'];
+      for (let i = 0; i < 50; i++) {
+        const d = document.createElement('div');
+        d.className = 'dot';
+        const s = Math.random() * 2.5 + .8;
+        d.style.cssText = `width:${s}px;height:${s}px;left:${Math.random() * 100}%;
+      bottom:${-Math.random() * 10}%;background:${cols[~~(Math.random() * 4)]};
+      animation-duration:${7 + Math.random() * 14}s;animation-delay:${Math.random() * 12}s`;
+        c.appendChild(d);
+      }
+    })();
+
+    /* stagger line delays */
+    function staggerLines(arm, baseDelay) {
+      arm.querySelectorAll('.tl').forEach((el, i) => {
+        el.style.animationDelay = (baseDelay + i * .13) + 's';
+      });
+    }
+
+    const armL = document.getElementById('arm-left');
+    const armR = document.getElementById('arm-right');
+
+    /* Phase 1: left arm */
+    setTimeout(() => {
+      staggerLines(armL, .1);
+      armL.classList.add('visible');
+    }, 400);
+
+    /* Phase 2: right arm */
+    setTimeout(() => {
+      staggerLines(armR, .1);
+      armR.classList.add('visible');
+    }, 820);
+
+    /* Phase 3: float idle */
+    setTimeout(() => {
+      armL.classList.remove('visible'); armL.classList.add('floating');
+      armR.classList.remove('visible'); armR.classList.add('floating');
+    }, 2600);
+
+    /* 3D Solid House Button (Three.js) */
+    (function () {
+      if (typeof THREE === 'undefined') return;
+
+      const canvas = document.getElementById('wireframe-canvas');
+      if (!canvas) return;
+
+      let wScene, wCamera, wRenderer, wHouseGroup;
+      const RS = 9, RH = 3.5;
+
+      // Texture canvas generators (matching the Dudok/Amsterdam textures from the game)
+      function createNoiseTexture() {
+        const size = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#C0C0C0';
+        ctx.fillRect(0, 0, size, size);
+
+        const idata = ctx.getImageData(0, 0, size, size);
+        for (let i = 0; i < idata.data.length; i += 4) {
+          const grain = (Math.random() - 0.5) * 30;
+          idata.data[i] = Math.min(255, Math.max(0, 128 + grain));
+          idata.data[i + 1] = Math.min(255, Math.max(0, 128 + grain));
+          idata.data[i + 2] = Math.min(255, Math.max(0, 128 + grain));
+          idata.data[i + 3] = 255;
+        }
+
+        ctx.putImageData(idata, 0, 0);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        return tex;
+      }
+
+      function createBrickTexture(type) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        const isAmsterdam = (type === 'amsterdam');
+        const baseColor = isAmsterdam ? '#8b4513' : '#f0e68c';
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const rows = 16, cols = 8;
+        const h = 512 / rows, w = 512 / cols;
+
+        for (let r = 0; r < rows; r++) {
+          const offset = (r % 2) * (w / 2);
+          for (let c = -1; c < cols + 1; c++) {
+            const vari = Math.random() * 30 - 15;
+            if (isAmsterdam) {
+              const rVal = 139 + vari;
+              const gVal = 69 + vari * 0.5;
+              const bVal = 19 + vari * 0.2;
+              ctx.fillStyle = `rgb(${rVal}, ${gVal}, ${bVal})`;
+            } else {
+              const rVal = 240 + vari;
+              const gVal = 230 + vari;
+              const bVal = 140 + vari;
+              ctx.fillStyle = `rgb(${rVal}, ${gVal}, ${bVal})`;
+            }
+            ctx.fillRect(c * w + offset + 2, r * h + 2, w - 4, h - 4);
+
+            ctx.strokeStyle = isAmsterdam ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(c * w + offset + 2, r * h + 2, w - 4, h - 4);
+          }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(4, 8);
+        return tex;
+      }
+
+      function createHouseNumberTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128; canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 128, 128);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('42', 64, 64);
+        const tex = new THREE.CanvasTexture(canvas);
+        return tex;
+      }
+
+      function createRoofTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#5c0000'; ctx.fillRect(0, 0, 512, 512);
+        const rows = 10; const cols = 8;
+        const tileH = 512 / rows; const tileW = 512 / cols;
+        for (let r = 0; r < rows; r++) {
+          const offset = (r % 2) * (tileW / 2);
+          for (let c = -1; c < cols + 1; c++) {
+            const shade = Math.random() * 40;
+            const redVal = 100 + shade;
+            ctx.fillStyle = `rgb(${redVal}, 20, 20)`;
+            ctx.beginPath();
+            ctx.rect(c * tileW + offset + 2, r * tileH + 2, tileW - 4, tileH - 4);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+          }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 4);
+        return tex;
+      }
+
+      const brickAmsterdamTex = createBrickTexture('amsterdam');
+      const brickDudokTex = createBrickTexture('dudok');
+      const roofTex = createRoofTexture();
+      const numberTex = createHouseNumberTexture();
+      const noiseTex = createNoiseTexture();
+
+      // Create cell texture for solar panels
+      function createCellTexture() {
+        const sc = document.createElement('canvas'); sc.width = 64; sc.height = 64;
+        const sctx = sc.getContext('2d');
+        sctx.fillStyle = '#0a2a55'; sctx.fillRect(0, 0, 64, 64);
+        sctx.strokeStyle = '#1a4a80'; sctx.lineWidth = 2;
+        for (let i = 1; i < 4; i++) {
+          sctx.beginPath(); sctx.moveTo(i * 16, 0); sctx.lineTo(i * 16, 64); sctx.stroke();
+          sctx.beginPath(); sctx.moveTo(0, i * 16); sctx.lineTo(64, i * 16); sctx.stroke();
+        }
+        return new THREE.CanvasTexture(sc);
+      }
+      const cellTex = createCellTexture();
+
+      // Materials matching the main solid experience
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        roughness: 0.4,
+        metalness: 0.6
+      });
+
+      const amsterdamMat = new THREE.MeshStandardMaterial({
+        color: 0x4d2600,
+        map: brickAmsterdamTex,
+        roughness: 0.8
+      });
+
+      const dudokMat = new THREE.MeshStandardMaterial({
+        color: 0x3d1f0d,
+        map: brickDudokTex,
+        roughness: 0.9
+      });
+
+      const planeMat = new THREE.MeshStandardMaterial({
+        color: 0x5c0000,
+        roughness: 0.6
+      });
+
+      const studioMat = new THREE.MeshStandardMaterial({
+        color: 0x8b4513,
+        roughness: 0.4,
+        metalness: 0.1
+      });
+
+      const doorFacadeMat = new THREE.MeshStandardMaterial({
+        color: 0x5c3317,
+        roughness: 0.5
+      });
+
+      const doorMat = new THREE.MeshStandardMaterial({
+        color: 0x3d1f0d,
+        roughness: 0.6
+      });
+
+      // Bright glowing windows as requested
+      const winMat = new THREE.MeshStandardMaterial({
+        color: 0xfffde0,
+        emissive: 0xffbb00,
+        emissiveIntensity: 1.8,
+        roughness: 0.1
+      });
+
+      const redRoofMat = new THREE.MeshStandardMaterial({
+        map: roofTex,
+        color: 0xcc1010,
+        roughness: 0.85
+      });
+
+      const stepDarkMat = new THREE.MeshStandardMaterial({ color: 0x1a0d00 });
+      const stepWhiteMat = new THREE.MeshStandardMaterial({ color: 0xbfb5ae });
+      const stepMats = [
+        stepDarkMat, // Right
+        stepDarkMat, // Left
+        stepDarkMat, // Top
+        stepDarkMat, // Bottom
+        stepWhiteMat, // Front
+        stepDarkMat  // Back
+      ];
+
+      function wAddPart(w, h, d, x, y, z, mat) {
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        // Dark outline edges for stylized depth
+        const edges = new THREE.EdgesGeometry(geo);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }));
+        mesh.add(line);
+
+        wHouseGroup.add(mesh);
+        return mesh;
+      }
+
+      function wAddRoomBlock(x, y, z, w, h, d, color, winConfigs = null) {
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const roomColor = new THREE.Color(color).addScalar(0.3);
+        const mat = new THREE.MeshStandardMaterial({
+          color: roomColor,
+          roughness: 0.9,
+          bumpMap: noiseTex,
+          bumpScale: 0.05,
+          map: noiseTex
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        const edges = new THREE.EdgesGeometry(geo);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 }));
+        mesh.add(line);
+
+        if (winConfigs) {
+          const configs = Array.isArray(winConfigs) ? winConfigs : [winConfigs];
+          configs.forEach(cfg => {
+            const s = cfg.scale || 1.0;
+            const frameW = (cfg.narrow ? 0.4 : 1.0) * s;
+            const frameH = cfg.height ? cfg.height : (1.0 * s);
+            const shift = cfg.shift || 0;
+            const frameDepth = 0.1;
+            const frameColor = cfg.type === 'white' ? 0xffffff : 0x222222;
+
+            const frame = new THREE.Mesh(
+              new THREE.BoxGeometry(frameW, frameH, frameDepth),
+              new THREE.MeshStandardMaterial({ color: frameColor })
+            );
+
+            const zOffset = d / 2 + 0.02;
+            const xOffset = w / 2 + 0.02;
+            const side = cfg.side || 'front';
+
+            if (side === 'front') frame.position.set(shift, 0, zOffset);
+            else if (side === 'back') {
+              frame.position.set(shift, 0, -zOffset);
+              frame.rotation.y = Math.PI;
+            } else if (side === 'left') {
+              frame.position.set(-xOffset, 0, shift);
+              frame.rotation.y = -Math.PI / 2;
+            } else if (side === 'right') {
+              frame.position.set(xOffset, 0, shift);
+              frame.rotation.y = Math.PI / 2;
+            }
+
+            const glass = new THREE.Mesh(
+              new THREE.PlaneGeometry(frameW * 0.85, frameH * 0.85),
+              winMat
+            );
+            glass.position.z = 0.06;
+            frame.add(glass);
+            mesh.add(frame);
+          });
+        }
+        wHouseGroup.add(mesh);
+        return mesh;
+      }
+
+      function wInit() {
+        wScene = new THREE.Scene();
+
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const aspect = w / h;
+        const d = 8.5; // Framing scale at the bottom
+        wCamera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+        // Look from front-right-above (isometric parallel projection, seen from above)
+        wCamera.position.set(16, 12, 16);
+        wCamera.lookAt(0, 4.5, 0);
+
+        wRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        wRenderer.setSize(w, h);
+        wRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        wRenderer.shadowMap.enabled = true;
+        wRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+        wScene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.85);
+        dirLight1.position.set(20, 35, 20);
+        dirLight1.castShadow = true;
+        wScene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.35);
+        dirLight2.position.set(-20, -35, -20);
+        wScene.add(dirLight2);
+
+        wHouseGroup = new THREE.Group();
+        wHouseGroup.position.set(0, 0.5, 0);
+        wScene.add(wHouseGroup);
+
+        wBuild();
+
+        window.addEventListener('resize', wResize);
+        
+        // Single static render
+        wRenderer.render(wScene, wCamera);
+
+        // Fade in
+        setTimeout(() => {
+          canvas.style.opacity = '1';
+        }, 300);
+      }
+
+      function wBuild() {
+        while (wHouseGroup.children.length) wHouseGroup.remove(wHouseGroup.children[0]);
+
+        // Foundation
+        wAddPart(7.5, 0.8, 6.5, 0, 0.4, 0, dudokMat);
+
+        // Horizontal red plates
+        wAddPart(7.5, 0.1, 6.5, 0, 0.85, 0, planeMat);
+        wAddPart(7.5, 0.1, 6.5, 0, 3.25, 0, planeMat);
+
+        // Living Room
+        const livingX = -2.05, livingY = 2.1, livingZ = 0;
+        const livingW = 2.9, livingH = 2.4, livingD = 5;
+        wAddPart(livingW, livingH, livingD, livingX, livingY, livingZ, amsterdamMat);
+        wAddPart(1.5, 0.4, 0.1, livingX, livingY + 0.4, livingZ + 2.55, winMat);
+        wAddPart(1.5, 0.4, 0.1, livingX, livingY + 0.4, livingZ - 2.55, winMat);
+
+        // Studio
+        const studioX = 2.0, studioY = 2.05, studioZ = 0;
+        const studioW = 2.8, studioH = 2.4, studioD = 5;
+        wAddPart(studioW, studioH, studioD, studioX, studioY, studioZ, studioMat);
+        wAddPart(1.5, 0.4, 0.1, studioX, studioY + 0.4, studioZ - 2.55, winMat);
+
+        // Circular window
+        const circWinGroup = new THREE.Group();
+        circWinGroup.position.set(studioX, studioY, studioZ + 2.52);
+        const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+        circFrame.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.TorusGeometry(0.6, 0.05, 8, 32)), new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 })));
+        circWinGroup.add(circFrame);
+        const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), winMat);
+        circWinGroup.add(circGlass);
+        wHouseGroup.add(circWinGroup);
+
+        // Studio side windows (5 slots)
+        const sWinSpan = 3.2;
+        for (let i = 0; i < 5; i++) {
+          const zPos = (studioZ - sWinSpan / 2) + (i * (sWinSpan / 4));
+          wAddPart(0.12, 0.5, 0.5, studioX + 1.42, studioY + 0.3, zPos, winMat);
+        }
+
+        // Studio roof plate
+        wAddPart(2.8, 0.05, 5.0, studioX, studioY + studioH / 2 + 0.025, studioZ, new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+
+        // Entrance Facade & Door
+        wAddPart(1.2, 1.8, 0.2, 0, 1.6, 2.45, doorFacadeMat);
+        const door = wAddPart(0.8, 1.6, 0.1, 0, 1.6, 2.57, doorMat);
+        const windowShape = new THREE.Shape();
+        windowShape.moveTo(0, 0.15);
+        windowShape.lineTo(-0.1, -0.05);
+        windowShape.lineTo(0.1, -0.05);
+        windowShape.lineTo(0, 0.15);
+        const triangularWindow = new THREE.Mesh(new THREE.ShapeGeometry(windowShape), winMat);
+        triangularWindow.position.set(0, 0.4, 0.06);
+        door.add(triangularWindow);
+        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04), new THREE.MeshStandardMaterial({ color: 0x996633 }));
+        knob.position.set(0.3, 0, 0.08);
+        door.add(knob);
+
+        // Number 42
+        const numberMat = new THREE.MeshBasicMaterial({ map: numberTex, transparent: true });
+        const numberPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), numberMat);
+        numberPlane.position.set(0, 2.7, 2.56);
+        wHouseGroup.add(numberPlane);
+
+        // Hall ceilings
+        wAddPart(1.25, 0.2, 5.0, 0, 3.15, 0, new THREE.MeshStandardMaterial({ color: 0x221100 }));
+        wAddPart(1.25, 2.4, 0.2, 0, 2.0, -2.4, doorFacadeMat);
+        wAddPart(1.2, 0.55, 0.2, 0, 2.775, 2.45, doorFacadeMat);
+
+        // Bedroom Cantilever
+        const bedX = -1.8, bedY = 4.5, bedZ = 0.5;
+        wAddRoomBlock(bedX, bedY, bedZ, 3.2, 2.4, 4.0, 0x5c3317, [
+          { type: 'dark', side: 'front', scale: 0.8 },
+          { type: 'dark', side: 'back', scale: 0.4 }
+        ]);
+        wAddPart(0.1, 1.2, 1.5, bedX - 1.65, bedY, bedZ, winMat);
+
+        // Bathroom Tower
+        const bathX = 2.0, bathY = 5.05, bathZ = 0;
+        wAddPart(2.0, 6.0, 2.5, bathX, bathY, bathZ, amsterdamMat);
+        for (let i = 0; i < 3; i++) {
+          wAddPart(0.1, 1.0, 0.4, bathX + 1.03, bathY + i * 1.2 - 0.1, 0, winMat);
+        }
+        for (let i = 0; i < 3; i++) {
+          wAddPart(1.6, 1.0, 0.1, bathX, bathY + i * 1.2 - 0.1, bathZ - 1.27, winMat);
+        }
+        const bathRoofTopY = bathY + 3.0 + 0.06;
+        wAddPart(2.3, 0.12, 2.8, bathX, bathRoofTopY, bathZ, redRoofMat);
+
+        // Bathroom Solar Panels
+        for (let r = 0; r < 2; r++) {
+          wAddPart(0.71, 0.06, 0.61, bathX, bathRoofTopY + 0.07, bathZ - 0.35 + r * 0.7, frameMat);
+          wAddPart(0.65, 0.04, 0.55, bathX, bathRoofTopY + 0.09, bathZ - 0.35 + r * 0.7, new THREE.MeshStandardMaterial({ color: 0x0a2a55, roughness: 0.2, metalness: 0.8, map: cellTex }));
+        }
+
+        // Attic Slab
+        const roofBaseY = 6.6;
+        wAddPart(7.5, 0.2, 6.0, 0, roofBaseY, 0, new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+        
+        // Attic Room
+        const atticX = -1.2, atticY = roofBaseY + 1.25, atticZ = 0;
+        const atticW = 3.6, atticH = 2.4, atticD = 4.5;
+        wAddRoomBlock(atticX, atticY, atticZ, atticW, atticH, atticD, 0x4d2600, { type: 'dark', side: 'back', scale: 0.8 });
+        for (let i = 0; i < 6; i++) {
+          wAddPart(0.12, 1.2, 0.1, atticX - 1.5 + i * 0.6, atticY + 0.2, atticZ + 2.28, winMat);
+        }
+        wAddPart(atticW + 0.3, 0.12, atticD + 0.3, atticX, atticY + atticH / 2 + 0.06, atticZ, redRoofMat);
+
+        // Attic Solar Panels
+        const _roofY = atticY + atticH / 2 + 0.13;
+        const _pW = 0.7, _pD = 0.55, _gap = 0.12;
+        const _sx = atticX - _pW / 2 - _gap / 2;
+        const _sz = atticZ - _pD - _gap;
+        for (let c = 0; c < 2; c++) {
+          for (let r = 0; r < 3; r++) {
+            const px = _sx + c * (_pW + _gap);
+            const pz = _sz + r * (_pD + _gap);
+            wAddPart(_pW + 0.06, 0.06, _pD + 0.06, px, _roofY, pz, frameMat);
+            wAddPart(_pW, 0.04, _pD, px, _roofY + 0.02, pz, new THREE.MeshStandardMaterial({ color: 0x0a2a55, roughness: 0.2, metalness: 0.8, map: cellTex }));
+          }
+        }
+
+        // Steps
+        for (let i = 0; i < 4; i++) {
+          wAddPart(2.0 - i * 0.2, 0.2, 0.4, 0, 0.1 + i * 0.22, 4.75 - i * 0.4, stepMats);
+        }
+      }
+
+      function wResize() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const aspect = w / h;
+        const d = 8.5;
+        wCamera.left = -d * aspect;
+        wCamera.right = d * aspect;
+        wCamera.top = d;
+        wCamera.bottom = -d;
+        wCamera.updateProjectionMatrix();
+        wRenderer.setSize(w, h);
+        wRenderer.render(wScene, wCamera);
+      }
+
+      setTimeout(() => requestAnimationFrame(wInit), 100);
+
+      // Connect Click handler to enter index page
+      canvas.addEventListener('click', () => {
+        location.href = 'index.html';
+      });
+
+      // Keep keyboard compatibility for entering
+      document.addEventListener('keydown', e => {
+        if (['Enter', 'Space', 'ArrowRight'].includes(e.code)) {
+          e.preventDefault();
+          location.href = 'index.html';
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

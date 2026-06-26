@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D World</title>
+<style>
+    body { 
+        margin:0; 
+        background:#000; 
+        overflow:hidden; 
+        display:flex; 
+        justify-content:center; 
+        align-items:center; 
+        height:100vh; 
+    }
+    .atom-container { 
+        position:fixed; 
+        inset:0; 
+        width:100vw; 
+        height:100vh; 
+    }
+    .nucleus {
+        position:absolute; 
+        top:50%; 
+        left:50%;
+        width:180px; 
+        height:180px; 
+        margin:-90px 0 0 -90px;
+        background:radial-gradient(circle, #000, #333 80%, #666);
+        border-radius:50%;
+        box-shadow:0 0 90px #ccc, 0 0 180px #ffea88, 0 0 300px rgba(0,0,0,0.8);
+        z-index:500;
+    }
+    .electron {
+        position:absolute; 
+        width:40px; 
+        height:40px; 
+        border-radius:50%; 
+        margin:-20px 0 0 -20px;
+        pointer-events:none;
+    }
+    #e1 { background:radial-gradient(circle at 30% 30%, #ff0000, #ff2244); box-shadow:0 0 55px #ff4466, inset -8px -8px 20px #900; }
+    #e2 { background:radial-gradient(circle at 30% 30%, #0000ff, #33889f); box-shadow:0 0 55px #55aa99, inset -8px -8px 20px #0066cc; }
+    #e3 { background:radial-gradient(circle at 30% 30%, #ffff00, #ffdd22); box-shadow:0 0 55px #ffee66, inset -8px -8px 20px #ccaa00; }
+    canvas { 
+        position:fixed; 
+        inset:0; 
+        width:100vw; 
+        height:100vh; 
+        pointer-events:none; 
+    }
+    .trail-front { z-index:550; }
+</style>
+</head>
+<body>
+<div class="atom-container">
+    <canvas id="trailsBack"></canvas>
+    <div class="electron" id="e1"></div>
+    <div class="electron" id="e2"></div>
+    <div class="electron" id="e3"></div>
+    <div class="nucleus"></div>
+    <canvas id="trailsFront" class="trail-front"></canvas>
+</div>
+
+<script>
+const baseSpeed      = 0.04;
+const trailFade      = 0.009;
+const trailThickness = 3.5;
+
+const canvasBack  = document.getElementById('trailsBack');
+const ctxBack     = canvasBack.getContext('2d');
+const canvasFront = document.getElementById('trailsFront');
+const ctxFront    = canvasFront.getContext('2d');
+
+let centerX, centerY;
+const nucleusRadius = 90;
+
+function resizeCanvas() {
+    canvasBack.width = canvasFront.width = window.innerWidth;
+    canvasBack.height = canvasFront.height = window.innerHeight;
+    centerX = window.innerWidth / 2;
+    centerY = window.innerHeight / 2;
+    
+    ctxBack.lineWidth = ctxFront.lineWidth = trailThickness;
+    ctxBack.lineCap = ctxFront.lineCap = 'round';
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ==================== TRUE 3-AXIS CONTROL ====================
+// inclinationDeg → tilt from horizontal (0° = flat, 90° = vertical)
+// planeRotDeg    → safe-dial rotation around vertical Y axis
+// rollDeg        → THE MISSING 3rd AXIS: rotation around line-of-sight (Z coming out of screen)
+const electrons = [
+    { el: document.getElementById('e1'), color: '#ff3355', speedMultiplier: 1,  radius: 225,
+      inclinationDeg: 90, planeRotDeg:   7, rollDeg:   0 },   // red
+
+    { el: document.getElementById('e2'), color: '#4488ff', speedMultiplier: 0.75, radius: 210,
+      inclinationDeg: 15, planeRotDeg:   95, rollDeg:   55 },   // blue
+
+    { el: document.getElementById('e3'), color: '#ffdd33', speedMultiplier: 3, radius: 210,
+      inclinationDeg: 15, planeRotDeg: 115, rollDeg:  -55 }    // yellow
+];
+
+// Pre-convert all angles
+electrons.forEach(e => {
+    const rad = deg => deg * Math.PI / 180;
+    e.i = rad(e.inclinationDeg);
+    e.r = rad(e.planeRotDeg);
+    e.o = rad(e.rollDeg);   // "o" for roll (orbit roll)
+});
+
+let time = 0;
+function animate() {
+    time += baseSpeed;
+
+    ctxBack.fillStyle  = `rgba(0,0,0,${trailFade})`;
+    ctxBack.fillRect(0, 0, canvasBack.width, canvasBack.height);
+    ctxFront.fillStyle = `rgba(0,0,0,${trailFade})`;
+    ctxFront.fillRect(0, 0, canvasFront.width, canvasFront.height);
+
+    electrons.forEach(e => {
+        const a = time * e.speedMultiplier;
+
+        // 1. Local circular motion
+        let x = Math.cos(a) * (e.rScaled || e.radius);
+		let y = Math.sin(a) * (e.rScaled || e.radius);
+        let z = 0;
+
+        // 2. Apply inclination (tilt from horizontal)
+        const tx = x * Math.cos(e.i) + z * Math.sin(e.i);
+        z        = -x * Math.sin(e.i) + z * Math.cos(e.i);
+        x = tx;
+
+        // 3. Apply plane rotation (safe dial – around Y)
+        const tx2 = x * Math.cos(e.r) - z * Math.sin(e.r);
+        z         = x * Math.sin(e.r) + z * Math.cos(e.r);
+        x = tx2;
+
+        // 4. NEW: Apply roll – rotation around line of sight (Z axis)
+        const tx3 = x * Math.cos(e.o) - y * Math.sin(e.o);
+        const ty3 = x * Math.sin(e.o) + y * Math.cos(e.o);
+        x = tx3; y = ty3;
+
+        // Perspective + screen
+        const scale = 1 + z * 0.0038;
+        const screenX = centerX + x;
+        const screenY = centerY + y;
+
+        e.el.style.left = screenX + 'px';
+        e.el.style.top  = screenY + 'px';
+        e.el.style.transform = `scale(${scale})`;
+
+        const behind = z < -20 && Math.hypot(x, y) < nucleusRadius + 20;
+        e.el.style.zIndex = behind ? 400 : 600;
+
+        const ctx = z < 0 ? ctxBack : ctxFront;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = e.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(screenX + 0.1, screenY + 0.1);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+}
+	
+	function updateOrbitScaling() {
+    const w = window.innerWidth;
+    const scale = Math.min(1, w / 900);   // scales down on mobile, stays 1 on desktop
+
+    electrons.forEach(e => {
+        e.rScaled = e.radius * scale;
+    });
+
+    // scale nucleus visually too
+    const nuc = document.querySelector('.nucleus');
+    const size = 180 * scale;
+    nuc.style.width = size + 'px';
+    nuc.style.height = size + 'px';
+    nuc.style.margin = `-${size/2}px 0 0 -${size/2}px`;
+}
+updateOrbitScaling();
+window.addEventListener('resize', updateOrbitScaling);
+
+	
+	
+animate();
+</script>
+    <script src="nav.js"></script>
+</body>
+</html>

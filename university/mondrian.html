@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadway Boogie Woogie</title>
+    
+    <!-- Poiret One: A sleek, geometric Art Deco font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+    <!-- Aubrey: Decorative font for text -->
+    <link href="https://fonts.googleapis.com/css2?family=Aubrey&display=swap" rel="stylesheet">
+    <!-- FontAwesome for the audio icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --m-yellow: #F8D836; 
+            --m-red: #D22626;
+            --m-blue: #285495;
+            --m-grey: #C8C8C8;
+            --m-white: #f4f4f4;
+            --bg-base: #2f433f;
+            --bg-light: #48635d; 
+            --bg-dark: #020404;   /* Almost pure black for deep vignette */
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            /* Spotlight: Tightened the center (30%) and darkened edges for more drama */
+            background: radial-gradient(circle at center, var(--bg-light) 0%, var(--bg-base) 30%, var(--bg-dark) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+            color: #cdc4ad;
+            box-sizing: border-box;
+        }
+
+        /* Main layout wrapper */
+        .gallery-layout {
+            display: flex;
+            flex-direction: column; /* Mobile default: Stacked */
+            align-items: center;
+            gap: 30px;
+            width: 100%;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        /* Desktop Layout Switch */
+        @media (min-width: 1000px) {
+            .gallery-layout {
+                flex-direction: row; 
+                align-items: stretch; 
+                justify-content: center;
+                gap: 40px;
+                height: 600px; 
+            }
+
+            .artwork-col {
+                flex: 0 0 600px; 
+                height: 100%;
+                display: flex;
+                align-items: flex-start;
+            }
+
+            .info-col {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between; 
+                height: 100%; 
+                overflow: hidden;
+            }
+
+            .header-wrapper {margin-bottom: 20px; flex-shrink: 0; }
+            
+            .info 			{flex-grow: 1; margin-top: 0; display: flex; flex-direction: column;}
+        }
+
+        /* --- ARTWORK COLUMN --- */
+        .artwork-col {width: 100%; max-width: 600px; position: relative;}
+
+        /* --- INFO COLUMN --- */
+        .info-col {width: 100%; max-width: 600px;}
+
+        /* --- TITLE DECORATION --- */
+        .header-wrapper {width: 100%; position: relative; display: flex; flex-direction: column; align-items: flex-start;}
+
+        .title-box {
+            background-color: rgba(120, 90, 0, 0.25);
+            border: 2px solid var(--m-grey);
+            padding: 20px 30px;
+            position: relative;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
+        /* Mondrian-ish decorative strip */
+        .title-box::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 6px;
+            background: linear-gradient(90deg, var(--m-red) 33%, var(--m-blue) 33%, var(--m-blue) 66%, var(--m-yellow) 66%);
+        }
+
+        h1 {
+            color: #e6dec8;
+            margin: 0;
+            font-family: 'Poiret One', cursive;
+            font-weight: 600;
+            font-size: clamp(36px, 4vw, 64px); 
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.25);
+            line-height: 0.9;
+        }
+
+        .subtitle {
+            font-family: 'Poiret One', cursive;
+            color: #000;
+            font-size: 1.1rem;font-weight: 700;
+            margin-top: 10px;
+            letter-spacing: 2px;
+            opacity: 0.9;
+			background-color: antiquewhite;
+			padding-bottom: 2px; padding-top: 2px; padding-left: 12px; padding-right: 4px;
+
+        }
+
+        /* --- AUDIO TOGGLE --- */
+        .audio-wrapper {margin-top: 15px; display: flex; align-items: center; gap: 10px;}
+
+        .audio-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+            font-family: 'Poiret One', sans-serif;
+        }
+
+        .audio-toggle-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--m-yellow);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .audio-toggle-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--m-red);
+            color: var(--m-red);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .audio-toggle-btn.muted {color: #666; border-color: #444;}
+
+        /* --- FRAME & CANVAS --- */
+        .frame {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            position: relative; /* Needed for pseudo-element positioning */
+            padding: 12px;
+            box-sizing: border-box;
+            /* Removed sharp background and border properties */
+        }
+
+        /* Soft/Blurry Black Border Implementation */
+        .frame::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            filter: blur(8px); /* The "softness" */
+            z-index: 0; /* Behind the canvas */
+            border-radius: 4px;
+        }
+
+        .canvas {
+            width: 100%;
+            height: 100%;
+            background-color: #f4f4f4;
+            position: relative;
+            z-index: 1; /* Sits on top of the blurry frame */
+            overflow: hidden;
+            
+            /* ISOLATION: Helps prevent blend mode leaks */
+            isolation: isolate;
+            
+            /* FILTER: Applied here */
+            filter: url(#canvas-texture) contrast(1.2) brightness(0.98); 
+            display: block;
+        }
+
+        /* --- TEXTURE GENERATOR (SVG) --- */
+        .texture-svg {
+            height: 0;
+            width: 0;
+            position: absolute;
+            visibility: hidden;
+        }
+
+        /* --- GRID LINES --- */
+        .grid-line {
+            position: absolute;
+            background-color: var(--m-yellow);
+            z-index: 1;
+            box-shadow: 0 0 1px rgba(0,0,0,0.15); 
+        }
+
+        /* --- STATIC BLOCKS --- */
+        .static-block {
+            position: absolute;
+            z-index: 2;
+        }
+
+        .bg-red  	{ background-color: var(--m-red); }
+        .bg-blue 	{ background-color: var(--m-blue); }
+        .bg-yellow 	{ background-color: var(--m-yellow); }
+        .bg-grey 	{ background-color: var(--m-grey); }
+        .bg-white 	{ background-color: var(--m-white); }
+
+        /* --- DYNAMIC MOSAIC (Traffic) --- */
+        .car {
+            position: absolute;
+            z-index: 3;
+            image-rendering: pixelated; 
+        }
+
+        /* RESPONSIVE ANIMATIONS */
+        @keyframes driveHorizontal {
+            from { left: -10%; }
+            to { left: 110%; }
+        }
+        @keyframes driveHorizontalRev {
+            from { left: 110%; }
+            to { left: -10%; }
+        }
+        @keyframes driveVertical {
+            from { top: -10%; }
+            to { top: 110%; }
+        }
+        @keyframes driveVerticalRev {
+            from { top: 110%; }
+            to { top: -10%; }
+        }
+
+        @keyframes blinkOpacity {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        @keyframes shiftColorRedBlue {
+            0%, 45% { background-color: var(--m-red); }
+            50%, 95% { background-color: var(--m-blue); }
+        }
+        
+        @keyframes shiftColorYellowWhite {
+            0%, 45% { background-color: var(--m-yellow); }
+            50%, 95% { background-color: var(--m-white); }
+        }
+
+        /* --- INFO BOX & READ MORE LOGIC --- */
+        .info {color: #ddd; font-size: 18px; line-height: 1.5; text-align: justify; font-family: 'Aubrey', cursive;
+            border: 1px solid var(--m-blue); background-color: rgba(0, 0, 0, 0.15); padding: 20px; box-sizing: border-box;
+            position: relative; display: flex; flex-direction: column; overflow: hidden;}
+
+        .info-content {overflow-y: hidden; mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            transition: mask-image 0.3s; height: 100%;}
+
+        .info-content.expanded {overflow-y: auto; mask-image: none; -webkit-mask-image: none; padding-right: 10px;}
+
+        .info-content::-webkit-scrollbar 		{width: 6px;}
+        .info-content::-webkit-scrollbar-track 	{background: rgba(0,0,200,0.7);}
+        .info-content::-webkit-scrollbar-thumb 	{background: var(--m-blue);  border-radius: 3px;}
+
+        .read-more-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 20px;
+            background: var(--m-yellow);
+            color: #1a1a1a;
+            border: none;
+            padding: 5px 10px;
+            font-family: 'Poiret One', sans-serif;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 10;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        .read-more-btn:hover {background: var(--m-white); transform: translateY(-2px);}
+
+        .info strong {
+            color: #fff;
+            font-size: 1.1em;
+            letter-spacing: 1.1px;
+			background-color: crimson;
+			padding-bottom: 2px; padding-top: 2px; padding-left: 4px; padding-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-layout">
+        
+        <!-- LEFT COLUMN: ARTWORK -->
+        <div class="artwork-col">
+            <div class="frame">
+                <div class="canvas" id="canvas">
+                    <!-- SVG Filter for Texture -->
+                    <!-- Added x, y, width, height attributes to strictly contain the filter -->
+                    <svg class="texture-svg">
+                        <filter id="canvas-texture" x="0%" y="0%" width="100%" height="100%">
+                            <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="4" stitchTiles="stitch" result="noise"/>
+                            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.35 0" in="noise" result="coloredNoise"/>
+                            <feBlend in="SourceGraphic" in2="coloredNoise" mode="multiply" />
+                        </filter>
+                    </svg>
+
+                    <div id="grid-layer"></div>
+                    <div id="traffic-layer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: INFO -->
+        <div class="info-col">
+            <div class="header-wrapper">
+                <div class="title-box">
+                    <h1>Broadway<br>Boogie Woogie</h1>
+                    <div class="subtitle">PIET MONDRIAN (1872 - 1944)</div>
+                </div>
+                
+                <div class="audio-wrapper">
+                    <button id="music-toggle" class="audio-toggle-btn muted" aria-label="Toggle Music">
+                        <i id="music-icon" class="fa-solid fa-volume-xmark"></i>
+                    </button>
+                    <span class="audio-label">Soundtrack</span>
+                </div>
+                
+                <audio id="bg-music" loop>
+                    <source src="jazzy.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="info" id="info-box">
+                <div class="info-content" id="info-text">
+                    <p><strong>New York City, 1942–43.</strong><br>
+						This animation reimagines Piet Mondrian’s final masterpiece. Painted shortly after his arrival in Manhattan, <em>Broadway Boogie Woogie</em> marked a radical departure from his earlier black-grid compositions.</p> 
+                    <p>Fascinated by the city's architectural grid and the syncopated rhythms of jazz and boogie-woogie music, Mondrian replaced solid black lines with vibrant, shimmering bands of color. The staccato rhythm of the yellow lines, interspersed with red, blue, and grey, mimics the frantic energy of New York traffic and the pulse of the music he loved.</p>
+                    <p>This digital interpretation amplifies that energy, turning the static canvas into a living, breathing metropolis where the infrastructure itself is composed of pure, rhythmic motion. The cars blink and shift, a nod to the neon lights and the ceaseless movement of the modern age.</p>
+                    <p>It stands not just as a painting, but as a map of modernism—a joyful, chaotic, yet perfectly ordered celebration of life in the big city.</p>
+                </div>
+                <button id="read-more-btn" class="read-more-btn">READ MORE</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const gridLayer = document.getElementById('grid-layer');
+        const trafficLayer = document.getElementById('traffic-layer');
+
+        // --- READ MORE LOGIC ---
+        const readMoreBtn = document.getElementById('read-more-btn');
+        const infoText = document.getElementById('info-text');
+        
+        readMoreBtn.addEventListener('click', () => {
+            if (infoText.classList.contains('expanded')) {
+                // Collapse
+                infoText.classList.remove('expanded');
+                readMoreBtn.textContent = "READ MORE";
+                infoText.scrollTop = 0; // Reset scroll
+            } else {
+                // Expand
+                infoText.classList.add('expanded');
+                readMoreBtn.textContent = "CLOSE";
+            }
+        });
+
+        // --- AUDIO CONTROLLER ---
+        const audio = document.getElementById('bg-music');
+        const toggleBtn = document.getElementById('music-toggle');
+        const icon = document.getElementById('music-icon');
+        let isPlaying = false;
+
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                icon.className = 'fa-solid fa-volume-xmark';
+                toggleBtn.classList.add('muted');
+            } else {
+                audio.play().catch(e => console.log("Audio play failed:", e));
+                icon.className = 'fa-solid fa-music'; 
+                toggleBtn.classList.remove('muted');
+            }
+            isPlaying = !isPlaying;
+        });
+
+        const REF_SIZE = 600; 
+
+        function toPct(val) {
+            return (val / REF_SIZE) * 100 + '%';
+        }
+
+        // --- COMPOSITION DATA ---
+        // Vertical Lines (x position, width)
+        const vLines = [
+            { x: 15, w: 12 }, { x: 35, w: 6 }, { x: 60, w: 10 }, { x: 85, w: 6 },
+            { x: 140, w: 8 }, { x: 180, w: 6 }, 
+            { x: 280, w: 14 },
+            { x: 340, w: 6 }, { x: 380, w: 8 },
+            { x: 480, w: 10 }, { x: 520, w: 6 }, { x: 550, w: 8 }, { x: 580, w: 12 }
+        ];
+
+        // Horizontal Lines (y position, height)
+        const hLines = [
+            { y: 15, h: 12 }, { y: 40, h: 6 }, { y: 70, h: 10 },
+            { y: 130, h: 8 }, { y: 180, h: 6 },
+            { y: 260, h: 14 },
+            { y: 330, h: 6 }, { y: 390, h: 8 }, 
+            { y: 460, h: 10 }, { y: 500, h: 6 }, { y: 540, h: 8 }, { y: 580, h: 12 }
+        ];
+
+        // Static Blocks
+        const staticBlocks = [
+            { x: 294, y: 46,  w: 47, h: 27, c: 'bg-red' 	},
+            { x: 418, y: 185, w: 40, h: 76, c: 'bg-blue'	},
+            { x: 428, y: 208, w: 20, h: 30, c: 'bg-red'		},
+            { x: 91,  y: 272, w: 50, h: 30, c: 'bg-red' 	},
+            { x: 490, y: 398, w: 31, h: 31, c: 'bg-blue' 	},			
+            { x: 490, y: 428, w: 31, h: 06, c: 'bg-yellow' 	},
+            { x: 490, y: 434, w: 31, h: 27, c: 'bg-red' 	},
+            { x: 558, y: 470, w: 23, h: 30, c: 'bg-red'		},
+            { x: 91,  y: 78,  w: 50, h: 55, c: 'bg-grey' 	},
+            { x: 148, y: 336, w: 32, h: 54, c: 'bg-white' 	},
+            { x: 346, y: 274, w: 35, h: 57, c: 'bg-yellow'	},
+            { x: 186, y: 470, w: 95, h: 30, c: 'bg-grey' 	},
+        ];
+
+        // --- RENDER STATIC GRID ---
+        function renderGrid() {
+            // Draw Vertical Lines
+            vLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line';
+                el.style.left = toPct(l.x);
+                el.style.top = '0';
+                el.style.width = toPct(l.w);
+                el.style.height = '100%';
+                gridLayer.appendChild(el);
+            });
+
+            // Draw Horizontal Lines
+            hLines.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'grid-line';
+                el.style.top = toPct(l.y);
+                el.style.left = '0';
+                el.style.height = toPct(l.h);
+                el.style.width = '100%';
+                gridLayer.appendChild(el);
+            });
+
+            // Draw Static Blocks
+            staticBlocks.forEach(b => {
+                const el = document.createElement('div');
+                el.className = `static-block ${b.c}`;
+                el.style.left = toPct(b.x);
+                el.style.top = toPct(b.y);
+                el.style.width = toPct(b.w);
+                el.style.height = toPct(b.h);
+                gridLayer.appendChild(el);
+            });
+        }
+
+        // --- RENDER DYNAMIC TRAFFIC ---
+        const colors = ['bg-red', 'bg-blue', 'bg-grey', 'bg-white', 'bg-red']; 
+        const anims = ['blinkOpacity', 'shiftColorRedBlue', 'shiftColorYellowWhite', 'none'];
+
+        function createTraffic() {
+
+            const carsPerLine = 15; 
+
+            // Populate Horizontal Tracks
+            hLines.forEach(track => {
+                const speed = Math.random() * 8 + 4; 
+                const dir = Math.random() > 0.5 ? 'normal' : 'reverse';
+                
+                for(let i=0; i<carsPerLine; i++) {
+                    const car = document.createElement('div');
+                    car.className = `car ${colors[Math.floor(Math.random()*colors.length)]}`;
+                    
+                    const h = track.h; 
+                    const w = Math.floor(Math.random() * 12) + 6; 
+                    
+                    car.style.height = toPct(h);
+                    car.style.width = toPct(w);
+                    car.style.top = toPct(track.y);
+                    car.style.left = '-10%'; 
+
+                    const animName = dir === 'normal' ? 'driveHorizontal' : 'driveHorizontalRev';
+                    const blinkName = anims[Math.floor(Math.random() * anims.length)];
+                    const delay = -(Math.random() * speed); 
+
+                    let style = `animation: ${animName} ${speed}s linear infinite`;
+                    if(blinkName !== 'none') {
+                        style += `, ${blinkName} ${Math.random() * 0.5 + 0.2}s steps(1) infinite`;
+                    }
+                    
+                    car.style.animation = style.split('animation: ')[1]; 
+                    car.style.animationDelay = `${delay}s`;
+
+                    trafficLayer.appendChild(car);
+                }
+            });
+
+            // Populate Vertical Tracks
+            vLines.forEach(track => {
+                const speed = Math.random() * 8 + 4;
+                const dir = Math.random() > 0.5 ? 'normal' : 'reverse';
+
+                for(let i=0; i<carsPerLine; i++) {
+                    const car = document.createElement('div');
+                    car.className = `car ${colors[Math.floor(Math.random()*colors.length)]}`;
+                    
+                    const w = track.w;
+                    const h = Math.floor(Math.random() * 12) + 6;
+
+                    car.style.width = toPct(w);
+                    car.style.height = toPct(h);
+                    car.style.left = toPct(track.x);
+                    car.style.top = '-10%';
+
+                    const animName = dir === 'normal' ? 'driveVertical' : 'driveVerticalRev';
+                    const blinkName = anims[Math.floor(Math.random() * anims.length)];
+                    const delay = -(Math.random() * speed);
+
+                    let style = `animation: ${animName} ${speed}s linear infinite`;
+                    if(blinkName !== 'none') {
+                        style += `, ${blinkName} ${Math.random() * 0.5 + 0.2}s steps(1) infinite`;
+                    }
+                    
+                    car.style.animation = style.split('animation: ')[1];
+                    car.style.animationDelay = `${delay}s`;
+
+                    trafficLayer.appendChild(car);
+                }
+            });
+        }
+
+        renderGrid();
+        createTraffic();
+
+    </script>
+    <script src="nav.js"></script>
+</body>
+</html>

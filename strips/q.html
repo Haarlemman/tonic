@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Strips te koop</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 10px; text-align: center; }
+    .card img { max-width: 100%; height: auto; border-radius: 4px; }
+    .price { font-weight: bold; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>STRIPS TE KOOP</h1>
+  <p style="text-align:center">uit de verzameling van David Enker te Haarlem</p>
+  <div id="grid" class="grid"></div>
+
+  <script>
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/pub?gid=1026598690&single=true&output=csv";
+
+    fetch(url)
+      .then(r => r.text())
+      .then(text => {
+        const rows = text.trim().split("\n").map(r => r.split(","));
+        const headers = rows.shift();
+        const grid = document.getElementById("grid");
+
+        rows.forEach(row => {
+          const [img, nr, titel, druk, conditie, bijzonder, link, prijs] = row;
+          if (!titel) return;
+
+          const card = document.createElement("div");
+          card.className = "card";
+
+          if (img) {
+            const image = document.createElement("img");
+            image.src = img.replace(/"/g, "");
+            card.appendChild(image);
+          }
+
+          const title = document.createElement("h3");
+          title.innerText = titel;
+          card.appendChild(title);
+
+          if (nr) {
+            const num = document.createElement("p");
+            num.innerText = "Nr: " + nr;
+            card.appendChild(num);
+          }
+
+          if (druk) {
+            const d = document.createElement("p");
+            d.innerText = "Druk: " + druk;
+            card.appendChild(d);
+          }
+
+          if (conditie) {
+            const c = document.createElement("p");
+            c.innerText = "Conditie: " + conditie;
+            card.appendChild(c);
+          }
+
+          if (bijzonder) {
+            const b = document.createElement("p");
+            b.innerText = "Bijzonderheden: " + bijzonder;
+            card.appendChild(b);
+          }
+
+          if (link) {
+            const a = document.createElement("a");
+            a.href = link;
+            a.target = "_blank";
+            a.innerText = "Bekijk op LastDodo";
+            card.appendChild(a);
+          }
+
+          if (prijs) {
+            const p = document.createElement("div");
+            p.className = "price";
+            p.innerText = prijs;
+            card.appendChild(p);
+          }
+
+          grid.appendChild(card);
+        });
+      })
+      .catch(err => {
+        document.getElementById("grid").innerText = "Kon data niet laden: " + err;
+      });
+  </script>
+</body>
+</html>

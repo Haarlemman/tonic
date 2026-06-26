@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>From Adam — An Interactive Genealogy</title>
+<style>
+  :root{
+    --ground:#231f1b;        /* warm dark, lifted */
+    --ground-2:#2c2723;
+    --parchment:#f4eddc;     /* brighter parchment */
+    --parchment-dim:#b3a888;
+    --signal:#d23b2c;        /* signal red */
+    --gold:#e8c94a;          /* messianic bloodline */
+    --green:#4f9d5d;         /* line of Ishmael */
+    --line:#5a5247;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color:var(--parchment);}
+  #scene{position:fixed;inset:0;display:block;cursor:grab;}
+
+  /* ---- Title plate ---- */
+  #title{position:fixed;top:22px;left:24px;z-index:10;pointer-events:none;
+    max-width:340px;}
+  #title h1{margin:0;font-size:13px;letter-spacing:.42em;font-weight:600;
+    text-transform:uppercase;color:var(--parchment);}
+  #title .rule{height:1px;background:var(--signal);width:46px;margin:9px 0;}
+  #title p{margin:0;font-size:11.5px;line-height:1.55;color:var(--parchment-dim);
+    letter-spacing:.02em;font-family:"Helvetica Neue",Arial,sans-serif;}
+
+  /* ---- Legend / controls ---- */
+  #legend{position:fixed;bottom:20px;left:24px;z-index:10;
+    font-family:"Helvetica Neue",Arial,sans-serif;font-size:10.5px;
+    color:var(--parchment-dim);letter-spacing:.04em;line-height:1.9;}
+  #legend .row{display:flex;align-items:center;gap:9px;}
+  #legend .swatch{width:22px;height:3px;border-radius:2px;}
+  #legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  /* ---- Info panel ---- */
+  #panel{position:fixed;top:0;right:0;height:100%;width:320px;z-index:20;
+    background:linear-gradient(180deg,rgba(34,30,27,.97),rgba(26,23,21,.98));
+    border-left:1px solid var(--line);
+    transform:translateX(100%);transition:transform .42s cubic-bezier(.22,.61,.36,1);
+    padding:34px 28px;overflow-y:auto;backdrop-filter:blur(6px);}
+  #panel.open{transform:translateX(0);}
+  #panel .eyebrow{font-family:"Helvetica Neue",Arial,sans-serif;font-size:10px;
+    letter-spacing:.34em;text-transform:uppercase;color:var(--signal);margin-bottom:14px;}
+  #panel h2{margin:0 0 4px;font-size:30px;font-weight:600;line-height:1.05;}
+  #panel .alt{font-size:13px;color:var(--parchment-dim);font-style:italic;margin-bottom:18px;}
+  #panel .meta{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;
+    letter-spacing:.05em;color:var(--parchment-dim);line-height:1.8;
+    border-top:1px solid var(--line);padding-top:14px;margin-top:6px;}
+  #panel .meta b{color:var(--parchment);font-weight:600;}
+  #panel .desc{font-size:13.5px;line-height:1.62;margin:16px 0 0;color:var(--parchment);}
+  #panel .close{position:absolute;top:20px;right:22px;cursor:pointer;
+    font-size:22px;line-height:1;color:var(--parchment-dim);}
+  #panel .close:hover{color:var(--signal);}
+
+  /* ---- Hint toast ---- */
+  #hint{position:fixed;bottom:22px;right:24px;z-index:10;
+    font-family:"Helvetica Neue",Arial,sans-serif;font-size:10.5px;
+    letter-spacing:.05em;color:var(--parchment-dim);text-align:right;line-height:1.8;
+    transition:opacity .6s;max-width:260px;}
+  #hint b{color:var(--gold);}
+
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:20px;
+    padding:3px 11px;margin:3px 4px 0 0;font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:10px;letter-spacing:.04em;color:var(--parchment-dim);}
+
+  @media (max-width:640px){
+    #title{max-width:62%;top:16px;left:16px;}
+    #title h1{font-size:11px;letter-spacing:.3em;}
+    #panel{width:100%;}
+    #legend{font-size:9.5px;bottom:14px;left:16px;}
+    #hint{display:none;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #panel{transition:none;}
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="title">
+  <h1>From Adam</h1>
+  <div class="rule"></div>
+  <p>The line of the world, drawn from Genesis through the patriarchs to the present.
+     The gold thread is the lineage of promise. Folded generations open at a touch.</p>
+</div>
+
+<div id="legend">
+  <div class="row"><span class="swatch" style="background:var(--gold)"></span> Bloodline of promise</div>
+  <div class="row"><span class="swatch" style="background:var(--green)"></span> Line of Ishmael</div>
+  <div class="row"><span class="swatch" style="background:var(--line)"></span> Descent</div>
+  <div class="row"><span class="swatch" style="background:linear-gradient(90deg,var(--gold) 55%,transparent 0);background-size:7px 100%"></span> Messiah — still to come</div>
+  <div class="row"><span class="dot" style="background:var(--signal)"></span> Folded — tap to open</div>
+</div>
+
+<div id="hint">Drag to pan the line · scroll to zoom toward the cursor · alt-drag to look around · <b>tap a red marker</b> to unfold</div>
+
+<div id="panel">
+  <div class="close" id="closePanel">×</div>
+  <div class="eyebrow" id="pEyebrow">Figure</div>
+  <h2 id="pName">Name</h2>
+  <div class="alt" id="pAlt"></div>
+  <div class="desc" id="pDesc"></div>
+  <div class="meta" id="pMeta"></div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================================================
+   DATA MODEL
+   Each node: id, label, alt(?), gen(depth row), branch(x offset hint),
+   blood(true = messianic line), age(?), date(?), desc(?), tags(?)
+   Edges connect ids. "fold" groups collapse a vertical chain.
+   ============================================================ */
+
+const N = (o)=>o;
+const people = {
+  adam:N({label:"Adam",alt:"× Eve",gen:0,x:0,blood:true,age:930,
+    desc:"The first man. From him every line in this chart descends.",tags:["Genesis"]}),
+  cain:N({label:"Cain",gen:1,x:-7,desc:"Firstborn of Adam; his line ends at the Flood."}),
+  abel:N({label:"Abel",gen:1,x:-4.5,desc:"The shepherd, slain by his brother."}),
+  seth:N({label:"Seth",alt:"× Azura",gen:1,x:0,blood:true,age:912,
+    desc:"Born in place of Abel; the appointed line of promise runs through him."}),
+
+  // antediluvian fold (Seth -> Noah)
+  enos:N({label:"Enos",gen:2,x:0,blood:true,age:905,fold:"ante"}),
+  kenan:N({label:"Kenan",gen:3,x:0,blood:true,fold:"ante"}),
+  mahalalel:N({label:"Mahalalel",gen:4,x:0,blood:true,fold:"ante"}),
+  jared:N({label:"Jared",gen:5,x:0,blood:true,fold:"ante"}),
+  enoch:N({label:"Enoch",gen:6,x:0,blood:true,fold:"ante",
+    desc:"He walked with God, and was not, for God took him."}),
+  methuselah:N({label:"Methuselah",gen:7,x:0,blood:true,age:969,fold:"ante",
+    desc:"The longest-lived man recorded in scripture."}),
+  lamech:N({label:"Lamech",gen:8,x:0,blood:true,fold:"ante"}),
+
+  noah:N({label:"Noah",gen:9,x:0,blood:true,
+    desc:"Through whom mankind begins again after the Flood.",tags:["Flood"]}),
+
+  // Noah's three sons
+  shem:N({label:"Shem",alt:"'Semitic'",gen:10,x:-9,blood:true,age:600,
+    desc:"Father of the Semitic peoples; the line of promise continues here.",tags:["'Jewish'"]}),
+  japheth:N({label:"Japheth",alt:"'Beauty'",gen:10,x:0,
+    desc:"Traditionally tied to the western and northern peoples.",tags:["'Greek / Western'"]}),
+  ham:N({label:"Ham",alt:"'Hot'",gen:10,x:9,
+    desc:"Father of the southern nations.",tags:["African / Eastern"]}),
+
+  // Shem's sons (siblings row)
+  elam:N({label:"Elam",alt:"SW Iran",gen:11,x:-13}),
+  asshur:N({label:"Asshur",alt:"Assyria",gen:11,x:-11.2}),
+  aram:N({label:"Aram",alt:"Syria",gen:11,x:-9.4}),
+  arpachshad:N({label:"Arpachshad",alt:"Chaldea",gen:11,x:-7.4,blood:true,age:438}),
+  lud:N({label:"Lud",alt:"Lydia",gen:11,x:-5.6}),
+
+  // Japheth's sons (compressed cluster)
+  gomer:N({label:"Gomer",gen:11,x:-1.5,fold:"japheth"}),
+  magog:N({label:"Magog",alt:"Slavs, Irish, Hungarians",gen:11,x:1.6,fold:"japheth"}),
+  ashkenaz:N({label:"Ashkenaz",alt:"Germans",gen:12,x:-1.5,fold:"japheth"}),
+  javan:N({label:"Javan",alt:"Greek",gen:12,x:1.6,fold:"japheth"}),
+  madai:N({label:"Madai",alt:"Kurds",gen:13,x:0,fold:"japheth"}),
+
+  // Ham's sons
+  cush:N({label:"Cush",alt:"Ethiopians",gen:11,x:7}),
+  mizraim:N({label:"Mizraim",alt:"Egypt",gen:11,x:9}),
+  put:N({label:"Put",alt:"Lybia",gen:11,x:11}),
+  canaan:N({label:"Canaan",alt:"Canaanites — 'cursed'",gen:11,x:13}),
+  nimrod:N({label:"Nimrod",gen:12,x:7,desc:"The first mighty one on earth; builder of Babel."}),
+
+  // Shem fold (Arpachshad -> Terah)
+  salah:N({label:"Salah",gen:12,x:-7.4,blood:true,age:433,fold:"shem"}),
+  eber:N({label:"Eber",alt:"'Hebrew'",gen:13,x:-7.4,blood:true,age:460,fold:"shem",
+    desc:"The root of the word 'Hebrew'."}),
+  peleg:N({label:"Peleg",gen:14,x:-7.4,blood:true,age:239,fold:"shem",
+    desc:"In his days the earth was divided."}),
+  reu:N({label:"Reu",gen:15,x:-7.4,blood:true,age:239,fold:"shem"}),
+  serug:N({label:"Serug",gen:16,x:-7.4,blood:true,age:230,fold:"shem"}),
+  nahor1:N({label:"Nahor",gen:17,x:-7.4,blood:true,age:148,fold:"shem"}),
+  joktan:N({label:"Joktan",gen:14,x:-4,desc:"Brother of Peleg; father of southern Arabian peoples."}),
+
+  terah:N({label:"Terah",gen:18,x:-7.4,blood:true,
+    desc:"Father of Abraham; he set out from Ur toward Canaan."}),
+
+  // Terah's sons
+  nahor2:N({label:"Nahor",gen:19,x:1,desc:"Brother of Abraham; grandfather of Rebecca."}),
+  haran:N({label:"Haran",gen:19,x:6,desc:"Brother of Abraham; father of Lot."}),
+  milcah:N({label:"Milcah",alt:"× Nahor",gen:20,x:1.2}),
+  iscah:N({label:"Iscah",alt:"Sarah?",gen:20,x:4}),
+  lot:N({label:"Lot",gen:20,x:7.5,desc:"Rescued from Sodom; ancestor of Moab and Ammon."}),
+  moab:N({label:"Moab",gen:21,x:12}),
+  ruth:N({label:"Ruth",gen:23,x:12,blood:false,
+    desc:"The Moabitess; great-grandmother of King David — a Gentile woman in the royal line."}),
+
+  abraham:N({label:"Abraham",alt:"+ Hagar  × Sarah  × Keturah",gen:19,x:-7.4,blood:true,
+    desc:"The father of nations. The covenant of promise begins with him.",tags:["Covenant"]}),
+  bethuel:N({label:"Bethuel",gen:20,x:2.6,desc:"Son of Nahor; father of Rebecca and Laban."}),
+
+  ishmael:N({label:"Ishmael",gen:20,x:-13,
+    desc:"Son of Abraham by Hagar; father of twelve princes, ancestor of the Arab peoples."}),
+  isaac:N({label:"Isaac",alt:"× Rebecca",gen:20,x:-7,blood:true,
+    desc:"The child of promise; bound on Moriah and spared."}),
+  laban:N({label:"Laban",alt:"'White'",gen:20,x:-1,
+    desc:"Brother of Rebecca; father of Leah and Rachel."}),
+  keturahsons:N({label:"Zimran, Jokshan, Medan,\nMidian, Ishbak, Shuah",gen:20,x:13,
+    desc:"The sons of Abraham by Keturah, sent eastward."}),
+
+  jacob:N({label:"Jacob",alt:"(Israel)",gen:21,x:-7,blood:true,
+    desc:"Renamed Israel after wrestling at Peniel; father of the twelve tribes.",tags:["Israel"]}),
+  leah:N({label:"× Leah",gen:21,x:-4.4}),
+  rachel:N({label:"× Rachel",gen:21,x:-1.8}),
+  bilhah:N({label:"+ Bilhah",gen:21,x:0.8}),
+  zilpah:N({label:"+ Zilpah",gen:21,x:3.4}),
+  esau:N({label:"Esau",alt:"× Adah, × Aholibamah, × Basemath",gen:21,x:8.5,
+    desc:"Jacob's brother; father of the Edomites.",tags:["Edom"]}),
+
+  // The twelve + Dinah (tribes row) — spread along one rank with a gentle stagger
+  reuben:N({label:"1. Reuben",gen:22,x:-13.5,desc:"Firstborn of Jacob and Leah."}),
+  simeon:N({label:"2. Simeon",gen:22.45,x:-11.6,lost:true}),
+  levi:N({label:"3. Levi",gen:22,x:-9.7,blood:true,
+    desc:"Father of the priestly tribe — the Cohanim and Levites descend here."}),
+  judah:N({label:"4. Judah",gen:22.45,x:-7.8,blood:true,
+    desc:"The royal tribe. The line of kings — and the Messiah — runs through Judah.",tags:["Royal line"]}),
+  dan:N({label:"5. Dan",gen:22,x:-5.6,lost:true}),
+  naphtali:N({label:"6. Naphtali",gen:22.45,x:-3.7,lost:true}),
+  gad:N({label:"7. Gad",gen:22,x:-1.8,lost:true}),
+  asher:N({label:"8. Asher",gen:22.45,x:0.1,lost:true}),
+  issachar:N({label:"9. Issachar",gen:22,x:2,lost:true}),
+  zebulun:N({label:"10. Zebulun",gen:22.45,x:3.9,lost:true}),
+  dinah:N({label:"Dinah",gen:22,x:5.9}),
+  joseph:N({label:"11. Joseph",alt:"× Asenath",gen:22.45,x:8,
+    desc:"Sold into Egypt, raised to its right hand; his sons become two tribes."}),
+  benjamin:N({label:"12. Benjamin",gen:22,x:10.2,desc:"Youngest son of Jacob; tribe of King Saul."}),
+
+  // descendants
+  miriam:N({label:"Miriam",gen:23,x:-9.7}),
+  aaron:N({label:"Aaron",gen:24,x:-10.8,blood:true,
+    desc:"First high priest; brother of Moses."}),
+  moses:N({label:"Moses",gen:24,x:-8.6,
+    desc:"Led Israel out of Egypt and received the Law at Sinai.",tags:["Exodus"]}),
+  menasseh:N({label:"Menasseh",gen:23,x:6.5}),
+  ephraim:N({label:"Ephraim",gen:23,x:9.5,lost:true}),
+  joshua:N({label:"Joshua",gen:24,x:8,desc:"Successor of Moses; led Israel into the land."}),
+  david:N({label:"King David",gen:25,x:-7.8,blood:true,
+    desc:"Shepherd, poet, king. The promise of an everlasting throne is given to his house.",tags:["Royal line"]}),
+  saul:N({label:"King Saul",gen:25,x:10.2,desc:"First king of Israel; of the tribe of Benjamin."}),
+  jesus:N({label:"Jesus",gen:27,x:-7,blood:true,
+    desc:"Of the line of David through Judah — the convergence point of the gold thread.",tags:["0–36 CE"]}),
+  mohammed:N({label:"Mohammed",gen:28,x:-15,desc:"A figure within the line of Ishmael — not the ancestor of all Arabs."}),
+
+  // ---- the "today" band (gen 30) ----
+  // Arab peoples sit at the far left, beside Mohammed, both flowing from Ishmael.
+  arabs:N({label:"Arabs",gen:30,x:-16,present:true,
+    desc:"The Arab peoples, traced here to Ishmael — Mohammed stands among them, not above them."}),
+  // The Jewish diaspora, spread left→right along the band.
+  cohen:N({label:"Cohanim",alt:"'priests'",gen:30,x:-12,present:true,blood:true,
+    desc:"The priestly line of Aaron, carried within the people."}),
+  ashkenazim:N({label:"Ashkenazim",alt:"N. & E. Europe",gen:30,x:-8.5,present:true,blood:true,
+    desc:"Jews of the Rhineland, Central and Eastern Europe."}),
+  sephardim:N({label:"Sephardim",alt:"Iberia & Mediterranean",gen:30,x:-4.5,present:true,blood:true,
+    desc:"Jews of Spain and Portugal and their dispersion around the Mediterranean."}),
+  mizrahim:N({label:"Mizrahim",alt:"Middle East & N. Africa",gen:30,x:-0.3,present:true,blood:true,
+    desc:"Jews of the Middle East and North Africa, never having left the East."}),
+  beta:N({label:"Beta Israel",alt:"Ethiopia",gen:30,x:3.6,present:true,blood:true}),
+  bukharan:N({label:"Bukharan",alt:"Central Asia",gen:30,x:7,present:true,blood:true}),
+  persian:N({label:"Persian Jews",alt:"Iran",gen:30,x:10.3,present:true,blood:true}),
+  bnei:N({label:"Bnei Menashe",alt:"India",gen:30,x:14,present:true,blood:true}),
+
+  messiah:N({label:"Messiah",alt:"awaited",gen:33,x:-7,blood:true,
+    desc:"In Jewish tradition, still to come — a future king of the line of David. The horizon toward which the whole chart reaches."}),
+};
+
+const edges = [
+  ["adam","cain"],["adam","abel"],["adam","seth"],
+  ["seth","enos"],["enos","kenan"],["kenan","mahalalel"],["mahalalel","jared"],
+  ["jared","enoch"],["enoch","methuselah"],["methuselah","lamech"],["lamech","noah"],
+  ["noah","shem"],["noah","japheth"],["noah","ham"],
+  ["shem","elam"],["shem","asshur"],["shem","aram"],["shem","arpachshad"],["shem","lud"],
+  ["japheth","gomer"],["japheth","magog"],["gomer","ashkenaz"],["magog","javan"],["magog","madai"],
+  ["ham","cush"],["ham","mizraim"],["ham","put"],["ham","canaan"],["cush","nimrod"],
+  ["arpachshad","salah"],["salah","eber"],["eber","peleg"],["eber","joktan"],
+  ["peleg","reu"],["reu","serug"],["serug","nahor1"],["nahor1","terah"],
+  ["terah","abraham"],["terah","nahor2"],["terah","haran"],
+  ["nahor2","milcah"],["haran","iscah"],["haran","lot"],["lot","moab"],["moab","ruth"],
+  ["nahor2","bethuel"],["bethuel","isaac"],["bethuel","laban"],
+  ["abraham","ishmael"],["abraham","isaac"],["abraham","keturahsons"],
+  ["isaac","jacob"],["isaac","esau"],["laban","leah"],["laban","rachel"],
+  ["jacob","reuben"],["jacob","simeon"],["jacob","levi"],["jacob","judah"],
+  ["jacob","dan"],["jacob","naphtali"],["jacob","gad"],["jacob","asher"],
+  ["jacob","issachar"],["jacob","zebulun"],["jacob","dinah"],["jacob","joseph"],["jacob","benjamin"],
+  ["levi","miriam"],["levi","aaron"],["levi","moses"],
+  ["judah","david"],["david","jesus"],
+  ["joseph","menasseh"],["joseph","ephraim"],["ephraim","joshua"],["benjamin","saul"],
+  ["ishmael","mohammed","ishmael"],
+  // to present
+  // Arab line (green): Arabs descend from Ishmael; Mohammed stands beside them, not above.
+  ["ishmael","arabs","ishmael"],
+  // The Jewish people today — the diaspora branches, all from Judah's line.
+  ["judah","cohen"],["aaron","cohen"],
+  ["judah","ashkenazim"],["judah","sephardim"],["judah","mizrahim"],
+  ["dan","beta"],["asher","bukharan"],["ephraim","persian"],["menasseh","bnei"],
+  // The awaited Messiah — a future king of David's line (dashed gold, still to come).
+  ["david","messiah","awaited"],
+];
+
+// Fold definitions: a vertical chain that collapses into one marker
+const folds = {
+  ante:   {anchor:"seth",  reattach:"noah", label:"7 patriarchs", x:0,   genMid:5.5},
+  shem:   {anchor:"arpachshad", reattach:"terah", label:"6 generations", x:-7.4, genMid:14.5},
+  japheth:{anchor:"japheth", reattach:null, label:"nations of Japheth", x:0, genMid:12},
+};
+
+/* ============================================================
+   SCENE SETUP
+   ============================================================ */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x231f1b);
+scene.fog = new THREE.FogExp2(0x231f1b, 0.0030);
+
+const camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.1, 4000);
+
+const reduceMotion = matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+// layout constants
+const ROW = 22;   // vertical spacing per generation
+const COL = 19;   // horizontal spacing per x unit (widened for legibility)
+
+function pos(p){ return new THREE.Vector3(p.x*COL, -p.gen*ROW, 0); }
+
+/* ----- label sprite ----- */
+function makeLabel(text, opts={}){
+  const {color='#e9e1cf', size=30, bold=false, alt=null, sub=null}=opts;
+  const dpr=2, pad=14;
+  const c=document.createElement('canvas'), g=c.getContext('2d');
+  const font=`${bold?'600':'400'} ${size}px "Iowan Old Style",Palatino,Georgia,serif`;
+  const altFont=`italic ${size*0.62}px "Iowan Old Style",Palatino,Georgia,serif`;
+  g.font=font;
+  const lines=String(text).split("\n");
+  let w=0; lines.forEach(l=>w=Math.max(w,g.measureText(l).width));
+  if(alt){ g.font=altFont; w=Math.max(w, g.measureText(alt).width); }
+  const lineH=size*1.18;
+  const totalLines=lines.length + (alt?1:0) + (sub?1:0);
+  const W=Math.ceil(w+pad*2), H=Math.ceil(lineH*totalLines+pad*2);
+  c.width=W*dpr; c.height=H*dpr; g.scale(dpr,dpr);
+  g.textBaseline='top'; g.textAlign='center';
+  let y=pad;
+  g.font=font; g.fillStyle=color;
+  g.shadowColor='rgba(0,0,0,0.85)'; g.shadowBlur=6;
+  lines.forEach(l=>{ g.fillText(l, W/2, y); y+=lineH; });
+  if(alt){ g.font=altFont; g.fillStyle='#c6bb9c'; g.fillText(alt, W/2, y); y+=lineH; }
+  if(sub){ g.font=`${size*0.5}px Helvetica,Arial,sans-serif`; g.fillStyle='#9a8f78'; g.fillText(sub, W/2, y); }
+  const tex=new THREE.CanvasTexture(c); tex.anisotropy=4; tex.needsUpdate=true;
+  const mat=new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false, depthWrite:false});
+  const sp=new THREE.Sprite(mat);
+  const scale=0.16;
+  sp.scale.set(W*scale, H*scale, 1);
+  sp.userData.baseScale=[W*scale,H*scale];
+  return sp;
+}
+
+/* ----- node group ----- */
+const nodeGroup=new THREE.Group(); scene.add(nodeGroup);
+const lineGroup=new THREE.Group(); scene.add(lineGroup);
+const pickables=[]; // {mesh, id}
+const nodeObjs={};   // id -> {group, sprite, marker}
+
+function buildNode(id){
+  const p=people[id];
+  const grp=new THREE.Group();
+  const v=pos(p); grp.position.copy(v);
+
+  const lab=makeLabel(p.label,{
+    color: p.present? '#f7f1e2' : (p.blood? '#fbeec6':'#f4eddc'),
+    size: p.gen===0?40 : (p.blood && p.gen<22?34:28),
+    bold: p.blood || p.gen<=10 || p.present,
+    alt: p.alt||null
+  });
+  lab.position.z = 0.4;
+  lab.renderOrder = 2;
+  grp.add(lab);
+
+  // little plinth behind major figures
+  let plate=null;
+  if(p.blood && !p.present){
+    const w=lab.userData.baseScale[0]+1.4, h=lab.userData.baseScale[1]+0.9;
+    plate=new THREE.Mesh(
+      new THREE.PlaneGeometry(w,h),
+      new THREE.MeshBasicMaterial({color:0x3a3128, transparent:true, opacity:0.55, depthTest:false, depthWrite:false})
+    );
+    plate.position.z=-0.4; plate.renderOrder=1; grp.add(plate);
+  }
+  if(p.present){
+    const w=lab.userData.baseScale[0]+1.2, h=lab.userData.baseScale[1]+0.7;
+    plate=new THREE.Mesh(
+      new THREE.PlaneGeometry(w,h),
+      new THREE.MeshBasicMaterial({color:0x4a443a, transparent:true, opacity:0.5, depthTest:false, depthWrite:false})
+    );
+    plate.position.z=-0.4; plate.renderOrder=1; grp.add(plate);
+  }
+
+  // pick target (invisible larger plane)
+  const hit=new THREE.Mesh(
+    new THREE.PlaneGeometry(lab.userData.baseScale[0]+2.4, lab.userData.baseScale[1]+2),
+    new THREE.MeshBasicMaterial({visible:false})
+  );
+  grp.add(hit);
+  hit.userData.id=id; pickables.push(hit);
+
+  nodeGroup.add(grp);
+  nodeObjs[id]={group:grp, sprite:lab, hit, plate, p};
+  return grp;
+}
+
+/* ----- fold marker ----- */
+const foldObjs={}; // key -> {group, expanded}
+function buildFoldMarker(key){
+  const f=folds[key];
+  const grp=new THREE.Group();
+  grp.position.set(f.x*COL, -f.genMid*ROW, 0);
+
+  // diamond marker
+  const geo=new THREE.OctahedronGeometry(1.7,0);
+  const mat=new THREE.MeshBasicMaterial({color:0xd23b2c, wireframe:false, transparent:true, opacity:0.92});
+  const dia=new THREE.Mesh(geo,mat);
+  grp.add(dia);
+  const ring=new THREE.Mesh(
+    new THREE.RingGeometry(2.4,2.7,32),
+    new THREE.MeshBasicMaterial({color:0xd23b2c, transparent:true, opacity:0.5, side:THREE.DoubleSide})
+  );
+  grp.add(ring);
+
+  const lab=makeLabel(f.label,{color:'#d6a59c', size:22});
+  lab.position.set(0,-3.4,0.2);
+  grp.add(lab);
+
+  const hit=new THREE.Mesh(new THREE.SphereGeometry(3.2,16,16),
+    new THREE.MeshBasicMaterial({visible:false}));
+  grp.add(hit); hit.userData.fold=key; pickables.push(hit);
+
+  scene.add(grp);
+  foldObjs[key]={group:grp, dia, ring, lab, expanded:false};
+}
+
+/* ----- build edges ----- */
+const edgeLines=[]; // {line, a, b, blood}
+function isHidden(id){
+  const p=people[id];
+  if(p.fold && !foldObjs[p.fold]?.expanded) return true;
+  return false;
+}
+function curveBetween(a,b){
+  const va=pos(people[a]), vb=pos(people[b]);
+  const mid=va.clone().add(vb).multiplyScalar(0.5);
+  mid.z += -2.5 - Math.min(8, Math.abs(va.y-vb.y)*0.06);
+  const curve=new THREE.QuadraticBezierCurve3(va, mid, vb);
+  return curve.getPoints(24);
+}
+const EDGE_STYLES = {
+  ishmael: {color:0x4f9d5d, opacity:0.7},   // green — the Ishmael / Arab line
+  awaited: {color:0xe8c94a, opacity:0.6, dashed:true}, // gold, dashed — still to come
+};
+function buildEdge(a,b,style){
+  const blood = people[a].blood && people[b].blood;
+  const pts=curveBetween(a,b);
+  const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const st = style ? EDGE_STYLES[style] : null;
+  let m, dashed=false;
+  if(st && st.dashed){
+    dashed=true;
+    m=new THREE.LineDashedMaterial({color:st.color, transparent:true, opacity:st.opacity,
+      dashSize:2.2, gapSize:1.8});
+  }else{
+    m=new THREE.LineBasicMaterial({
+      color: st? st.color : (blood?0xe8c94a:0x837a6a),
+      transparent:true, opacity: st? st.opacity : (blood?0.95:0.55)
+    });
+  }
+  const ln=new THREE.Line(g,m);
+  if(dashed) ln.computeLineDistances();
+  lineGroup.add(ln);
+  edgeLines.push({line:ln,a,b,blood,style:style||null});
+}
+
+// build everything
+for(const id in people) buildNode(id);
+for(const k in folds) buildFoldMarker(k);
+for(const e of edges) buildEdge(e[0],e[1],e[2]);
+
+/* ----- fold-bridge edges -----
+   A node whose parent lives *inside* a fold (e.g. Joktan, child of Eber)
+   would float free when that fold is collapsed. Draw a faint connector from
+   the fold marker down to such children, shown only while the fold is closed. */
+const bridgeEdges=[]; // {line, key, child}
+function foldMarkerPos(key){ const f=folds[key]; return new THREE.Vector3(f.x*COL, -f.genMid*ROW, 0); }
+(function buildBridges(){
+  for(const [a,b] of edges){
+    const fa=people[a].fold, fb=people[b].fold;
+    if(fa && !fb){                       // parent folded, child outside
+      const va=foldMarkerPos(fa), vb=pos(people[b]);
+      const mid=va.clone().add(vb).multiplyScalar(0.5); mid.z+=-2.5;
+      const g=new THREE.BufferGeometry().setFromPoints(
+        new THREE.QuadraticBezierCurve3(va,mid,vb).getPoints(20));
+      const m=new THREE.LineBasicMaterial({color:0x837a6a, transparent:true, opacity:0.45});
+      const ln=new THREE.Line(g,m); lineGroup.add(ln);
+      bridgeEdges.push({line:ln, key:fa, child:b});
+    }
+  }
+})();
+
+/* ----- gold spine: a single glowing tube through the bloodline -----
+   Runs Adam → … → David. From David the thread continues to the awaited
+   Messiah as a separate dashed edge, not through Jesus. ----- */
+const bloodChain=["adam","seth","enos","kenan","mahalalel","jared","enoch","methuselah",
+  "lamech","noah","shem","arpachshad","salah","eber","peleg","reu","serug","nahor1",
+  "terah","abraham","isaac","jacob","judah","david"];
+function buildSpine(){
+  const pts=[];
+  bloodChain.forEach(id=>{ const v=pos(people[id]); pts.push(new THREE.Vector3(v.x,v.y,v.z-1.5)); });
+  const curve=new THREE.CatmullRomCurve3(pts,false,'catmullrom',0.4);
+  const tube=new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 400, 0.32, 8, false),
+    new THREE.MeshBasicMaterial({color:0xe8c94a, transparent:true, opacity:0.28})
+  );
+  scene.add(tube);
+  return {curve};
+}
+const spine=buildSpine();
+
+// travelling glow along spine
+const glow=new THREE.Mesh(
+  new THREE.SphereGeometry(0.85,16,16),
+  new THREE.MeshBasicMaterial({color:0xfff2b0})
+);
+scene.add(glow);
+const halo=new THREE.Mesh(
+  new THREE.SphereGeometry(1.8,16,16),
+  new THREE.MeshBasicMaterial({color:0xe8c94a, transparent:true, opacity:0.18})
+);
+scene.add(halo);
+
+/* ----- ambient dust particles ----- */
+const dustN=420, dust=new Float32Array(dustN*3);
+for(let i=0;i<dustN;i++){
+  dust[i*3]=(Math.random()-0.5)*260;
+  dust[i*3+1]=(Math.random()-0.5)*420 - 180;
+  dust[i*3+2]=(Math.random()-0.5)*90 - 10;
+}
+const dustGeo=new THREE.BufferGeometry();
+dustGeo.setAttribute('position',new THREE.BufferAttribute(dust,3));
+const dustPts=new THREE.Points(dustGeo,new THREE.PointsMaterial({
+  color:0x8a7f6a, size:0.5, transparent:true, opacity:0.5, sizeAttenuation:true}));
+scene.add(dustPts);
+
+/* ============================================================
+   VISIBILITY (folding) — animated
+   Each folded node carries foldT in [0..1]: 0 = tucked into the marker,
+   1 = fully out at its true position. We ease foldT toward a target each
+   frame so expand/collapse glide instead of snapping.
+   ============================================================ */
+const foldState={}; // foldKey -> target 0/1 (expanded?1:0)
+for(const k in folds) foldState[k]=0;
+
+function nodeFoldKey(id){ return people[id].fold || null; }
+
+function refreshVisibility(){
+  // Non-folded nodes: simple visibility (always visible here).
+  for(const id in nodeObjs){
+    const fk=nodeFoldKey(id);
+    if(!fk){ nodeObjs[id].group.visible=true; }
+    // folded nodes stay "visible" so the loop can animate them; the loop
+    // hides them once they've fully collapsed (foldT≈0).
+  }
+  edgeLines.forEach(e=>{
+    const af=nodeFoldKey(e.a), bf=nodeFoldKey(e.b);
+    // an edge fully internal/attached to a fold animates with it; otherwise static
+    e.foldKey = af||bf||null;
+  });
+  if(typeof bridgeEdges!=='undefined'){
+    bridgeEdges.forEach(b=>{ b.line.visible = !isHidden(b.child); });
+  }
+}
+
+function toggleFold(key){
+  const f=foldObjs[key];
+  f.expanded=!f.expanded;
+  foldState[key]=f.expanded?1:0;
+  refreshVisibility();
+  if(f.expanded && !reduceMotion){
+    const ids=Object.keys(people).filter(id=>people[id].fold===key);
+    if(ids.length){
+      const mid=ids.reduce((acc,id)=>acc.add(pos(people[id])),new THREE.Vector3())
+        .multiplyScalar(1/ids.length);
+      flyTo(mid, Math.max(80, radius*0.9));
+    }
+  }
+}
+
+// animated fold progress, eased every frame
+const foldT={}; for(const k in folds) foldT[k]=0;
+function updateFolds(dt){
+  const k=1-Math.pow(0.0008, dt); // smooth ease
+  for(const key in folds){
+    const tgt=foldState[key];
+    foldT[key] += (tgt - foldT[key])*k;
+    if(Math.abs(tgt-foldT[key])<0.001) foldT[key]=tgt;
+    const prog=foldT[key];                 // 0 collapsed .. 1 expanded
+    const marker=foldMarkerPos(key);
+    const expanded = prog>0.02;
+    // marker itself: fades out as the chain opens
+    const fo=foldObjs[key];
+    fo.group.visible = prog<0.985;
+    const mo=1-prog;
+    fo.dia.material.opacity=0.92*mo;
+    fo.ring.material.opacity=0.5*mo;
+    if(fo.lab) fo.lab.material.opacity=mo;
+    // member nodes: lerp from marker -> true pos, fade & scale with prog
+    for(const id in nodeObjs){
+      if(people[id].fold!==key) continue;
+      const o=nodeObjs[id];
+      const truePos=pos(people[id]);
+      o.group.visible = prog>0.01;
+      o.group.position.lerpVectors(marker, truePos, prog);
+      o.foldProg=prog;
+    }
+    // edges that belong to this fold fade with it
+    edgeLines.forEach(e=>{
+      if(e.foldKey===key){ e.line.visible=prog>0.05; e.line.material.opacity=(e.blood?0.95:0.55)*prog; }
+    });
+    // bridge edges fade OUT as the fold opens (replaced by real edges)
+    if(typeof bridgeEdges!=='undefined'){
+      bridgeEdges.forEach(b=>{ if(b.key===key){ b.line.material.opacity=0.45*(1-prog); b.line.visible=(1-prog)>0.05 && !isHidden(b.child); }});
+    }
+  }
+}
+refreshVisibility();
+
+/* ============================================================
+   CAMERA CONTROLS (orbit + pan + zoom, pointer + touch)
+   ============================================================ */
+const target=new THREE.Vector3(0,-30,0);
+let radius=300, theta=0, phi=Math.PI/2, thetaBase=0;
+let velT=0, velP=0;
+let desiredX=0, desiredY=-30, desiredRadius=300;
+
+function applyCamera(){
+  const x=target.x + radius*Math.sin(phi)*Math.sin(theta);
+  const y=target.y + radius*Math.cos(phi);
+  const z=target.z + radius*Math.sin(phi)*Math.cos(theta);
+  camera.position.set(x,y,z);
+  camera.lookAt(target);
+}
+applyCamera();
+
+let dragging=false, panning=false, lastX=0, lastY=0;
+let pinchDist=0;
+
+canvas.addEventListener('pointerdown',e=>{
+  dragging=true;
+  // Plain drag = pan (move the treeline). Hold Alt/Ctrl (or right-button) to orbit/look around.
+  panning = !(e.altKey || e.ctrlKey || e.button===2);
+  lastX=e.clientX; lastY=e.clientY;
+  canvas.setPointerCapture(e.pointerId); downX=e.clientX; downY=e.clientY; moved=false;
+  canvas.style.cursor = panning ? 'grabbing' : 'move';
+  flyAnim=null;
+});
+let downX=0,downY=0,moved=false;
+let panVX=0, panVY=0;
+canvas.addEventListener('pointermove',e=>{
+  if(!dragging) return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>6) moved=true;
+  if(panning){
+    const panScale=radius*0.0016;
+    const right=new THREE.Vector3().crossVectors(camera.up, new THREE.Vector3().subVectors(camera.position,target)).normalize();
+    const up=camera.up.clone();
+    // drive the *desired* target; the easing loop follows for a fluid glide
+    const move=new THREE.Vector3();
+    move.addScaledVector(right, -dx*panScale);
+    move.addScaledVector(up, dy*panScale);
+    desiredX = Math.max(-20*COL, Math.min(20*COL, desiredX + move.x));
+    desiredY = Math.max(-34*ROW-30, Math.min(50, desiredY + move.y));
+    panVX = move.x; panVY = move.y;          // remember for release momentum
+  }else{
+    theta-=dx*0.0024; phi-=dy*0.0024;
+    theta=Math.max(-0.7, Math.min(0.7, theta));
+    phi=Math.max(Math.PI/2-0.5, Math.min(Math.PI/2+0.18, phi));
+    thetaBase=theta;                          // idle sway now centers here
+    velT=-dx*0.0024; velP=-dy*0.0024;
+    applyCamera();
+  }
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener('pointerup',e=>{
+  dragging=false;
+  canvas.style.cursor='grab';
+  if(!moved){ handleClick(e.clientX,e.clientY); panVX=panVY=0; }
+});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+// world point under the cursor on the tree plane (z=0)
+const _planeZ0=new THREE.Plane(new THREE.Vector3(0,0,1),0);
+const _ndc=new THREE.Vector2();
+const _ray=new THREE.Raycaster();
+function cursorWorld(cx,cy){
+  const r=canvas.getBoundingClientRect();
+  _ndc.x=((cx-r.left)/r.width)*2-1;
+  _ndc.y=-((cy-r.top)/r.height)*2+1;
+  _ray.setFromCamera(_ndc,camera);
+  const hit=new THREE.Vector3();
+  return _ray.ray.intersectPlane(_planeZ0,hit)?hit:null;
+}
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(e.shiftKey){
+    // shift-scroll: drift vertically through the line without zooming
+    desiredY -= e.deltaY*0.32;
+    desiredY = Math.max(-33*ROW-30, Math.min(40, desiredY));
+    flyAnim=null; return;
+  }
+  // plain scroll: zoom, keeping the point under the cursor anchored
+  const zoomIn = e.deltaY<0;
+  const factor = 1 + (zoomIn?-0.085:0.085);
+  const before = cursorWorld(e.clientX,e.clientY);
+  desiredRadius *= factor;
+  desiredRadius = Math.max(60, Math.min(900, desiredRadius));
+  if(before){
+    // pull the focus toward the cursor when zooming in, release it when zooming out
+    const pull = zoomIn ? 0.28 : 0.12;
+    desiredX += (before.x - desiredX) * pull;
+    desiredY += (before.y - desiredY) * pull;
+    desiredX = Math.max(-18*COL, Math.min(18*COL, desiredX));
+    desiredY = Math.max(-33*ROW-30, Math.min(40, desiredY));
+    // when fully zoomed out, recenter horizontally
+    if(!zoomIn && desiredRadius>650) desiredX += (0 - desiredX)*0.2;
+  }
+  flyAnim=null;
+},{passive:false});
+
+// touch pinch
+canvas.addEventListener('touchmove',e=>{
+  if(e.touches.length===2){
+    e.preventDefault();
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    if(pinchDist){ desiredRadius*=pinchDist/d; desiredRadius=Math.max(60,Math.min(900,desiredRadius)); }
+    pinchDist=d;
+  }
+},{passive:false});
+canvas.addEventListener('touchend',()=>pinchDist=0);
+
+function flyTo(tgt, rad){
+  flyAnim={fromT:target.clone(),toT:tgt.clone(),fromR:radius,toR:rad,t:0};
+}
+let flyAnim=null;
+
+/* ============================================================
+   PICKING
+   ============================================================ */
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+function handleClick(cx,cy){
+  const r=canvas.getBoundingClientRect();
+  mouse.x=((cx-r.left)/r.width)*2-1;
+  mouse.y=-((cy-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(pickables.filter(o=>o.parent&&o.parent.visible!==false),true);
+  if(hits.length){
+    const ud=hits[0].object.userData;
+    if(ud.fold){ toggleFold(ud.fold); return; }
+    if(ud.id){ openPanel(ud.id); flyTo(pos(people[ud.id]).clone(), Math.max(60,radius*0.7)); }
+  } else {
+    closePanel();
+  }
+}
+
+/* ----- info panel ----- */
+const panel=document.getElementById('panel');
+const pEyebrow=document.getElementById('pEyebrow');
+const pName=document.getElementById('pName');
+const pAlt=document.getElementById('pAlt');
+const pDesc=document.getElementById('pDesc');
+const pMeta=document.getElementById('pMeta');
+document.getElementById('closePanel').onclick=closePanel;
+function openPanel(id){
+  const p=people[id];
+  pEyebrow.textContent = p.blood?'Bloodline of promise' : (p.present?'Living people':'Figure');
+  pEyebrow.style.color = p.blood? 'var(--gold)':'var(--signal)';
+  pName.textContent=p.label;
+  pAlt.textContent=p.alt||'';
+  pAlt.style.display=p.alt?'block':'none';
+  pDesc.textContent=p.desc||'';
+  let meta='';
+  if(p.age) meta+=`<b>Lived</b> ${p.age} years<br>`;
+  if(p.tags) meta+= p.tags.map(t=>`<span class="pill">${t}</span>`).join('');
+  pMeta.innerHTML=meta;
+  pMeta.style.display=meta?'block':'none';
+  panel.classList.add('open');
+}
+function closePanel(){ panel.classList.remove('open'); }
+
+/* hide hint after a bit */
+setTimeout(()=>{const h=document.getElementById('hint'); if(h) h.style.opacity='0';},9000);
+
+/* ============================================================
+   RESIZE
+   ============================================================ */
+function resize(){
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize); resize();
+
+/* ============================================================
+   ANIMATE
+   ============================================================ */
+const clock=new THREE.Clock();
+let spineT=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+
+  // gentle idle parallax — sways around the user's chosen orbit instead of
+  // overwriting it, so releasing an alt-drag doesn't snap the view back.
+  if(!dragging && !flyAnim && !reduceMotion){
+    theta = thetaBase + 0.10*Math.sin(performance.now()*0.00009);
+  }
+
+  // pan momentum: let a flick keep gliding briefly after release
+  if(!dragging && !flyAnim && (Math.abs(panVX)>0.001 || Math.abs(panVY)>0.001)){
+    desiredX = Math.max(-20*COL, Math.min(20*COL, desiredX + panVX));
+    desiredY = Math.max(-34*ROW-30, Math.min(50, desiredY + panVY));
+    panVX*=0.90; panVY*=0.90;
+    if(Math.abs(panVX)<0.001) panVX=0;
+    if(Math.abs(panVY)<0.001) panVY=0;
+  }
+
+  // ease toward scroll/zoom targets (smooth, not jumpy)
+  if(!flyAnim){
+    const k=1-Math.pow(0.0001, dt);   // frame-rate independent smoothing
+    target.x += (desiredX - target.x)*k;
+    target.y += (desiredY - target.y)*k;
+    radius   += (desiredRadius - radius)*k;
+    applyCamera();
+  }
+
+  // fly animation (slower, gentle ease)
+  if(flyAnim){
+    flyAnim.t=Math.min(1, flyAnim.t + dt*0.85);
+    const e=1-Math.pow(1-flyAnim.t,3);
+    target.lerpVectors(flyAnim.fromT,flyAnim.toT,e);
+    radius=flyAnim.fromR+(flyAnim.toR-flyAnim.fromR)*e;
+    applyCamera();
+    if(flyAnim.t>=1){ flyAnim=null; desiredX=target.x; desiredY=target.y; desiredRadius=radius; }
+  }
+
+  // travelling glow on spine (slower)
+  if(!reduceMotion){
+    spineT=(spineT+dt*0.025)%1;
+    const gp=spine.curve.getPoint(spineT);
+    glow.position.copy(gp); halo.position.copy(gp);
+    const pulse=0.7+0.3*Math.sin(performance.now()*0.0025);
+    halo.material.opacity=0.12+0.12*pulse;
+  }
+
+  // animate fold expand/collapse
+  updateFolds(dt);
+
+  // depth-fade: labels near the focus row stay crisp; distant rows dim & recede
+  const focusY = target.y;
+  for(const id in nodeObjs){
+    const o=nodeObjs[id];
+    if(o.group.visible===false) continue;
+    const dy = Math.abs(o.group.position.y - focusY);
+    // full opacity within ~1.5 rows, fading to a floor by ~5 rows away
+    const t = Math.min(1, Math.max(0, (dy - ROW*1.4) / (ROW*4)));
+    const foldP = (o.foldProg!==undefined && people[id].fold) ? o.foldProg : 1;
+    const op = (1 - t*0.7) * foldP;
+    o.sprite.material.opacity = op;
+    if(o.plate) o.plate.material.opacity = (o.p.present?0.5:0.55) * op;
+    // slight scale-down of far rows so near labels visually win overlaps
+    const sc = (1 - t*0.22) * (0.55 + 0.45*foldP);
+    const bs=o.sprite.userData.baseScale;
+    o.sprite.scale.set(bs[0]*sc, bs[1]*sc, 1);
+    o.group.renderOrder = Math.round(1000 - dy); // near rows draw on top
+  }
+  for(const k in foldObjs){
+    const f=foldObjs[k];
+    if(f.group.visible){ f.dia.rotation.y+=dt*0.45; f.dia.rotation.x+=dt*0.2;
+      f.ring.lookAt(camera.position);
+      const s=1+0.1*Math.sin(performance.now()*0.0025); f.ring.scale.set(s,s,s); }
+  }
+
+  dustPts.rotation.y += dt*0.006;
+
+  renderer.render(scene,camera);
+}
+animate();
+
+/* open with a slow establishing move from the heavens down to Adam */
+target.set(0,-30,0); radius=620; phi=Math.PI/2; theta=0; applyCamera();
+desiredX=0; desiredY=-30; desiredRadius=300;
+if(!reduceMotion){ setTimeout(()=>flyTo(new THREE.Vector3(0,-30,0),300),400); }
+else { radius=300; applyCamera(); }
+</script>
+</body>
+</html>

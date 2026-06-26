@@ -1,0 +1,433 @@
+﻿<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <title>Suske & Wiske - 4 kleurenreeks</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .header p {
+            font-size: 1.2em;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        nav {
+            padding: 20px;
+            text-align: center;
+        }
+        nav a {
+            color: #2c3e50;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+        }
+        nav a.active {
+            color: #FF6B6B;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .comics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        .comic-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .comic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #FF6B6B;
+        }
+        .comic-card.selected {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .comic-image {
+            width: 120px;
+            height: 160px;
+            border-radius: 8px;
+            margin: 0 auto 15px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .comic-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .comic-number {
+            background: #FF6B6B;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .comic-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .comic-details {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        .comic-condition {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .condition-goed { background: #d4edda; color: #155724; }
+        .condition-zeer-goed { background: #d1ecf1; color: #0c5460; }
+        .condition-unknown { background: #e2e3e5; color: #383d41; }
+        .comic-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .comic-link {
+            color: #FF6B6B;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .comic-link:hover {
+            text-decoration: underline;
+        }
+        .select-checkbox {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        .select-checkbox input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .buy-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        .buy-button:hover {
+            transform: translateY(-3px);
+        }
+        .buy-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .selected-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .image-popup.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .image-popup img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .popup-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        .popup-close:hover {
+            color: #ccc;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+            color: #6c757d;
+        }
+        @media (max-width: 768px) {
+            .comics-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            .header {
+                padding: 40px 20px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body data-category="suske-wiske">
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='/strips/'">← Terug</button>
+            <h1>Suske & Wiske - 4 kleurenreeks</h1>
+            <p>uit de verzameling van David Enker te Haarlem</p>
+        </div>
+        <nav>
+            <a href="/strips/">Terug naar overzicht</a>
+            <a href="sw-4k.html" class="active">Suske & Wiske<br>(4 kleurenreeks)</a>
+            <a href="sw-br.html">Suske & Wiske<br>(buiten reeks)</a>
+            <a href="franquin.html">Franquin</a>
+            <a href="disney.html">Disney</a>
+        </nav>
+        <div class="tab-content">
+            <div id="grid" class="comics-grid"><p class="loading">Bezig met laden...</p></div>
+        </div>
+    </div>
+    <div id="popup" class="image-popup">
+        <img id="popimg" alt="">
+        <span class="popup-close" onclick="document.getElementById('popup').classList.remove('show')">×</span>
+    </div>
+    <button id="buyBtn" class="buy-button" disabled>
+        Koop of informeer <span id="badge" class="selected-count">0</span>
+    </button>
+    <script>
+        const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/export?format=csv&gid=1026598690';
+        const IMAGE_BASE_URL = 'https://www.tonicforthebones.com/strips/images/';
+        const CONTACT_EMAIL = 'david.enker@gmail.com';
+        const CATEGORY = document.body.dataset.category || 'suske-wiske';
+
+        const selectedComics = new Set();
+
+        function renderComics(data) {
+            console.log('Rendering comics for category:', CATEGORY);
+            console.log('Data:', data);
+            const grid = document.getElementById('grid');
+            if (!grid) {
+                console.error('Grid element not found');
+                return;
+            }
+            grid.innerHTML = '<p class="loading">Bezig met laden...</p>';
+
+            try {
+                if (!Array.isArray(data) || data.length === 0) {
+                    console.error('No valid data:', data);
+                    throw new Error('Geen geldige data gevonden');
+                }
+                // Filter out invalid rows
+                const validData = data.filter(row => row && typeof row === 'object' && (row.nummer || row.nr || row.titel || row.title));
+                if (validData.length === 0) {
+                    console.error('No valid rows after filtering:', data);
+                    throw new Error('Geen geldige comics gevonden');
+                }
+
+                let html = '<div class="comics-grid">';
+                validData.forEach((row, index) => {
+                    console.log('Rendering comic:', row);
+                    const comicId = `${CATEGORY}-${index}`;
+                    const condition = (row.conditie || row.staat || row.condition || 'Onbekend').toLowerCase().replace(/\s+/g, '-') || 'unknown';
+                    const imageUrl = (row.image || row.afbeelding || row.cover || row.image_url) ? 
+                        ((row.image || row.afbeelding || row.picture || row.image_url).startsWith('http') ? 
+                         (row.image || row.afbeelding || row.picture || row.image_url) : 
+                         `${IMAGE_BASE_URL}${row.image || row.afbeelding || row.picture || row.image_url}`) : 
+                        'https://via.placeholder.com/120x160?text=No+Image';
+                    const title = row.title || row.titel || row.name || 'Geen titel';
+                    const nr = row.nr || row.nummer || row.number || '';
+                    const druk = row.druk || row.jaar || row.datum || row.edition || 'N.v.t.';
+                    const bijzonderheden = row.bijzonderheden || row.notities || row.opmerkingen || row.notes || '';
+                    const link = row.link || row.url || row.lastdodo || '';
+                    const prijs = row.prijs || row.euro || row.price || 'N.v.t.';
+                    html += `<div class="comic-card" data-id="${comicId}">
+                        <div class="select-checkbox">
+                            <input type="checkbox" onchange="toggleComicSelection('${comicId}')">
+                        </div>
+                        <div class="comic-image">
+                            <img src="${imageUrl}" alt="${title}" loading="lazy" onerror="this.src='https://via.placeholder.com/120x160?text=Image+Error';" onclick="showImagePopup(this.src, this.alt)">
+                        </div>
+                        <div class="comic-details">
+                            <span class="comic-number">${nr}</span>
+                            <div class="comic-title">${title}</div>
+                            <div>
+                                <span>Druk: ${druk}</span><br>
+                                <span class="comic-condition condition-${condition}">Conditie: ${row.conditie || row.staat || row.condition || 'Onbekend'}</span><br>
+                                <span class="comic-price">Prijs: ${prijs}</span><br>
+                                <span>${bijzonderheden}</span><br>
+                                ${link ? `<a href="${link}" target="_blank" class="comic-link">Meer info</a>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                grid.innerHTML = html;
+            } catch (err) {
+                console.error('Error rendering comics:', err);
+                grid.innerHTML = `<p class="error-message">Fout bij laden: ${err.message}</p>`;
+            }
+        }
+
+        function fetchComics() {
+            console.log('Fetching data from:', SPREADSHEET_URL);
+            Papa.parse(SPREADSHEET_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    console.log('Parsed CSV data:', results.data);
+                    if (results.errors.length > 0) {
+                        console.error('CSV parsing errors:', results.errors);
+                        document.getElementById('grid').innerHTML = `<p class="error-message">Fout bij laden van data: ${results.errors[0].message}</p>`;
+                        return;
+                    }
+                    renderComics(results.data);
+                },
+                error: function(err) {
+                    console.error('Error fetching CSV:', err);
+                    document.getElementById('grid').innerHTML = `<p class="error-message">Fout bij ophalen van data: Controleer of de spreadsheet openbaar is</p>`;
+                }
+            });
+        }
+
+        function toggleComicSelection(comicId) {
+            if (selectedComics.has(comicId)) {
+                selectedComics.delete(comicId);
+            } else {
+                selectedComics.add(comicId);
+            }
+            updateBuyButton();
+            document.querySelectorAll('.comic-card').forEach(item => {
+                item.classList.toggle('selected', selectedComics.has(item.dataset.id));
+            });
+        }
+
+        function updateBuyButton() {
+            const buyButton = document.getElementById('buyBtn');
+            const badge = document.getElementById('badge');
+            if (!buyButton || !badge) return;
+            const count = selectedComics.size;
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+            buyButton.disabled = count === 0;
+            buyButton.onclick = () => {
+                if (count > 0) {
+                    const selected = Array.from(selectedComics).join(', ');
+                    window.location.href = `mailto:${CONTACT_EMAIL}?subject=Comic Purchase Inquiry&body=Interested in comics: ${selected}`;
+                }
+            };
+        }
+
+        function showImagePopup(src, alt) {
+            const popup = document.getElementById('popup');
+            const popImg = document.getElementById('popimg');
+            if (!popup || !popImg) return;
+            popImg.src = src;
+            popImg.alt = alt || '';
+            popup.classList.add('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, fetching comics for:', CATEGORY);
+            fetchComics();
+        });
+    </script>
+</body>
+</html>

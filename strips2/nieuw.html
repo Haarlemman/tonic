@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <title>Strips - Verzameling van David Enker</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color, #FF6B6B), var(--secondary-color, #FF8E53));
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        nav {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        nav a {
+            background: white;
+            color: #333;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            min-width: 140px;
+        }
+
+        nav a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        nav a.active {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #FF6B6B;
+            color: white;
+            border-color: #FF6B6B;
+        }
+
+        .stats {
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .comics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 100px;
+        }
+
+        .comic-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .comic-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .comic-card.selected {
+            border: 3px solid #FF6B6B;
+            transform: translateY(-5px);
+        }
+
+        .comic-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 48px;
+            position: relative;
+        }
+
+        .comic-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .comic-info {
+            padding: 20px;
+        }
+
+        .comic-number {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .comic-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .comic-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .comic-price {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .image-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-popup img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .popup-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .buy-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(40,167,69,0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .buy-button:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .buy-button:not(:disabled):hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(40,167,69,0.6);
+        }
+
+        .selected-count {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .comics-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: auto;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body data-category="sw-4k" class="comic-page">
+    <div class="container">
+        <div class="header" style="--primary-color: #FF6B6B; --secondary-color: #FF8E53;">
+            <button class="back-button" onclick="window.location.href='/'">← Terug</button>
+            <h1>David's Strips</h1>
+            <p>uit de verzameling van David Enker te Haarlem</p>
+        </div>
+        
+        <nav>
+            <a href="#" class="category-link active" data-category="sw-4k">Suske & Wiske<br>(4 kleurenreeks)</a>
+            <a href="#" class="category-link" data-category="sw-br">Suske & Wiske<br>(buiten reeks)</a>
+            <a href="#" class="category-link" data-category="franquin">Franquin</a>
+            <a href="#" class="category-link" data-category="disney">Disney</a>
+        </nav>
+
+        <div class="controls">
+            <input type="text" class="search-box" placeholder="Zoek op titel, nummer of beschrijving..." id="searchInput">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">Alle</button>
+                <button class="filter-btn" data-filter="available">Beschikbaar</button>
+                <button class="filter-btn" data-filter="sold">Verkocht</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <span id="totalCount">0</span> strips gevonden
+        </div>
+        
+        <div class="tab-content">
+            <div id="grid" class="comics-grid">
+                <div class="loading">Strips worden geladen...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="popup" class="image-popup">
+        <img id="popimg" alt="">
+        <span class="popup-close">×</span>
+    </div>
+    
+    <button id="buyBtn" class="buy-button" disabled>
+        Koop of informeer <span id="badge" class="selected-count">0</span>
+    </button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+        class ComicCollection {
+            constructor() {
+                this.comics = [];
+                this.selectedComics = new Set();
+                this.currentFilter = 'all';
+                this.searchTerm = '';
+                this.currentCategory = 'sw-4k'; // Initial category
+                
+                this.csvUrlMapping = {
+                    'sw-4k': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/pub?gid=1026598690&single=true&output=csv',
+                    'sw-br': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/pub?gid=595534884&single=true&output=csv',
+                    'franquin': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/pub?gid=1889510080&single=true&output=csv',
+                    'disney': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/pub?gid=253283921&single=true&output=csv'
+                };
+
+                this.init();
+            }
+
+            async init() {
+                await this.loadData();
+                this.setupEventListeners();
+                this.renderComics();
+                this.updateStats();
+            }
+
+            async loadData() {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '<div class="loading">Strips worden geladen...</div>';
+                
+                this.comics = [];
+                for (const category in this.csvUrlMapping) {
+                    const url = this.csvUrlMapping[category];
+                    try {
+                        const response = await fetch(url);
+                        const csvData = await response.text();
+                        
+                        const parsed = Papa.parse(csvData, {
+                            header: true,
+                            skipEmptyLines: true,
+                            dynamicTyping: true
+                        });
+                        
+                        this.comics.push(...parsed.data.map((row, index) => ({
+                            id: `${category}-${index}`,
+                            number: row.Nummer || row.Number || row.Nr || null,
+                            title: row.Titel || row.Title || row.Naam || 'Onbekende titel',
+                            year: row.Jaar || row.Year || row.Uitgave || null,
+                            publisher: row.Uitgever || row.Publisher || null,
+                            condition: row.Staat || row.Condition || null,
+                            price: row.Prijs || row.Price || null,
+                            available: (row.Beschikbaar || row.Available) !== 'Nee' && (row.Beschikbaar || row.Available) !== 'No',
+                            description: row.Beschrijving || row.Description || null,
+                            image: row.Afbeelding || row.Image || null,
+                            category: category
+                        })));
+                    } catch (error) {
+                        console.error(`Error loading data for ${category}:`, error);
+                        // No sample data fallback to avoid confusion, user needs to fix the links if they are broken.
+                        // Display error message to user
+                        grid.innerHTML = `<div class="loading">Er is een fout opgetreden bij het laden van de strips. Controleer de internetverbinding of de databronnen.</div>`;
+                    }
+                }
+            }
+
+            setupEventListeners() {
+                // Search functionality
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.renderComics();
+                    this.updateStats();
+                });
+
+                // Filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentFilter = e.target.dataset.filter;
+                        this.renderComics();
+                        this.updateStats();
+                    });
+                });
+
+                // Category links
+                document.querySelectorAll('.category-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('.category-link').forEach(l => l.classList.remove('active'));
+                        e.target.closest('.category-link').classList.add('active');
+                        this.currentCategory = e.target.closest('.category-link').dataset.category;
+                        this.renderComics();
+                        this.updateStats();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                });
+
+                // Image popup
+                document.getElementById('popup').addEventListener('click', (e) => {
+                    if (e.target.id === 'popup' || e.target.classList.contains('popup-close')) {
+                        document.getElementById('popup').style.display = 'none';
+                    }
+                });
+
+                // Buy button
+                document.getElementById('buyBtn').addEventListener('click', () => {
+                    this.handlePurchase();
+                });
+            }
+
+            filterComics() {
+                return this.comics.filter(comic => {
+                    const matchesCategory = this.currentCategory === 'all' || comic.category === this.currentCategory;
+                    
+                    const matchesSearch = !this.searchTerm ||
+                        (comic.title && comic.title.toLowerCase().includes(this.searchTerm)) ||
+                        (comic.number && comic.number.toString().includes(this.searchTerm)) ||
+                        (comic.description && comic.description.toLowerCase().includes(this.searchTerm));
+
+                    const matchesFilter = this.currentFilter === 'all' ||
+                        (this.currentFilter === 'available' && comic.available) ||
+                        (this.currentFilter === 'sold' && !comic.available);
+
+                    return matchesCategory && matchesSearch && matchesFilter;
+                }).sort((a, b) => (a.number || 0) - (b.number || 0)); // Sort by number
+            }
+
+            renderComics() {
+                const filteredComics = this.filterComics();
+                const grid = document.getElementById('grid');
+
+                if (filteredComics.length === 0) {
+                    grid.innerHTML = '<div class="loading">Geen strips gevonden met de huidige filters.</div>';
+                    return;
+                }
+
+                grid.innerHTML = filteredComics.map(comic => `
+                    <div class="comic-card ${this.selectedComics.has(comic.id) ? 'selected' : ''}"
+                        data-id="${comic.id}">
+                        <div class="comic-image" onclick="app.showImage('${comic.image}')">
+                            ${comic.image ?
+                                `<img src="${comic.image}" alt="${comic.title}" onerror="this.style.display='none'">` :
+                                '📖'
+                            }
+                        </div>
+                        <div class="comic-info">
+                            ${comic.number !== null ? `<div class="comic-number">Nr. ${comic.number}</div>` : ''}
+                            <div class="comic-title">${comic.title}</div>
+                            <div class="comic-details">
+                                ${comic.year ? `Jaar: ${comic.year}<br>` : ''}
+                                ${comic.publisher ? `Uitgever: ${comic.publisher}<br>` : ''}
+                                ${comic.condition ? `Staat: ${comic.condition}<br>` : ''}
+                                ${comic.description ? `${comic.description}` : ''}
+                            </div>
+                            ${comic.available ?
+                                `<div class="comic-price">${comic.price || 'Prijs op aanvraag'}</div>` :
+                                '<div style="color: #dc3545; font-weight: bold; margin-top: 10px;">Verkocht</div>'
+                            }
+                        </div>
+                    </div>
+                `).join('');
+
+                // Add click listeners for selection
+                document.querySelectorAll('.comic-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        // Don't select if clicking on image
+                        if (e.target.tagName === 'IMG' || e.target.classList.contains('comic-image')) return;
+                        
+                        const comicId = card.dataset.id;
+                        const comic = this.comics.find(c => c.id === comicId);
+                        
+                        if (comic && comic.available) {
+                            this.toggleSelection(comicId);
+                            card.classList.toggle('selected');
+                            this.updateBuyButton();
+                        }
+                    });
+                });
+            }
+
+            showImage(imageSrc) {
+                if (imageSrc && imageSrc !== 'null') {
+                    document.getElementById('popimg').src = imageSrc;
+                    document.getElementById('popup').style.display = 'flex';
+                }
+            }
+
+            toggleSelection(comicId) {
+                if (this.selectedComics.has(comicId)) {
+                    this.selectedComics.delete(comicId);
+                } else {
+                    this.selectedComics.add(comicId);
+                }
+            }
+
+            updateBuyButton() {
+                const buyBtn = document.getElementById('buyBtn');
+                const badge = document.getElementById('badge');
+                const count = this.selectedComics.size;
+                
+                badge.textContent = count;
+                buyBtn.disabled = count === 0;
+            }
+
+            updateStats() {
+                const filteredComics = this.filterComics();
+                document.getElementById('totalCount').textContent = filteredComics.length;
+            }
+
+            handlePurchase() {
+                if (this.selectedComics.size === 0) return;
+
+                const selectedTitles = Array.from(this.selectedComics)
+                    .map(id => this.comics.find(c => c.id === id))
+                    .filter(Boolean)
+                    .map(comic => {
+                        const titleLine = `${comic.number ? `Nr. ${comic.number}: ` : ''}${comic.title}`;
+                        const categoryLine = `Categorie: ${this.getCategoryName(comic.category)}`;
+                        return `${titleLine} (${categoryLine})`;
+                    })
+                    .join('\n');
+
+                const message = `Hallo David,\n\nIk ben geïnteresseerd in de volgende strips uit uw verzameling:\n\n${selectedTitles}\n\nKunt u mij meer informatie geven over beschikbaarheid en prijs?\n\nMet vriendelijke groet`;
+                
+                const mailtoLink = `mailto:david@enker.nl?subject=Interesse in strips uit uw verzameling&body=${encodeURIComponent(message)}`;
+                window.location.href = mailtoLink;
+            }
+
+            getCategoryName(categoryKey) {
+                const names = {
+                    'sw-4k': 'Suske & Wiske (4 kleurenreeks)',
+                    'sw-br': 'Suske & Wiske (buiten reeks)',
+                    'franquin': 'Franquin',
+                    'disney': 'Disney'
+                };
+                return names[categoryKey] || categoryKey;
+            }
+        }
+
+        // Initialize the application
+        const app = new ComicCollection();
+    </script>
+</body>
+</html>

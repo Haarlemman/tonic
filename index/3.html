@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>David Enker - Paradox Prime</title>
+    <style>
+        /* --- 1. CORE VARIABLES & RESET --- */
+        :root {
+            --paper: #E8E6D9;
+            --red: #D9381E;
+            --yellow: #F2A900;
+            --teal: #0097A7;
+            --black: #0F0F0F;    
+            --white: #F5F5F0;
+            --neon-blue: #0ff;
+            --neon-pink: #f0f;
+            --neon-green: #0f0;
+        }
+
+        * { box-sizing: border-box; cursor: default; }
+        a, button, .reel-group, .close-btn { cursor: pointer; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--paper);
+            color: var(--black);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            height: 100vh; width: 100vw;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- 2. BACKGROUNDS --- */
+        .texture {
+            position: absolute; inset: 0;
+            opacity: 0.25; pointer-events: none; z-index: 2;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            mix-blend-mode: multiply;
+        }
+
+        /* --- 3. THE MONITOR (Top Left) --- */
+        #monitor-panel {
+            position: absolute;
+            top: 2rem; left: 2rem;
+            width: 220px; 
+            z-index: 20;
+            pointer-events: none; 
+        }
+
+        .monitor-header {
+            font-size: 0.7rem;
+            font-weight: 900;
+            margin-bottom: 5px;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 2px;
+            display: flex; justify-content: space-between;
+        }
+
+        /* The 200x200 Stage */
+        .monitor-stage {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            /* Border removed as requested */
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* The Cycling Images */
+        .monitor-disc {
+            position: absolute;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            opacity: 0;
+            will-change: transform;
+            transition: opacity 1s ease-in-out;
+        }
+
+        /* Scanline Overlay for the monitor */
+        .monitor-scan {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 21;
+        }
+
+        /* --- 4. TEXT OUTPUT --- */
+        .monitor-log {
+            margin-top: 10px;
+            font-size: 0.6rem;
+            line-height: 1.2;
+            font-weight: bold;
+            height: 40px;
+            overflow: hidden;
+            color: var(--black);
+            opacity: 0.8;
+        }
+
+        /* --- 5. UI ELEMENTS (Status) --- */
+        .sys-status {
+            position: absolute; top: 2rem; right: 2rem; 
+            text-align: right; font-size: 0.7rem; opacity: 0.6;
+            z-index: 10; pointer-events: none; font-weight: bold;
+        }
+
+        /* --- 6. ANIMATIONS --- */
+        
+        /* 1. Calm Drift */
+        .spin-slow { 
+            animation: rotate-calm 20s linear infinite; 
+        }
+
+        /* 2. Frantic Mode - No Wobble, just fast speed */
+        .spin-frantic { 
+            animation: rotate-calm 0.1s linear infinite; /* Re-using calm keyframes but super fast */
+            filter: contrast(1.4);
+        }
+
+        @keyframes rotate-calm {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* (Old wobble animation removed) */
+
+        .cursor-blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- 7. THE CORE (SVG SYSTEM) --- */
+        #core-container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85vmin; height: 85vmin; 
+            z-index: 5;
+        }
+        svg.reel-system { width: 100%; height: 100%; overflow: visible; }
+        .reel-group { transform-origin: 50% 50%; cursor: pointer; transition: all 0.2s ease-out; }
+        
+        /* Hover Effects */
+        .reel-group:hover path, .reel-group:hover polygon { fill: rgba(0,0,0,0.9) !important; stroke-width: 3px; vector-effect: non-scaling-stroke; }
+        .group-outer:hover path { stroke: var(--neon-pink); filter: drop-shadow(0 0 20px var(--neon-pink)); }
+        .group-outer:hover text { fill: var(--neon-pink) !important; text-shadow: 0 0 15px var(--neon-pink); }
+        .group-mid:hover polygon { stroke: var(--neon-blue); filter: drop-shadow(0 0 20px var(--neon-blue)); }
+        .group-mid:hover text { fill: var(--neon-blue) !important; text-shadow: 0 0 15px var(--neon-blue); }
+        .group-inner:hover polygon { stroke: var(--neon-green); filter: drop-shadow(0 0 20px var(--neon-green)); }
+        .group-inner:hover text { fill: var(--neon-green) !important; text-shadow: 0 0 15px var(--neon-green); }
+        
+        text { font-family: 'Impact', sans-serif; text-transform: uppercase; fill: currentColor; font-weight: normal; pointer-events: none; }
+
+        /* SVG Animations */
+        .anim-name { animation: rotate-slow 120s linear infinite; }
+        .anim-outer { animation: berserk-outer 14s linear infinite; }
+        .anim-mid { animation: berserk-mid 14s linear infinite; }
+        .anim-inner { animation: berserk-inner 14s linear infinite; }
+        .reel-group:hover { animation-play-state: paused !important; }
+
+        @keyframes rotate-slow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Complex chaotic rotations for rings */
+        @keyframes berserk-outer { 0%, 15% { transform: rotate(0deg); } 20% { transform: rotate(180deg); } 30% { transform: rotate(720deg); } 50%, 65% { transform: rotate(360deg); } 70% { transform: rotate(500deg); } 100% { transform: rotate(360deg); } }
+        @keyframes berserk-mid { 0%, 15% { transform: rotate(0deg); } 25% { transform: rotate(-360deg); } 35% { transform: rotate(-500deg); } 50%, 65% { transform: rotate(0deg); } 75% { transform: rotate(120deg); } 100% { transform: rotate(-360deg); } }
+        @keyframes berserk-inner { 0%, 15% { transform: rotate(0deg); } 20% { transform: rotate(400deg); } 30% { transform: rotate(600deg); } 50%, 65% { transform: rotate(0deg); } 75% { transform: rotate(-180deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- 8. POPUP CARD --- */
+        #card {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -40%) scale(0.9);
+            opacity: 0; pointer-events: none;
+            width: 320px; max-width: 90vw;
+            background: rgba(240, 234, 214, 0.98);
+            border: 4px solid var(--black);
+            padding: 0; z-index: 100;
+            box-shadow: 20px 20px 0 rgba(0,0,0,0.25);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #card.visible { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+        .card-head { background: var(--black); color: var(--white); padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 25px; }
+        .card-btn { display: block; margin-top: 20px; padding: 15px; background: transparent; border: 3px solid var(--black); color: var(--black); text-align: center; text-decoration: none; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; transition: 0.1s; }
+        .card-btn:hover { background: var(--black); color: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0 rgba(0,0,0,0.2); }
+
+        /* --- 9. RESPONSIVE --- */
+        @media (max-width: 768px) {
+            /* Move Monitor to bottom on mobile so it doesn't overlap header/rings */
+            #monitor-panel { top: auto; bottom: 2rem; left: 1rem; transform: scale(0.7); transform-origin: bottom left; }
+            .sys-status { top: 1rem; right: 1rem; font-size: 0.6rem; }
+            #core-container { width: 95vmin; height: 95vmin; }
+            .text-name { font-size: 44px !important; letter-spacing: 4px !important; }
+            .text-outer { font-size: 32px !important; }
+            .text-mid { font-size: 18px !important; }
+            .text-inner { font-size: 16px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="texture"></div>
+
+    <div id="monitor-panel">
+        <div class="monitor-header">
+            <span>VISUAL.FEED</span>
+            <span>AUTO</span>
+        </div>
+        <div class="monitor-stage" id="monitor-stage">
+            <div class="monitor-scan"></div>
+            </div>
+        <div class="monitor-log" id="monitor-text">
+            > INITIALIZING...<span class="cursor-blink">_</span>
+        </div>
+    </div>
+
+    <div class="sys-status">
+        <p>SYS: ONLINE</p>
+        <p>LOC: HAARLEM / NL</p>
+        <p>USER: GUEST</p>
+    </div>
+
+    <div id="core-container">
+        <svg class="reel-system" viewBox="0 0 600 600">
+            <defs>
+                <path id="path-name" d="M 300, 300 m -300, 0 a 300,300 0 1,1 600,0 a 300,300 0 1,1 -600,0" />
+                <path id="path-outer" d="M 300, 300 m -204, 0 a 204,204 0 1,1 408,0 a 204,204 0 1,1 -408,0" />
+                <path id="path-mid" d="M 300, 300 m -170, 0 a 170,170 0 1,1 340,0 a 170,170 0 1,1 -340,0" />
+                <path id="path-inner" d="M 300, 300 m -110, 0 a 110,110 0 1,1 220,0 a 110,110 0 1,1 -220,0" />
+            </defs>
+
+            <g class="reel-group anim-name" style="pointer-events: none; color: var(--black); opacity: 1;">
+                <text class="text-name" font-size="54" letter-spacing="8" fill="currentColor">
+                    <textPath href="#path-name" startOffset="0%">
+                        DAVID ENKER • PARADOX PRIME • HAARLEM • WRITER • DESIGNER •
+                    </textPath>
+                </text>
+            </g>
+
+            <g class="reel-group anim-outer group-outer" onclick="activate('paradox')" style="color: var(--red)">
+                <path d="M300 300 L300 96 A204 204 0 0 1 476.6 198 Z" fill="currentColor" /> 
+                <path d="M300 300 L476.6 402 A204 204 0 0 1 300 504 Z" fill="currentColor" /> 
+                <path d="M300 300 L123.4 402 A204 204 0 0 1 123.4 198 Z" fill="currentColor" /> 
+                <text class="text-outer" font-size="42" dy="-20" letter-spacing="5" fill="var(--paper)" style="font-weight: 900;">
+                    <textPath href="#path-outer" startOffset="6%">
+                        /// POLITICS /// FREE WILL
+                    </textPath>
+                </text>
+            </g>
+
+            <g class="reel-group anim-mid group-mid" onclick="activate('books')" style="color: var(--yellow)">
+                <polygon points="300,90 481,405 119,405" fill="currentColor" opacity="1" style="mix-blend-mode: multiply;" />
+                <text class="text-mid" font-size="22" dy="-10" letter-spacing="2" fill="black" style="font-weight: bold;">
+                    <textPath href="#path-mid" startOffset="50%" text-anchor="middle">
+                        TONIC FOR THE BONES • MANUSCRIPT
+                    </textPath>
+                </text>
+            </g>
+
+            <g class="reel-group anim-inner group-inner" onclick="activate('art')" style="color: var(--teal)">
+                <polygon points="119,195 481,195 300,510" fill="currentColor" opacity="1" style="mix-blend-mode: multiply;" />
+                <text class="text-inner" font-size="20" dy="-12" letter-spacing="2" fill="white" style="font-weight: bold;">
+                    <textPath href="#path-inner" startOffset="50%" text-anchor="middle">
+                        GRAPHIC DATA • JEWISH ICONOGRAPHY
+                    </textPath>
+                </text>
+            </g>
+
+            <circle cx="300" cy="300" r="15" fill="#111" />
+            <circle cx="300" cy="300" r="5" fill="red">
+                <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite" />
+            </circle>
+        </svg>
+    </div>
+
+    <div id="card">
+        <div class="card-head"><span id="c-id">SYS.DAT</span><span onclick="closeCard()" class="close-btn">[✕]</span></div>
+        <div class="card-body">
+            <h2 id="c-title" style="margin:0 0 15px 0; font-family:'Impact'; font-size:2rem; text-transform:uppercase; line-height:0.9">TITLE</h2>
+            <p id="c-desc" style="font-size:1rem; line-height:1.4; font-weight: 500;">Description.</p>
+            <a id="c-link" href="#" class="card-btn">ENTER SECTION</a>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const contentData = {
+            'paradox': {
+                title: 'The Paradox',
+                desc: 'Reflections on the complexity of life. "The more you learn, the more you realise you know nothing."',
+                color: '#D9381E', 
+                link: '/philosophy',
+                stream: 'ANALYZING... FREE WILL ALGORITHMS... POLITICAL SPECTRUM DEVIATION...'
+            },
+            'books': {
+                title: 'Tonic For The Bones',
+                desc: 'My second book. A personal narrative on my 2021 diagnosis, family, and the stories we tell to survive.',
+                color: '#F2A900', 
+                link: '/books',
+                stream: 'DECODING MANUSCRIPT... DIAGNOSIS: 2021... ARCHIVE: AILISH & YARON...'
+            },
+            'art': {
+                title: 'Visual Data',
+                desc: 'Experiments in structure, typography, and Jewish iconography.',
+                color: '#0097A7', 
+                link: '/art',
+                stream: 'RENDERING VECTORS... ISRAEL/JEWISH ARCHIVE... TYPOGRAPHIC OVERLAY...'
+            }
+        };
+
+        // --- 2. MONITOR ENGINE (200x200) ---
+        // Updated Image List
+        const discImages = [
+            'images/mandala.png', 'images/gotlib.png', 'images/green.png', 'images/bats.png', 
+            'images/sun.png', 'images/vetruvian.png', 'images/cccp.png', 'images/earthclouds.png', 
+            'images/dao.png', 'images/escherbol.png', 'images/hmv.png', 'images/pioneer.png', 
+            'images/voyager.png', 'images/penrose.png', 'images/snakes.png'
+        ];
+        
+        // Random blends
+        const blendModes = ['multiply', 'normal', 'difference', 'multiply', 'darken'];
+        
+        let currentDiscIndex = 0;
+        const monitorStage = document.getElementById('monitor-stage');
+        const monitorText = document.getElementById('monitor-text');
+
+        function updateMonitorText(msg) {
+            monitorText.innerHTML = `> ${msg}<br>> <span class='cursor-blink'>_</span>`;
+        }
+
+        function spawnDisc() {
+            // 1. Create Image
+            const img = document.createElement('img');
+            img.src = discImages[currentDiscIndex];
+            img.classList.add('monitor-disc');
+            
+            // 2. Random Blend Mode
+            const randomBlend = blendModes[Math.floor(Math.random() * blendModes.length)];
+            img.style.mixBlendMode = randomBlend;
+            
+            // 3. Add to stage
+            monitorStage.appendChild(img);
+            
+            // 4. ANIMATION SEQUENCE
+            
+            // PHASE A: ENTER (Fade In + Slow Spin)
+            setTimeout(() => {
+                img.style.opacity = '0.9'; 
+                img.classList.add('spin-slow');
+                updateMonitorText(`LOADING: IMG_0${currentDiscIndex}`);
+            }, 100);
+
+            // PHASE B: FRANTIC (Fast Spin - No Wobble)
+            setTimeout(() => {
+                img.classList.remove('spin-slow');
+                img.classList.add('spin-frantic');
+                updateMonitorText(`SYNCING DATA...`);
+            }, 6000); // 6s calm
+
+            // PHASE C: EXIT (Fade Out)
+            setTimeout(() => {
+                img.style.opacity = '0';
+            }, 9000); // 3s chaotic
+
+            // PHASE D: CLEANUP
+            setTimeout(() => {
+                img.remove();
+            }, 11000); 
+
+            // 6. PREPARE NEXT
+            currentDiscIndex = (currentDiscIndex + 1) % discImages.length;
+        }
+
+        // Start cycle
+        spawnDisc();
+        setInterval(spawnDisc, 9000);
+
+        // --- 3. INTERACTION LOGIC ---
+        const card = document.getElementById('card');
+        let streamInterval;
+
+        function runTextStream(text) {
+            // Override monitor text with clicked content
+            clearInterval(streamInterval);
+            let index = 0;
+            monitorText.innerHTML = "> ACCESSING...<br>> ";
+            streamInterval = setInterval(() => {
+                if (index < text.length) {
+                    monitorText.innerHTML += text[index];
+                    index++;
+                    monitorText.scrollTop = monitorText.scrollHeight;
+                } else {
+                    clearInterval(streamInterval);
+                    monitorText.innerHTML += "<span class='cursor-blink'>_</span>";
+                }
+            }, 30);
+        }
+
+        function activate(key) {
+            const item = contentData[key];
+            if(!item) return;
+
+            document.getElementById('c-id').innerText = `SYS.${key.toUpperCase()}`;
+            document.getElementById('c-title').innerText = item.title;
+            document.getElementById('c-title').style.color = item.color;
+            document.getElementById('c-desc').innerText = item.desc;
+            document.getElementById('c-link').href = item.link;
+            
+            // Send stream to monitor
+            runTextStream(item.stream);
+            
+            const btn = document.getElementById('c-link');
+            btn.style.borderColor = item.color;
+            btn.onmouseover = () => { btn.style.background = item.color; btn.style.color = 'white'; };
+            btn.onmouseout = () => { btn.style.background = 'transparent'; btn.style.color = 'black'; };
+
+            card.classList.add('visible');
+        }
+
+        function closeCard() {
+            card.classList.remove('visible');
+            updateMonitorText("WAITING FOR INPUT...");
+        }
+
+        document.body.addEventListener('click', (e) => {
+            if(!e.target.closest('.reel-group') && !e.target.closest('#card')) {
+                closeCard();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <title>Suske & Wiske (4 kleurenreeks)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .comics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 100px;
+        }
+        .comic-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .comic-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        .comic-card.selected {
+            border: 3px solid #FF6B6B;
+            transform: translateY(-5px);
+        }
+        .comic-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 48px;
+            position: relative;
+        }
+        .comic-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .comic-info {
+            padding: 20px;
+        }
+        .comic-number {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .comic-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .comic-details div {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .comic-details strong {
+            color: #666;
+            font-weight: bold;
+        }
+        .comic-price {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+        .image-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .image-popup img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .popup-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .buy-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(40,167,69,0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        .buy-button:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .buy-button:not(:disabled):hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(40,167,69,0.6);
+        }
+        .selected-count {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+        @media (max-width: 768px) {
+            .comics-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='index.html'">← Terug</button>
+            <h1>Suske & Wiske<br>(4 kleurenreeks)</h1>
+        </div>
+        <div class="tab-content">
+            <div id="grid" class="comics-grid">
+                <div class="loading">Strips worden geladen...</div>
+            </div>
+        </div>
+    </div>
+    <div id="popup" class="image-popup">
+        <img id="popimg" alt="">
+        <span class="popup-close">×</span>
+    </div>
+    <button id="buyBtn" class="buy-button" disabled>
+        Koop of informeer <span id="badge" class="selected-count">0</span>
+    </button>
+    <script>
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-AJ2_vyyxvfpdRPd3v6MXbbI8bPF7-fLNpQx7jOGnm8mXoIhh-Gkza5xMtG8WKUHGy5ILCkBT5L-R/pub?gid=1026598690&single=true&output=csv';
+        const comicsGrid = document.getElementById('grid');
+        const selectedComics = new Set();
+        const buyButton = document.getElementById('buyBtn');
+
+        // This function now simply returns the URL provided by the CSV
+        function getDirectImageUrl(url) {
+            return url;
+        }
+
+        function loadComics() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const comics = results.data.map((row, index) => {
+                        const comic = { ...row };
+                        comic.id = `sw-4k-${index}`;
+                        comic.available = (row.Beschikbaar || row.Available) !== 'Nee' && (row.Beschikbaar || row.Available) !== 'No';
+                        comic.image = row.Afbeelding || row.Image || null;
+                        comic.title = row.Titel || row.Title || row.Naam || 'Onbekende titel';
+                        comic.number = row.Nummer || row.Number || row.Nr || null;
+                        comic.description = row.Beschrijving || row.Description || null;
+                        comic.price = row.Prijs || row.Price || null;
+                        return comic;
+                    }).sort((a, b) => (a.number || 0) - (b.number || 0));
+                    renderComics(comics);
+                }
+            });
+        }
+        function renderComics(comics) {
+            comicsGrid.innerHTML = comics.map(comic => {
+                const detailsHtml = Object.keys(comic)
+                    .filter(key => !['nummer', 'number', 'nr', 'titel', 'title', 'naam', 'beschikbaar', 'available', 'afbeelding', 'image', 'prijs', 'price', 'category', 'id', 'description'].includes(key.toLowerCase()))
+                    .map(key => `<div><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${comic[key]}</div>`).join('');
+                
+                const displayPrice = (comic.price && comic.price.trim() !== '') ? comic.price : 'Prijs op aanvraag';
+                const directImageUrl = getDirectImageUrl(comic.image);
+                const imageSrc = directImageUrl ? directImageUrl : 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Geen+afbeelding';
+
+                return `
+                    <div class="comic-card ${selectedComics.has(comic.id) ? 'selected' : ''}" data-id="${comic.id}">
+                        <div class="comic-image" onclick="showImage('${directImageUrl}')">
+                            <img src="${imageSrc}" alt="${comic.title}" onerror="this.src='https://placehold.co/400x300/FF6B6B/FFFFFF?text=Geen+afbeelding'">
+                        </div>
+                        <div class="comic-info">
+                            ${comic.number !== null ? `<div class="comic-number">Nr. ${comic.number}</div>` : ''}
+                            <div class="comic-title">${comic.title}</div>
+                            <div class="comic-details">
+                                ${detailsHtml}
+                                ${comic.description ? `<div><strong>Beschrijving:</strong> ${comic.description}</div>` : ''}
+                            </div>
+                            ${comic.available ? `<div class="comic-price">${displayPrice}</div>` : '<div style="color: #dc3545; font-weight: bold; margin-top: 10px;">Verkocht</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.querySelectorAll('.comic-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'IMG' || e.target.classList.contains('comic-image')) return;
+                    const comicId = card.dataset.id;
+                    const comic = comics.find(c => c.id === comicId);
+                    if (comic && comic.available) {
+                        toggleSelection(comicId);
+                        card.classList.toggle('selected');
+                        updateBuyButton();
+                    }
+                });
+            });
+        }
+        function showImage(imageSrc) {
+            if (imageSrc && imageSrc !== 'null') {
+                document.getElementById('popimg').src = imageSrc;
+                document.getElementById('popup').style.display = 'flex';
+            }
+        }
+        function toggleSelection(comicId) {
+            if (selectedComics.has(comicId)) {
+                selectedComics.delete(comicId);
+            } else {
+                selectedComics.add(comicId);
+            }
+        }
+        function updateBuyButton() {
+            const count = selectedComics.size;
+            document.getElementById('badge').textContent = count;
+            buyButton.disabled = count === 0;
+        }
+        function handlePurchase() {
+            if (selectedComics.size === 0) return;
+            const selectedTitles = Array.from(selectedComics).map(id => {
+                const comic = document.querySelector(`[data-id="${id}"]`);
+                const title = comic ? comic.querySelector('.comic-title').textContent : '';
+                const number = comic ? comic.querySelector('.comic-number')?.textContent : '';
+                return `${number} ${title}`.trim();
+            }).join('\n');
+            const message = `Hallo David,\n\nIk ben geïnteresseerd in de volgende strips:\n\n${selectedTitles}\n\nKunt u mij meer informatie geven over beschikbaarheid en prijs?\n\nMet vriendelijke groet`;
+            const mailtoLink = `mailto:david@enker.nl?subject=Interesse in strips uit uw verzameling&body=${encodeURIComponent(message)}`;
+            window.location.href = mailtoLink;
+        }
+        document.getElementById('popup').addEventListener('click', (e) => {
+            if (e.target.id === 'popup' || e.target.classList.contains('popup-close')) {
+                document.getElementById('popup').style.display = 'none';
+            }
+        });
+        buyButton.addEventListener('click', handlePurchase);
+        window.onload = loadComics;
+    </script>
+</body>
+</html>
+

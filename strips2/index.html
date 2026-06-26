@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Vreemde Verzameling - Stripcatalogus</title>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Oswald:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Oswald', sans-serif; }
+        .font-serif { font-family: 'Merriweather', serif; }
+        .halftone {
+            background-image: radial-gradient(#000 1px, transparent 1px);
+            background-size: 8px 8px;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- ICON COMPONENTS ---
+        const Icon = ({ path, className, size = 20 }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {path}
+            </svg>
+        );
+
+        const Icons = {
+            BookOpen: (props) => <Icon {...props} path={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} />,
+            Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />,
+            Filter: (props) => <Icon {...props} path={<><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>} />,
+            Upload: (props) => <Icon {...props} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>} />,
+            X: (props) => <Icon {...props} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
+            Mail: (props) => <Icon {...props} path={<><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>} />,
+            Hash: (props) => <Icon {...props} path={<><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></>} />,
+            Award: (props) => <Icon {...props} path={<><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></>} />,
+            DollarSign: (props) => <Icon {...props} path={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>} />,
+            Image: (props) => <Icon {...props} path={<><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>} />,
+        };
+
+        // --- DATA (Same as before) ---
+        const USER_DATA = [
+            // Suske & Wiske
+            { title: "De poenschepper", issue: "67", publisher: "Suske & Wiske", grade: "goed", price: "", notes: "1968" },
+            { title: "Het eiland Amoras", issue: "68", publisher: "Suske & Wiske", grade: "slecht", price: "", notes: "1968, plakbad aan zijkant" },
+            { title: "De nerveuze Nerviërs", issue: "69", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "De spokenjagers", issue: "70", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "Wattman", issue: "71", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "Jeromba de Griek", issue: "72", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "Het zoemende ei", issue: "73", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "De koddige kater", issue: "74", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "Het mini-mierennest", issue: "75", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "De ijzeren schelvis", issue: "76", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "De apekermis", issue: "77", publisher: "Suske & Wiske", grade: "", price: "", notes: "" },
+            { title: "Vakantiealbum", issue: "", publisher: "Suske & Wiske", grade: "zeer goed", price: "3", notes: "1975, buiten reeks" },
+            { title: "Vakantieboek", issue: "", publisher: "Suske & Wiske", grade: "goed", price: "6", notes: "1974" },
+            { title: "Winterboek", issue: "", publisher: "Suske & Wiske", grade: "", price: "8", notes: "1974" },
+            
+            // Asterix
+            { title: "Asterix de Galliër", issue: "1", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Het gouden snoeimes", issue: "2", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix en de Goten", issue: "3", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix als gladiator", issue: "4", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De ronde van Gallië", issue: "5", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix en Cleopatra", issue: "6", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De strijd van de stamhoofden", issue: "7", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix bij de Britten", issue: "8", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix en de Noormannen", issue: "9", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix als legioensoldaat", issue: "10", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Het ijzeren schild", issue: "11", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix en de Olympische Spelen", issue: "12", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix en de koperen ketel", issue: "13", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix in Hispania", issue: "14", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De lauwerkrans van Caesar", issue: "18", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De ziener", issue: "19", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix op Corsica", issue: "20", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De broedertwist", issue: "25", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De odyssee van Asterix", issue: "26", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De zoon van Asterix", issue: "27", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix in Indus-land", issue: "28", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De roos en het zwaard", issue: "29", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "De beproeving van Obelix", issue: "30", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            { title: "Asterix en Latraviata", issue: "31", publisher: "Asterix", grade: "", price: "", notes: "Goscinny / Uderzo" },
+            
+            // Lucky Luke
+            { title: "Dick Diggers goudmijn", issue: "1", publisher: "Lucky Luke", grade: "", price: "", notes: "1949, Morris" },
+            { title: "Rodeo", issue: "2", publisher: "Lucky Luke", grade: "", price: "", notes: "1950, Morris" },
+            { title: "Arizona", issue: "3", publisher: "Lucky Luke", grade: "", price: "", notes: "1951, Morris" },
+            { title: "Avonturen in het westen", issue: "4", publisher: "Lucky Luke", grade: "", price: "", notes: "1952, Morris" },
+            { title: "Lucky Luke tegen Pat Poker", issue: "5", publisher: "Lucky Luke", grade: "", price: "", notes: "1953, Morris" },
+            { title: "Vogelvrij", issue: "6", publisher: "Lucky Luke", grade: "", price: "", notes: "1954, Morris" },
+            { title: "Dr. Doxey's elixer", issue: "7", publisher: "Lucky Luke", grade: "", price: "", notes: "1955, Morris" },
+            { title: "Phil IJzerdraad", issue: "8", publisher: "Lucky Luke", grade: "", price: "", notes: "1957, Morris" },
+            { title: "De spoorweg door de prairie", issue: "9", publisher: "Lucky Luke", grade: "", price: "", notes: "1957, Morris" },
+            { title: "Blauwvoeten op het oorlogspad", issue: "10", publisher: "Lucky Luke", grade: "", price: "", notes: "1958, Morris" },
+            { title: "De bende van Joss Jamon", issue: "11", publisher: "Lucky Luke", grade: "slecht", price: "0.5", notes: "1958, Morris en Goscinny" },
+            { title: "De neven Dalton", issue: "12", publisher: "Lucky Luke", grade: "", price: "", notes: "1959, Morris" },
+            { title: "De rechter", issue: "13", publisher: "Lucky Luke", grade: "", price: "", notes: "1959, Morris" },
+            { title: "Nitroglycerine", issue: "27", publisher: "Lucky Luke", grade: "", price: "", notes: "1987" },
+            { title: "De duivelsranch", issue: "26", publisher: "Lucky Luke", grade: "", price: "", notes: "1986" },
+            { title: "Het alibi", issue: "28", publisher: "Lucky Luke", grade: "", price: "", notes: "1987" },
+            { title: "De Pony Express", issue: "29", publisher: "Lucky Luke", grade: "", price: "", notes: "1988" },
+            { title: "De Daltons verliezen hun geheugen", issue: "30", publisher: "Lucky Luke", grade: "", price: "", notes: "1991" },
+            { title: "Spokenjacht", issue: "31", publisher: "Lucky Luke", grade: "", price: "", notes: "1992" },
+            { title: "Klondike", issue: "36", publisher: "Lucky Luke", grade: "", price: "", notes: "1996" },
+            { title: "O.K. Corral", issue: "37", publisher: "Lucky Luke", grade: "", price: "", notes: "1997" },
+            
+            // Ravian & Philemon
+            { title: "Onzekere tijden", issue: "18", publisher: "Ravian", grade: "zeer goed", price: "5", notes: "2001, Mézières" },
+            { title: "Aan de grenzen", issue: "13", publisher: "Ravian", grade: "als nieuw", price: "4", notes: "1994, 1e druk" },
+            { title: "Verschijningen op Inverloch", issue: "11", publisher: "Ravian", grade: "als nieuw", price: "4", notes: "1994, 2 exemplaren" },
+            { title: "De drenkeling van de A", issue: "1", publisher: "Philémon", grade: "goed", price: "3", notes: "1974, 1e druk" },
+            { title: "Wie verre reizen doet...", issue: "4", publisher: "Philémon", grade: "als nieuw", price: "4", notes: "1976, 1e druk" },
+            { title: "De simbabbad van batbad", issue: "5", publisher: "Philémon", grade: "als nieuw", price: "4", notes: "1977, 1e druk" },
+            
+            // Disney
+            { title: "Ik Mickey Mouse", issue: "1", publisher: "Mickey Mouse", grade: "goed", price: "7.5", notes: "1977" },
+            { title: "Ik Mickey Mouse 2", issue: "2", publisher: "Mickey Mouse", grade: "goed", price: "7.5", notes: "1977" },
+            { title: "Donald Duck als brandweerman", issue: "1", publisher: "Donald Duck", grade: "goed", price: "1", notes: "" },
+            { title: "Donald Duck als cowboy", issue: "2", publisher: "Donald Duck", grade: "", price: "1", notes: "" },
+            { title: "Donald Duck als schipper", issue: "3", publisher: "Donald Duck", grade: "", price: "1", notes: "" },
+            { title: "Donald Duck als postbode", issue: "4", publisher: "Donald Duck", grade: "", price: "1", notes: "" },
+            { title: "(geen titel)", issue: "4", publisher: "Donald Duck", grade: "heel slecht", price: "1", notes: "1958, Donald Duck en andere verhalen" },
+            { title: "(geen titel)", issue: "15", publisher: "Donald Duck", grade: "slecht", price: "2", notes: "1969, Donald Duck en andere verhalen" },
+            { title: "Carl Barks and the Disney Ducks", issue: "", publisher: "Donald Duck", grade: "goed", price: "2.5", notes: "1993, Another Rainbow Publishing" },
+            { title: "50 Years of Happy Frustration", issue: "", publisher: "Donald Duck", grade: "zeer goed", price: "3", notes: "1984, Hardcover" },
+            
+            // Franquin
+            { title: "De Flater-saga", issue: "7", publisher: "Guust Flater", grade: "goed", price: "10", notes: "1983, Unicum uitgave" },
+            { title: "Guust", issue: "3", publisher: "Guust Flater", grade: "goed", price: "10", notes: "1984, Franquin collectie" },
+        ];
+
+        // --- MAIN APPLICATION ---
+        function App() {
+            const [inventory, setInventory] = useState(USER_DATA);
+            const [searchTerm, setSearchTerm] = useState("");
+            const [filterPublisher, setFilterPublisher] = useState("Alles");
+            const [showImporter, setShowImporter] = useState(false);
+            const [csvText, setCsvText] = useState("");
+
+            // Statistics
+            const stats = useMemo(() => {
+                const totalItems = inventory.length;
+                const parsePrice = (p) => {
+                    if (!p) return 0;
+                    const clean = p.toString().replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                    return parseFloat(clean) || 0;
+                };
+
+                const totalValue = inventory.reduce((acc, item) => acc + parsePrice(item.price), 0);
+                const publishers = [...new Set(inventory.map(i => i.publisher || "Onbekend"))].sort();
+                
+                const sortedByPrice = [...inventory].sort((a, b) => parsePrice(b.price) - parsePrice(a.price));
+                const topItem = sortedByPrice[0] || { title: "N/A", price: 0 };
+
+                return { totalItems, totalValue, publishers, topItem };
+            }, [inventory]);
+
+            // Filtering
+            const filteredInventory = useMemo(() => {
+                return inventory.filter(item => {
+                    const matchesSearch = 
+                        (item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                        (item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                        (item.publisher && item.publisher.toLowerCase().includes(searchTerm.toLowerCase()));
+                    const matchesPublisher = filterPublisher === "Alles" || item.publisher === filterPublisher;
+                    return matchesSearch && matchesPublisher;
+                });
+            }, [inventory, searchTerm, filterPublisher]);
+
+            // Import Logic
+            const handleImport = () => {
+                if (!csvText) return;
+                try {
+                    const lines = csvText.trim().split('\n');
+                    const headers = lines[0].split(/,|;/).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+                    
+                    const newInventory = lines.slice(1).map(line => {
+                        const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)|;/); 
+                        const entry = { title: "", issue: "", publisher: "Onbekend", grade: "", price: "", notes: "", image: "" };
+                        
+                        headers.forEach((h, index) => {
+                            let val = values[index] ? values[index].replace(/^"|"$/g, '').trim() : "";
+                            
+                            if (h === 'titel' || h === 'title') entry.title = val;
+                            if (h === 'nr' || h === 'issue') entry.issue = val;
+                            if (h === 'serie' || h === 'reeks' || h === 'publisher') entry.publisher = val;
+                            if (h === 'conditie' || h === 'grade') entry.grade = val;
+                            if (h === 'prijs' || h === 'price') entry.price = val;
+                            if (h === 'afbeelding' || h === 'image' || h === 'img') entry.image = val;
+                            
+                            if (h === 'bijzonderheden' || h === 'druk' || h === 'auteur' || h === 'meer info') {
+                                if (val) entry.notes = entry.notes ? `${entry.notes}, ${val}` : val;
+                            }
+                        });
+
+                        if (!entry.title && !entry.issue) return null;
+                        return entry;
+                    }).filter(Boolean);
+
+                    setInventory([...inventory, ...newInventory]);
+                    setShowImporter(false);
+                    setFilterPublisher("Alles");
+                } catch (e) {
+                    alert("Fout bij het laden van CSV. Controleer het formaat.");
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-stone-50 font-sans text-stone-900 pb-12">
+                    {/* Header Bar - Tighter & Horizontal */}
+                    <div className="bg-yellow-400 border-b-4 border-black py-4 px-4 shadow-sm relative overflow-hidden">
+                        <div className="absolute inset-0 opacity-10 halftone"></div>
+                        <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-4">
+                            
+                            {/* Title Left */}
+                            <div className="text-left">
+                                <h1 className="text-3xl md:text-4xl font-black text-black tracking-tighter uppercase italic drop-shadow-sm leading-none">
+                                    De Vreemde Verzameling
+                                </h1>
+                                <p className="text-sm md:text-base font-medium text-stone-800 font-serif mt-1">
+                                    Een unieke collectie strips & graphic novels • Haarlem, NL
+                                </p>
+                            </div>
+                            
+                            {/* Buttons Right - Small & Compact */}
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => document.getElementById('inventory').scrollIntoView({ behavior: 'smooth' })}
+                                    className="bg-black text-white px-3 py-2 font-bold text-xs hover:bg-stone-800 transition-all shadow-md flex items-center gap-2 uppercase tracking-wide rounded-sm">
+                                    <Icons.BookOpen size={14} />
+                                    Bekijk Lijst
+                                </button>
+                                <button 
+                                    onClick={() => setShowImporter(true)}
+                                    className="bg-white text-black border border-black px-3 py-2 font-bold text-xs hover:bg-yellow-50 transition-all shadow-md flex items-center gap-2 uppercase tracking-wide rounded-sm">
+                                    <Icons.Upload size={14} />
+                                    Gegevens Laden
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Stats Dashboard - Tighter spacing */}
+                    <div className="max-w-6xl mx-auto px-4 mt-6 relative z-20 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <StatCard 
+                                icon={<Icons.Hash className="text-blue-600" />}
+                                label="Aantal Items" 
+                                value={stats.totalItems} 
+                            />
+                            <StatCard 
+                                icon={<Icons.Award className="text-purple-600" />}
+                                label="Topstuk" 
+                                value={stats.topItem.title} 
+                                subValue={`${stats.topItem.publisher} • €${stats.topItem.price}`}
+                            />
+                            <StatCard 
+                                icon={<Icons.DollarSign className="text-green-600" />}
+                                label="Totale Waarde" 
+                                value={`€${stats.totalValue.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}`} 
+                            />
+                        </div>
+                    </div>
+
+                    {/* Inventory */}
+                    <div id="inventory" className="max-w-6xl mx-auto px-4">
+                        <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3 bg-white p-3 rounded-lg shadow-sm border border-stone-200">
+                            <div className="flex items-center gap-2 w-full md:w-auto relative">
+                                <span className="absolute left-3 text-stone-400"><Icons.Search size={16} /></span>
+                                <input 
+                                    type="text" 
+                                    placeholder="Zoek op titel, nummer, jaartal..." 
+                                    className="pl-9 pr-4 py-1.5 border border-stone-300 rounded focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 w-full md:w-64 outline-none text-sm"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            
+                            <div className="flex items-center gap-2 w-full md:w-auto">
+                                <span className="text-stone-400"><Icons.Filter size={16} /></span>
+                                <select 
+                                    className="py-1.5 px-3 border border-stone-300 rounded focus:ring-2 focus:ring-yellow-400 outline-none bg-white w-full md:w-auto text-sm"
+                                    value={filterPublisher}
+                                    onChange={(e) => setFilterPublisher(e.target.value)}
+                                >
+                                    <option value="Alles">Alle Series</option>
+                                    {stats.publishers.map(pub => (
+                                        <option key={pub} value={pub}>{pub}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="bg-white shadow-lg rounded-lg border border-stone-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-stone-100 border-b border-stone-200 text-stone-600">
+                                        <tr>
+                                            <th className="p-3 font-bold text-xs uppercase tracking-wider w-1/3">Titel & Nummer</th>
+                                            <th className="p-3 font-bold text-xs uppercase tracking-wider">Serie</th>
+                                            <th className="p-3 font-bold text-xs uppercase tracking-wider">Conditie</th>
+                                            <th className="p-3 font-bold text-xs uppercase tracking-wider">Details</th>
+                                            <th className="p-3 font-bold text-xs uppercase tracking-wider text-right">Prijs</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-stone-100">
+                                        {filteredInventory.length > 0 ? (
+                                            filteredInventory.map((item, idx) => (
+                                                <tr key={idx} className="hover:bg-yellow-50 transition-colors">
+                                                    <td className="p-3">
+                                                        <div className="flex items-start gap-3">
+                                                            {item.image && (
+                                                                <img src={item.image} alt={item.title} className="w-10 h-14 object-cover border border-stone-200 shadow-sm rounded-sm" />
+                                                            )}
+                                                            <div>
+                                                                <div className="font-bold text-stone-900 text-base leading-tight">{item.title}</div>
+                                                                {item.issue && <div className="text-stone-500 text-xs mt-0.5">Nr. {item.issue}</div>}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <span className="inline-block px-2 py-0.5 rounded bg-stone-100 text-stone-700 text-[10px] font-bold uppercase whitespace-nowrap">
+                                                            {item.publisher}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        {item.grade && item.grade !== '-' ? (
+                                                            <span className="font-medium text-stone-700 text-xs bg-blue-50 px-2 py-0.5 rounded text-blue-800 uppercase whitespace-nowrap">
+                                                                {item.grade}
+                                                            </span>
+                                                        ) : <span className="text-stone-300">-</span>}
+                                                    </td>
+                                                    <td className="p-3 text-xs text-stone-500 italic max-w-xs truncate">
+                                                        {item.notes}
+                                                    </td>
+                                                    <td className="p-3 text-right whitespace-nowrap">
+                                                        {parseFloat(item.price) > 0 ? (
+                                                            <div className="font-bold text-emerald-700 text-base">
+                                                                €{parseFloat(item.price).toLocaleString('nl-NL', { minimumFractionDigits: 2 })}
+                                                            </div>
+                                                        ) : <span className="text-[10px] text-stone-400 uppercase font-bold">Bieden</span>}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5" className="p-8 text-center text-stone-400 italic">Geen strips gevonden.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer - Compact */}
+                    <div className="max-w-4xl mx-auto px-4 text-center mt-12 pt-6 border-t border-stone-300">
+                         <p className="mb-3 font-serif italic text-base text-stone-500">
+                            "The more you learn, the more you realise you know nothing."
+                        </p>
+                        <a href="mailto:your-email@example.com" className="inline-flex items-center gap-2 bg-black text-white px-4 py-1.5 rounded-full hover:bg-yellow-400 hover:text-black transition-colors font-bold text-sm">
+                            <Icons.Mail size={14} />
+                            Contact
+                        </a>
+                    </div>
+
+                    {/* Importer Modal */}
+                    {showImporter && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden border border-stone-300">
+                                <div className="bg-stone-100 p-3 border-b border-stone-200 flex justify-between items-center">
+                                    <h3 className="font-bold text-stone-800 flex items-center gap-2 text-sm">
+                                        <Icons.Upload size={16} />
+                                        Data Toevoegen
+                                    </h3>
+                                    <button onClick={() => setShowImporter(false)} className="p-1 hover:bg-stone-200 rounded text-stone-500">
+                                        <Icons.X size={18} />
+                                    </button>
+                                </div>
+                                <div className="p-4">
+                                    <p className="text-xs text-stone-600 mb-2">
+                                        Plak hier CSV data. Kolommen: Titel, nr, Serie, Prijs, Conditie, Afbeelding.
+                                    </p>
+                                    <textarea 
+                                        className="w-full h-40 border border-stone-300 rounded p-2 font-mono text-xs focus:ring-2 focus:ring-yellow-400 outline-none bg-stone-50"
+                                        placeholder="Plak hier je tekst..."
+                                        value={csvText}
+                                        onChange={(e) => setCsvText(e.target.value)}
+                                    />
+                                </div>
+                                <div className="p-3 bg-stone-50 border-t border-stone-200 flex justify-end gap-2">
+                                    <button onClick={() => setShowImporter(false)} className="px-3 py-1.5 text-stone-600 font-medium hover:text-stone-900 text-xs">Annuleren</button>
+                                    <button onClick={handleImport} className="px-4 py-1.5 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 text-xs shadow-sm">Verwerken</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function StatCard({ icon, label, value, subValue }) {
+            return (
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-stone-200 flex items-center gap-3">
+                    <div className="p-2 bg-stone-50 rounded-full border border-stone-100">{icon}</div>
+                    <div className="overflow-hidden">
+                        <div className="text-stone-500 font-bold text-[10px] uppercase tracking-wide">{label}</div>
+                        <div className="text-lg font-black text-stone-900 truncate leading-none">{value}</div>
+                        {subValue && <div className="text-[10px] text-stone-500 truncate mt-0.5">{subValue}</div>}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

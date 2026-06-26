@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Strips te koop</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .card { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; }
+    .card img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>STRIPS TE KOOP</h1>
+  <p>uit de verzameling van David Enker te Haarlem</p>
+  <div id="items" class="grid"></div>
+
+  <script>
+    const sheetId = "1z_SeCSAdMrFYq_xkN2-WwL-6HJ7LxFqONh_yrMfhsOU"; // jouw sheet ID
+    const gid = "0"; // juiste tabblad-ID
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+    fetch(url)
+      .then(res => res.text())
+      .then(data => {
+        const json = JSON.parse(data.substr(47).slice(0, -2));
+        const rows = json.table.rows;
+
+        const container = document.getElementById("items");
+        container.innerHTML = "";
+
+        rows.forEach(row => {
+          let cover   = row.c[0]?.v || "";
+          let title   = row.c[1]?.v || "";
+          let serie   = row.c[2]?.v || "";
+          let year    = row.c[3]?.v || "";
+          let edition = row.c[4]?.v || "";
+          let link    = row.c[5]?.v || "";
+          let prijs   = row.c[6]?.v || "";
+
+          if (title) {
+            container.innerHTML += `
+              <div class="card">
+                <img src="${cover}" alt="${title}">
+                <h3>${title}</h3>
+                <p><em>${serie}</em></p>
+                <p>${year} – ${edition}</p>
+                <p><strong>€${prijs}</strong></p>
+                <a href="${link}" target="_blank">Bekijk</a>
+              </div>
+            `;
+          }
+        });
+      })
+      .catch(err => {
+        document.getElementById("items").innerHTML = "Kon data niet laden 😢";
+        console.error("Error:", err);
+      });
+  </script>
+</body>
+</html>

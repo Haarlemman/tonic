@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Test strips</title>
+  <style>
+    .item-card { border:1px solid #ccc; margin:10px; padding:10px; max-width:200px; }
+    img { max-width:100%; }
+  </style>
+</head>
+<body>
+  <h1>Alle strips test</h1>
+  <div id="items"></div>
+
+  <script>
+    async function loadComics() {
+      const sheetId = "1z_SeCSAdMrFYq_xkN2-WwL-6HJ7LxFqONh_yrMfhsOU"; 
+      const gid = "0"; 
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+      try {
+        const response = await fetch(url);
+        const text = await response.text();
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        const rows = json.table.rows;
+        const itemsContainer = document.getElementById("items");
+
+        rows.forEach(row => {
+          const values = row.c.map(cell => cell ? cell.v : "");
+          const card = document.createElement("div");
+          card.className = "item-card";
+          card.innerHTML = `
+            <img src="${values[0]}" alt="${values[1]}">
+            <h3>${values[1]}</h3>
+            <p><strong>Serie:</strong> ${values[2]}</p>
+            <p><strong>Jaar:</strong> ${values[3]}</p>
+            <p><strong>Uitgave:</strong> ${values[4]}</p>
+            <p><strong>Prijs:</strong> €${values[6]}</p>
+            <a href="${values[5]}" target="_blank">Bekijk</a>
+          `;
+          itemsContainer.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Error:", err);
+        document.getElementById("items").innerHTML = "<p>Kon data niet laden</p>";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadComics);
+  </script>
+</body>
+</html>

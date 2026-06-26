@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trauma & Healing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .tab-btn-active { @apply bg-primary-blue text-white; }
+        .tab-btn-inactive { @apply bg-gray-200 text-gray-700; }
+        @media print { header, button { display: none; } #en-content, #nl-content { display: block !important; } }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<header class="hero-gradient text-white py-4 print:hidden">
+    <div class="max-w-6xl mx-auto px-4 flex justify-between items-center">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+            <i class="fas fa-brain text-4xl"></i>
+            <h1 class="text-xl font-bold">Trauma & Healing</h1>
+        </div>
+        <div class="flex gap-2">
+            <button id="en-btn" onclick="switchLanguage('en')" class="px-6 py-3 rounded-full bg-primary-blue text-white">EN</button>
+            <button id="nl-btn" onclick="switchLanguage('nl')" class="px-6 py-3 rounded-full bg-white text-gray-700">NL</button>
+            <button onclick="window.print()" class="px-3 py-1.5 rounded-full bg-white/20 text-white">PDF</button>
+        </div>
+    </div>
+</header>
+
+<div class="max-w-6xl mx-auto p-6">
+    <div id="en-content">
+        <button onclick="setTab('overview')" class="tab-btn-active px-6 py-3 rounded-full">Overview</button>
+        <button onclick="setTab('events')" class="tab-btn-inactive px-6 py-3 rounded-full">Events</button>
+        <div id="overview-tab">Your full English content here...</div>
+        <div id="events-tab" class="hidden">Events...</div>
+    </div>
+    <div id="nl-content" class="hidden">
+        <button onclick="setTabNL('overzicht')" class="tab-btn-active px-6 py-3 rounded-full">Overzicht</button>
+        <div id="overzicht-tab-nl">Dutch content...</div>
+    </div>
+</div>
+
+<script>
+    function goHome() { switchLanguage('en'); setTab('overview'); window.scrollTo(0,0); }
+    function switchLanguage(lang) {
+        document.getElementById('en-content').classList.toggle('hidden', lang !== 'en');
+        document.getElementById('nl-content').classList.toggle('hidden', lang !== 'nl');
+        document.getElementById('en-btn').className = lang === 'en' ? 'px-6 py-3 rounded-full bg-primary-blue text-white' : 'px-6 py-3 rounded-full bg-white text-gray-700';
+        document.getElementById('nl-btn').className = lang === 'nl' ? 'px-6 py-3 rounded-full bg-primary-blue text-white' : 'px-6 py-3 rounded-full bg-white text-gray-700';
+        if (lang === 'en') setTab('overview'); else setTabNL('overzicht');
+    }
+    function setTab(tab) {
+        document.querySelectorAll('#tab-content > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById(tab + '-tab').classList.remove('hidden');
+        document.querySelectorAll('#en-content button').forEach(b => b.className = b.onclick.toString().includes(tab) ? 'tab-btn-active px-6 py-3 rounded-full' : 'tab-btn-inactive px-6 py-3 rounded-full');
+    }
+    function setTabNL(tab) { /* same for NL */ }
+</script>
+</body>
+</html>

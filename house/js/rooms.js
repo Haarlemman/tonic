@@ -1,4 +1,4 @@
-function playTrack(index) {
+﻿function playTrack(index) {
     if (!window.currentRoom || !window.roomContent || !window.roomContent[window.currentRoom]) {
         console.error("playTrack called too early � currentRoom =", window.currentRoom);
         return;
@@ -2797,7 +2797,7 @@ function createLivingRoomInterior() {
         interiorGroup.add(mesh);
     }
 
-    createBook("Tonic for\nthe Bones", '#8b0000', -0.6, -1.4, 0.2, '/assets/images/tftb-cover.jpg', "A celebration of life amidst a dire diagnosis.", "https://tonic.davidenker.com/tftb/");
+    createBook("Tonic for\nthe Bones", '#8b0000', -0.6, -1.4, 0.2, '/assets/images/tftb-cover.jpg', "A celebration of life amidst a dire diagnosis.", "https://www.tonicforthebones.com/tftb/");
     createBook("Phantom\nParents", '#1a237e', -0.4, -0.4, -0.1, '/assets/images/phantomparents-cover.jpg', "A personal and creative look at the experience of growing up- being an adoptee.", "https://www.amazon.com/gp/product/9090369449/");
     createBook("Tiny Socks and Vanishing Dopamine", '#065f46', 0.5, -0.9, -0.3, '/assets/images/gifts-cover.jpg', "A short story about fatherhood while dealing with Parkinson.", "https://www.amazon.com/dp/B0FCM11RH3");
 
@@ -4941,7 +4941,7 @@ function createGarageInterior() {
         onClick: () => {
 
             // Play door opening sound
-            const openSound = new Audio('https://tonic.davidenker.com/assets/audio/garage-door-opening.mp3');
+            const openSound = new Audio('https://www.tonicforthebones.com/assets/audio/garage-door-opening.mp3');
             openSound.volume = 0.7;
             openSound.play().catch(() => { });
 

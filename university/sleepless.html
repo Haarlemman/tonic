@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleeples</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .typewriter {
+      white-space: pre-wrap;
+      font-size: 1.2rem;
+      max-width: 800px;
+      line-height: 1.6;
+      display: inline-block;
+      position: relative;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 1ch;
+      height: 1.2em;
+      background-color: white;
+      vertical-align: bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { background-color: transparent; }
+    }
+
+    .enter-button, .next-button {
+      background: transparent;
+      border: 1px solid #555;
+      color: #999;
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      bottom: 5vh;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    .extra-next-button {
+      bottom: 8vh;
+    }
+
+    .enter-button.show,
+    .next-button.show {
+      opacity: 1;
+      pointer-events: auto;
+      transition: opacity 1s ease;
+    }
+
+    .enter-button:hover, .next-button:hover {
+      color: #fff;
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .poem {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(to bottom, #003153, #8B0000);
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 4vh 5vw;
+      box-sizing: border-box;
+      overflow: hidden;
+      animation: fadeIn 2s ease-in-out forwards;
+    }
+
+    .poem-line {
+      position: absolute;
+      opacity: 0;
+      animation: floatIn 1s ease forwards;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,0.3));
+      font-size: 1.4rem;
+    }
+
+    /* Adjusted positioning to keep content closer together and higher on screen */
+    .poem-line:nth-child(1) { top: 15%; left: 15%; animation-delay: 0.5s; }
+    .poem-line:nth-child(2) { top: 22%; left: 55%; animation-delay: 1.5s; }
+    .poem-line:nth-child(3) { top: 29%; left: 25%; animation-delay: 2.5s; }
+    .poem-line:nth-child(4) { top: 36%; left: 50%; animation-delay: 3.5s; }
+    .poem-line:nth-child(5) { top: 43%; left: 30%; animation-delay: 4.5s; }
+    .poem-line:nth-child(6) { top: 50%; left: 65%; animation-delay: 5.5s; }
+    .poem-line:nth-child(7) { top: 57%; left: 35%; animation-delay: 6.5s; }
+    .poem-line:nth-child(8) { top: 64%; left: 10%; animation-delay: 7.5s; }
+
+    @keyframes floatIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .haiku {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(to bottom, #330066, #000);
+      overflow: hidden;
+    }
+
+    .haiku-content {
+      position: relative;
+      z-index: 2;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      font-size: 2rem;
+      animation: fadeIn 2s ease forwards;
+      text-shadow: 0 0 10px #c33, 0 0 20px #339;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .blob-bg {
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, rgba(255,0,0,0.5), rgba(0,255,0,0.4), rgba(0,0,255,0.3));
+      animation: morph 30s infinite alternate ease-in-out;
+      filter: blur(60px);
+      z-index: 1;
+    }
+
+    @keyframes morph {
+      0% { border-radius: 40% 60% 70% 30% / 40% 30% 70% 60%; }
+      100% { border-radius: 70% 30% 40% 60% / 50% 60% 30% 70%; }
+    }
+
+    .final {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(45deg, #000428, #004e92, #667db6, #0082c8, #667db6, #004e92, #000428);
+      background-size: 300% 300%;
+      animation: gradientShift 12s ease-in-out infinite;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .final-word {
+      position: absolute;
+      font-size: 1.5rem;
+      line-height: 2;
+      opacity: 0;
+      text-shadow: 0 0 20px rgba(255,255,255,0.5);
+      transition: all 2s ease-out;
+    }
+
+    .final-word.in-position {
+      opacity: 1;
+    }
+
+    /* Starting positions for words - scattered around screen */
+    .word-1 { top: -50px; left: 10%; }
+    .word-2 { top: 120%; right: 20%; }
+    .word-3 { left: -100px; top: 30%; }
+    .word-4 { right: -100px; top: 60%; }
+    .word-5 { top: -50px; right: 30%; }
+    .word-6 { bottom: -50px; left: 40%; }
+    .word-7 { left: -100px; bottom: 20%; }
+    .word-8 { right: -100px; bottom: 40%; }
+    .word-9 { top: -50px; left: 60%; }
+    .word-10 { bottom: -50px; right: 15%; }
+    .word-11 { left: -100px; top: 50%; }
+    .word-12 { right: -100px; top: 80%; }
+    .word-13 { top: -50px; left: 80%; }
+    .word-14 { bottom: -50px; left: 20%; }
+    .word-15 { left: -100px; bottom: 60%; }
+
+    /* Final positions - forming the poem */
+    .word-1.in-position { top: 25%; left: 50%; transform: translateX(-50%); }
+    .word-2.in-position { top: 30%; left: 50%; transform: translateX(-50%); }
+    .word-3.in-position { top: 35%; left: 50%; transform: translateX(-50%); }
+    .word-4.in-position { top: 40%; left: 50%; transform: translateX(-50%); }
+    .word-5.in-position { top: 45%; left: 50%; transform: translateX(-50%); }
+    .word-6.in-position { top: 50%; left: 50%; transform: translateX(-50%); }
+    .word-7.in-position { top: 55%; left: 50%; transform: translateX(-50%); }
+    .word-8.in-position { top: 60%; left: 50%; transform: translateX(-50%); }
+    .word-9.in-position { top: 68%; left: 50%; transform: translateX(-50%); }
+    .word-10.in-position { top: 73%; left: 50%; transform: translateX(-50%); }
+    .word-11.in-position { top: 78%; left: 50%; transform: translateX(-50%); }
+    .word-12.in-position { top: 83%; left: 50%; transform: translateX(-50%); }
+    .word-13.in-position { top: 88%; left: 50%; transform: translateX(-50%); }
+    .word-14.in-position { top: 93%; left: 50%; transform: translateX(-50%); }
+    .word-15.in-position { top: 98%; left: 50%; transform: translateX(-50%); }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+        justify-content: flex-start;
+        padding-top: 15vh;
+        min-height: 80vh;
+      }
+
+      .typewriter {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .next-button, .enter-button {
+        bottom: 5vh;
+        font-size: 1rem;
+        padding: 0.6rem 1.2rem;
+        position: fixed;
+      }
+
+      .poem-line {
+        font-size: 1.1rem;
+      }
+
+      /* Adjust poem lines for mobile to be even closer together */
+      .poem-line:nth-child(1) { top: 10%; left: 10%; }
+      .poem-line:nth-child(2) { top: 16%; left: 50%; }
+      .poem-line:nth-child(3) { top: 22%; left: 20%; }
+      .poem-line:nth-child(4) { top: 28%; left: 45%; }
+      .poem-line:nth-child(5) { top: 34%; left: 25%; }
+      .poem-line:nth-child(6) { top: 40%; left: 55%; }
+      .poem-line:nth-child(7) { top: 46%; left: 30%; }
+      .poem-line:nth-child(8) { top: 52%; left: 15%; }
+
+      .haiku-content {
+        font-size: 1.5rem;
+      }
+
+      .final-text {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="intro">
+    <div class="typewriter" id="typewriter"></div>
+    <button class="enter-button" id="enterButton">enter</button>
+  </div>
+
+  <div class="poem" id="poem">
+    <div class="poem-line">some nights</div>
+    <div class="poem-line">don't end</div>
+    <div class="poem-line">they dissolve</div>
+    <div class="poem-line">into</div>
+    <div class="poem-line">sketches</div>
+    <div class="poem-line">and</div>
+    <div class="poem-line">light</div>
+    <div class="poem-line">without warning</div>
+    <button class="next-button show extra-next-button" id="nextButton2">next</button>
+    <button class="next-button" id="nextButton">next</button>
+  </div>
+
+  <div class="haiku" id="haiku">
+    <div class="blob-bg"></div>
+    <div class="haiku-content">
+      <div>red moon above fields</div>
+      <div>whispers caught between branches</div>
+      <div>the sky forgets us</div>
+    </div>
+    <button class="next-button show" id="haikuNextButton">next</button>
+  </div>
+
+  <div class="final" id="final">
+    <div class="final-word word-1">and</div>
+    <div class="final-word word-2">so</div>
+    <div class="final-word word-3">we</div>
+    <div class="final-word word-4">return</div>
+    <div class="final-word word-5">to</div>
+    <div class="final-word word-6">the</div>
+    <div class="final-word word-7">beginning</div>
+    <div class="final-word word-8">where</div>
+    <div class="final-word word-9">sleep</div>
+    <div class="final-word word-10">was</div>
+    <div class="final-word word-11">always</div>
+    <div class="final-word word-12">just</div>
+    <div class="final-word word-13">a</div>
+    <div class="final-word word-14">word</div>
+    <div class="final-word word-15">...</div>
+  </div>
+
+  <script>
+    const text = `i cannot sleep\nso i make this instead\n\none line\nthen another\n\nwhite text on black\nlike dreams inverted\n\nscroll or don't\nthis is not a trap\njust a mirror.`;
+
+    let i = 0;
+    const speed = 50;
+    const output = document.getElementById('typewriter');
+    const cursor = document.createElement('span');
+    cursor.classList.add('cursor');
+    cursor.innerHTML = '&nbsp;';
+    output.appendChild(cursor);
+
+    function type() {
+      if (i < text.length) {
+        if (text.charAt(i) === '\n') {
+          output.insertBefore(document.createElement('br'), cursor);
+        } else {
+          const span = document.createElement('span');
+          span.textContent = text.charAt(i);
+          output.insertBefore(span, cursor);
+        }
+        i++;
+        setTimeout(type, text.charAt(i - 1) === '\n' ? 300 : speed);
+      } else {
+        cursor.remove();
+        document.getElementById('enterButton').classList.add('show');
+      }
+    }
+
+    document.getElementById('enterButton').addEventListener('click', () => {
+      document.getElementById('intro').style.display = 'none';
+      document.getElementById('poem').style.display = 'block';
+      const ambient = new Audio('https://cdn.openai.com/chat-assets/sleeples/ambient.mp3');
+      ambient.loop = true;
+      ambient.volume = 0.2;
+      ambient.play().catch(err => console.log('Audio play failed:', err));
+
+      setTimeout(() => {
+        document.getElementById('nextButton').classList.add('show');
+      }, 10000);
+    });
+
+    const goToHaiku = () => {
+      document.getElementById('poem').style.display = 'none';
+      document.getElementById('haiku').style.display = 'block';
+    };
+
+    const goToFinal = () => {
+      document.getElementById('haiku').style.display = 'none';
+      document.getElementById('final').style.display = 'flex';
+      
+      // Animate words flying in from different directions
+      const words = document.querySelectorAll('.final-word');
+      words.forEach((word, index) => {
+        setTimeout(() => {
+          word.classList.add('in-position');
+        }, index * 300 + 500);
+      });
+    };
+
+    document.getElementById('nextButton').addEventListener('click', goToHaiku);
+    document.getElementById('nextButton2').addEventListener('click', goToHaiku);
+    document.getElementById('haikuNextButton').addEventListener('click', goToFinal);
+
+    type();
+  </script>
+    <script src="nav.js"></script>
+</body>
+</html>

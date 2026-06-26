@@ -2,10 +2,11 @@
 // Minimal SW: just enough to make the PWA installable.
 // Assets (audio/video/3D) are too large to cache offline.
 
-const CACHE_NAME = 'house-of-awe-v1';
+const CACHE_NAME = 'house-of-awe-v4';
 const PRECACHE = [
   '/',
   '/index.html',
+  '/view-pillar.html',
   '/manifest.json',
   '/css/style.css',
   '/css/mobile.css',

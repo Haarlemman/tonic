@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Seapony: Immersive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Averia+Libre:wght@300;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510; 
+            font-family: 'Averia Libre', cursive;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+
+        /* --- LYRICS OVERLAY --- */
+        #lyrics-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .lyric-wrapper {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            opacity: 0;
+            will-change: transform, opacity, filter;
+            /* Slower, dreamier float for Seapony */
+            animation: floatThrough 12s linear forwards;
+        }
+
+        .lyric-content {
+            font-size: 5rem; /* Large for Seapony */
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+            text-align: center;
+            mix-blend-mode: overlay;
+            letter-spacing: 4px;
+        }
+
+        @keyframes floatThrough {
+            0% { opacity: 0; transform: scale(0.8) translateY(10vh); filter: blur(10px); }
+            20% { opacity: 1; transform: scale(1) translateY(0vh); filter: blur(0px); }
+            80% { opacity: 1; transform: scale(1.1) translateY(-10vh); filter: blur(0px); }
+            100% { opacity: 0; transform: scale(1.2) translateY(-20vh); filter: blur(20px); }
+        }
+
+        /* --- START SCREEN --- */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease;
+            backdrop-filter: blur(8px);
+        }
+        
+        #start-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 15px 50px;
+            font-family: 'Averia Libre', cursive;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        #start-btn:hover {
+            background: rgba(255,255,255,0.15);
+            letter-spacing: 5px;
+            box-shadow: 0 0 30px rgba(255,255,255,0.2);
+        }
+
+        .faded-out { opacity: 0; pointer-events: none; }
+
+        @media (max-width: 768px) {
+            .lyric-content { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="sky-canvas"></canvas>
+    <div id="lyrics-container"></div>
+
+    <div id="start-screen">
+        <button id="start-btn">Start</button>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION
+        // ==========================================
+        
+        const audioSrc = "/music/Seapony-Always.mp3"; 
+
+        // Seapony Theme Colors (Blue & Magenta)
+        const theme = {
+            primary: [0, 100, 240],    // Deep Blue
+            secondary: [222, 0, 205]   // Magenta
+        };
+
+        const lyricsRaw = `
+[00:32.08] Always
+[00:34.07] Together
+[00:35.18] Always
+[00:37.16] Forever
+[00:38.33] Always
+[00:40.41] Together
+[00:41.44] Always
+[00:43.70] Forever
+[01:10.42] I fall beside you
+[01:13.40] We all run to
+[01:16.47] I fall beside you
+[01:19.60] We all run to
+[01:48.16] Always
+[01:50.09] Together
+[01:51.25] Always
+[01:53.19] Forever
+[01:54.36] Always
+[01:56.54] Together
+[01:57.60] Always
+[01:59.53] Forever
+[02:00.71] Always
+[02:07.19] Always
+`;
+
+        // ==========================================
+        // 2. SETUP
+        // ==========================================
+        
+        const canvas = document.getElementById('sky-canvas');
+        const ctx = canvas.getContext('2d');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+
+        let width, height;
+        let audioContext, analyser, source, dataArray;
+        let isPlaying = false;
+        
+        // Touch Interaction
+        let touchX = -1000, touchY = -1000;
+        let isTouching = false;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Audio Init
+        audioPlayer.src = audioSrc;
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256; 
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+            audioContext.resume();
+        }
+
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            audioPlayer.play();
+            startScreen.classList.add('faded-out');
+            isPlaying = true;
+            animate();
+        });
+
+        // Touch Tracking
+        const updateTouch = (e) => {
+            const t = e.touches ? e.touches[0] : e;
+            touchX = t.clientX;
+            touchY = t.clientY;
+            isTouching = true;
+        };
+        window.addEventListener('mousemove', updateTouch);
+        window.addEventListener('touchstart', updateTouch);
+        window.addEventListener('touchend', () => { isTouching = false; touchX = -1000; });
+
+
+        // ==========================================
+        // 3. SKY BACKGROUND (Dusk -> Dawn)
+        // ==========================================
+
+        const skyColors = {
+            night:  { r: 5,  g: 10, b: 30 },   // Deep Night Blue
+            dawn:   { r: 80, g: 50, b: 60 }    // Muted Dawn (Purplish)
+        };
+
+        function getSkyColor(progress) {
+            // Slowly lighten from night to dawn based on song progress
+            const p = Math.min(progress, 1);
+            const r = Math.round(skyColors.night.r + (skyColors.dawn.r - skyColors.night.r) * p);
+            const g = Math.round(skyColors.night.g + (skyColors.dawn.g - skyColors.night.g) * p);
+            const b = Math.round(skyColors.night.b + (skyColors.dawn.b - skyColors.night.b) * p);
+            return `rgb(${r},${g},${b})`;
+        }
+
+
+        // ==========================================
+        // 4. ENTANGLED CLOUD SYSTEM (Modified)
+        // ==========================================
+        
+        // Targets for particles to swarm around
+        const targets = { 
+            blue: { x: 0, y: 0 }, 
+            magenta: { x: 0, y: 0 } 
+        };
+
+        class Particle {
+            constructor(type, index) {
+                this.type = type; 
+                this.index = index; 
+                this.seed = Math.random() * 1000; 
+                this.init(false);
+            }
+
+            init(startRandom = false) {
+                this.x = Math.random() * width; 
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5; 
+                this.vy = (Math.random() - 0.5) * 0.5;
+
+                if (this.type === 'blue') { 
+                    this.baseSize = 60 + Math.random() * 60; // Larger, softer
+                    this.mass = 2.0; 
+                    this.drag = 0.95; 
+                    const [r,g,b] = theme.primary;
+                    // Very low opacity for transparency
+                    this.colorRaw = {r, g, b};
+                } else { 
+                    this.baseSize = 50 + Math.random() * 50; 
+                    this.mass = 1.5; 
+                    this.drag = 0.94; 
+                    const [r,g,b] = theme.secondary;
+                    this.colorRaw = {r, g, b};
+                } 
+                this.size = this.baseSize;
+            }
+
+            update(bassEnergy, trebleEnergy) {
+                const time = Date.now() * 0.001;
+                
+                // 1. Determine Target (Entanglement)
+                let tX = this.type === 'blue' ? targets.blue.x : targets.magenta.x;
+                let tY = this.type === 'blue' ? targets.blue.y : targets.magenta.y;
+                
+                // 2. Spread/Swarm logic
+                let spread = 180;
+                if (this.type === 'blue') spread += bassEnergy * 1.5; 
+                else spread += trebleEnergy * 1.0;
+
+                const noiseX = Math.sin(this.seed + time * 0.5) + Math.cos(this.index * 0.1 + time * 0.2);
+                const noiseY = Math.cos(this.seed * 0.9 + time * 0.3) + Math.sin(this.index * 0.15 - time * 0.4);
+                
+                const homeX = tX + noiseX * spread; 
+                const homeY = tY + noiseY * spread;
+
+                // 3. Physics (Attraction to target)
+                let ax = (homeX - this.x) * 0.0006; 
+                let ay = (homeY - this.y) * 0.0006;
+
+                // 4. Touch Repulsion/Attraction
+                if (isTouching) {
+                    const dx = this.x - touchX;
+                    const dy = this.y - touchY;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 300) {
+                        // Gentle push away to clear view, or pull - let's do a swirl
+                        // Adding rotational force
+                        ax += -dy * 0.0005; 
+                        ay += dx * 0.0005;
+                    }
+                }
+
+                // Apply Audio Energy to velocity
+                if (this.type === 'blue' && bassEnergy > 30) { 
+                    this.size += 2;
+                } else if (this.type === 'magenta' && trebleEnergy > 30) {
+                    this.size += 1;
+                }
+
+                // Return size to base
+                this.size += (this.baseSize - this.size) * 0.05;
+
+                // Physics update
+                this.vx += ax / this.mass; 
+                this.vy += ay / this.mass; 
+                this.x += this.vx; 
+                this.y += this.vy; 
+                this.vx *= this.drag; 
+                this.vy *= this.drag;
+            }
+
+            draw(ctx) { 
+                ctx.beginPath(); 
+                // Very subtle opacity (0.04) for "passing transparent clouds" feel
+                ctx.fillStyle = `rgba(${this.colorRaw.r}, ${this.colorRaw.g}, ${this.colorRaw.b}, 0.04)`; 
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); 
+                ctx.fill(); 
+            }
+        }
+
+        const particles = [];
+        // More particles for density since they are transparent
+        for (let i = 0; i < 300; i++) particles.push(new Particle('blue', i));
+        for (let i = 0; i < 300; i++) particles.push(new Particle('magenta', i));
+
+
+        // ==========================================
+        // 5. LYRICS ENGINE
+        // ==========================================
+        
+        function parseLRC(lrc) {
+            const lines = lrc.split('\n');
+            const result = [];
+            lines.forEach(line => {
+                const match = line.match(/\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/);
+                if (match) {
+                    const min = parseInt(match[1]);
+                    const sec = parseInt(match[2]);
+                    const time = min * 60 + sec;
+                    result.push({ time, text: match[4].trim() });
+                }
+            });
+            return result;
+        }
+
+        const lyrics = parseLRC(lyricsRaw);
+        let currentLineIndex = -1;
+
+        function checkLyrics(currentTime) {
+            let activeIndex = -1;
+            // Simple lookahead 
+            for (let i = 0; i < lyrics.length; i++) {
+                if (currentTime >= lyrics[i].time) {
+                    activeIndex = i;
+                } else { break; }
+            }
+
+            if (activeIndex !== currentLineIndex && activeIndex !== -1) {
+                currentLineIndex = activeIndex;
+                showLyric(lyrics[activeIndex].text);
+            }
+        }
+
+        function showLyric(text) {
+            const old = document.querySelector('.lyric-wrapper');
+            if(old) {
+                // Accelerate exit
+                old.style.transition = "opacity 1s, transform 1s";
+                old.style.opacity = 0;
+                old.style.transform = "translateY(-50px) scale(1.5)";
+                setTimeout(() => old.remove(), 1000);
+            }
+
+            if(!text) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'lyric-wrapper';
+            wrapper.innerHTML = `<div class="lyric-content">${text}</div>`;
+            lyricsContainer.appendChild(wrapper);
+        }
+
+        // ==========================================
+        // 6. ANIMATION LOOP
+        // ==========================================
+
+        function animate() {
+            if (!isPlaying) return;
+
+            // Update Audio Data
+            let bass = 0, treble = 0;
+            if (analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                // Low freqs
+                for (let i = 0; i < 10; i++) bass += dataArray[i];
+                bass = (bass / 10) * 1.5;
+                // High freqs
+                for (let i = 50; i < 100; i++) treble += dataArray[i];
+                treble = (treble / 50) * 1.5;
+            }
+
+            // Move Targets (The "Entangled" Logic)
+            // We keep them in the upper/mid sky (height * 0.3)
+            const time = Date.now() * 0.0004;
+            
+            // Lissajous figures for organic movement
+            targets.blue.x = (width * 0.4) + Math.cos(time * 0.8) * (width * 0.25); 
+            targets.blue.y = (height * 0.35) + Math.sin(time * 0.5) * (height * 0.15); // Stays high
+            
+            targets.magenta.x = (width * 0.6) + Math.cos(time * 0.7 + 2) * (width * 0.25); 
+            targets.magenta.y = (height * 0.35) + Math.sin(time * 0.6 + 1) * (height * 0.15); // Stays high
+
+            // Background
+            const duration = audioPlayer.duration || 200;
+            const progress = audioPlayer.currentTime / duration;
+            ctx.fillStyle = getSkyColor(progress);
+            ctx.fillRect(0, 0, width, height);
+
+            // Particles
+            // 'lighter' blend mode creates the glow when they overlap, 
+            // but we use low opacity for subtlety
+            ctx.globalCompositeOperation = 'lighter'; 
+            
+            particles.forEach(p => { 
+                p.update(bass, treble); 
+                p.draw(ctx); 
+            });
+            
+            ctx.globalCompositeOperation = 'source-over';
+
+            checkLyrics(audioPlayer.currentTime);
+            requestAnimationFrame(animate);
+        }
+
+    </script>
+</body>
+</html>

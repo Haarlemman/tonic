@@ -176,7 +176,8 @@
             financePoint5Text: 'They did not escape to some hidden communal refuge. Madoff died in federal prison; Weinstein was convicted and imprisoned; Epstein died in jail while awaiting federal trial; Bankman-Fried was convicted and sentenced to prison. The point is accountability, not collective blame.',
             contemporaryIntro: 'Today\'s Jews are a global diaspora shaped by internet, migration, intermarriage, and diverse belief systems. Geographic and cultural communities continue to thrive while new forms of Jewish identity emerge.',
             scienceIntro: 'Jewish thinkers have advanced mathematics, physics, medicine, computer science, and more—often with global impact while facing cultural and political challenges.',
-            antisemitismIntro: 'Antisemitism is the world\'s oldest hatred. It has evolved from religious persecution to racial pseudo-science and modern conspiracy theories. In the 21st century, it persists in radical forms.',
+            antisemitismIntro: 'Antisemitism is the world\'s oldest hatred. It has evolved from religious persecution to racial pseudo-science and modern conspiracy theories. In the 21st century, it persists in radical forms, etc.',
+            bookCredit: 'Adaptation from "The Plot: The Secret Story of The Protocols of the Elders of Zion" (2005, graphic novel, Will Eisner)',
 
             // Antisemitism Content (EN)
             anti911Title: '9/11 as Watershed (2001)', anti911Text: 'Al-Qaeda\'s attacks shifted global terrorism paradigm.',
@@ -539,7 +540,8 @@
             financePoint5Text: 'Ze ontsnapten niet naar een verborgen gemeenschappelijke schuilplaats. Madoff stierf in de federale gevangenis; Weinstein werd veroordeeld en opgesloten; Epstein stierf in de cel in afwachting van zijn federale proces; Bankman-Fried werd veroordeeld tot gevangenisstraf. Het punt is verantwoordelijkheid, niet collectieve schuld.',
             contemporaryIntro: 'De Joden van vandaag vormen een wereldwijde diaspora, beïnvloed door internet, migratie, intermarriage en diverse geloofsvormen. Geografische en culturele gemeenschappen bloeien voort terwijl nieuwe vormen van joodse identiteit ontstaan.',
             scienceIntro: 'Joodse denkers hebben wiskunde, fysica, geneeskunde, informatica en meer vooruitgestuwd—vaak met wereldwijde impact terwijl zij ook culturele en politieke uitdagingen trotseren.',
-            antisemitismIntro: 'Antisemitisme is de oudste haat ter wereld. Het heeft zich ontwikkeld van religieuze vervolging tot raciale pseudowetenschap en moderne complottheorieën. In de 21e eeuw blijft het bestaan in radicale vormen.',
+            antisemitismIntro: 'Antisemitisme is de oudste haat ter wereld. Het heeft zich ontwikkeld van religieuze vervolging tot raciale pseudowetenschap en moderne complottheorieën. In de 21e eeuw blijft het bestaan in radicale vormen, enz.',
+            bookCredit: 'Adaptatie van "The Plot: The Secret Story of The Protocols of the Elders of Zion" (2005, graphic novel, Will Eisner)',
 
             // Antisemitism Content (NL)
             anti911Title: '9/11 als Keerpunt (2001)', anti911Text: 'De aanslagen van Al-Qaeda veranderden het mondiale terrorisme.',
@@ -745,6 +747,15 @@
         // --- Handle data-lang spans (for pages like israel.html) ---
         document.querySelectorAll('[data-lang]:not(.lang-btn)').forEach(el => {
             el.style.display = (el.dataset.lang === lang) ? '' : 'none';
+        });
+
+        // --- Handle data-en / data-nl attributes (for inline content translation) ---
+        document.querySelectorAll('[data-en][data-nl]').forEach(el => {
+            const translation = el.getAttribute(`data-${lang}`);
+            if (translation) {
+                if (translation.includes('<')) el.innerHTML = translation;
+                else el.textContent = translation;
+            }
         });
 
         window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));

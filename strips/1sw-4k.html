@@ -1,0 +1,3572 @@
+﻿<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <title>Suske & Wiske - 4 kleurenreeks</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .header p {
+            font-size: 1.2em;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        nav {
+            padding: 20px;
+            text-align: center;
+        }
+        nav a {
+            color: #2c3e50;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+        }
+        nav a.active {
+            color: #FF6B6B;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .comics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        .comic-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .comic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #FF6B6B;
+        }
+        .comic-card.selected {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .comic-image {
+            width: 120px;
+            height: 160px;
+            border-radius: 8px;
+            margin: 0 auto 15px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .comic-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .comic-number {
+            background: #FF6B6B;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .comic-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .comic-details {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        .comic-condition {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .condition-goed { background: #d4edda; color: #155724; }
+        .condition-zeer-goed { background: #d1ecf1; color: #0c5460; }
+        .condition-unknown { background: #e2e3e5; color: #383d41; }
+        .comic-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .comic-link {
+            color: #FF6B6B;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .comic-link:hover {
+            text-decoration: underline;
+        }
+        .select-checkbox {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        .select-checkbox input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .buy-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        .buy-button:hover {
+            transform: translateY(-3px);
+        }
+        .buy-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .selected-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .image-popup.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .image-popup img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .popup-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        .popup-close:hover {
+            color: #ccc;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px;
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            .comics-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            .header {
+                padding: 40px 20px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body data-category="suske-wiske">
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='/strips/'">← Terug</button>
+            <h1>Suske & Wiske - 4 kleurenreeks</h1>
+            <p>uit de verzameling van David Enker te Haarlem</p>
+        </div>
+        <nav>
+            <a href="/strips/">Terug naar overzicht</a>
+            <a href="sw-4k.html" class="active">Suske & Wiske<br>(4 kleurenreeks)</a>
+            <a href="sw-br.html">Suske & Wiske<br>(buiten reeks)</a>
+            <a href="franquin.html">Franquin</a>
+            <a href="disney.html">Disney</a>
+        </nav>
+        <div class="tab-content">
+            <div id="grid" class="comics-grid"></div>
+        </div>
+    </div>
+    <div id="popup" class="image-popup">
+        <img id="popimg" alt="">
+        <span class="popup-close" onclick="document.getElementById('popup').classList.remove('show')">×</span>
+    </div>
+    <button id="buyBtn" class="buy-button" disabled>
+        Koop of informeer <span id="badge" class="selected-count">0</span>
+    </button>
+    <script>
+        const comicsData = [
+            {
+                "nr": "1",
+                "title": "De Zwarte Madam",
+                "image": "sw1.jpg",
+                "druk": "1e druk 1960",
+                "conditie": "Goed",
+                "bijzonderheden": "Lichte slijtage",
+                "link": "https://lastdodo.com/item/123",
+                "prijs": "€10,00",
+                "serie": "4 kleurenreeks"
+            },
+            {
+                "nr": "2",
+                "title": "De Schat van Beersel",
+                "image": "sw2.jpg",
+                "druk": "2e druk 1970",
+                "conditie": "Zeer goed",
+                "bijzonderheden": "",
+                "link": "https://lastdodo.com/item/124",
+                "prijs": "€15,00",
+                "serie": "4 kleurenreeks"
+            }
+[
+  {
+    "afbeelding": "https://davidenker.com/strips/images/67poen.jpg",
+    "Nr": 67,
+    "Titel": "De poenschepper",
+    "druk": "02/07/1968",
+    "conditie": "goed",
+    "bijzonderheden": "",
+    "Last Dodo link": "https://www.lastdodo.nl/nl/items/27151-de-poenschepper",
+    "prijs": "€ 5,00"
+  },
+  {
+    "afbeelding": "https://davidenker.com/strips/images/68amoras.jpg",
+    "Nr": 68,
+    "Titel": "Het eiland Amoras",
+    "druk": "02/07/1968",
+    "conditie": "slecht",
+    "bijzonderheden": "plakbad aan de zijkant",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "https://davidenker.com/strips/images/69nervier.jpg",
+    "Nr": 69,
+    "Titel": "De nerveuze Nerviërs",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "https://davidenker.com/strips/images/70spokenjage.jpg",
+    "Nr": 70,
+    "Titel": "De spokenjagers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 71,
+    "Titel": "Wattman",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 72,
+    "Titel": "Jeromba de Griek",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 73,
+    "Titel": "Het zoemende ei",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 74,
+    "Titel": "De koddige kater",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 75,
+    "Titel": "Het mini-mierennest",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 76,
+    "Titel": "De ijzeren schelvis",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 77,
+    "Titel": "De apekermis",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 78,
+    "Titel": "De dulle griet",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 79,
+    "Titel": "De zeven snaren",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 80,
+    "Titel": "De brullende berg",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 81,
+    "Titel": "De circusbaron",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 82,
+    "Titel": "De gramme huurling",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 83,
+    "Titel": "De straatridder",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 84,
+    "Titel": "De stemmenrover",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 85,
+    "Titel": "De schone slaper",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 86,
+    "Titel": "Tedere Tronica",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 87,
+    "Titel": "De vliegende aap",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 88,
+    "Titel": "De tamtamkloppers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 89,
+    "Titel": "De dolle musketiers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 90,
+    "Titel": "Sjeik El Rojenbiet",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 91,
+    "Titel": "De speelgoedzaaier",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 92,
+    "Titel": "De briesende bruid",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 93,
+    "Titel": "De snorrende snor",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 94,
+    "Titel": "De sissende sampan",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 95,
+    "Titel": "De kleppende klipper",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 96,
+    "Titel": "Het rijmende paard",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 97,
+    "Titel": "De junglebloem",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 98,
+    "Titel": "Het hondenparadijs",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 99,
+    "Titel": "De kwakstralen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 100,
+    "Titel": "Het gouden paard",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 101,
+    "Titel": "De kaartendans",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 102,
+    "Titel": "De dromendiefstal",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 103,
+    "Titel": "De klankentapper",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 104,
+    "Titel": "De wilde weldoener",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 105,
+    "Titel": "De koning drinkt",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 106,
+    "Titel": "De charmante koffiepot",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 107,
+    "Titel": "De sprietatoom",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 108,
+    "Titel": "Twee toffe totems",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 109,
+    "Titel": "De wolkeneters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 110,
+    "Titel": "De zingende zwammen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 111,
+    "Titel": "De schat van Beersel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 112,
+    "Titel": "De groene splinter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 113,
+    "Titel": "Het geheim van de gladiatoren",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 114,
+    "Titel": "De Tartaarse helm",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 115,
+    "Titel": "De gezanten van Mars",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 116,
+    "Titel": "De bronzen sleutel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 117,
+    "Titel": "De toornige tjiftjaf",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 118,
+    "Titel": "De gouden cirkel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 119,
+    "Titel": "Het sprekende testament",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 120,
+    "Titel": "De geverniste zeerovers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 121,
+    "Titel": "De duistere diamant",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 122,
+    "Titel": "De kale kapper",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 123,
+    "Titel": "De zwarte zwaan",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 124,
+    "Titel": "Het vliegende bed",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 125,
+    "Titel": "De Texasrakkers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 126,
+    "Titel": "De windmakers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 127,
+    "Titel": "De knokkersburcht",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 128,
+    "Titel": "Het brommende brons",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 129,
+    "Titel": "Prinses Zagemeel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 130,
+    "Titel": "De steensnoepers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 131,
+    "Titel": "Het zingende nijlpaard",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 132,
+    "Titel": "De stierentemmer",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 133,
+    "Titel": "De tuf-tuf-club",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 134,
+    "Titel": "De witte uil",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 135,
+    "Titel": "De gekke gokker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 136,
+    "Titel": "De bokkerijders",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 137,
+    "Titel": "De ringelingschat",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 138,
+    "Titel": "Bibbergoud",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 139,
+    "Titel": "De boze boomzalver",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 140,
+    "Titel": "De zwarte madam",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 141,
+    "Titel": "Het bevroren vuur",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 142,
+    "Titel": "De mottenvanger",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 143,
+    "Titel": "De malle mergpijp",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 144,
+    "Titel": "Lambiorix",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 145,
+    "Titel": "De stalen bloempot",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 146,
+    "Titel": "De sterrenplukkers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 147,
+    "Titel": "De poppenpakker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 148,
+    "Titel": "De lachende wolf",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 149,
+    "Titel": "De gladde glipper",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 150,
+    "Titel": "Het Spaanse spook",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 151,
+    "Titel": "Het ros Bazhaar",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 152,
+    "Titel": "De bevende Baobab",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 153,
+    "Titel": "De nare varaan",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 154,
+    "Titel": "Rikki en Wiske in Chocowakije",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 155,
+    "Titel": "De poezelige poes",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 156,
+    "Titel": "Beminde Barabas",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 157,
+    "Titel": "De mollige meivis",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 158,
+    "Titel": "De vinnige viking",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 159,
+    "Titel": "De minilotten van Kokonera",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 160,
+    "Titel": "De bokkige bombardon",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 161,
+    "Titel": "De blinkende boemerang",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 162,
+    "Titel": "De gouden locomotief",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 163,
+    "Titel": "De vlijtige vlinder",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 164,
+    "Titel": "De raap van Rubens",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 165,
+    "Titel": "De sputterende spuiter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 166,
+    "Titel": "De maffe maniak",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 167,
+    "Titel": "De zingende kaars",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 168,
+    "Titel": "De Efteling-elfjes",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 169,
+    "Titel": "De amoureuze amazone",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 170,
+    "Titel": "De olijke olifant",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 171,
+    "Titel": "Walli de walvis",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 172,
+    "Titel": "Het laatste dwaallicht",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 173,
+    "Titel": "Het drijvende dorp",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 174,
+    "Titel": "Het statige standbeeld",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 175,
+    "Titel": "De kadulle Cupido",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 176,
+    "Titel": "De pompenplanters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 177,
+    "Titel": "De adellijke ark",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 178,
+    "Titel": "De stoute steenezel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 179,
+    "Titel": "De windbrekers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 180,
+    "Titel": "Het kregelige ketje",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 181,
+    "Titel": "De perenprins",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 182,
+    "Titel": "De koperen knullen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 183,
+    "Titel": "De toffe tamboer",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 184,
+    "Titel": "De Regenboogprinses",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 185,
+    "Titel": "De botte botaknol",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 186,
+    "Titel": "De rosse reus",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 187,
+    "Titel": "De droevige duif",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 188,
+    "Titel": "De snoezige Snowijt - Het vliegende hart",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 189,
+    "Titel": "De belhamel-bende",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 190,
+    "Titel": "De woelige wadden",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 191,
+    "Titel": "De vergeten vallei - Toffe Tiko",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 192,
+    "Titel": "Het Bretoense broertje",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 193,
+    "Titel": "Hippus het zeeveulen - Het verborgen volk",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 194,
+    "Titel": "De gouden ganzeveer",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 195,
+    "Titel": "De hippe heksen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 196,
+    "Titel": "De natte Navajo",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 197,
+    "Titel": "Het Delta-duel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 198,
+    "Titel": "De lieve Lilleham",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 199,
+    "Titel": "De tamme tumi",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 200,
+    "Titel": "Amoris van Amoras",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 201,
+    "Titel": "Het dreigende dinges",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 202,
+    "Titel": "Angst op de \"Amsterdam",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 203,
+    "Titel": "De ruige regen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 204,
+    "Titel": "De mooie millirem",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 205,
+    "Titel": "De kattige kat",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 206,
+    "Titel": "De bonkige baarden",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 207,
+    "Titel": "De glanzende gletsjer",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 208,
+    "Titel": "De hellegathonden",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 209,
+    "Titel": "De kwaaie kwieten",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 210,
+    "Titel": "De jolige joffer",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 211,
+    "Titel": "De woeste wespen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 212,
+    "Titel": "De edele elfen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 213,
+    "Titel": "De eenzame eenhoorn",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 214,
+    "Titel": "De parel in de lotusbloem",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 215,
+    "Titel": "De Krimson-crisis",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 216,
+    "Titel": "De wervelende waterzak",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 217,
+    "Titel": "De komieke Coco",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 218,
+    "Titel": "De krachtige krans",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 219,
+    "Titel": "De speelgoedspiegel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 220,
+    "Titel": "Sagarmatha",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 221,
+    "Titel": "De rinoramp",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 222,
+    "Titel": "De bezeten bezitter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 223,
+    "Titel": "De kleurenkladder",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 224,
+    "Titel": "De kleine postruiter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 225,
+    "Titel": "De goalgetter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 226,
+    "Titel": "De mysterieuze mijn",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 227,
+    "Titel": "Het witte wief",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 228,
+    "Titel": "Het wondere Wolfje",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 229,
+    "Titel": "Tazuur en Tazijn",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "GESIGNEERD door Paul Geerts \"voor David",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 230,
+    "Titel": "Lambik Baba",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 231,
+    "Titel": "De scherpe schorpioen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 232,
+    "Titel": "De tootootjes",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 233,
+    "Titel": "De klinkende klokken",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 234,
+    "Titel": "Het kristallen kasteel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 235,
+    "Titel": "De krakende carcas",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 236,
+    "Titel": "De gulden harpoen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 237,
+    "Titel": "De snikkende sirene",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 238,
+    "Titel": "De slimme slapjanus",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 239,
+    "Titel": "De stervende ster",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 240,
+    "Titel": "De pottenproever",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 241,
+    "Titel": "Het Aruba-dossier",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 242,
+    "Titel": "Tokapua Toraja",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 243,
+    "Titel": "De averechtse aap",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 244,
+    "Titel": "De begeerde berg",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 245,
+    "Titel": "De 7 Schaken",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 246,
+    "Titel": "De vonkende vuurman",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 247,
+    "Titel": "Het kostbare kader",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 248,
+    "Titel": "Robotkop",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 249,
+    "Titel": "De razende race",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 250,
+    "Titel": "Het Grote Gat",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 251,
+    "Titel": "De verraderlijke Vinson",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 252,
+    "Titel": "Volle maan",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 253,
+    "Titel": "Prachtige Pjotr",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 254,
+    "Titel": "Tex en Terry",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 255,
+    "Titel": "De mompelende mummie",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 256,
+    "Titel": "De vogels der goden",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 257,
+    "Titel": "De rebelse Reinaert",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 258,
+    "Titel": "De gevederde slang",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 259,
+    "Titel": "Amber",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 260,
+    "Titel": "De bonte bollen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 261,
+    "Titel": "Het berenbeklag",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 262,
+    "Titel": "Het enge eiland",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 263,
+    "Titel": "Het verdronken land",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 264,
+    "Titel": "Jeanne Panne",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 265,
+    "Titel": "Papa Razzi",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 266,
+    "Titel": "De kernmonsters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 267,
+    "Titel": "Lilli Natal",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 268,
+    "Titel": "De koeiencommissie",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 269,
+    "Titel": "De stugge Stuyvesant",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 270,
+    "Titel": "De ongelooflijke Thomas",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 271,
+    "Titel": "Big Mother",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 272,
+    "Titel": "De blote Belg",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 273,
+    "Titel": "De europummel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 274,
+    "Titel": "De fleurige Floriade",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 275,
+    "Titel": "Heilig bloed",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 276,
+    "Titel": "In de ban van de Milt",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 277,
+    "Titel": "De verdwenen verteller",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 278,
+    "Titel": "De kunstkraker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 279,
+    "Titel": "De laatste vloek",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 280,
+    "Titel": "De kus van Odfella",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 281,
+    "Titel": "De gevangene van Prisonov",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 282,
+    "Titel": "De breinbrekers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 283,
+    "Titel": "Paniek in Palermo",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 284,
+    "Titel": "Kaapse kaalkoppen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 285,
+    "Titel": "Verraad op de Veluwe",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 286,
+    "Titel": "De flierende fluiter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 287,
+    "Titel": "De formidabele fantast",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 288,
+    "Titel": "Het slapende goud",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 289,
+    "Titel": "De kaduke klonen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 290,
+    "Titel": "De blikken blutser - Het mopperende masker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 291,
+    "Titel": "De bangeschieters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 292,
+    "Titel": "De nachtwachtbrigade",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 293,
+    "Titel": "De kaperkoters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 294,
+    "Titel": "De tikkende tinkan",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 295,
+    "Titel": "De krasse kroko",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 296,
+    "Titel": "De curieuze neuzen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 297,
+    "Titel": "De joviale Gille",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 298,
+    "Titel": "De elfstedenstunt",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 299,
+    "Titel": "Het babbelende bad",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 300,
+    "Titel": "Het machtige monument",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 301,
+    "Titel": "De dartele draak",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 302,
+    "Titel": "De sterrensteen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 303,
+    "Titel": "De knikkende knoken",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 304,
+    "Titel": "De jokkende joker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 305,
+    "Titel": "De tijdbobijn",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 306,
+    "Titel": "De stralende staf",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 307,
+    "Titel": "De rillende rots",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 308,
+    "Titel": "De gamegoeroe",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 309,
+    "Titel": "De watersater",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 310,
+    "Titel": "De halve Havelaar",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 311,
+    "Titel": "De stuivende stad",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 312,
+    "Titel": "De zappende ziel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 313,
+    "Titel": "De kwakende queen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 314,
+    "Titel": "Het lijdende Leiden",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 315,
+    "Titel": "De bananenzangers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 316,
+    "Titel": "Krimsonia",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 317,
+    "Titel": "Het bizarre blok",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 318,
+    "Titel": "De suikerslaven",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 319,
+    "Titel": "Suske de rat",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 320,
+    "Titel": "De tirannieke tor",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 321,
+    "Titel": "Het ijzeren duel",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 322,
+    "Titel": "De vliegende rivier",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 323,
+    "Titel": "Barabas de Balorige",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 324,
+    "Titel": "De royale ruiter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 325,
+    "Titel": "Het schrikkelspook",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 326,
+    "Titel": "De zwarte tulp",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 327,
+    "Titel": "Het gebroken dorp",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 328,
+    "Titel": "Sterrenrood",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 329,
+    "Titel": "Suskewiet",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 330,
+    "Titel": "De fabuleuze freak",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 331,
+    "Titel": "Sooi en Sientje",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 332,
+    "Titel": "Het verloren verleden",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 333,
+    "Titel": "De bibberende Bosch",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 334,
+    "Titel": "Expeditie Robikson - Taxi Tata",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 335,
+    "Titel": "Het lederen monster",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 336,
+    "Titel": "Het omgekeerde land",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 337,
+    "Titel": "Game of Drones",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 338,
+    "Titel": "De Heldenmaker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 339,
+    "Titel": "De planeetvreter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 340,
+    "Titel": "Mami Wata",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 341,
+    "Titel": "Het Monamysterie",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 342,
+    "Titel": "De zwarte zwevers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 343,
+    "Titel": "SOS Snowbell",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 344,
+    "Titel": "BRBS 2.0",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 345,
+    "Titel": "Operatie Siggy",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 346,
+    "Titel": "Chronos en Chaos",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 347,
+    "Titel": "Lambik Plastiek",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 348,
+    "Titel": "De wrede wensput",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 349,
+    "Titel": "Het lekkere lab",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 350,
+    "Titel": "De nacht van de narwal",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 351,
+    "Titel": "De verloren Van Eyck",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 352,
+    "Titel": "Team Krimson",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 353,
+    "Titel": "Het gewiste Wiske",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 354,
+    "Titel": "De zwijgende Zwollem",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 355,
+    "Titel": "De scheve Schot",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 356,
+    "Titel": "De fluitende olifant",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 357,
+    "Titel": "De zalige ziener",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 358,
+    "Titel": "De drakenprinter",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 359,
+    "Titel": "De naamloze 9",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 360,
+    "Titel": "De drijvende dokters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 361,
+    "Titel": "De grot van Gregorius",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 362,
+    "Titel": "De kale kroon",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 363,
+    "Titel": "De maffe markies",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 364,
+    "Titel": "De gulden krijger",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 365,
+    "Titel": "De boze boleet",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 366,
+    "Titel": "De geplaagde Plantijn",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 367,
+    "Titel": "De harteloze Hein",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 368,
+    "Titel": "De Rookburgh Rookies",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 369,
+    "Titel": "De boterhammenman",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 370,
+    "Titel": "De krijtkampioen",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 371,
+    "Titel": "De zoevende zusters",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 372,
+    "Titel": "Bolhoed Bik",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 373,
+    "Titel": "Klaartje Wakker",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 374,
+    "Titel": "De Keizerkop",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 375,
+    "Titel": "De schakende schim",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 376,
+    "Titel": "De boekenduikers",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 377,
+    "Titel": "De stenen samoerai",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 378,
+    "Titel": "Het ware witje",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  },
+  {
+    "afbeelding": "",
+    "Nr": 379,
+    "Titel": "Het Hondenhart",
+    "druk": "",
+    "conditie": "",
+    "bijzonderheden": "",
+    "Last Dodo link": "",
+    "prijs": ""
+  }
+]        ];
+        const IMAGE_BASE_URL = 'https://www.tonicforthebones.com/strips/images/';
+        const CONTACT_EMAIL = 'david.enker@gmail.com';
+        const CATEGORY = document.body.dataset.category || 'suske-wiske';
+
+        const selectedComics = new Set();
+
+        function renderComics() {
+            console.log('Starting renderComics for category:', CATEGORY);
+            console.log('comicsData:', comicsData);
+            const grid = document.getElementById('grid');
+            if (!grid) {
+                console.error('Grid element not found');
+                return;
+            }
+            grid.innerHTML = '<p class="loading">Bezig met laden...</p>';
+
+            try {
+                if (!Array.isArray(comicsData)) {
+                    throw new Error('comicsData is not an array');
+                }
+                // Flexible filtering based on category
+                const categoryFilters = {
+                    'suske-wiske': '4 kleurenreeks',
+                    'suske-wiske-buiten': 'buiten reeks',
+                    'franquin': 'franquin',
+                    'disney': 'disney'
+                };
+                const filterValue = categoryFilters[CATEGORY]?.toLowerCase();
+                console.log('Filter value:', filterValue);
+                const filtered = filterValue
+                    ? comicsData.filter(row => {
+                        const serie = row.serie?.toLowerCase() || row.reeks?.toLowerCase() || '';
+                        const match = serie.includes(filterValue);
+                        console.log('Comic:', row, 'Match:', match);
+                        return match;
+                    })
+                    : comicsData; // No filter if category unknown
+                console.log('Filtered comics:', filtered);
+                if (filtered.length === 0) {
+                    throw new Error(`Geen comics gevonden voor categorie ${CATEGORY}`);
+                }
+
+                let html = '<div class="comics-grid">';
+                filtered.forEach((row, index) => {
+                    console.log('Rendering comic:', row);
+                    const comicId = `${CATEGORY}-${index}`;
+                    const condition = (row.conditie || row.staat || 'Onbekend')?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
+                    const imageUrl = (row.image || row.afbeelding) ? 
+                        ((row.image || row.afbeelding).startsWith('http') ? 
+                         (row.image || row.afbeelding) : 
+                         `${IMAGE_BASE_URL}${row.image || row.afbeelding}`) : 
+                        'https://via.placeholder.com/120x160?text=No+Image';
+                    const title = row.title || row.titel || 'Geen titel';
+                    const nr = row.nr || row.nummer || '';
+                    const druk = row.druk || row.jaar || row.datum || 'N.v.t.';
+                    const bijzonderheden = row.bijzonderheden || row.notities || row.opmerkingen || '';
+                    const link = row.link || row.url || '';
+                    const prijs = row.prijs || row.euro || row.price || 'N.v.t.';
+                    html += `<div class="comic-card" data-id="${comicId}">
+                        <div class="select-checkbox">
+                            <input type="checkbox" onchange="toggleComicSelection('${comicId}')">
+                        </div>
+                        <div class="comic-image">
+                            <img src="${imageUrl}" alt="${title}" loading="lazy" onerror="this.src='https://via.placeholder.com/120x160?text=Image+Error';" onclick="showImagePopup(this.src, this.alt)">
+                        </div>
+                        <div class="comic-details">
+                            <span class="comic-number">${nr}</span>
+                            <div class="comic-title">${title}</div>
+                            <div>
+                                <span>Druk: ${druk}</span><br>
+                                <span class="comic-condition condition-${condition}">Conditie: ${row.conditie || row.staat || 'Onbekend'}</span><br>
+                                <span class="comic-price">Prijs: ${prijs}</span><br>
+                                <span>${bijzonderheden}</span><br>
+                                ${link ? `<a href="${link}" target="_blank" class="comic-link">Meer info</a>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                grid.innerHTML = html;
+            } catch (err) {
+                console.error('Error rendering comics:', err);
+                grid.innerHTML = `<p class="error-message">Fout bij laden: ${err.message}</p>`;
+            }
+        }
+
+        function toggleComicSelection(comicId) {
+            if (selectedComics.has(comicId)) {
+                selectedComics.delete(comicId);
+            } else {
+                selectedComics.add(comicId);
+            }
+            updateBuyButton();
+            document.querySelectorAll('.comic-card').forEach(item => {
+                item.classList.toggle('selected', selectedComics.has(item.dataset.id));
+            });
+        }
+
+        function updateBuyButton() {
+            const buyButton = document.getElementById('buyBtn');
+            const badge = document.getElementById('badge');
+            if (!buyButton || !badge) return;
+            const count = selectedComics.size;
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+            buyButton.disabled = count === 0;
+            buyButton.onclick = () => {
+                if (count > 0) {
+                    const selected = Array.from(selectedComics).join(', ');
+                    window.location.href = `mailto:${CONTACT_EMAIL}?subject=Comic Purchase Inquiry&body=Interested in comics: ${selected}`;
+                }
+            };
+        }
+
+        function showImagePopup(src, alt) {
+            const popup = document.getElementById('popup');
+            const popImg = document.getElementById('popimg');
+            if (!popup || !popImg) return;
+            popImg.src = src;
+            popImg.alt = alt || '';
+            popup.classList.add('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, rendering comics for:', CATEGORY);
+            renderComics();
+        });
+    </script>
+</body>
+</html>

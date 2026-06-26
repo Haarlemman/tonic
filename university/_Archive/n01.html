@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The University of Free Will</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  
+  <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #020617; 
+            font-family: 'Roboto', sans-serif; 
+            color: #fff;
+        }
+
+        #canvas-container { width: 100vw; height: 100vh; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        
+        /* Intro Overlay - Restored Original Blurry Concept */
+        #intro-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 15, 25, 0.4); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        #intro-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem;
+            font-style: italic;
+            max-width: 850px;
+            min-height: 140px;
+            line-height: 1.5;
+            margin-bottom: 50px;
+            padding: 0 40px;
+            color: #e2e8f0;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        #intro-text::after {
+            content: '|';
+            display: inline-block;
+            margin-left: 5px;
+            color: #64748b;
+            animation: cursor-blink 0.8s step-end infinite;
+        }
+
+        @keyframes cursor-blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 14px 45px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.4s ease;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+        }
+        .action-btn:hover {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* UI / HUD */
+        #hud-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+            box-sizing: border-box;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .brand-box {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            padding: 20px 30px;
+            pointer-events: auto;
+            border-left: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { margin: 0; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; }
+        .sub-brand { font-size: 0.65rem; margin-top: 8px; color: #94a3b8; letter-spacing: 2px; }
+
+        .status-box { pointer-events: auto; display: flex; gap: 15px; }
+        .hud-btn {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 18px;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+        .hud-btn:hover { background: #fff; color: #000; }
+
+        .directory-box { pointer-events: auto; }
+        .building-tag {
+            display: block;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: right;
+        }
+        .building-tag:hover { background: #fff; color: #000; transform: translateX(-5px); }
+
+        /* Faculty Screens */
+        #faculty-screen {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 20px;
+            width: 260px;
+            display: none;
+            z-index: 80;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            text-align: center;
+            transform: translate(-50%, -120%);
+        }
+        #faculty-screen.active { display: block; opacity: 1; }
+        .quote-text {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            color: #fff;
+        }
+
+        #tooltip {
+            position: absolute;
+            padding: 5px 12px;
+            background: #fff;
+            color: #000;
+            pointer-events: none;
+            display: none;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            z-index: 60;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+        }
+  </style>
+ </head>
+ <body>
+
+  <audio id="bg-music" loop crossorigin="anonymous">
+    <source src="audio/MysteriousHeartbeat1.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="intro-overlay">
+    <div id="intro-text"></div>
+    <div class="intro-btns">
+        <button id="skip-btn" class="action-btn">Enter Campus</button>
+    </div>
+  </div>
+
+  <div id="hud-layer">
+    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+        <div class="brand-box">
+            <h1>The University<br>of Free Will</h1>
+            <div class="sub-brand">EST. THE PARADOX</div>
+        </div>
+        <div class="status-box">
+            <button class="hud-btn" onclick="toggleMusic()" id="music-toggle">Audio: On</button>
+            <button class="hud-btn" onclick="showTerminal()">Terminal</button>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div style="font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 2px;">
+            Coordinate Sync: Active<br>Framework: Established
+        </div>
+        <div class="directory-box">
+            <div class="building-tag" onclick="focusBuilding('art')">01 Beauty (Art)</div>
+            <div class="building-tag" onclick="focusBuilding('science')">02 Knowledge (Science)</div>
+            <div class="building-tag" onclick="focusBuilding('spirit')">03 Wisdom (Spirit)</div>
+        </div>
+    </div>
+  </div>
+
+  <div id="faculty-screen">
+    <div class="quote-text" id="screen-content"></div>
+    <div style="font-size: 0.5rem; color: #64748b; margin-top: 10px; text-transform: uppercase; letter-spacing: 2px;">Campus Transmission</div>
+  </div>
+
+  <div id="tooltip"></div>
+  <div id="canvas-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <script>
+        let scene, camera, renderer, raycaster, mouse, controls;
+        let specialBlocks = [];
+        let introActive = true;
+        let skipRequested = false;
+        let cinematicTarget = null;
+        let lastZoomTime = 0;
+        let lastQuoteTime = 0;
+        const ZOOM_INTERVAL = 12000;
+
+        let audioCtx, analyser, dataArray;
+        let beatLevel = 0;
+
+        const introQuotes = [
+            "Welcome to the University of Free Will.",
+            "Life is complicated, full of surprises and twists...",
+            "But within a framework, there is still control.",
+            "The more you learn, the more you realize you know nothing.",
+            "Adversity is your teacher."
+        ];
+
+        const facultyQuotes = {
+            art: ["Beauty is the only truth.", "Creation is a discovery of self.", "Form follows the soul."],
+            science: ["Knowledge is a framework of doubt.", "Observation collapses potentiality.", "The map is not the territory."],
+            spirit: ["Silence speaks volumes.", "Wisdom is the art of letting go.", "The void is where everything begins."]
+        };
+
+        window.onload = function() {
+            init();
+            animate();
+            runIntroSequence();
+            document.getElementById('skip-btn').onclick = startExperience;
+        };
+
+        async function typeText(text, element) {
+            element.innerHTML = '';
+            for (let i = 0; i < text.length; i++) {
+                if (skipRequested) return;
+                element.innerHTML += text.charAt(i);
+                await new Promise(r => setTimeout(r, 45));
+            }
+        }
+
+        async function runIntroSequence() {
+            const el = document.getElementById('intro-text');
+            for (let quote of introQuotes) {
+                if (skipRequested) break;
+                await typeText(quote, el);
+                if (skipRequested) break;
+                await new Promise(r => setTimeout(r, 2000));
+                if (skipRequested) break;
+                el.style.opacity = 0;
+                await new Promise(r => setTimeout(r, 600));
+                el.innerHTML = '';
+                el.style.opacity = 1;
+            }
+        }
+
+        function startExperience() {
+            skipRequested = true;
+            introActive = false;
+            initAudio();
+            
+            const overlay = document.getElementById('intro-overlay');
+            overlay.style.opacity = 0;
+            setTimeout(() => {
+                overlay.style.visibility = 'hidden';
+                document.getElementById('hud-layer').style.opacity = 1;
+                lastZoomTime = Date.now();
+                controls.autoRotate = true;
+            }, 1000);
+            
+            const music = document.getElementById('bg-music');
+            music.volume = 0.5;
+            music.play().catch(()=>{});
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                const source = audioCtx.createMediaElementSource(document.getElementById('bg-music'));
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                analyser.fftSize = 128;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            } catch(e) {}
+        }
+
+        function toggleMusic() {
+            const m = document.getElementById('bg-music');
+            const btn = document.getElementById('music-toggle');
+            if (m.paused) { m.play(); btn.innerText = "Audio: On"; }
+            else { m.pause(); btn.innerText = "Audio: Off"; }
+        }
+
+        function showTerminal() {
+            // Simplified for now
+            console.log("Terminal accessed.");
+        }
+
+        function focusBuilding(type) {
+            const b = specialBlocks.find(x => x.userData.type === type);
+            if (b) {
+                cinematicTarget = b;
+                lastZoomTime = Date.now();
+                updateFacultyScreen(type);
+            }
+        }
+
+        function updateFacultyScreen(type) {
+            const quotes = facultyQuotes[type];
+            document.getElementById('screen-content').innerText = quotes[Math.floor(Math.random()*quotes.length)];
+            document.getElementById('faculty-screen').classList.add('active');
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+            scene.fog = new THREE.Fog(0x020617, 30, 150);
+
+            const aspect = window.innerWidth / window.innerHeight;
+            camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+            camera.position.set(60, 40, 60);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotateSpeed = 0.5;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const light = new THREE.DirectionalLight(0xffffff, 0.8);
+            light.position.set(50, 100, 50);
+            scene.add(light);
+
+            createCampus();
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+        }
+
+        function createCampus() {
+            const loader = new THREE.TextureLoader();
+            
+            // Placeholder images from Unsplash to demonstrate textures
+            const texArt = loader.load('https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=400&q=80'); // Abstract
+            const texSci = loader.load('https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=400&q=80'); // Lab
+            const texSpi = loader.load('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=400&q=80'); // Nature
+
+            const GRID = 12;
+            const SPACING = 5;
+            const offset = (GRID * SPACING) / 2;
+
+            for(let x=0; x<GRID; x++) {
+                for(let z=0; z<GRID; z++) {
+                    let type = "campus";
+                    let mesh;
+                    let h = 2 + Math.random() * 8;
+                    let color = 0x1e293b;
+
+                    if (x === 4 && z === 4) {
+                        type = "art"; h = 20;
+                        mesh = new THREE.Mesh(new THREE.BoxGeometry(4, h, 4), new THREE.MeshStandardMaterial({ map: texArt }));
+                    } else if (x === 8 && z === 3) {
+                        type = "science"; h = 22;
+                        mesh = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, h, 32), new THREE.MeshStandardMaterial({ map: texSci }));
+                    } else if (x === 5 && z === 9) {
+                        type = "spirit"; h = 25;
+                        mesh = new THREE.Mesh(new THREE.BoxGeometry(3, h, 3), new THREE.MeshStandardMaterial({ map: texSpi }));
+                    } else {
+                        mesh = new THREE.Mesh(new THREE.BoxGeometry(2, h, 2), new THREE.MeshStandardMaterial({ color: color }));
+                    }
+
+                    mesh.position.set(x * SPACING - offset, h/2, z * SPACING - offset);
+                    mesh.userData = { type, label: type.toUpperCase() };
+                    scene.add(mesh);
+                    if(type !== "campus") specialBlocks.push(mesh);
+                }
+            }
+
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0x010409 }));
+            floor.rotation.x = -Math.PI/2;
+            scene.add(floor);
+        }
+
+        function onMouseMove(e) {
+            if (introActive) return;
+            mouse = mouse || new THREE.Vector2();
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster = raycaster || new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            const tooltip = document.getElementById('tooltip');
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while(obj.parent && !obj.userData.type) obj = obj.parent;
+                if(obj.userData.type && obj.userData.type !== "campus") {
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = e.clientX + 'px';
+                    tooltip.style.top = e.clientY + 'px';
+                    tooltip.innerText = obj.userData.label;
+                    return;
+                }
+            }
+            tooltip.style.display = 'none';
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = Date.now();
+
+            if (analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0; for(let i=0; i<10; i++) sum += dataArray[i];
+                beatLevel = sum / 10 / 255;
+            }
+
+            if (!introActive && !cinematicTarget && now - lastZoomTime > ZOOM_INTERVAL) {
+                // Auto-cinematic cycle
+                const targets = specialBlocks;
+                cinematicTarget = targets[Math.floor(Math.random()*targets.length)];
+                updateFacultyScreen(cinematicTarget.userData.type);
+                lastZoomTime = now;
+            }
+
+            if (cinematicTarget) {
+                const targetPos = new THREE.Vector3();
+                cinematicTarget.getWorldPosition(targetPos);
+                controls.target.lerp(targetPos, 0.05);
+                
+                // Overlay Logic
+                const v = targetPos.clone(); v.y += 10; v.project(camera);
+                const screen = document.getElementById('faculty-screen');
+                screen.style.left = (v.x * .5 + .5) * window.innerWidth + 'px';
+                screen.style.top = (v.y * -.5 + .5) * window.innerHeight + 'px';
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+ </body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parkinson Praktisch Wetenschappelijk - Herbert Aberson</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0f172a;
+        }
+        
+        .hidden-app {
+            display: none !important;
+        }
+
+        .journal-entry {
+            border-left: 4px solid #10b981;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 transition-colors duration-300">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="p-4">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center fade-in">
+            <div class="bg-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg">
+                <i data-lucide="lock" class="w-8 h-8"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2 text-slate-900" id="login-title">Beveiligde Toegang</h2>
+            <p class="text-slate-500 mb-8 text-sm" id="login-subtitle">Voer het wachtwoord in om de Parkinson Praktisch gids te openen.</p>
+            
+            <div class="space-y-4">
+                <input type="password" id="password-input" 
+                    class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-center tracking-widest"
+                    placeholder="••••••••"
+                    onkeypress="if(event.key === 'Enter') checkPassword()">
+                
+                <button onclick="checkPassword()" 
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95">
+                    Toegang Verlenen
+                </button>
+                <p id="error-msg" class="text-rose-500 text-xs font-medium h-4"></p>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-slate-100">
+                <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Herbert Aberson</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Content -->
+    <div id="app-content" class="hidden-app">
+        <!-- Navigation -->
+        <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('home')">
+                        <div class="bg-emerald-600 p-1.5 rounded-lg text-white">
+                            <i data-lucide="compass"></i>
+                        </div>
+                        <span class="font-bold text-xl tracking-tight">
+                            Parkinson<span class="text-emerald-600 font-black" id="nav-brand-suffix">Praktisch</span>
+                        </span>
+                    </div>
+                    
+                    <div class="hidden md:flex space-x-8">
+                        <button onclick="switchTab('home')" id="nav-home" class="text-sm font-medium text-emerald-600 underline underline-offset-8 decoration-2">Dashboard</button>
+                        <button onclick="switchTab('protocol')" id="nav-protocol" class="text-sm font-medium text-slate-500 hover:text-slate-900">Het Protocol</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleLanguage()" class="flex items-center gap-2 p-2 rounded-full hover:bg-slate-100 transition-colors text-sm font-bold text-slate-600">
+                            <i data-lucide="languages" class="w-5 h-5"></i>
+                            <span id="lang-label" class="uppercase">NL</span>
+                        </button>
+                        <button onclick="switchTab('journal')" class="hidden sm:block bg-slate-900 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-slate-800 transition-all" id="btn-journal">
+                            Mijn Dagboek
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            
+            <!-- HOME TAB -->
+            <div id="tab-home" class="tab-content active space-y-8 fade-in">
+                <header class="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-12 shadow-2xl">
+                    <div class="relative z-10 max-w-2xl">
+                        <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight" id="hero-title">
+                            Parkinson Praktisch <span class="text-emerald-400">Wetenschappelijk</span>
+                        </h1>
+                        <p class="text-lg text-slate-300 mb-8 leading-relaxed" id="hero-subtitle">
+                            Nieuwe inzichten, nieuwe oplossingen, nieuwe horizon. Neem de controle terug over uw gezondheid door bewuste keuzes.
+                        </p>
+                        <button onclick="switchTab('protocol')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg flex items-center gap-2">
+                            <span id="hero-btn">Bekijk het Protocol</span> <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none p-12">
+                        <i data-lucide="brain" class="w-full h-full text-white"></i>
+                    </div>
+                </header>
+
+                <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="pillars-grid"></section>
+
+                <section class="bg-emerald-50 border border-emerald-100 rounded-3xl p-8">
+                    <div class="flex flex-col md:flex-row gap-8 items-center">
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                                <i data-lucide="info" class="w-6 h-6"></i> <span id="quote-title">De Marathon Mindset</span>
+                            </h2>
+                            <p class="text-emerald-800 leading-relaxed mb-4 italic" id="quote-text"></p>
+                            <div class="flex gap-4" id="quote-tags"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- PROTOCOL TAB -->
+            <div id="tab-protocol" class="tab-content space-y-6 fade-in">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-3xl font-bold" id="protocol-header">Het Protocol</h2>
+                    <div class="bg-slate-100 rounded-full px-4 py-1 text-sm text-slate-500" id="progress-counter">0 voltooid</div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="protocol-cards"></div>
+            </div>
+
+            <!-- JOURNAL TAB -->
+            <div id="tab-journal" class="tab-content space-y-6 fade-in">
+                <h2 class="text-3xl font-bold mb-8" id="journal-header">Mijn Dagboek</h2>
+                
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                    <textarea id="journal-input" class="w-full h-32 p-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none mb-4" placeholder="Schrijf hier uw gedachten voor vandaag..."></textarea>
+                    <div class="flex justify-end">
+                        <button onclick="saveJournalEntry()" class="bg-emerald-600 text-white px-8 py-2 rounded-full font-bold hover:bg-emerald-700 transition-all shadow-md" id="btn-save-note">Opslaan</button>
+                    </div>
+                </div>
+
+                <div id="journal-entries" class="space-y-4 pt-4">
+                    <!-- Entries go here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-slate-200 bg-white mt-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+                    <div>
+                        <p class="text-slate-900 font-bold text-lg mb-1" id="footer-author">Door Herbert Aberson</p>
+                        <p class="text-slate-500 text-sm">
+                            <span id="footer-based">Analyst consultant</span> <br />
+                            <span class="font-bold text-slate-900">immunoresolvents</span>
+                        </p>
+                    </div>
+                    <div class="flex gap-6">
+                        <i data-lucide="heart" class="w-6 h-6 text-rose-400"></i>
+                        <i data-lucide="book-open" class="w-6 h-6 text-slate-400"></i>
+                        <i data-lucide="wind" class="w-6 h-6 text-sky-400"></i>
+                    </div>
+                </div>
+                <div class="mt-8 pt-8 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-400" id="footer-rights"></p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const SITE_PASSWORD = "parkinson"; 
+        let currentLang = 'nl';
+        let completedItems = new Set();
+        let journalEntries = [];
+
+        const translations = {
+            nl: {
+                brand: 'Praktisch', navHome: 'Dashboard', navProtocol: 'Het Protocol', navJournal: 'Mijn Dagboek',
+                heroTitle: 'Parkinson Praktisch <span class="text-emerald-400">Wetenschappelijk</span>',
+                heroSubtitle: 'Nieuwe inzichten, nieuwe oplossingen, nieuwe horizon. Neem de controle terug over uw gezondheid door bewuste keuzes.',
+                heroBtn: 'Bekijk het Protocol', quoteTitle: 'De Marathon Mindset',
+                quoteText: '"Wees niet te streng op jezelf als je dit een dag of langer niet lukt om wat voor reden dan ook. Ga gewoon door als het wel weer lukt. Het is een marathon, geen sprint."',
+                quoteTags: ['Consistentie', 'Geduld', 'Zelfzorg'], footerAuthor: 'Door Herbert Aberson',
+                footerBased: 'Analyst consultant', footerRights: '© 2026 Herbert Aberson. Webdesign by <a href="https://davidenker.com">ENKR </a> - Alle rechten voorbehouden.',
+                protocolHeader: 'Het Protocol', completedSuffix: 'voltooid', of: 'van',
+                loginTitle: 'Beveiligde Toegang', loginSubtitle: 'Voer het wachtwoord in om de Parkinson Praktisch gids te openen.',
+                journalHeader: 'Mijn Dagboek', journalPlaceholder: 'Schrijf hier uw gedachten voor vandaag...', btnSave: 'Opslaan',
+                pillars: [
+                    { id: 'nutri', title: 'Voeding & Keto', icon: 'apple', color: 'bg-emerald-500', desc: 'Eet vlees, vis, gevogelte, groenten en fruit. Pas op met koolhydraten.', tips: ['Focus op keto: het is een tool.', 'Denk aan elektrolyten: zout, kalium, magnesium.', 'Begin eenvoudig.', 'Gezondheid boven afvallen.'] },
+                    { id: 'sleep', title: 'Slaap & Ritme', icon: 'moon', color: 'bg-indigo-500', desc: 'Circadiaanse ritmes beïnvloeden chronische ziekten enorm.', tips: ['Optimaliseer je biologische klok.', 'Zorg voor een avondritueel.', 'Beperk blauw licht.'] },
+                    { id: 'move', title: 'Beweging', icon: 'activity', color: 'bg-orange-500', desc: 'Consistentie boven intensiteit.', tips: ['Beweeg elke dag.', 'Focus op mobiliteit.', 'Rust is ook een actie.'] },
+                    { id: 'mind', title: 'Mindset & Stress', icon: 'brain', color: 'bg-purple-500', desc: 'Beheersing van stress remt symptomen.', tips: ['Wees niet te streng voor jezelf.', 'Blijf sociaal actief.', 'Focus op wat je kunt beïnvloeden.'] }
+                ]
+            },
+            en: {
+                brand: 'Practical', navHome: 'Dashboard', navProtocol: 'The Protocol', navJournal: 'My Journal',
+                heroTitle: 'Parkinson Practical <span class="text-emerald-400">Scientific</span>',
+                heroSubtitle: 'New insights, new solutions, new horizons. Take back control of your health through conscious choices.',
+                heroBtn: 'View the Protocol', quoteTitle: 'The Marathon Mindset',
+                quoteText: '"Don’t be too hard on yourself if you don’t manage this for a day or longer. Just continue when you can. It’s a marathon, not a sprint."',
+                quoteTags: ['Consistency', 'Patience', 'Self-care'], footerAuthor: 'By Herbert Aberson',
+                footerBased: 'Analyst consultant', footerRights: '© 2026 Herbert Aberson. Webdesign by <a href="https://davidenker.com">ENKR </a> - All rights reserved.',
+                protocolHeader: 'The Protocol', completedSuffix: 'completed', of: 'of',
+                loginTitle: 'Secure Access', loginSubtitle: 'Enter the password to access the Parkinson Practical guide.',
+                journalHeader: 'My Journal', journalPlaceholder: 'Write your thoughts for today here...', btnSave: 'Save Note',
+                pillars: [
+                    { id: 'nutri', title: 'Nutrition & Keto', icon: 'apple', color: 'bg-emerald-500', desc: 'Eat meat, fish, poultry, vegetables and fruit. Watch carbohydrates.', tips: ['Focus on keto: it’s a tool.', 'Think electrolytes: salt, potassium, magnesium.', 'Start simply.', 'Health over weight loss.'] },
+                    { id: 'sleep', title: 'Sleep & Rhythm', icon: 'moon', color: 'bg-indigo-500', desc: 'Circadian rhythms heavily impact chronic disease.', tips: ['Optimize your biological clock.', 'Maintain a consistent ritual.', 'Limit blue light.'] },
+                    { id: 'move', title: 'Movement', icon: 'activity', color: 'bg-orange-500', desc: 'Consistency over intensity.', tips: ['Move every day.', 'Focus on mobility.', 'Rest is an action too.'] },
+                    { id: 'mind', title: 'Mindset & Stress', icon: 'brain', color: 'bg-purple-500', desc: 'Managing stress slows down symptoms.', tips: ['Don’t be too hard on yourself.', 'Stay socially active.', 'Focus on what you can control.'] }
+                ]
+            }
+        };
+
+        function checkPassword() {
+            const input = document.getElementById('password-input').value;
+            if (input === SITE_PASSWORD) {
+                document.getElementById('login-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-content').classList.remove('hidden-app');
+                    updateUI();
+                }, 500);
+            } else {
+                document.getElementById('error-msg').innerText = currentLang === 'nl' ? "Onjuist wachtwoord." : "Incorrect password.";
+                document.getElementById('password-input').value = "";
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            const nh = document.getElementById('nav-home'), np = document.getElementById('nav-protocol'), bj = document.getElementById('btn-journal');
+            nh.className = tabId === 'home' ? 'text-sm font-medium text-emerald-600 underline underline-offset-8 decoration-2' : 'text-sm font-medium text-slate-500 hover:text-slate-900';
+            np.className = tabId === 'protocol' ? 'text-sm font-medium text-emerald-600 underline underline-offset-8 decoration-2' : 'text-sm font-medium text-slate-500 hover:text-slate-900';
+            bj.className = tabId === 'journal' ? 'hidden sm:block bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-semibold transition-all shadow-inner' : 'hidden sm:block bg-slate-900 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-slate-800 transition-all';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'nl' ? 'en' : 'nl';
+            updateUI();
+        }
+
+        function saveJournalEntry() {
+            const input = document.getElementById('journal-input');
+            if (input.value.trim()) {
+                journalEntries.unshift({
+                    text: input.value,
+                    date: new Date().toLocaleString(currentLang === 'nl' ? 'nl-NL' : 'en-US')
+                });
+                input.value = "";
+                renderJournalEntries();
+            }
+        }
+
+        function renderJournalEntries() {
+            const container = document.getElementById('journal-entries');
+            container.innerHTML = journalEntries.map(e => `
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 journal-entry fade-in">
+                    <p class="text-xs font-bold text-emerald-600 mb-2 uppercase tracking-wider">${e.date}</p>
+                    <p class="text-slate-700 whitespace-pre-wrap">${e.text}</p>
+                </div>
+            `).join('');
+            if(journalEntries.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 py-10 italic">${currentLang === 'nl' ? 'Nog geen dagboeknotities.' : 'No journal notes yet.'}</p>`;
+            }
+        }
+
+        function toggleTip(id) {
+            completedItems.has(id) ? completedItems.delete(id) : completedItems.add(id);
+            updateProgress();
+            renderProtocolCards();
+        }
+
+        function updateProgress() {
+            const total = translations[currentLang].pillars.reduce((acc, p) => acc + p.tips.length, 0);
+            const counter = document.getElementById('progress-counter');
+            if(counter) counter.innerText = `${completedItems.size} ${translations[currentLang].of} ${total} ${translations[currentLang].completedSuffix}`;
+        }
+
+        function updateUI() {
+            const t = translations[currentLang];
+            document.getElementById('lang-label').innerText = currentLang;
+            document.getElementById('nav-brand-suffix').innerText = t.brand;
+            document.getElementById('nav-home').innerText = t.navHome;
+            document.getElementById('nav-protocol').innerText = t.navProtocol;
+            document.getElementById('btn-journal').innerText = t.navJournal;
+            document.getElementById('hero-title').innerHTML = t.heroTitle;
+            document.getElementById('hero-subtitle').innerText = t.heroSubtitle;
+            document.getElementById('hero-btn').innerText = t.heroBtn;
+            document.getElementById('quote-title').innerText = t.quoteTitle;
+            document.getElementById('quote-text').innerText = t.quoteText;
+            document.getElementById('footer-author').innerText = t.footerAuthor;
+            document.getElementById('footer-based').innerText = t.footerBased;
+            document.getElementById('footer-rights').innerText = t.footerRights;
+            document.getElementById('protocol-header').innerText = t.protocolHeader;
+            document.getElementById('journal-header').innerText = t.journalHeader;
+            document.getElementById('journal-input').placeholder = t.journalPlaceholder;
+            document.getElementById('btn-save-note').innerText = t.btnSave;
+            document.getElementById('quote-tags').innerHTML = t.quoteTags.map(tag => `<span class="text-xs font-semibold bg-emerald-200 text-emerald-800 px-3 py-1 rounded-full">${tag}</span>`).join('');
+            renderPillars(); renderProtocolCards(); renderJournalEntries(); updateProgress(); lucide.createIcons();
+        }
+
+        function renderPillars() {
+            document.getElementById('pillars-grid').innerHTML = translations[currentLang].pillars.map(p => `
+                <div onclick="switchTab('protocol')" class="group cursor-pointer bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div class="${p.color} w-12 h-12 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform"><i data-lucide="${p.icon}"></i></div>
+                    <h3 class="text-xl font-bold mb-2">${p.title}</h3>
+                    <p class="text-slate-500 text-sm">${p.desc}</p>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderProtocolCards() {
+            document.getElementById('protocol-cards').innerHTML = translations[currentLang].pillars.map(p => `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="${p.color} p-6 text-white flex items-center gap-3"><i data-lucide="${p.icon}"></i><h3 class="text-xl font-bold">${p.title}</h3></div>
+                    <div class="p-6">
+                        <p class="text-slate-600 mb-6 text-sm italic border-l-4 border-slate-200 pl-4">${p.desc}</p>
+                        <ul class="space-y-4">
+                            ${p.tips.map((tip, idx) => {
+                                const tipId = `${p.id}-${idx}`, isDone = completedItems.has(tipId);
+                                return `<li onclick="toggleTip('${tipId}')" class="flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-colors ${isDone ? 'bg-slate-50' : 'hover:bg-slate-50'}">
+                                    <i data-lucide="check-circle" class="w-5 h-5 mt-0.5 flex-shrink-0 ${isDone ? 'text-emerald-500' : 'text-slate-300'}"></i>
+                                    <span class="text-sm ${isDone ? 'text-slate-400 line-through' : 'text-slate-700'}">${tip}</span>
+                                </li>`;
+                            }).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        window.onload = () => { lucide.createIcons(); document.getElementById('password-input').focus(); };
+    </script>
+</body>
+</html>

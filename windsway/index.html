@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WINDSWAY | Interactive Pitch Deck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #15803d; 
+            --accent: #0ea5e9;
+            --energy: #fbbf24;
+            --speed: 4s; /* Controlled by JS */
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent scroll on main view */
+        }
+
+        /* --- Layout Containers --- */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 1rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .main-container {
+                flex-direction: row;
+                padding: 2rem;
+            }
+        }
+
+        /* --- The Visualization Panel --- */
+        .visual-panel {
+            flex: 2;
+            background: white;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- The Control Panel --- */
+        .control-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 300px;
+        }
+
+        /* --- SVG Animations --- */
+        .sway-tree {
+            /* FIXED: Use precise coordinate origin (0,0) of the group instead of bounding box */
+            transform-origin: 0px 0px; 
+            animation: sway var(--speed) ease-in-out infinite alternate;
+        }
+        
+        .flow-dash {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 200;
+            animation: flow linear infinite;
+            animation-duration: calc(var(--speed) * 0.5); 
+        }
+
+        .pulse-element {
+            animation: pulse calc(var(--speed) * 0.5) ease-in-out infinite;
+        }
+
+        @keyframes sway {
+            0% { transform: rotate(-2deg); }
+            100% { transform: rotate(2deg); }
+        }
+
+        @keyframes flow {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* --- Highlight Mode for Steps --- */
+        .highlight-group {
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+        
+        /* When a specific mode is active, dim everything else */
+        svg[data-mode="movement"] .group-harvest, 
+        svg[data-mode="movement"] .group-output { opacity: 0.2; filter: grayscale(100%); }
+        
+        svg[data-mode="harvest"] .group-movement, 
+        svg[data-mode="harvest"] .group-output { opacity: 0.2; filter: grayscale(100%); }
+
+        svg[data-mode="output"] .group-movement, 
+        svg[data-mode="output"] .group-harvest { opacity: 0.2; filter: grayscale(100%); }
+
+
+        /* --- UI Components --- */
+        .card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        
+        .interactive-card {
+            cursor: pointer;
+        }
+        .interactive-card:hover, .interactive-card.active {
+            border-color: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .interactive-card.active {
+            background-color: #f0f9ff;
+        }
+
+        /* Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin-top: 0.5rem;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #0f172a;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 1), 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Simple Navbar -->
+    <nav class="px-6 py-4 flex justify-between items-center bg-white border-b border-slate-200 shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-green-700 rounded text-white flex items-center justify-center">
+                <i data-lucide="wind" class="w-5 h-5"></i>
+            </div>
+            <span class="font-extrabold text-xl tracking-tight text-slate-800">WINDSWAY</span>
+        </div>
+        <div class="text-right">
+            <p class="text-xs font-bold text-slate-900">Alan Kelly</p>
+            <p class="text-[10px] text-slate-500 uppercase">Pitch Deck 2025</p>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-container">
+        
+        <!-- VISUALIZATION (Left/Top) -->
+        <div class="visual-panel">
+            
+            <!-- Floating Metrics -->
+            <div class="absolute top-4 left-4 flex gap-2 z-10">
+                <div class="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 shadow-sm">
+                    Input: <span id="wind-label" class="text-sky-600">Breeze</span>
+                </div>
+                <div class="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 shadow-sm flex items-center gap-1">
+                    <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                    <span id="power-label" class="text-slate-800">120 W</span>
+                </div>
+            </div>
+
+            <!-- THE SVG SCENE -->
+            <svg id="scene" width="100%" height="100%" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+                
+                <defs>
+                    <linearGradient id="skyGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#f0f9ff" />
+                        <stop offset="100%" stop-color="#ffffff" />
+                    </linearGradient>
+                    <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#0ea5e9" />
+                    </marker>
+                     <marker id="arrowhead-gold" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+                    </marker>
+                </defs>
+
+                <!-- Background -->
+                <rect width="800" height="500" fill="url(#skyGradient)" />
+
+                <!-- Ground -->
+                <path d="M0 400 L 800 400" stroke="#cbd5e1" stroke-width="2" />
+
+                <!-- GROUP 1: MOVEMENT (Wind & Sway) -->
+                <g class="highlight-group group-movement">
+                    <!-- Big INPUT Arrow -->
+                    <path d="M50 200 L 150 200" stroke="#0ea5e9" stroke-width="8" marker-end="url(#arrowhead-blue)" opacity="0.8" />
+                    <text x="100" y="180" text-anchor="middle" font-size="12" font-weight="bold" fill="#0ea5e9">WIND KINETICS</text>
+
+                    <!-- Wind Lines flowing into trees -->
+                    <path d="M160 220 C 200 220, 250 150, 320 150" fill="none" stroke="#bae6fd" stroke-width="2" />
+                    <path d="M160 220 C 200 220, 250 150, 320 150" fill="none" stroke="#0ea5e9" stroke-width="2" class="flow-dash" />
+                    
+                    <path d="M160 240 C 220 240, 260 280, 350 280" fill="none" stroke="#bae6fd" stroke-width="2" />
+                    <path d="M160 240 C 220 240, 260 280, 350 280" fill="none" stroke="#0ea5e9" stroke-width="2" class="flow-dash" style="animation-delay: 0.5s"/>
+                </g>
+
+                <!-- Trees Container -->
+                <g transform="translate(400, 400)">
+                    
+                    <!-- Side Trees (Visual Context) -->
+                    <g transform="translate(-120, 0) scale(0.8)">
+                        <!-- Static Base / Roots (No Animation) -->
+                        <path d="M-8 0 L 8 0 L 8 -15 L -8 -15 Z" fill="#5d4037" />
+                        
+                        <!-- Swaying Part -->
+                        <g class="sway-tree" style="animation-delay: 0.2s">
+                            <path d="M-5 0 L 5 0 L 2 -100 L -2 -100 Z" fill="#5d4037" />
+                            <path d="M-40 -80 L 0 -220 L 40 -80 Z" fill="#15803d" />
+                        </g>
+                    </g>
+                    <g transform="translate(120, 0) scale(0.8)">
+                        <!-- Static Base / Roots (No Animation) -->
+                        <path d="M-8 0 L 8 0 L 8 -15 L -8 -15 Z" fill="#5d4037" />
+
+                        <!-- Swaying Part -->
+                        <g class="sway-tree" style="animation-delay: 0.4s">
+                            <path d="M-5 0 L 5 0 L 2 -100 L -2 -100 Z" fill="#5d4037" />
+                            <path d="M-40 -80 L 0 -220 L 40 -80 Z" fill="#15803d" />
+                        </g>
+                    </g>
+
+                    <!-- Main Center Tree -->
+                    <g class="highlight-group group-movement">
+                        <!-- Static Base / Anchor Point (No Animation) -->
+                        <path d="M-14 0 L 14 0 L 12 -20 L -12 -20 Z" fill="#4a3728" />
+                        
+                        <!-- Swaying Structure -->
+                        <g class="sway-tree">
+                            <!-- Trunk -->
+                            <path d="M-12 0 L 12 0 L 8 -140 L -8 -140 Z" fill="#5d4037" />
+                            <!-- Foliage -->
+                            <path d="M-60 -120 L 0 -300 L 60 -120 Z" fill="#16a34a" />
+                            <path d="M-50 -200 L 0 -340 L 50 -200 Z" fill="#22c55e" opacity="0.8"/>
+                        </g>
+                    </g>
+
+                    <!-- GROUP 2: HARVEST (The Collar) -->
+                    <!-- Attached to the swaying tree movement -->
+                    <g class="sway-tree highlight-group group-harvest">
+                         <rect x="-14" y="-80" width="28" height="20" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+                         <circle cx="0" cy="-70" r="5" fill="#fbbf24" class="pulse-element" />
+                         <!-- Wire running down -->
+                         <path d="M0 -60 L 0 0" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4" />
+                    </g>
+                </g>
+
+                <!-- GROUP 3: OUTPUT (Roots & Grid) -->
+                <g class="highlight-group group-output">
+                    <!-- Roots Visualization -->
+                    <g transform="translate(400, 400)">
+                        <path d="M0 0 L -20 40 M 0 0 L 0 50 M 0 0 L 20 40" stroke="#fbbf24" stroke-width="3" fill="none" opacity="0.5"/>
+                        <path d="M0 0 L -20 40 M 0 0 L 0 50 M 0 0 L 20 40" stroke="#fbbf24" stroke-width="3" fill="none" class="flow-dash"/>
+                    </g>
+
+                    <!-- Output Arrow -->
+                    <path d="M450 440 C 500 440, 600 300, 650 300" fill="none" stroke="#fcd34d" stroke-width="2" />
+                    <path d="M450 440 C 500 440, 600 300, 650 300" fill="none" stroke="#fbbf24" stroke-width="2" class="flow-dash"/>
+                    
+                    <!-- Big OUTPUT Arrow -->
+                    <path d="M650 300 L 750 300" stroke="#fbbf24" stroke-width="8" marker-end="url(#arrowhead-gold)" />
+                    <text x="700" y="280" text-anchor="middle" font-size="12" font-weight="bold" fill="#d97706">GRID OUTPUT</text>
+                </g>
+
+            </svg>
+        </div>
+
+        <!-- CONTROLS & STEPS (Right/Bottom) -->
+        <div class="control-panel">
+            
+            <!-- Slider Control -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Wind Intensity</span>
+                    <span id="intensity-val" class="text-sm font-bold text-slate-900">30%</span>
+                </div>
+                <input type="range" id="slider" min="1" max="100" value="30">
+                <div class="mt-4 flex gap-4">
+                    <div>
+                        <div class="text-[10px] text-slate-500 uppercase font-bold">Oscillation</div>
+                        <div id="osc-val" class="text-lg font-extrabold text-slate-800">12 <span class="text-xs font-normal text-slate-400">Hz</span></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-500 uppercase font-bold">Generation</div>
+                        <div id="gen-val" class="text-lg font-extrabold text-amber-500">Low</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steps (Clickable) -->
+            <div class="flex-1 overflow-y-auto flex flex-col gap-2">
+                
+                <div class="card interactive-card" onclick="setMode('movement', this)">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                        <h3 class="font-bold text-slate-700 text-sm">Kinetic Input</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 pl-11">
+                        Wind enters the system, engaging the tree canopy which acts as a massive natural lever.
+                    </p>
+                </div>
+
+                <div class="card interactive-card" onclick="setMode('harvest', this)">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-green-100 text-green-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                        <h3 class="font-bold text-slate-700 text-sm">The Harvester</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 pl-11">
+                        Attached to the trunk, the device captures torque and vibration, converting it into pulses.
+                    </p>
+                </div>
+
+                <div class="card interactive-card" onclick="setMode('output', this)">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-amber-100 text-amber-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                        <h3 class="font-bold text-slate-700 text-sm">Grid Output</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 pl-11">
+                        Energy flows down to the roots and out to the grid as clean, usable electricity.
+                    </p>
+                </div>
+
+            </div>
+
+            <button class="bg-slate-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition shadow-lg w-full mt-auto" onclick="resetMode()">
+                Reset View
+            </button>
+
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const slider = document.getElementById('slider');
+        const root = document.documentElement;
+        
+        // UI Elements
+        const windLabel = document.getElementById('wind-label');
+        const powerLabel = document.getElementById('power-label');
+        const intensityVal = document.getElementById('intensity-val');
+        const oscVal = document.getElementById('osc-val');
+        const genVal = document.getElementById('gen-val');
+        const scene = document.getElementById('scene');
+        const cards = document.querySelectorAll('.interactive-card');
+
+        // Logic
+        function updateSimulation(val) {
+            // CSS Speed (Lower is faster)
+            // Val 1 (Slow) -> 100 (Fast)
+            // CSS 6s -> 0.5s
+            const speed = 6 - (val / 100 * 5.5);
+            root.style.setProperty('--speed', speed + 's');
+
+            // Text Updates
+            intensityVal.innerText = val + "%";
+            
+            // Power Curve (Exponential)
+            const watts = Math.floor(Math.pow(val / 10, 3) * 2) + 10;
+            powerLabel.innerText = watts + (watts > 1000 ? " kW" : " W");
+
+            oscVal.innerText = Math.floor(val * 0.4); 
+
+            if(val < 25) {
+                windLabel.innerText = "Breeze";
+                genVal.innerText = "Trickle";
+            } else if (val < 75) {
+                windLabel.innerText = "Windy";
+                genVal.innerText = "Flowing";
+            } else {
+                windLabel.innerText = "Storm";
+                genVal.innerText = "Surge";
+            }
+        }
+
+        // Interaction
+        slider.addEventListener('input', (e) => updateSimulation(e.target.value));
+
+        // Mode Switching
+        function setMode(mode, element) {
+            // Set Attribute on SVG to trigger CSS filters
+            scene.setAttribute('data-mode', mode);
+            
+            // UI Card Active State
+            cards.forEach(c => c.classList.remove('active'));
+            if(element) element.classList.add('active');
+        }
+
+        function resetMode() {
+            scene.removeAttribute('data-mode');
+            cards.forEach(c => c.classList.remove('active'));
+        }
+
+        // Init
+        updateSimulation(30);
+
+    </script>
+</body>
+</html>

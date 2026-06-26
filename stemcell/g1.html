@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stem Cell Research & Parkinson's Guide</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Inline SVGs to remove dependencies) ---
+        const IconWrapper = ({ children, className }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Dna = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="M2 15c6.667-6 13.333 0 20-6" />
+                <path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993" />
+                <path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993" />
+                <path d="M17 6l-2.5-2.5" />
+                <path d="M14 8l-1-1" />
+                <path d="M7 18l2.5 2.5" />
+                <path d="M3.5 14.5l.5.5" />
+                <path d="M20 9l.5.5" />
+                <path d="M6.5 12.5l1 1" />
+                <path d="M16.5 10.5l1 1" />
+                <path d="M10 16l1.5 1.5" />
+            </IconWrapper>
+        );
+
+        const Brain = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+            </IconWrapper>
+        );
+
+        const AlertTriangle = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+            </IconWrapper>
+        );
+
+        const ShieldAlert = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                <path d="M12 8v4" />
+                <path d="M12 16h.01" />
+            </IconWrapper>
+        );
+
+        const CheckCircle2 = ({ className }) => (
+            <IconWrapper className={className}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="m9 12 2 2 4-4" />
+            </IconWrapper>
+        );
+
+        const XCircle = ({ className }) => (
+            <IconWrapper className={className}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="m15 9-6 6" />
+                <path d="m9 9 6 6" />
+            </IconWrapper>
+        );
+
+        const Microscope = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="M6 18h8" />
+                <path d="M3 22h18" />
+                <path d="M14 22a7 7 0 1 0 0-14h-1" />
+                <path d="M9 14h2" />
+                <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" />
+                <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" />
+            </IconWrapper>
+        );
+
+        const Activity = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </IconWrapper>
+        );
+
+        const Menu = ({ className }) => (
+            <IconWrapper className={className}>
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+            </IconWrapper>
+        );
+
+        const X = ({ className }) => (
+            <IconWrapper className={className}>
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+            </IconWrapper>
+        );
+
+
+        // --- COMPONENTS ---
+
+        const Navigation = ({ activeSection, setActiveSection, mobileMenuOpen, setMobileMenuOpen }) => {
+            const navItems = [
+                { id: 'basics', label: 'The Basics' },
+                { id: 'updates', label: 'Latest Updates' },
+                { id: 'parkinsons', label: 'Parkinson\'s Focus' },
+                { id: 'tourism', label: 'Tourism Warning' },
+                { id: 'trials', label: 'Clinical Trials' },
+            ];
+
+            return (
+                <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-16 items-center">
+                            <div className="flex items-center space-x-2">
+                                <Dna className="h-8 w-8 text-emerald-600" />
+                                <span className="font-bold text-xl text-slate-800 tracking-tight">NeuroStem<span className="text-emerald-600">Info</span></span>
+                            </div>
+                            
+                            {/* Desktop Nav */}
+                            <div className="hidden md:flex space-x-8">
+                                {navItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                                            setActiveSection(item.id);
+                                        }}
+                                        className={`text-sm font-medium transition-colors duration-200 ${
+                                            activeSection === item.id 
+                                                ? 'text-emerald-600 border-b-2 border-emerald-600' 
+                                                : 'text-slate-600 hover:text-emerald-600'
+                                        }`}
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Mobile Menu Button */}
+                            <div className="md:hidden">
+                                <button 
+                                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                    className="p-2 rounded-md text-slate-600 hover:text-slate-900 focus:outline-none"
+                                >
+                                    {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mobile Nav Menu */}
+                    {mobileMenuOpen && (
+                        <div className="md:hidden bg-white border-b border-slate-200">
+                            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                                {navItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                                            setActiveSection(item.id);
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50"
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+
+        const Hero = () => (
+            <div className="relative bg-slate-900 overflow-hidden">
+                <div className="absolute inset-0 opacity-20">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
+                </div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
+                    <div className="text-center">
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-6">
+                            Stem Cell Research & <br className="hidden sm:block" />
+                            <span className="text-emerald-400">Parkinson's Disease</span>
+                        </h1>
+                        <p className="mt-4 max-w-2xl mx-auto text-xl text-slate-300">
+                            A clear, evidence-based guide to the latest developments, legitimate trials, and the risks of medical tourism.
+                        </p>
+                        <div className="mt-8 flex justify-center gap-4">
+                            <button 
+                                onClick={() => document.getElementById('basics').scrollIntoView({ behavior: 'smooth' })}
+                                className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-slate-900 bg-emerald-400 hover:bg-emerald-500 md:py-4 md:text-lg md:px-10 transition-all shadow-lg hover:shadow-emerald-500/20"
+                            >
+                                Start Reading
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const Section = ({ id, title, children, className = "" }) => (
+            <section id={id} className={`py-16 ${className}`}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {title && (
+                        <div className="mb-12 border-l-4 border-emerald-500 pl-4">
+                            <h2 className="text-3xl font-bold text-slate-900">{title}</h2>
+                        </div>
+                    )}
+                    {children}
+                </div>
+            </section>
+        );
+
+        const Card = ({ icon: Icon, title, content }) => (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center mb-4">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                        <Icon className="h-6 w-6 text-emerald-600" />
+                    </div>
+                    <h3 className="ml-3 text-xl font-semibold text-slate-800">{title}</h3>
+                </div>
+                <p className="text-slate-600 leading-relaxed">{content}</p>
+            </div>
+        );
+
+        const AlertBox = ({ title, children, type = "warning" }) => {
+            const styles = type === "danger" 
+                ? "bg-red-50 border-red-200 text-red-800"
+                : "bg-amber-50 border-amber-200 text-amber-900";
+                
+            const Icon = type === "danger" ? ShieldAlert : AlertTriangle;
+
+            return (
+                <div className={`border-l-4 p-6 rounded-r-lg ${styles} mb-8`}>
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <Icon className="h-6 w-6" />
+                        </div>
+                        <div className="ml-4">
+                            <h3 className="text-lg font-medium mb-2">{title}</h3>
+                            <div className="text-sm leading-relaxed opacity-90">
+                                {children}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TrialTable = () => (
+            <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sponsor / Trial</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Cell Type & Approach</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status / Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                        {[
+                            {
+                                sponsor: "BlueRock (Bayer) – bemdaneprocel",
+                                details: "Multicenter (US/EU)",
+                                cells: "Allogeneic (donor) pluripotent-stem-cell–derived dopaminergic neurons. Implanted into putamen (brain surgery).",
+                                status: "Phase III (exPDite-2) underway. First patient treated Sept 2025. Pivotal efficacy trial."
+                            },
+                            {
+                                sponsor: "Lund Univ. – STEM-PD",
+                                details: "Sweden/Europe",
+                                cells: "hPSC-derived dopamine neurons, stereotactic brain implantation.",
+                                status: "Phase 1/2a dose-escalation. Moved to higher dosing after initial safety signal."
+                            },
+                            {
+                                sponsor: "Kyoto Univ. (CiRA) – iPSC-DANs",
+                                details: "Japan",
+                                cells: "iPSC-derived dopaminergic progenitors, bilateral putamen implantation + immunosuppression.",
+                                status: "Phase I/II cohort of 7 reported. Early safety/feasibility established."
+                            },
+                            {
+                                sponsor: "Aspen Neuroscience – ANPD001",
+                                details: "USA",
+                                cells: "Autologous (your own) iPSC-derived dopamine neurons.",
+                                status: "Phase 1/2a enrolling. FDA Fast Track designation."
+                            }
+                        ].map((row, idx) => (
+                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                                <td className="px-6 py-4 whitespace-normal">
+                                    <div className="text-sm font-medium text-slate-900">{row.sponsor}</div>
+                                    <div className="text-sm text-slate-500">{row.details}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-normal text-sm text-slate-600">{row.cells}</td>
+                                <td className="px-6 py-4 whitespace-normal text-sm text-slate-600">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                        {row.status}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const App = () => {
+            const [activeSection, setActiveSection] = useState('basics');
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const sections = ['basics', 'updates', 'parkinsons', 'tourism', 'trials'];
+                    const scrollPosition = window.scrollY + 100;
+
+                    for (const section of sections) {
+                        const element = document.getElementById(section);
+                        if (element && element.offsetTop <= scrollPosition && (element.offsetTop + element.offsetHeight) > scrollPosition) {
+                            setActiveSection(section);
+                        }
+                    }
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            return (
+                <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+                    <Navigation 
+                        activeSection={activeSection} 
+                        setActiveSection={setActiveSection}
+                        mobileMenuOpen={mobileMenuOpen}
+                        setMobileMenuOpen={setMobileMenuOpen}
+                    />
+                    
+                    <Hero />
+
+                    <Section id="basics" title="The Basics: What & Why">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <Card 
+                                icon={Activity}
+                                title="What are they?"
+                                content="Cells with two key abilities: Self-renewal (creating more stem cells) and Differentiation (becoming specialized cells like blood, nerve, or heart cells)."
+                            />
+                            <Card 
+                                icon={Dna}
+                                title="The Types"
+                                content="Embryonic (ESCs) are pluripotent (can become anything). Adult stem cells are multipotent (restricted). iPSCs are adult cells reprogrammed back to a powerful, pluripotent state."
+                            />
+                            <Card 
+                                icon={Microscope}
+                                title="Key Uses"
+                                content="Replacing lost cells (regenerative medicine), disease modeling (testing drugs on cells in a dish), and understanding disease mechanisms."
+                            />
+                        </div>
+                    </Section>
+
+                    <Section id="updates" title="Developments (2024-2025)" className="bg-white">
+                        <div className="space-y-8">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center">
+                                        <span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded text-sm mr-3">Trending</span>
+                                        Mesenchymal Stem Cells (MSCs)
+                                    </h3>
+                                    <p className="text-slate-600">
+                                        Growing importance due to immunomodulatory properties. Now derived from bone marrow, adipose tissue, and dental pulp. Used for tissue repair and managing inflammation.
+                                    </p>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center">
+                                        <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm mr-3">Research</span>
+                                        iPSCs Clinical Translation
+                                    </h3>
+                                    <p className="text-slate-600">
+                                        Key themes for 2025 are improving quality control and safety (reducing tumor risk). Clinical trials are increasing globally for these reprogrammed cells.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-slate-100 pt-6">
+                                <div className="bg-slate-50 p-6 rounded-lg">
+                                    <h4 className="font-semibold text-slate-900 mb-2">Governance Update</h4>
+                                    <p className="text-slate-700 text-sm">
+                                    The International Society for Stem Cell Research (ISSCR) updated guidelines in August 2025 (v1.2), focusing on new "embryo models" and ensuring oversight keeps pace with rapid science.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </Section>
+
+                    <Section id="parkinsons" title="The Connection to Parkinson's">
+                        <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                            <div className="flex flex-col lg:flex-row items-center gap-10">
+                                <div className="flex-1">
+                                    <Brain className="w-16 h-16 text-emerald-600 mb-6" />
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-4">The Goal: Replacing Dopamine</h3>
+                                    <p className="text-slate-600 mb-4 leading-relaxed">
+                                        The degeneration of dopaminergic neurons is the hallmark of Parkinson's. The scientific "holy grail" is using pluripotent stem cells (ESCs or iPSCs) to generate healthy, new dopamine-producing neurons to replace the lost ones.
+                                    </p>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center text-slate-700">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-3" />
+                                            <span>Generating patient-specific iPSCs to reduce rejection.</span>
+                                        </div>
+                                        <div className="flex items-center text-slate-700">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-3" />
+                                            <span>Surgical implantation into the putamen (deep brain).</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex-1 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                    <h4 className="font-bold text-slate-800 mb-4">Major Hurdles Remaining</h4>
+                                    <ul className="space-y-4">
+                                        <li className="flex items-start">
+                                            <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-amber-100 text-amber-600 text-xs font-bold mt-0.5">1</span>
+                                            <span className="ml-3 text-slate-600 text-sm"><strong>Survival & Integration:</strong> Keeping transplanted cells alive and ensuring they connect correctly with existing brain circuits.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-amber-100 text-amber-600 text-xs font-bold mt-0.5">2</span>
+                                            <span className="ml-3 text-slate-600 text-sm"><strong>Safety:</strong> Strict control is needed to prevent tumor formation or uncontrolled growth.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-amber-100 text-amber-600 text-xs font-bold mt-0.5">3</span>
+                                            <span className="ml-3 text-slate-600 text-sm"><strong>Scale:</strong> Manufacturing high-quality cells for millions of patients is complex and expensive.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </Section>
+
+                    <Section id="tourism" title="⚠️ Critical: Stem Cell Tourism" className="bg-red-50/50">
+                        <div className="max-w-4xl mx-auto">
+                            <AlertBox title="The 'Going Abroad' Red Flag" type="danger">
+                                <p className="mb-4">
+                                    If someone says "I'm going to Thailand/Switzerland to cure my Parkinson's," caution is necessary. Unregulated clinics often promise reversals without peer-reviewed evidence.
+                                </p>
+                                <p className="font-semibold">Common Trap:</p>
+                                <p>
+                                    They usually offer IV infusions of MSCs (Mesenchymal Stem Cells). While these might have a temporary anti-inflammatory effect (the "placebo" or "reset" feeling), <strong>they do not become dopamine neurons</strong> and cannot repair the brain circuitry.
+                                </p>
+                            </AlertBox>
+
+                            <div className="grid md:grid-cols-2 gap-6 mt-8">
+                                <div className="bg-white p-6 rounded-lg shadow-sm border border-red-100">
+                                    <h4 className="text-red-700 font-bold flex items-center mb-4">
+                                        <XCircle className="w-5 h-5 mr-2" />
+                                        Commercial "Tourist" Clinics
+                                    </h4>
+                                    <ul className="space-y-3 text-sm text-slate-600">
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Offer:</strong> IV infusions of "stem cells" (fat/cord derived).</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Cost:</strong> €20k–€50k, often cash upfront.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Risks:</strong> Infection, embolism, unknown cell quality, financial loss.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Oversight:</strong> Often minimal or non-existent.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-white p-6 rounded-lg shadow-sm border border-emerald-100">
+                                    <h4 className="text-emerald-700 font-bold flex items-center mb-4">
+                                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                                        Legitimate Science
+                                    </h4>
+                                    <ul className="space-y-3 text-sm text-slate-600">
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Offer:</strong> Brain surgery (implantation) of specific dopamine neurons.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Cost:</strong> Free (participation in clinical trial).</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Oversight:</strong> Ethics boards, FDA/EMA, peer-review.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>Goal:</strong> Prove safety first, then efficacy.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </Section>
+
+                    <Section id="trials" title="Legitimate Clinical Trials (2024-2025)">
+                        <p className="mb-6 text-slate-600 max-w-3xl">
+                            These are the trials to watch. They are highly regulated, hospital/university-based, and focus on surgical implantation of dopamine neurons—not generic IV drips.
+                        </p>
+                        <TrialTable />
+                        
+                        <div className="mt-12 bg-emerald-50 rounded-xl p-8 border border-emerald-100">
+                            <h3 className="text-xl font-bold text-slate-800 mb-4">How to Sanity-Check an Offer</h3>
+                            <p className="text-slate-600 mb-6">Use this checklist if anyone in your support group is considering a treatment:</p>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {[
+                                    "What cells exactly? (PD needs dopamine neurons, not generic MSCs)",
+                                    "How is it delivered? (Brain surgery vs. IV drip)",
+                                    "Is it on ClinicalTrials.gov?",
+                                    "Who oversees it? (University/Hospital vs. Private Wellness Clinic)",
+                                    "What is the follow-up? (Real trials track you for years)",
+                                ].map((item, idx) => (
+                                    <div key={idx} className="flex items-center bg-white p-3 rounded-lg shadow-sm">
+                                        <div className="h-6 w-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold mr-3">
+                                            ?
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-700">{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </Section>
+
+                    <footer className="bg-slate-900 text-slate-400 py-12">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                            <Dna className="h-10 w-10 mx-auto text-emerald-500 mb-4" />
+                            <p className="text-lg font-medium text-slate-200 mb-2">NeuroStem Info</p>
+                            <p className="text-sm max-w-md mx-auto">
+                                Providing evidence-based information for the Parkinson's community. 
+                                Always consult your neurologist before making medical decisions.
+                            </p>
+                            <div className="mt-8 pt-8 border-t border-slate-800 text-xs">
+                                © 2025 Information curated for patient support.
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
