@@ -87,7 +87,7 @@
         yellow: `
         <header class="w-full py-2 px-3 md:px-12 flex justify-between items-center bg-tonicYellow sticky top-0 z-50 border-b-2 border-black" style="font-family: sans-serif;">
             <div class="flex flex-col md:flex-row md:items-center gap-0 md:gap-3">
-                <a href="/index.html" class="bg-black text-white px-3 py-1 text-xl md:text-2xl font-bold tracking-tight uppercase border-2 border-black hover:bg-white hover:text-black transition-colors self-start md:self-auto z-10 relative" style="font-family: serif;">David Enker</a>
+                <a href="https://www.tonicforthebones.com/" class="bg-black text-white px-3 py-1 text-xl md:text-2xl font-bold tracking-tight uppercase border-2 border-black hover:bg-white hover:text-black transition-colors self-start md:self-auto z-10 relative" style="font-family: serif;">David Enker</a>
                 <span class="bg-white text-black px-2 py-1 text-[10px] font-bold uppercase tracking-widest border-2 border-t-0 md:border-t-2 border-black block self-start md:self-auto -mt-[2px] md:mt-0 relative z-0">A remedy for the soul</span>
             </div>
             <nav class="relative">
