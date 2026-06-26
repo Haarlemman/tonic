@@ -43,7 +43,7 @@
         prijs: ['prijs', 'price', '�', 'euro'],
         serie: ['serie']
     },
-    IMAGE_BASE_URL: 'https://davidenker.com/strips/images/',
+    IMAGE_BASE_URL: 'https://www.tonicforthebones.com/strips/images/',
     CONTACT: {
         EMAIL: 'david.enker@gmail.com',
         WEBSITE: 'https://www.tonicforthebones.com'

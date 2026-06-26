@@ -15,7 +15,7 @@
   const selected = new Set();
 
   function escapeHtml(text){ return text ? text.toString().replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])) : ''; }
-  function genImg(nr,title){ return `https://davidenker.com/strips/images/${nr}${title.toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,10)}.jpg`; }
+  function genImg(nr,title){ return `https://www.tonicforthebones.com/strips/images/${nr}${title.toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,10)}.jpg`; }
 
   function findIndex(cols,names){ names=names.map(n=>n.toLowerCase()); for(let i=0;i<cols.length;i++){ const l=(cols[i]||'').toLowerCase(); if(names.includes(l)) return i; for(const n of names) if(l.indexOf(n)!==-1) return i; } return -1; }
 

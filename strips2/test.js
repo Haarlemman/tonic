@@ -20,7 +20,7 @@
   function genImg(nr,title){
     if(!nr||!title) return '';
     const short = title.toLowerCase().replace(/^(de |het |een |der )/i,'').replace(/[^a-z0-9]/g,'').substring(0,10);
-    return `https://davidenker.com/strips/images/${nr}${short}.jpg`;
+    return `https://www.tonicforthebones.com/strips/images/${nr}${short}.jpg`;
   }
 
   function createCard(item,index){

@@ -53,7 +53,7 @@ const CONFIG = {
     },
     
     // Image settings
-    IMAGE_BASE_URL: 'https://davidenker.com/strips/images/',
+    IMAGE_BASE_URL: 'https://www.tonicforthebones.com/strips/images/',
     
     // Contact information
     CONTACT: {

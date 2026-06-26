@@ -67,7 +67,7 @@
                 <div class="md:hidden group relative">
                      <button id="mobile-menu-btn" class="p-2 text-black hover:bg-stone-100 transition-colors focus:outline-none"><i data-lucide="menu" class="w-6 h-6"></i></button>
                     <div id="mobile-menu" class="absolute right-0 mt-2 w-56 bg-white border border-stone-200 py-2 hidden shadow-2xl z-[10000]">
-                        <a href="https://davidenker.com/tftb/" class="block px-6 py-3 text-xs font-bold uppercase tracking-widest text-stone-900 hover:bg-stone-50">The Book</a>
+                        <a href="https://www.tonicforthebones.com/tftb/" class="block px-6 py-3 text-xs font-bold uppercase tracking-widest text-stone-900 hover:bg-stone-50">The Book</a>
                         <a href="/folio/" class="block px-6 py-3 text-xs font-bold uppercase tracking-widest text-stone-900 hover:bg-stone-50">The Merch</a>
                         <a href="/intro/index.html" class="block px-6 py-3 text-xs font-bold uppercase tracking-widest text-stone-900 hover:bg-stone-50">The Tonic</a>
                     </div>
@@ -76,7 +76,7 @@
                     <li class="relative dropdown group h-full cursor-pointer py-2">
                         <span class="hover:text-black transition-colors flex items-center gap-1">Menu <i data-lucide="chevron-down" class="w-3 h-3 opacity-50"></i></span>
                         <div class="dropdown-menu absolute right-0 top-full mt-0 w-64 bg-white border border-stone-100 py-4 hidden z-[10000] shadow-xl">
-                            <a href="https://davidenker.com/tftb/" class="block px-8 py-3 text-stone-600 hover:text-black hover:bg-stone-50 transition-colors">The Book</a>
+                            <a href="https://www.tonicforthebones.com/tftb/" class="block px-8 py-3 text-stone-600 hover:text-black hover:bg-stone-50 transition-colors">The Book</a>
                             <a href="/folio/" class="block px-8 py-3 text-stone-600 hover:text-black hover:bg-stone-50 transition-colors">The Merch</a>
                             <a href="/intro/index.html" class="block px-8 py-3 text-stone-600 hover:text-black hover:bg-stone-50 transition-colors">The Tonic</a>
                         </div>
@@ -94,7 +94,7 @@
                 <div class="md:hidden group relative">
                      <button id="mobile-menu-btn" class="p-1 bg-tonicRed text-white border border-black hover:bg-tonicDarkRed transition-colors focus:outline-none"><i data-lucide="menu" class="w-5 h-5"></i></button>
                     <div id="mobile-menu" class="absolute right-0 mt-1 w-48 bg-white border border-black py-0 hidden shadow-xl z-50">
-                        <a href="https://davidenker.com/tftb/" class="block px-4 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">The Book</a>
+                        <a href="https://www.tonicforthebones.com/tftb/" class="block px-4 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">The Book</a>
                         <a href="/folio/" class="block px-4 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">The Merch</a>
                         <a href="/intro/index.html" class="block px-4 py-3 text-sm text-stone-900 hover:bg-tonicBlue hover:text-white">The Tonic</a>
                     </div>
@@ -103,7 +103,7 @@
                     <li class="relative dropdown group h-full cursor-pointer">
                         <span class="bg-tonicRed text-white border border-black px-4 py-1 hover:bg-tonicDarkRed transition-colors flex items-center gap-2">Menu <i data-lucide="chevron-down" class="w-3 h-3"></i></span>
                         <div class="dropdown-menu absolute right-0 top-full mt-0 w-56 bg-white border border-black py-0 hidden z-50 shadow-xl">
-                            <a href="https://davidenker.com/tftb/" class="block px-6 py-3 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">The Book</a>
+                            <a href="https://www.tonicforthebones.com/tftb/" class="block px-6 py-3 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">The Book</a>
                             <a href="/folio/" class="block px-6 py-3 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">The Merch</a>
                             <a href="/intro/index.html" class="block px-6 py-3 text-black hover:bg-tonicBlue hover:text-white transition-colors">The Tonic</a>
                         </div>

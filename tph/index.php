@@ -126,7 +126,7 @@ $note = $lang === 'en' ?
 </main>
 
 <footer class="max-w-6xl mx-auto p-6 text-center text-sm text-gray-600 dark:text-gray-400">
-  <p>© 2025 David Enker – <a href="https://www.tonicforthebones.com" class="underline">davidenker.com</a></p>
+  <p>© 2025 David Enker – <a href="https://www.tonicforthebones.com" class="underline">www.tonicforthebones.com</a></p>
 </footer>
 
 <script src="assets/js/main.js"></script>

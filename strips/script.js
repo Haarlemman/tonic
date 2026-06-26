@@ -1,4 +1,4 @@
-/* script.js */
+﻿/* script.js */
 (function(){
   const SHEET_ID = window.SHEET_ID;
   const cfg = window.PAGE_CONFIG;
@@ -15,7 +15,7 @@
   function escapeHtml(text){ if(!text) return ''; const div=document.createElement('div'); div.textContent=text; return div.innerHTML; }
   function findIndex(cols,names){ names=names.map(n=>n.toLowerCase()); for(let i=0;i<cols.length;i++){ const label=(cols[i]||'').toLowerCase().trim(); if(names.includes(label)) return i; for(const n of names) if(label.indexOf(n)!==-1) return i; } return -1; }
   function createImageErrorHandler(){ return `this.style.display='none'; this.nextElementSibling.style.display='block'`; }
-  function genImg(nr,title){ const short=(title||'').toLowerCase().replace(/^(de |het |een |der )/i,'').replace(/[^a-z0-9]/g,'').substring(0,10); return `https://davidenker.com/strips/images/${nr}${short}.jpg`; }
+  function genImg(nr,title){ const short=(title||'').toLowerCase().replace(/^(de |het |een |der )/i,'').replace(/[^a-z0-9]/g,'').substring(0,10); return `https://www.tonicforthebones.com/strips/images/${nr}${short}.jpg`; }
 
   function createCard(item,index){
     const el=document.createElement('div'); el.className='card'; el.dataset.index=index;
@@ -53,7 +53,7 @@
   if(buyBtn) buyBtn.addEventListener('click',function(){
     if(selected.size===0) return alert('Selecteer eerst enkele strips');
     const lines=Array.from(selected).map(i=>{ const x=all[i]; return `Nr. ${x.nr}: ${x.title}${x.prijs?` (€ ${x.prijs})`:''}`; }).join('\n');
-    const subject=encodeURIComponent('Interesse in strips (davidenker.com)');
+    const subject=encodeURIComponent('Interesse in strips (tonicforthebones.com)');
     const body=encodeURIComponent(`Beste David,\n\nIk heb interesse in de volgende strips:\n\n${lines}\n\nZijn ze beschikbaar en wat zijn de verzendkosten?\n\nMet vriendelijke groet,`);
     window.location.href=`mailto:david.enker@gmail.com?subject=${subject}&body=${body}`;
   });
