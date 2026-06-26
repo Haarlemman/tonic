@@ -4106,8 +4106,7 @@ function buildInterior(roomKey) {
         interiorGroup.add(bulb);
     }
 
-    // V325-v326: Scale and zOffset now handled internally by music.js
-    // V325-v326: Scale and zOffset now handled internally by music.js
+
     if (window.createMusicPanel) {
         window.createMusicPanel(data.playlist);
     } else {
