@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
-    <title>Navigate the World - Dynamic Dashboard</title>
+    <title>Navigate the Web — Dynamic Dashboard</title>
     <style>
         :root {
             --accent: #e2dfb3;
@@ -16,28 +16,18 @@
             --bg-dark: #233137;
             --radius: 20px;
             --base-opacity: 0.25;
-            --expanded-opacity: 0.7;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
             background-color: var(--bg-dark);
-            font-family: 'Space Grotesk', Arial, serif;
+            font-family: 'Space Grotesk', Arial, sans-serif;
             color: var(--accent);
             overflow-x: hidden;
-        }
-
-        #bg-video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -1;
-            opacity: 0.8;
         }
 
         .main-wrapper {
@@ -47,12 +37,15 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            box-sizing: border-box;
         }
 
         .header-section {
             padding: 5px 0 15px 0;
-            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .header-link {
@@ -61,13 +54,7 @@
             gap: 15px;
             text-decoration: none;
             color: inherit;
-            width: fit-content;
-            transition: opacity 0.3s ease;
             cursor: pointer;
-        }
-
-        .header-link:hover {
-            opacity: 0.8;
         }
 
         .grid-hoofd img {
@@ -85,20 +72,36 @@
             white-space: nowrap;
         }
 
-        /* Folder Grid Layout */
+        .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn {
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(226, 223, 179, 0.25);
+            border-radius: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(226, 223, 179, 0.5); }
+        .btn.active { background: var(--hover-accent); color: #1a1a1a; border-color: var(--hover-accent); }
+
         .folder-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             grid-auto-flow: dense;
             gap: 10px;
             padding: 0 0 20px 0;
-            /* Rows have a minimum height but don't stretch to fill viewport */
             grid-auto-rows: minmax(120px, auto);
             align-content: start;
             align-items: start;
         }
 
-        /* The Group "Folder" Tile */
         .category-group {
             border-radius: var(--radius);
             padding: 10px 14px 12px 14px;
@@ -111,55 +114,17 @@
             border: 1px solid rgba(226, 223, 179, 0.1);
             overflow: hidden;
             backdrop-filter: blur(10px);
-            box-sizing: border-box;
-            justify-content: flex-start;
-        }
-
-        /* Unique Background Colors */
-        .category-group[data-cat="office"] {
-            background: rgba(30, 144, 255, var(--base-opacity));
-        }
-
-        .category-group[data-cat="ai"] {
-            background: rgba(138, 43, 226, var(--base-opacity));
-        }
-
-        .category-group[data-cat="search"] {
-            background: rgba(46, 139, 87, var(--base-opacity));
-        }
-
-        .category-group[data-cat="news"] {
-            background: rgba(220, 20, 60, var(--base-opacity));
-        }
-
-        .category-group[data-cat="creative"] {
-            background: rgba(255, 105, 180, var(--base-opacity));
-        }
-
-        .category-group[data-cat="music"] {
-            background: rgba(0, 206, 209, var(--base-opacity));
-        }
-
-        .category-group[data-cat="social"] {
-            background: rgba(255, 140, 0, var(--base-opacity));
-        }
-
-        .category-group[data-cat="writing"] {
-            background: rgba(218, 165, 32, var(--base-opacity));
-        }
-
-        .category-group[data-cat="mystuff"] {
             background: rgba(112, 128, 144, var(--base-opacity));
-        }
-
-        .category-group[data-cat="work"] {
-            background: rgba(0, 100, 0, var(--base-opacity));
+            justify-content: flex-start;
         }
 
         .category-group:hover {
             border-color: rgba(226, 223, 179, 0.3);
             transform: translateY(-2px);
         }
+
+        .category-group.drag-over { outline: 2px dashed var(--hover-accent); outline-offset: -4px; }
+        .category-group.dragging { opacity: 0.4; }
 
         .category-title {
             font-size: 0.8rem;
@@ -168,15 +133,34 @@
             margin-bottom: 8px;
             opacity: 0.9;
             font-weight: 700;
-            pointer-events: none;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 10px;
             line-height: 1;
+            min-height: 18px;
+        }
+        .category-title .title-text { pointer-events: none; }
+
+        .title-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+        .title-actions .ctrl {
+            display: none;
+            cursor: pointer;
+            opacity: 0.7;
+            font-size: 1rem;
+            line-height: 1;
+            pointer-events: auto;
+        }
+        .title-actions .ctrl:hover { opacity: 1; color: #fff; }
+        .close-btn { display: none; cursor: pointer; opacity: 0.8; font-size: 1.5rem; line-height: 1; pointer-events: auto; }
+        .category-group.expanded .close-btn { display: block; }
+
+        body.edit-mode .title-actions .ctrl { display: block; }
+        body.edit-mode .grid-item { cursor: grab; }
+        body.edit-mode .grid-item .item-del {
+            display: flex;
         }
 
-        /* Container for icons in Mini Mode - 10 columns prevents AI (9 icons) from wrapping and stretching the row */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -185,13 +169,16 @@
             transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
             pointer-events: none;
         }
+        body.edit-mode .grid-container { pointer-events: auto; }
 
         .grid-item {
             display: flex;
             flex-direction: column;
             align-items: center;
             text-decoration: none;
+            position: relative;
         }
+        .grid-item.dragging { opacity: 0.4; }
 
         .grid-item span {
             display: none;
@@ -212,15 +199,38 @@
             justify-content: center;
             align-items: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .icon-circle img, .icon-circle svg { width: 20px; height: 20px; object-fit: contain; }
+        .icon-circle .fallback {
+            font-weight: 700; color: #444; font-size: 14px; text-transform: uppercase;
         }
 
-        .icon-circle img,
-        .icon-circle svg {
-            width: 20px;
-            height: 20px;
+        .item-del {
+            display: none;
+            position: absolute;
+            top: -6px; right: 50%;
+            transform: translateX(50%) translateX(18px);
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: crimson; color: #fff;
+            align-items: center; justify-content: center;
+            font-size: 13px; line-height: 1;
+            cursor: pointer; z-index: 5;
+            border: 1px solid rgba(255,255,255,0.4);
         }
 
-        /* --- Dynamic Expanded State --- */
+        .add-item {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        body.edit-mode .category-group.expanded .add-item { display: flex; }
+        .add-item .icon-circle { border: 2px dashed #888; background: rgba(255,255,255,0.4); }
+        .add-item .plus { font-size: 22px; color: #444; line-height: 1; }
+
+        /* Expanded */
         .category-group.expanded {
             grid-column: span 2;
             grid-row: span 2;
@@ -230,479 +240,645 @@
             z-index: 10;
             padding: 14px 16px 10px 16px;
             align-self: stretch;
-            /* Fill the full height of both rows it spans */
         }
-
-        .category-group.expanded .category-title {
-            font-size: 1.05rem;
-            margin-bottom: 12px;
-            color: #fff;
-        }
-
+        .category-group.expanded .category-title { font-size: 1.05rem; margin-bottom: 12px; color: #fff; }
         .category-group.expanded .grid-container {
             grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
             gap: 10px;
             pointer-events: auto;
             width: 100%;
-            display: grid;
         }
-
         .category-group.expanded .grid-item span {
-            display: block;
-            max-width: 75px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 11px;
+            display: block; max-width: 75px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; font-size: 11px;
         }
+        .category-group.expanded .icon-circle { width: 62px; height: 62px; }
+        .category-group.expanded .icon-circle img, .category-group.expanded .icon-circle svg { width: 34px; height: 34px; }
+        .category-group.expanded .icon-circle .fallback { font-size: 24px; }
 
-        .category-group.expanded .icon-circle {
-            width: 62px;
-            height: 62px;
-        }
+        .grid-item:hover .icon-circle { transform: scale(1.1); box-shadow: 0 0 15px var(--hover-accent); }
+        .grid-item:hover span { color: #fff; }
 
-        .category-group.expanded .icon-circle img,
-        .category-group.expanded .icon-circle svg {
-            width: 34px;
-            height: 34px;
-        }
-
-        .grid-item:hover .icon-circle {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px var(--hover-accent);
-        }
-
-        .grid-item:hover span {
-            color: #fff;
-        }
-
-        .close-btn {
+        .add-folder-tile {
             display: none;
-            margin-left: auto;
-            font-size: 1.5rem;
+            border-radius: var(--radius);
+            min-height: 120px;
+            border: 2px dashed rgba(226, 223, 179, 0.3);
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            opacity: 0.8;
-            transition: transform 0.3s;
-            pointer-events: auto;
-            line-height: 1;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            transition: all 0.2s ease;
         }
-
-        .category-group.expanded .close-btn {
-            display: block;
-        }
+        body.edit-mode .add-folder-tile { display: flex; }
+        .add-folder-tile:hover { opacity: 1; border-color: var(--hover-accent); color: #fff; }
 
         @keyframes jerkyRotate {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
+        /* Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal {
+            background: #2c3a41;
+            border: 1px solid rgba(226, 223, 179, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            width: min(420px, 92vw);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .modal h2 { margin: 0 0 16px 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .modal label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; margin: 12px 0 4px; }
+        .modal input {
+            width: 100%; padding: 9px 11px; border-radius: 8px;
+            border: 1px solid rgba(226, 223, 179, 0.25);
+            background: rgba(0,0,0,0.25); color: var(--accent);
+            font-family: inherit; font-size: 0.9rem;
+        }
+        .modal input:focus { outline: none; border-color: var(--hover-accent); }
+        .modal .hint { font-size: 0.7rem; opacity: 0.5; margin-top: 4px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
+        .modal-actions .btn.primary { background: var(--hover-accent); color: #1a1a1a; border-color: var(--hover-accent); }
+
         @media (max-width: 768px) {
-            .folder-grid {
-                grid-template-columns: 1fr;
-                grid-auto-rows: auto;
-                align-items: start;
-                gap: 5px;
-            }
-
-            .category-group {
-                min-height: auto;
-            }
-
-            .category-group.expanded {
-                grid-column: span 1;
-                min-height: 220px;
-            }
-
-            .category-group.expanded .grid-container {
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            }
+            .folder-grid { grid-template-columns: 1fr; grid-auto-rows: auto; gap: 5px; }
+            .category-group { min-height: auto; }
+            .category-group.expanded { grid-column: span 1; min-height: 220px; }
+            .category-group.expanded .grid-container { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
         }
     </style>
 </head>
 
 <body>
-
-    <video autoplay loop muted playsinline id="bg-video">
-        <source src="/nav/video/skaai.mp4" type="video/mp4">
-    </video>
-
     <div class="main-wrapper">
-
         <header class="header-section">
-            <a onclick="window.location.reload();" class="header-link">
+            <a class="header-link" onclick="location.reload()">
                 <div class="grid-hoofd">
-                    <img src="images/web-app-manifest-512x512.png" alt="Navigator">
+                    <img src="https://www.google.com/s2/favicons?sz=128&domain=davidenker.com" alt="Navigator"
+                         onerror="this.style.visibility='hidden'">
                 </div>
                 <div class="grid-item-nav">Navigate the Web</div>
             </a>
+            <div class="toolbar">
+                <button class="btn" id="editToggle">Edit</button>
+                <button class="btn" id="exportBtn">Export</button>
+                <button class="btn" id="importBtn">Import</button>
+                <button class="btn" id="resetBtn">Reset</button>
+                <input type="file" id="importFile" accept="application/json" hidden>
+            </div>
         </header>
 
-        <div class="folder-grid" id="folderGrid">
+        <div class="folder-grid" id="folderGrid"></div>
+    </div>
 
-            <!-- OFFICE -->
-            <section class="category-group" data-cat="office">
-                <div class="category-title">Office <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://mail.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Gmail_icon.svg" alt="Gmail"></div><span>Gmail</span>
-                    </a>
-                    <a href="https://sheets.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Sheets.svg" alt="Sheets"></div>
-                        <span>Sheets</span>
-                    </a>
-                    <a href="https://drive.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/GDrive.svg" alt="Drive"></div><span>Drive</span>
-                    </a>
-                    <a href="https://keep.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/GKeep.svg" alt="Notes"></div><span>Notes</span>
-                    </a>
-                    <a href="https://calendar.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Calendar.svg" alt="Calendar"></div>
-                        <span>Calendar</span>
-                    </a>
-                    <a href="https://contacts.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Contacts.svg" alt="Contacts"></div>
-                        <span>Contacts</span>
-                    </a>
-                    <a href="https://photos.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Photos.svg" alt="Photos"></div>
-                        <span>Photos</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- AI -->
-            <section class="category-group" data-cat="ai">
-                <div class="category-title">AI <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://chat.openai.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/ChatGPT.svg" alt="ChatGPT"></div><span>ChatGPT</span>
-                    </a>
-                    <a href="https://gemini.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Gemini.svg" alt="Gemini"></div><span>Gemini</span>
-                    </a>
-                    <a href="https://claude.ai" class="grid-item">
-                        <div class="icon-circle"><img src="images/Claude_AI.svg" alt="Claude"></div><span>Claude</span>
-                    </a>
-                    <a href="https://grok.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/grok.svg" alt="Grok"></div><span>Grok</span>
-                    </a>
-                    <a href="https://copilot.microsoft.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/copilot.svg" alt="Copilot"></div><span>Copilot</span>
-                    </a>
-                    <a href="https://perplexity.ai" class="grid-item">
-                        <div class="icon-circle"><img src="images/Perplexity.svg" alt="Perplexity"></div>
-                        <span>Perplexity</span>
-                    </a>
-                    <a href="https://chat.deepseek.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/deepseek.svg" alt="DeepSeek"></div>
-                        <span>DeepSeek</span>
-                    </a>
-                    <a href="https://manus.im/app" class="grid-item">
-                        <div class="icon-circle"><img src="images/manus.svg" alt="Manus"></div><span>Manus</span>
-                    </a>
-                    <a href="https://labs.google/fx/tools/flow" class="grid-item">
-                        <div class="icon-circle"><img src="images/flow.jpg" alt="Flow"></div><span>Flow</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- SEARCH & NAV -->
-            <section class="category-group" data-cat="search">
-                <div class="category-title">Search & Nav <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://www.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/google.svg" alt="Search"></div><span>Search</span>
-                    </a>
-                    <a href="https://www.google.com/maps" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Maps_icon.svg" alt="Maps"></div>
-                        <span>Maps</span>
-                    </a>
-                    <a href="https://earth.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Earth.svg" alt="Earth"></div><span>Earth</span>
-                    </a>
-                    <a href="https://en.wikipedia.org/wiki/Main_Page" class="grid-item">
-                        <div class="icon-circle"><img src="images/wikipedia-logo-black.svg" alt="Wiki"></div>
-                        <span>Wikipedia</span>
-                    </a>
-                    <a href="https://imdb.com/" class="grid-item">
-                        <div class="icon-circle"><img src="images/IMDB.svg" alt="IMdb"></div><span>IMdb</span>
-                    </a>
-                    <a href="https://start.duckduckgo.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/duckduck.svg" alt="DuckDuck"></div>
-                        <span>DuckDuckGo</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- NEWS -->
-            <section class="category-group" data-cat="news">
-                <div class="category-title">News <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://www.bbc.com/news" class="grid-item">
-                        <div class="icon-circle"><img src="images/BBC-icon.svg" alt="BBC"></div><span>BBC News</span>
-                    </a>
-                    <a href="https://www.geenstijl.nl" class="grid-item">
-                        <div class="icon-circle"><img src="images/geenstijl.svg" alt="GeenStijl"></div>
-                        <span>GeenStijl</span>
-                    </a>
-                    <a href="https://nos.nl/teletekst/101/1" class="grid-item">
-                        <div class="icon-circle"><img src="images/NOS.svg" alt="NOS"></div><span>Teletext</span>
-                    </a>
-                    <a href="https://www.jpost.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/jpost.svg" alt="JPost"></div><span>JPost</span>
-                    </a>
-                    <a href="https://www.timesofisrael.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/toi.svg" alt="Times of Israel"></div><span>Times
-                            IL</span>
-                    </a>
-                    <a href="https://www.ynetnews.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Ynet.svg" alt="Ynet"></div><span>Ynet</span>
-                    </a>
-                    <a href="https://www.at5.nl" class="grid-item">
-                        <div class="icon-circle"><img src="images/at5.svg" alt="AT5"></div><span>AT5</span>
-                    </a>
-                    <a href="https://buienradar.nl" class="grid-item">
-                        <div class="icon-circle"><img src="images/Buienradar.svg" alt="Weather"></div>
-                        <span>Buienradar</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- CREATIVE -->
-            <section class="category-group" data-cat="creative">
-                <div class="category-title">Creative <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://firefly.adobe.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Adobe_Firefly.svg" alt="Firefly"></div>
-                        <span>Firefly</span>
-                    </a>
-                    <a href="https://express.adobe.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Adobe_Express_logo_CMYK.svg" alt="Express"></div>
-                        <span>Express</span>
-                    </a>
-                    <a href="https://projectneo.adobe.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Neo.svg" alt="Neo"></div><span>Neo</span>
-                    </a>
-                    <a href="https://canva.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Canva.svg" alt="Canva"></div><span>Canva</span>
-                    </a>
-                    <a href="https://capcut.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Capcut.svg" alt="Capcut"></div><span>Capcut</span>
-                    </a>
-                    <a href="https://fonts.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/google-fonts.svg" alt="Google Fonts"></div><span>G
-                            Fonts</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- AV -->
-            <section class="category-group" data-cat="music">
-                <div class="category-title">A/V <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="spotify:app" class="grid-item">
-                        <div class="icon-circle"><img src="images/Spotify.svg" alt="Spotify"></div><span>Spotify</span>
-                    </a>
-                    <a href="https://www.youtube.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/youtube.svg" alt="YouTube"></div><span>YouTube</span>
-                    </a>
-                    <a href="https://music.youtube.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Youtube_Music.svg" alt="YouTube Music"></div><span>YT
-                            Music</span>
-                    </a>
-                    <a href="https://suno.com/" class="grid-item">
-                        <div class="icon-circle"><img src="images/suno.svg" alt="Suno"></div><span>Suno</span>
-                    </a>
-                    <a href="https://distrokid.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/dk.svg" alt="DistroKid"></div><span>DistroKid</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- SOCIAL -->
-            <section class="category-group" data-cat="social">
-                <div class="category-title">Social <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://www.x.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/X_logo.svg" alt="X"></div><span>X</span>
-                    </a>
-                    <a href="https://bsky.app" class="grid-item">
-                        <div class="icon-circle"><img src="images/bluesky.svg" alt="Bluesky"></div><span>Bluesky</span>
-                    </a>
-                    <a href="https://www.threads.net/@davidje" class="grid-item">
-                        <div class="icon-circle"><img src="images/threads.svg" alt="Threads"></div><span>Threads</span>
-                    </a>
-                    <a href="https://www.instagram.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Instagram.svg" alt="Insta"></div>
-                        <span>Instagram</span>
-                    </a>
-                    <a href="#" onclick="openWhatsApp()" class="grid-item">
-                        <div class="icon-circle"><img src="images/WhatsApp.svg" alt="WhatsApp"></div>
-                        <span>WhatsApp</span>
-                    </a>
-                    <a href="https://www.facebook.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Facebook_icon.svg" alt="Facebook"></div>
-                        <span>Facebook</span>
-                    </a>
-                    <a href="https://pinterest.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Pinterest.svg" alt="Pinterest"></div>
-                        <span>Pinterest</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- WRITING -->
-            <section class="category-group" data-cat="writing">
-                <div class="category-title">Writing <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://docs.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Docs.svg" alt="Docs"></div><span>Docs</span>
-                    </a>
-                    <a href="https://davidenker.substack.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/substack.svg" alt="Substack"></div>
-                        <span>Substack</span>
-                    </a>
-                    <a href="https://medium.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/medium.svg" alt="Medium"></div><span>Medium</span>
-                    </a>
-                    <a href="https://translate.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/Google_Translate.svg" alt="Translate"></div>
-                        <span>Translate</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- WORK -->
-            <section class="category-group" data-cat="work">
-                <div class="category-title">Work <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="https://www.linkedin.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/linkedin.svg" alt="LinkedIn"></div>
-                        <span>LinkedIn</span>
-                    </a>
-                    <a href="/folio/" class="grid-item">
-                        <div class="icon-circle"><img src="images/tmm.png" alt="Folio"></div><span>Folio</span>
-                    </a>
-                    <a href="https://upwork.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/upwork.svg" alt="Upwork"></div><span>Upwork</span>
-                    </a>
-                    <a href="https://www.fiverr.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/fiverr.svg" alt="Fiverr"></div><span>Fiverr</span>
-                    </a>
-                    <a href="https://www.reedsy.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/reedsy.svg" alt="Reedsy"></div><span>Reedsy</span>
-                    </a>
-                    <a href="https://analytics.google.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/GAnalytics.svg" alt="Analytics"></div>
-                        <span>Analytics</span>
-                    </a>
-                </div>
-            </section>
-
-
-            <!-- MY STUFF -->
-            <section class="category-group" data-cat="mystuff">
-                <div class="category-title">MY STUFF <div class="close-btn">&times;</div>
-                </div>
-                <div class="grid-container">
-                    <a href="/" class="grid-item">
-                        <div class="icon-circle"><img src="images/3de.svg" alt="DE"></div><span>Home (DE)</span>
-                    </a>
-                    <a href="https://www.tonicforthebones.com/standingstudio" class="grid-item">
-                        <div class="icon-circle"><img src="images/favicon-studio.svg" alt="Studio"></div>
-                        <span>Studio</span>
-                    </a>
-                    <a href="https://www.tonicforthebones.com" class="grid-item">
-                        <div class="icon-circle"><img src="images/t.png" alt="Tonic"></div><span>Tonic</span>
-                    </a>
-                    <a href="https://www.tonicforthebones.com/folio/" class="grid-item">
-                        <div class="icon-circle"><img src="images/davilov.svg" alt="Folio"></div><span>Folio</span>
-                    </a>
-                    <a href="https://house-of-awe.web.app" class="grid-item">
-                        <div class="icon-circle">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" style="color: #444;">
-                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                <polyline points="9 22 9 12 15 12 15 22" />
-                            </svg>
-                        </div>
-                        <span>Awe</span>
-                    </a>
-                </div>
-            </section>
-
-
-
+    <!-- Folder modal -->
+    <div class="modal-backdrop" id="folderModal">
+        <div class="modal">
+            <h2 id="folderModalTitle">New Folder</h2>
+            <label>Folder name</label>
+            <input type="text" id="folderName" placeholder="e.g. Office">
+            <label>Tile color (any CSS color)</label>
+            <input type="text" id="folderColor" placeholder="e.g. #1e90ff or dodgerblue">
+            <div class="hint">Leave blank for default grey.</div>
+            <div class="modal-actions">
+                <button class="btn" id="folderCancel">Cancel</button>
+                <button class="btn primary" id="folderSave">Save</button>
+            </div>
         </div>
+    </div>
 
+    <!-- Shortcut modal -->
+    <div class="modal-backdrop" id="itemModal">
+        <div class="modal">
+            <h2 id="itemModalTitle">New Shortcut</h2>
+            <label>Label</label>
+            <input type="text" id="itemLabel" placeholder="e.g. Gmail">
+            <label>URL</label>
+            <input type="text" id="itemUrl" placeholder="https://mail.google.com">
+            <label>Custom icon URL (optional)</label>
+            <input type="text" id="itemIcon" placeholder="leave blank to auto-fetch favicon">
+            <div class="hint">If blank, the icon is fetched automatically from the site.</div>
+            <div class="modal-actions">
+                <button class="btn" id="itemCancel">Cancel</button>
+                <button class="btn primary" id="itemSave">Save</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const folders = document.querySelectorAll('.category-group');
+        // ---------- Default data (migrated from the original page) ----------
+        const DEFAULT_DATA = [
+            { id: 'office', name: 'Office', color: 'rgba(30,144,255,0.25)', items: [
+                { label: 'Gmail', url: 'https://mail.google.com' },
+                { label: 'Sheets', url: 'https://sheets.google.com' },
+                { label: 'Drive', url: 'https://drive.google.com' },
+                { label: 'Notes', url: 'https://keep.google.com' },
+                { label: 'Calendar', url: 'https://calendar.google.com' },
+                { label: 'Contacts', url: 'https://contacts.google.com' },
+                { label: 'Photos', url: 'https://photos.google.com' },
+            ]},
+            { id: 'ai', name: 'AI', color: 'rgba(138,43,226,0.25)', items: [
+                { label: 'ChatGPT', url: 'https://chat.openai.com' },
+                { label: 'Gemini', url: 'https://gemini.google.com' },
+                { label: 'Claude', url: 'https://claude.ai' },
+                { label: 'Grok', url: 'https://grok.com' },
+                { label: 'Copilot', url: 'https://copilot.microsoft.com' },
+                { label: 'Perplexity', url: 'https://perplexity.ai' },
+                { label: 'DeepSeek', url: 'https://chat.deepseek.com' },
+                { label: 'Manus', url: 'https://manus.im/app' },
+                { label: 'Flow', url: 'https://labs.google/fx/tools/flow' },
+            ]},
+            { id: 'search', name: 'Search & Nav', color: 'rgba(46,139,87,0.25)', items: [
+                { label: 'Search', url: 'https://www.google.com' },
+                { label: 'Maps', url: 'https://www.google.com/maps' },
+                { label: 'Earth', url: 'https://earth.google.com' },
+                { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Main_Page' },
+                { label: 'IMdb', url: 'https://imdb.com/' },
+                { label: 'DuckDuckGo', url: 'https://start.duckduckgo.com' },
+            ]},
+            { id: 'news', name: 'News', color: 'rgba(220,20,60,0.25)', items: [
+                { label: 'BBC News', url: 'https://www.bbc.com/news' },
+                { label: 'GeenStijl', url: 'https://www.geenstijl.nl' },
+                { label: 'Teletext', url: 'https://nos.nl/teletekst/101/1' },
+                { label: 'JPost', url: 'https://www.jpost.com' },
+                { label: 'Times IL', url: 'https://www.timesofisrael.com' },
+                { label: 'Ynet', url: 'https://www.ynetnews.com' },
+                { label: 'AT5', url: 'https://www.at5.nl' },
+                { label: 'Buienradar', url: 'https://buienradar.nl' },
+            ]},
+            { id: 'creative', name: 'Creative', color: 'rgba(255,105,180,0.25)', items: [
+                { label: 'Firefly', url: 'https://firefly.adobe.com' },
+                { label: 'Express', url: 'https://express.adobe.com' },
+                { label: 'Neo', url: 'https://projectneo.adobe.com' },
+                { label: 'Canva', url: 'https://canva.com' },
+                { label: 'Capcut', url: 'https://capcut.com' },
+                { label: 'G Fonts', url: 'https://fonts.google.com' },
+            ]},
+            { id: 'av', name: 'A/V', color: 'rgba(0,206,209,0.25)', items: [
+                { label: 'Spotify', url: 'https://open.spotify.com' },
+                { label: 'YouTube', url: 'https://www.youtube.com' },
+                { label: 'YT Music', url: 'https://music.youtube.com' },
+                { label: 'Suno', url: 'https://suno.com/' },
+                { label: 'DistroKid', url: 'https://distrokid.com' },
+            ]},
+            { id: 'social', name: 'Social', color: 'rgba(255,140,0,0.25)', items: [
+                { label: 'X', url: 'https://www.x.com' },
+                { label: 'Bluesky', url: 'https://bsky.app' },
+                { label: 'Threads', url: 'https://www.threads.net/@davidje' },
+                { label: 'Instagram', url: 'https://www.instagram.com' },
+                { label: 'WhatsApp', url: 'https://web.whatsapp.com' },
+                { label: 'Facebook', url: 'https://www.facebook.com' },
+                { label: 'Pinterest', url: 'https://pinterest.com' },
+            ]},
+            { id: 'writing', name: 'Writing', color: 'rgba(218,165,32,0.25)', items: [
+                { label: 'Docs', url: 'https://docs.google.com' },
+                { label: 'Substack', url: 'https://davidenker.substack.com' },
+                { label: 'Medium', url: 'https://medium.com' },
+                { label: 'Translate', url: 'https://translate.google.com' },
+            ]},
+            { id: 'work', name: 'Work', color: 'rgba(0,100,0,0.25)', items: [
+                { label: 'LinkedIn', url: 'https://www.linkedin.com' },
+                { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/' },
+                { label: 'Upwork', url: 'https://upwork.com' },
+                { label: 'Fiverr', url: 'https://www.fiverr.com' },
+                { label: 'Reedsy', url: 'https://www.reedsy.com' },
+                { label: 'Analytics', url: 'https://analytics.google.com' },
+            ]},
+            { id: 'mystuff', name: 'My Stuff', color: 'rgba(112,128,144,0.25)', items: [
+                { label: 'Home (DE)', url: 'https://www.tonicforthebones.com' },
+                { label: 'Studio', url: 'https://www.tonicforthebones.com/standingstudio' },
+                { label: 'Tonic', url: 'https://www.tonicforthebones.com' },
+                { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/' },
+                { label: 'Awe', url: 'https://house-of-awe.web.app' },
+            ]},
+        ];
 
-        folders.forEach(folder => {
-            folder.addEventListener('click', (e) => {
-                if (e.target.classList.contains('close-btn')) {
-                    folder.classList.remove('expanded');
+        const STORAGE_KEY = 'navdash.v1';
+        let data = load();
+        let editMode = false;
+
+        // ---------- Persistence ----------
+        function load() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return structuredClone(DEFAULT_DATA);
+        }
+        function save() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+        }
+        const uid = () => 'id' + Math.random().toString(36).slice(2, 9);
+
+        // ---------- Icon helpers ----------
+        // Distinct icons for sites the generic favicon service renders identically
+        // (all Google products otherwise resolve to the same grey "G").
+        const ICON_OVERRIDES = [
+            [/mail\.google\./,      'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico'],
+            [/sheets\.google\./,    'https://ssl.gstatic.com/docs/spreadsheets/favicon3.ico'],
+            [/docs\.google\./,      'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'],
+            [/drive\.google\./,     'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'],
+            [/keep\.google\./,      'https://ssl.gstatic.com/keep/icon_2020q4v2_128.png'],
+            [/calendar\.google\./,  'https://calendar.google.com/googlecalendar/images/favicons_2020q4/calendar_31.ico'],
+            [/contacts\.google\./,  'https://ssl.gstatic.com/social/contactsui/images/logo/contacts_2022_32dp.png'],
+            [/photos\.google\./,    'https://ssl.gstatic.com/social/photosui/images/logo/favicon_v2_96px.png'],
+            [/translate\.google\./, 'https://ssl.gstatic.com/translate/favicon.ico'],
+            [/earth\.google\./,     'https://ssl.gstatic.com/earth/0_215/images/icons/earth.ico'],
+            [/maps\.google\.|google\.[^/]+\/maps/, 'https://maps.gstatic.com/favicon3.ico'],
+        ];
+
+        // Build the ordered list of icon URLs to try for a shortcut.
+        function iconSources(item) {
+            const out = [];
+            if (item.icon) out.push(item.icon);            // user-set custom icon wins
+            for (const [re, src] of ICON_OVERRIDES) {
+                if (re.test(item.url)) { out.push(src); break; }
+            }
+            try {
+                const u = new URL(item.url);
+                out.push(`${u.origin}/favicon.ico`);        // the site's own favicon (per-subdomain)
+                out.push(`https://www.google.com/s2/favicons?sz=128&domain=${u.hostname}`);
+                out.push(`https://icons.duckduckgo.com/ip3/${u.hostname}.ico`);
+            } catch (e) {}
+            return out;
+        }
+
+        function iconEl(item) {
+            const circle = document.createElement('div');
+            circle.className = 'icon-circle';
+            const sources = iconSources(item);
+
+            const showFallback = () => {
+                const fb = document.createElement('span');
+                fb.className = 'fallback';
+                fb.textContent = (item.label || '?').trim().charAt(0);
+                circle.appendChild(fb);
+            };
+
+            if (!sources.length) { showFallback(); return circle; }
+
+            const img = document.createElement('img');
+            let i = 0;
+            img.alt = item.label;
+            img.loading = 'lazy';
+            img.onerror = () => {
+                i++;
+                if (i < sources.length) { img.src = sources[i]; }
+                else { img.remove(); showFallback(); }
+            };
+            img.src = sources[0];
+            circle.appendChild(img);
+            return circle;
+        }
+
+        // ---------- Render ----------
+        const grid = document.getElementById('folderGrid');
+
+        function render() {
+            grid.innerHTML = '';
+            data.forEach(folder => grid.appendChild(renderFolder(folder)));
+
+            const addTile = document.createElement('div');
+            addTile.className = 'add-folder-tile';
+            addTile.textContent = '+ Add folder';
+            addTile.addEventListener('click', () => openFolderModal(null));
+            grid.appendChild(addTile);
+        }
+
+        function renderFolder(folder) {
+            const section = document.createElement('section');
+            section.className = 'category-group';
+            section.dataset.id = folder.id;
+            if (folder.color) section.style.background = folder.color;
+            section.draggable = false;
+
+            // Title bar
+            const title = document.createElement('div');
+            title.className = 'category-title';
+            const tText = document.createElement('span');
+            tText.className = 'title-text';
+            tText.textContent = folder.name;
+            title.appendChild(tText);
+
+            const actions = document.createElement('div');
+            actions.className = 'title-actions';
+            const editCtrl = mkCtrl('✎', 'Edit folder', (e) => { e.stopPropagation(); openFolderModal(folder.id); });
+            const moveCtrl = mkCtrl('⇕', 'Drag to reorder', null);
+            moveCtrl.classList.add('move-handle');
+            const delCtrl = mkCtrl('🗑', 'Delete folder', (e) => {
+                e.stopPropagation();
+                if (confirm(`Delete folder "${folder.name}" and all its shortcuts?`)) {
+                    data = data.filter(f => f.id !== folder.id);
+                    save(); render();
+                }
+            });
+            actions.appendChild(editCtrl);
+            actions.appendChild(moveCtrl);
+            actions.appendChild(delCtrl);
+            title.appendChild(actions);
+
+            const close = document.createElement('div');
+            close.className = 'close-btn';
+            close.innerHTML = '&times;';
+            actions.appendChild(close);
+
+            section.appendChild(title);
+
+            // Items
+            const container = document.createElement('div');
+            container.className = 'grid-container';
+            folder.items.forEach(item => container.appendChild(renderItem(folder, item)));
+
+            const addItem = document.createElement('div');
+            addItem.className = 'add-item grid-item';
+            const ac = document.createElement('div');
+            ac.className = 'icon-circle';
+            ac.innerHTML = '<span class="plus">+</span>';
+            addItem.appendChild(ac);
+            const al = document.createElement('span');
+            al.textContent = 'Add';
+            addItem.appendChild(al);
+            addItem.addEventListener('click', (e) => { e.stopPropagation(); openItemModal(folder.id, null); });
+            container.appendChild(addItem);
+
+            section.appendChild(container);
+
+            // --- Folder click to expand ---
+            section.addEventListener('click', (e) => {
+                if (editMode) return;
+                if (e.target.closest('.close-btn')) {
+                    section.classList.remove('expanded');
                     e.stopPropagation();
                     return;
                 }
-
-                if (folder.classList.contains('expanded')) {
-                    if (!e.target.closest('.grid-item')) {
-                        folder.classList.remove('expanded');
-                        e.stopPropagation();
-                    }
+                if (section.classList.contains('expanded')) {
+                    if (!e.target.closest('.grid-item')) section.classList.remove('expanded');
                     return;
                 }
-
-                folders.forEach(f => f.classList.remove('expanded'));
-                folder.classList.add('expanded');
-
-                setTimeout(() => {
-                    folder.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300);
+                document.querySelectorAll('.category-group').forEach(f => f.classList.remove('expanded'));
+                section.classList.add('expanded');
+                setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
             });
-        });
 
-        function openWhatsApp() {
-            var mobileLink = "whatsapp://send?phone=+31624658222";
-            var desktopLink = "https://web.whatsapp.com";
-            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                window.location.href = mobileLink;
-            } else {
-                window.open(desktopLink, "_blank");
-            }
-        }
-
-        window.onload = function () {
-            const links = document.querySelectorAll('a');
-            links.forEach(link => {
-                // Prevent header-link from opening in a new tab
-                if (!link.hasAttribute('onclick') &&
-                    !link.href.includes('spotify:') &&
-                    !link.classList.contains('header-link')) {
-                    link.setAttribute('target', '_blank');
+            // --- Folder drag (reorder) via move handle ---
+            moveCtrl.addEventListener('mousedown', () => { section.draggable = true; });
+            section.addEventListener('dragstart', (e) => {
+                if (!section.draggable) { e.preventDefault(); return; }
+                dragState = { type: 'folder', folderId: folder.id };
+                section.classList.add('dragging');
+            });
+            section.addEventListener('dragend', () => {
+                section.draggable = false;
+                section.classList.remove('dragging');
+                dragState = null;
+            });
+            section.addEventListener('dragover', (e) => {
+                if (!dragState) return;
+                e.preventDefault();
+                if (dragState.type === 'item') section.classList.add('drag-over');
+            });
+            section.addEventListener('dragleave', () => section.classList.remove('drag-over'));
+            section.addEventListener('drop', (e) => {
+                e.preventDefault();
+                section.classList.remove('drag-over');
+                if (!dragState) return;
+                if (dragState.type === 'folder') {
+                    reorderFolder(dragState.folderId, folder.id);
+                } else if (dragState.type === 'item') {
+                    // dropped on folder body (not on a specific item) -> append to this folder
+                    moveItem(dragState.folderId, dragState.itemId, folder.id, null);
                 }
             });
-        };
-    </script>
 
+            return section;
+        }
+
+        function mkCtrl(symbol, title, handler) {
+            const c = document.createElement('span');
+            c.className = 'ctrl';
+            c.textContent = symbol;
+            c.title = title;
+            if (handler) c.addEventListener('click', handler);
+            return c;
+        }
+
+        function renderItem(folder, item) {
+            const a = document.createElement('a');
+            a.className = 'grid-item';
+            a.href = item.url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.dataset.itemId = item.id || (item.id = uid());
+
+            a.appendChild(iconEl(item));
+            const span = document.createElement('span');
+            span.textContent = item.label;
+            a.appendChild(span);
+
+            const del = document.createElement('div');
+            del.className = 'item-del';
+            del.textContent = '×';
+            del.title = 'Delete shortcut';
+            del.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                folder.items = folder.items.filter(it => it.id !== item.id);
+                save(); render();
+            });
+            a.appendChild(del);
+
+            // In edit mode: clicking opens editor instead of navigating
+            a.addEventListener('click', (e) => {
+                if (editMode) {
+                    e.preventDefault(); e.stopPropagation();
+                    if (!e.target.closest('.item-del')) openItemModal(folder.id, item.id);
+                }
+            });
+
+            // Drag item
+            a.draggable = true;
+            a.addEventListener('dragstart', (e) => {
+                if (!editMode) { e.preventDefault(); return; }
+                e.stopPropagation();
+                dragState = { type: 'item', folderId: folder.id, itemId: item.id };
+                a.classList.add('dragging');
+            });
+            a.addEventListener('dragend', () => { a.classList.remove('dragging'); dragState = null; });
+            a.addEventListener('dragover', (e) => {
+                if (dragState && dragState.type === 'item') { e.preventDefault(); e.stopPropagation(); }
+            });
+            a.addEventListener('drop', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                if (dragState && dragState.type === 'item') {
+                    moveItem(dragState.folderId, dragState.itemId, folder.id, item.id);
+                }
+            });
+
+            return a;
+        }
+
+        // ---------- Drag logic ----------
+        let dragState = null;
+
+        function reorderFolder(srcId, targetId) {
+            if (srcId === targetId) return;
+            const srcIdx = data.findIndex(f => f.id === srcId);
+            const tgtIdx = data.findIndex(f => f.id === targetId);
+            if (srcIdx < 0 || tgtIdx < 0) return;
+            const [moved] = data.splice(srcIdx, 1);
+            const newTgt = data.findIndex(f => f.id === targetId);
+            data.splice(newTgt + (srcIdx < tgtIdx ? 1 : 0), 0, moved);
+            save(); render();
+        }
+
+        function moveItem(srcFolderId, itemId, tgtFolderId, beforeItemId) {
+            const srcF = data.find(f => f.id === srcFolderId);
+            const tgtF = data.find(f => f.id === tgtFolderId);
+            if (!srcF || !tgtF) return;
+            const i = srcF.items.findIndex(it => it.id === itemId);
+            if (i < 0) return;
+            const [moved] = srcF.items.splice(i, 1);
+            if (beforeItemId == null) {
+                tgtF.items.push(moved);
+            } else {
+                const t = tgtF.items.findIndex(it => it.id === beforeItemId);
+                tgtF.items.splice(t < 0 ? tgtF.items.length : t, 0, moved);
+            }
+            save(); render();
+            // keep target folder open
+            const sec = grid.querySelector(`[data-id="${tgtFolderId}"]`);
+            if (sec && editMode) sec.classList.add('expanded');
+        }
+
+        // ---------- Modals ----------
+        const folderModal = document.getElementById('folderModal');
+        const itemModal = document.getElementById('itemModal');
+        let folderEditId = null, itemEditFolderId = null, itemEditId = null;
+
+        function openFolderModal(id) {
+            folderEditId = id;
+            const f = id ? data.find(x => x.id === id) : null;
+            document.getElementById('folderModalTitle').textContent = f ? 'Edit Folder' : 'New Folder';
+            document.getElementById('folderName').value = f ? f.name : '';
+            document.getElementById('folderColor').value = f ? (f.color || '') : '';
+            folderModal.classList.add('open');
+            document.getElementById('folderName').focus();
+        }
+        document.getElementById('folderCancel').onclick = () => folderModal.classList.remove('open');
+        document.getElementById('folderSave').onclick = () => {
+            const name = document.getElementById('folderName').value.trim() || 'Untitled';
+            const color = document.getElementById('folderColor').value.trim();
+            if (folderEditId) {
+                const f = data.find(x => x.id === folderEditId);
+                f.name = name; f.color = color || '';
+            } else {
+                data.push({ id: uid(), name, color: color || '', items: [] });
+            }
+            save(); render();
+            folderModal.classList.remove('open');
+        };
+
+        function openItemModal(folderId, itemId) {
+            itemEditFolderId = folderId; itemEditId = itemId;
+            const f = data.find(x => x.id === folderId);
+            const it = itemId ? f.items.find(i => i.id === itemId) : null;
+            document.getElementById('itemModalTitle').textContent = it ? 'Edit Shortcut' : 'New Shortcut';
+            document.getElementById('itemLabel').value = it ? it.label : '';
+            document.getElementById('itemUrl').value = it ? it.url : '';
+            document.getElementById('itemIcon').value = it ? (it.icon || '') : '';
+            itemModal.classList.add('open');
+            document.getElementById('itemLabel').focus();
+        }
+        document.getElementById('itemCancel').onclick = () => itemModal.classList.remove('open');
+        document.getElementById('itemSave').onclick = () => {
+            const label = document.getElementById('itemLabel').value.trim() || 'Link';
+            let url = document.getElementById('itemUrl').value.trim();
+            const icon = document.getElementById('itemIcon').value.trim();
+            if (url && !/^[a-z]+:/i.test(url)) url = 'https://' + url;
+            const f = data.find(x => x.id === itemEditFolderId);
+            if (itemEditId) {
+                const it = f.items.find(i => i.id === itemEditId);
+                it.label = label; it.url = url; it.icon = icon || undefined;
+            } else {
+                f.items.push({ id: uid(), label, url, icon: icon || undefined });
+            }
+            save(); render();
+            const sec = grid.querySelector(`[data-id="${itemEditFolderId}"]`);
+            if (sec && editMode) sec.classList.add('expanded');
+            itemModal.classList.remove('open');
+        };
+
+        // close modal on backdrop click
+        [folderModal, itemModal].forEach(m => m.addEventListener('click', e => {
+            if (e.target === m) m.classList.remove('open');
+        }));
+
+        // ---------- Toolbar ----------
+        const editToggle = document.getElementById('editToggle');
+        editToggle.addEventListener('click', () => {
+            editMode = !editMode;
+            document.body.classList.toggle('edit-mode', editMode);
+            editToggle.classList.toggle('active', editMode);
+            editToggle.textContent = editMode ? 'Done' : 'Edit';
+            if (editMode) {
+                // expand all so items are visible/editable
+                document.querySelectorAll('.category-group').forEach(f => f.classList.add('expanded'));
+            } else {
+                document.querySelectorAll('.category-group').forEach(f => f.classList.remove('expanded'));
+            }
+        });
+
+        document.getElementById('exportBtn').onclick = () => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'navdash-backup.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        };
+
+        const importFile = document.getElementById('importFile');
+        document.getElementById('importBtn').onclick = () => importFile.click();
+        importFile.addEventListener('change', () => {
+            const file = importFile.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(reader.result);
+                    if (Array.isArray(parsed)) {
+                        data = parsed;
+                        // ensure ids exist
+                        data.forEach(f => { if (!f.id) f.id = uid(); f.items.forEach(i => { if (!i.id) i.id = uid(); }); });
+                        save(); render();
+                    } else alert('That file does not look like a valid dashboard export.');
+                } catch (e) { alert('Could not read that file.'); }
+                importFile.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('resetBtn').onclick = () => {
+            if (confirm('Reset to the default set of folders and shortcuts? Your current layout will be lost.')) {
+                data = structuredClone(DEFAULT_DATA);
+                save(); render();
+            }
+        };
+
+        // ---------- Init ----------
+        render();
+    </script>
 </body>
 
 </html>

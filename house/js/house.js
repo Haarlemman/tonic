@@ -3618,8 +3618,8 @@ function runCircularMaskReveal() {
             const wA = ctx.measureText('A').width;
             const wW = ctx.measureText('W').width;
             const wE = ctx.measureText('E').width;
-            const gapAW = largeSize * 0.22;  // wider than standard 0.12 (A's right leg optically closes with W's left leg)
-            const gapWE = largeSize * 0.03;  // tight — moves AW right toward E
+            const gapAW = largeSize * 0.18;  // natural A→W gap
+            const gapWE = largeSize * -0.13; // negative: pulls E into W's natural right-side bearing
             const aweTotal = wA + gapAW + wW + gapWE + wE;
             let ax = centerX - aweTotal / 2;
             ctx.fillText('A', ax, aweY);

@@ -411,6 +411,19 @@
         bottom: 5vh;
       }
     }
+
+    /* Highlight glow — added after all lines appear */
+    .arm-left.highlighted .c-red { filter: brightness(1.5) drop-shadow(0 0 14px var(--red)); transition: filter 0.5s ease; }
+    .arm-left.highlighted .c-yel { filter: brightness(1.5) drop-shadow(0 0 14px var(--yel)); transition: filter 0.5s ease; }
+    .arm-left.highlighted .c-cyn { filter: brightness(1.5) drop-shadow(0 0 14px var(--cyn)); transition: filter 0.5s ease; }
+    .arm-left.highlighted .c-wht { filter: brightness(1.4) drop-shadow(0 0 8px #fff);       transition: filter 0.5s ease; }
+
+    /* Final line blink */
+    @keyframes blink-line {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.05; }
+    }
+    .blinking { animation: blink-line 0.4s ease-in-out 4 !important; }
   </style>
 </head>
 
@@ -610,26 +623,62 @@
 
     const armL = document.getElementById('arm-left');
 
-    // Text reveal is triggered externally once the lights sequence finishes
-    // (see window.triggerTextReveal below, called from the animate loop)
+    // Text reveal: line-by-line top→bottom, then highlight, then last line blinks.
     window._textRevealed = false;
     window.triggerTextReveal = function() {
       if (window._textRevealed) return;
       window._textRevealed = true;
 
+      const LINE_GAP   = 300;  // ms between consecutive lines
+      const ARM_LEAD   = 600;  // ms head-start for the arm slide before lines appear
+      const FADE_DELAY = 200;  // ms after last line before highlight glow
+      const BLINK_DELAY = 400; // ms after highlight before last line blinks
+      const BLINK_DUR  = 1800; // ms of blinking before float mode
+
+      const lines = Array.from(armL.querySelectorAll('.tl'));
+
+      // Freeze all lines invisible so the CSS default animation doesn't fire
+      lines.forEach(line => {
+        line.style.animation = 'none';
+        line.style.opacity = '0';
+      });
+
       // Slide house to the right (desktop) / bottom (mobile)
       document.getElementById('wireframe-canvas').classList.add('shifted');
 
-      // Bring in text after a short pause so the slide starts first
+      // Start arm slide-in, then reveal lines one by one
       setTimeout(() => {
-        staggerLines(armL, .1);
         armL.classList.add('visible');
-      }, 300);
 
-      setTimeout(() => {
-        armL.classList.remove('visible');
-        armL.classList.add('floating');
-      }, 2500);
+        lines.forEach((line, i) => {
+          setTimeout(() => {
+            line.style.opacity = '';          // un-freeze
+            void line.offsetWidth;            // force reflow → restart animation
+            line.style.animation = 'line-pop 0.5s ease forwards';
+          }, ARM_LEAD + i * LINE_GAP);
+        });
+
+        const allDone = ARM_LEAD + lines.length * LINE_GAP;
+
+        // Highlight glow on all colored lines
+        setTimeout(() => {
+          armL.classList.add('highlighted');
+        }, allDone + FADE_DELAY);
+
+        // Blink last line, then transition to floating mode
+        setTimeout(() => {
+          const lastLine = lines[lines.length - 1];
+          lastLine.classList.add('blinking');
+          setTimeout(() => {
+            lastLine.classList.remove('blinking');
+            armL.classList.remove('highlighted');
+            lines.forEach(line => { line.style.animation = ''; line.style.opacity = ''; });
+            armL.classList.add('floating');
+            armL.classList.remove('visible');
+          }, BLINK_DUR);
+        }, allDone + FADE_DELAY + BLINK_DELAY);
+
+      }, 300);
     };
 
     (function () {
@@ -639,6 +688,7 @@
       if (!canvas) return;
 
       let wScene, wCamera, wRenderer, wHouseGroup;
+      let windowTimes = [], sequenceEndTime = 0; // precomputed accelerating light schedule
       const RS = 9, RH = 3.5;
 
       function createNoiseTexture() {
@@ -1107,6 +1157,21 @@
 
         wBuild();
 
+        // Precompute per-window start/end times with exponentially shrinking durations
+        // so lights switch on increasingly fast (slow start → rapid-fire finish).
+        {
+          let cum = 0;
+          const n = windowObjects.length;
+          windowTimes = [];
+          for (let i = 0; i < n; i++) {
+            const frac = i / Math.max(1, n - 1);          // 0 → 1
+            const dur  = 0.55 * Math.pow(0.06 / 0.55, frac); // 0.55s → 0.06s
+            windowTimes.push({ start: cum, end: cum + dur, dur });
+            cum += dur;
+          }
+          sequenceEndTime = cum;
+        }
+
         window.addEventListener('resize', wResize);
 
         // ResizeObserver fires on every frame the canvas element changes size,
@@ -1264,60 +1329,38 @@
         requestAnimationFrame(animate);
         
         const t = performance.now() * 0.001; // Time in seconds
-        const stepDuration = 0.45;
-        const totalWindows = windowObjects.length;
-        const sequenceEndTime = totalWindows * stepDuration;
-        // Fire only after the final 1.5s fade-in is complete + a small buffer,
-        // so text appears exactly when every light is fully lit.
+        // sequenceEndTime and windowTimes computed in wInit after wBuild.
         const shiftTriggerTime = sequenceEndTime + 1.5 + 0.4;
-        
+
         windowObjects.forEach((win, i) => {
           const u = win.beamMesh.userData;
           let targetIntensity = 0;
           let targetOpacity = 0;
-          
+
           if (t < sequenceEndTime) {
-            // Sequential phase: window i is on if t is within its window
-            const winStartTime = i * stepDuration;
-            const winEndTime = (i + 1) * stepDuration;
-            
-            if (t >= winStartTime && t < winEndTime) {
-              // Fade in and out quickly during its slot
-              const progress = (t - winStartTime) / stepDuration; // 0 to 1
-              // Smooth bell curve: sin(progress * PI)
-              const factor = Math.sin(progress * Math.PI);
-              
-              targetIntensity = factor * 6.0; // Max brightness
-              targetOpacity = factor * 0.55;
-            } else {
-              targetIntensity = 0;
-              targetOpacity = 0;
+            // Accelerating sequential phase — each window has a shorter slot than the last.
+            const wt = windowTimes[i];
+            if (wt && t >= wt.start && t < wt.end) {
+              const progress = (t - wt.start) / wt.dur; // 0 → 1
+              const factor   = Math.sin(progress * Math.PI); // bell curve
+              targetIntensity = factor * 6.0;
+              targetOpacity   = factor * 0.55;
             }
           } else {
-            // Final phase: all windows are on and fade in together
-            const fadeInTime = 1.5;
+            // Final phase: all windows on, fading in together
+            const fadeInTime   = 1.5;
             const timeSinceEnd = t - sequenceEndTime;
-            const fadeFactor = Math.min(1.0, timeSinceEnd / fadeInTime);
-            
-            // Fluctuation factor
-            const pulse = Math.sin(t * u.pulseSpeed + u.pulsePhase) * 0.15;
-            const globalPulse = Math.sin(t * 2.2) * 1.5;
-            
+            const fadeFactor   = Math.min(1.0, timeSinceEnd / fadeInTime);
+            const pulse        = Math.sin(t * u.pulseSpeed + u.pulsePhase) * 0.15;
+            const globalPulse  = Math.sin(t * 2.2) * 1.5;
             targetIntensity = fadeFactor * (5.0 + globalPulse);
-            targetOpacity = fadeFactor * (u.baseOpacity + pulse);
+            targetOpacity   = fadeFactor * (u.baseOpacity + pulse);
           }
-          
-          // Apply values
-          if (win.glassMat) {
-            win.glassMat.emissiveIntensity = targetIntensity;
-          }
-          if (win.beamMesh && win.beamMesh.material) {
-            win.beamMesh.material.opacity = targetOpacity;
-          }
+
+          if (win.glassMat) win.glassMat.emissiveIntensity = targetIntensity;
+          if (win.beamMesh && win.beamMesh.material) win.beamMesh.material.opacity = targetOpacity;
         });
 
-        // Once enough time has passed after the last light turns on, slide house
-        // and reveal text — triggered only once.
         if (t >= shiftTriggerTime && typeof window.triggerTextReveal === 'function') {
           window.triggerTextReveal();
         }
