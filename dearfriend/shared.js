@@ -9,7 +9,7 @@
     // --- TRANSLATIONS (Core UI only) ---
     window.translations = {
         en: {
-            siteName: '<span class="brand-star"><img class="logo-image-png" src="images/ster.png?v=4" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">something<br>Jewish</span>',
+            siteName: '<span class="brand-star"><img class="logo-image-png" src="images/ster.png" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">something<br>Jewish</span>',
             navPeople: 'People',
             navReligion: 'Religion',
             navCultureGroup: 'Culture',
@@ -357,7 +357,6 @@
             aboutIssuesText: 'This isn\'t a lecture. It\'s a conversation starter. Whether you\'re Jewish, curious, sceptical, or somewhere in between — pull up a chair. There\'s a lot to talk about, and questions are more than welcome.'
         },
         nl: {
-            siteName: '<span class="brand-star"><img class="logo-image-png" src="davicon.svg?v=2" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">Beste<br>Vriend</span>',
             navPeople: 'Volk',
             navReligion: 'Religie',
             navCultureGroup: 'Cultuur',
@@ -383,7 +382,7 @@
                 ],
                 'about': [{ id: 'about', i18n: 'navAbout' }]
             },
-            siteName: '<span class="brand-star"><img class="logo-image-png" src="images/ster.png?v=4" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">iets<br>Joods</span>',
+            siteName: '<span class="brand-star"><img class="logo-image-png" src="images/ster.png" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">iets<br>Joods</span>',
             footerNavigate: 'Navigeren',
             footerExplore: 'Ontdekken',
             footerSeeFurther: 'Zie verder op:',
