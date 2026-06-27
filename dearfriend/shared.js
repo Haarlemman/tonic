@@ -9,7 +9,7 @@
     // --- TRANSLATIONS (Core UI only) ---
     window.translations = {
         en: {
-            siteName: '<span class="brand-star"><img class="logo-image-png" src="images/ster.png" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">something<br>Jewish</span>',
+            siteName: '<span class="brand-star"><img class="logo-image-png" src="/dearfriend/images/ster.png" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">something<br>Jewish</span>',
             navPeople: 'People',
             navReligion: 'Religion',
             navCultureGroup: 'Culture',
@@ -382,7 +382,7 @@
                 ],
                 'about': [{ id: 'about', i18n: 'navAbout' }]
             },
-            siteName: '<span class="brand-star"><img class="logo-image-png" src="images/ster.png" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">iets<br>Joods</span>',
+            siteName: '<span class="brand-star"><img class="logo-image-png" src="/dearfriend/images/ster.png" width="42" height="42" alt="Magen David" aria-hidden="true"/></span><span class="brand-wordmark">iets<br>Joods</span>',
             footerNavigate: 'Navigeren',
             footerExplore: 'Ontdekken',
             footerSeeFurther: 'Zie verder op:',
