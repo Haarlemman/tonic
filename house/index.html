@@ -288,32 +288,31 @@
             display: block;
             align-items: baseline;
             gap: 0.12em;
-            line-height: 1;
+            line-height: 1.4;
             white-space: nowrap;
-            font-family: omnium, sans-serif;
-            font-size: clamp(1rem, 1.6vw, 1.7rem);
+            font-family: 'OCR A Extended', 'OCR A', 'Share Tech Mono', monospace !important;
+            font-size: 10px !important;
             text-transform: uppercase;
         }
 
         .landing-line-house {
             color: #E91111 !important;
-            font-size: clamp(1.65rem, 1.8vw, 2.1rem);
+            font-size: 10px !important;
             text-shadow: 
                 0 0 6px rgba(233, 17, 17, 0.9), 
                 0 0 15px rgba(233, 17, 17, 0.6), 
                 0 0 30px rgba(233, 17, 17, 0.3) !important;
         }
 
-         .landing-line-expl {
-            color: #09E1CE !important;            
-            font-size: clamp(3.8rem, 4.4vw, 4.8rem);
+        .landing-line-expl {
+            color: #09E1CE !important;
+            font-size: 10px !important;
             text-shadow: 0 0 12px rgba(0, 255, 255, 0.75) !important;
         }
-        
-        
+
         .landing-line-mol {
             color: #CDFF00 !important;
-            font-size: clamp(1.6rem, 1.8vw, 2.0rem);
+            font-size: 10px !important;
             text-shadow: 
                 0 0 6px rgba(205, 255, 0, 0.9), 
                 0 0 15px rgba(205, 255, 0, 0.6), 
@@ -321,16 +320,16 @@
         }
 
         .landing-line-name {
-            font-size: clamp(1.8rem, 2.8vw, 3.2rem) !important;
-            line-height: 1.1;
+            font-size: 10px !important;
+            line-height: 1.4;
             margin-top: 0.15em;
         }
 
         .landing-text-iso .lw,
         .landing-text-iso #landing-visitor-name {
             display: inline-block;
-            font-family: 'Share Tech Mono', monospace !important;
-            font-size: inherit !important;
+            font-family: 'OCR A Extended', 'OCR A', 'Share Tech Mono', monospace !important;
+            font-size: 10px !important;
             text-transform: uppercase !important;
             font-style: normal !important;
         }
@@ -465,8 +464,8 @@
         }
 
         #landing-visitor-name {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: clamp(2rem, 4vw, 4rem);
+            font-family: 'OCR A Extended', 'OCR A', 'Share Tech Mono', monospace;
+            font-size: 10px !important;
             font-style: normal;
             font-weight: normal;
             text-transform: uppercase;
@@ -992,12 +991,12 @@
                     <div id="landing-bg-text"
                         class="absolute flex items-start justify-end pointer-events-none select-none p-4">
                         <div class="landing-text-iso">
-                            <div class="landing-line landing-line-expl">EXPLORE</div>
-                            <div class="landing-line landing-line-house">THE HOUSE OF AWE</div>
-                            <div class="landing-line">AND DISCOVER</div>
-                            <div class="landing-line landing-line-mol">THE MEANING OF LIFE</div>
-                            <div class="landing-line">ACCORDING TO</div>
-                            <div class="landing-line landing-line-name"><span id="landing-visitor-name">YOU</span></div>
+                            <div class="landing-line landing-line-expl" data-tw="EXPLORE" style="visibility:hidden"></div>
+                            <div class="landing-line landing-line-house" data-tw="THE HOUSE OF AWE" style="visibility:hidden"></div>
+                            <div class="landing-line" data-tw="AND DISCOVER" style="visibility:hidden"></div>
+                            <div class="landing-line landing-line-mol" data-tw="THE MEANING OF LIFE" style="visibility:hidden"></div>
+                            <div class="landing-line" data-tw="ACCORDING TO" style="visibility:hidden"></div>
+                            <div class="landing-line landing-line-name" data-tw-name="1" style="visibility:hidden"><span id="landing-visitor-name"></span></div>
                             <div class="mt-4 pointer-events-auto">
                                 <button id="boot-btn" onclick="bootExperience()" data-i18n="initialize"
                                     class="px-4 md:px-8 py-2 transition-all uppercase font-bold tracking-[0.2em] shadow-2xl text-[10px] md:text-sm flex items-center gap-2 boot-button"
@@ -1009,9 +1008,105 @@
                         </div>
                     </div>
 
+                    <!-- Typewriter effect for landing pillar text -->
+                    <script>
+                    (function() {
+                        var CHAR_DELAY = 55;   // ms per character
+                        var LINE_PAUSE = 180;  // ms pause between lines
+                        var CURSOR    = '\u2588'; // block cursor
+
+                        function typewriterSequence(visitorName) {
+                            var container = document.querySelector('.landing-text-iso');
+                            if (!container) return;
+
+                            // Collect lines: [el, text] pairs
+                            var lines = [];
+                            var twLines = container.querySelectorAll('[data-tw]');
+                            twLines.forEach(function(el) {
+                                lines.push({ el: el, text: el.getAttribute('data-tw'), isName: false });
+                            });
+                            // Name line
+                            var nameLine = container.querySelector('[data-tw-name]');
+                            if (nameLine) {
+                                lines.push({ el: nameLine, text: (visitorName || 'YOU').toUpperCase(), isName: true });
+                            }
+
+                            var lineIdx = 0;
+
+                            function typeNextLine() {
+                                if (lineIdx >= lines.length) return;
+                                var item = lines[lineIdx];
+                                lineIdx++;
+
+                                item.el.style.visibility = 'visible';
+                                var target = item.isName
+                                    ? document.getElementById('landing-visitor-name')
+                                    : item.el;
+
+                                var chars = item.text.split('');
+                                var i = 0;
+
+                                function typeChar() {
+                                    if (i < chars.length) {
+                                        target.textContent = item.text.slice(0, i + 1) + CURSOR;
+                                        i++;
+                                        setTimeout(typeChar, CHAR_DELAY);
+                                    } else {
+                                        // Remove cursor, pause, then next line
+                                        target.textContent = item.text;
+                                        setTimeout(typeNextLine, LINE_PAUSE);
+                                    }
+                                }
+                                typeChar();
+                            }
+
+                            typeNextLine();
+                        }
+
+                        // Wait for DOM + slight delay so wireframe is visible first
+                        function init() {
+                            var name = 'YOU';
+                            try {
+                                var q = JSON.parse(localStorage.getItem('userQuizProgress') || '{}');
+                                var r = JSON.parse(localStorage.getItem('houseReflections') || '{}');
+                                var saved = q.name || r.name;
+                                if (saved && saved.trim()) name = saved.trim();
+                            } catch(e) {}
+                            setTimeout(function() { typewriterSequence(name); }, 600);
+                        }
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', init);
+                        } else {
+                            init();
+                        }
+
+                        // Re-run name line if visitor name changes later
+                        window._updateTypewriterName = function(name) {
+                            var el = document.getElementById('landing-visitor-name');
+                            if (!el) return;
+                            var parent = el.closest('[data-tw-name]');
+                            if (parent) parent.style.visibility = 'visible';
+                            var chars = (name || 'YOU').toUpperCase().split('');
+                            var i = 0;
+                            var CURSOR = '\u2588';
+                            function t() {
+                                if (i < chars.length) {
+                                    el.textContent = chars.slice(0, i+1).join('') + CURSOR;
+                                    i++;
+                                    setTimeout(t, 55);
+                                } else {
+                                    el.textContent = (name || 'YOU').toUpperCase();
+                                }
+                            }
+                            t();
+                        };
+                    })();
+                    </script>
+
                     <!-- Wireframe canvas fills the entire container -->
                     <canvas id="wireframe-canvas" class="absolute inset-0 w-full h-full z-10"
-                        style="display:block; background: transparent;"></canvas>
+                        style="display:block; background: transparent; pointer-events: none;"></canvas>
 
                     <script>
                         document.addEventListener("DOMContentLoaded", () => {
@@ -1883,7 +1978,13 @@
             if (hel) hel.innerText = nameToDisplay;
 
             const lel = document.getElementById('landing-visitor-name');
-            if (lel) lel.innerText = nameToDisplay;
+            if (lel) {
+                if (typeof window._updateTypewriterName === 'function') {
+                    window._updateTypewriterName(nameToDisplay);
+                } else {
+                    lel.innerText = nameToDisplay;
+                }
+            }
         }
 
         function submitVisitorName() {
