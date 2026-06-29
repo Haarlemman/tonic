@@ -259,17 +259,21 @@
 
         #landing-bg-text {
             position: absolute;
-            right: clamp(4rem, 10vw, 7rem);
-            bottom: clamp(18rem, 18vw, 16rem);
+            right: 1.25rem;
+            bottom: 1.25rem;
             left: auto;
             top: auto;
-            z-index: 5;
+            z-index: 30;
             display: flex;
-            align-items: flex-start;
-            justify-content: flex-end;
-            width: min(50%, 480px);
-            padding: 0;
-            overflow: visible;
+            flex-direction: column;
+            box-sizing: border-box;
+            /* Fixed width and height so outline stays constant and typewriter lines/button fit perfectly */
+            width: 175px;
+            height: 150px;
+            padding: 10px 14px 10px 14px;
+            overflow: hidden;
+            outline: 1px solid #ffffff;
+            background: rgba(0,0,0,0.55);
         }
 
         .landing-text-iso {
@@ -278,7 +282,8 @@
             align-items: flex-start;
             gap: 0.16em;
             text-align: left;
-            max-width: 100%;
+            width: 100%;
+            height: 100%;
             margin: 0;
             color: #09E1CE !important;
             text-shadow: 0 0 10px rgba(0, 255, 255, 0.8) !important;
@@ -484,8 +489,9 @@
         @media (max-width: 640px) {
             #landing-bg-text {
                 right: 0.75rem;
-                bottom: 3rem;
-                width: min(85%, 320px);
+                bottom: 0.75rem;
+                width: 175px;
+                height: 150px;
             }
 
             .landing-text-iso {
@@ -922,7 +928,7 @@
                 <p class="text-[10px] tracking-[0.1em] uppercase"
                     style="color: #fff; font-family: 'Share Tech Mono'; opacity: 0.9;">
                     <span data-i18n="mol_subtitle">THE MEANING OF LIFE ACCORDING TO</span> <span
-                        id="header-visitor-name">YOU</span>
+                        id="header-visitor-name"></span>
                 </p>
                 <!-- Language Toggle -->
                 <div class="flex gap-2 text-[10px] font-bold tracking-widest font-mono">
@@ -987,26 +993,6 @@
                     <!-- Isometric grid (lowest layer) -->
                     <div id="landing-iso-grid" aria-hidden="true"></div>
 
-                    <!-- Typography — above grid, below wireframe -->
-                    <div id="landing-bg-text"
-                        class="absolute flex items-start justify-end pointer-events-none select-none p-4">
-                        <div class="landing-text-iso">
-                            <div class="landing-line landing-line-expl" data-tw="EXPLORE" style="visibility:hidden"></div>
-                            <div class="landing-line landing-line-house" data-tw="THE HOUSE OF AWE" style="visibility:hidden"></div>
-                            <div class="landing-line" data-tw="AND DISCOVER" style="visibility:hidden"></div>
-                            <div class="landing-line landing-line-mol" data-tw="THE MEANING OF LIFE" style="visibility:hidden"></div>
-                            <div class="landing-line" data-tw="ACCORDING TO" style="visibility:hidden"></div>
-                            <div class="landing-line landing-line-name" data-tw-name="1" style="visibility:hidden"><span id="landing-visitor-name"></span></div>
-                            <div class="mt-4 pointer-events-auto">
-                                <button id="boot-btn" onclick="bootExperience()" data-i18n="initialize"
-                                    class="px-4 md:px-8 py-2 transition-all uppercase font-bold tracking-[0.2em] shadow-2xl text-[10px] md:text-sm flex items-center gap-2 boot-button"
-                                    style="letter-spacing:0.2em; cursor:pointer; display:flex;">
-                                    INITIALIZE &nbsp;<span
-                                        style='font-size:1.4em; vertical-align:middle; line-height:0;'>▶</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Typewriter effect for landing pillar text -->
                     <script>
@@ -1028,13 +1014,22 @@
                             // Name line
                             var nameLine = container.querySelector('[data-tw-name]');
                             if (nameLine) {
-                                lines.push({ el: nameLine, text: (visitorName || 'YOU').toUpperCase(), isName: true });
+                                lines.push({ el: nameLine, text: (visitorName || 'Y O U').toUpperCase(), isName: true });
                             }
 
                             var lineIdx = 0;
 
                             function typeNextLine() {
-                                if (lineIdx >= lines.length) return;
+                                if (lineIdx >= lines.length) {
+                                     window._twDone = true;
+                                     if (typeof updateSectionName === 'function') {
+                                         updateSectionName();
+                                     }
+                                     if (typeof bootExperience === 'function') {
+                                         bootExperience();
+                                     }
+                                     return;
+                                 }
                                 var item = lines[lineIdx];
                                 lineIdx++;
 
@@ -1065,7 +1060,7 @@
 
                         // Wait for DOM + slight delay so wireframe is visible first
                         function init() {
-                            var name = 'YOU';
+                            var name = 'Y O U';
                             try {
                                 var q = JSON.parse(localStorage.getItem('userQuizProgress') || '{}');
                                 var r = JSON.parse(localStorage.getItem('houseReflections') || '{}');
@@ -1087,7 +1082,7 @@
                             if (!el) return;
                             var parent = el.closest('[data-tw-name]');
                             if (parent) parent.style.visibility = 'visible';
-                            var chars = (name || 'YOU').toUpperCase().split('');
+                            var chars = (name || 'Y O U').toUpperCase().split('');
                             var i = 0;
                             var CURSOR = '\u2588';
                             function t() {
@@ -1096,7 +1091,7 @@
                                     i++;
                                     setTimeout(t, 55);
                                 } else {
-                                    el.textContent = (name || 'YOU').toUpperCase();
+                                    el.textContent = (name || 'Y O U').toUpperCase();
                                 }
                             }
                             t();
@@ -1108,22 +1103,22 @@
                     <canvas id="wireframe-canvas" class="absolute inset-0 w-full h-full z-10"
                         style="display:block; background: transparent; pointer-events: none;"></canvas>
 
-                    <script>
-                        document.addEventListener("DOMContentLoaded", () => {
-                            // Auto-boot: skip the INITIALIZE button, go straight to LOADING
-                            setTimeout(() => {
-                                const bootBtn = document.getElementById('boot-btn');
-                                if (bootBtn) {
-                                    // Make it visible so bootExperience can render the LOADING bar into it
-                                    bootBtn.classList.remove('hidden');
-                                    bootBtn.style.display = 'flex';
-                                }
-                                if (typeof bootExperience === 'function') {
-                                    bootExperience();
-                                }
-                            }, 800);
-                        });
-                    </script>
+                    <!-- Auto-boot script removed. Boot is triggered upon typewriter sequence completion. -->
+                </div>
+
+                <!-- Legend box: direct child of simulation-container, always on top -->
+                <div id="landing-bg-text" class="pointer-events-none select-none">
+                    <div class="landing-text-iso">
+                        <div class="landing-line landing-line-expl" data-tw="EXPLORE" style="visibility:hidden"></div>
+                        <div class="landing-line landing-line-house" data-tw="THE HOUSE OF AWE" style="visibility:hidden"></div>
+                        <div class="landing-line" data-tw="AND DISCOVER" style="visibility:hidden"></div>
+                        <div class="landing-line landing-line-mol" data-tw="THE MEANING OF LIFE" style="visibility:hidden"></div>
+                        <div class="landing-line" data-tw="ACCORDING TO" style="visibility:hidden"></div>
+                        <div class="landing-line landing-line-name" data-tw-name="1" style="visibility:hidden"><span id="landing-visitor-name"></span></div>
+                        <div class="mt-auto pointer-events-auto w-full flex items-center justify-start" style="margin-top: auto !important; min-height: 24px;">
+                            <button id="boot-btn" style="display:none; background:transparent; border:none; padding:0; cursor:pointer; pointer-events:none;"></button>
+                        </div>
+                    </div>
                 </div>
 
                 <script>
@@ -1968,23 +1963,53 @@
         }
 
         function updateSectionName() {
-            const suffix = currentLang === 'en' ? 'YOU' : 'JOU';
+            const suffix = currentLang === 'en' ? 'Y O U' : 'J O U';
             const nameToDisplay = sessionVisitorName || suffix;
 
             const el = document.getElementById('section-visitor-name');
             if (el) el.innerText = nameToDisplay;
 
-            const hel = document.getElementById('header-visitor-name');
-            if (hel) hel.innerText = nameToDisplay;
+            // Only show name in header/legend once initial typewriter is done
+            if (window._twDone) {
+                const hel = document.getElementById('header-visitor-name');
+                if (hel) hel.innerText = nameToDisplay;
 
-            const lel = document.getElementById('landing-visitor-name');
-            if (lel) {
-                if (typeof window._updateTypewriterName === 'function') {
-                    window._updateTypewriterName(nameToDisplay);
-                } else {
-                    lel.innerText = nameToDisplay;
+                const lel = document.getElementById('landing-visitor-name');
+                if (lel) {
+                    if (typeof window._updateTypewriterName === 'function') {
+                        if (lel.textContent !== nameToDisplay) {
+                            window._updateTypewriterName(nameToDisplay);
+                        }
+                    } else {
+                        lel.innerText = nameToDisplay;
+                    }
                 }
+            } else {
+                // Keep header name empty during typing sequence
+                const hel = document.getElementById('header-visitor-name');
+                if (hel) hel.innerText = '';
             }
+        }
+
+        function showJumpInButton(btn) {
+            if (btn._loadInterval) clearInterval(btn._loadInterval);
+            btn.style.display = 'inline-flex';
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.style.background = '#000000';
+            btn.style.color = '#ffcc00';
+            btn.style.border = '2px solid #ffcc00';
+            btn.style.padding = '4px 12px';
+            btn.style.boxShadow = '0 0 12px rgba(255, 255, 0, 0.55)';
+            btn.classList.add('boot-button');
+            btn.innerHTML = (i18n[currentLang].jump_in || 'JUMP IN &nbsp;<span style="font-size:1.4em; vertical-align:middle; line-height:0;">▶</span>');
+
+            btn.onclick = function () {
+                if (typeof enterExperience === 'function') enterExperience();
+            };
+
+            btn.classList.add('animate-pulse');
         }
 
         function submitVisitorName() {
@@ -2027,8 +2052,10 @@
             container.scrollIntoView({ behavior: 'smooth' });
 
             // Show LOADING state on button (ANIMATED BATTERY BAR)
-            const btn = placeholder.querySelector('button');
+            const btn = document.getElementById('boot-btn');
             if (btn) {
+                btn.style.display = 'flex';
+                btn.style.alignItems = 'center';
                 // Remove text, use custom HTML
                 btn.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -2054,7 +2081,15 @@
                 let progress = 0;
                 btn._loadInterval = setInterval(() => {
                     progress += 4;
-                    if (progress > 100) progress = 100;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(btn._loadInterval);
+                        if (window._experienceLoaded) {
+                            showJumpInButton(btn);
+                        } else {
+                            btn._loadedAndWaiting = true;
+                        }
+                    }
                     const fill = document.getElementById('battery-fill');
                     if (fill) fill.style.width = progress + '%';
                 }, 50);
@@ -2209,10 +2244,16 @@
             const placeholder = document.getElementById('sim-placeholder');
             const startBtn = document.getElementById('start-btn');
             const introUI = document.getElementById('ui-wrapper');
+            const legend = document.getElementById('landing-bg-text');
 
             if (placeholder) {
                 placeholder.classList.add('opacity-0');
                 setTimeout(() => { placeholder.style.display = 'none'; }, 400);
+            }
+            if (legend) {
+                legend.style.transition = 'opacity 0.4s ease';
+                legend.style.opacity = '0';
+                setTimeout(() => { legend.style.display = 'none'; }, 400);
             }
             if (startBtn) {
                 startBtn.style.display = 'inline-block';
@@ -2298,31 +2339,11 @@
                 const retryEl = document.getElementById('experience-retry');
                 if (retryEl) retryEl.remove();
 
-                const placeholder = document.getElementById('sim-placeholder');
-                const btn = placeholder ? placeholder.querySelector('button') : null;
-
+                const btn = document.getElementById('boot-btn');
                 if (btn) {
-                    // Stop the loading animation
-                    if (btn._loadInterval) clearInterval(btn._loadInterval);
-
-                    // Restore button for interaction
-                    btn.style.pointerEvents = 'auto';
-                    btn.style.opacity = '1';
-                    btn.style.cursor = 'pointer';
-                    btn.style.background = '#000000';
-                    btn.style.color = '#ffcc00';
-                    btn.style.border = '2px solid #ffcc00';
-                    btn.style.boxShadow = '0 0 12px rgba(255, 255, 0, 0.55)';
-                    btn.classList.add('boot-button');
-                    btn.innerHTML = (i18n[currentLang].jump_in || 'JUMP IN &nbsp;<span style="font-size:1.4em; vertical-align:middle; line-height:0;">▶</span>');
-
-                    btn.onclick = function () {
-                        // Enter experience on click (allows audio/fullscreen)
-                        if (typeof enterExperience === 'function') enterExperience();
-                    };
-
-                    // Add a subtle pulse to indicate it's ready
-                    btn.classList.add('animate-pulse');
+                    if (btn._loadedAndWaiting || !btn._loadInterval) {
+                        showJumpInButton(btn);
+                    }
                 }
             }
 
