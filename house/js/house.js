@@ -1119,109 +1119,6 @@ function createHouseNumberTexture() {
     return tex;
 }
 
-function createCustomWindow(w, h, d, name, x, y, z, parent, side = 'front') {
-    const frameW = w;
-    const frameH = h;
-    const frameDepth = 0.12;
-    const frameColor = 0x0a1a3f; // Sleek dark navy blue
-
-    const frame = new THREE.Mesh(
-        new THREE.BoxGeometry(frameW, frameH, frameDepth),
-        new THREE.MeshStandardMaterial({ color: frameColor })
-    );
-    if (name) {
-        frame.userData = { name: name, type: 'room', onClick: () => window.enterRoom(name) };
-    }
-
-    const glassMat = new THREE.MeshStandardMaterial({
-        color: 0x88c0ff,
-        emissive: 0x0055ff,
-        emissiveIntensity: 0.4,
-        roughness: 0.2
-    });
-    glassMat.userData = {
-        baseEmissive: 2.2,
-        speed: 1.5 + Math.random() * 2.0,
-        phase: Math.random() * Math.PI * 20,
-        hueSpeed: 0.05 + Math.random() * 0.05,
-        hueOffset: Math.random(),
-    };
-    windowFlickerMaterials.push(glassMat);
-
-    const glass = new THREE.Mesh(
-        new THREE.PlaneGeometry(frameW * 0.85, frameH * 0.85),
-        glassMat
-    );
-    if (name) {
-        glass.userData = { name: name, type: 'room', onClick: () => window.enterRoom(name) };
-    }
-    glass.position.z = frameDepth / 2 + 0.005;
-    frame.add(glass);
-
-    frame.position.set(x, y, z);
-    if (side === 'back') {
-        frame.rotation.y = Math.PI;
-    } else if (side === 'left') {
-        frame.rotation.y = -Math.PI / 2;
-    } else if (side === 'right') {
-        frame.rotation.y = Math.PI / 2;
-    }
-
-    parent.add(frame);
-    return frame;
-}
-
-function createCustomCircularWindow(radius, name, x, y, z, parent, side = 'front') {
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const frameColor = 0x0a1a3f; // Sleek dark navy blue
-
-    const frame = new THREE.Mesh(
-        new THREE.TorusGeometry(radius, 0.04, 8, 32),
-        new THREE.MeshStandardMaterial({ color: frameColor })
-    );
-    if (name) {
-        frame.userData = { name: name, type: 'room', onClick: () => window.enterRoom(name) };
-    }
-    group.add(frame);
-
-    const glassMat = new THREE.MeshStandardMaterial({
-        color: 0x88c0ff,
-        emissive: 0x0055ff,
-        emissiveIntensity: 0.4,
-        roughness: 0.2
-    });
-    glassMat.userData = {
-        baseEmissive: 2.2,
-        speed: 1.5 + Math.random() * 2.0,
-        phase: Math.random() * Math.PI * 20,
-        hueSpeed: 0.05 + Math.random() * 0.05,
-        hueOffset: Math.random(),
-    };
-    windowFlickerMaterials.push(glassMat);
-
-    const glass = new THREE.Mesh(
-        new THREE.CircleGeometry(radius, 32),
-        glassMat
-    );
-    if (name) {
-        glass.userData = { name: name, type: 'room', onClick: () => window.enterRoom(name) };
-    }
-    group.add(glass);
-
-    if (side === 'back') {
-        group.rotation.y = Math.PI;
-    } else if (side === 'left') {
-        group.rotation.y = -Math.PI / 2;
-    } else if (side === 'right') {
-        group.rotation.y = Math.PI / 2;
-    }
-
-    parent.add(group);
-    return group;
-}
-
 function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
     const geo = new THREE.BoxGeometry(w, h, d);
 
@@ -1263,7 +1160,7 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
             const shift = cfg.shift || 0;
 
             const frameDepth = 0.1;
-            const frameColor = 0x0a1a3f; // All window frames dark blue
+            const frameColor = cfg.type === 'white' ? 0xffffff : 0x222222;
 
             const frame = new THREE.Mesh(
                 new THREE.BoxGeometry(frameW, frameH, frameDepth),
@@ -1296,8 +1193,8 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
             const glass = new THREE.Mesh(
                 new THREE.PlaneGeometry(frameW * 0.85, frameH * 0.85),
                 new THREE.MeshStandardMaterial({
-                    color: 0x88c0ff,
-                    emissive: 0x0055ff,
+                    color: 0xffffcc,
+                    emissive: 0xffaa00,
                     emissiveIntensity: 0.4,
                     roughness: 0.2
                 })
@@ -1393,13 +1290,15 @@ function buildWorld() {
     if (window.createDistantBuildings) window.createDistantBuildings(scene);
 }
 
+
+
 function buildHouse() {
     // --- FOUNDATION: DUDOK BRICK BASE (DARK BROWN) ---
-    createRoomBlock('basement', 0, 0.4, 0, 7.5, 0.8, 6.5, 0xffffff, { type: 'dark', scale: 0.5, shift: 1.8 });
+    createRoomBlock('basement', 0, 0.4, 0, 7.5, 0.8, 6.5, 0x3d1f0d, { type: 'dark', scale: 0.5, shift: 1.8 });
     const basementMesh = worldGroup.children.find(c => c.userData.name === 'basement');
     if (basementMesh) {
         basementMesh.material.map = window.brickDudokTex;
-        basementMesh.material.color.setHex(0xffffff); // Tint it white
+        basementMesh.material.color.setHex(0x3d1f0d); // Tint it dark
         basementMesh.material.polygonOffset = true;
         basementMesh.material.polygonOffsetFactor = 2;
         basementMesh.material.polygonOffsetUnits = 2;
@@ -1408,7 +1307,7 @@ function buildHouse() {
     // --- HORIZONTAL PLANES (DARK REDDISH BROWN) ---
     const planeGeo = new THREE.BoxGeometry(7.5, 0.1, 6.5);
     const planeMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff, // White
+        color: 0x5c0000, // Dark red-brown instead of white
         polygonOffset: true,
         polygonOffsetFactor: -1,
         polygonOffsetUnits: 1
@@ -1426,19 +1325,23 @@ function buildHouse() {
     livingGroup.position.set(livingX, livingY, livingZ);
     worldGroup.add(livingGroup);
 
-    const amsterdamMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: window.brickAmsterdamTex, roughness: 0.8 });
+    const amsterdamMat = new THREE.MeshStandardMaterial({ color: 0x4d2600, map: window.brickAmsterdamTex, roughness: 0.8 });
     const livingBody = new THREE.Mesh(new THREE.BoxGeometry(livingW, livingH, livingD), amsterdamMat);
     livingBody.castShadow = true; livingBody.receiveShadow = true;
     livingBody.userData = { name: 'living', type: 'room' };
     livingGroup.add(livingBody);
 
-    const winMat = new THREE.MeshStandardMaterial({ color: 0x88c0ff, emissive: 0x0055ff, emissiveIntensity: 2.2 });
-
     // Windows
-    createCustomWindow(1.5, 0.4, 0.1, 'living', 0, 0.4, 2.55, livingGroup, 'front');
+    const winGeo = new THREE.BoxGeometry(1.5, 0.4, 0.1);
+    const winMat = new THREE.MeshStandardMaterial({ color: 0xffccaa, emissive: 0xff7700, emissiveIntensity: 2.2 });
+    const lWin = new THREE.Mesh(winGeo, winMat);
+    lWin.position.set(0, 0.4, 2.55);
+    livingGroup.add(lWin);
 
     // BACK WINDOW: Livingroom
-    createCustomWindow(1.5, 0.4, 0.1, 'living', 0, 0.4, -2.55, livingGroup, 'back');
+    const lWinBack = new THREE.Mesh(winGeo, winMat);
+    lWinBack.position.set(0, 0.4, -2.55);
+    livingGroup.add(lWinBack);
 
     // Living Room Hitbox (Large and accessible)
     const liveHitBox = new THREE.Mesh(
@@ -1458,59 +1361,47 @@ function buildHouse() {
     const studioW = 2.8, studioH = 2.4, studioD = 5;
     const studioBody = new THREE.Mesh(
         new THREE.BoxGeometry(studioW, studioH, studioD),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 })
+        new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.4, metalness: 0.1 })
     );
     studioBody.position.set(studioX, studioY, studioZ);
     studioBody.userData = { name: 'studio', type: 'room' };
     worldGroup.add(studioBody);
 
     // BACK WINDOW: Studio
-    createCustomWindow(1.5, 0.4, 0.1, 'studio', studioX, studioY + 0.4, studioZ - 2.55, worldGroup, 'back');
+    const sWinBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.1), winMat);
+    sWinBack.position.set(studioX, studioY + 0.4, studioZ - 2.55);
+    worldGroup.add(sWinBack);
 
     // CIRCULAR WINDOW — centered on front face (studioZ + depth/2 = 2.5)
     const circWinGroup = new THREE.Group();
     circWinGroup.position.set(studioX, studioY, studioZ + 2.52);
-    const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), new THREE.MeshStandardMaterial({ color: 0x0a1a3f }));
-    circFrame.userData = { name: 'studio', type: 'room', onClick: () => window.enterRoom('studio') };
+    const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), new THREE.MeshStandardMaterial({ color: 0x111111 }));
     circWinGroup.add(circFrame);
-
-    const circGlassMat = new THREE.MeshStandardMaterial({
-        color: 0x88c0ff,
-        emissive: 0x0055ff,
-        emissiveIntensity: 0.4,
-        roughness: 0.2,
-        transparent: true,
-        opacity: 0.9
-    });
-    circGlassMat.userData = {
-        baseEmissive: 2.2,
-        speed: 1.5 + Math.random() * 2.0,
-        phase: Math.random() * Math.PI * 20,
-        hueSpeed: 0.05 + Math.random() * 0.05,
-        hueOffset: Math.random(),
-    };
-    windowFlickerMaterials.push(circGlassMat);
-
-    const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), circGlassMat);
-    circGlass.userData = { name: 'studio', type: 'room', onClick: () => window.enterRoom('studio') };
+    const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0x222233, emissive: 0xff7700, emissiveIntensity: 2.2, transparent: true, opacity: 0.9 }));
+    circGlass.userData = { name: 'studio', type: 'room' };
     circWinGroup.add(circGlass);
     worldGroup.add(circWinGroup);
 
     // Studio side Windows
+    const sWinMat = new THREE.MeshStandardMaterial({ color: 0x574a63, emissive: 0xff7700, emissiveIntensity: 2.2 });
     const sWinSpan = 3.2;
     const sWinZCenter = studioZ - 0.0;
     for (let i = 0; i < 5; i++) {
+        const sWinSquare = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.5), sWinMat);
         const zPos = (sWinZCenter - sWinSpan / 2) + (i * (sWinSpan / 4));
-        createCustomWindow(0.5, 0.5, 0.12, 'studio', studioX + 1.42, studioY + 0.3, zPos, worldGroup, 'right');
+        sWinSquare.position.set(studioX + 1.42, studioY + 0.3, zPos);
+        worldGroup.add(sWinSquare);
     }
 
     // DE STIJL ACCENTS - Red Plate covering the Studio Roof
     // Dimensions match Studio: W=2.8, D=5.0. Thickness 0.05.
-    const redPlate = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.05, 5.0), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    const redPlate = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.05, 5.0), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
     // Position: Center X=2.0 (studioX), Top Y=2.05+1.2+0.025=3.275, Center Z=0
     redPlate.position.set(studioX, studioY + studioH / 2 + 0.025, studioZ);
     redPlate.receiveShadow = true;
     worldGroup.add(redPlate);
+
+
 
     // Studio Hitbox (Large and accessible)
     const studioHitBox = new THREE.Mesh(
@@ -1528,12 +1419,12 @@ function buildHouse() {
     // --- ENTRANCE: PRACTICAL PORCH ---
     const doorFacade = new THREE.Mesh(
         new THREE.BoxGeometry(1.2, 1.8, 0.2),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 })
+        new THREE.MeshStandardMaterial({ color: 0x5c3317, roughness: 0.5 })
     );
     doorFacade.position.set(0, 1.6, 2.45);
     worldGroup.add(doorFacade);
 
-    const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.1), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.1), new THREE.MeshStandardMaterial({ color: 0x3d1f0d }));
     door.position.set(0, 1.6, 2.57);
     door.userData = {
         name: 'hall',
@@ -1576,36 +1467,12 @@ function buildHouse() {
     windowShape.lineTo(0, 0.15); // Close the triangle
 
     const windowGeometry = new THREE.ShapeGeometry(windowShape);
-
-    // Frame Shape (slightly larger triangle)
-    const frameShape = new THREE.Shape();
-    frameShape.moveTo(0, 0.18);
-    frameShape.lineTo(-0.13, -0.08);
-    frameShape.lineTo(0.13, -0.08);
-    frameShape.lineTo(0, 0.18);
-
-    const frameGeometry = new THREE.ShapeGeometry(frameShape);
-    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x0a1a3f, side: THREE.DoubleSide });
-    const triangularFrame = new THREE.Mesh(frameGeometry, frameMaterial);
-    triangularFrame.position.set(0, 0.4, 0.055);
-    door.add(triangularFrame);
-
-    const windowMaterial = new THREE.MeshStandardMaterial({
-        color: 0x88c0ff,
-        emissive: 0x0055ff,
-        emissiveIntensity: 0.4,
-        roughness: 0.2,
+    const windowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x88ccff,
+        transparent: true,
+        opacity: 0.6,
         side: THREE.DoubleSide
     });
-    windowMaterial.userData = {
-        baseEmissive: 2.2,
-        speed: 1.5 + Math.random() * 2.0,
-        phase: Math.random() * Math.PI * 20,
-        hueSpeed: 0.05 + Math.random() * 0.05,
-        hueOffset: Math.random(),
-    };
-    windowFlickerMaterials.push(windowMaterial);
-
     const triangularWindow = new THREE.Mesh(windowGeometry, windowMaterial);
     triangularWindow.position.set(0, 0.4, 0.06); // Middle of top half, slightly in front
     door.add(triangularWindow);
@@ -1626,7 +1493,7 @@ function buildHouse() {
     // Ceiling connecting Living and Studio (Gap is 1.2)
     const hallCeiling = new THREE.Mesh(
         new THREE.BoxGeometry(1.25, 0.2, 5.0), // 1.25 allows minimal overlap to seal gap
-        new THREE.MeshStandardMaterial({ color: 0xffffff })
+        new THREE.MeshStandardMaterial({ color: 0x221100 })
     );
     // Studio Top is ~3.25. Living Top is ~3.3. Align to 3.25.
     // Center at 3.15 (Top face at 3.25)
@@ -1637,7 +1504,7 @@ function buildHouse() {
     // Back Wall (Closing the corridor)
     const hallBack = new THREE.Mesh(
         new THREE.BoxGeometry(1.25, 2.4, 0.2),
-        new THREE.MeshStandardMaterial({ color: 0xffffff })
+        new THREE.MeshStandardMaterial({ color: 0x5c3317 })
     );
     hallBack.position.set(0, 2.0, -2.4);
     hallBack.castShadow = true;
@@ -1649,7 +1516,7 @@ function buildHouse() {
     // Height = 0.55. Center = 2.775
     const hallFrontUpper = new THREE.Mesh(
         new THREE.BoxGeometry(1.2, 0.55, 0.2),
-        new THREE.MeshStandardMaterial({ color: 0xffffff })
+        new THREE.MeshStandardMaterial({ color: 0x5c3317 })
     );
     hallFrontUpper.position.set(0, 2.775, 2.45);
     hallFrontUpper.castShadow = true;
@@ -1669,13 +1536,16 @@ function buildHouse() {
     // --- UPPER FLOOR: CLASHING VOLUMES ---
     // BEDROOM: Cantilevered Overhang + Corner Window
     const bedX = -1.8, bedY = 4.5, bedZ = 0.5; // Upward nudge
-    createRoomBlock('bedroom', bedX, bedY, bedZ, 3.2, 2.4, 4.0, 0xffffff, [
+    createRoomBlock('bedroom', bedX, bedY, bedZ, 3.2, 2.4, 4.0, 0x5c3317, [
         { type: 'dark', side: 'front', scale: 0.8 },
         { type: 'dark', side: 'back', scale: 0.4 }
     ]);
 
     // Add side window for bedroom
-    createCustomWindow(1.5, 1.2, 0.1, 'bedroom', bedX - 1.65, bedY, bedZ, worldGroup, 'left');
+    const bWinSide = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 1.5), winMat);
+    bWinSide.position.set(bedX - 1.65, bedY, bedZ);
+    bWinSide.userData = { name: 'bedroom', type: 'room', onClick: () => window.enterRoom('bedroom') };
+    worldGroup.add(bWinSide);
 
     // BATHROOM: Vertical Brick Tower (Amsterdam Style)
     const bathX = 2.0, bathY = 5.05, bathZ = 0; // Upward nudge
@@ -1686,17 +1556,24 @@ function buildHouse() {
 
     // Bathroom Windows (Slits on side - moved lower)
     for (let i = 0; i < 3; i++) {
-        createCustomWindow(0.4, 1.0, 0.1, 'bathroom', bathX + 1.03, bathY + i * 1.2 - 0.9, 0, worldGroup, 'right');
+        const slit = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.4), winMat);
+        slit.position.set(bathX + 1.03, bathY + i * 1.2 - 0.9, 0);
+        worldGroup.add(slit);
     }
 
     // BACK WINDOWS: 3 on the tall bathroom (moved lower)
     for (let i = 0; i < 3; i++) {
-        createCustomWindow(1.6, 1.0, 0.1, 'bathroom', bathX, bathY + i * 1.2 - 0.9, bathZ - 1.27, worldGroup, 'back');
+        const slitBack = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), winMat);
+        slitBack.position.set(bathX, bathY + i * 1.2 - 0.9, bathZ - 1.27);
+        worldGroup.add(slitBack);
     }
 
     // FRONT WINDOWS: 3 round ones on the bathroom front (aligned)
     for (let i = 0; i < 3; i++) {
-        createCustomCircularWindow(0.2, 'bathroom', bathX, bathY + i * 1.2 - 0.9, bathZ + 1.27, worldGroup);
+        const roundWin = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16), winMat);
+        roundWin.position.set(bathX, bathY + i * 1.2 - 0.9, bathZ + 1.27);
+        roundWin.rotation.x = Math.PI / 2;
+        worldGroup.add(roundWin);
     }
 
     const bathHitBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 6.0, 0.8), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
@@ -1706,7 +1583,7 @@ function buildHouse() {
 
     // --- ROOF & ATTIC: AMSTERDAM FLAT BOX STYLE ---
     const roofBaseY = 8.05; // Elevated to top of bathroom roof level (bathY + 3.0)
-    const flatRoof = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.2, 6.0), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    const flatRoof = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.2, 6.0), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
     flatRoof.position.set(0, roofBaseY, 0);
     worldGroup.add(flatRoof);
 
@@ -1715,12 +1592,15 @@ function buildHouse() {
     const atticW = 3.6, atticH = 2.4, atticD = 4.5;
 
     // BACK WINDOW: Attic
-    createRoomBlock('attic', atticX, atticY, atticZ, atticW, atticH, atticD, 0xffffff, { type: 'dark', side: 'back', scale: 0.8 });
+    createRoomBlock('attic', atticX, atticY, atticZ, atticW, atticH, atticD, 0x4d2600, { type: 'dark', side: 'back', scale: 0.8 });
     // Note: createRoomBlock already adds the mesh to worldGroup
 
     // Row of taller, narrow Amsterdam-school slit windows
+    const rowWinGeo = new THREE.BoxGeometry(0.12, 1.2, 0.1); // Narrower and taller
     for (let i = 0; i < 6; i++) {
-        createCustomWindow(0.12, 1.2, 0.1, 'attic', atticX - 1.5 + i * 0.6, atticY + 0.2, atticZ + 2.28, worldGroup, 'front');
+        const slit = new THREE.Mesh(rowWinGeo, winMat);
+        slit.position.set(atticX - 1.5 + i * 0.6, atticY + 0.2, atticZ + 2.28);
+        worldGroup.add(slit);
     }
 
     const atticHitBox = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 5), new THREE.MeshBasicMaterial({ visible: false, transparent: true }));
@@ -1732,7 +1612,7 @@ function buildHouse() {
     const atticRoofTex = createRoofTexture();
     const atticRoof = new THREE.Mesh(
         new THREE.BoxGeometry(atticW + 0.3, 0.12, atticD + 0.3),
-        new THREE.MeshStandardMaterial({ map: atticRoofTex, color: 0xffffff, roughness: 0.85 })
+        new THREE.MeshStandardMaterial({ map: atticRoofTex, color: 0xcc1010, roughness: 0.85 })
     );
     atticRoof.position.set(atticX, atticY + atticH / 2 + 0.06, atticZ);
     atticRoof.castShadow = true; atticRoof.receiveShadow = true;
@@ -1768,8 +1648,8 @@ function buildHouse() {
     })();
 
     // --- STAIRS ---
-    const stepDarkMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
-    const stepWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const stepDarkMat = new THREE.MeshStandardMaterial({ color: 0x1a0d00 });
+    const stepWhiteMat = new THREE.MeshStandardMaterial({ color: 0xbfb5ae });
     const stepMats = [
         stepDarkMat, // Right
         stepDarkMat, // Left
@@ -5816,10 +5696,10 @@ function animate(time) {
                 const flicker = Math.sin(t * u.speed + u.phase) * 0.4;
                 mat.emissiveIntensity = Math.max(0.8, u.baseEmissive + flicker);
 
-                // Independent Color Cycle (Glowing Blue range)
-                const hue = 0.62 + Math.sin(t * u.hueSpeed + u.phase) * 0.04; // ranges between 0.58 and 0.66 (Cyan-Blue range)
-                mat.color.setHSL(hue, 0.95, 0.6); // Blue base
-                mat.emissive.setHSL(hue, 1.0, 0.5); // Glowing blue emissive
+                // Independent Color Cycle (Warm Orange-Yellow range)
+                const hue = 0.08 + Math.sin(t * u.hueSpeed + u.phase) * 0.02; // ranges between 0.06 and 0.10
+                mat.color.setHSL(hue, 0.9, 0.6); // Warm orange-yellow base
+                mat.emissive.setHSL(hue, 0.95, 0.5); // Warm orange-yellow glow
             }
         });
     }
@@ -6961,7 +6841,7 @@ function createGarageDoor(parentGroup, position) {
 
     // --- 1. WALLS & STRUCTURE (V-FIX: No more gaps!) ---
     const garageExtMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff, // White
+        color: 0x4a3a2a, // Exterior Brown
         roughness: 0.8
     });
     const garageIntMat = new THREE.MeshBasicMaterial({
@@ -7057,7 +6937,11 @@ function createGarageDoor(parentGroup, position) {
     garageGroup.add(walls);
 
     // Side Window
-    createCustomWindow(0.8, 0.5, 0.12, null, garageWidth / 2 + 0.11, 1.4, 0, garageGroup, 'right');
+    const sideWinMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, emissive: 0xff7700, emissiveIntensity: 2.2 });
+    const sideWin = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), sideWinMat);
+    sideWin.position.set(garageWidth / 2 + 0.11, 1.4, 0);
+    sideWin.rotation.y = Math.PI / 2;
+    garageGroup.add(sideWin);
 
     // --- 2. DOOR GROUP for proper pivot (at top) ---
     const doorPivot = new THREE.Group();
@@ -7066,10 +6950,10 @@ function createGarageDoor(parentGroup, position) {
 
     const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness);
     const doorMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
+        color: 0x8B4513,
         roughness: 0.6,
         metalness: 0.2,
-        emissive: 0x111111,
+        emissive: 0x331a0a,
         emissiveIntensity: 0.2
     });
 
@@ -7095,8 +6979,8 @@ function createGarageDoor(parentGroup, position) {
     const panelCanvas = document.createElement('canvas');
     panelCanvas.width = 512; panelCanvas.height = 512;
     const pctx = panelCanvas.getContext('2d');
-    pctx.fillStyle = '#ffffff'; pctx.fillRect(0, 0, 512, 512);
-    pctx.strokeStyle = '#dddddd'; pctx.lineWidth = 10;
+    pctx.fillStyle = '#8B4513'; pctx.fillRect(0, 0, 512, 512);
+    pctx.strokeStyle = '#5d2906'; pctx.lineWidth = 10;
     for (let i = 0; i < 4; i++) {
         pctx.strokeRect(20, i * 120 + 20, 472, 100);
     }
@@ -7170,7 +7054,7 @@ function createGarageDoor(parentGroup, position) {
     const roofTex = createRoofTexture();
     const tRoofMat = new THREE.MeshStandardMaterial({
         map: roofTex,
-        color: 0xffffff,
+        color: 0xcc1010,
         roughness: 0.85,
         side: THREE.DoubleSide
     });
@@ -7305,7 +7189,7 @@ function createToiletExterior(parentGroup, position) {
     const heightAtGarden = 2.1; // Low point (Front)
     const depth = 2.5;
 
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xdcb28b, roughness: 0.9 });
 
     // 1. Side Walls
     // Draw shape in XY. 
@@ -7354,7 +7238,7 @@ function createToiletExterior(parentGroup, position) {
     // Sloping UP from Garden (-Z) to House (+Z)
     const roofLength = Math.sqrt(Math.pow(depth, 2) + Math.pow(heightAtHouse - heightAtGarden, 2));
     const roofGeo = new THREE.BoxGeometry(width + 0.4, 0.15, roofLength + 0.4);
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
     const roof = new THREE.Mesh(roofGeo, roofMat);
 
     // Position: Center (y averaged, z=0)
@@ -7371,7 +7255,7 @@ function createToiletExterior(parentGroup, position) {
 
     // 3. Door (Front - Low side - Garden Facing)
     const doorGeo = new THREE.PlaneGeometry(0.7, 1.8);
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, side: THREE.DoubleSide });
     const door = new THREE.Mesh(doorGeo, doorMat);
     door.position.set(0, 0.9, -depth / 2 - 0.06);
     door.rotation.y = Math.PI; // Face garden
