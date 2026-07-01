@@ -1,4 +1,4 @@
-﻿function playTrack(index) {
+function playTrack(index) {
     if (!window.currentRoom || !window.roomContent || !window.roomContent[window.currentRoom]) {
         console.error("playTrack called too early � currentRoom =", window.currentRoom);
         return;
@@ -4401,6 +4401,7 @@ window.createStudioInterior = function () {
         vid.crossOrigin = "anonymous";
         vid.setAttribute('playsinline', '');
         vid.setAttribute('loop', ''); // Explicitly set loop attribute
+        vid.playsInline = true;
         vid.style.position = 'fixed';
         vid.style.top = '-10000px';
         vid.style.left = '-10000px';
@@ -4413,12 +4414,24 @@ window.createStudioInterior = function () {
         });
 
         vid.load();
-        const p = vid.play();
-        if (p !== undefined) {
-            p.catch(error => {
-                console.error("Auto-play blocked for " + src, error);
-            });
-        }
+        // Defer play() to ensure it runs within a user-gesture context
+        // (enterRoom is triggered by a click, so gesture propagation is still active)
+        const tryPlay = () => {
+            const p = vid.play();
+            if (p !== undefined) {
+                p.catch(error => {
+                    console.warn("Auto-play blocked for " + src + ", will retry on next interaction.", error);
+                    // Retry on next user interaction
+                    const retryPlay = () => {
+                        vid.play().catch(() => { });
+                        document.removeEventListener('click', retryPlay);
+                    };
+                    document.addEventListener('click', retryPlay, { once: true });
+                });
+            }
+        };
+        // Small defer to stay inside the gesture propagation window
+        setTimeout(tryPlay, 50);
 
         const tex = new THREE.VideoTexture(vid);
         tex.minFilter = THREE.LinearFilter;

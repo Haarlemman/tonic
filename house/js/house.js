@@ -1160,11 +1160,12 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
             const shift = cfg.shift || 0;
 
             const frameDepth = 0.1;
-            const frameColor = cfg.type === 'white' ? 0xffffff : 0x222222;
+            // Dark navy blue frames for all windows
+            const frameColor = 0x0d1f3c;
 
             const frame = new THREE.Mesh(
                 new THREE.BoxGeometry(frameW, frameH, frameDepth),
-                new THREE.MeshStandardMaterial({ color: frameColor })
+                new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.4, metalness: 0.3 })
             );
             // Ensure Frame is Clickable (Propagate Name and Handler)
             frame.userData = {
@@ -1193,20 +1194,22 @@ function createRoomBlock(name, x, y, z, w, h, d, color, winConfigs = null) {
             const glass = new THREE.Mesh(
                 new THREE.PlaneGeometry(frameW * 0.85, frameH * 0.85),
                 new THREE.MeshStandardMaterial({
-                    color: 0xffffcc,
+                    color: 0xffdd44,
                     emissive: 0xffaa00,
-                    emissiveIntensity: 0.4,
-                    roughness: 0.2
+                    emissiveIntensity: 3.0,
+                    roughness: 0.1,
+                    transparent: true,
+                    opacity: 0.92
                 })
             );
             glass.position.z = 0.06;
 
-            // -- WINDOW ANIMATION SETUP --
+            // -- WINDOW ANIMATION SETUP (warm yellow range) --
             glass.material.userData = {
-                baseEmissive: 2.2,
+                baseEmissive: 2.8,
                 speed: 1.5 + Math.random() * 2.0,
                 phase: Math.random() * Math.PI * 20,
-                hueSpeed: 0.05 + Math.random() * 0.05,
+                hueSpeed: 0.03 + Math.random() * 0.03,
                 hueOffset: Math.random(),
             };
             windowFlickerMaterials.push(glass.material);
@@ -1331,17 +1334,29 @@ function buildHouse() {
     livingBody.userData = { name: 'living', type: 'room' };
     livingGroup.add(livingBody);
 
-    // Windows
+    // Windows — dark blue frame, yellow glowing glass
     const winGeo = new THREE.BoxGeometry(1.5, 0.4, 0.1);
-    const winMat = new THREE.MeshStandardMaterial({ color: 0xffccaa, emissive: 0xff7700, emissiveIntensity: 2.2 });
-    const lWin = new THREE.Mesh(winGeo, winMat);
-    lWin.position.set(0, 0.4, 2.55);
-    livingGroup.add(lWin);
+    const winFrameMat = new THREE.MeshStandardMaterial({ color: 0x0d1f3c, roughness: 0.4, metalness: 0.3 });
+    const winMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffaa00, emissiveIntensity: 3.0, transparent: true, opacity: 0.92 });
+
+    // Helper to make a framed window mesh
+    const makeWin = (geo, frameMat, glassMat, glowDir) => {
+        const grp = new THREE.Group();
+        const fGeo = new THREE.BoxGeometry(geo.parameters ? geo.parameters.width + 0.08 : 1.58, geo.parameters ? geo.parameters.height + 0.08 : 0.48, 0.1);
+        const frame = new THREE.Mesh(fGeo, frameMat);
+        const glass = new THREE.Mesh(geo, glassMat);
+        grp.add(frame); grp.add(glass);
+        return grp;
+    };
+
+    const lWinGrp = makeWin(winGeo, winFrameMat, winMat, '+z');
+    lWinGrp.position.set(0, 0.4, 2.55);
+    livingGroup.add(lWinGrp);
 
     // BACK WINDOW: Livingroom
-    const lWinBack = new THREE.Mesh(winGeo, winMat);
-    lWinBack.position.set(0, 0.4, -2.55);
-    livingGroup.add(lWinBack);
+    const lWinBackGrp = makeWin(winGeo, winFrameMat, winMat, '-z');
+    lWinBackGrp.position.set(0, 0.4, -2.55);
+    livingGroup.add(lWinBackGrp);
 
     // Living Room Hitbox (Large and accessible)
     const liveHitBox = new THREE.Mesh(
@@ -1368,22 +1383,22 @@ function buildHouse() {
     worldGroup.add(studioBody);
 
     // BACK WINDOW: Studio
-    const sWinBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.1), winMat);
-    sWinBack.position.set(studioX, studioY + 0.4, studioZ - 2.55);
-    worldGroup.add(sWinBack);
+    const sWinBackGrp = makeWin(winGeo, winFrameMat, winMat, '-z');
+    sWinBackGrp.position.set(studioX, studioY + 0.4, studioZ - 2.55);
+    worldGroup.add(sWinBackGrp);
 
     // CIRCULAR WINDOW — centered on front face (studioZ + depth/2 = 2.5)
     const circWinGroup = new THREE.Group();
     circWinGroup.position.set(studioX, studioY, studioZ + 2.52);
-    const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    const circFrame = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.07, 8, 32), new THREE.MeshStandardMaterial({ color: 0x0d1f3c, roughness: 0.4, metalness: 0.3 }));
     circWinGroup.add(circFrame);
-    const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0x222233, emissive: 0xff7700, emissiveIntensity: 2.2, transparent: true, opacity: 0.9 }));
+    const circGlass = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffaa00, emissiveIntensity: 3.0, transparent: true, opacity: 0.92 }));
     circGlass.userData = { name: 'studio', type: 'room' };
     circWinGroup.add(circGlass);
     worldGroup.add(circWinGroup);
 
-    // Studio side Windows
-    const sWinMat = new THREE.MeshStandardMaterial({ color: 0x574a63, emissive: 0xff7700, emissiveIntensity: 2.2 });
+    // Studio side Windows — narrow yellow slits
+    const sWinMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffaa00, emissiveIntensity: 3.0 });
     const sWinSpan = 3.2;
     const sWinZCenter = studioZ - 0.0;
     for (let i = 0; i < 5; i++) {
@@ -5696,10 +5711,10 @@ function animate(time) {
                 const flicker = Math.sin(t * u.speed + u.phase) * 0.4;
                 mat.emissiveIntensity = Math.max(0.8, u.baseEmissive + flicker);
 
-                // Independent Color Cycle (Warm Orange-Yellow range)
-                const hue = 0.08 + Math.sin(t * u.hueSpeed + u.phase) * 0.02; // ranges between 0.06 and 0.10
-                mat.color.setHSL(hue, 0.9, 0.6); // Warm orange-yellow base
-                mat.emissive.setHSL(hue, 0.95, 0.5); // Warm orange-yellow glow
+                // Yellow window glow — tight warm range (golden yellow)
+                const hue = 0.12 + Math.sin(t * u.hueSpeed + u.phase) * 0.02; // 0.10–0.14 warm yellow
+                mat.color.setHSL(hue, 1.0, 0.65); // Bright warm yellow
+                mat.emissive.setHSL(hue, 1.0, 0.55); // Glowing yellow emissive
             }
         });
     }
@@ -6936,8 +6951,13 @@ function createGarageDoor(parentGroup, position) {
 
     garageGroup.add(walls);
 
-    // Side Window
-    const sideWinMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, emissive: 0xff7700, emissiveIntensity: 2.2 });
+    // Side Window — dark blue frame + yellow glass
+    const sideWinFrameMat = new THREE.MeshStandardMaterial({ color: 0x0d1f3c, roughness: 0.4, metalness: 0.3 });
+    const sideWinFrame = new THREE.Mesh(new THREE.PlaneGeometry(0.88, 0.58), sideWinFrameMat);
+    sideWinFrame.position.set(garageWidth / 2 + 0.10, 1.4, 0);
+    sideWinFrame.rotation.y = Math.PI / 2;
+    garageGroup.add(sideWinFrame);
+    const sideWinMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffaa00, emissiveIntensity: 3.0, transparent: true, opacity: 0.92 });
     const sideWin = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), sideWinMat);
     sideWin.position.set(garageWidth / 2 + 0.11, 1.4, 0);
     sideWin.rotation.y = Math.PI / 2;
