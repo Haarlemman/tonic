@@ -282,24 +282,24 @@ window.addEventListener('load', async () => {
     const canvas = document.getElementById('gameCanvas');
     
     const imageSources = {
-        dancing: 'assets/images/dancingspritesheet.png',
-        face: 'assets/images/dude.png',
-		dancing: 'assets/images/dancingspritesheet.png',
-        faceboom: 'assets/images/faceboom.png',
-        stripe: 'assets/images/stripe.png',
-        blob: 'assets/images/blob.png',
-        augurk: 'assets/images/augurk.png',
-        monster1: 'assets/images/monster1.png',
-        monster2: 'assets/images/monster2.png',
-        monster3: 'assets/images/monster3.png',
-        character_l1: 'assets/images/character_l1.png',
-        character_l2: 'assets/images/character_l2.png',
-        character_l3: 'assets/images/character_l3.png',
-        character_l4: 'assets/images/character_l4.png',
-		character_l1_hit: 'assets/images/character_l1_hit.png',
-		character_l2_hit: 'assets/images/character_l2_hit.png',
-		character_l3_hit: 'assets/images/character_l3_hit.png',
-		character_l4_hit: 'assets/images/character_l4_hit.png',    };
+        dancing: 'images/dancingspritesheet.png',
+        face: 'images/dude.png',
+		dancing: 'images/dancingspritesheet.png',
+        faceboom: 'images/faceboom.png',
+        stripe: 'images/stripe.png',
+        blob: 'images/blob.png',
+        augurk: 'images/augurk.png',
+        monster1: 'images/monster1.png',
+        monster2: 'images/monster2.png',
+        monster3: 'images/monster3.png',
+        character_l1: 'images/character_l1.png',
+        character_l2: 'images/character_l2.png',
+        character_l3: 'images/character_l3.png',
+        character_l4: 'images/character_l4.png',
+		character_l1_hit: 'images/character_l1_hit.png',
+		character_l2_hit: 'images/character_l2_hit.png',
+		character_l3_hit: 'images/character_l3_hit.png',
+		character_l4_hit: 'images/character_l4_hit.png',    };
     
     const soundFiles = {
     collision: 'sound/glitshowman.mp3',

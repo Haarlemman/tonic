@@ -145,12 +145,12 @@ function createGameOverScreen() {
     gameOverDiv.id = 'game-over-screen';
     gameOverDiv.innerHTML = `
         <div class="start-screen-container">
-            <img src="assets/images/gameover.gif" alt="Game Over" class="game-over-image">
+            <img src="images/gameover.gif" alt="Game Over" class="game-over-image">
             <div class="game-stats">
                 <h2>Final Score: ${score}</h2>
                 <h2>High Score: ${highScore}</h2>
             </div>
-            <img src="assets/images/but-playagain.png" alt="Play Again" id="restart-game-btn" class="play-again-button" style="cursor: pointer;">
+            <img src="images/but-playagain.png" alt="Play Again" id="restart-game-btn" class="play-again-button" style="cursor: pointer;">
         </div>
     `;
     document.body.appendChild(gameOverDiv);
@@ -672,12 +672,12 @@ function handleGameOver() {
 
     gameOverDiv.innerHTML = `
         <div class="start-screen-container">
-            <img src="assets/images/gameover.gif" alt="Game Over" class="game-over-image">
+            <img src="images/gameover.gif" alt="Game Over" class="game-over-image">
             <div class="game-stats">
                 <h2>Final Score: ${score}</h2>
                 <h2>High Score: ${highScore}</h2>
             </div>
-            <img src="assets/images/but-playagain.png" alt="Play Again" id="restart-game-btn" class="play-again-button" style="cursor: pointer;">
+            <img src="images/but-playagain.png" alt="Play Again" id="restart-game-btn" class="play-again-button" style="cursor: pointer;">
         </div>
     `;
 
@@ -919,28 +919,28 @@ function setupMobileControls() {
         initializeMobileSupport();
 
         await loadImages({
-            dancing: 'assets/images/dancingspritesheet.png',
-            live: 'assets/images/leven.png',
-            face: 'assets/images/dude.png',
-            faceboom: 'assets/images/faceboom.png',
-            stripe: 'assets/images/stripe.png',
-            blob: 'assets/images/blob.png',
-            augurk: 'assets/images/augurk.png',
-            monster1: 'assets/images/monster1.png',
-            monster2: 'assets/images/monster2.png',
-            monster3: 'assets/images/monster3.png',
-            monster6: 'assets/images/monster6.png',
-            monster7: 'assets/images/monster7.png',
-            monster4Sprite: 'assets/images/monster4_spritesheet.png',
-            monster5Sprite: 'assets/images/monster5_spritesheet.png',
-            character_l1: 'assets/images/character_l1.png',
-            character_l2: 'assets/images/character_l2.png',
-            character_l3: 'assets/images/character_l3.png',
-            character_l4: 'assets/images/character_l4.png',
-            character_l1_hit: 'assets/images/character_l1_hit.png',
-            character_l2_hit: 'assets/images/character_l2_hit.png',
-            character_l3_hit: 'assets/images/character_l3_hit.png',
-            character_l4_hit: 'assets/images/character_l4_hit.png',
+            dancing: 'images/dancingspritesheet.png',
+            live: 'images/leven.png',
+            face: 'images/dude.png',
+            faceboom: 'images/faceboom.png',
+            stripe: 'images/stripe.png',
+            blob: 'images/blob.png',
+            augurk: 'images/augurk.png',
+            monster1: 'images/monster1.png',
+            monster2: 'images/monster2.png',
+            monster3: 'images/monster3.png',
+            monster6: 'images/monster6.png',
+            monster7: 'images/monster7.png',
+            monster4Sprite: 'images/monster4_spritesheet.png',
+            monster5Sprite: 'images/monster5_spritesheet.png',
+            character_l1: 'images/character_l1.png',
+            character_l2: 'images/character_l2.png',
+            character_l3: 'images/character_l3.png',
+            character_l4: 'images/character_l4.png',
+            character_l1_hit: 'images/character_l1_hit.png',
+            character_l2_hit: 'images/character_l2_hit.png',
+            character_l3_hit: 'images/character_l3_hit.png',
+            character_l4_hit: 'images/character_l4_hit.png',
         });
         await loadSounds();
         resizeCanvas();
