@@ -21,7 +21,7 @@
     <meta name="description"
         content="Explore 'Tonic for the Bones'—a memoir on adversity, philosophy, and art by designer and writer David Enker.">
     <meta name="keywords"
-        content="David Enker, Tonic for the Bones, Creative Thinker, Writer, Designer, Philosophy, Memoir, Art, Resilience, Parkinson's">
+        content="David Enker, Tonic for the Bones, Creative Thinker, Writer, Designer, Philosophy, Memoir, Art, Resilience, Adoptee, Parkinson">
     <meta name="author" content="David Enker">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://tonicforthebones.com/">
@@ -46,7 +46,7 @@
     <meta name="twitter:url" content="https://tonicforthebones.com/">
     <meta name="twitter:title" content="Tonic for the Bones | David Enker">
     <meta name="twitter:description"
-          content="Explore 'Tonic for the Bones'—a memoir on adversity, philosophy, and art by designer and writer David Enker.">
+        content="Explore 'Tonic for the Bones'—a memoir on adversity, philosophy, and art by designer and writer David Enker.">
     <meta name="twitter:image" content="https://tonicforthebones.com/assets/images/enter.jpg">
 
     <!-- Favicon & Icons -->
@@ -656,31 +656,25 @@
                     </a>
                 </div>
                 <!-- Hero Experience Cell with Video Background -->
-                <div class="relative overflow-hidden bg-black group h-[150px] md:h-auto">
+                <div class="relative overflow-hidden bg-black h-[150px] md:h-auto">
                     <video id="hero-video" autoplay muted loop playsinline
-                        class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity duration-700">
+                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+                        style="opacity: 0.9;">
                         <source src="assets/video/light.mp4" type="video/mp4">
                     </video>
-                    <!-- Dark overlay for better text contrast -->
-                    <div class="absolute inset-0 bg-black/30 transition-colors duration-500">
-                    </div>
 
-                    <!-- Centered status text overlay -->
-                    <div class="absolute inset-0 flex items-center justify-center p-6 md:p-12 z-20 pointer-events-none">
+                    <!-- Centered sentence overlay -->
+                    <div
+                        class="absolute inset-0 flex items-center justify-center px-8 md:px-14 z-20 pointer-events-none">
                         <div id="hero-typing-text"
-                            class="text-white/90 text-[11px] md:text-[15px] max-w-[95%] md:max-w-none w-full leading-relaxed relative min-h-[100px] md:min-h-[140px]" style="font-family: 'Share Tech Mono', monospace; letter-spacing: 0.04em;">
-                            While my book awaits its final edit, I've turned my focus to AI. Living with Parkinson’s
-                            makes this technology more than just a trend; it is a vital body extension that removes
-                            physical barriers to creativity. It's the intent that counts, not the manual process. Like
-                            Kraftwerk's synthesizers, these machines are simply tools used to unleash the
-                            spirit.<br>
-                            <br>
-                            Explore my latest experiments below.
+                            class="text-white text-[11px] md:text-[15px] text-center leading-relaxed"
+                            style="font-family: 'Share Tech Mono', monospace; letter-spacing: 0.04em; opacity: 0; transition: opacity 0.8s ease; max-width: 520px;">
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
 
         <!-- QUICK LINKS -->
         <section class="border-b border-black">
@@ -1511,85 +1505,83 @@
             }
         })();
 
-        // --- HERO TEXT CINEMATIC EFFECTS (Typewriter, Raining, Reveal) ---
+        // --- HERO TEXT: one sentence at a time, typewriter in → hold → fade out ---
         (function () {
             const container = document.getElementById('hero-typing-text');
             const video = document.getElementById('hero-video');
             if (!container || !video) return;
 
-            const fullText = container.innerHTML.replace(/\s+/g, ' ').trim();
-            let currentTimer = null;
+            const sentences = [
+                "While my book awaits its final edit,",
+                "I've turned my focus to AI.",
+                "Living with Parkinson's",
+                "makes this technology more than just a trend",
+                "a vital body extension",
+                "that removes physical barriers",
+                "to creativity.",
+                "It's the intent that counts,",
+                "not the manual process.",
+                "Machines are simply tools",
+                "to express the soul."
+            ];
 
-            function startCycle() {
-                // Phase 1: Typewriter entry
+            const CHAR_DELAY = 30;   // ms between characters
+            const HOLD_DURATION = 3200; // ms the full sentence stays
+            const FADE_OUT_MS = 800;  // CSS transition duration
+            const PAUSE_BETWEEN = 700;  // ms gap between sentences
+
+            const VIDEO_BRIGHT = '0.9';  // normal video opacity
+            const VIDEO_DIM = '0.55'; // slightly dimmer while text is on screen
+
+            let idx = 0;
+
+            function showNext() {
+                const text = sentences[idx];
+                idx = (idx + 1) % sentences.length;
+
+                // Dim video slightly
+                video.style.opacity = VIDEO_DIM;
+
+                // Build hidden char spans
                 container.innerHTML = '';
+                container.style.transition = 'none';
                 container.style.opacity = '1';
-                video.style.opacity = '0.5';
 
-                // Split by spaces or <br> tags, keeping the delimiters
-                const items = fullText.split(/(<br\s*\/?>| )/i);
+                const charSpans = [];
+                for (let ch of text) {
+                    const cs = document.createElement('span');
+                    cs.textContent = ch;
+                    cs.style.opacity = '0';
+                    container.appendChild(cs);
+                    charSpans.push(cs);
+                }
 
-                items.forEach((item) => {
-                    if (!item) return;
-
-                    if (item.toLowerCase().startsWith('<br')) {
-                        // It's a line break
-                        container.appendChild(document.createElement('br'));
-                    } else if (item === ' ') {
-                        // It's a space
-                        const space = document.createElement('span');
-                        space.textContent = ' ';
-                        space.style.opacity = '0';
-                        container.appendChild(space);
+                // Type characters one by one
+                let ci = 0;
+                function typeChar() {
+                    if (ci < charSpans.length) {
+                        charSpans[ci].style.opacity = '1';
+                        ci++;
+                        setTimeout(typeChar, CHAR_DELAY);
                     } else {
-                        // It's a word
-                        const wordSpan = document.createElement('span');
-                        wordSpan.style.display = 'inline-block';
-                        wordSpan.style.whiteSpace = 'nowrap';
-
-                        for (let char of item) {
-                            const charSpan = document.createElement('span');
-                            charSpan.textContent = char;
-                            charSpan.style.opacity = '0';
-                            charSpan.style.display = 'inline-block';
-                            wordSpan.appendChild(charSpan);
-                        }
-                        container.appendChild(wordSpan);
-                    }
-                });
-
-                const spans = Array.from(container.querySelectorAll('span')).filter(s => s.children.length === 0);
-                let charIdx = 0;
-                const totalChars = spans.length;
-                const typingDelay = Math.max(5, (2000 / (totalChars / 4)));
-
-                function type() {
-                    const batchSize = 4;
-                    for (let i = 0; i < batchSize && charIdx < totalChars; i++) {
-                        spans[charIdx].style.opacity = '1';
-                        charIdx++;
-                    }
-
-                    if (charIdx < totalChars) {
-                        setTimeout(type, typingDelay);
-                    } else {
-                        // Finished typing, wait 30s to fade out
-                        currentTimer = setTimeout(fadeOut, 30000);
+                        // Sentence fully typed — hold, then fade out
+                        setTimeout(fadeOut, HOLD_DURATION);
                     }
                 }
-                type();
+                typeChar();
             }
 
             function fadeOut() {
+                container.style.transition = 'opacity ' + (FADE_OUT_MS / 1000) + 's ease';
                 container.style.opacity = '0';
-                // Brighter video reveal
-                video.style.opacity = '1.0';
-
-                // Wait 30s after fade out to reappear
-                currentTimer = setTimeout(startCycle, 30000);
+                // Restore video brightness
+                video.style.opacity = VIDEO_BRIGHT;
+                // Next sentence after fade completes + pause
+                setTimeout(showNext, FADE_OUT_MS + PAUSE_BETWEEN);
             }
 
-            startCycle();
+            // Kick off after a brief opening moment
+            setTimeout(showNext, 1200);
         })();
 
         /* BMS Cube Interactions */
