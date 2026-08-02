@@ -1279,7 +1279,10 @@ function buildWorld() {
 
 function buildHouse() {
     // --- FOUNDATION: DUDOK BRICK BASE (DARK BROWN) ---
-    createRoomBlock('basement', 0, 0.4, 0, 7.5, 0.8, 6.5, 0x3d1f0d, { type: 'dark', scale: 0.5, shift: 1.8 });
+    createRoomBlock('basement', 0, 0.4, 0, 7.5, 0.8, 6.5, 0x3d1f0d, [
+        { scale: 1.3, height: 0.5, shift: 1.8, side: 'front' },
+        { scale: 1.3, height: 0.5, shift: -1.8, side: 'front' }
+    ]);
     const basementMesh = worldGroup.children.find(c => c.userData.name === 'basement');
     if (basementMesh) {
         basementMesh.material.map = window.brickDudokTex;
@@ -1288,6 +1291,15 @@ function buildHouse() {
         basementMesh.material.polygonOffsetFactor = 2;
         basementMesh.material.polygonOffsetUnits = 2;
     }
+
+    // Warm ground glow for basement entry point windows
+    const basementLight1 = new THREE.PointLight(0xffaa00, 3.5, 4.5);
+    basementLight1.position.set(1.8, 0.4, 3.6);
+    worldGroup.add(basementLight1);
+
+    const basementLight2 = new THREE.PointLight(0xffaa00, 3.5, 4.5);
+    basementLight2.position.set(-1.8, 0.4, 3.6);
+    worldGroup.add(basementLight2);
 
     // --- HORIZONTAL PLANES (DARK REDDISH BROWN) ---
     const planeGeo = new THREE.BoxGeometry(7.5, 0.1, 6.5);
