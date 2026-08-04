@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATTAKK - Hero Showcase</title>
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --accent-color: #ff2a5f;
+      --card-glow: rgba(255, 42, 95, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: #05070d;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* 16:9 Landscape Screen Frame */
+    .game-screen {
+      position: relative;
+      width: 90vw;
+      max-width: 1100px;
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px var(--card-glow);
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      transition: box-shadow 0.6s ease;
+      background: #101424;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Background Canvas & Platform */
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      transition: background 0.8s ease;
+    }
+
+    .platform {
+      position: absolute;
+      bottom: 12%;
+      left: 10%;
+      width: 45%;
+      height: 35px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      border-radius: 50%;
+      filter: blur(4px);
+      box-shadow: 0 10px 30px var(--accent-color);
+      transform: rotateX(70deg);
+      transition: box-shadow 0.6s ease;
+    }
+
+    /* Header Title */
+    .header {
+      position: relative;
+      z-index: 10;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(0,0,0,0.6), transparent);
+    }
+
+    .game-logo {
+      font-size: 2.2rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-style: italic;
+      text-shadow: 3px 3px 0px #000, 0 0 15px var(--accent-color);
+    }
+
+    /* Character Display Area */
+    .showcase {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+    }
+
+    /* Character Avatar Animation Container */
+    .character-stage {
+      position: relative;
+      width: 45%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: 30px;
+    }
+
+    .character-svg {
+      width: 280px;
+      height: 280px;
+      filter: drop-shadow(0 15px 10px rgba(0,0,0,0.5));
+      animation: idleFloat 3s ease-in-out infinite alternate;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+    }
+
+    @keyframes idleFloat {
+      0% { transform: translateY(0px) scale(1); }
+      100% { transform: translateY(-12px) scale(1.02); }
+    }
+
+    /* Stats Card (Right Side) */
+    .stats-card {
+      width: 45%;
+      background: rgba(12, 16, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(30px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .hero-name {
+      font-size: 2.2rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .rarity-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: bold;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    .rarity-epic { background: #9d22ff; color: #fff; }
+    .rarity-legendary { background: #ffaa00; color: #000; }
+
+    /* Meter Bars (HP & Energy) */
+    .stat-row {
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      font-family: sans-serif;
+      font-weight: bold;
+    }
+
+    .bar-container {
+      display: flex;
+      gap: 6px;
+      height: 20px;
+    }
+
+    .bar-segment {
+      flex: 1;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .bar-segment.filled-hp {
+      background: linear-gradient(180deg, #ff4e4e, #c01111);
+      box-shadow: 0 0 8px #ff4e4e;
+    }
+
+    .bar-segment.filled-energy {
+      background: linear-gradient(180deg, #4eff7b, #11c045);
+      box-shadow: 0 0 8px #4eff7b;
+    }
+
+    /* Attack Move Badges */
+    .attacks-title {
+      font-size: 0.9rem;
+      color: #888;
+      margin: 16px 0 8px 0;
+      font-family: sans-serif;
+      text-transform: uppercase;
+    }
+
+    .attacks-grid {
+      display: flex;
+      gap: 12px;
+    }
+
+    .attack-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .attack-card:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .attack-name {
+      font-size: 1rem;
+      color: #fff;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .attack-icon {
+      font-size: 1.5rem;
+    }
+
+    /* Footer Selector Bar */
+    .controls-bar {
+      position: relative;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .hero-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .hero-btn.active {
+      border-color: #fff;
+      background: var(--accent-color);
+      box-shadow: 0 0 20px var(--accent-color);
+      transform: scale(1.05);
+    }
+
+    /* Hero Special Animations inside SVG */
+    .fist-pulse {
+      animation: fistPunch 1.5s infinite alternate ease-in-out;
+      transform-origin: center;
+    }
+    @keyframes fistPunch {
+      0% { transform: scale(1) rotate(0deg); }
+      100% { transform: scale(1.15) rotate(-5deg); }
+    }
+
+    .fire-glow {
+      animation: fireFlicker 0.8s infinite alternate ease-in-out;
+    }
+    @keyframes fireFlicker {
+      0% { opacity: 0.8; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1.08); }
+    }
+
+    .axe-spin {
+      animation: axeTilt 2s infinite alternate ease-in-out;
+      transform-origin: center;
+    }
+    @keyframes axeTilt {
+      0% { transform: rotate(-8deg); }
+      100% { transform: rotate(12deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-screen" id="gameScreen">
+    <div class="bg-layer" id="bgLayer"></div>
+
+    <div class="header">
+      <div class="game-logo">ATTAKK</div>
+      <div style="font-family: sans-serif; font-size: 0.85rem; color: #888;">SELECT HERO</div>
+    </div>
+
+    <div class="showcase">
+      
+      <div class="character-stage">
+        <div class="platform"></div>
+        <div id="characterContainer">
+          </div>
+      </div>
+
+      <div class="stats-card" id="statsCard">
+        </div>
+
+    </div>
+
+    <div class="controls-bar">
+      <button class="hero-btn active" onclick="selectHero(0)" id="btn-0">
+        <span>1.</span> JANSINA
+      </button>
+      <button class="hero-btn" onclick="selectHero(1)" id="btn-1">
+        <span>2.</span> GIYA
+      </button>
+      <button class="hero-btn" onclick="selectHero(2)" id="btn-2">
+        <span>3.</span> VIKING
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Hero Data extracted directly from your son's illustration
+    const heroes = [
+      {
+        id: "jansina",
+        name: "Jansina",
+        rarity: "EPIC",
+        rarityClass: "rarity-epic",
+        hp: 6,
+        maxHp: 8,
+        energy: 2,
+        maxEnergy: 5,
+        themeColor: "#ff2a5f",
+        bgGradient: "radial-gradient(circle at 30% 60%, #3a0d25 0%, #0d1124 70%)",
+        attacks: [
+          { name: "SUPER ATTACK", icon: "🥊" },
+          { name: "CLAW SLAP (+2)", icon: "🖐️" }
+        ],
+        svg: `
+          <svg class="character-svg" viewBox="0 0 200 200">
+            <path d="M 60 130 Q 100 110 140 130 L 150 200 L 50 200 Z" fill="#0077ff" />
+            <rect x="65" y="50" width="70" height="70" rx="15" fill="#e60039" />
+            <path d="M 65 50 Q 100 35 135 50 L 135 65 L 65 65 Z" fill="#ffd700" />
+            <rect x="75" y="70" width="50" height="20" rx="5" fill="#111" />
+            <rect x="80" y="75" width="12" height="10" fill="#fff" />
+            <rect x="98" y="75" width="12" height="10" fill="#fff" />
+            <rect x="112" y="75" width="8" height="10" fill="#fff" />
+            <g class="fist-pulse">
+              <circle cx="150" cy="80" r="28" fill="#e60039" />
+              <rect x="135" y="65" width="28" height="28" rx="6" fill="#b3002d" />
+              <path d="M 125 100 L 145 120" stroke="#e60039" stroke-width="12" stroke-linecap="round" />
+            </g>
+          </svg>
+        `
+      },
+      {
+        id: "giya",
+        name: "Giya",
+        rarity: "LEGENDARY",
+        rarityClass: "rarity-legendary",
+        hp: 5,
+        maxHp: 8,
+        energy: 4,
+        maxEnergy: 5,
+        themeColor: "#ffaa00",
+        bgGradient: "radial-gradient(circle at 30% 60%, #4a3300 0%, #0d1124 70%)",
+        attacks: [
+          { name: "FIREBOL", icon: "🔥" },
+          { name: "THUNDER SLAP", icon: "⚡" }
+        ],
+        svg: `
+          <svg class="character-svg" viewBox="0 0 200 200">
+            <path d="M 65 120 Q 100 110 135 120 L 145 200 L 55 200 Z" fill="#0055ff" />
+            <circle cx="100" cy="85" r="32" fill="#d9a05b" />
+            <circle cx="88" cy="82" r="6" fill="#ff0000" />
+            <circle cx="112" cy="82" r="6" fill="#ff0000" />
+            <path d="M 68 62 L 75 35 L 88 50 L 100 30 L 112 50 L 125 35 L 132 62 Z" fill="#ffd700" stroke="#ccac00" stroke-width="2"/>
+            <circle cx="100" cy="45" r="4" fill="#ff0000" />
+            <g class="fire-glow">
+              <path d="M 40 100 Q 30 70 45 60 Q 60 70 50 100 Z" fill="#ff4500" />
+              <path d="M 42 95 Q 35 75 45 70 Q 52 75 46 95 Z" fill="#ffcc00" />
+              
+              <path d="M 160 100 Q 170 70 155 60 Q 140 70 150 100 Z" fill="#ff4500" />
+              <path d="M 158 95 Q 165 75 155 70 Q 148 75 154 95 Z" fill="#ffcc00" />
+            </g>
+          </svg>
+        `
+      },
+      {
+        id: "viking",
+        name: "Viking",
+        rarity: "EPIC",
+        rarityClass: "rarity-epic",
+        hp: 7,
+        maxHp: 8,
+        energy: 3,
+        maxEnergy: 5,
+        themeColor: "#00d2ff",
+        bgGradient: "radial-gradient(circle at 30% 60%, #082d38 0%, #0d1124 70%)",
+        attacks: [
+          { name: "TRIO AX SPIN", icon: "🪓" },
+          { name: "AXE CHOP", icon: "⚔️" }
+        ],
+        svg: `
+          <svg class="character-svg" viewBox="0 0 200 200">
+            <path d="M 55 125 L 145 125 L 155 200 L 45 200 Z" fill="#4a5568" />
+            <path d="M 45 125 L 35 110 L 52 120 Z" fill="#cbd5e0" />
+            <path d="M 155 125 L 165 110 L 148 120 Z" fill="#cbd5e0" />
+            <rect x="70" y="65" width="60" height="60" rx="10" fill="#d9a05b" />
+            <circle cx="85" cy="85" r="5" fill="#000" />
+            <circle cx="115" cy="85" r="5" fill="#000" />
+            <path d="M 70 100 Q 100 130 130 100 Z" fill="#333" />
+            <path d="M 65 70 Q 100 50 135 70 Z" fill="#2d3748" />
+            <path d="M 68 65 Q 45 40 40 20 Q 55 35 62 55 Z" fill="#e2e8f0" />
+            <path d="M 132 65 Q 155 40 160 20 Q 145 35 138 55 Z" fill="#e2e8f0" />
+            <g class="axe-spin">
+              <path d="M 150 140 L 175 115" stroke="#718096" stroke-width="4" />
+              <path d="M 165 110 C 180 115 180 130 165 130 Z" fill="#cbd5e0" />
+              <path d="M 30 140 L 10 115" stroke="#718096" stroke-width="4" />
+              <path d="M 15 110 C 0 115 0 130 15 130 Z" fill="#cbd5e0" />
+            </g>
+          </svg>
+        `
+      }
+    ];
+
+    let currentHeroIndex = 0;
+
+    function renderHero(index) {
+      const hero = heroes[index];
+      
+      // Update Root CSS variables for Dynamic Glowing Effect
+      document.documentElement.style.setProperty('--accent-color', hero.themeColor);
+      document.documentElement.style.setProperty('--card-glow', `${hero.themeColor}66`);
+      
+      // Update Screen Background Gradient
+      document.getElementById('bgLayer').style.background = hero.bgGradient;
+
+      // Render Character SVG
+      document.getElementById('characterContainer').innerHTML = hero.svg;
+
+      // Build Health Segments
+      let hpSegments = '';
+      for (let i = 0; i < hero.maxHp; i++) {
+        hpSegments += `<div class="bar-segment ${i < hero.hp ? 'filled-hp' : ''}"></div>`;
+      }
+
+      // Build Energy Segments
+      let energySegments = '';
+      for (let i = 0; i < hero.maxEnergy; i++) {
+        energySegments += `<div class="bar-segment ${i < hero.energy ? 'filled-energy' : ''}"></div>`;
+      }
+
+      // Build Attack Cards
+      let attackCards = hero.attacks.map(atk => `
+        <div class="attack-card">
+          <div class="attack-icon">${atk.icon}</div>
+          <div class="attack-name">${atk.name}</div>
+        </div>
+      `).join('');
+
+      // Render Stats Card with animation reset
+      const statsCard = document.getElementById('statsCard');
+      statsCard.style.animation = 'none';
+      statsCard.offsetHeight; // trigger reflow
+      statsCard.style.animation = 'slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+      statsCard.innerHTML = `
+        <div class="hero-header">
+          <div class="hero-name">${hero.name}</div>
+          <div class="rarity-badge ${hero.rarityClass}">${hero.rarity}</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-label">
+            <span>HEALTH</span>
+            <span>${hero.hp} / ${hero.maxHp} HP</span>
+          </div>
+          <div class="bar-container">${hpSegments}</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-label">
+            <span>ENERGY / MANA</span>
+            <span>${hero.energy} / ${hero.maxEnergy}</span>
+          </div>
+          <div class="bar-container">${energySegments}</div>
+        </div>
+
+        <div class="attacks-title">SPECIAL ABILITIES</div>
+        <div class="attacks-grid">${attackCards}</div>
+      `;
+
+      // Update Active Navigation Button
+      heroes.forEach((_, i) => {
+        const btn = document.getElementById(`btn-${i}`);
+        if (i === index) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function selectHero(index) {
+      currentHeroIndex = index;
+      renderHero(currentHeroIndex);
+      playSwitchSound();
+    }
+
+    // Optional synthesized Web Audio API sound effect on button switch
+    function playSwitchSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch (e) {
+        // Audio Context blocked until user interaction
+      }
+    }
+
+    // Keyboard Arrow Key Navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        currentHeroIndex = (currentHeroIndex + 1) % heroes.length;
+        selectHero(currentHeroIndex);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        currentHeroIndex = (currentHeroIndex - 1 + heroes.length) % heroes.length;
+        selectHero(currentHeroIndex);
+      } else if (e.key === '1') selectHero(0);
+      else if (e.key === '2') selectHero(1);
+      else if (e.key === '3') selectHero(2);
+    });
+
+    // Initialize initial hero display
+    renderHero(0);
+  </script>
+</body>
+</html>

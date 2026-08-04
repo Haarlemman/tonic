@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ATTACK ARENA — Choose Your Fighter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6efdd;
+    --ink:#191512;
+    --cream:#fffaf0;
+
+    /* Jansina — teal/red/gold */
+    --jan-1:#0c7079;
+    --jan-2:#0a4a52;
+    --jan-glow:#3fd6c8;
+    --jan-accent:#e2273f;
+
+    /* Viking — crimson/mint */
+    --vik-1:#b3273b;
+    --vik-2:#6e1522;
+    --vik-glow:#ff8a6b;
+    --vik-accent:#bfe8d9;
+
+    /* Giya — olive/blue/fire */
+    --giy-1:#5c7a29;
+    --giy-2:#31420f;
+    --giy-glow:#ffd23f;
+    --giy-accent:#ff7a1a;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:'Nunito', sans-serif;
+    overflow:hidden;
+    color:var(--cream);
+  }
+
+  .stage{
+    position:relative;
+    width:100vw; height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:space-between;
+    background: radial-gradient(120% 90% at 50% 20%, var(--jan-1), var(--jan-2));
+    transition: background 0.7s ease;
+    isolation:isolate;
+  }
+
+  /* subtle hand-drawn paper grain */
+  .grain{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    opacity:.10; mix-blend-mode:overlay;
+    background-image: radial-gradient(circle, #000 1px, transparent 1.4px);
+    background-size: 5px 5px;
+  }
+
+  /* wobble ring behind the whole card, like marker scribble energy */
+  .scribble-ring{
+    position:absolute; top:50%; left:50%; z-index:0; pointer-events:none;
+    width:min(70vw,640px); height:min(70vw,640px);
+    transform:translate(-50%,-52%);
+    opacity:.35;
+    animation: spin 40s linear infinite;
+  }
+  .scribble-ring svg{ width:100%; height:100%; }
+  @keyframes spin{ to{ transform:translate(-50%,-52%) rotate(360deg);} }
+
+  /* ---------- Title ---------- */
+  .title-wrap{
+    position:relative; z-index:2;
+    text-align:center;
+    margin-top:2.2vh;
+  }
+  .game-title{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:clamp(2.1rem, 5vw, 3.6rem);
+    margin:0;
+    letter-spacing:1px;
+    color:var(--cream);
+    text-shadow: 4px 4px 0 var(--ink), -1px -1px 0 var(--ink);
+    -webkit-text-stroke: 2px var(--ink);
+  }
+  .game-title .arena{
+    display:inline-block;
+    font-size:.5em;
+    vertical-align:middle;
+    margin-left:.4em;
+    padding:.25em .6em;
+    background:var(--jan-accent);
+    border:3px solid var(--ink);
+    border-radius:10px;
+    transform:rotate(-3deg);
+    -webkit-text-stroke:0;
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .subtitle{
+    margin:.4rem 0 0;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:500;
+    font-size:clamp(.85rem,1.6vw,1.15rem);
+    letter-spacing:3px;
+    text-transform:uppercase;
+    opacity:.85;
+  }
+
+  /* ---------- Fighter display ---------- */
+  .fighter-display{
+    position:relative; z-index:2;
+    display:flex; align-items:center; justify-content:center;
+    gap:clamp(10px, 3vw, 40px);
+    flex:1;
+    width:100%;
+    padding: 0 3vw;
+  }
+
+  .nav-arrow{
+    font-family:'Baloo 2', sans-serif;
+    background:var(--cream);
+    border:3px solid var(--ink);
+    color:var(--ink);
+    width:52px; height:52px;
+    border-radius:50%;
+    font-size:1.4rem;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    transition: transform .15s ease;
+    flex:0 0 auto;
+  }
+  .nav-arrow:hover{ transform:translateY(-3px) scale(1.05); }
+  .nav-arrow:active{ transform:translateY(1px) scale(.96); box-shadow:1px 1px 0 var(--ink); }
+
+  .card{
+    position:relative;
+    width:min(88vw, 380px);
+    background:var(--cream);
+    border:5px solid var(--ink);
+    border-radius:22px;
+    padding: 34px 22px 20px;
+    box-shadow: 8px 8px 0 var(--ink);
+    color:var(--ink);
+    text-align:center;
+    animation: cardIn .5s cubic-bezier(.2,1.4,.4,1);
+    transition: border-color .5s ease;
+  }
+  @keyframes cardIn{
+    0%{ transform:scale(.85) rotate(-2deg); opacity:0; }
+    100%{ transform:scale(1) rotate(0); opacity:1; }
+  }
+
+  .rarity-banner{
+    position:absolute; top:-20px; left:50%; transform:translateX(-50%) rotate(-2deg);
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    padding:6px 22px;
+    border:3px solid var(--ink);
+    border-radius:8px;
+    font-size:.95rem;
+    box-shadow:3px 3px 0 var(--ink);
+    color:var(--ink);
+    animation: ribbonWiggle 3.4s ease-in-out infinite;
+    white-space:nowrap;
+  }
+  .rarity-banner.epic{ background:linear-gradient(90deg,#a99bff,#6a5acd); color:#1c1642; }
+  .rarity-banner.legendary{
+    background:linear-gradient(90deg,#ff9a3d,#ffd23f,#7fd858,#4fb0e0,#b07be0,#ff7ab0);
+    background-size:300% 100%;
+    animation: ribbonWiggle 3.4s ease-in-out infinite, rainbow 4s linear infinite;
+    color:#241a09;
+  }
+  @keyframes ribbonWiggle{
+    0%,100%{ transform:translateX(-50%) rotate(-3deg); }
+    50%{ transform:translateX(-50%) rotate(3deg); }
+  }
+  @keyframes rainbow{
+    0%{ background-position:0% 0; } 100%{ background-position:300% 0; }
+  }
+
+  .portrait-frame{
+    width:172px; height:172px;
+    margin:6px auto 10px;
+    border:4px solid var(--ink);
+    border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    overflow:visible;
+    background:var(--cream);
+    transition: background .5s ease;
+  }
+  .portrait-frame::after{
+    content:"";
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.35), transparent 60%);
+    pointer-events:none;
+  }
+  .portrait-frame svg{
+    width:88%; height:88%;
+    overflow:visible;
+    animation: floaty 3s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-8px); }
+  }
+
+  .fighter-name{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:1.7rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin:2px 0 12px;
+  }
+
+  .stat-row{
+    display:flex; flex-direction:column; gap:8px;
+    margin-bottom:14px;
+    text-align:left;
+  }
+  .stat{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:.8rem;
+  }
+  .stat .icon{ width:22px; height:22px; flex:0 0 auto; }
+  .bar-track{
+    flex:1;
+    height:14px;
+    background:#e9e2cf;
+    border:2.5px solid var(--ink);
+    border-radius:7px;
+    overflow:hidden;
+    display:flex;
+  }
+  .bar-fill{
+    height:100%;
+    transition: width .6s ease;
+  }
+  .bar-fill.hp{ background: repeating-linear-gradient(90deg, #e2273f 0 8px, #c21030 8px 10px); }
+  .bar-fill.pow{ background: repeating-linear-gradient(90deg, #4f9e2f 0 8px, #3c7d21 8px 10px); }
+  .stat-value{ font-size:.75rem; opacity:.75; min-width:26px; text-align:right; }
+
+  .section-label{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:.68rem;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    opacity:.55;
+    margin:0 0 8px;
+  }
+
+  .moves{
+    display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+  }
+  .move-chip{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    padding:6px 10px;
+    border:2.5px solid var(--ink);
+    border-radius:20px;
+    background:var(--cream);
+    display:flex; align-items:center; gap:5px;
+  }
+  .move-chip .dot{
+    width:9px;height:9px;border-radius:50%;background:var(--ink);flex:0 0 auto;
+  }
+  .move-chip.super .dot{ animation:pulseDot 1.1s ease-in-out infinite; }
+  @keyframes pulseDot{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.6);} }
+
+  /* ---------- Platform ---------- */
+  .platform{
+    position:relative; z-index:1;
+    width:min(70vw, 460px);
+    height:34px;
+    margin-bottom:6px;
+    border-radius:50%;
+    background: radial-gradient(closest-side, rgba(0,0,0,.35), rgba(0,0,0,0) 75%);
+    filter:blur(1px);
+  }
+
+  /* ---------- Roster ---------- */
+  .roster{
+    position:relative; z-index:2;
+    display:flex; gap:14px;
+    margin-bottom:3vh;
+  }
+  .roster-item{
+    width:56px; height:56px;
+    border-radius:14px;
+    border:3px solid var(--ink);
+    cursor:pointer;
+    padding:0;
+    overflow:hidden;
+    box-shadow:3px 3px 0 var(--ink);
+    opacity:.55;
+    transform:scale(.92);
+    transition: opacity .2s ease, transform .2s ease;
+    background:var(--cream);
+  }
+  .roster-item svg{ width:100%; height:100%; }
+  .roster-item.active{
+    opacity:1; transform:scale(1.06);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .roster-item:hover{ opacity:.9; }
+
+  @media (max-height: 640px){
+    .subtitle{ display:none; }
+    .platform{ height:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="grain"></div>
+  <div class="scribble-ring">
+    <svg viewBox="0 0 200 200"><path d="M20,100 C20,50 60,15 100,18 C150,22 182,55 180,102 C178,150 145,182 98,180 C50,178 20,148 20,100 Z"
+      fill="none" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  </div>
+
+  <div class="title-wrap">
+    <h1 class="game-title">ATTACK<span class="arena">ARENA</span></h1>
+    <p class="subtitle">Choose your fighter</p>
+  </div>
+
+  <div class="fighter-display">
+    <button class="nav-arrow" id="prevBtn" aria-label="Previous fighter">&#10094;</button>
+
+    <div class="card" id="card">
+      <div class="rarity-banner" id="rarityBanner"></div>
+      <div class="portrait-frame" id="portraitFrame"></div>
+      <h2 class="fighter-name" id="fighterName"></h2>
+
+      <div class="stat-row">
+        <div class="stat">
+          <svg class="icon" viewBox="0 0 24 24"><path fill="#e2273f" stroke="#191512" stroke-width="1.5" d="M12 21s-7.5-4.6-10-9.3C.4 8 2 4 6 4c2.2 0 3.7 1.2 4.6 2.6C11.5 5.2 13 4 15.2 4c4 0 5.6 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
+          <div class="bar-track"><div class="bar-fill hp" id="hpBar"></div></div>
+          <span class="stat-value" id="hpVal"></span>
+        </div>
+        <div class="stat">
+          <svg class="icon" viewBox="0 0 24 24"><path fill="#e2273f" stroke="#191512" stroke-width="1.5" d="M6 14c-2 0-4-1.5-4-4 0-2 1.5-3.3 3.3-3.3.3-2 2-3.7 4.2-3.7 2 0 3.6 1.3 4.1 3 .4-.2.9-.3 1.4-.3 2 0 3.6 1.6 3.6 3.6 0 2.3-1.9 4-4.2 3.9H6z"/><rect x="7" y="13" width="10" height="8" rx="2" fill="#e2273f" stroke="#191512" stroke-width="1.5"/></svg>
+          <div class="bar-track"><div class="bar-fill pow" id="powBar"></div></div>
+          <span class="stat-value" id="powVal"></span>
+        </div>
+      </div>
+
+      <p class="section-label">Strengths</p>
+      <div class="moves" id="moves"></div>
+    </div>
+
+    <button class="nav-arrow" id="nextBtn" aria-label="Next fighter">&#10095;</button>
+  </div>
+
+  <div class="platform" id="platform"></div>
+
+  <nav class="roster" id="roster"></nav>
+</div>
+
+<script>
+/* ---------------- Fighter portraits (hand-drawn-style SVGs) ---------------- */
+
+const jansinaSVG = `
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="58" cy="112" rx="34" ry="7" fill="#00000022"/>
+
+  <!-- back arm: smaller, behind the torso, shrinking as it swings away (perspective) -->
+  <g transform="translate(36 90)" opacity="0.9">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="10;34;10" dur="1.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1;0.3 0 0.2 1"/>
+      <g>
+        <animateTransform attributeName="transform" type="scale" values="0.7;0.4;0.7" dur="1.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1;0.3 0 0.2 1"/>
+        <rect x="-30" y="-8" width="28" height="16" rx="7" fill="#175fa8" stroke="#191512" stroke-width="4"/>
+        <rect x="-36" y="-10" width="9" height="20" rx="4" fill="#eee" stroke="#191512" stroke-width="3.5"/>
+        <circle cx="-34" cy="-12" r="6.5" fill="#b81f34" stroke="#191512" stroke-width="3.5"/>
+        <ellipse cx="-46" cy="0" rx="14" ry="12" fill="#b81f34" stroke="#191512" stroke-width="4"/>
+      </g>
+    </g>
+  </g>
+
+  <path d="M40 78 C34 90 34 108 40 116 L80 116 C86 108 86 90 80 78 Z" fill="#1f7fd6" stroke="#191512" stroke-width="4"/>
+  <circle cx="58" cy="52" r="30" fill="#e2273f" stroke="#191512" stroke-width="4"/>
+  <path d="M34 34 C38 20 50 16 58 22 C48 20 40 26 38 36 Z" fill="#ffd23f" stroke="#191512" stroke-width="3"/>
+  <circle cx="47" cy="50" r="9" fill="#fff" stroke="#191512" stroke-width="3"/>
+  <circle cx="48" cy="51" r="3.4" fill="#191512"/>
+  <ellipse cx="71" cy="52" rx="5" ry="6" fill="#a3122a" stroke="#191512" stroke-width="3"/>
+  <path d="M43 66 Q58 76 74 65 L72 70 Q58 78 45 70 Z" fill="#fff" stroke="#191512" stroke-width="3"/>
+  <path d="M48 66 L52 71 M58 68 L58 73 M67 66 L64 71" stroke="#191512" stroke-width="2.5" fill="none"/>
+
+  <!-- speed lines trailing the punch -->
+  <path d="M100 64 L118 58 M104 74 L122 71 M102 86 L120 90" stroke="#191512" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- front shoulder joint, on the side of the torso -->
+  <circle cx="84" cy="92" r="12" fill="#1f7fd6" stroke="#191512" stroke-width="4"/>
+
+  <!-- front arm: pivots at the shoulder, grows as the glove punches out toward us -->
+  <g transform="translate(84 92)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-10;-34;-10" dur="1.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1;0.3 0 0.2 1"/>
+      <g>
+        <animateTransform attributeName="transform" type="scale" values="0.9;1.35;0.9" dur="1.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1;0.3 0 0.2 1"/>
+        <rect x="0" y="-10" width="34" height="20" rx="9" fill="#1f7fd6" stroke="#191512" stroke-width="4"/>
+        <rect x="30" y="-13" width="12" height="26" rx="5" fill="#fff" stroke="#191512" stroke-width="3.5"/>
+        <ellipse cx="54" cy="0" rx="20" ry="17" fill="#e2273f" stroke="#191512" stroke-width="4"/>
+        <circle cx="39" cy="-15" r="9.5" fill="#e2273f" stroke="#191512" stroke-width="4"/>
+        <path d="M32 -9 Q38 -5 44 -7" stroke="#191512" stroke-width="2" fill="none"/>
+        <path d="M46 -9 Q54 -13 62 -9 M46 9 Q54 13 62 9" stroke="#191512" stroke-width="2" fill="none"/>
+      </g>
+    </g>
+  </g>
+</svg>`;
+
+const vikingSVG = `
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="60" cy="112" rx="34" ry="7" fill="#00000022"/>
+
+  <!-- body suit -->
+  <path d="M38 82 C32 94 32 108 38 116 L82 116 C88 108 88 94 82 82 Z" fill="#bfe8d9" stroke="#191512" stroke-width="4"/>
+
+  <!-- visible spikes along the sides of the armor -->
+  <polygon points="38,88 25,84 38,98" fill="#191512"/>
+  <polygon points="36,100 22,98 36,110" fill="#191512"/>
+  <polygon points="82,88 95,84 82,98" fill="#191512"/>
+  <polygon points="84,100 98,98 84,110" fill="#191512"/>
+
+  <!-- pear-shaped goofy head: narrow top, wide jaw -->
+  <path d="M60 20 C46 20 36 30 35 44 C34 56 36 66 44 74 C50 79 70 79 76 74 C84 66 86 56 85 44 C84 30 74 20 60 20 Z"
+        fill="#9db8ae" stroke="#191512" stroke-width="4"/>
+  <!-- double chin -->
+  <ellipse cx="60" cy="76" rx="15" ry="6.5" fill="#9db8ae" stroke="#191512" stroke-width="3.5"/>
+
+  <!-- horns / spiky mohawk -->
+  <path d="M30 38 L20 16 L38 28 Z" fill="#191512"/>
+  <path d="M90 38 L100 16 L82 28 Z" fill="#191512"/>
+  <path d="M34 24 Q60 6 86 24 L80 32 Q60 18 40 32 Z" fill="#191512"/>
+
+  <!-- big goofy eyes -->
+  <circle cx="49" cy="50" r="9" fill="#fff" stroke="#191512" stroke-width="3"/>
+  <circle cx="50" cy="51" r="3.4" fill="#191512"/>
+  <circle cx="71" cy="50" r="9" fill="#fff" stroke="#191512" stroke-width="3"/>
+  <circle cx="72" cy="51" r="3.4" fill="#191512"/>
+
+  <!-- straight goofy mouth with teeth -->
+  <rect x="45" y="62" width="30" height="9" rx="2" fill="#fff" stroke="#191512" stroke-width="3"/>
+  <path d="M53 62 L53 71 M60 62 L60 71 M67 62 L67 71" stroke="#191512" stroke-width="2.2"/>
+</svg>`;
+
+const giyaSVG = `
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="60" cy="112" rx="34" ry="7" fill="#00000022"/>
+  <path d="M42 76 C34 90 34 108 42 116 L78 116 C86 108 86 90 78 76 Z" fill="#1f5fb0" stroke="#191512" stroke-width="4"/>
+
+  <!-- arms reaching down to the flames in each hand -->
+  <path d="M44 80 C34 86 28 96 26 108" fill="none" stroke="#191512" stroke-width="19" stroke-linecap="round"/>
+  <path d="M44 80 C34 86 28 96 26 108" fill="none" stroke="#1f5fb0" stroke-width="13" stroke-linecap="round"/>
+  <path d="M76 80 C86 86 92 96 94 108" fill="none" stroke="#191512" stroke-width="19" stroke-linecap="round"/>
+  <path d="M76 80 C86 86 92 96 94 108" fill="none" stroke="#1f5fb0" stroke-width="13" stroke-linecap="round"/>
+
+  <circle cx="60" cy="52" r="26" fill="#f4c89a" stroke="#191512" stroke-width="4"/>
+  <path d="M36 46 Q40 20 60 20 Q80 20 84 46 Q60 32 36 46 Z" fill="#ffd23f" stroke="#191512" stroke-width="3"/>
+  <path d="M52 16 L60 6 L68 16 Z" fill="#ffd23f" stroke="#191512" stroke-width="3"/>
+  <circle cx="50" cy="52" r="4.5" fill="#e2273f" stroke="#191512" stroke-width="2.5"/>
+  <circle cx="70" cy="52" r="4.5" fill="#e2273f" stroke="#191512" stroke-width="2.5"/>
+  <path d="M48 66 L72 66" stroke="#191512" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+  <!-- hands + flames -->
+  <circle cx="25" cy="109" r="7" fill="#f4c89a" stroke="#191512" stroke-width="3"/>
+  <circle cx="95" cy="109" r="7" fill="#f4c89a" stroke="#191512" stroke-width="3"/>
+  <g transform="translate(25 92)">
+    <path d="M0 10 Q-6 0 0 -10 Q6 0 0 -10 Q10 -2 4 8 Q2 14 0 10Z" fill="#ff7a1a" stroke="#191512" stroke-width="2.5"/>
+    <circle cx="0" cy="4" r="3" fill="#ffd23f"/>
+  </g>
+  <g transform="translate(95 92)">
+    <path d="M0 10 Q-6 0 0 -10 Q6 0 0 -10 Q10 -2 4 8 Q2 14 0 10Z" fill="#ff7a1a" stroke="#191512" stroke-width="2.5"/>
+    <circle cx="0" cy="4" r="3" fill="#ffd23f"/>
+  </g>
+</svg>`;
+
+const thumbFrame = (inner) => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+
+/* ---------------- Fighter data ---------------- */
+const fighters = [
+  {
+    id: "jansina",
+    name: "Jansina",
+    rarity: "epic",
+    svg: jansinaSVG,
+    colors: { bg1:"var(--jan-1)", bg2:"var(--jan-2)" },
+    box: "#ffd23f",
+    hp: 8, hpMax: 10,
+    pow: 4, powMax: 10,
+    moves: [
+      { label: "Attack", super:false },
+      { label: "Super", super:true },
+      { label: "Guard +1", super:false }
+    ]
+  },
+  {
+    id: "giya",
+    name: "Giya",
+    rarity: "legendary",
+    svg: giyaSVG,
+    colors: { bg1:"var(--giy-1)", bg2:"var(--giy-2)" },
+    box: "#a86bdb",
+    hp: 6, hpMax: 10,
+    pow: 7, powMax: 10,
+    moves: [
+      { label: "Fireball", super:false },
+      { label: "Thunder Slap", super:false },
+      { label: "Hair Fire", super:true }
+    ]
+  },
+  {
+    id: "viking",
+    name: "Viking",
+    rarity: "epic",
+    svg: vikingSVG,
+    colors: { bg1:"var(--vik-1)", bg2:"var(--vik-2)" },
+    box: "#4f8fe0",
+    hp: 9, hpMax: 10,
+    pow: 5, powMax: 10,
+    moves: [
+      { label: "Trio Ax Spin", super:false },
+      { label: "Super", super:true }
+    ]
+  }
+];
+
+/* ---------------- Render ---------------- */
+const stage = document.getElementById('stage');
+const card = document.getElementById('card');
+const rarityBanner = document.getElementById('rarityBanner');
+const portraitFrame = document.getElementById('portraitFrame');
+const fighterName = document.getElementById('fighterName');
+const hpBar = document.getElementById('hpBar');
+const powBar = document.getElementById('powBar');
+const hpVal = document.getElementById('hpVal');
+const powVal = document.getElementById('powVal');
+const movesEl = document.getElementById('moves');
+const rosterEl = document.getElementById('roster');
+
+let current = 0;
+
+function renderRoster(){
+  rosterEl.innerHTML = fighters.map((f,i) => `
+    <button class="roster-item ${i===current?'active':''}" data-index="${i}" aria-label="Select ${f.name}">
+      ${f.svg}
+    </button>
+  `).join('');
+  rosterEl.querySelectorAll('.roster-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> goTo(parseInt(btn.dataset.index,10)));
+  });
+}
+
+function render(){
+  const f = fighters[current];
+
+  stage.style.background = `radial-gradient(120% 90% at 50% 20%, ${f.colors.bg1}, ${f.colors.bg2})`;
+  card.style.borderColor = f.box;
+  portraitFrame.style.background = f.box;
+
+  rarityBanner.textContent = f.rarity;
+  rarityBanner.className = 'rarity-banner ' + f.rarity;
+
+  portraitFrame.innerHTML = f.svg;
+  fighterName.textContent = f.name;
+
+  hpBar.style.width = (f.hp / f.hpMax * 100) + '%';
+  hpVal.textContent = f.hp + '/' + f.hpMax;
+  powBar.style.width = (f.pow / f.powMax * 100) + '%';
+  powVal.textContent = '+' + f.pow;
+
+  movesEl.innerHTML = f.moves.map(m => `
+    <span class="move-chip ${m.super ? 'super' : ''}"><span class="dot"></span>${m.label}</span>
+  `).join('');
+
+  // retrigger card entrance animation
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = '';
+
+  renderRoster();
+}
+
+function goTo(index){
+  current = (index + fighters.length) % fighters.length;
+  render();
+}
+
+document.getElementById('prevBtn').addEventListener('click', ()=> goTo(current - 1));
+document.getElementById('nextBtn').addEventListener('click', ()=> goTo(current + 1));
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowLeft') goTo(current - 1);
+  if(e.key === 'ArrowRight') goTo(current + 1);
+});
+
+render();
+</script>
+</body>
+</html>
