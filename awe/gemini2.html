@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The House of Awe — Mondrian Twilight 4-Level Tower</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; width:100%; height:100%; background:#090c12; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+  #canvas-wrap { position:fixed; inset:0; }
+  canvas { display:block; touch-action:none; }
+
+  #overlay {
+    position:fixed; top:0; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:26px 30px; pointer-events:none;
+    z-index:10;
+  }
+  #title-block { pointer-events:auto; }
+  #title-block h1 {
+    margin:0; font-size:24px; letter-spacing:0.14em; font-weight:700;
+    color:#f4f7fa; text-transform:uppercase; text-shadow:0 2px 12px rgba(0,0,0,0.8);
+  }
+  #title-block h1 span.red { color:#ff3b30; }
+  #title-block h1 span.yellow { color:#ffcc00; }
+  #title-block h1 span.blue { color:#007aff; }
+
+  #title-block p {
+    margin:6px 0 0; font-size:11px; letter-spacing:0.06em; color:#a0b4c8;
+    max-width:420px; line-height:1.5; text-shadow:0 1px 6px rgba(0,0,0,0.9);
+  }
+
+  #controls-panel {
+    pointer-events:auto; text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+  }
+  .chip {
+    font-size:11px; letter-spacing:0.08em; color:#e0f0f5; background:rgba(14,18,26,0.85);
+    border:1px solid rgba(255,59,48,0.5); padding:8px 14px; border-radius:20px;
+    cursor:pointer; user-select:none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    transition: all .2s ease; box-shadow:0 4px 14px rgba(0,0,0,0.5);
+  }
+  .chip:hover { background:rgba(255,59,48,0.3); border-color:#ff3b30; color:#fff; transform:translateY(-1px); }
+  .chip.active { background:#ff3b30; border-color:#ff3b30; color:#fff; font-weight:600; }
+
+  #hint {
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    font-size:10px; letter-spacing:0.14em; color:#88a0b5; text-transform:uppercase;
+    pointer-events:none; z-index:10; background:rgba(9,12,18,0.85); padding:5px 16px; border-radius:14px;
+    border:1px solid rgba(255,255,255,0.1);
+  }
+
+  #loading {
+    position:fixed; inset:0; background:#090c12; z-index:20;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;
+    color:#ff3b30; font-size:12px; letter-spacing:0.25em; text-transform:uppercase;
+    transition: opacity .6s ease;
+  }
+  #loading .ring {
+    width:42px; height:42px; border-radius:50%;
+    border:2px solid rgba(255,59,48,0.2); border-top-color:#ff3b30;
+    animation: spin 0.85s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #err {
+    position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
+    color:#f87171; font-size:12px; background:rgba(28,10,10,0.9); padding:10px 18px;
+    border-radius:8px; display:none; z-index:30; max-width:80%; text-align:center; border:1px solid #f87171;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="ring"></div><div>Illuminating Mondrian Twilight Tower...</div></div>
+<div id="err"></div>
+
+<div id="overlay">
+  <div id="title-block">
+    <h1>The House of <span class="red">A</span><span class="yellow">W</span><span class="blue">E</span></h1>
+    <p>A striking 4-level Mondrian composition in permanent twilight: primary color blocks, black grid framing, glowing equal windows & reflecting pool.</p>
+  </div>
+  <div id="controls-panel">
+    <div class="chip" id="toggle-rotate">&#8635; Auto-rotate: OFF</div>
+    <div class="chip" id="toggle-grid">&#9671; Black Matrix Grid: ON</div>
+    <div class="chip" id="reset-cam">&#8962; Reset View</div>
+  </div>
+</div>
+
+<div id="hint">Drag to orbit &middot; Scroll to zoom</div>
+
+<div id="canvas-wrap"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+(function(){
+
+  function showError(msg){
+    var e = document.getElementById('err');
+    e.textContent = msg;
+    e.style.display = 'block';
+    var l = document.getElementById('loading');
+    if (l) l.remove();
+  }
+
+  if (typeof THREE === 'undefined') {
+    showError('Three.js failed to load from CDN.');
+    return;
+  }
+
+  try {
+    run();
+  } catch (err) {
+    console.error(err);
+    showError('Error building scene: ' + err.message);
+  }
+
+  function run(){
+
+  var scene, camera, renderer, controls, clock;
+  var towerGroup = new THREE.Group();
+  var blackGridLinesGroup = new THREE.Group();
+  var dirLight, hemiLight;
+
+  function init(){
+    scene = new THREE.Scene();
+    scene.background = makeTwilightSkyTexture();
+    scene.fog = new THREE.FogExp2(0x121b28, 0.006);
+
+    camera = new THREE.PerspectiveCamera(36, window.innerWidth/window.innerHeight, 0.1, 500);
+    camera.position.set(32, 20, 36);
+
+    renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
+    else if ('outputEncoding' in renderer) renderer.outputEncoding = THREE.sRGBEncoding;
+    document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+    controls = new SimpleOrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 10.5, 0);
+    controls.syncFromCamera();
+
+    clock = new THREE.Clock();
+
+    // Permanent Twilight Dusk Lighting Setup
+    hemiLight = new THREE.HemisphereLight(0x4a658a, 0x0f1622, 0.65);
+    scene.add(hemiLight);
+
+    // Warm Low Sunset Directional Sun
+    dirLight = new THREE.DirectionalLight(0xff8c42, 1.6);
+    dirLight.position.set(-22, 24, -25);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(2048, 2048);
+    dirLight.shadow.camera.left = -35; dirLight.shadow.camera.right = 35;
+    dirLight.shadow.camera.top = 35; dirLight.shadow.camera.bottom = -35;
+    dirLight.shadow.camera.near = 2; dirLight.shadow.camera.far = 120;
+    dirLight.shadow.bias = -0.0003;
+    scene.add(dirLight);
+
+    // Subtle Cyan Fill Light from opposite sky
+    var fillLight = new THREE.DirectionalLight(0x00b4d8, 0.4);
+    fillLight.position.set(25, 18, 20);
+    scene.add(fillLight);
+
+    scene.add(towerGroup);
+    towerGroup.add(blackGridLinesGroup);
+
+    window.addEventListener('resize', onResize);
+
+    document.getElementById('toggle-rotate').addEventListener('click', function(e){
+      controls.autoRotate = !controls.autoRotate;
+      e.target.classList.toggle('active', controls.autoRotate);
+      e.target.textContent = '\u21BB Auto-rotate: ' + (controls.autoRotate ? 'ON' : 'OFF');
+    });
+
+    document.getElementById('toggle-grid').addEventListener('click', function(e){
+      var on = !blackGridLinesGroup.visible;
+      blackGridLinesGroup.visible = on;
+      e.target.classList.toggle('active', on);
+      e.target.textContent = '\u25C7 Black Matrix Grid: ' + (on ? 'ON' : 'OFF');
+    });
+
+    document.getElementById('reset-cam').addEventListener('click', function(){
+      camera.position.set(32, 20, 36);
+      controls.target.set(0, 10.5, 0);
+      controls.syncFromCamera();
+    });
+
+    setTimeout(function(){
+      var l = document.getElementById('loading');
+      if (!l) return;
+      l.style.opacity = 0;
+      setTimeout(function(){ l.remove(); }, 650);
+    }, 400);
+  }
+
+  function makeTwilightSkyTexture(){
+    var c = document.createElement('canvas');
+    c.width = 2; c.height = 256;
+    var ctx = c.getContext('2d');
+    var g = ctx.createLinearGradient(0,0,0,256);
+    g.addColorStop(0, '#060810');     // Deep space top
+    g.addColorStop(0.35, '#121c2d'); // Twilight indigo
+    g.addColorStop(0.7, '#2b1b33');  // Violet dusk
+    g.addColorStop(1, '#4a252d');    // Warm horizon glow
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,2,256);
+    var tex = new THREE.CanvasTexture(c);
+    if ('colorSpace' in tex) tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  /* ---------------- PROCEDURAL MOSAIC TEXTURE FOR ROOF ---------------- */
+  function generateMosaicTexture(){
+    var c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#0f141c';
+    ctx.fillRect(0,0,512,512);
+
+    var colors = ['#ff3b30','#ffcc00','#007aff','#ffffff','#0f141c'];
+    ctx.strokeStyle = '#060810'; ctx.lineWidth = 3;
+    for(var i=0; i<280; i++){
+      var cx = Math.random()*512, cy = Math.random()*512;
+      var r = 10 + Math.random()*20;
+      ctx.beginPath();
+      ctx.rect(cx - r/2, cy - r/2, r, r);
+      ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
+      ctx.fill(); ctx.stroke();
+    }
+    var tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 1);
+    if ('colorSpace' in tex) tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  var mosaicTex = generateMosaicTexture();
+
+  /* ---------------- PURE MONDRIAAN MATERIALS ---------------- */
+  var MAT = {
+    // Pure Mondrian Primary Palette (Vibrant, high saturated pigments)
+    pureRed: new THREE.MeshStandardMaterial({ color:0xff3b30, roughness:0.3, metalness:0.05 }),     // Level 3
+    pureYellow: new THREE.MeshStandardMaterial({ color:0xffcc00, roughness:0.3, metalness:0.05 }),  // Level 2
+    pureBlue: new THREE.MeshStandardMaterial({ color:0x007aff, roughness:0.3, metalness:0.05 }),    // Level 4
+    pureWhite: new THREE.MeshStandardMaterial({ color:0xf5f7fa, roughness:0.35, metalness:0.05 }),   // Level 1
+    jetBlackGrid: new THREE.MeshStandardMaterial({ color:0x0d1017, roughness:0.2, metalness:0.85 }), // Structural Grid Beams
+
+    // Mosaic Roof Trim
+    mosaicRoof: new THREE.MeshStandardMaterial({ map:mosaicTex, roughness:0.2, metalness:0.1 }),
+
+    // Glowing Twilight Windows (Emissive warm interior light)
+    glowingGlass: new THREE.MeshPhysicalMaterial({
+      color:0xfffae0,
+      emissive:0xffb703,
+      emissiveIntensity:0.65,
+      roughness:0.08,
+      transmission:0.4,
+      transparent:true,
+      opacity:0.95
+    }),
+    
+    // Environment
+    groundGrass: new THREE.MeshStandardMaterial({ color:0x203025, roughness:0.95 }),
+    plazaDeck: new THREE.MeshStandardMaterial({ color:0xbcc8d4, roughness:0.6 }),
+    reflectingWater: new THREE.MeshPhysicalMaterial({ color:0x16425b, roughness:0.04, transmission:0.82, thickness:1.5, ior:1.33, transparent:true, opacity:0.95 })
+  };
+
+  /* ---------------- ENVIRONMENT ---------------- */
+  function buildEnvironment(){
+    var ground = new THREE.Mesh(new THREE.CircleGeometry(75, 64), MAT.groundGrass);
+    ground.rotation.x = -Math.PI/2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Reflecting Water Pool surrounding tower base
+    var pool = new THREE.Mesh(new THREE.BoxGeometry(28, 0.4, 28), MAT.plazaDeck);
+    pool.position.set(0, 0.05, 0);
+    pool.receiveShadow = true;
+    scene.add(pool);
+
+    var water = new THREE.Mesh(new THREE.PlaneGeometry(26.5, 26.5), MAT.reflectingWater);
+    water.rotation.x = -Math.PI/2;
+    water.position.set(0, 0.26, 0);
+    scene.add(water);
+
+    // Modernist Deck
+    var plaza = new THREE.Mesh(new THREE.PlaneGeometry(44, 44), MAT.plazaDeck);
+    plaza.rotation.x = -Math.PI/2;
+    plaza.position.set(0, 0.08, 0);
+    plaza.receiveShadow = true;
+    scene.add(plaza);
+  }
+
+  /* ---------------- MONDRIAAN 4-LEVEL TOWER ASSEMBLY ---------------- */
+  function buildTower(){
+    var w = 11.5;     // Tower width
+    var d = 11.5;     // Tower depth
+    var levelH = 4.8; // Uniform level height
+    var beamW = 0.48; // Thick black Mondrian grid beam thickness
+
+    var levelMaterials = [MAT.pureWhite, MAT.pureYellow, MAT.pureRed, MAT.pureBlue];
+
+    // Build 4 Straight Uniform Colored Levels
+    for(var lvl=0; lvl<4; lvl++){
+      var yBase = lvl * levelH;
+
+      // Main Color Block for this level
+      var block = new THREE.Mesh(
+        new THREE.BoxGeometry(w, levelH, d),
+        levelMaterials[lvl]
+      );
+      block.position.set(0, yBase + levelH/2, 0);
+      block.castShadow = true; block.receiveShadow = true;
+      towerGroup.add(block);
+
+      // Build Equal Recessed Glowing Window Bays (4 equal window openings per side)
+      buildEqualWindowsForLevel(yBase + levelH/2, w, levelH, d, lvl === 0);
+
+      // Build Bold Jet-Black Mondrian Grid Frames around this level
+      buildBlackGridBeamsForLevel(yBase, yBase + levelH, w, d, beamW);
+    }
+
+    // Top Roof Parapet with Colourful Mosaic Trim
+    var topY = 4 * levelH;
+    var roofSlab = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.5, d + 0.6), MAT.pureWhite);
+    roofSlab.position.set(0, topY + 0.25, 0);
+    roofSlab.castShadow = true;
+    towerGroup.add(roofSlab);
+
+    // Mondrian Mosaic Rim
+    var mosaicRim = new THREE.Mesh(new THREE.BoxGeometry(w + 0.75, 0.55, d + 0.75), MAT.mosaicRoof);
+    mosaicRim.position.set(0, topY + 0.75, 0);
+    mosaicRim.castShadow = true;
+    towerGroup.add(mosaicRim);
+
+    // Rooftop Glass Box Pavilion
+    var skylight = new THREE.Mesh(new THREE.BoxGeometry(w * 0.45, 1.8, d * 0.45), MAT.glowingGlass);
+    skylight.position.set(0, topY + 1.6, 0);
+    towerGroup.add(skylight);
+
+    // Add warm interior light source inside the tower
+    var interiorLight = new THREE.PointLight(0xffaa33, 1.8, 40);
+    interiorLight.position.set(0, 10, 0);
+    scene.add(interiorLight);
+  }
+
+  /* --- EQUAL WINDOWS BUILDER --- */
+  function buildEqualWindowsForLevel(centerY, w, h, d, isGround){
+    var bays = 4;
+    var paneW = (w - 1.2) / bays;
+    var paneH = h * 0.65;
+    var rots = [0, Math.PI/2, Math.PI, -Math.PI/2];
+
+    rots.forEach(function(r){
+      var g = new THREE.Group();
+      for(var b=0; b<bays; b++){
+        var px = -w/2 + 0.6 + paneW/2 + b*paneW;
+
+        if(isGround && (b === 1 || b === 2)){
+          // Entrance Door
+          var door = new THREE.Mesh(new THREE.BoxGeometry(paneW*0.92, h*0.8, 0.08), MAT.glowingGlass);
+          door.position.set(px, -h*0.1, d/2 + 0.04);
+          g.add(door);
+        } else {
+          // Equal Window Pane
+          var pane = new THREE.Mesh(new THREE.BoxGeometry(paneW*0.85, paneH, 0.08), MAT.glowingGlass);
+          pane.position.set(px, 0, d/2 + 0.04);
+          g.add(pane);
+        }
+      }
+      g.position.set(0, centerY, 0);
+      g.rotation.y = r;
+      towerGroup.add(g);
+    });
+  }
+
+  /* --- BOLD JET-BLACK MONDRIAAN GRID BEAMS --- */
+  function buildBlackGridBeamsForLevel(yBottom, yTop, w, d, bw){
+    // Horizontal perimeter beams at floor levels
+    var hBeamGeo = new THREE.BoxGeometry(w + bw, bw, d + bw);
+    
+    var bBottom = new THREE.Mesh(hBeamGeo, MAT.jetBlackGrid);
+    bBottom.position.set(0, yBottom + bw/2, 0);
+    blackGridLinesGroup.add(bBottom);
+
+    var bTop = new THREE.Mesh(hBeamGeo, MAT.jetBlackGrid);
+    bTop.position.set(0, yTop - bw/2, 0);
+    blackGridLinesGroup.add(bTop);
+
+    // Vertical corner pillars
+    var vPillarGeo = new THREE.BoxGeometry(bw, yTop - yBottom, bw);
+    var corners = [
+      [-w/2, -d/2], [w/2, -d/2], [w/2, d/2], [-w/2, d/2]
+    ];
+    corners.forEach(function(c){
+      var p = new THREE.Mesh(vPillarGeo, MAT.jetBlackGrid);
+      p.position.set(c[0], (yBottom + yTop)/2, c[1]);
+      blackGridLinesGroup.add(p);
+    });
+  }
+
+  /* ---------------- MINIMAL ORBIT CONTROLS ---------------- */
+  function SimpleOrbitControls(cam, domEl){
+    var self = this;
+    this.camera = cam;
+    this.domEl = domEl;
+    this.target = new THREE.Vector3(0,10.5,0);
+    this.autoRotate = false;
+    this.autoRotateSpeed = 0.4;
+
+    var spherical = new THREE.Spherical();
+    var offset = new THREE.Vector3();
+    offset.copy(cam.position).sub(this.target);
+    spherical.setFromVector3(offset);
+
+    var minDist = 10, maxDist = 90;
+    var minPolar = 0.1, maxPolar = Math.PI/2 - 0.01;
+
+    var dragging = false;
+    var lastX = 0, lastY = 0;
+    var rotSpeed = 0.006;
+    var zoomSpeed = 0.0015;
+
+    function pointerDown(e){
+      dragging = true;
+      var p = e.touches ? e.touches[0] : e;
+      lastX = p.clientX; lastY = p.clientY;
+    }
+    function pointerMove(e){
+      if (!dragging) return;
+      var p = e.touches ? e.touches[0] : e;
+      var dx = p.clientX - lastX;
+      var dy = p.clientY - lastY;
+      lastX = p.clientX; lastY = p.clientY;
+      spherical.theta -= dx * rotSpeed;
+      spherical.phi -= dy * rotSpeed;
+      spherical.phi = Math.max(minPolar, Math.min(maxPolar, spherical.phi));
+      if (e.cancelable) e.preventDefault();
+    }
+    function pointerUp(){ dragging = false; }
+    function wheel(e){
+      spherical.radius += e.deltaY * zoomSpeed * spherical.radius * 0.6;
+      spherical.radius = Math.max(minDist, Math.min(maxDist, spherical.radius));
+      e.preventDefault();
+    }
+
+    domEl.addEventListener('mousedown', pointerDown);
+    window.addEventListener('mousemove', pointerMove);
+    window.addEventListener('mouseup', pointerUp);
+    domEl.addEventListener('touchstart', pointerDown, { passive:true });
+    window.addEventListener('touchmove', pointerMove, { passive:false });
+    window.addEventListener('touchend', pointerUp);
+    domEl.addEventListener('wheel', wheel, { passive:false });
+
+    this.update = function(delta){
+      if (self.autoRotate) spherical.theta += self.autoRotateSpeed * (delta || 0.016);
+      offset.setFromSpherical(spherical);
+      cam.position.copy(self.target).add(offset);
+      cam.lookAt(self.target);
+    };
+
+    this.syncFromCamera = function(){
+      offset.copy(cam.position).sub(self.target);
+      spherical.setFromVector3(offset);
+    };
+  }
+
+  /* ---------------- ANIMATION & RENDER LOOP ---------------- */
+  function onResize(){
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+    var delta = clock.getDelta();
+    controls.update(delta);
+    renderer.render(scene, camera);
+  }
+
+  init();
+  buildEnvironment();
+  buildTower();
+  animate();
+
+  } // end run()
+
+})();
+</script>
+</body>
+</html>

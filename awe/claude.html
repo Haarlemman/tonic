@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The House of Awe</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; width:100%; height:100%; background:#0b0f14; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  #canvas-wrap { position:fixed; inset:0; }
+  canvas { display:block; }
+
+  #overlay {
+    position:fixed; top:0; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:26px 30px; pointer-events:none;
+    z-index:10;
+  }
+  #title-block { pointer-events:auto; }
+  #title-block h1 {
+    margin:0; font-size:22px; letter-spacing:0.12em; font-weight:300;
+    color:#f4f1ea; text-transform:uppercase;
+  }
+  #title-block h1 span { color:#c9a227; font-weight:600; }
+  #title-block p {
+    margin:6px 0 0; font-size:11px; letter-spacing:0.06em; color:#9aa5ad;
+    max-width:340px; line-height:1.5;
+  }
+
+  #controls-panel {
+    pointer-events:auto; text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+  }
+  .chip {
+    font-size:10px; letter-spacing:0.08em; color:#cfd6db; background:rgba(20,24,28,0.55);
+    border:1px solid rgba(201,162,39,0.35); padding:7px 12px; border-radius:20px;
+    cursor:pointer; user-select:none; backdrop-filter: blur(6px);
+    transition: background .2s, border-color .2s;
+  }
+  .chip:hover { background:rgba(201,162,39,0.18); border-color:#c9a227; }
+  .chip.active { background:rgba(201,162,39,0.28); border-color:#c9a227; color:#fff; }
+
+  #hint {
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    font-size:10px; letter-spacing:0.1em; color:#7d868c; text-transform:uppercase;
+    pointer-events:none; z-index:10;
+  }
+
+  #loading {
+    position:fixed; inset:0; background:#0b0f14; z-index:20;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    color:#c9a227; font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+    transition: opacity .6s ease;
+  }
+  #loading .ring {
+    width:34px; height:34px; border-radius:50%;
+    border:1px solid rgba(201,162,39,0.25); border-top-color:#c9a227;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="ring"></div><div>constructing awe</div></div>
+
+<div id="overlay">
+  <div id="title-block">
+    <h1>The House of <span>Awe</span></h1>
+    <p>An exterior study fusing Jugendstil ornament, Bauhaus rationalism and a
+       deconstructed / parametric shell — Libeskind's fracture, Hadid's flow, Foster's lattice.</p>
+  </div>
+  <div id="controls-panel">
+    <div class="chip" id="toggle-rotate">⟳ auto-rotate: off</div>
+    <div class="chip" id="toggle-wire">◇ structural frame: off</div>
+    <div class="chip" id="reset-cam">⌂ reset view</div>
+  </div>
+</div>
+
+<div id="hint">drag to orbit · scroll to zoom</div>
+
+<div id="canvas-wrap"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
+
+/* ---------------------------------------------------------------
+   THE HOUSE OF AWE — exterior architectural study
+   Bauhaus base + Libeskind shard + Hadid canopy + Foster diagrid dome
+   + Jugendstil ornamental bay
+----------------------------------------------------------------*/
+
+let scene, camera, renderer, controls, clock;
+const houseGroup = new THREE.Group();
+let diagridHelper = null;
+
+init();
+buildEnvironment();
+buildHouse();
+animate();
+
+function init(){
+  scene = new THREE.Scene();
+  scene.background = makeSkyTexture();
+  scene.fog = new THREE.Fog(0xcdd8dd, 40, 130);
+
+  camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 500);
+  camera.position.set(26, 16, 30);
+
+  renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.minDistance = 10;
+  controls.maxDistance = 80;
+  controls.maxPolarAngle = Math.PI/2 - 0.02;
+  controls.target.set(0, 4.5, 0);
+  controls.update();
+
+  clock = new THREE.Clock();
+
+  // lighting
+  const hemi = new THREE.HemisphereLight(0xdfe9f0, 0x3a3a30, 0.9);
+  scene.add(hemi);
+
+  const sun = new THREE.DirectionalLight(0xfff3dd, 2.2);
+  sun.position.set(24, 32, 14);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
+  sun.shadow.camera.top = 30; sun.shadow.camera.bottom = -30;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 90;
+  sun.shadow.bias = -0.0004;
+  scene.add(sun);
+
+  const fill = new THREE.DirectionalLight(0xbfd4ff, 0.35);
+  fill.position.set(-20, 10, -18);
+  scene.add(fill);
+
+  scene.add(houseGroup);
+
+  window.addEventListener('resize', onResize);
+  document.getElementById('toggle-rotate').addEventListener('click', (e)=>{
+    controls.autoRotate = !controls.autoRotate;
+    controls.autoRotateSpeed = 1.1;
+    e.target.classList.toggle('active', controls.autoRotate);
+    e.target.textContent = '⟳ auto-rotate: ' + (controls.autoRotate ? 'on' : 'off');
+  });
+  document.getElementById('toggle-wire').addEventListener('click', (e)=>{
+    const on = !diagridHelper.visible;
+    diagridHelper.visible = on;
+    e.target.classList.toggle('active', on);
+    e.target.textContent = '◇ structural frame: ' + (on ? 'on' : 'off');
+  });
+  document.getElementById('reset-cam').addEventListener('click', ()=>{
+    camera.position.set(26, 16, 30);
+    controls.target.set(0, 4.5, 0);
+    controls.update();
+  });
+
+  setTimeout(()=>{
+    const l = document.getElementById('loading');
+    l.style.opacity = 0;
+    setTimeout(()=> l.remove(), 650);
+  }, 500);
+}
+
+function makeSkyTexture(){
+  const c = document.createElement('canvas');
+  c.width = 2; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0,0,0,256);
+  g.addColorStop(0, '#7fa8c9');
+  g.addColorStop(0.45, '#cfe0e8');
+  g.addColorStop(1, '#f3ede0');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,2,256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/* ---------------- MATERIALS ---------------- */
+const MAT = {
+  stucco: new THREE.MeshStandardMaterial({ color:0xf1ece0, roughness:0.88, metalness:0.02 }),
+  stuccoDark: new THREE.MeshStandardMaterial({ color:0xd9d2c2, roughness:0.9, metalness:0.02 }),
+  concrete: new THREE.MeshStandardMaterial({ color:0xcfc9bd, roughness:0.95, metalness:0.0 }),
+  zinc: new THREE.MeshStandardMaterial({ color:0x484e54, roughness:0.38, metalness:0.75 }),
+  zincDark: new THREE.MeshStandardMaterial({ color:0x2e3236, roughness:0.42, metalness:0.7 }),
+  frame: new THREE.MeshStandardMaterial({ color:0x1b1b1b, roughness:0.4, metalness:0.6 }),
+  iron: new THREE.MeshStandardMaterial({ color:0x232323, roughness:0.35, metalness:0.85 }),
+  gold: new THREE.MeshStandardMaterial({ color:0xc9a227, roughness:0.28, metalness:0.9 }),
+  hadidShell: new THREE.MeshPhysicalMaterial({ color:0xfaf9f5, roughness:0.22, metalness:0.05, clearcoat:0.6, clearcoatRoughness:0.25 }),
+  glass: new THREE.MeshPhysicalMaterial({ color:0x9fc4d8, roughness:0.05, metalness:0, transmission:0.92, thickness:0.4, ior:1.45, transparent:true, opacity:1 }),
+  glassDark: new THREE.MeshPhysicalMaterial({ color:0x2a3238, roughness:0.08, metalness:0.1, transmission:0.75, thickness:0.4, ior:1.4, transparent:true, opacity:1 }),
+  wood: new THREE.MeshStandardMaterial({ color:0x6b4a35, roughness:0.7, metalness:0.05 }),
+  grass: new THREE.MeshStandardMaterial({ color:0x7f9a5c, roughness:1 }),
+  path: new THREE.MeshStandardMaterial({ color:0xb7ada0, roughness:0.85 }),
+  water: new THREE.MeshPhysicalMaterial({ color:0x3d6b78, roughness:0.05, metalness:0, transmission:0.6, thickness:1, ior:1.33, transparent:true, opacity:0.92 }),
+};
+
+const stainedColors = [0xb23a48, 0x2e6f95, 0xd9a441, 0x4a7c59, 0x7a4c9e, 0xcf6d3b];
+
+/* ---------------- ENVIRONMENT ---------------- */
+function buildEnvironment(){
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(70, 64), MAT.grass);
+  ground.rotation.x = -Math.PI/2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // plaza
+  const plaza = new THREE.Mesh(new THREE.CylinderGeometry(13, 13, 0.15, 48), MAT.path);
+  plaza.position.y = 0.075;
+  plaza.receiveShadow = true;
+  scene.add(plaza);
+
+  // path
+  const pathShape = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 20), MAT.path);
+  pathShape.rotation.x = -Math.PI/2;
+  pathShape.position.set(0, 0.08, 22);
+  pathShape.receiveShadow = true;
+  scene.add(pathShape);
+
+  // reflecting pool near entrance
+  const pool = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.4, 0.2, 40), MAT.water);
+  pool.position.set(0, 0.05, 9.5);
+  scene.add(pool);
+  const poolRim = new THREE.Mesh(new THREE.TorusGeometry(4.4, 0.15, 12, 48), MAT.concrete);
+  poolRim.rotation.x = Math.PI/2;
+  poolRim.position.set(0, 0.1, 9.5);
+  scene.add(poolRim);
+
+  // low hedges
+  const hedgeMat = new THREE.MeshStandardMaterial({ color:0x4c6b3d, roughness:0.95 });
+  for(let i=0;i<10;i++){
+    const a = (i/10)*Math.PI*2;
+    const r = 15.5;
+    const hedge = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), hedgeMat);
+    hedge.position.set(Math.cos(a)*r, 0.9, Math.sin(a)*r);
+    hedge.scale.y = 0.65;
+    hedge.castShadow = true; hedge.receiveShadow = true;
+    scene.add(hedge);
+  }
+}
+
+/* ---------------- HOUSE ASSEMBLY ---------------- */
+function buildHouse(){
+  houseGroup.add(buildBauhausBase());
+  houseGroup.add(buildLibeskindShard());
+  houseGroup.add(buildHadidCanopy());
+  houseGroup.add(buildJugendstilBay());
+  houseGroup.add(buildFosterDome());
+  houseGroup.add(buildEntrance());
+  houseGroup.add(buildRoofDetails());
+}
+
+/* --- 1. Bauhaus rational base block --- */
+function buildBauhausBase(){
+  const g = new THREE.Group();
+
+  const w = 14, d = 10, h = 6.2;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), MAT.stucco);
+  base.position.set(-1.5, h/2, -1);
+  base.castShadow = true; base.receiveShadow = true;
+  g.add(base);
+
+  // second recessed storey, slightly smaller footprint & set back — pure Bauhaus horizontality
+  const h2 = 3.6;
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(w*0.72, h2, d*0.78), MAT.stuccoDark);
+  upper.position.set(-2.3, h + h2/2, -1.4);
+  upper.castShadow = true; upper.receiveShadow = true;
+  g.add(upper);
+
+  // flat roof slab overhang
+  const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(w*0.78, 0.3, d*0.84), MAT.concrete);
+  roofSlab.position.set(-2.3, h + h2 + 0.15, -1.4);
+  roofSlab.castShadow = true;
+  g.add(roofSlab);
+
+  // horizontal ribbon windows — lower floor
+  g.add(ribbonWindowBand(w*0.62, 1.6, -1.5, 1.9, -1 + d/2 + 0.03, 8, 0));
+  g.add(ribbonWindowBand(w*0.62, 1.6, -1.5, 4.1, -1 + d/2 + 0.03, 8, 0));
+  g.add(ribbonWindowBand(d*0.7, 1.6, -1.5 - w/2 - 0.03, 2.9, -1, 6, Math.PI/2));
+
+  // upper floor ribbon
+  g.add(ribbonWindowBand(w*0.5, 1.3, -2.3, h + 1.9, -1.4 + d*0.78/2 + 0.03, 6, 0));
+
+  return g;
+}
+
+function ribbonWindowBand(totalWidth, height, cx, cy, cz, panes, rotY){
+  const g = new THREE.Group();
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(totalWidth, height, 0.14), MAT.frame);
+  g.add(frame);
+  const paneW = (totalWidth - (panes+1)*0.06) / panes;
+  for(let i=0;i<panes;i++){
+    const px = -totalWidth/2 + 0.06 + paneW/2 + i*(paneW+0.06);
+    const pane = new THREE.Mesh(new THREE.BoxGeometry(paneW, height-0.12, 0.05), MAT.glass);
+    pane.position.set(px, 0, 0.05);
+    g.add(pane);
+  }
+  g.position.set(cx, cy, cz);
+  g.rotation.y = rotY;
+  return g;
+}
+
+/* --- 2. Libeskind fractured shard --- */
+function buildLibeskindShard(){
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(6.5, 0.4);
+  shape.lineTo(7.8, 3.1);
+  shape.lineTo(4.6, 6.4);
+  shape.lineTo(-0.8, 5.1);
+  shape.lineTo(-1.6, 2.0);
+  shape.closePath();
+
+  const extrudeSettings = { depth: 5.4, bevelEnabled:true, bevelThickness:0.05, bevelSize:0.04, bevelSegments:1 };
+  const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  geo.center();
+
+  const shard = new THREE.Mesh(geo, MAT.zinc);
+  shard.castShadow = true; shard.receiveShadow = true;
+
+  // add a few angled slit windows cut visually via thin dark inset panels
+  const slitGroup = new THREE.Group();
+  for(let i=0;i<4;i++){
+    const slit = new THREE.Mesh(new THREE.BoxGeometry(0.35, 2.4, 4.6), MAT.glassDark);
+    slit.position.set(-2 + i*1.6, 0.4, 0);
+    slitGroup.add(slit);
+  }
+  shard.add(slitGroup);
+
+  const pivot = new THREE.Group();
+  pivot.add(shard);
+  pivot.rotation.z = THREE.MathUtils.degToRad(-13);
+  pivot.rotation.x = THREE.MathUtils.degToRad(6);
+  pivot.rotation.y = THREE.MathUtils.degToRad(18);
+  pivot.position.set(6.8, 9.6, -0.8);
+  pivot.scale.set(1.05, 1.05, 1.05);
+  return pivot;
+}
+
+/* --- 3. Hadid flowing canopy over entrance (parametric surface) --- */
+function buildHadidCanopy(){
+  const g = new THREE.Group();
+
+  function canopySurface(u, v, target){
+    // u: 0..1 across width, v: 0..1 along depth (sweep)
+    const width = 13;
+    const depth = 9;
+    const x = (u - 0.5) * width;
+    const zBase = (v - 0.2) * depth;
+    // flowing wave heights combining two sine components for organic Hadid curvature
+    const wave = Math.sin(u * Math.PI * 1.15 + 0.4) * 1.4
+               + Math.sin(v * Math.PI * 0.9) * 1.1
+               + Math.pow(u, 2.2) * 1.6
+               - Math.pow(v, 2) * 0.8;
+    const y = 3.4 + wave * 0.85 - Math.abs(u-0.72)*1.4;
+    target.set(x, Math.max(y, 0.6), zBase);
+  }
+
+  const geo = new ParametricGeometry(canopySurface, 40, 26);
+  geo.computeVertexNormals();
+  const shell = new THREE.Mesh(geo, MAT.hadidShell);
+  shell.castShadow = true; shell.receiveShadow = true;
+  shell.position.set(-1.2, 4.9, 6.4);
+  g.add(shell);
+
+  // thin underside glass to suggest structural glazing beneath the sweep
+  const glassGeo = new ParametricGeometry((u,v,target)=>{
+    canopySurface(u,v,target);
+    target.y -= 0.12;
+  }, 40, 26);
+  const under = new THREE.Mesh(glassGeo, MAT.glassDark);
+  under.position.copy(shell.position);
+  g.add(under);
+
+  // slender supporting fins (Hadid-style tapered blades)
+  const finMat = MAT.zincDark;
+  const finPositions = [-4.5, -1, 3];
+  finPositions.forEach((fx)=>{
+    const finShape = new THREE.Shape();
+    finShape.moveTo(0,0);
+    finShape.quadraticCurveTo(0.4, 2.5, 0.1, 5.2);
+    finShape.lineTo(-0.15, 5.2);
+    finShape.quadraticCurveTo(-0.3, 2.4, -0.1, 0);
+    finShape.closePath();
+    const finGeo = new THREE.ExtrudeGeometry(finShape, { depth:0.5, bevelEnabled:false });
+    const fin = new THREE.Mesh(finGeo, finMat);
+    fin.rotation.y = Math.PI/2;
+    fin.position.set(fx - 1.2, 0.1, 10.5);
+    fin.castShadow = true;
+    g.add(fin);
+  });
+
+  return g;
+}
+
+/* --- 4. Jugendstil ornamental bay window turret --- */
+function buildJugendstilBay(){
+  const g = new THREE.Group();
+
+  // curved bay volume — cylindrical segment
+  const bayGeo = new THREE.CylinderGeometry(2.4, 2.4, 5.4, 20, 1, false, -Math.PI*0.32, Math.PI*0.64);
+  const bay = new THREE.Mesh(bayGeo, MAT.stucco);
+  bay.castShadow = true; bay.receiveShadow = true;
+  bay.position.set(-9.2, 2.9, 2.6);
+  g.add(bay);
+
+  // conical/domed turret roof, patinated copper-green
+  const turretMat = new THREE.MeshStandardMaterial({ color:0x4f7a6b, roughness:0.5, metalness:0.4 });
+  const turretRoof = new THREE.Mesh(new THREE.ConeGeometry(2.75, 2.3, 20, 1, false, -Math.PI*0.32, Math.PI*0.64), turretMat);
+  turretRoof.position.set(-9.2, 6.75, 2.6);
+  turretRoof.castShadow = true;
+  g.add(turretRoof);
+
+  const finial = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), MAT.gold);
+  finial.position.set(-9.2, 7.95, 2.6);
+  g.add(finial);
+
+  // curved window with stained glass roundel above
+  const bayWindowGlass = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.3, 2.3, 2.6, 20, 1, true, -Math.PI*0.28, Math.PI*0.56),
+    MAT.glass
+  );
+  bayWindowGlass.position.set(-9.2, 2.4, 2.6);
+  g.add(bayWindowGlass);
+
+  const mullionMat = MAT.iron;
+  for(let i=-2;i<=2;i++){
+    const a = i * (Math.PI*0.56/5);
+    const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.6, 0.06), mullionMat);
+    mullion.position.set(-9.2 + Math.sin(a)*2.3, 2.4, 2.6 + Math.cos(a)*2.3 - 2.6);
+    g.add(mullion);
+  }
+
+  // stained-glass rosette (rose window) above the bay, floral / radial pattern
+  g.add(buildRosette(-9.2, 5.35, 4.85));
+
+  // wrought-iron vine ornament flanking the bay
+  g.add(buildIronVine(-11.3, 1.2, 3.3, 1));
+  g.add(buildIronVine(-7.1, 1.2, 3.3, -1));
+
+  return g;
+}
+
+function buildRosette(x, y, z){
+  const g = new THREE.Group();
+  const ringOuter = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.09, 10, 32), MAT.gold);
+  g.add(ringOuter);
+  const petals = 8;
+  for(let i=0;i<petals;i++){
+    const a = (i/petals) * Math.PI*2;
+    const color = stainedColors[i % stainedColors.length];
+    const petalMat = new THREE.MeshPhysicalMaterial({ color, roughness:0.2, transmission:0.6, thickness:0.2, emissive:color, emissiveIntensity:0.12 });
+    const petal = new THREE.Mesh(new THREE.CircleGeometry(0.42, 3, a-0.32, 0.64), petalMat);
+    petal.position.set(Math.cos(a)*0.55, Math.sin(a)*0.55, 0.02);
+    g.add(petal);
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.0, 0.04), MAT.iron);
+    rib.position.set(Math.cos(a)*0.5, Math.sin(a)*0.5, 0.03);
+    rib.rotation.z = a + Math.PI/2;
+    g.add(rib);
+  }
+  const centerGlass = new THREE.Mesh(new THREE.CircleGeometry(0.22, 16), new THREE.MeshPhysicalMaterial({ color:0xd9a441, transmission:0.7, roughness:0.15, emissive:0xd9a441, emissiveIntensity:0.15 }));
+  centerGlass.position.z = 0.03;
+  g.add(centerGlass);
+
+  g.position.set(x, y, z);
+  return g;
+}
+
+function buildIronVine(x, y, z, dir){
+  const points = [];
+  for(let i=0;i<=10;i++){
+    const t = i/10;
+    points.push(new THREE.Vector3(
+      Math.sin(t*Math.PI*2.2)*0.28*dir,
+      t*3.4,
+      Math.cos(t*Math.PI*1.4)*0.18
+    ));
+  }
+  const curve = new THREE.CatmullRomCurve3(points);
+  const tubeGeo = new THREE.TubeGeometry(curve, 40, 0.045, 8, false);
+  const vine = new THREE.Mesh(tubeGeo, MAT.iron);
+  vine.position.set(x, y, z);
+  vine.castShadow = true;
+
+  // small leaf accents
+  const g = new THREE.Group();
+  g.add(vine);
+  for(let i=1;i<9;i+=2){
+    const t = i/10;
+    const leaf = new THREE.Mesh(new THREE.CircleGeometry(0.16, 3), new THREE.MeshStandardMaterial({ color:0x4c6b3d, roughness:0.7, side:THREE.DoubleSide }));
+    leaf.position.set(x + Math.sin(t*Math.PI*2.2)*0.28*dir + 0.15*dir, y + t*3.4, z + Math.cos(t*Math.PI*1.4)*0.18);
+    leaf.rotation.y = Math.PI/3;
+    g.add(leaf);
+  }
+  return g;
+}
+
+/* --- 5. Foster-esque geodesic diagrid glass dome --- */
+function buildFosterDome(){
+  const g = new THREE.Group();
+  const radius = 3.3;
+
+  const domeGeo = new THREE.SphereGeometry(radius, 8, 6, 0, Math.PI*2, 0, Math.PI/2);
+  const dome = new THREE.Mesh(domeGeo, MAT.glass);
+  dome.castShadow = true;
+  g.add(dome);
+
+  // exposed structural diagrid frame — edges of a low-poly icosphere hemisphere
+  const frameGeo = new THREE.IcosahedronGeometry(radius + 0.02, 2);
+  // keep only upper hemisphere-ish vertices by leaving geometry whole but clipping visually is complex;
+  // instead build edges from the sphere geometry directly for a diagrid look
+  const edgesGeo = new THREE.EdgesGeometry(new THREE.SphereGeometry(radius+0.015, 10, 6, 0, Math.PI*2, 0, Math.PI/2), 1);
+  diagridHelper = new THREE.LineSegments(edgesGeo, new THREE.LineBasicMaterial({ color:0x1b1b1b, linewidth:1 }));
+  diagridHelper.visible = false;
+  g.add(diagridHelper);
+
+  // ring base
+  const ringBase = new THREE.Mesh(new THREE.CylinderGeometry(radius+0.15, radius+0.15, 0.25, 24), MAT.zinc);
+  g.add(ringBase);
+
+  g.position.set(3.2, 9.9, -4.6);
+  return g;
+}
+
+/* --- 6. Entrance: Jugendstil arch meeting Bauhaus door meeting Hadid step --- */
+function buildEntrance(){
+  const g = new THREE.Group();
+
+  // ornamental arch (segmental, art-nouveau curved profile) using a lathe/extrude
+  const archShape = new THREE.Shape();
+  archShape.moveTo(-1.6, 0);
+  archShape.lineTo(-1.6, 2.2);
+  archShape.quadraticCurveTo(-1.6, 3.6, 0, 3.6);
+  archShape.quadraticCurveTo(1.6, 3.6, 1.6, 2.2);
+  archShape.lineTo(1.6, 0);
+  archShape.lineTo(1.25, 0);
+  archShape.lineTo(1.25, 2.2);
+  archShape.quadraticCurveTo(1.25, 3.25, 0, 3.25);
+  archShape.quadraticCurveTo(-1.25, 3.25, -1.25, 2.2);
+  archShape.lineTo(-1.25, 0);
+  archShape.closePath();
+
+  const archGeo = new THREE.ExtrudeGeometry(archShape, { depth:0.5, bevelEnabled:true, bevelThickness:0.03, bevelSize:0.03, bevelSegments:2 });
+  const arch = new THREE.Mesh(archGeo, MAT.stuccoDark);
+  arch.position.set(-1.5, 0, -1 + 5 + 0.05);
+  arch.castShadow = true;
+  g.add(arch);
+
+  // door glass
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 3.3), MAT.glassDark);
+  door.position.set(-1.5, 1.65, -1 + 5 + 0.28);
+  g.add(door);
+
+  const doorFrame = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.05, 8, 2, Math.PI), MAT.gold);
+  doorFrame.position.set(-1.5, 2.2, -1+5+0.3);
+  g.add(doorFrame);
+
+  // entry steps
+  for(let i=0;i<3;i++){
+    const step = new THREE.Mesh(new THREE.BoxGeometry(6 - i*0.6, 0.2, 1 - i*0.15), MAT.concrete);
+    step.position.set(-1.5, 0.1 + i*0.2, -1+5+2 + i*0.5);
+    step.receiveShadow = true;
+    g.add(step);
+  }
+
+  return g;
+}
+
+/* --- 7. Roof-top details: skylight ribs, chimney-like vent, small PV-esque louvers (Foster sustainability nod) --- */
+function buildRoofDetails(){
+  const g = new THREE.Group();
+  const louverMat = MAT.zincDark;
+  for(let i=0;i<6;i++){
+    const louver = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.5), louverMat);
+    louver.position.set(-6 + i*1.5, 9.95, -4.2);
+    louver.rotation.z = THREE.MathUtils.degToRad(18);
+    louver.castShadow = true;
+    g.add(louver);
+  }
+  return g;
+}
+
+/* ---------------- LOOP ---------------- */
+function onResize(){
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>

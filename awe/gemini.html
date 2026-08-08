@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The House of Awe - Architectural 3D Model</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0d0f12;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #fff;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #overlay {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #e6c875, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p {
+            font-size: 0.85rem;
+            color: #8a94a0;
+            margin: 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            font-size: 0.75rem;
+            color: #5a6470;
+            letter-spacing: 1px;
+        }
+    </style>
+    <!-- Three.js and OrbitControls via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1>The House of Awe</h1>
+        <p>Jugendstil &bull; Bauhaus &bull; Parametric Modernism</p>
+    </div>
+
+    <div class="controls-hint">
+        Drag to rotate | Scroll to zoom | Right-click to pan
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // --- SCENE SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0c10);
+        scene.fog = new THREE.FogExp2(0x0a0c10, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(35, 18, 45);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.01; // Don't go below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 120;
+        controls.target.set(0, 8, 0);
+
+        // --- MATERIALS ---
+        const materials = {
+            concrete: new THREE.MeshStandardMaterial({ color: 0xd0d4d8, roughness: 0.5, metalness: 0.1 }),
+            darkZinc: new THREE.MeshStandardMaterial({ color: 0x2a2e35, roughness: 0.3, metalness: 0.8 }),
+            glass: new THREE.MeshPhysicalMaterial({
+                color: 0x99ccff, transmission: 0.85, opacity: 1, transparent: true,
+                roughness: 0.05, ior: 1.5, reflectivity: 0.9, clearcoat: 1
+            }),
+            goldBrass: new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.9 }),
+            warmLight: new THREE.MeshBasicMaterial({ color: 0xffe5b4 }),
+            grass: new THREE.MeshStandardMaterial({ color: 0x1a261a, roughness: 0.9 }),
+            water: new THREE.MeshStandardMaterial({ color: 0x051525, roughness: 0.1, metalness: 0.8 })
+        };
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xdde5ff, 0.6);
+        scene.add(ambientLight);
+
+        const mainSun = new THREE.DirectionalLight(0xfff5ea, 1.8);
+        mainSun.position.set(40, 50, 20);
+        mainSun.castShadow = true;
+        mainSun.shadow.mapSize.width = 2048;
+        mainSun.shadow.mapSize.height = 2048;
+        mainSun.shadow.camera.near = 10;
+        mainSun.shadow.camera.far = 150;
+        const d = 40;
+        mainSun.shadow.camera.left = -d;
+        mainSun.shadow.camera.right = d;
+        mainSun.shadow.camera.top = d;
+        mainSun.shadow.camera.bottom = -d;
+        scene.add(mainSun);
+
+        const warmFill = new THREE.DirectionalLight(0xffa550, 0.4);
+        warmFill.position.set(-30, 20, -30);
+        scene.add(warmFill);
+
+        // --- ARCHITECTURAL ASSEMBLY ---
+        const houseGroup = new THREE.Group();
+
+        // 1. GROUND & SITE (Landscape Base)
+        const groundGeo = new THREE.PlaneGeometry(200, 200);
+        const ground = new THREE.Mesh(groundGeo, materials.grass);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Reflecting Pool (Modern/Hadid integration)
+        const poolGeo = new THREE.PlaneGeometry(35, 18);
+        const pool = new THREE.Mesh(poolGeo, materials.water);
+        pool.rotation.x = -Math.PI / 2;
+        pool.position.set(0, 0.05, 20);
+        scene.add(pool);
+
+        // 2. BAUHAUS CORE (Functional geometric blocks & cantilever)
+        const mainBlockGeo = new THREE.BoxGeometry(16, 10, 14);
+        const mainBlock = new THREE.Mesh(mainBlockGeo, materials.concrete);
+        mainBlock.position.set(-4, 5, 0);
+        mainBlock.castShadow = true;
+        mainBlock.receiveShadow = true;
+        houseGroup.add(mainBlock);
+
+        // Cantilevered Upper Volume (Bauhaus staple)
+        const cantileverGeo = new THREE.BoxGeometry(14, 6, 12);
+        const cantilever = new THREE.Mesh(cantileverGeo, materials.concrete);
+        cantilever.position.set(-8, 11, -2);
+        cantilever.castShadow = true;
+        cantilever.receiveShadow = true;
+        houseGroup.add(cantilever);
+
+        // Interior glow block (visible through glass)
+        const interiorGlowGeo = new THREE.BoxGeometry(10, 8, 8);
+        const interiorGlow = new THREE.Mesh(interiorGlowGeo, materials.warmLight);
+        interiorGlow.position.set(2, 5, 0);
+        houseGroup.add(interiorGlow);
+
+        // Point light inside house
+        const houseLight = new THREE.PointLight(0xffaa44, 2, 25);
+        houseLight.position.set(2, 6, 0);
+        houseGroup.add(houseLight);
+
+        // 3. NORMAN FOSTER ELEMENT (High-Tech Glazed Atrium & Diagrid)
+        const glassAtriumGeo = new THREE.CylinderGeometry(7, 9, 14, 16, 1, true, Math.PI * 0.2, Math.PI * 1.2);
+        const glassAtrium = new THREE.Mesh(glassAtriumGeo, materials.glass);
+        glassAtrium.position.set(4, 7, 2);
+        houseGroup.add(glassAtrium);
+
+        // Diagrid Frame Structure around Glass
+        const frameGroup = new THREE.Group();
+        const frameCount = 12;
+        for (let i = 0; i < frameCount; i++) {
+            const angle = (i / frameCount) * Math.PI * 1.2 + Math.PI * 0.2;
+            const radius = 8;
+            const x = Math.cos(angle) * radius + 4;
+            const z = Math.sin(angle) * radius + 2;
+
+            const strutGeo = new THREE.CylinderGeometry(0.15, 0.15, 14.5);
+            const strut = new THREE.Mesh(strutGeo, materials.darkZinc);
+            strut.position.set(x, 7, z);
+            strut.rotation.z = (i % 2 === 0 ? 0.15 : -0.15);
+            strut.castShadow = true;
+            frameGroup.add(strut);
+        }
+        houseGroup.add(frameGroup);
+
+        // 4. DANIEL LIBESKIND ELEMENT (Deconstructivist Sharp Shards)
+        const shardShape1 = new THREE.ConeGeometry(6, 22, 4);
+        const shard1 = new THREE.Mesh(shardShape1, materials.darkZinc);
+        shard1.position.set(6, 10, -5);
+        shard1.rotation.set(0.4, 0.2, -0.6);
+        shard1.scale.set(1, 1, 0.4);
+        shard1.castShadow = true;
+        houseGroup.add(shard1);
+
+        const shard2 = new THREE.Mesh(shardShape1, materials.darkZinc);
+        shard2.position.set(-12, 12, 5);
+        shard2.rotation.set(-0.3, 0.5, 0.8);
+        shard2.scale.set(0.8, 1.2, 0.3);
+        shard2.castShadow = true;
+        houseGroup.add(shard2);
+
+        // 5. ZAHA HADID ELEMENT (Parametric Sweeping Roof Shell)
+        const curvedRoofCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-18, 12, -10),
+            new THREE.Vector3(-6, 16, -4),
+            new THREE.Vector3(6, 17, 2),
+            new THREE.Vector3(16, 8, 8),
+            new THREE.Vector3(20, 1, 14)
+        ]);
+        const roofExtrudeSettings = { steps: 50, bevelEnabled: true, bevelThickness: 0.4, extrudePath: curvedRoofCurve };
+        
+        // Profile shape for the sweeping roof
+        const roofProfile = new THREE.Shape();
+        roofProfile.moveTo(-4, -0.3);
+        roofProfile.lineTo(4, -0.3);
+        roofProfile.lineTo(4, 0.3);
+        roofProfile.lineTo(-4, 0.3);
+        roofProfile.closePath();
+
+        const roofGeo = new THREE.ExtrudeGeometry(roofProfile, roofExtrudeSettings);
+        const roof = new THREE.Mesh(roofGeo, materials.concrete);
+        roof.castShadow = true;
+        roof.receiveShadow = true;
+        houseGroup.add(roof);
+
+        // 6. JUGENDSTIL / ART NOUVEAU ELEMENT (Organic Ornamentation & Filigree)
+        // Fluid balcony railing with whip-crack curves
+        const railingGroup = new THREE.Group();
+        const curvePointsCount = 30;
+        
+        for (let j = -1; j <= 1; j += 2) {
+            const curvePath = new THREE.CurvePath();
+            for (let i = 0; i < 5; i++) {
+                const p1 = new THREE.Vector3(-12 + i * 2, 8, 6 * j);
+                const p2 = new THREE.Vector3(-11 + i * 2, 8.8 + Math.sin(i * 1.5) * 0.5, 6.5 * j);
+                const line = new THREE.LineCurve3(p1, p2);
+                curvePath.add(line);
+            }
+            const tubeGeo = new THREE.TubeGeometry(curvePath, 20, 0.08, 8, false);
+            const railing = new THREE.Mesh(tubeGeo, materials.goldBrass);
+            railingGroup.add(railing);
+        }
+
+        // Decorative Jugendstil Entrance Portal (Whiplash Motif)
+        const portalCurve = new THREE.CubicBezierCurve3(
+            new THREE.Vector3(0, 0, 9),
+            new THREE.Vector3(0, 4, 11),
+            new THREE.Vector3(4, 6, 9),
+            new THREE.Vector3(4, 0, 9)
+        );
+        const portalGeo = new THREE.TubeGeometry(portalCurve, 32, 0.25, 8, false);
+        const portal = new THREE.Mesh(portalGeo, materials.goldBrass);
+        portal.position.set(-1, 0, 0);
+        portal.castShadow = true;
+        houseGroup.add(portal);
+
+        const portalCurve2 = new THREE.CubicBezierCurve3(
+            new THREE.Vector3(0.5, 0, 9.1),
+            new THREE.Vector3(0.2, 3.5, 10.5),
+            new THREE.Vector3(3.5, 5.2, 9.1),
+            new THREE.Vector3(3.5, 0, 9.1)
+        );
+        const portalGeo2 = new THREE.TubeGeometry(portalCurve2, 32, 0.15, 8, false);
+        const portal2 = new THREE.Mesh(portalGeo2, materials.goldBrass);
+        portal2.position.set(-1, 0, 0);
+        houseGroup.add(portal2);
+
+        houseGroup.add(railingGroup);
+
+        // Add complete house model to scene
+        scene.add(houseGroup);
+
+        // --- ANIMATION & RESIZE ---
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Slow cinematic rotation when idle
+        let idleRotation = true;
+        controls.addEventListener('start', () => { idleRotation = false; });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (idleRotation) {
+                houseGroup.rotation.y += 0.0015;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
