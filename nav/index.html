@@ -697,9 +697,22 @@
             } catch (e) { }
             return structuredClone(DEFAULT_DATA);
         }
+        // Migrate old davidenker.com URLs to tonicforthebones.com
         function save() {
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { }
         }
+        (function migrateDomain() {
+            let changed = false;
+            data.forEach(folder => {
+                folder.items.forEach(item => {
+                    if (item.url && item.url.includes('davidenker.com')) {
+                        item.url = item.url.replace(/davidenker\.com/g, 'tonicforthebones.com');
+                        changed = true;
+                    }
+                });
+            });
+            if (changed) save();
+        })();
         const uid = () => 'id' + Math.random().toString(36).slice(2, 9);
 
         // ---------- Icon helpers ----------
