@@ -188,16 +188,21 @@
 
   /* Preview Panel */
   .preview-panel{
-    width:min(42vw, 320px);
+    width:320px;
+    height:330px;
     background:var(--cream);
     border:5px solid var(--ink);
     border-radius:22px;
-    padding:22px 18px 16px;
+    padding:20px 18px 16px;
     box-shadow:8px 8px 0 var(--ink);
     color:var(--ink);
     position:relative;
-    transition:border-color .5s ease;
-    flex:0 0 auto;
+    transition:border-color .5s ease, background .5s ease;
+    flex:0 0 320px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
     animation:cardIn .4s cubic-bezier(.2,1.4,.4,1);
   }
   @keyframes cardIn{
@@ -791,7 +796,7 @@
 
     <div class="preview-panel" id="previewPanel">
       <div class="preview-stats-wrap" id="previewStatsWrap">
-        <div class="preview-power-tag" id="previewPowerTag">Power: ZAP</div>
+        <div class="preview-power-tag" id="previewPowerTag"><span class="power-prefix">POWER:</span> ZAP</div>
         <div class="preview-rating" id="previewRating">
           <span>♥ 5/10</span>
           <span>▼ +6</span>
@@ -799,7 +804,6 @@
       </div>
       <div class="preview-portrait" id="previewPortrait"></div>
       <h2 class="preview-name" id="previewName"></h2>
-      <div class="preview-moves" id="previewMoves"></div>
       <button id="enterArenaBtn" class="enter-arena-btn">ENTER THE ARENA →</button>
     </div>
   </div>
@@ -1542,7 +1546,7 @@ const fighters = [
   {
     id: "jansina",
     name: "Jansina",
-    power: "Punching",
+    power: "Super punch",
     rarity: "epic",
     svg: jansinaSVG,
     colors: { bg1:"var(--jan-1)", bg2:"var(--jan-2)" },
@@ -1559,7 +1563,7 @@ const fighters = [
   {
     id: "giya",
     name: "Giya",
-    power: "Fireballs",
+    power: "Hair fire",
     rarity: "legendary",
     svg: giyaSVG,
     colors: { bg1:"var(--giy-1)", bg2:"var(--giy-2)" },
@@ -1592,7 +1596,7 @@ const fighters = [
   {
     id: "killroy",
     name: "Killroyce",
-    power: "Triple bite",
+    power: "Spore burst",
     rarity: "legendary",
     svg: killroySVG,
     colors: { bg1:"var(--kil-1)", bg2:"var(--kil-2)" },
@@ -1609,7 +1613,7 @@ const fighters = [
   {
     id: "bananaflip",
     name: "Bananana",
-    power: "Banana toss",
+    power: "Peel slip",
     rarity: "rare",
     svg: bananaflipSVG,
     colors: { bg1:"var(--ban-1)", bg2:"var(--ban-2)" },
@@ -1625,7 +1629,7 @@ const fighters = [
   {
     id: "bullygan",
     name: "Bullyboy",
-    power: "Wrecking ball",
+    power: "Bully swing",
     rarity: "legendary",
     svg: bullyganSVG,
     colors: { bg1:"var(--bul-1)", bg2:"var(--bul-2)" },
@@ -1641,7 +1645,7 @@ const fighters = [
   {
     id: "electro",
     name: "Electronator",
-    power: "ZAPP",
+    power: "Zap",
     rarity: "epic",
     svg: electroSVG,
     colors: { bg1:"var(--ele-1)", bg2:"var(--ele-2)" },
@@ -1699,7 +1703,6 @@ const previewPortrait = document.getElementById('previewPortrait');
 const previewName = document.getElementById('previewName');
 const previewPowerTag = document.getElementById('previewPowerTag');
 const previewRating = document.getElementById('previewRating');
-const previewMoves = document.getElementById('previewMoves');
 
 let current = 0;
 
@@ -1736,10 +1739,6 @@ function showPreview(f){
 
   previewPowerTag.innerHTML = `<span class="power-prefix">POWER:</span> ${f.power.toUpperCase()}`;
   previewRating.innerHTML = '<span>\u2665 ' + f.hp + '/' + f.hpMax + '</span><span>\u25BC +' + f.pow + '</span>';
-
-  previewMoves.innerHTML = f.moves.map(m => `
-    <span class="preview-move-chip ${m.super ? 'super' : ''}"><span class="dot"></span>${m.label}</span>
-  `).join('');
 
   previewPortrait.querySelectorAll('animateTransform, animate').forEach(el => {
     try { if (typeof el.beginElement === 'function') el.beginElement(); } catch(e){}
