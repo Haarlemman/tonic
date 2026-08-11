@@ -52,6 +52,12 @@
     /* Killroyce — vivid magenta / deep green */
     --kil-1:#9d2b6c;
     --kil-2:#3b0a2c;
+
+    /* Toms — orange tabby cat */
+    --tom-1:#e68a3c;
+    --tom-2:#5c3510;
+    --tom-glow:#ffb366;
+    --tom-accent:#8b4513;
   }
 
   *{box-sizing:border-box;}
@@ -100,7 +106,7 @@
   .game-title{
     font-family:'Baloo 2', sans-serif;
     font-weight:800;
-    font-size:clamp(2.1rem, 5vw, 3.6rem);
+    font-size:clamp(2.8rem, 7vw, 5rem);
     margin:0;
     letter-spacing:1px;
     color:var(--cream);
@@ -130,241 +136,202 @@
     opacity:.85;
   }
 
-  /* ---------- Fighter display ---------- */
-  .fighter-display{
+/* ---------- Selection Grid + Preview ---------- */
+  .select-layout{
     position:relative; z-index:2;
     display:flex; align-items:center; justify-content:center;
-    gap:clamp(10px, 3vw, 40px);
-    flex:1;
-    width:100%;
-    padding: 0 3vw;
+    gap:clamp(16px, 3.5vw, 50px);
+    flex:1; width:100%; padding:0 4vw;
   }
 
-  .nav-arrow{
-    font-family:'Baloo 2', sans-serif;
-    background:var(--cream);
-    border:3px solid var(--ink);
-    color:var(--ink);
-    width:52px; height:52px;
-    border-radius:50%;
-    font-size:1.4rem;
-    cursor:pointer;
-    box-shadow:3px 3px 0 var(--ink);
-    transition: transform .15s ease;
+  .select-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
     flex:0 0 auto;
   }
-  .nav-arrow:hover{ transform:translateY(-3px) scale(1.05); }
-  .nav-arrow:active{ transform:translateY(1px) scale(.96); box-shadow:1px 1px 0 var(--ink); }
 
-  .card{
+  .grid-slot{
+    width:clamp(72px, 8.5vw, 100px);
+    height:clamp(72px, 8.5vw, 100px);
+    border-radius:16px;
+    border:3px solid var(--ink);
+    background:var(--cream);
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    padding:4px;
+    transition:transform .2s ease, box-shadow .2s ease, border-color .3s ease;
+    overflow:hidden;
     position:relative;
-    width:min(88vw, 380px);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .grid-slot svg{ width:90%; height:90%; pointer-events:none; }
+  .grid-slot:hover{
+    transform:translateY(-4px) scale(1.1);
+    box-shadow:5px 5px 0 var(--ink), 0 0 20px rgba(255,255,255,.25);
+    z-index:3;
+  }
+  .grid-slot.selected{
+    border-color:#e2273f;
+    box-shadow:4px 4px 0 var(--ink), 0 0 16px #e2273f66;
+    transform:scale(1.05);
+  }
+  .grid-slot .slot-name{
+    position:absolute; bottom:2px; left:0; right:0;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700; font-size:.48rem;
+    text-align:center; color:var(--ink);
+    text-transform:uppercase; letter-spacing:.5px;
+    opacity:0; transition:opacity .2s;
+    pointer-events:none;
+  }
+  .grid-slot:hover .slot-name{ opacity:.75; }
+
+  /* Preview Panel */
+  .preview-panel{
+    width:min(42vw, 320px);
     background:var(--cream);
     border:5px solid var(--ink);
     border-radius:22px;
-    padding: 34px 22px 20px;
-    box-shadow: 8px 8px 0 var(--ink);
+    padding:22px 18px 16px;
+    box-shadow:8px 8px 0 var(--ink);
     color:var(--ink);
-    text-align:center;
-    animation: cardIn .5s cubic-bezier(.2,1.4,.4,1);
-    transition: border-color .5s ease;
+    position:relative;
+    transition:border-color .5s ease;
+    flex:0 0 auto;
+    animation:cardIn .4s cubic-bezier(.2,1.4,.4,1);
   }
   @keyframes cardIn{
     0%{ transform:scale(.85) rotate(-2deg); opacity:0; }
     100%{ transform:scale(1) rotate(0); opacity:1; }
   }
 
-  .rarity-banner{
-    position:absolute; top:-20px; left:50%; transform:translateX(-50%) rotate(-2deg);
-    font-family:'Baloo 2', sans-serif;
-    font-weight:800;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    padding:6px 22px;
-    border:3px solid var(--ink);
-    border-radius:8px;
-    font-size:.95rem;
-    box-shadow:3px 3px 0 var(--ink);
-    color:var(--ink);
-    animation: ribbonWiggle 3.4s ease-in-out infinite;
-    white-space:nowrap;
-  }
-  .rarity-banner.epic{ background:linear-gradient(90deg,#a99bff,#6a5acd); color:#1c1642; }
-  .rarity-banner.rare{ background:linear-gradient(90deg,#ffb84d,#ff7a3d); color:#3a1400; }
-  .rarity-banner.legendary{
-    background:linear-gradient(90deg,#ff9a3d,#ffd23f,#7fd858,#4fb0e0,#b07be0,#ff7ab0);
-    background-size:300% 100%;
-    animation: ribbonWiggle 3.4s ease-in-out infinite, rainbow 4s linear infinite;
-    color:#241a09;
-  }
-  @keyframes ribbonWiggle{
-    0%,100%{ transform:translateX(-50%) rotate(-3deg); }
-    50%{ transform:translateX(-50%) rotate(3deg); }
-  }
-  @keyframes rainbow{
-    0%{ background-position:0% 0; } 100%{ background-position:300% 0; }
-  }
-
-  .portrait-frame{
-    width:172px; height:172px;
-    margin:6px auto 10px;
+  .preview-portrait{
+    width:150px; height:150px;
+    margin:0 auto 8px;
     border:4px solid var(--ink);
     border-radius:16px;
     display:flex; align-items:center; justify-content:center;
-    position:relative;
-    overflow:visible;
+    position:relative; overflow:visible;
     background:var(--cream);
-    transition: background .5s ease;
+    transition:background .4s ease;
   }
-  .portrait-frame::after{
-    content:"";
-    position:absolute; inset:0;
+  .preview-portrait::after{
+    content:""; position:absolute; inset:0;
     background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.35), transparent 60%);
     pointer-events:none;
   }
-  .portrait-frame svg{
+  .preview-portrait svg{
     width:88%; height:88%;
     overflow:visible;
-    animation: floaty 3s ease-in-out infinite;
+    animation:floaty 3s ease-in-out infinite;
   }
   @keyframes floaty{
     0%,100%{ transform:translateY(0); }
     50%{ transform:translateY(-8px); }
   }
 
-  .fighter-name{
+  .preview-name{
     font-family:'Baloo 2', sans-serif;
-    font-weight:800;
-    font-size:1.7rem;
-    text-transform:uppercase;
-    letter-spacing:1px;
-    margin:2px 0 12px;
+    font-weight:800; font-size:1.4rem;
+    text-transform:uppercase; text-align:center;
+    letter-spacing:1px; margin:2px 0 8px;
   }
 
-  .stat-row{
-    display:flex; flex-direction:column; gap:8px;
-    margin-bottom:14px;
-    text-align:left;
+  .preview-stats-wrap{
+    position:absolute; top:14px; right:14px; z-index:5;
+    display:flex; flex-direction:column;
+    align-items:flex-end; gap:6px;
   }
-  .stat{
-    display:flex; align-items:center; gap:8px;
+
+  .preview-power-tag{
     font-family:'Baloo 2', sans-serif;
-    font-weight:700;
-    font-size:.8rem;
-  }
-  .stat .icon{ width:22px; height:22px; flex:0 0 auto; }
-  .bar-track{
-    flex:1;
-    height:14px;
-    background:#e9e2cf;
+    font-weight:800; font-size:.72rem;
+    text-transform:uppercase; letter-spacing:1px;
+    padding:5px 11px;
     border:2.5px solid var(--ink);
-    border-radius:7px;
-    overflow:hidden;
-    display:flex;
+    border-radius:9px;
+    background:#e2273f;
+    color:var(--cream);
+    box-shadow:2px 2px 0 var(--ink);
+    white-space:nowrap;
+    animation:wobbleTag 2.4s ease-in-out infinite;
   }
-  .bar-fill{
-    height:100%;
-    transition: width .6s ease;
+  @keyframes wobbleTag{
+    0%,100%{ transform:rotate(-2deg); }
+    50%{ transform:rotate(2deg); }
   }
-  .bar-fill.hp{ background: repeating-linear-gradient(90deg, #e2273f 0 8px, #c21030 8px 10px); }
-  .bar-fill.pow{ background: repeating-linear-gradient(90deg, #4f9e2f 0 8px, #3c7d21 8px 10px); }
-  .stat-value{ font-size:.75rem; opacity:.75; min-width:26px; text-align:right; }
 
-  .section-label{
+  .preview-rating{
+    display:flex; flex-direction:column;
+    gap:2px; align-items:flex-end;
     font-family:'Baloo 2', sans-serif;
-    font-weight:800;
-    font-size:.68rem;
-    letter-spacing:2.5px;
-    text-transform:uppercase;
-    opacity:.55;
-    margin:0 0 8px;
+    font-weight:700; font-size:.78rem;
+    color:var(--ink);
+    background:var(--cream);
+    border:2px solid var(--ink);
+    border-radius:8px;
+    padding:4px 9px;
+    box-shadow:2px 2px 0 var(--ink);
+  }
+  .preview-rating span{
+    display:flex; align-items:center; gap:4px;
   }
 
-  .moves{
-    display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+  .preview-moves{
+    display:flex; flex-wrap:wrap; gap:5px; justify-content:center;
+    margin-bottom:10px;
   }
-  .move-chip{
+  .preview-move-chip{
     font-family:'Baloo 2', sans-serif;
-    font-weight:700;
-    font-size:.72rem;
-    text-transform:uppercase;
-    letter-spacing:.5px;
-    padding:6px 10px;
-    border:2.5px solid var(--ink);
-    border-radius:20px;
+    font-weight:700; font-size:.65rem;
+    text-transform:uppercase; letter-spacing:.5px;
+    padding:4px 8px;
+    border:2px solid var(--ink);
+    border-radius:18px;
     background:var(--cream);
-    display:flex; align-items:center; gap:5px;
+    display:flex; align-items:center; gap:4px;
+    color:var(--ink);
   }
-  .move-chip .dot{
-    width:9px;height:9px;border-radius:50%;background:var(--ink);flex:0 0 auto;
+  .preview-move-chip .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--ink); flex:0 0 auto;
   }
-  .move-chip.super .dot{ animation:pulseDot 1.1s ease-in-out infinite; }
-  @keyframes pulseDot{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.6);} }
-
-  /* ---------- Platform ---------- */
-  .platform{
-    position:relative; z-index:1;
-    width:min(70vw, 460px);
-    height:34px;
-    margin-bottom:6px;
-    border-radius:50%;
-    background: radial-gradient(closest-side, rgba(0,0,0,.35), rgba(0,0,0,0) 75%);
-    filter:blur(1px);
+  .preview-move-chip.super .dot{
+    animation:pulseDot 1.1s ease-in-out infinite;
+  }
+  @keyframes pulseDot{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.6); }
   }
 
-  /* ---------- Roster ---------- */
-  .roster{
-    position:relative; z-index:2;
-    display:flex; gap:12px;
-    flex-wrap:wrap;
-    justify-content:center;
-    max-width:92vw;
-    margin-bottom:3vh;
-  }
-  .roster-item{
-    width:56px; height:56px;
-    border-radius:14px;
-    border:3px solid var(--ink);
-    cursor:pointer;
-    padding:0;
-    overflow:hidden;
-    box-shadow:3px 3px 0 var(--ink);
-    opacity:.55;
-    transform:scale(.92);
-    transition: opacity .2s ease, transform .2s ease;
-    background:var(--cream);
-  }
-  .roster-item svg{ width:100%; height:100%; }
-  .roster-item.active{
-    opacity:1; transform:scale(1.06);
-    box-shadow:4px 4px 0 var(--ink);
-  }
-  .roster-item:hover{ opacity:.9; }
-
-  @media (max-height: 640px){
-    .subtitle{ display:none; }
-    .platform{ height:20px; }
-  }
-
-  /* =========================================================
-     ARENA MODE
-     ========================================================= */
   .enter-arena-btn{
-    margin-top:18px;
-    width:100%;
-    padding:13px 16px;
+    margin-top:10px; width:100%;
+    padding:11px 16px;
     border:3px solid var(--ink);
     border-radius:12px;
     background:#e2273f;
     color:#fffaf0;
-    font:800 1rem 'Baloo 2',sans-serif;
-    letter-spacing:1px;
-    cursor:pointer;
+    font:800 .9rem 'Baloo 2',sans-serif;
+    letter-spacing:1px; cursor:pointer;
     box-shadow:4px 4px 0 var(--ink);
     transition:.15s ease;
   }
   .enter-arena-btn:hover{transform:translateY(-2px);filter:saturate(1.15)}
   .enter-arena-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+
+  @media (max-height: 640px){
+    .subtitle{ display:none; }
+    .select-layout{ gap:10px; }
+    .grid-slot{ width:64px; height:64px; border-radius:12px; }
+    .preview-panel{ padding:12px 10px 10px; }
+    .preview-portrait{ width:100px; height:100px; }
+  }
+
+  @media (max-width: 600px){
+    .select-layout{ flex-direction:column; gap:10px; }
+    .preview-panel{ width:min(90vw, 340px); }
+  }
 
   #arena{
     position:fixed; inset:0; z-index:50;
@@ -595,6 +562,211 @@
     .control-btn{min-width:48px;padding:8px 7px}
   }
 
+
+/* =========================================================
+   ATTACK ARENA V2 — frame-based SVG combat animation rig
+   The original vector characters are retained. Instead of
+   swapping bitmap sprites, we animate the SVG rig + effects,
+   which keeps edges crisp at any resolution.
+   ========================================================= */
+.arena-fighter{
+  width:190px;height:235px;
+  bottom:24%;
+  transform-origin:center bottom;
+  will-change:left,bottom,filter;
+  transition:filter .08s ease;
+}
+.arena-fighter .body-rig{
+  position:absolute;inset:0;
+  transform-origin:center bottom;
+  will-change:transform;
+}
+.arena-fighter .body-rig svg{
+  width:100%;height:100%;overflow:visible;
+  transform-origin:center bottom;
+  will-change:transform;
+}
+.arena-fighter.face-left .body-rig,
+.arena-fighter.face-left .body-rig svg{transform:scaleX(-1)}
+.arena-fighter.face-right .body-rig,
+.arena-fighter.face-right .body-rig svg{transform:none}
+
+.arena-fighter.walking .body-rig{
+  animation: fighterWalkBob .20s ease-in-out infinite alternate;
+}
+@keyframes fighterWalkBob{
+  from{transform:translateY(0) rotate(-1deg) scaleY(1)}
+  to{transform:translateY(-5px) rotate(1deg) scaleY(.985)}
+}
+.walking.has-arena-legs .arena-legs .leg-left{
+  animation:legWalkLeft .20s linear infinite alternate;
+}
+.walking.has-arena-legs .arena-legs .leg-right{
+  animation:legWalkRight .20s linear infinite alternate;
+}
+
+/* Attack anticipation / contact / recovery. These are deliberately
+   short so the controls feel responsive rather than slideshow-like. */
+.arena-fighter.action .body-rig{z-index:12}
+.arena-fighter.attack-jansina .body-rig{animation:atkPunch .34s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-giya .body-rig{animation:atkGiya .42s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-viking .body-rig{animation:atkViking .48s cubic-bezier(.2,.8,.2,1) both}
+.arena-fighter.attack-killroy .body-rig{animation:atkKillroy .42s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-bananaflip .body-rig{animation:atkBanana .38s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-bullygan .body-rig{animation:atkBully .44s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-electro .body-rig{animation:atkElectro .40s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-toms .body-rig{animation:atkToms .36s cubic-bezier(.2,.9,.25,1) both}
+.arena-fighter.attack-ultaclownsy .body-rig{animation:atkClown .50s cubic-bezier(.2,.9,.25,1) both}
+
+@keyframes atkPunch{
+  0%{transform:translateX(0) rotate(0) scale(1)}
+  28%{transform:translateX(-18px) rotate(-7deg) scale(.96,1.04)}
+  52%{transform:translateX(35px) rotate(5deg) scale(1.10,.94)}
+  68%{transform:translateX(62px) rotate(1deg) scale(1.16,.90)}
+  100%{transform:translateX(0) rotate(0) scale(1)}
+}
+@keyframes atkGiya{
+  0%{transform:translateX(0) scale(1)}
+  25%{transform:translateX(-15px) rotate(-8deg) scale(.96,1.04)}
+  55%{transform:translateX(28px) rotate(4deg) scale(1.08,.94)}
+  72%{transform:translateX(18px) scale(1.12,.92)}
+  100%{transform:translateX(0) scale(1)}
+}
+@keyframes atkViking{
+  0%{transform:rotate(0) scale(1)}
+  18%{transform:translateX(-12px) rotate(-10deg) scale(.96,1.04)}
+  52%{transform:translateX(18px) rotate(190deg) scale(1.10,.92)}
+  76%{transform:translateX(8px) rotate(345deg) scale(1.03,.97)}
+  100%{transform:rotate(360deg) scale(1)}
+}
+@keyframes atkKillroy{
+  0%{transform:translateX(0) rotate(0) scale(1)}
+  30%{transform:translateX(-16px) rotate(-5deg) scale(.94,1.05)}
+  60%{transform:translateX(48px) rotate(7deg) scale(1.12,.92)}
+  100%{transform:translateX(0) rotate(0) scale(1)}
+}
+@keyframes atkBanana{
+  0%{transform:translateY(0) rotate(0)}
+  25%{transform:translate(-10px,-4px) rotate(-8deg) scale(.96,1.04)}
+  55%{transform:translate(30px,-12px) rotate(18deg) scale(1.10,.92)}
+  78%{transform:translate(15px,0) rotate(-4deg)}
+  100%{transform:none}
+}
+@keyframes atkBully{
+  0%{transform:translateX(0) rotate(0)}
+  25%{transform:translateX(-22px) rotate(-7deg) scale(.94,1.05)}
+  55%{transform:translateX(28px) rotate(8deg) scale(1.10,.93)}
+  72%{transform:translateX(8px) rotate(-3deg)}
+  100%{transform:none}
+}
+@keyframes atkElectro{
+  0%{transform:translateX(0) scale(1)}
+  20%{transform:translateX(-10px) scale(.96,1.04)}
+  45%{transform:translateX(25px) scale(1.12,.90) skewX(-7deg)}
+  60%{transform:translateX(34px) scale(1.08,.94)}
+  75%{transform:translateX(8px)}
+  100%{transform:none}
+}
+@keyframes atkClown{
+  0%{transform:translateY(0) rotate(0) scale(1)}
+  25%{transform:translateY(8px) rotate(-10deg) scale(.95,1.05)}
+  55%{transform:translateY(-4px) rotate(9deg) scale(1.12,.9)}
+  72%{transform:translateY(2px) rotate(-3deg)}
+  100%{transform:none}
+}
+@keyframes atkToms{
+  0%{transform:translateX(0) rotate(0) scale(1)}
+  25%{transform:translateX(-12px) rotate(-6deg) scale(.95,1.04)}
+  50%{transform:translateX(40px) rotate(8deg) scale(1.14,.90)}
+  75%{transform:translateX(16px) rotate(-2deg)}
+  100%{transform:none}
+}
+
+/* Impact squash and recoil */
+.arena-fighter.hit .body-rig{
+  animation:damageRecoil .24s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes damageRecoil{
+  0%{transform:translateX(0) rotate(0) scale(1)}
+  22%{transform:translateX(-16px) rotate(-7deg) scale(.95,1.05)}
+  48%{transform:translateX(18px) rotate(5deg) scale(1.08,.92)}
+  72%{transform:translateX(-7px) rotate(-2deg) scale(.98,1.02)}
+  100%{transform:none}
+}
+.arena-fighter.hit{
+  filter:brightness(2.2) saturate(.35) drop-shadow(0 0 18px #ff174d) !important;
+}
+
+/* Combat effects: lightweight DOM "sprite" objects, no external assets. */
+.combat-effect{
+  position:absolute;z-index:28;pointer-events:none;
+  left:0;top:0;width:80px;height:80px;
+  transform:translate(-50%,-50%);
+}
+.fx-ring{border:4px solid var(--fx,#fff);border-radius:50%;animation:fxRing .32s ease-out both}
+@keyframes fxRing{from{opacity:1;transform:translate(-50%,-50%) scale(.15)}to{opacity:0;transform:translate(-50%,-50%) scale(1.8)}}
+.fx-starburst{animation:fxBurst .30s ease-out both}
+.fx-starburst:before,.fx-starburst:after{
+  content:"";position:absolute;left:50%;top:50%;
+  width:72px;height:7px;border-radius:4px;background:var(--fx,#fff);
+  box-shadow:0 0 12px var(--fx,#fff);
+}
+.fx-starburst:before{transform:translate(-50%,-50%) rotate(0)}
+.fx-starburst:after{transform:translate(-50%,-50%) rotate(90deg)}
+@keyframes fxBurst{
+  from{opacity:1;transform:translate(-50%,-50%) scale(.35) rotate(0)}
+  to{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(45deg)}
+}
+.fx-fire,.fx-zap,.fx-banana,.fx-spore,.fx-stink,.fx-ball{
+  font-size:52px;display:flex;align-items:center;justify-content:center;
+  animation:fxProjectile .42s cubic-bezier(.15,.8,.25,1) forwards;
+  width:auto;height:auto;
+}
+@keyframes fxProjectile{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.35) rotate(-20deg)}
+  18%{opacity:1}
+  100%{opacity:1;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(1.15) rotate(360deg)}
+}
+.fx-stink{font-size:70px;filter:hue-rotate(35deg);animation:fxStink .62s ease-out forwards}
+@keyframes fxStink{
+  0%{opacity:.95;transform:translate(-50%,-50%) scale(.2)}
+  55%{opacity:.9;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(1.2)}
+  100%{opacity:0;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(2)}
+}
+.fx-zap{font-size:58px;animation:fxZap .34s steps(3,end) forwards}
+@keyframes fxZap{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+  30%{opacity:1}
+  100%{opacity:0;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(1.25)}
+}
+.hit-number{
+  position:absolute;z-index:31;pointer-events:none;
+  color:#fff;font:900 28px 'Baloo 2',sans-serif;
+  text-shadow:3px 3px 0 #191512,-1px -1px 0 #191512;
+  animation:damageNumber .65s cubic-bezier(.2,.9,.2,1) forwards;
+}
+@keyframes damageNumber{
+  0%{opacity:0;transform:translate(-50%,0) scale(.5) rotate(-8deg)}
+  18%{opacity:1;transform:translate(-50%,-12px) scale(1.2) rotate(4deg)}
+  100%{opacity:0;transform:translate(-50%,-70px) scale(.9) rotate(-2deg)}
+}
+.arena-fighter.guard .body-rig{
+  animation:guardPose .30s ease-out both;
+  filter:drop-shadow(0 0 22px #55e6ff);
+}
+@keyframes guardPose{
+  0%{transform:none}
+  45%{transform:translateY(-4px) scale(.9,1.08) rotate(-4deg)}
+  100%{transform:none}
+}
+.arena-shake{animation:arenaShake .16s linear}
+@keyframes arenaShake{
+  0%,100%{transform:translate(0,0)}
+  25%{transform:translate(-5px,2px)}
+  50%{transform:translate(5px,-2px)}
+  75%{transform:translate(-3px,1px)}
+}
+
 </style>
 </head>
 <body>
@@ -611,38 +783,23 @@
     <p class="subtitle">Choose your fighter</p>
   </div>
 
-  <div class="fighter-display">
-    <button class="nav-arrow" id="prevBtn" aria-label="Previous fighter">&#10094;</button>
+<div class="select-layout" id="selectLayout">
+    <div class="select-grid" id="selectGrid"></div>
 
-    <div class="card" id="card">
-      <div class="rarity-banner" id="rarityBanner"></div>
-      <div class="portrait-frame" id="portraitFrame"></div>
-      <h2 class="fighter-name" id="fighterName"></h2>
-
-      <div class="stat-row">
-        <div class="stat">
-          <svg class="icon" viewBox="0 0 24 24"><path fill="#e2273f" stroke="#191512" stroke-width="1.5" d="M12 21s-7.5-4.6-10-9.3C.4 8 2 4 6 4c2.2 0 3.7 1.2 4.6 2.6C11.5 5.2 13 4 15.2 4c4 0 5.6 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
-          <div class="bar-track"><div class="bar-fill hp" id="hpBar"></div></div>
-          <span class="stat-value" id="hpVal"></span>
-        </div>
-        <div class="stat">
-          <svg class="icon" viewBox="0 0 24 24"><path fill="#e2273f" stroke="#191512" stroke-width="1.5" d="M6 14c-2 0-4-1.5-4-4 0-2 1.5-3.3 3.3-3.3.3-2 2-3.7 4.2-3.7 2 0 3.6 1.3 4.1 3 .4-.2.9-.3 1.4-.3 2 0 3.6 1.6 3.6 3.6 0 2.3-1.9 4-4.2 3.9H6z"/><rect x="7" y="13" width="10" height="8" rx="2" fill="#e2273f" stroke="#191512" stroke-width="1.5"/></svg>
-          <div class="bar-track"><div class="bar-fill pow" id="powBar"></div></div>
-          <span class="stat-value" id="powVal"></span>
+    <div class="preview-panel" id="previewPanel">
+      <div class="preview-stats-wrap" id="previewStatsWrap">
+        <div class="preview-power-tag" id="previewPowerTag">Power: ZAP</div>
+        <div class="preview-rating" id="previewRating">
+          <span>♥ 5/10</span>
+          <span>▼ +6</span>
         </div>
       </div>
-
-      <p class="section-label">Strengths</p>
-      <div class="moves" id="moves"></div>
-        <button id="enterArenaBtn" class="enter-arena-btn">ENTER THE ARENA →</button>
+      <div class="preview-portrait" id="previewPortrait"></div>
+      <h2 class="preview-name" id="previewName"></h2>
+      <div class="preview-moves" id="previewMoves"></div>
+      <button id="enterArenaBtn" class="enter-arena-btn">ENTER THE ARENA →</button>
     </div>
-
-    <button class="nav-arrow" id="nextBtn" aria-label="Next fighter">&#10095;</button>
   </div>
-
-  <div class="platform" id="platform"></div>
-
-  <nav class="roster" id="roster"></nav>
 </div>
 
 <script>
@@ -1283,6 +1440,100 @@ const ultaclownsySVG = `
   <path d="M48 67 L52 74 M56 68 L57 76 M63 68 L64 76 M68 67 L72 74" stroke="#191512" stroke-width="2.2"/>
 </svg>`;
 
+/* TOMS — Orange Tabby Cat Fighter */
+const tomsSVG = `
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="60" cy="112" rx="34" ry="7" fill="#00000022"/>
+
+  <!-- Tail with sway animation -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate" values="-8,50,100;8,50,100;-8,50,100" dur="2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <path d="M42 100 Q28 92 22 78 Q18 68 22 58 Q24 52 28 55" stroke="#191512" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+    <path d="M42 100 Q28 92 22 78 Q18 68 22 58 Q24 52 28 55" stroke="#e68a3c" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M28 55 Q26 50 30 48" stroke="#191512" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <path d="M28 55 Q26 50 30 48" stroke="#c0701e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Body -->
+  <rect x="40" y="74" width="40" height="38" rx="14" fill="#e68a3c" stroke="#191512" stroke-width="4"/>
+
+  <!-- Belly -->
+  <ellipse cx="60" cy="94" rx="14" ry="16" fill="#f5c78e" opacity="0.5"/>
+
+  <!-- Tiger stripes on body -->
+  <path d="M48 80 Q52 78 55 82" stroke="#c0701e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M65 80 Q68 78 72 82" stroke="#c0701e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M46 90 Q50 88 53 92" stroke="#c0701e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M67 90 Q70 88 74 92" stroke="#c0701e" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Paws/feet -->
+  <ellipse cx="48" cy="112" rx="9" ry="5" fill="#e68a3c" stroke="#191512" stroke-width="3"/>
+  <ellipse cx="72" cy="112" rx="9" ry="5" fill="#e68a3c" stroke="#191512" stroke-width="3"/>
+  <path d="M44 110 L44 114 M48 110 L48 114 M52 110 L52 114" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M68 110 L68 114 M72 110 L72 114 M76 110 L76 114" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Head -->
+  <circle cx="60" cy="46" r="26" fill="#e68a3c" stroke="#191512" stroke-width="4"/>
+
+  <!-- Ears -->
+  <path d="M38 28 L44 42 L30 38 Z" fill="#e68a3c" stroke="#191512" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M40 31 L43 40 L34 37 Z" fill="#ff9eac"/>
+  <path d="M82 28 L76 42 L90 38 Z" fill="#e68a3c" stroke="#191512" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80 31 L77 40 L86 37 Z" fill="#ff9eac"/>
+
+  <!-- Forehead stripes -->
+  <path d="M50 28 L52 36" stroke="#c0701e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M60 25 L60 33" stroke="#c0701e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M70 28 L68 36" stroke="#c0701e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Eyes -->
+  <ellipse cx="50" cy="44" rx="7" ry="8" fill="#fff" stroke="#191512" stroke-width="2"/>
+  <ellipse cx="50" cy="45" rx="3.5" ry="4.5" fill="#4a8f29"/>
+  <ellipse cx="50" cy="45" rx="1.8" ry="4" fill="#191512"/>
+  <circle cx="48" cy="42" r="1.6" fill="#fff"/>
+
+  <ellipse cx="70" cy="44" rx="7" ry="8" fill="#fff" stroke="#191512" stroke-width="2"/>
+  <ellipse cx="70" cy="45" rx="3.5" ry="4.5" fill="#4a8f29"/>
+  <ellipse cx="70" cy="45" rx="1.8" ry="4" fill="#191512"/>
+  <circle cx="68" cy="42" r="1.6" fill="#fff"/>
+
+  <!-- Nose -->
+  <path d="M57 52 L60 56 L63 52 Z" fill="#ff6b8a" stroke="#191512" stroke-width="1.5"/>
+
+  <!-- Mouth -->
+  <path d="M60 56 Q54 62 48 59" stroke="#191512" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M60 56 Q66 62 72 59" stroke="#191512" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Whiskers with animation -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate" values="-2,60,52;2,60,52;-2,60,52" dur="2.2s" repeatCount="indefinite"/>
+    <line x1="22" y1="48" x2="44" y2="52" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="20" y1="54" x2="44" y2="55" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="22" y1="60" x2="44" y2="58" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="98" y1="48" x2="76" y2="52" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="100" y1="54" x2="76" y2="55" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="98" y1="60" x2="76" y2="58" stroke="#191512" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Boxing gloves with punch animation -->
+  <g transform="translate(30 78)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="5;-18;5" dur="1.1s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1;0.3 0 0.2 1"/>
+      <rect x="-6" y="-4" width="12" height="12" rx="3" fill="#e68a3c" stroke="#191512" stroke-width="2.5"/>
+      <circle cx="0" cy="6" r="9" fill="#e2273f" stroke="#191512" stroke-width="3"/>
+      <path d="M-4 4 Q0 0 4 4" stroke="#b81f34" stroke-width="1.5" fill="none"/>
+    </g>
+  </g>
+  <g transform="translate(90 78)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-5;18;-5" dur="1.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1;0.3 0 0.2 1"/>
+      <rect x="-6" y="-4" width="12" height="12" rx="3" fill="#e68a3c" stroke="#191512" stroke-width="2.5"/>
+      <circle cx="0" cy="6" r="9" fill="#e2273f" stroke="#191512" stroke-width="3"/>
+      <path d="M-4 4 Q0 0 4 4" stroke="#b81f34" stroke-width="1.5" fill="none"/>
+    </g>
+  </g>
+</svg>`;
+
 /* ---------------- Fighter data ---------------- */
 const fighters = [
   {
@@ -1410,84 +1661,105 @@ const fighters = [
       { label: "Punch", super:false },
       { label: "Super", super:true }
     ]
+  },
+  {
+    id: "toms",
+    name: "Toms",
+    rarity: "rare",
+    svg: tomsSVG,
+    colors: { bg1:"var(--tom-1)", bg2:"var(--tom-2)" },
+    box: "#ffb366",
+    hasArenaLegs: false,
+    hp: 6, hpMax: 10,
+    pow: 4, powMax: 10,
+    moves: [
+      { label: "Scratch", super:false },
+      { label: "Pounce", super:true }
+    ]
   }
 ];
 
 /* ---------------- Render ---------------- */
 const stage = document.getElementById('stage');
-const card = document.getElementById('card');
-const rarityBanner = document.getElementById('rarityBanner');
-const portraitFrame = document.getElementById('portraitFrame');
-const fighterName = document.getElementById('fighterName');
-const hpBar = document.getElementById('hpBar');
-const powBar = document.getElementById('powBar');
-const hpVal = document.getElementById('hpVal');
-const powVal = document.getElementById('powVal');
-const movesEl = document.getElementById('moves');
-const rosterEl = document.getElementById('roster');
+const selectGrid = document.getElementById('selectGrid');
+const previewPanel = document.getElementById('previewPanel');
+const previewPortrait = document.getElementById('previewPortrait');
+const previewName = document.getElementById('previewName');
+const previewPowerTag = document.getElementById('previewPowerTag');
+const previewRating = document.getElementById('previewRating');
+const previewMoves = document.getElementById('previewMoves');
 
-let current = 3; // Killroyce index
+let current = 0;
 
-function renderRoster(){
-  rosterEl.innerHTML = fighters.map((f,i) => `
-    <button class="roster-item ${i===current?'active':''}" data-index="${i}" aria-label="Select ${f.name}">
+function renderGrid(){
+  selectGrid.innerHTML = fighters.map((f,i) => `
+    <button class="grid-slot ${i===current?'selected':''}" data-index="${i}" aria-label="Select ${f.name}">
       ${f.svg}
+      <span class="slot-name">${f.name}</span>
     </button>
   `).join('');
-  rosterEl.querySelectorAll('.roster-item').forEach(btn=>{
-    btn.addEventListener('click', ()=> goTo(parseInt(btn.dataset.index,10)));
+  selectGrid.querySelectorAll('.grid-slot').forEach(btn => {
+    const idx = parseInt(btn.dataset.index, 10);
+    btn.addEventListener('click', () => {
+      current = idx;
+      renderGrid();
+      showPreview(fighters[current]);
+      updateBackground(fighters[current]);
+    });
+    btn.addEventListener('mouseenter', () => {
+      showPreview(fighters[idx]);
+      updateBackground(fighters[idx]);
+    });
+    btn.addEventListener('mouseleave', () => {
+      showPreview(fighters[current]);
+      updateBackground(fighters[current]);
+    });
   });
 }
 
-function render(){
-  const f = fighters[current];
+function showPreview(f){
+  previewPanel.style.borderColor = f.box;
+  previewPortrait.style.background = f.box;
+  previewPortrait.innerHTML = f.svg;
+  previewName.textContent = f.name;
 
-  stage.style.background = `radial-gradient(120% 90% at 50% 20%, ${f.colors.bg1}, ${f.colors.bg2})`;
-  card.style.borderColor = f.box;
-  portraitFrame.style.background = f.box;
+  const superMove = f.moves.find(m => m.super);
+  const powerLabel = superMove ? superMove.label : f.moves[0].label;
+  previewPowerTag.textContent = 'Power: ' + powerLabel.toUpperCase();
 
-  rarityBanner.textContent = f.rarity;
-  rarityBanner.className = 'rarity-banner ' + f.rarity;
+  previewRating.innerHTML = '<span>\u2665 ' + f.hp + '/' + f.hpMax + '</span><span>\u25BC +' + f.pow + '</span>';
 
-  portraitFrame.innerHTML = f.svg;
-  fighterName.textContent = f.name;
-
-  portraitFrame.querySelectorAll('animateTransform, animate').forEach(el => {
-    try {
-      if (typeof el.beginElement === 'function') el.beginElement();
-    } catch(e){}
-  });
-
-  hpBar.style.width = (f.hp / f.hpMax * 100) + '%';
-  hpVal.textContent = f.hp + '/' + f.hpMax;
-  powBar.style.width = (f.pow / f.powMax * 100) + '%';
-  powVal.textContent = '+' + f.pow;
-
-  movesEl.innerHTML = f.moves.map(m => `
-    <span class="move-chip ${m.super ? 'super' : ''}"><span class="dot"></span>${m.label}</span>
+  previewMoves.innerHTML = f.moves.map(m => `
+    <span class="preview-move-chip ${m.super ? 'super' : ''}"><span class="dot"></span>${m.label}</span>
   `).join('');
 
-  card.style.animation = 'none';
-  void card.offsetWidth;
-  card.style.animation = '';
-
-  renderRoster();
+  previewPortrait.querySelectorAll('animateTransform, animate').forEach(el => {
+    try { if (typeof el.beginElement === 'function') el.beginElement(); } catch(e){}
+  });
 }
 
-function goTo(index){
-  current = (index + fighters.length) % fighters.length;
-  render();
+function updateBackground(f){
+  stage.style.background = `radial-gradient(120% 90% at 50% 20%, ${f.colors.bg1}, ${f.colors.bg2})`;
 }
 
-document.getElementById('prevBtn').addEventListener('click', ()=> goTo(current - 1));
-document.getElementById('nextBtn').addEventListener('click', ()=> goTo(current + 1));
-
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowLeft') goTo(current - 1);
-  if(e.key === 'ArrowRight') goTo(current + 1);
+document.addEventListener('keydown', (e) => {
+  const cols = 3;
+  const total = fighters.length;
+  let changed = false;
+  if(e.key === 'ArrowRight') { current = (current + 1) % total; changed = true; }
+  else if(e.key === 'ArrowLeft') { current = (current - 1 + total) % total; changed = true; }
+  else if(e.key === 'ArrowDown') { current = (current + cols) % total; changed = true; }
+  else if(e.key === 'ArrowUp') { current = (current - cols + total) % total; changed = true; }
+  if(!changed) return;
+  e.preventDefault();
+  renderGrid();
+  showPreview(fighters[current]);
+  updateBackground(fighters[current]);
 });
 
-render();
+renderGrid();
+showPreview(fighters[current]);
+updateBackground(fighters[current]);
 </script>
 
 <div id="arena" aria-hidden="true">
@@ -1541,10 +1813,12 @@ render();
 </div>
 
 
+
 <script>
 (() => {
   const enter = document.getElementById('enterArenaBtn');
   const arena = document.getElementById('arena');
+  const world = document.getElementById('arenaWorld');
   const playerEl = document.getElementById('playerFighter');
   const enemyEl = document.getElementById('enemyFighter');
   const playerName = document.getElementById('playerName');
@@ -1557,9 +1831,8 @@ render();
   const floorLines = document.getElementById('floorLines');
   const crowd = document.getElementById('crowd');
 
-  /* Build 6 Rows of Spectators (Sitting Behind Each Other) */
-  const skins = ['#d59a78','#efb88d','#9a6248','#f0c7a0','#76503f'];
-  const shirts = ['#e2273f','#4f8fe0','#ffd23f','#55a77b','#a86bdb','#e88937','#fffaf0'];
+  const skins=['#d59a78','#efb88d','#9a6248','#f0c7a0','#76503f'];
+  const shirts=['#e2273f','#4f8fe0','#ffd23f','#55a77b','#a86bdb','#e88937','#fffaf0'];
   for(let r=6;r>=1;r--){
     const row=document.createElement('div');
     row.className='crowd-row r'+r;
@@ -1569,44 +1842,77 @@ render();
       p.style.setProperty('--skin',skins[(i+r)%skins.length]);
       p.style.setProperty('--shirt',shirts[(i*3+r)%shirts.length]);
       p.style.setProperty('--bob',(1.1+(i%7)*.22)+'s');
-      p.style.animationDelay=(-((i*0.31+r)*0.17))+'s';
+      p.style.animationDelay=(-((i*.31+r)*.17))+'s';
       row.appendChild(p);
     }
     crowd.appendChild(row);
   }
 
-  let player, enemy, playerHP, enemyHP, px, ex, vy, enemyVy;
-  let facing=1, keys=new Set(), running=false, last=0, enemyThink=0;
-  let arenaScroll=0;
+  let player,enemy,playerHP,enemyHP,px,ex,vy;
+  let playerFacing=1,enemyFacing=-1;
+  let keys=new Set(),running=false,last=0,enemyThink=0;
+  let arenaScroll=0, playerY=0, attackLock=false, matchOver=false;
+
+  const MOVE_SPEED=285, BOT_SPEED=170, GRAVITY=1320, JUMP=-545;
+  const ATTACKS={
+    jansina:{label:'SUPER PUNCH',duration:340,impact:170,damage:2,fx:'👊',fxClass:'fx-starburst',color:'#ffd23f'},
+    giya:{label:'FIREBALL',duration:420,impact:210,damage:3,fx:'🔥',fxClass:'fx-fire',color:'#ff7a1a',projectile:true},
+    viking:{label:'AXE SPIN',duration:480,impact:235,damage:2,fx:'⚔️',fxClass:'fx-starburst',color:'#8ebbf5',area:true},
+    killroy:{label:'SPIKE TAIL',duration:420,impact:200,damage:3,fx:'🟢',fxClass:'fx-spore',color:'#65e36a',projectile:true},
+    bananaflip:{label:'BANANA TOSS',duration:380,impact:205,damage:2,fx:'🍌',fxClass:'fx-banana',color:'#ffd23f',projectile:true},
+    bullygan:{label:'WRECKING BALL',duration:440,impact:220,damage:3,fx:'💥',fxClass:'fx-ball',color:'#5fd6c0',projectile:true},
+    electro:{label:'ZAP',duration:400,impact:195,damage:3,fx:'⚡',fxClass:'fx-zap',color:'#ffe14d',projectile:true},
+    toms:{label:'SCRATCH',duration:360,impact:180,damage:2,fx:'🐱',fxClass:'fx-starburst',color:'#ffb366'},
+    ultaclownsy:{label:'STINK BOMB',duration:500,impact:250,damage:3,fx:'💨',fxClass:'fx-stink',color:'#9be21c',projectile:true}
+  };
 
   function pickEnemy(){
-    const choices=fighters.filter(f => f.id !== fighters[current].id);
+    const choices=fighters.filter(f=>f.id!==fighters[current].id);
     return choices[Math.floor(Math.random()*choices.length)];
+  }
+
+  function setupFighterRig(el,f){
+    el.innerHTML='<div class="body-rig">'+f.svg+'</div>';
+    el.setAttribute('data-id',f.id);
+    el.classList.toggle('has-arena-legs',!!f.hasArenaLegs);
+    el.classList.remove('face-left','face-right','walking','action','hit','guard');
+    el.classList.add('face-right');
+  }
+
+  function setOrientation(el,newFacing,currentFacing){
+    if(newFacing===currentFacing) return currentFacing;
+    el.classList.remove('face-left','face-right');
+    el.classList.add(newFacing===1?'face-right':'face-left');
+    return newFacing;
+  }
+
+  function resetSvgAnimations(el){
+    el.querySelectorAll('animateTransform,animate').forEach(a=>{
+      try{ if(typeof a.beginElement==='function') a.beginElement(); }catch(e){}
+    });
   }
 
   function openArena(){
     player=fighters[current];
     enemy=pickEnemy();
     playerHP=player.hpMax; enemyHP=enemy.hpMax;
-    px=window.innerWidth*.22; ex=window.innerWidth*.70;
-    vy=enemyVy=0; facing=1;
+    px=innerWidth*.22; ex=innerWidth*.70;
+    vy=0; playerY=0; arenaScroll=0;
+    playerFacing=1; enemyFacing=-1;
+    enemyThink=.4; attackLock=false; matchOver=false;
 
-    playerEl.innerHTML=player.svg;
-    enemyEl.innerHTML=enemy.svg;
-
-    if(player.hasArenaLegs) playerEl.classList.add('has-arena-legs');
-    else playerEl.classList.remove('has-arena-legs');
-
-    if(enemy.hasArenaLegs) enemyEl.classList.add('has-arena-legs');
-    else enemyEl.classList.remove('has-arena-legs');
-
+    setupFighterRig(playerEl,player);
+    setupFighterRig(enemyEl,enemy);
     playerName.textContent=player.name;
     enemyName.textContent=enemy.name;
     modePill.textContent='BOT MATCH · A/D MOVE · W JUMP · SPACE ATTACK';
     enemyStatus.textContent='BOT · THINKING...';
     arena.classList.add('active');
     arena.setAttribute('aria-hidden','false');
-    running=true; last=performance.now(); enemyThink=0;
+    updateHud();
+    resetSvgAnimations(playerEl);
+    resetSvgAnimations(enemyEl);
+    running=true; last=performance.now();
     requestAnimationFrame(loop);
   }
 
@@ -1614,6 +1920,7 @@ render();
     running=false;
     arena.classList.remove('active');
     arena.setAttribute('aria-hidden','true');
+    keys.clear();
   }
 
   function updateHud(){
@@ -1625,79 +1932,146 @@ render();
     flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on');
   }
 
-  function attack(attacker, target, amount){
-    const aX=attacker==='p'?px:ex, tX=attacker==='p'?ex:px;
-    if(Math.abs(aX-tX)>150) return;
-    if(attacker==='p'){
-      enemyHP=Math.max(0,enemyHP-amount);
-      enemyEl.classList.remove('hit'); void enemyEl.offsetWidth; enemyEl.classList.add('hit');
-      playerEl.classList.add('attack'); setTimeout(()=>playerEl.classList.remove('attack'),220);
-    }else{
-      playerHP=Math.max(0,playerHP-amount);
-      playerEl.classList.remove('hit'); void playerEl.offsetWidth; playerEl.classList.add('hit');
-      enemyEl.classList.add('attack'); setTimeout(()=>enemyEl.classList.remove('attack'),220);
-    }
-    flashHit(); updateHud();
-    if(playerHP<=0 || enemyHP<=0){
-      setTimeout(()=>alert((enemyHP<=0?player.name:enemy.name)+' WINS!'),80);
-      setTimeout(openArena,350);
-    }
+  function spawnImpact(x,y,color='#fff'){
+    const fx=document.createElement('div');
+    fx.className='combat-effect fx-ring';
+    fx.style.left=x+'px'; fx.style.top=y+'px'; fx.style.setProperty('--fx',color);
+    world.appendChild(fx);
+    setTimeout(()=>fx.remove(),350);
   }
 
-  function doPlayerAttack(){
-    if(!running) return;
-    attack('p','e',Math.max(1,player.pow));
+  function spawnProjectile(attacker,fighter){
+    const aX=attacker==='p'?px:ex;
+    const tX=attacker==='p'?ex:px;
+    const y=innerHeight*.53;
+    const spec=ATTACKS[fighter.id];
+    if(!spec?.projectile) return;
+    const fx=document.createElement('div');
+    fx.className='combat-effect '+spec.fxClass;
+    fx.textContent=spec.fx;
+    fx.style.left=aX+'px'; fx.style.top=y+'px';
+    fx.style.setProperty('--dx',(tX-aX)+'px');
+    fx.style.setProperty('--dy','0px');
+    fx.style.setProperty('--fx',spec.color);
+    world.appendChild(fx);
+    setTimeout(()=>fx.remove(),fighter.id==='ultaclownsy'?650:470);
   }
 
-  function doBotAttack(){
-    attack('e','p',Math.max(1,enemy.pow));
+  function showDamage(targetEl,amount,x,y){
+    targetEl.classList.remove('hit'); void targetEl.offsetWidth; targetEl.classList.add('hit');
+    const n=document.createElement('div');
+    n.className='hit-number';
+    n.textContent='-'+amount;
+    n.style.left=x+'px'; n.style.top=y+'px';
+    world.appendChild(n);
+    setTimeout(()=>n.remove(),700);
   }
+
+  function doAttack(attacker){
+    if(!running || matchOver) return;
+    const fighter=attacker==='p'?player:enemy;
+    const attackerEl=attacker==='p'?playerEl:enemyEl;
+    const targetEl=attacker==='p'?enemyEl:playerEl;
+    const aX=attacker==='p'?px:ex;
+    const tX=attacker==='p'?ex:px;
+    const dist=Math.abs(aX-tX);
+    const spec=ATTACKS[fighter.id] || ATTACKS.jansina;
+
+    if(attackLock && attacker==='p') return;
+    if(attacker==='p') attackLock=true;
+
+    attackerEl.classList.remove('action');
+    attackerEl.classList.remove('attack-'+fighter.id);
+    void attackerEl.offsetWidth;
+    attackerEl.classList.add('action','attack-'+fighter.id);
+    spawnProjectile(attacker,fighter);
+
+    // Ranged characters can connect at longer range; melee requires contact.
+    const range=spec.projectile?235:155;
+    const connects=dist<=range;
+
+    setTimeout(()=>{
+      if(!running || matchOver) return;
+      if(connects){
+        const damage=spec.damage;
+        if(attacker==='p') enemyHP=Math.max(0,enemyHP-damage);
+        else playerHP=Math.max(0,playerHP-damage);
+        showDamage(targetEl,damage,tX,innerHeight*.47);
+        spawnImpact(tX,innerHeight*.51,spec.color);
+        flashHit();
+        arena.classList.remove('arena-shake'); void arena.offsetWidth; arena.classList.add('arena-shake');
+        updateHud();
+      }
+    },spec.impact);
+
+    setTimeout(()=>{
+      attackerEl.classList.remove('action','attack-'+fighter.id);
+      if(attacker==='p') attackLock=false;
+    },spec.duration);
+
+    setTimeout(()=>{
+      if(running && (playerHP<=0 || enemyHP<=0)) endMatch();
+    },spec.impact+30);
+  }
+
+  function endMatch(){
+    if(matchOver) return;
+    matchOver=true;
+    const winner=enemyHP<=0?player:enemy;
+    running=false;
+    enemyStatus.textContent=winner.name.toUpperCase()+' WINS';
+    modePill.textContent='MATCH OVER · PRESS EXIT OR WAIT';
+    setTimeout(()=>{
+      if(arena.classList.contains('active')) openArena();
+    },1400);
+  }
+
+  function doPlayerAttack(){ doAttack('p'); }
+  function doBotAttack(){ doAttack('e'); }
 
   function loop(t){
     if(!running) return;
     const dt=Math.min(.033,(t-last)/1000); last=t;
 
-    let isWalking = false;
-    if(keys.has('a')) { px-=260*dt; facing=-1; isWalking = true; }
-    if(keys.has('d')) { px+=260*dt; facing=1; isWalking = true; }
-    if(keys.has('w') && Math.abs(vy)<1) vy=-520;
-    vy+=1250*dt; px=Math.max(40,Math.min(innerWidth-210,px)); 
-
-    if(isWalking) playerEl.classList.add('walking');
-    else playerEl.classList.remove('walking');
-
-    window.__playerY=(window.__playerY||0)+vy*dt;
-    if(window.__playerY>0){window.__playerY=0;vy=0}
+    let walking=false;
+    if(keys.has('a')){px-=MOVE_SPEED*dt;playerFacing=setOrientation(playerEl,-1,playerFacing);walking=true}
+    if(keys.has('d')){px+=MOVE_SPEED*dt;playerFacing=setOrientation(playerEl,1,playerFacing);walking=true}
+    if(keys.has('w') && Math.abs(vy)<1){vy=JUMP}
+    vy+=GRAVITY*dt;
+    playerY+=vy*dt;
+    if(playerY>0){playerY=0;vy=0}
+    px=Math.max(40,Math.min(innerWidth-210,px));
     playerEl.style.left=px+'px';
-    playerEl.style.bottom=(25 + (-window.__playerY/14))+'%';
-    playerEl.style.transform='scaleX('+facing+')';
+    playerEl.style.bottom=(24+(-playerY/14))+'%';
+    playerEl.classList.toggle('walking',walking && !attackLock);
 
-    // Enemy movement & walking animation
     enemyThink-=dt;
     const dist=px-ex;
-    let enemyMoving = false;
-    if(dist>135) { ex-=145*dt; enemyMoving = true; }
-    else if(dist<-135) { ex+=145*dt; enemyMoving = true; }
-
-    if(enemyMoving) enemyEl.classList.add('walking');
-    else enemyEl.classList.remove('walking');
-
-    if(enemyThink<=0){
-      enemyThink=.35+Math.random()*.75;
-      if(Math.abs(dist)<145 && Math.random()<.72) doBotAttack();
-      if(Math.random()<.22) ex += (Math.random()<.5?-1:1)*45;
+    let enemyMoving=false;
+    if(Math.abs(dist)>145){
+      ex += (dist>0?1:-1)*BOT_SPEED*dt;
+      enemyFacing=setOrientation(enemyEl,dist>0?1:-1,enemyFacing);
+      enemyMoving=true;
+    }else if(Math.random()<.015){
+      ex += (Math.random()<.5?-1:1)*35;
+      enemyFacing=setOrientation(enemyEl,ex<px?1:-1,enemyFacing);
     }
     ex=Math.max(40,Math.min(innerWidth-210,ex));
-    enemyEl.style.right='auto';
     enemyEl.style.left=ex+'px';
+    enemyEl.style.right='auto';
+    enemyEl.classList.toggle('walking',enemyMoving);
 
-    // Interactive Sideways Checkerboard Ground Movement
+    if(enemyThink<=0 && !matchOver){
+      enemyThink=.45+Math.random()*.75;
+      const d=Math.abs(px-ex);
+      if(d<240 && Math.random()<.70) doBotAttack();
+    }
+
     arenaScroll += ((px-innerWidth*.22)*.035);
-    floorLines.style.transform = `perspective(400px) rotateX(65deg) translateX(${-arenaScroll % 80}px)`;
-
+    floorLines.style.transform=`perspective(400px) rotateX(65deg) translateX(${-arenaScroll%80}px)`;
     document.querySelectorAll('.parallax').forEach(el=>{
       const s=parseFloat(el.dataset.speed||'.2');
-      el.style.transform='translateX('+(-arenaScroll*s)+'px)';
+      el.style.transform=`translateX(${(-arenaScroll*s)%innerWidth}px)`;
     });
 
     requestAnimationFrame(loop);
@@ -1713,15 +2087,19 @@ render();
 
   document.querySelectorAll('.control-btn[data-key]').forEach(btn=>{
     const k=btn.dataset.key;
-    btn.addEventListener('pointerdown',e=>{e.preventDefault();keys.add(k);if(k===' ')doPlayerAttack()});
-    btn.addEventListener('pointerup',()=>keys.delete(k));
-    btn.addEventListener('pointerleave',()=>keys.delete(k));
+    const press=e=>{e.preventDefault();if(!running)return;keys.add(k);if(k===' ')doPlayerAttack()};
+    const release=()=>keys.delete(k);
+    btn.addEventListener('pointerdown',press);
+    btn.addEventListener('pointerup',release);
+    btn.addEventListener('pointercancel',release);
+    btn.addEventListener('pointerleave',release);
   });
 
   enter.addEventListener('click',openArena);
   document.getElementById('leaveArena').addEventListener('click',closeArena);
 })();
 </script>
+
 
 </body>
 </html>
