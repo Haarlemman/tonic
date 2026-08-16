@@ -60,7 +60,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Original JS/CSS references -->
-    <script src="js/layout.js?v=202606261618"></script>
+    <script src="js/layout.js?v=202608161003"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -618,6 +618,49 @@
         .play-bones {
             color: #7a6a5e;
         }
+
+        /* Rainbow Flickering Blink Hover Effect for TONIC FOR THE BONES */
+        @keyframes rainbowBlinkFlicker {
+            0%   { color: #ff0055 !important; text-shadow: 0 0 8px #ff0055, 0 0 20px #ff0055 !important; opacity: 1 !important; }
+            10%  { color: #ff6600 !important; text-shadow: 0 0 4px #ff6600 !important; opacity: 0.3 !important; }
+            20%  { color: #ffea00 !important; text-shadow: 0 0 10px #ffea00, 0 0 25px #ffea00 !important; opacity: 1 !important; }
+            30%  { color: #00ff66 !important; text-shadow: 0 0 4px #00ff66 !important; opacity: 0.35 !important; }
+            40%  { color: #00f0ff !important; text-shadow: 0 0 12px #00f0ff, 0 0 30px #00f0ff !important; opacity: 1 !important; }
+            50%  { color: #0044ff !important; text-shadow: 0 0 4px #0044ff !important; opacity: 0.25 !important; }
+            60%  { color: #a000ff !important; text-shadow: 0 0 10px #a000ff, 0 0 25px #a000ff !important; opacity: 1 !important; }
+            70%  { color: #ff00cc !important; text-shadow: 0 0 5px #ff00cc !important; opacity: 0.4 !important; }
+            80%  { color: #ffffff !important; text-shadow: 0 0 15px #ffffff, 0 0 30px #ffffff !important; opacity: 1 !important; }
+            90%  { color: #ff3300 !important; text-shadow: 0 0 4px #ff3300 !important; opacity: 0.3 !important; }
+            100% { color: #ff0055 !important; text-shadow: 0 0 8px #ff0055, 0 0 20px #ff0055 !important; opacity: 1 !important; }
+        }
+
+        .rainbow-title-hover,
+        .rainbow-title-hover * {
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .rainbow-title-hover:hover,
+        .rainbow-title-hover:hover *,
+        footer a[href="/"]:hover {
+            animation: rainbowBlinkFlicker 0.35s infinite steps(1) !important;
+        }
+
+        .rainbow-title-hover:hover > *:nth-child(1),
+        .rainbow-title-hover:hover > *:nth-child(1) * {
+            animation-delay: 0s !important;
+        }
+        .rainbow-title-hover:hover > *:nth-child(2),
+        .rainbow-title-hover:hover > *:nth-child(2) * {
+            animation-delay: 0.07s !important;
+        }
+        .rainbow-title-hover:hover > *:nth-child(3),
+        .rainbow-title-hover:hover > *:nth-child(3) * {
+            animation-delay: 0.14s !important;
+        }
+        .rainbow-title-hover:hover > *:nth-child(4),
+        .rainbow-title-hover:hover > *:nth-child(4) * {
+            animation-delay: 0.21s !important;
+        }
     </style>
 </head>
 
@@ -637,7 +680,7 @@
                         Work</a>
                     <h1 class="font-serif leading-[0.85] mb-6 w-full"
                         style="font-size: clamp(3.1rem, 10.5vw, 5.1rem);">
-                        <a href="/tftb/" class="inline-flex items-center gap-3 hover:text-tonicRed transition-colors">
+                        <a href="/tftb/" class="inline-flex items-center gap-3 rainbow-title-hover transition-colors">
                             <span class="tracking-tight">TONIC</span>
                             <span
                                 class="flex flex-col font-sans font-extrabold tracking-widest uppercase text-[0.18em] leading-[1.0]"
@@ -847,7 +890,7 @@
                     <!-- Part 1: Tonic and Bones -->
                     <div class="text-center md:text-left mb-8">
                         <h2
-                            class="inline-block bg-white px-4 py-1.5 shadow-sm mb-8 flex-wrap items-center justify-center md:justify-start gap-2 md:gap-4 font-serif text-5xl md:text-7xl">
+                            class="inline-block bg-white px-4 py-1.5 shadow-sm mb-8 flex-wrap items-center justify-center md:justify-start gap-2 md:gap-4 font-serif text-5xl md:text-7xl rainbow-title-hover cursor-pointer">
                             <span class="text-2xl md:text-3xl font-sans uppercase tracking-widest opacity-60">The</span>
                             <span class="text-[#2ac2c4] font-bold">Tonic</span>
                             <span class="text-2xl md:text-3xl font-sans uppercase tracking-widest opacity-60">and
@@ -1609,6 +1652,22 @@
                     }
                 });
             }
+        })();
+
+        /* Auto-tag TONIC FOR THE BONES elements for rainbow hover */
+        (function () {
+            const scan = () => {
+                const candidates = document.querySelectorAll('h1, h2, h3, a');
+                candidates.forEach(el => {
+                    const txt = el.textContent.replace(/\s+/g, ' ').trim().toUpperCase();
+                    if (txt.includes('TONIC FOR THE BONES') || txt === 'TONIC FOR THE BONES' || (el.tagName === 'A' && txt.includes('TONIC') && txt.includes('BONES'))) {
+                        el.classList.add('rainbow-title-hover');
+                    }
+                });
+            };
+            scan();
+            setTimeout(scan, 500);
+            setTimeout(scan, 1500);
         })();
     </script>
 
