@@ -8,25 +8,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
-    <title>Navigate the Web — Dynamic Dashboard</title>
+    <title>Navigate the Web — Desktop Shortcuts</title>
     <style>
         :root {
             --accent: #e2dfb3;
             --hover-accent: #d8ce2f;
-            --bg-dark: #233137;
-            --radius: 20px;
+            --bg-dark: #192227;
+            --radius: 16px;
             --base-opacity: 0.25;
         }
 
-        #bg-video {
+        #bg-canvas {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100vw;
+            height: 100vh;
             z-index: -1;
-            opacity: 0.8;
+            pointer-events: none;
+            display: block;
         }
 
         * {
@@ -41,54 +41,100 @@
             font-family: 'Space Grotesk', Arial, sans-serif;
             color: var(--accent);
             overflow-x: hidden;
+            user-select: none;
         }
 
         .main-wrapper {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 15px;
+            padding: 15px 20px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
+        /* Top Bar Header */
         .header-section {
-            padding: 5px 0 15px 0;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
             flex-wrap: wrap;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: rgba(15, 23, 30, 0.55);
+            border-radius: var(--radius);
+            border: 1px solid rgba(226, 223, 179, 0.2);
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
         .header-link {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             text-decoration: none;
             color: inherit;
             cursor: pointer;
         }
 
         .grid-hoofd img {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             animation: jerkyRotate 30s linear infinite;
             filter: drop-shadow(0 0 8px #007bff);
         }
 
         .grid-item-nav {
-            font-size: 1.8em;
+            font-size: 1.5em;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: -1px;
             white-space: nowrap;
         }
 
+        /* Category Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .chip {
+            font-family: inherit;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(226, 223, 179, 0.2);
+            border-radius: 20px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chip:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(226, 223, 179, 0.5);
+        }
+
+        .chip.active {
+            background: var(--hover-accent);
+            color: #111;
+            border-color: var(--hover-accent);
+            font-weight: 700;
+        }
+
+        /* Toolbar Buttons */
         .toolbar {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn {
@@ -98,17 +144,53 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--accent);
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(226, 223, 179, 0.25);
             border-radius: 10px;
-            padding: 8px 12px;
+            padding: 7px 12px;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar .btn {
+            font-size: 0.65rem;
+            letter-spacing: 0.8px;
+            color: rgba(226, 223, 179, 0.85);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(226, 223, 179, 0.18);
+            border-radius: 8px;
+            padding: 4px 9px;
+            gap: 4px;
+        }
+
+        .toolbar .btn svg {
+            width: 11px;
+            height: 11px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.85;
+            flex-shrink: 0;
         }
 
         .btn:hover {
-            background: rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.18);
             border-color: rgba(226, 223, 179, 0.5);
+        }
+
+        .toolbar .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--accent);
+            border-color: rgba(226, 223, 179, 0.45);
+        }
+
+        .toolbar .btn:hover svg {
+            opacity: 1;
         }
 
         .btn.active {
@@ -117,306 +199,189 @@
             border-color: var(--hover-accent);
         }
 
-        .folder-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            grid-auto-flow: dense;
-            gap: 10px;
-            padding: 0 0 20px 0;
-            grid-auto-rows: minmax(120px, auto);
-            align-content: start;
-            align-items: start;
-        }
-
-        .category-group {
-            border-radius: var(--radius);
-            padding: 10px 14px 12px 14px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-            display: flex;
-            flex-direction: column;
-            min-height: 120px;
-            border: 1px solid rgba(226, 223, 179, 0.1);
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            background: rgba(112, 128, 144, var(--base-opacity));
-            justify-content: flex-start;
-        }
-
-        .category-group:hover {
-            border-color: rgba(226, 223, 179, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .category-group.drag-over {
-            outline: 2px dashed var(--hover-accent);
-            outline-offset: -4px;
-        }
-
-        .category-group.dragging {
-            opacity: 0.4;
-        }
-
-        .category-title {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            opacity: 0.9;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            line-height: 1;
-            min-height: 18px;
-        }
-
-        .category-title .title-text {
-            pointer-events: none;
-        }
-
-        .title-actions {
-            margin-left: auto;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .title-actions .ctrl {
-            display: none;
-            cursor: pointer;
-            opacity: 0.7;
-            font-size: 1rem;
-            line-height: 1;
-            pointer-events: auto;
-        }
-
-        .title-actions .ctrl:hover {
-            opacity: 1;
-            color: #fff;
-        }
-
-        .close-btn {
-            display: none;
-            cursor: pointer;
-            opacity: 0.8;
-            font-size: 1.5rem;
-            line-height: 1;
-            pointer-events: auto;
-        }
-
-        .category-group.expanded .close-btn {
-            display: block;
-        }
-
-        body.edit-mode .title-actions .ctrl {
-            display: block;
-        }
-
-        body.edit-mode .grid-item {
-            cursor: grab;
-        }
-
-        body.edit-mode .grid-item .item-del {
-            display: flex;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 4px;
+        /* Desktop Canvas & Grid */
+        .desktop-canvas {
+            flex: 1;
             width: 100%;
-            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-            pointer-events: none;
+            padding: 10px 5px 40px 5px;
         }
 
-        body.edit-mode .grid-container {
-            pointer-events: auto;
+        .desktop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 22px 14px;
+            align-items: start;
+            justify-items: center;
+            width: 100%;
         }
 
-        .grid-item {
+        /* Desktop Shortcut Card */
+        .desktop-shortcut {
             display: flex;
             flex-direction: column;
             align-items: center;
             text-decoration: none;
             position: relative;
+            width: 100px;
+            padding: 8px 4px;
+            border-radius: 12px;
+            transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+            cursor: pointer;
         }
 
-        .grid-item.dragging {
-            opacity: 0.4;
+        .desktop-shortcut:hover {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(4px);
+            transform: translateY(-4px);
         }
 
-        .grid-item span {
-            display: none;
-            color: var(--accent);
-            text-align: center;
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 6px;
-            line-height: 1;
+        .desktop-shortcut.dragging {
+            opacity: 0.35;
+            transform: scale(0.92);
         }
 
+        .desktop-shortcut.drag-over {
+            outline: 2px dashed var(--hover-accent);
+            outline-offset: 4px;
+            border-radius: 14px;
+            background: rgba(226, 223, 179, 0.2);
+        }
+
+        /* Desktop Icon Circle */
         .icon-circle {
-            width: 34px;
-            height: 34px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
-            background: radial-gradient(circle, #fcfcfc, #d1d1d1);
+            background: radial-gradient(circle at 35% 35%, #ffffff, #d9d9d9);
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 0 0 2px rgba(255, 255, 255, 0.7);
             overflow: hidden;
+            position: relative;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .desktop-shortcut:hover .icon-circle {
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px var(--cat-glow, rgba(226, 223, 179, 0.7)), inset 0 0 0 2px #ffffff;
         }
 
         .icon-circle img,
         .icon-circle svg {
-            width: 20px;
-            height: 20px;
+            width: 32px;
+            height: 32px;
             object-fit: contain;
         }
 
         .icon-circle .fallback {
             font-weight: 700;
-            color: #444;
-            font-size: 14px;
+            color: #333;
+            font-size: 22px;
             text-transform: uppercase;
         }
 
+
+
+        /* Title Label Under Icon */
+        .shortcut-title {
+            color: #ffffff;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+            line-height: 1.2;
+            max-width: 95px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.8);
+            word-break: break-word;
+            letter-spacing: 0.2px;
+            transition: color 0.2s ease;
+        }
+
+        .desktop-shortcut:hover .shortcut-title {
+            color: var(--hover-accent);
+        }
+
+        /* Delete Button in Edit Mode */
         .item-del {
             display: none;
             position: absolute;
-            top: -6px;
-            right: 50%;
-            transform: translateX(50%) translateX(18px);
-            width: 18px;
-            height: 18px;
+            top: 2px;
+            right: 6px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            background: crimson;
+            background: #e63946;
             color: #fff;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 14px;
+            font-weight: 700;
             line-height: 1;
             cursor: pointer;
-            z-index: 5;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            z-index: 10;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
         }
 
-        .add-item {
+        body.edit-mode .item-del {
+            display: flex;
+        }
+
+        body.edit-mode .desktop-shortcut {
+            cursor: grab;
+        }
+
+        body.edit-mode .desktop-shortcut:active {
+            cursor: grabbing;
+        }
+
+        /* Add Shortcut Tile */
+        .add-shortcut-tile {
             display: none;
             flex-direction: column;
             align-items: center;
             cursor: pointer;
+            width: 100px;
+            padding: 8px 4px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            opacity: 0.8;
         }
 
-        body.edit-mode .category-group.expanded .add-item {
+        body.edit-mode .add-shortcut-tile {
             display: flex;
         }
 
-        .add-item .icon-circle {
-            border: 2px dashed #888;
-            background: rgba(255, 255, 255, 0.4);
+        .add-shortcut-tile:hover {
+            opacity: 1;
+            transform: translateY(-4px);
         }
 
-        .add-item .plus {
-            font-size: 22px;
-            color: #444;
+        .add-shortcut-tile .icon-circle {
+            border: 2px dashed rgba(226, 223, 179, 0.7);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+        }
+
+        .add-shortcut-tile .plus {
+            font-size: 26px;
+            color: var(--accent);
             line-height: 1;
         }
 
-        /* Expanded */
-        .category-group.expanded {
-            grid-column: span 2;
-            grid-row: span 2;
-            cursor: default;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
-            border-color: rgba(226, 223, 179, 0.4);
-            z-index: 10;
-            padding: 14px 16px 10px 16px;
-            align-self: stretch;
-        }
-
-        .category-group.expanded .category-title {
-            font-size: 1.05rem;
-            margin-bottom: 12px;
-            color: #fff;
-        }
-
-        .category-group.expanded .grid-container {
-            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-            gap: 10px;
-            pointer-events: auto;
-            width: 100%;
-        }
-
-        .category-group.expanded .grid-item span {
-            display: block;
-            max-width: 75px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 11px;
-        }
-
-        .category-group.expanded .icon-circle {
-            width: 62px;
-            height: 62px;
-        }
-
-        .category-group.expanded .icon-circle img,
-        .category-group.expanded .icon-circle svg {
-            width: 34px;
-            height: 34px;
-        }
-
-        .category-group.expanded .icon-circle .fallback {
-            font-size: 24px;
-        }
-
-        .grid-item:hover .icon-circle {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px var(--hover-accent);
-        }
-
-        .grid-item:hover span {
-            color: #fff;
-        }
-
-        .add-folder-tile {
-            display: none;
-            border-radius: var(--radius);
-            min-height: 120px;
-            border: 2px dashed rgba(226, 223, 179, 0.3);
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.7;
-            transition: all 0.2s ease;
-        }
-
-        body.edit-mode .add-folder-tile {
-            display: flex;
-        }
-
-        .add-folder-tile:hover {
-            opacity: 1;
-            border-color: var(--hover-accent);
-            color: #fff;
+        .add-shortcut-tile .shortcut-title {
+            color: var(--accent);
         }
 
         @keyframes jerkyRotate {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Modal */
@@ -424,11 +389,11 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.65);
             z-index: 100;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
 
         .modal-backdrop.open {
@@ -436,12 +401,12 @@
         }
 
         .modal {
-            background: #2c3a41;
-            border: 1px solid rgba(226, 223, 179, 0.3);
+            background: #233137;
+            border: 1px solid rgba(226, 223, 179, 0.35);
             border-radius: 16px;
             padding: 24px;
-            width: min(420px, 92vw);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            width: min(440px, 92vw);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
         }
 
         .modal h2 {
@@ -456,29 +421,36 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            opacity: 0.7;
+            opacity: 0.85;
             margin: 12px 0 4px;
         }
 
-        .modal input {
+        .modal input,
+        .modal select {
             width: 100%;
             padding: 9px 11px;
             border-radius: 8px;
-            border: 1px solid rgba(226, 223, 179, 0.25);
-            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(226, 223, 179, 0.3);
+            background: rgba(0, 0, 0, 0.3);
             color: var(--accent);
             font-family: inherit;
             font-size: 0.9rem;
         }
 
-        .modal input:focus {
+        .modal select option {
+            background: #233137;
+            color: var(--accent);
+        }
+
+        .modal input:focus,
+        .modal select:focus {
             outline: none;
             border-color: var(--hover-accent);
         }
 
         .modal .hint {
             font-size: 0.7rem;
-            opacity: 0.5;
+            opacity: 0.6;
             margin-top: 4px;
         }
 
@@ -495,24 +467,31 @@
             border-color: var(--hover-accent);
         }
 
-        @media (max-width: 768px) {
-            .folder-grid {
-                grid-template-columns: 1fr;
-                grid-auto-rows: auto;
-                gap: 5px;
+        @media (max-width: 600px) {
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
             }
 
-            .category-group {
-                min-height: auto;
+            .desktop-grid {
+                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+                gap: 16px 10px;
             }
 
-            .category-group.expanded {
-                grid-column: span 1;
-                min-height: 220px;
+            .desktop-shortcut,
+            .add-shortcut-tile {
+                width: 85px;
             }
 
-            .category-group.expanded .grid-container {
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            .icon-circle {
+                width: 50px;
+                height: 50px;
+            }
+
+            .icon-circle img,
+            .icon-circle svg {
+                width: 28px;
+                height: 28px;
             }
         }
     </style>
@@ -520,9 +499,7 @@
 
 <body>
 
-    <video autoplay loop muted playsinline id="bg-video">
-        <source src="video/bg.mp4?v=202608081700" type="video/mp4">
-    </video>
+    <canvas id="bg-canvas"></canvas>
 
     <div class="main-wrapper">
         <header class="header-section">
@@ -532,45 +509,41 @@
                 </div>
                 <div class="grid-item-nav">Navigate the Web</div>
             </a>
+
+            <!-- Category Filter Bar -->
+            <div class="filter-bar" id="filterBar"></div>
+
+            <!-- Action Buttons Toolbar -->
             <div class="toolbar">
-                <button class="btn" id="editToggle">Edit</button>
-                <button class="btn" id="exportBtn">Export</button>
-                <button class="btn" id="importBtn">Import</button>
-                <button class="btn" id="resetBtn">Reset</button>
+                <button class="btn" id="addShortcutBtn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
+                <button class="btn" id="editToggle"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+                <button class="btn" id="arrangeBtn" title="Auto arrange by category"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Arrange</button>
+                <button class="btn" id="exportBtn"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export</button>
+                <button class="btn" id="importBtn"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Import</button>
+                <button class="btn" id="resetBtn"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Reset</button>
                 <input type="file" id="importFile" accept="application/json" hidden>
             </div>
         </header>
 
-        <div class="folder-grid" id="folderGrid"></div>
+        <!-- Desktop Canvas -->
+        <main class="desktop-canvas">
+            <div class="desktop-grid" id="desktopGrid"></div>
+        </main>
     </div>
 
-    <!-- Folder modal -->
-    <div class="modal-backdrop" id="folderModal">
-        <div class="modal">
-            <h2 id="folderModalTitle">New Folder</h2>
-            <label>Folder name</label>
-            <input type="text" id="folderName" placeholder="e.g. Office">
-            <label>Tile color (any CSS color)</label>
-            <input type="text" id="folderColor" placeholder="e.g. #1e90ff or dodgerblue">
-            <div class="hint">Leave blank for default grey.</div>
-            <div class="modal-actions">
-                <button class="btn" id="folderCancel">Cancel</button>
-                <button class="btn primary" id="folderSave">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Shortcut modal -->
+    <!-- Shortcut Modal -->
     <div class="modal-backdrop" id="itemModal">
         <div class="modal">
-            <h2 id="itemModalTitle">New Shortcut</h2>
+            <h2 id="itemModalTitle">Shortcut</h2>
             <label>Label</label>
             <input type="text" id="itemLabel" placeholder="e.g. Gmail">
             <label>URL</label>
             <input type="text" id="itemUrl" placeholder="https://mail.google.com">
+            <label>Category</label>
+            <select id="itemCategory"></select>
             <label>Custom icon URL (optional)</label>
             <input type="text" id="itemIcon" placeholder="leave blank to auto-fetch favicon">
-            <div class="hint">If blank, the icon is fetched automatically from the site.</div>
+            <div class="hint">If blank, the icon is fetched automatically from the website.</div>
             <div class="modal-actions">
                 <button class="btn" id="itemCancel">Cancel</button>
                 <button class="btn primary" id="itemSave">Save</button>
@@ -579,176 +552,260 @@
     </div>
 
     <script>
-        // ---------- Default data (migrated from the original page) ----------
-        const DEFAULT_DATA = [
-            {
-                id: 'office', name: 'Office', color: 'rgba(30,144,255,0.25)', items: [
-                    { label: 'Gmail', url: 'https://mail.google.com' },
-                    { label: 'Sheets', url: 'https://sheets.google.com' },
-                    { label: 'Drive', url: 'https://drive.google.com' },
-                    { label: 'Notes', url: 'https://keep.google.com' },
-                    { label: 'Calendar', url: 'https://calendar.google.com' },
-                    { label: 'Contacts', url: 'https://contacts.google.com' },
-                    { label: 'Photos', url: 'https://photos.google.com' },
-                ]
-            },
-            {
-                id: 'ai', name: 'AI', color: 'rgba(138,43,226,0.25)', items: [
-                    { label: 'ChatGPT', url: 'https://chat.openai.com' },
-                    { label: 'Gemini', url: 'https://gemini.google.com' },
-                    { label: 'Claude', url: 'https://claude.ai' },
-                    { label: 'Grok', url: 'https://grok.com' },
-                    { label: 'Copilot', url: 'https://copilot.microsoft.com' },
-                    { label: 'Perplexity', url: 'https://perplexity.ai' },
-                    { label: 'DeepSeek', url: 'https://chat.deepseek.com' },
-                    { label: 'Manus', url: 'https://manus.im/app' },
-                    { label: 'Flow', url: 'https://labs.google/fx/tools/flow' },
-                ]
-            },
-            {
-                id: 'search', name: 'Search & Nav', color: 'rgba(46,139,87,0.25)', items: [
-                    { label: 'Search', url: 'https://www.google.com' },
-                    { label: 'Maps', url: 'https://www.google.com/maps' },
-                    { label: 'Earth', url: 'https://earth.google.com' },
-                    { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Main_Page' },
-                    { label: 'IMdb', url: 'https://imdb.com/' },
-                    { label: 'DuckDuckGo', url: 'https://start.duckduckgo.com' },
-                ]
-            },
-            {
-                id: 'news', name: 'News', color: 'rgba(220,20,60,0.25)', items: [
-                    { label: 'BBC News', url: 'https://www.bbc.com/news' },
-                    { label: 'GeenStijl', url: 'https://www.geenstijl.nl' },
-                    { label: 'Teletext', url: 'https://nos.nl/teletekst/101/1' },
-                    { label: 'JPost', url: 'https://www.jpost.com' },
-                    { label: 'Times IL', url: 'https://www.timesofisrael.com' },
-                    { label: 'Ynet', url: 'https://www.ynetnews.com' },
-                    { label: 'AT5', url: 'https://www.at5.nl' },
-                    { label: 'Buienradar', url: 'https://buienradar.nl' },
-                ]
-            },
-            {
-                id: 'creative', name: 'Creative', color: 'rgba(255,105,180,0.25)', items: [
-                    { label: 'Firefly', url: 'https://firefly.adobe.com' },
-                    { label: 'Express', url: 'https://express.adobe.com' },
-                    { label: 'Neo', url: 'https://projectneo.adobe.com' },
-                    { label: 'Canva', url: 'https://canva.com' },
-                    { label: 'Capcut', url: 'https://capcut.com' },
-                    { label: 'G Fonts', url: 'https://fonts.google.com' },
-                ]
-            },
-            {
-                id: 'av', name: 'A/V', color: 'rgba(0,206,209,0.25)', items: [
-                    { label: 'Spotify', url: 'https://open.spotify.com' },
-                    { label: 'YouTube', url: 'https://www.youtube.com' },
-                    { label: 'YT Music', url: 'https://music.youtube.com' },
-                    { label: 'Suno', url: 'https://suno.com/' },
-                    { label: 'DistroKid', url: 'https://distrokid.com' },
-                ]
-            },
-            {
-                id: 'social', name: 'Social', color: 'rgba(255,140,0,0.25)', items: [
-                    { label: 'X', url: 'https://www.x.com' },
-                    { label: 'Bluesky', url: 'https://bsky.app' },
-                    { label: 'Threads', url: 'https://www.threads.net/@davidje' },
-                    { label: 'Instagram', url: 'https://www.instagram.com' },
-                    { label: 'WhatsApp', url: 'https://web.whatsapp.com' },
-                    { label: 'Facebook', url: 'https://www.facebook.com' },
-                    { label: 'Pinterest', url: 'https://pinterest.com' },
-                ]
-            },
-            {
-                id: 'writing', name: 'Writing', color: 'rgba(218,165,32,0.25)', items: [
-                    { label: 'Docs', url: 'https://docs.google.com' },
-                    { label: 'Substack', url: 'https://davidenker.substack.com' },
-                    { label: 'Medium', url: 'https://medium.com' },
-                    { label: 'Translate', url: 'https://translate.google.com' },
-                ]
-            },
-            {
-                id: 'work', name: 'Work', color: 'rgba(0,100,0,0.25)', items: [
-                    { label: 'LinkedIn', url: 'https://www.linkedin.com' },
-                    { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/' },
-                    { label: 'Upwork', url: 'https://upwork.com' },
-                    { label: 'Fiverr', url: 'https://www.fiverr.com' },
-                    { label: 'Reedsy', url: 'https://www.reedsy.com' },
-                    { label: 'Analytics', url: 'https://analytics.google.com' },
-                ]
-            },
-            {
-                id: 'mystuff', name: 'My Stuff', color: 'rgba(112,128,144,0.25)', items: [
-                    { label: 'Studio', url: 'https://www.tonicforthebones.com/standingstudio' },
-                    { label: 'Tonic', url: 'https://www.tonicforthebones.com' },
-                    { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/' },
-                    { label: 'Awe', url: 'https://house-of-awe.web.app' },
-                ]
-            },
+        // ---------- Categories Definition ----------
+        const CATEGORIES = [
+            { id: 'office', name: 'Office', color: '#1e90ff', glow: 'rgba(30,144,255,0.7)' },
+            { id: 'ai', name: 'AI', color: '#8a2be2', glow: 'rgba(138,43,226,0.7)' },
+            { id: 'search', name: 'Search & Nav', color: '#2e8b57', glow: 'rgba(46,139,87,0.7)' },
+            { id: 'news', name: 'News', color: '#dc143c', glow: 'rgba(220,20,60,0.7)' },
+            { id: 'creative', name: 'Creative', color: '#ff69b4', glow: 'rgba(255,105,180,0.7)' },
+            { id: 'av', name: 'A/V', color: '#00ced1', glow: 'rgba(0,206,209,0.7)' },
+            { id: 'social', name: 'Social', color: '#ff8c00', glow: 'rgba(255,140,0,0.7)' },
+            { id: 'writing', name: 'Writing', color: '#daa520', glow: 'rgba(218,165,32,0.7)' },
+            { id: 'work', name: 'Work', color: '#2e7d32', glow: 'rgba(46,125,50,0.7)' },
+            { id: 'mystuff', name: 'My Stuff', color: '#708090', glow: 'rgba(112,128,144,0.7)' },
         ];
 
-        const STORAGE_KEY = 'navdash.v1';
-        let data = load();
-        let editMode = false;
+        // ---------- Default Shortcuts Data ----------
+        const DEFAULT_SHORTCUTS = [
+            // Office
+            { label: 'Gmail', url: 'https://mail.google.com', category: 'office' },
+            { label: 'Sheets', url: 'https://sheets.google.com', category: 'office' },
+            { label: 'Drive', url: 'https://drive.google.com', category: 'office' },
+            { label: 'Notes', url: 'https://keep.google.com', category: 'office' },
+            { label: 'Calendar', url: 'https://calendar.google.com', category: 'office' },
+            { label: 'Contacts', url: 'https://contacts.google.com', category: 'office' },
+            { label: 'Photos', url: 'https://photos.google.com', category: 'office' },
 
-        // ---------- Persistence ----------
-        function load() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) return JSON.parse(raw);
-            } catch (e) { }
-            return structuredClone(DEFAULT_DATA);
-        }
-        // Migrate old davidenker.com URLs to tonicforthebones.com
-        function save() {
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { }
-        }
-        (function migrateDomain() {
-            let changed = false;
-            data.forEach(folder => {
-                folder.items.forEach(item => {
-                    if (item.url && item.url.includes('davidenker.com')) {
-                        item.url = item.url.replace(/davidenker\.com/g, 'tonicforthebones.com');
-                        changed = true;
-                    }
-                });
-            });
-            if (changed) save();
-        })();
+            // AI
+            { label: 'ChatGPT', url: 'https://chat.openai.com', category: 'ai' },
+            { label: 'Gemini', url: 'https://gemini.google.com', category: 'ai' },
+            { label: 'Claude', url: 'https://claude.ai', category: 'ai' },
+            { label: 'Grok', url: 'https://grok.com', category: 'ai' },
+            { label: 'Copilot', url: 'https://copilot.microsoft.com', category: 'ai' },
+            { label: 'Perplexity', url: 'https://perplexity.ai', category: 'ai' },
+            { label: 'DeepSeek', url: 'https://chat.deepseek.com', category: 'ai' },
+            { label: 'Manus', url: 'https://manus.im/app', category: 'ai' },
+            { label: 'Flow', url: 'https://labs.google/fx/tools/flow', category: 'ai' },
+
+            // Search
+            { label: 'Search', url: 'https://www.google.com', category: 'search' },
+            { label: 'Maps', url: 'https://www.google.com/maps', category: 'search' },
+            { label: 'Earth', url: 'https://earth.google.com', category: 'search' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Main_Page', category: 'search' },
+            { label: 'IMdb', url: 'https://imdb.com/', category: 'search' },
+            { label: 'DuckDuckGo', url: 'https://start.duckduckgo.com', category: 'search' },
+
+            // News
+            { label: 'BBC News', url: 'https://www.bbc.com/news', category: 'news' },
+            { label: 'GeenStijl', url: 'https://www.geenstijl.nl', category: 'news' },
+            { label: 'Teletext', url: 'https://nos.nl/teletekst/101/1', category: 'news' },
+            { label: 'JPost', url: 'https://www.jpost.com', category: 'news' },
+            { label: 'Times IL', url: 'https://www.timesofisrael.com', category: 'news' },
+            { label: 'Ynet', url: 'https://www.ynetnews.com', category: 'news' },
+            { label: 'AT5', url: 'https://www.at5.nl', category: 'news' },
+            { label: 'Buienradar', url: 'https://buienradar.nl', category: 'news' },
+
+            // Creative
+            { label: 'Firefly', url: 'https://firefly.adobe.com', category: 'creative' },
+            { label: 'Express', url: 'https://express.adobe.com', category: 'creative' },
+            { label: 'Neo', url: 'https://projectneo.adobe.com', category: 'creative' },
+            { label: 'Canva', url: 'https://canva.com', category: 'creative' },
+            { label: 'Capcut', url: 'https://capcut.com', category: 'creative' },
+            { label: 'G Fonts', url: 'https://fonts.google.com', category: 'creative' },
+
+            // A/V
+            { label: 'Spotify', url: 'https://open.spotify.com', category: 'av' },
+            { label: 'YouTube', url: 'https://www.youtube.com', category: 'av' },
+            { label: 'YT Music', url: 'https://music.youtube.com', category: 'av' },
+            { label: 'Suno', url: 'https://suno.com/', category: 'av' },
+            { label: 'DistroKid', url: 'https://distrokid.com', category: 'av' },
+
+            // Social
+            { label: 'X', url: 'https://www.x.com', category: 'social' },
+            { label: 'Bluesky', url: 'https://bsky.app', category: 'social' },
+            { label: 'Threads', url: 'https://www.threads.net', category: 'social' },
+            { label: 'Instagram', url: 'https://www.instagram.com', category: 'social' },
+            { label: 'WhatsApp', url: 'https://web.whatsapp.com', category: 'social' },
+            { label: 'Facebook', url: 'https://www.facebook.com', category: 'social' },
+            { label: 'Pinterest', url: 'https://pinterest.com', category: 'social' },
+
+            // Writing
+            { label: 'Docs', url: 'https://docs.google.com', category: 'writing' },
+            { label: 'Substack', url: 'https://tonicforthebones.substack.com', category: 'writing' },
+            { label: 'Medium', url: 'https://medium.com', category: 'writing' },
+            { label: 'Translate', url: 'https://translate.google.com', category: 'writing' },
+
+            // Work
+            { label: 'LinkedIn', url: 'https://www.linkedin.com', category: 'work' },
+            { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/', category: 'work' },
+            { label: 'Upwork', url: 'https://upwork.com', category: 'work' },
+            { label: 'Fiverr', url: 'https://www.fiverr.com', category: 'work' },
+            { label: 'Reedsy', url: 'https://www.reedsy.com', category: 'work' },
+            { label: 'Analytics', url: 'https://analytics.google.com', category: 'work' },
+
+            // My Stuff
+            { label: 'Studio', url: 'https://www.tonicforthebones.com/standingstudio', category: 'mystuff' },
+            { label: 'Tonic', url: 'https://www.tonicforthebones.com', category: 'mystuff' },
+            { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/', category: 'mystuff' },
+            { label: 'Awe', url: 'https://house-of-awe.web.app', category: 'mystuff' },
+        ];
+
+        const STORAGE_KEY = 'navdash.desktop.v2';
+        const LEGACY_STORAGE_KEY = 'navdash.v1';
         const uid = () => 'id' + Math.random().toString(36).slice(2, 9);
 
-        // ---------- Icon helpers ----------
-        // Distinct icons for sites the generic favicon service renders identically
-        // (all Google products otherwise resolve to the same grey "G").
+        let shortcuts = loadData();
+        let editMode = false;
+        let activeFilter = 'all';
+
+        // ---------- Data Load & Migration ----------
+        function loadData() {
+            try {
+                // Try modern desktop storage key first
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) return ensureIds(parsed);
+                }
+
+                // Fallback / Migration from legacy folder-based navdash.v1
+                const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+                if (legacyRaw) {
+                    const legacyData = JSON.parse(legacyRaw);
+                    if (Array.isArray(legacyData)) {
+                        const migrated = [];
+                        legacyData.forEach(folder => {
+                            const catId = folder.id || 'mystuff';
+                            if (Array.isArray(folder.items)) {
+                                folder.items.forEach(it => {
+                                    migrated.push({
+                                        id: it.id || uid(),
+                                        label: it.label || 'Link',
+                                        url: it.url || '',
+                                        icon: it.icon,
+                                        category: catId
+                                    });
+                                });
+                            }
+                        });
+                        if (migrated.length > 0) return ensureIds(migrated);
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading shortcuts:', e);
+            }
+
+            // Default initial shortcuts
+            return ensureIds(DEFAULT_SHORTCUTS);
+        }
+
+        function ensureIds(list) {
+            return list.map(item => ({
+                id: item.id || uid(),
+                label: item.label || 'Shortcut',
+                url: item.url || '#',
+                icon: item.icon,
+                category: item.category || 'mystuff'
+            }));
+        }
+
+        function save() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
+            } catch (e) { }
+        }
+
+        // ---------- Icon Handling ----------
         const ICON_OVERRIDES = [
-            [/mail\.google\./, 'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico'],
-            [/sheets\.google\./, 'https://ssl.gstatic.com/docs/spreadsheets/favicon3.ico'],
-            [/docs\.google\./, 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'],
-            [/drive\.google\./, 'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'],
-            [/keep\.google\./, 'https://ssl.gstatic.com/keep/icon_2020q4v2_128.png'],
-            [/calendar\.google\./, 'https://calendar.google.com/googlecalendar/images/favicons_2020q4/calendar_31.ico'],
-            [/contacts\.google\./, 'https://ssl.gstatic.com/social/contactsui/images/logo/contacts_2022_32dp.png'],
-            [/photos\.google\./, 'https://ssl.gstatic.com/social/photosui/images/logo/favicon_v2_96px.png'],
-            [/translate\.google\./, 'https://ssl.gstatic.com/translate/favicon.ico'],
-            [/earth\.google\./, 'https://ssl.gstatic.com/earth/0_215/images/icons/earth.ico'],
-            [/maps\.google\.|google\.[^/]+\/maps/, 'https://maps.gstatic.com/favicon3.ico'],
+            // Messaging & Social
+            [/whatsapp\.com/, 'images/WhatsApp.svg'],
+            [/medium\.com/, 'images/medium.svg'],
+            [/house-of-awe\.web\.app/, 'images/awe.png'],
+            [/threads\.net/, 'images/threads.svg'],
+            [/instagram\.com/, 'images/Instagram.svg'],
+            [/facebook\.com/, 'images/Facebook_icon.svg'],
+            [/pinterest\.com/, 'images/Pinterest.svg'],
+            [/linkedin\.com/, 'images/LinkedIn.svg'],
+            [/x\.com|twitter\.com/, 'images/X_logo.svg'],
+            [/bsky\.app/, 'images/bluesky.svg'],
+
+            // Google Apps
+            [/mail\.google\./, 'images/Gmail_icon.svg'],
+            [/sheets\.google\./, 'images/Google_Sheets.svg'],
+            [/docs\.google\./, 'images/Google_Docs.svg'],
+            [/drive\.google\./, 'images/Google_Drive.svg'],
+            [/keep\.google\./, 'images/Google_Keep.svg'],
+            [/calendar\.google\./, 'images/Google_Calendar.svg'],
+            [/contacts\.google\./, 'images/Google_Contacts.svg'],
+            [/photos\.google\./, 'images/Google_Photos.svg'],
+            [/translate\.google\./, 'images/Google_Translate.svg'],
+            [/earth\.google\./, 'images/Google_Earth.svg'],
+            [/maps\.google\.|google\.[^/]+\/maps/, 'images/Google_Maps_icon.svg'],
+            [/fonts\.google\./, 'images/google-fonts.svg'],
+            [/analytics\.google\./, 'images/GAnalytics.svg'],
+            [/google\.com$/, 'images/google.svg'],
+
+            // AI Tools
+            [/chat\.openai\.com|chatgpt\.com/, 'images/ChatGPT.svg'],
+            [/gemini\.google\./, 'images/Gemini.svg'],
+            [/claude\.ai/, 'images/Claude_AI.svg'],
+            [/grok\.com/, 'images/grok.svg'],
+            [/copilot\.microsoft\./, 'images/copilot.svg'],
+            [/perplexity\.ai/, 'images/Perplexity.svg'],
+            [/deepseek\.com/, 'images/deepseek.svg'],
+            [/manus\.im/, 'images/manus.svg'],
+            [/labs\.google\/fx\/tools\/flow/, 'images/flow.png'],
+
+            // Writing & Work
+            [/substack\.com/, 'images/substack.svg'],
+            [/upwork\.com/, 'images/upwork.svg'],
+            [/fiverr\.com/, 'images/fiverr.svg'],
+            [/reedsy\.com/, 'images/reedsy.svg'],
+            [/tonicforthebones\.com\/standingstudio/, 'images/favicon-studio.svg'],
+            [/tonicforthebones\.com\/folio\//, 'images/davilov.svg'],
+            [/tonicforthebones\.com$/, 'images/t.png'],
+
+            // Search, News & Media
+            [/wikipedia\.org/, 'images/wikipedia-logo-black.svg'],
+            [/imdb\.com/, 'images/IMDB.svg'],
+            [/duckduckgo\.com/, 'images/duckduck.svg'],
+            [/bbc\.com/, 'images/BBC-icon.svg'],
+            [/geenstijl\.nl/, 'images/geenstijl.svg'],
+            [/nos\.nl/, 'images/NOS.svg'],
+            [/jpost\.com/, 'images/jpost.svg'],
+            [/timesofisrael\.com/, 'images/toi.svg'],
+            [/ynetnews\.com/, 'images/Ynet.svg'],
+            [/at5\.nl/, 'images/at5.svg'],
+            [/buienradar\.nl/, 'images/Buienradar.svg'],
+            [/firefly\.adobe\./, 'images/Adobe_Firefly.svg'],
+            [/express\.adobe\./, 'images/Adobe_Express_logo_CMYK.svg'],
+            [/projectneo\.adobe\./, 'images/Neo.svg'],
+            [/canva\.com/, 'images/Canva.svg'],
+            [/capcut\.com/, 'images/Capcut.svg'],
+            [/spotify\.com/, 'images/Spotify.svg'],
+            [/music\.youtube\./, 'images/Youtube_Music.svg'],
+            [/youtube\.com/, 'images/youtube.svg'],
+            [/suno\.com/, 'images/suno.svg'],
+            [/distrokid\.com/, 'images/dk.svg']
         ];
 
-        // Build the ordered list of icon URLs to try for a shortcut.
         function iconSources(item) {
             const out = [];
-            if (item.icon) out.push(item.icon);            // user-set custom icon wins
+            if (item.icon) out.push(item.icon);
             for (const [re, src] of ICON_OVERRIDES) {
                 if (re.test(item.url)) { out.push(src); break; }
             }
             try {
                 const u = new URL(item.url);
-                out.push(`${u.origin}/favicon.ico`);        // the site's own favicon (per-subdomain)
+                out.push(`${u.origin}/favicon.ico`);
                 out.push(`https://www.google.com/s2/favicons?sz=128&domain=${u.hostname}`);
                 out.push(`https://icons.duckduckgo.com/ip3/${u.hostname}.ico`);
             } catch (e) { }
             return out;
         }
 
-        function iconEl(item) {
+        function createIconElement(item) {
             const circle = document.createElement('div');
             circle.className = 'icon-circle';
             const sources = iconSources(item);
@@ -760,323 +817,287 @@
                 circle.appendChild(fb);
             };
 
-            if (!sources.length) { showFallback(); return circle; }
+            if (!sources.length) {
+                showFallback();
+            } else {
+                const img = document.createElement('img');
+                let i = 0;
+                img.alt = item.label;
+                img.loading = 'lazy';
+                img.onerror = () => {
+                    i++;
+                    if (i < sources.length) { img.src = sources[i]; }
+                    else { img.remove(); showFallback(); }
+                };
+                img.src = sources[0];
+                circle.appendChild(img);
+            }
 
-            const img = document.createElement('img');
-            let i = 0;
-            img.alt = item.label;
-            img.loading = 'lazy';
-            img.onerror = () => {
-                i++;
-                if (i < sources.length) { img.src = sources[i]; }
-                else { img.remove(); showFallback(); }
-            };
-            img.src = sources[0];
-            circle.appendChild(img);
+
+
             return circle;
         }
 
-        // ---------- Render ----------
-        const grid = document.getElementById('folderGrid');
+        // ---------- UI Rendering ----------
+        const grid = document.getElementById('desktopGrid');
+        const filterBar = document.getElementById('filterBar');
 
-        function render() {
+        function renderCategoryFilters() {
+            filterBar.innerHTML = '';
+            
+            const allBtn = document.createElement('button');
+            allBtn.className = `chip ${activeFilter === 'all' ? 'active' : ''}`;
+            allBtn.textContent = 'All';
+            allBtn.onclick = () => setFilter('all');
+            filterBar.appendChild(allBtn);
+
+            CATEGORIES.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `chip ${activeFilter === cat.id ? 'active' : ''}`;
+                btn.textContent = cat.name;
+                btn.style.setProperty('--cat-color', cat.color);
+                btn.onclick = () => setFilter(cat.id);
+                filterBar.appendChild(btn);
+            });
+        }
+
+        function setFilter(catId) {
+            activeFilter = catId;
+            renderCategoryFilters();
+            renderGrid();
+        }
+
+        function renderGrid() {
             grid.innerHTML = '';
-            data.forEach(folder => grid.appendChild(renderFolder(folder)));
 
+            const visibleItems = shortcuts.filter(s => activeFilter === 'all' || s.category === activeFilter);
+
+            visibleItems.forEach(item => {
+                grid.appendChild(renderShortcut(item));
+            });
+
+            // Add Shortcut tile (visible in edit mode)
             const addTile = document.createElement('div');
-            addTile.className = 'add-folder-tile';
-            addTile.textContent = '+ Add folder';
-            addTile.addEventListener('click', () => openFolderModal(null));
+            addTile.className = 'add-shortcut-tile';
+            addTile.innerHTML = `
+                <div class="icon-circle"><span class="plus">+</span></div>
+                <span class="shortcut-title">Add Shortcut</span>
+            `;
+            addTile.onclick = () => openItemModal(null);
             grid.appendChild(addTile);
         }
 
-        function renderFolder(folder) {
-            const section = document.createElement('section');
-            section.className = 'category-group';
-            section.dataset.id = folder.id;
-            if (folder.color) section.style.background = folder.color;
-            section.draggable = false;
+        function renderShortcut(item) {
+            const card = document.createElement('a');
+            card.className = 'desktop-shortcut';
+            card.href = item.url;
+            card.target = '_blank';
+            card.rel = 'noopener';
+            card.dataset.id = item.id;
 
-            // Title bar
-            const title = document.createElement('div');
-            title.className = 'category-title';
-            const tText = document.createElement('span');
-            tText.className = 'title-text';
-            tText.textContent = folder.name;
-            title.appendChild(tText);
+            const cat = CATEGORIES.find(c => c.id === item.category);
+            if (cat) {
+                card.style.setProperty('--cat-color', cat.color);
+                card.style.setProperty('--cat-glow', cat.glow);
+            }
 
-            const actions = document.createElement('div');
-            actions.className = 'title-actions';
-            const editCtrl = mkCtrl('✎', 'Edit folder', (e) => { e.stopPropagation(); openFolderModal(folder.id); });
-            const moveCtrl = mkCtrl('⇕', 'Drag to reorder', null);
-            moveCtrl.classList.add('move-handle');
-            const delCtrl = mkCtrl('🗑', 'Delete folder', (e) => {
-                e.stopPropagation();
-                if (confirm(`Delete folder "${folder.name}" and all its shortcuts?`)) {
-                    data = data.filter(f => f.id !== folder.id);
-                    save(); render();
-                }
-            });
-            actions.appendChild(editCtrl);
-            actions.appendChild(moveCtrl);
-            actions.appendChild(delCtrl);
-            title.appendChild(actions);
+            // Icon
+            card.appendChild(createIconElement(item));
 
-            const close = document.createElement('div');
-            close.className = 'close-btn';
-            close.innerHTML = '&times;';
-            actions.appendChild(close);
+            // Title Label UNDER Icon
+            const title = document.createElement('span');
+            title.className = 'shortcut-title';
+            title.textContent = item.label;
+            card.appendChild(title);
 
-            section.appendChild(title);
-
-            // Items
-            const container = document.createElement('div');
-            container.className = 'grid-container';
-            folder.items.forEach(item => container.appendChild(renderItem(folder, item)));
-
-            const addItem = document.createElement('div');
-            addItem.className = 'add-item grid-item';
-            const ac = document.createElement('div');
-            ac.className = 'icon-circle';
-            ac.innerHTML = '<span class="plus">+</span>';
-            addItem.appendChild(ac);
-            const al = document.createElement('span');
-            al.textContent = 'Add';
-            addItem.appendChild(al);
-            addItem.addEventListener('click', (e) => { e.stopPropagation(); openItemModal(folder.id, null); });
-            container.appendChild(addItem);
-
-            section.appendChild(container);
-
-            // --- Folder click to expand ---
-            section.addEventListener('click', (e) => {
-                if (editMode) return;
-                if (e.target.closest('.close-btn')) {
-                    section.classList.remove('expanded');
-                    e.stopPropagation();
-                    return;
-                }
-                if (section.classList.contains('expanded')) {
-                    if (!e.target.closest('.grid-item')) section.classList.remove('expanded');
-                    return;
-                }
-                document.querySelectorAll('.category-group').forEach(f => f.classList.remove('expanded'));
-                section.classList.add('expanded');
-                setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-            });
-
-            // --- Folder drag (reorder) via move handle ---
-            moveCtrl.addEventListener('mousedown', () => { section.draggable = true; });
-            section.addEventListener('dragstart', (e) => {
-                if (!section.draggable) { e.preventDefault(); return; }
-                dragState = { type: 'folder', folderId: folder.id };
-                section.classList.add('dragging');
-            });
-            section.addEventListener('dragend', () => {
-                section.draggable = false;
-                section.classList.remove('dragging');
-                dragState = null;
-            });
-            section.addEventListener('dragover', (e) => {
-                if (!dragState) return;
-                e.preventDefault();
-                if (dragState.type === 'item') section.classList.add('drag-over');
-            });
-            section.addEventListener('dragleave', () => section.classList.remove('drag-over'));
-            section.addEventListener('drop', (e) => {
-                e.preventDefault();
-                section.classList.remove('drag-over');
-                if (!dragState) return;
-                if (dragState.type === 'folder') {
-                    reorderFolder(dragState.folderId, folder.id);
-                } else if (dragState.type === 'item') {
-                    // dropped on folder body (not on a specific item) -> append to this folder
-                    moveItem(dragState.folderId, dragState.itemId, folder.id, null);
-                }
-            });
-
-            return section;
-        }
-
-        function mkCtrl(symbol, title, handler) {
-            const c = document.createElement('span');
-            c.className = 'ctrl';
-            c.textContent = symbol;
-            c.title = title;
-            if (handler) c.addEventListener('click', handler);
-            return c;
-        }
-
-        function renderItem(folder, item) {
-            const a = document.createElement('a');
-            a.className = 'grid-item';
-            a.href = item.url;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.dataset.itemId = item.id || (item.id = uid());
-
-            a.appendChild(iconEl(item));
-            const span = document.createElement('span');
-            span.textContent = item.label;
-            a.appendChild(span);
-
+            // Delete button in edit mode
             const del = document.createElement('div');
             del.className = 'item-del';
             del.textContent = '×';
             del.title = 'Delete shortcut';
             del.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                folder.items = folder.items.filter(it => it.id !== item.id);
-                save(); render();
-            });
-            a.appendChild(del);
-
-            // In edit mode: clicking opens editor instead of navigating
-            a.addEventListener('click', (e) => {
-                if (editMode) {
-                    e.preventDefault(); e.stopPropagation();
-                    if (!e.target.closest('.item-del')) openItemModal(folder.id, item.id);
-                }
-            });
-
-            // Drag item
-            a.draggable = true;
-            a.addEventListener('dragstart', (e) => {
-                if (!editMode) { e.preventDefault(); return; }
+                e.preventDefault();
                 e.stopPropagation();
-                dragState = { type: 'item', folderId: folder.id, itemId: item.id };
-                a.classList.add('dragging');
+                deleteShortcut(item.id);
             });
-            a.addEventListener('dragend', () => { a.classList.remove('dragging'); dragState = null; });
-            a.addEventListener('dragover', (e) => {
-                if (dragState && dragState.type === 'item') { e.preventDefault(); e.stopPropagation(); }
-            });
-            a.addEventListener('drop', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                if (dragState && dragState.type === 'item') {
-                    moveItem(dragState.folderId, dragState.itemId, folder.id, item.id);
+            card.appendChild(del);
+
+            // Edit mode click handler (opens modal instead of navigating)
+            card.addEventListener('click', (e) => {
+                if (editMode) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!e.target.closest('.item-del')) {
+                        openItemModal(item.id);
+                    }
                 }
             });
 
-            return a;
+            // Drag and drop event handlers
+            card.draggable = true;
+
+            card.addEventListener('dragstart', (e) => {
+                dragState = { itemId: item.id };
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.id);
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                dragState = null;
+                document.querySelectorAll('.desktop-shortcut').forEach(el => el.classList.remove('drag-over'));
+            });
+
+            card.addEventListener('dragover', (e) => {
+                if (dragState && dragState.itemId !== item.id) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    card.classList.add('drag-over');
+                }
+            });
+
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('drag-over');
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over');
+                if (dragState && dragState.itemId !== item.id) {
+                    reorderShortcuts(dragState.itemId, item.id);
+                }
+            });
+
+            return card;
         }
 
-        // ---------- Drag logic ----------
+        // ---------- Drag & Reorder Logic ----------
         let dragState = null;
 
-        function reorderFolder(srcId, targetId) {
-            if (srcId === targetId) return;
-            const srcIdx = data.findIndex(f => f.id === srcId);
-            const tgtIdx = data.findIndex(f => f.id === targetId);
+        function reorderShortcuts(srcId, targetId) {
+            const srcIdx = shortcuts.findIndex(s => s.id === srcId);
+            const tgtIdx = shortcuts.findIndex(s => s.id === targetId);
             if (srcIdx < 0 || tgtIdx < 0) return;
-            const [moved] = data.splice(srcIdx, 1);
-            const newTgt = data.findIndex(f => f.id === targetId);
-            data.splice(newTgt + (srcIdx < tgtIdx ? 1 : 0), 0, moved);
-            save(); render();
+
+            const [moved] = shortcuts.splice(srcIdx, 1);
+            shortcuts.splice(tgtIdx, 0, moved);
+            save();
+            renderGrid();
         }
 
-        function moveItem(srcFolderId, itemId, tgtFolderId, beforeItemId) {
-            const srcF = data.find(f => f.id === srcFolderId);
-            const tgtF = data.find(f => f.id === tgtFolderId);
-            if (!srcF || !tgtF) return;
-            const i = srcF.items.findIndex(it => it.id === itemId);
-            if (i < 0) return;
-            const [moved] = srcF.items.splice(i, 1);
-            if (beforeItemId == null) {
-                tgtF.items.push(moved);
-            } else {
-                const t = tgtF.items.findIndex(it => it.id === beforeItemId);
-                tgtF.items.splice(t < 0 ? tgtF.items.length : t, 0, moved);
+        function deleteShortcut(id) {
+            const item = shortcuts.find(s => s.id === id);
+            if (!item) return;
+            if (confirm(`Delete shortcut "${item.label}"?`)) {
+                shortcuts = shortcuts.filter(s => s.id !== id);
+                save();
+                renderGrid();
             }
-            save(); render();
-            // keep target folder open
-            const sec = grid.querySelector(`[data-id="${tgtFolderId}"]`);
-            if (sec && editMode) sec.classList.add('expanded');
         }
 
-        // ---------- Modals ----------
-        const folderModal = document.getElementById('folderModal');
+        function autoArrange() {
+            // Sort by category order then by label
+            const catOrder = CATEGORIES.reduce((acc, cat, idx) => { acc[cat.id] = idx; return acc; }, {});
+            shortcuts.sort((a, b) => {
+                const orderA = catOrder[a.category] ?? 99;
+                const orderB = catOrder[b.category] ?? 99;
+                if (orderA !== orderB) return orderA - orderB;
+                return a.label.localeCompare(b.label);
+            });
+            save();
+            renderGrid();
+        }
+
+        // ---------- Modal Management ----------
         const itemModal = document.getElementById('itemModal');
-        let folderEditId = null, itemEditFolderId = null, itemEditId = null;
+        const itemCategorySelect = document.getElementById('itemCategory');
+        let itemEditId = null;
 
-        function openFolderModal(id) {
-            folderEditId = id;
-            const f = id ? data.find(x => x.id === id) : null;
-            document.getElementById('folderModalTitle').textContent = f ? 'Edit Folder' : 'New Folder';
-            document.getElementById('folderName').value = f ? f.name : '';
-            document.getElementById('folderColor').value = f ? (f.color || '') : '';
-            folderModal.classList.add('open');
-            document.getElementById('folderName').focus();
+        function populateCategorySelect() {
+            itemCategorySelect.innerHTML = '';
+            CATEGORIES.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name;
+                itemCategorySelect.appendChild(opt);
+            });
         }
-        document.getElementById('folderCancel').onclick = () => folderModal.classList.remove('open');
-        document.getElementById('folderSave').onclick = () => {
-            const name = document.getElementById('folderName').value.trim() || 'Untitled';
-            const color = document.getElementById('folderColor').value.trim();
-            if (folderEditId) {
-                const f = data.find(x => x.id === folderEditId);
-                f.name = name; f.color = color || '';
-            } else {
-                data.push({ id: uid(), name, color: color || '', items: [] });
-            }
-            save(); render();
-            folderModal.classList.remove('open');
-        };
 
-        function openItemModal(folderId, itemId) {
-            itemEditFolderId = folderId; itemEditId = itemId;
-            const f = data.find(x => x.id === folderId);
-            const it = itemId ? f.items.find(i => i.id === itemId) : null;
-            document.getElementById('itemModalTitle').textContent = it ? 'Edit Shortcut' : 'New Shortcut';
-            document.getElementById('itemLabel').value = it ? it.label : '';
-            document.getElementById('itemUrl').value = it ? it.url : '';
-            document.getElementById('itemIcon').value = it ? (it.icon || '') : '';
+        function openItemModal(id) {
+            populateCategorySelect();
+            itemEditId = id;
+            const item = id ? shortcuts.find(s => s.id === id) : null;
+
+            document.getElementById('itemModalTitle').textContent = item ? 'Edit Shortcut' : 'New Shortcut';
+            document.getElementById('itemLabel').value = item ? item.label : '';
+            document.getElementById('itemUrl').value = item ? item.url : '';
+            document.getElementById('itemIcon').value = item ? (item.icon || '') : '';
+            itemCategorySelect.value = item ? item.category : (activeFilter !== 'all' ? activeFilter : 'office');
+
             itemModal.classList.add('open');
             document.getElementById('itemLabel').focus();
         }
+
         document.getElementById('itemCancel').onclick = () => itemModal.classList.remove('open');
+
         document.getElementById('itemSave').onclick = () => {
             const label = document.getElementById('itemLabel').value.trim() || 'Link';
             let url = document.getElementById('itemUrl').value.trim();
             const icon = document.getElementById('itemIcon').value.trim();
+            const category = itemCategorySelect.value;
+
             if (url && !/^[a-z]+:/i.test(url)) url = 'https://' + url;
-            const f = data.find(x => x.id === itemEditFolderId);
+
             if (itemEditId) {
-                const it = f.items.find(i => i.id === itemEditId);
-                it.label = label; it.url = url; it.icon = icon || undefined;
+                const item = shortcuts.find(s => s.id === itemEditId);
+                if (item) {
+                    item.label = label;
+                    item.url = url;
+                    item.icon = icon || undefined;
+                    item.category = category;
+                }
             } else {
-                f.items.push({ id: uid(), label, url, icon: icon || undefined });
+                shortcuts.push({
+                    id: uid(),
+                    label,
+                    url,
+                    icon: icon || undefined,
+                    category
+                });
             }
-            save(); render();
-            const sec = grid.querySelector(`[data-id="${itemEditFolderId}"]`);
-            if (sec && editMode) sec.classList.add('expanded');
+
+            save();
+            renderGrid();
             itemModal.classList.remove('open');
         };
 
-        // close modal on backdrop click
-        [folderModal, itemModal].forEach(m => m.addEventListener('click', e => {
-            if (e.target === m) m.classList.remove('open');
-        }));
+        itemModal.addEventListener('click', (e) => {
+            if (e.target === itemModal) itemModal.classList.remove('open');
+        });
 
-        // ---------- Toolbar ----------
+        // ---------- Toolbar Actions ----------
+        document.getElementById('addShortcutBtn').onclick = () => openItemModal(null);
+
         const editToggle = document.getElementById('editToggle');
         editToggle.addEventListener('click', () => {
             editMode = !editMode;
             document.body.classList.toggle('edit-mode', editMode);
             editToggle.classList.toggle('active', editMode);
-            editToggle.textContent = editMode ? 'Done' : 'Edit';
-            if (editMode) {
-                // expand all so items are visible/editable
-                document.querySelectorAll('.category-group').forEach(f => f.classList.add('expanded'));
-            } else {
-                document.querySelectorAll('.category-group').forEach(f => f.classList.remove('expanded'));
-            }
+            editToggle.innerHTML = editMode
+                ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Done'
+                : '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit';
         });
 
+        document.getElementById('arrangeBtn').onclick = () => {
+            autoArrange();
+        };
+
         document.getElementById('exportBtn').onclick = () => {
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(shortcuts, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'navdash-backup.json';
+            a.download = 'navdash-shortcuts-backup.json';
             a.click();
             URL.revokeObjectURL(a.href);
         };
@@ -1091,11 +1112,10 @@
                 try {
                     const parsed = JSON.parse(reader.result);
                     if (Array.isArray(parsed)) {
-                        data = parsed;
-                        // ensure ids exist
-                        data.forEach(f => { if (!f.id) f.id = uid(); f.items.forEach(i => { if (!i.id) i.id = uid(); }); });
-                        save(); render();
-                    } else alert('That file does not look like a valid dashboard export.');
+                        shortcuts = ensureIds(parsed);
+                        save();
+                        renderGrid();
+                    } else alert('That file does not look like a valid shortcuts backup.');
                 } catch (e) { alert('Could not read that file.'); }
                 importFile.value = '';
             };
@@ -1103,14 +1123,156 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            if (confirm('Reset to the default set of folders and shortcuts? Your current layout will be lost.')) {
-                data = structuredClone(DEFAULT_DATA);
-                save(); render();
+            if (confirm('Reset layout to default shortcuts? Your custom arrangement will be reset.')) {
+                shortcuts = ensureIds(DEFAULT_SHORTCUTS);
+                save();
+                renderGrid();
             }
         };
 
-        // ---------- Init ----------
-        render();
+        // ---------- Initialize ----------
+        renderCategoryFilters();
+        renderGrid();
+
+        // ---------- Soothing Ambient Canvas Background ----------
+        (function () {
+            const canvas = document.getElementById('bg-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            let width = 0, height = 0, dpr = 1;
+            let mouseX = 0.5, mouseY = 0.5;
+            let targetMouseX = 0.5, targetMouseY = 0.5;
+
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                ctx.scale(dpr, dpr);
+            }
+            window.addEventListener('resize', resize, { passive: true });
+            resize();
+
+            window.addEventListener('mousemove', (e) => {
+                targetMouseX = e.clientX / Math.max(width, 1);
+                targetMouseY = e.clientY / Math.max(height, 1);
+            }, { passive: true });
+
+            // Fluid color blobs matching dark theme with warm accents
+            const blobs = [
+                { x: 0.2, y: 0.25, radius: 0.5, color: 'rgba(10, 40, 62, 0.85)', speed: 0.00015, phase: 0 },
+                { x: 0.8, y: 0.2, radius: 0.55, color: 'rgba(27, 28, 75, 0.75)', speed: 0.00012, phase: 1.5 },
+                { x: 0.65, y: 0.75, radius: 0.6, color: 'rgba(13, 63, 77, 0.8)', speed: 0.00018, phase: 3.1 },
+                { x: 0.25, y: 0.8, radius: 0.45, color: 'rgba(50, 45, 25, 0.45)', speed: 0.0001, phase: 4.5 },
+                { x: 0.85, y: 0.65, radius: 0.4, color: 'rgba(22, 55, 75, 0.65)', speed: 0.00014, phase: 2.2 }
+            ];
+
+            // Soft floating stardust particles
+            const PARTICLE_COUNT = 70;
+            const particles = [];
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2.2 + 0.8,
+                    speedY: Math.random() * 0.22 + 0.08,
+                    speedX: (Math.random() - 0.5) * 0.15,
+                    opacity: Math.random() * 0.5 + 0.2,
+                    pulseSpeed: Math.random() * 0.015 + 0.005,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    isWarm: Math.random() < 0.25
+                });
+            }
+
+            let animId = null;
+            let lastTime = performance.now();
+
+            function render(now) {
+                // Smooth mouse drift interpolation
+                mouseX += (targetMouseX - mouseX) * 0.03;
+                mouseY += (targetMouseY - mouseY) * 0.03;
+
+                // Canvas dimensions for calculations
+                const minDim = Math.min(width, height);
+                const maxDim = Math.max(width, height);
+
+                // Deep dark base gradient background
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = '#0b1217';
+                ctx.fillRect(0, 0, width, height);
+
+                // Render Fluid Ambient Aurora Blobs
+                ctx.globalCompositeOperation = 'lighter';
+
+                for (let i = 0; i < blobs.length; i++) {
+                    const b = blobs[i];
+                    const time = now * b.speed + b.phase;
+                    const bx = (b.x + Math.sin(time) * 0.12 + (mouseX - 0.5) * 0.08) * width;
+                    const by = (b.y + Math.cos(time * 0.8) * 0.12 + (mouseY - 0.5) * 0.08) * height;
+                    const r = b.radius * maxDim * (1 + Math.sin(time * 1.3) * 0.08);
+
+                    const grad = ctx.createRadialGradient(bx, by, 0, bx, by, r);
+                    grad.addColorStop(0, b.color);
+                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Render Floating Particles
+                ctx.globalCompositeOperation = 'source-over';
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.y -= p.speedY;
+                    p.x += p.speedX + Math.sin(now * 0.001 + p.pulsePhase) * 0.12;
+                    p.pulsePhase += p.pulseSpeed;
+
+                    if (p.y < -10) {
+                        p.y = height + 10;
+                        p.x = Math.random() * width;
+                    }
+                    if (p.x < -10) p.x = width + 10;
+                    if (p.x > width + 10) p.x = -10;
+
+                    const alpha = p.opacity * (0.6 + 0.4 * Math.sin(p.pulsePhase));
+                    ctx.fillStyle = p.isWarm ? `rgba(226, 223, 179, ${alpha})` : `rgba(180, 220, 240, ${alpha * 0.75})`;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Vignette for subtle edge focus
+                const vigGrad = ctx.createRadialGradient(
+                    width / 2, height / 2, minDim * 0.45,
+                    width / 2, height / 2, maxDim * 0.85
+                );
+                vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                vigGrad.addColorStop(1, 'rgba(5, 10, 15, 0.65)');
+                ctx.fillStyle = vigGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                if (!document.hidden) {
+                    animId = requestAnimationFrame(render);
+                }
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (animId) cancelAnimationFrame(animId);
+                } else {
+                    lastTime = performance.now();
+                    animId = requestAnimationFrame(render);
+                }
+            });
+
+            animId = requestAnimationFrame(render);
+        })();
     </script>
 </body>
 
