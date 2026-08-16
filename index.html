@@ -619,19 +619,36 @@
             color: #7a6a5e;
         }
 
-        /* Rainbow Flickering Blink Hover Effect for TONIC FOR THE BONES */
-        @keyframes rainbowBlinkFlicker {
-            0%   { color: #ff0055 !important; text-shadow: 0 0 12px #ff0055, 0 0 25px #ff0055 !important; }
-            10%  { color: #ffff00 !important; text-shadow: 0 0 4px #ffff00 !important; }
-            20%  { color: #00ff66 !important; text-shadow: 0 0 12px #00ff66, 0 0 25px #00ff66 !important; }
-            30%  { color: #ffffff !important; text-shadow: 0 0 4px #ffffff !important; }
-            40%  { color: #00f0ff !important; text-shadow: 0 0 12px #00f0ff, 0 0 25px #00f0ff !important; }
-            50%  { color: #ff00cc !important; text-shadow: 0 0 4px #ff00cc !important; }
-            60%  { color: #aa00ff !important; text-shadow: 0 0 12px #aa00ff, 0 0 25px #aa00ff !important; }
-            70%  { color: #ffaa00 !important; text-shadow: 0 0 4px #ffaa00 !important; }
-            80%  { color: #00ffff !important; text-shadow: 0 0 12px #00ffff, 0 0 25px #00ffff !important; }
-            90%  { color: #ffffff !important; text-shadow: 0 0 4px #ffffff !important; }
-            100% { color: #ff0055 !important; text-shadow: 0 0 12px #ff0055, 0 0 25px #ff0055 !important; }
+        /* Smooth Sine Wave Rainbow Hover Effect for TONIC FOR THE BONES */
+        @keyframes rainbowSineWave {
+            0% {
+                color: #ff0055;
+                text-shadow: 0 0 12px rgba(255, 0, 85, 0.7), 0 0 24px rgba(255, 0, 85, 0.4);
+            }
+            16.6% {
+                color: #ff9900;
+                text-shadow: 0 0 14px rgba(255, 153, 0, 0.8), 0 0 28px rgba(255, 153, 0, 0.4);
+            }
+            33.3% {
+                color: #ffea00;
+                text-shadow: 0 0 12px rgba(255, 234, 0, 0.7), 0 0 24px rgba(255, 234, 0, 0.4);
+            }
+            50% {
+                color: #00ff88;
+                text-shadow: 0 0 14px rgba(0, 255, 136, 0.8), 0 0 28px rgba(0, 255, 136, 0.4);
+            }
+            66.6% {
+                color: #00d9ff;
+                text-shadow: 0 0 12px rgba(0, 217, 255, 0.7), 0 0 24px rgba(0, 217, 255, 0.4);
+            }
+            83.3% {
+                color: #b000ff;
+                text-shadow: 0 0 14px rgba(176, 0, 255, 0.8), 0 0 28px rgba(176, 0, 255, 0.4);
+            }
+            100% {
+                color: #ff0055;
+                text-shadow: 0 0 12px rgba(255, 0, 85, 0.7), 0 0 24px rgba(255, 0, 85, 0.4);
+            }
         }
 
         .rainbow-title-hover {
@@ -643,20 +660,20 @@
         .rainbow-title-hover:hover h2,
         .rainbow-title-hover:hover a,
         footer a[href="/"]:hover {
-            animation: rainbowBlinkFlicker 0.4s infinite steps(10) both !important;
+            animation: rainbowSineWave 3.5s infinite ease-in-out both !important;
         }
 
         .rainbow-title-hover:hover span:nth-child(1) {
             animation-delay: 0s !important;
         }
         .rainbow-title-hover:hover span:nth-child(2) {
-            animation-delay: 0.1s !important;
+            animation-delay: 0.4s !important;
         }
         .rainbow-title-hover:hover span:nth-child(3) {
-            animation-delay: 0.2s !important;
+            animation-delay: 0.8s !important;
         }
         .rainbow-title-hover:hover span:nth-child(4) {
-            animation-delay: 0.3s !important;
+            animation-delay: 1.2s !important;
         }
     </style>
 </head>
@@ -1651,18 +1668,81 @@
             }
         })();
 
-        /* Auto-tag TONIC FOR THE BONES elements for rainbow hover */
+        /* Slow Sine Wave Rainbow Hover Controller for TONIC FOR THE BONES */
         (function () {
+            const activeAnimations = new Map();
+
+            function bindSineRainbowHover(el) {
+                if (el.dataset.sineRainbowBound) return;
+                el.dataset.sineRainbowBound = 'true';
+                el.style.cursor = 'pointer';
+
+                const getTargets = () => {
+                    let targets = Array.from(el.querySelectorAll('span'));
+                    if (targets.length === 0) targets = [el];
+                    return targets;
+                };
+
+                let animFrameId = null;
+                let startTime = null;
+
+                el.addEventListener('mouseenter', () => {
+                    if (activeAnimations.has(el)) cancelAnimationFrame(activeAnimations.get(el));
+                    const targets = getTargets();
+                    startTime = performance.now();
+
+                    function animate(now) {
+                        const elapsed = (now - startTime) / 1000;
+                        const baseHue = (elapsed * 102) % 360;
+
+                        targets.forEach((target, idx) => {
+                            const wordHue = (baseHue + idx * 40) % 360;
+                            const sineVal = Math.sin(elapsed * 2.2 + idx * 0.4);
+                            
+                            const lightness = 58 + sineVal * 10;
+                            const glowRadius = 14 + sineVal * 6;
+                            const colorStr = `hsl(${wordHue.toFixed(1)}, 100%, ${lightness.toFixed(1)}%)`;
+                            const shadowStr = `0 0 ${glowRadius.toFixed(1)}px ${colorStr}, 0 0 ${(glowRadius * 1.6).toFixed(1)}px ${colorStr}`;
+
+                            target.style.setProperty('color', colorStr, 'important');
+                            target.style.setProperty('text-shadow', shadowStr, 'important');
+                        });
+
+                        animFrameId = requestAnimationFrame(animate);
+                        activeAnimations.set(el, animFrameId);
+                    }
+
+                    animFrameId = requestAnimationFrame(animate);
+                    activeAnimations.set(el, animFrameId);
+                });
+
+                el.addEventListener('mouseleave', () => {
+                    if (activeAnimations.has(el)) {
+                        cancelAnimationFrame(activeAnimations.get(el));
+                        activeAnimations.delete(el);
+                    }
+                    const targets = getTargets();
+                    targets.forEach(target => {
+                        target.style.removeProperty('color');
+                        target.style.removeProperty('text-shadow');
+                        target.style.removeProperty('opacity');
+                    });
+                });
+            }
+
             const scan = () => {
-                const candidates = document.querySelectorAll('h1, h2, h3, a');
+                const candidates = document.querySelectorAll('h1, h2, h3, a, .rainbow-title-hover');
                 candidates.forEach(el => {
                     const txt = el.textContent.replace(/\s+/g, ' ').trim().toUpperCase();
                     if (txt.includes('TONIC FOR THE BONES') || txt === 'TONIC FOR THE BONES' || (el.tagName === 'A' && txt.includes('TONIC') && txt.includes('BONES'))) {
                         el.classList.add('rainbow-title-hover');
+                        bindSineRainbowHover(el);
                     }
                 });
             };
+
             scan();
+            document.addEventListener('DOMContentLoaded', scan);
             setTimeout(scan, 500);
             setTimeout(scan, 1500);
         })();
