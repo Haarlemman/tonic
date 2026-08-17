@@ -620,6 +620,20 @@
         .hero-overlapping-title a {
             white-space: nowrap;
         }
+        /* Mobile cycling phrases */
+        .mobile-phrase {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.7s ease;
+            white-space: nowrap;
+            font-size: clamp(0.65rem, 2.6vw, 0.95rem);
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .mobile-phrase-active {
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -657,23 +671,25 @@
                             class="md:hidden absolute right-0 flex flex-col items-center justify-center bg-tonicRed text-white hover:bg-black transition-colors text-center shadow-md"
                             style="
                               min-width: clamp(90px, 30vw, 145px);
-                              top: calc(var(--title-size) * 0.30);
-                              bottom: calc(var(--title-size) * 0.06);
+                              top: calc(calc(var(--title-size) * 0.30) - 6px);
+                              bottom: calc(calc(var(--title-size) * 0.06) + 2px);
+                              mix-blend-mode: multiply;
                             ">
-                            <span
-                                class="font-sans font-black tracking-[0.16em] uppercase flex flex-col items-center justify-center gap-1 leading-none"
-                                style="font-size: clamp(1rem, 4vw, 1.45rem);">
-                                <span class="font-bold tracking-[0.22em]" style="font-size: 0.65em;">A</span>
-                                <span>MEMOIR</span>
+                            <span id="mobile-phrase-box"
+                                class="font-sans font-black tracking-[0.12em] uppercase flex items-center justify-center leading-none relative"
+                                style="font-size: clamp(0.7rem, 2.8vw, 1rem); min-height: 2.4em;">
+                                <span class="mobile-phrase mobile-phrase-active">The Found</span>
+                                <span class="mobile-phrase">The Given</span>
+                                <span class="mobile-phrase">The Chosen</span>
                             </span>
                         </a>
                     </div>
 
                     <!-- Desktop Red Ribbon Badge (under title) -->
                     <a href="/tftb/"
-                        class="hidden md:inline-flex items-center gap-1.5 font-bold text-sm tracking-widest uppercase text-white mb-4 bg-tonicRed px-3 py-1 self-start hover:bg-black transition-colors">
-                        <span>A</span>
-                        <span>MEMOIR</span>
+                        class="hidden md:flex items-center justify-center font-bold text-sm tracking-[0.22em] uppercase text-white mb-4 bg-tonicRed px-3 py-2 w-full hover:bg-black transition-colors"
+                        style="mix-blend-mode: multiply;">
+                        The Found, The Given, The Chosen
                     </a>
                     <p class="text-lg md:text-xl text-stone-600 leading-relaxed mb-5">
                         <a href="/tftb/" class="hover:text-stone-900 transition-colors block">
@@ -1640,6 +1656,18 @@
             }
         })();
 
+
+        // Mobile phrase cycler
+        (function () {
+            const phrases = document.querySelectorAll('.mobile-phrase');
+            if (!phrases.length) return;
+            let current = 0;
+            setInterval(function () {
+                phrases[current].classList.remove('mobile-phrase-active');
+                current = (current + 1) % phrases.length;
+                phrases[current].classList.add('mobile-phrase-active');
+            }, 3000);
+        })();
 
     </script>
 
