@@ -3,245 +3,1344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The University of Free Will | City of Life Complete Suite</title>
+    <title>The University of Free Will | City of Life</title>
+    <meta name="description" content="Explore the City of Life: A procedural 3D campus where Body, Mind, and Soul converge across the Faculties of Art, Science, and Religion.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['"Courier New"', 'monospace'],
+                        display: ['"Space Grotesk"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
         :root {
             --ink: #0a0f1d;
             --surface: #111827;
-            --art: #ff3300;
-            --science: #ffcc00;
+            --art: #ff3322;
+            --art-glow: rgba(255, 51, 34, 0.45);
+            --science: #ffbb00;
+            --science-glow: rgba(255, 187, 0, 0.45);
             --soul: #3b82f6;
+            --soul-glow: rgba(59, 130, 246, 0.45);
         }
-        body { margin: 0; overflow: hidden; background-color: #0f172a; font-family: 'Inter', sans-serif; color: #fff; }
-        #canvas-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; cursor: grab; }
+        
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0b1120;
+            font-family: 'Inter', sans-serif;
+            color: #f8fafc;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            cursor: grab;
+        }
         #canvas-container:active { cursor: grabbing; }
+
+        /* Intro Overlay */
         #intro-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle, rgba(15,23,42,0.95) 0%, rgba(10,15,29,0.99) 100%);
-            backdrop-filter: blur(16px); z-index: 1000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center; padding: 2rem;
-            transition: opacity 1.5s ease, visibility 1.5s;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.92) 0%, rgba(10, 15, 29, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 1.6s;
         }
-        #intro-text { font-size: 1.6rem; font-style: italic; max-width: 650px; min-height: 100px; margin-bottom: 2rem; color: #e2e8f0; transition: opacity 0.8s ease; }
+        #intro-kicker {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.35em;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+        #intro-text {
+            font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+            font-weight: 300;
+            font-style: italic;
+            max-width: 800px;
+            min-height: 110px;
+            margin-bottom: 2.5rem;
+            color: #f1f5f9;
+            line-height: 1.5;
+            transition: opacity 0.7s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         .action-btn {
-            background: #1e293b; border: 1px solid rgba(255,255,255,0.3); color: #fff;
-            padding: 1rem 3rem; text-transform: uppercase; letter-spacing: 0.2em; font-weight: bold;
-            cursor: pointer; transition: all 0.3s ease; border-radius: 4px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 1.1rem 3.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
-        .action-btn:hover { background: #fff; color: #0f172a; transform: scale(1.05); }
+        .action-btn:hover {
+            background: #ffffff;
+            color: #0f172a;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Floating Faculty Data Screen */
         #faculty-screen {
-            position: absolute; width: 300px; background: rgba(10,15,29,0.85); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15); padding: 1.25rem; display: none; flex-direction: column;
-            gap: 0.75rem; z-index: 800; opacity: 0; transition: opacity 0.4s ease; text-align: center;
-            transform: translate(-50%, -125%); border-radius: 6px; pointer-events: none;
+            position: absolute;
+            width: 320px;
+            background: rgba(10, 15, 29, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 1.25rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 800;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            text-align: center;
+            transform: translate(-50%, -125%);
+            border-radius: 8px;
+            pointer-events: none;
         }
-        #faculty-screen.active { display: flex; opacity: 1; }
-        .neon-text { font-family: 'Courier New', monospace; font-weight: 900; font-size: 1rem; letter-spacing: 0.05em; text-transform: uppercase; min-height: 3em; display: flex; align-items: center; justify-content: center; }
-        .neon-art { color: var(--art); text-shadow: 0 0 12px rgba(255,51,0,0.6); }
-        .neon-science { color: var(--science); text-shadow: 0 0 12px rgba(255,204,0,0.6); }
-        .neon-spirit { color: var(--soul); text-shadow: 0 0 12px rgba(59,130,246,0.6); }
+        #faculty-screen.active {
+            display: flex;
+            opacity: 1;
+        }
+        .neon-text {
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            min-height: 2.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.35;
+        }
+        .neon-art { color: var(--art); text-shadow: 0 0 14px var(--art-glow); }
+        .neon-science { color: var(--science); text-shadow: 0 0 14px var(--science-glow); }
+        .neon-spirit { color: #60a5fa; text-shadow: 0 0 14px var(--soul-glow); }
+
+        .screen-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 0.6rem;
+            font-size: 0.65rem;
+            color: #94a3b8;
+        }
+        .screen-meta .badge-row {
+            display: flex;
+            justify-content: space-between;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        /* HUD Layer */
         #hud-layer {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none;
-            display: flex; flex-direction: column; justify-content: space-between; padding: 2.5rem; box-sizing: border-box; z-index: 500; opacity: 0; transition: opacity 1.5s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+            box-sizing: border-box;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 1.5s ease;
         }
-        .top-right { position: absolute; top: 2.5rem; right: 2.5rem; pointer-events: auto; }
-        .icon-btn { background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .icon-btn:hover { background: #fff; color: #000; }
-        #tri-truth-badge { position: absolute; top: 2.2rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.75rem; font-family: 'Courier New', monospace; font-size: 0.7rem; font-weight: bold; letter-spacing: 0.2em; text-transform: uppercase; background: rgba(15,23,42,0.8); padding: 0.6rem 1.2rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); }
-        .bottom-nav { position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%); display: flex; gap: 1rem; pointer-events: auto; }
-        .building-tag { cursor: pointer; padding: 0.8rem 1.5rem; background: rgba(15,23,42,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.2); text-transform: uppercase; font-size: 0.75font-weight: bold; letter-spacing: 0.1em; transition: 0.3s; border-radius: 4px; }
-        .building-tag:hover { background: #fff; color: #000; transform: translateY(-3px); }
+        .hud-interactive { pointer-events: auto; }
+
+        /* Tri-Truth Dynamic Cycling Badge */
+        #tri-truth-badge {
+            position: absolute;
+            top: 1.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        #tri-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 0.65rem 1.4rem;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.5s ease;
+        }
+        .tri-art { color: var(--art); }
+        .tri-sci { color: var(--science); }
+        .tri-soul { color: #60a5fa; }
+        .tri-dot { color: rgba(255, 255, 255, 0.3); font-size: 0.8em; }
+
+        .tri-subtitle {
+            font-size: 0.6rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        /* Top Controls */
+        .top-right {
+            position: absolute;
+            top: 1.75rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+        .icon-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        .icon-btn:hover {
+            background: #fff;
+            color: #0f172a;
+            transform: scale(1.08);
+        }
+        .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+        /* Bottom Faculty Navigation */
+        .bottom-nav {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.85rem;
+        }
+        .building-tag {
+            cursor: pointer;
+            padding: 0.85rem 1.6rem;
+            background: rgba(15, 23, 42, 0.9);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .building-tag:hover {
+            background: #fff;
+            color: #0f172a;
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(255, 255, 255, 0.15);
+        }
         .tag-red { border-bottom: 4px solid var(--art); }
         .tag-yellow { border-bottom: 4px solid var(--science); }
         .tag-blue { border-bottom: 4px solid var(--soul); }
-        #tooltip { position: absolute; padding: 0.4rem 0.8rem; background: rgba(15,23,42,0.95); border: 1px solid rgba(255,255,255,0.2); font-size: 11px; font-weight: bold; display: none; z-index: 900; transform: translate(-50%, -130%); pointer-events: none; border-radius: 4px; }
+        .tag-overview { border-bottom: 4px solid #94a3b8; }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            padding: 0.5rem 0.9rem;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            display: none;
+            z-index: 900;
+            transform: translate(-50%, -135%);
+            pointer-events: none;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Live Matrix Status Ticker in Bottom Left */
+        .hud-ticker {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: #64748b;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            display: none;
+        }
+        @media (min-width: 1024px) {
+            .hud-ticker { display: block; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Cinematic Intro Sequence Overlay -->
     <div id="intro-overlay">
+        <div id="intro-kicker">The University of Free Will</div>
         <div id="intro-text">Initializing the City of Life...</div>
-        <button id="skip-btn" class="action-btn">Enter Campus</button>
+        <button id="skip-btn" class="action-btn">Enter Metropolis</button>
     </div>
+
+    <!-- Floating Faculty Information Feed -->
     <div id="faculty-screen">
         <div id="screen-content" class="neon-text"></div>
-        <div style="color:#94a3b8; font-size:0.55rem; letter-spacing:0.3em; border-top:1px solid rgba(255,255,255,0.1); padding-top:0.5em;">FACULTY DATA FEED</div>
+        <div class="screen-meta">
+            <div class="badge-row">
+                <span id="screen-faculty-name" style="letter-spacing:0.15em;">FACULTY DATA FEED</span>
+                <span id="screen-category">BODY · ART</span>
+            </div>
+            <div id="screen-subfield" style="color: #cbd5e1; font-size: 0.6rem; letter-spacing: 0.05em;"></div>
+        </div>
     </div>
+
+    <!-- Heads-Up Display Frame -->
     <div id="hud-layer">
+        <!-- Dynamic Tri-Truth Badge -->
         <div id="tri-truth-badge">
-            <span style="color:var(--art)">ART</span> &middot; <span style="color:var(--science)">SCIENCE</span> &middot; <span style="color:var(--soul)">RELIGION</span>
+            <div id="tri-pill">
+                <span id="tri-w1" class="tri-art">ART</span>
+                <span class="tri-dot">&middot;</span>
+                <span id="tri-w2" class="tri-sci">SCIENCE</span>
+                <span class="tri-dot">&middot;</span>
+                <span id="tri-w3" class="tri-soul">RELIGION</span>
+            </div>
+            <div class="tri-subtitle">Tri-Truth Philosophical Matrix</div>
         </div>
-        <div class="top-right">
-            <button class="icon-btn" onclick="if(!document.fullscreenElement)document.documentElement.requestFullscreen();else if(document.exitFullscreen)document.exitFullscreen();" title="Fullscreen">⛶</button>
+
+        <!-- Top Right Actions -->
+        <div class="top-right hud-interactive">
+            <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
+                <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+                <svg id="sound-icon-off" viewBox="0 0 24 24">
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                </svg>
+            </button>
+            <button class="icon-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+            </button>
         </div>
-        <div class="bottom-nav">
-            <div class="building-tag tag-red" onclick="focusBuilding('art')">Faculty of Art</div>
-            <div class="building-tag tag-yellow" onclick="focusBuilding('science')">Faculty of Science</div>
-            <div class="building-tag tag-blue" onclick="focusBuilding('spirit')">Faculty of Religion</div>
+
+        <!-- Live Status Ticker -->
+        <div class="hud-ticker">
+            <span style="color:#38bdf8">SYSTEM:</span> CITY OF LIFE // PROCEDURAL METROPOLIS // <span id="ticker-time">ONLINE</span>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="bottom-nav hud-interactive">
+            <div class="building-tag tag-red" onclick="focusBuilding('art')">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--art);"></span>
+                Faculty of Art
+            </div>
+            <div class="building-tag tag-yellow" onclick="focusBuilding('science')">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--science);"></span>
+                Faculty of Science
+            </div>
+            <div class="building-tag tag-blue" onclick="focusBuilding('spirit')">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--soul);"></span>
+                Faculty of Religion
+            </div>
+            <div class="building-tag tag-overview" onclick="resetOverview()">
+                Metropolis Orbit
+            </div>
         </div>
     </div>
+
+    <!-- Tooltip & 3D Canvas -->
     <div id="tooltip"></div>
     <div id="canvas-container"></div>
 
+    <!-- Three.js + OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
     <script>
+        /* ==========================================================================
+           1. DEEP TRI-TRUTH PHILOSOPHICAL MATRICES & DATA ARRAYS
+           ========================================================================== */
+        const facultyData = {
+            art: {
+                name: "FACULTY OF ART",
+                category: "BODY · SENSES · SUBJECTIVE",
+                color: 0xff3322,
+                class: "neon-art",
+                quotes: [
+                    "LITERATURE, PAINTING, MUSIC",
+                    "BEAUTY IS SUBJECTIVE TRUTH",
+                    "THE SENSES & SOMATIC EXPERIENCE",
+                    "THE CANVAS OF HUMAN EMOTION",
+                    "PHYSICALITY, DANCE & VITALITY",
+                    "POETRY, CINEMA & ARCHITECTURE"
+                ],
+                highFields: ["Literature", "Painting", "Sculpture", "Music", "Poetry", "Theater", "Haute Cuisine", "Cinema"],
+                lowFields: ["Games", "Pulp Fiction", "Pop Music", "Street Art", "Fashion", "Sensory Thrills"],
+                purposes: ["Aesthetic Bliss", "Emotional Resonance", "Sensory Vitality", "Joy of Living"]
+            },
+            science: {
+                name: "FACULTY OF SCIENCE",
+                category: "MIND · REASON · OBJECTIVE",
+                color: 0xffbb00,
+                class: "neon-science",
+                quotes: [
+                    "PHYSICS, MATHS, ASTRONOMY",
+                    "EMPIRICAL REASON & LOGIC",
+                    "OBJECTIVE ORDER & NATURAL LAW",
+                    "THE NEURAL ARCHITECTURE OF THOUGHT",
+                    "COMPUTATION & SYSTEMIC TRUTH",
+                    "DISCOVERING THE COSMIC BLUEPRINT"
+                ],
+                highFields: ["Physics", "Mathematics", "Astronomy", "Chemistry", "Neuroscience", "Computer Science", "Economics"],
+                lowFields: ["Puzzles", "Sci-Fi Lore", "Tech Gadgets", "System Optimization", "Trivia", "Chess"],
+                purposes: ["Objective Truth", "Intellectual Clarity", "Empirical Mastery", "Universal Order"]
+            },
+            spirit: {
+                name: "FACULTY OF RELIGION",
+                category: "SOUL · MYSTERY · UNIVERSAL",
+                color: 0x3b82f6,
+                class: "neon-spirit",
+                quotes: [
+                    "PRIESTHOOD & SACRED MYSTERY",
+                    "FAITH, MEANING & SOLACE",
+                    "THE UNIVERSAL HORIZON OF BEING",
+                    "ENLIGHTENMENT THROUGH TRANSCENDENCE",
+                    "METAPHYSICS, ETHICS & SILENCE",
+                    "COMMUNION WITH THE INFINITE"
+                ],
+                highFields: ["Theology", "Metaphysics", "Mysticism", "Sacred Mystery", "Ethics", "Contemplation", "Ritual"],
+                lowFields: ["Mindfulness", "Meditation", "Folklore", "Community Rites", "Oral Tradition", "Solace"],
+                purposes: ["Existential Solace", "Ultimate Meaning", "Spiritual Transcendence", "Boundless Hope"]
+            }
+        };
+
+        const triTruthTriads = [
+            ["ART", "SCIENCE", "RELIGION"],
+            ["BODY", "MIND", "SOUL"],
+            ["BEAUTY", "REASON", "WISDOM"],
+            ["SUBJECTIVE", "OBJECTIVE", "UNIVERSAL"],
+            ["SENSATION", "LOGIC", "FAITH"],
+            ["BLISS", "TRUTH", "MEANING"],
+            ["LITERATURE", "PHYSICS", "PRIESTHOOD"],
+            ["GAMES & POP", "SCI-FI & TECH", "MINDFULNESS & RITE"],
+            ["HAPPINESS", "ORDER", "HOPE"]
+        ];
+        let currentTriadIndex = 0;
+
+        const introSequenceQuotes = [
+            "Welcome to the City of Life.",
+            "The University of Hope and the Faculties of Free Will.",
+            "Where Body, Mind, and Soul converge in architectural harmony.",
+            "Where Art, Science, and Religion structure our universe."
+        ];
+
+        /* ==========================================================================
+           2. THREE.JS CAMPUS SIMULATION & PROCEDURAL METROPOLIS GENERATOR
+           ========================================================================== */
         let scene, camera, renderer, controls, raycaster, mouse;
         let specialBlocks = [];
-        let cinematicTarget = null;
-        let lastZoomTime = 0;
-        let introActive = true;
+        let landmarkLights = [];
+        let particlesSystem;
+        let groundTriangle;
 
-        const facultyData = {
-            art: { quotes: ["LITERATURE, PAINTING, MUSIC", "BEAUTY IS SUBJECTIVE TRUTH", "SENSES & SENSORY EXPERIENCE"], class: "neon-art" },
-            science: { quotes: ["PHYSICS, MATHS, ASTRONOMY", "EMPIRICAL REASON & KNOWLEDGE", "OBJECTIVE ORDER & FACTS"], class: "neon-science" },
-            spirit: { quotes: ["PRIESTHOOD & SACRED MYSTERY", "FAITH, MEANING & SOLACE", "ENLIGHTENMENT THROUGH UNITY"], class: "neon-spirit" }
-        };
+        let introActive = true;
+        let cinematicTarget = null;
+        let lastAutoTourTime = 0;
+        let lastQuoteCycleTime = 0;
+        const AUTO_TOUR_INTERVAL = 14000;
+        const QUOTE_CYCLE_INTERVAL = 3400;
+
+        const container = document.getElementById('canvas-container');
+        const tooltip = document.getElementById('tooltip');
+        const introTextEl = document.getElementById('intro-text');
+        const introOverlay = document.getElementById('intro-overlay');
+        const skipBtn = document.getElementById('skip-btn');
+        const hudLayer = document.getElementById('hud-layer');
+        const facultyScreen = document.getElementById('faculty-screen');
+        const screenContent = document.getElementById('screen-content');
+        const screenFacultyName = document.getElementById('screen-faculty-name');
+        const screenCategory = document.getElementById('screen-category');
+        const screenSubfield = document.getElementById('screen-subfield');
+        const triPill = document.getElementById('tri-pill');
+        const triW1 = document.getElementById('tri-w1');
+        const triW2 = document.getElementById('tri-w2');
+        const triW3 = document.getElementById('tri-w3');
 
         window.onload = function() {
-            init();
+            initScene();
             animate();
-            runIntro();
-            document.getElementById('skip-btn').onclick = (e) => { e.stopPropagation(); startApp(); };
+            runIntroSequence();
+            setInterval(cycleTriadBadge, 4800);
+            skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
+            setInterval(updateTicker, 1000);
         };
 
-        async function runIntro() {
-            const quotes = [
-                "Welcome to the City of Life.",
-                "The University of Hope and the Faculties of Free Will.",
-                "Explore where Body, Mind, and Soul converge."
-            ];
-            for(let q of quotes) {
-                document.getElementById('intro-text').style.opacity = 0;
-                await new Promise(r => setTimeout(r, 500));
-                document.getElementById('intro-text').innerText = q;
-                document.getElementById('intro-text').style.opacity = 1;
-                await new Promise(r => setTimeout(r, 3000));
+        function updateTicker() {
+            const d = new Date();
+            const el = document.getElementById('ticker-time');
+            if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
+        }
+
+        function cycleTriadBadge() {
+            if (!triPill) return;
+            triPill.style.opacity = 0;
+            setTimeout(() => {
+                const triad = triTruthTriads[currentTriadIndex];
+                triW1.innerText = triad[0];
+                triW2.innerText = triad[1];
+                triW3.innerText = triad[2];
+                triPill.style.opacity = 1;
+                currentTriadIndex = (currentTriadIndex + 1) % triTruthTriads.length;
+            }, 500);
+        }
+
+        async function runIntroSequence() {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.65;
+            for (let quote of introSequenceQuotes) {
+                introTextEl.style.opacity = 0;
+                await new Promise(r => setTimeout(r, 600));
+                introTextEl.innerText = quote;
+                introTextEl.style.opacity = 1;
+                await new Promise(r => setTimeout(r, 3200));
             }
         }
 
-        function startApp() {
+        function enterCampus() {
             introActive = false;
-            document.getElementById('intro-overlay').style.opacity = 0;
+            introOverlay.style.opacity = 0;
             setTimeout(() => {
-                document.getElementById('intro-overlay').style.visibility = 'hidden';
-                document.getElementById('hud-layer').style.opacity = 1;
-                lastZoomTime = Date.now();
+                introOverlay.style.visibility = 'hidden';
+                hudLayer.style.opacity = 1;
+                lastAutoTourTime = Date.now();
             }, 1000);
         }
 
-        function focusBuilding(type) {
-            const b = specialBlocks.find(x => x.userData.type === type);
-            if(b) {
-                cinematicTarget = b;
-                lastZoomTime = Date.now();
-                const screen = document.getElementById('faculty-screen');
-                const content = document.getElementById('screen-content');
-                content.className = "neon-text " + facultyData[type].class;
-                content.innerText = facultyData[type].quotes[0];
-                screen.classList.add('active');
+        /* Helper to create text sprite billboards */
+        function createTextSprite(text, color = "#ffffff", subtext = "") {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024;
+            canvas.height = 256;
+
+            // Background capsule
+            ctx.fillStyle = 'rgba(10, 15, 29, 0.88)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(140, 44, 744, 168, 30);
+            ctx.fill();
+            ctx.stroke();
+
+            // Main Title
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.font = 'bold 44px "Space Grotesk", Inter, sans-serif';
+            ctx.fillText(text, 512, 110);
+
+            // Subtext
+            if (subtext) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '24px "Space Grotesk", monospace';
+                ctx.fillText(subtext, 512, 162);
             }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
+            sprite.scale.set(8.5, 2.125, 1);
+            return sprite;
         }
 
-        function init() {
+        /* 3D Scene Initialization */
+        function initScene() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0f172a);
-            scene.fog = new THREE.Fog(0x0f172a, 40, 150);
+            scene.background = new THREE.Color(0x0b1120);
+            scene.fog = new THREE.FogExp2(0x0b1120, 0.012);
 
-            const container = document.getElementById('canvas-container');
             const aspect = container.clientWidth / container.clientHeight;
-            camera = new THREE.OrthographicCamera(-16 * aspect, 16 * aspect, 16, -16, 1, 1000);
-            camera.position.set(40, 40, 40);
+            const d = 26;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(58, 62, 58);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2.1;
+            controls.minZoom = 0.5;
+            controls.maxZoom = 4.0;
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-            sun.position.set(30, 60, 20);
+            // Environmental Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+
+            const hemi = new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.4);
+            scene.add(hemi);
+
+            const sun = new THREE.DirectionalLight(0xffffff, 1.15);
+            sun.position.set(45, 80, 35);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            sun.shadow.camera.near = 10;
+            sun.shadow.camera.far = 200;
+            sun.shadow.camera.left = -50;
+            sun.shadow.camera.right = 50;
+            sun.shadow.camera.top = 50;
+            sun.shadow.camera.bottom = -50;
+            sun.shadow.bias = -0.0005;
             scene.add(sun);
 
-            // Build Grid & Landmarks
-            const spacing = 1.6;
-            const grid = 12;
-            const offset = (grid * spacing) / 2;
+            // Procedural City & Landmarks
+            generateProceduralCity();
 
-            for (let x = 0; x < grid; x++) {
-                for (let z = 0; z < grid; z++) {
-                    let mesh, type = "campus", label = "";
-                    if (x === 4 && z === 4) {
-                        type = "art"; label = "FACULTY OF ART";
-                        mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 6.5, 2.2), new THREE.MeshStandardMaterial({color: 0xff3300}));
-                        mesh.position.y = 3.25;
-                    } else if (x === 8 && z === 4) {
-                        type = "science"; label = "FACULTY OF SCIENCE";
-                        mesh = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.6, 5.5, 6), new THREE.MeshStandardMaterial({color: 0xffcc00}));
-                        mesh.position.y = 2.75;
-                    } else if (x === 6 && z === 8) {
-                        type = "spirit"; label = "FACULTY OF RELIGION";
-                        mesh = new THREE.Mesh(new THREE.ConeGeometry(1.6, 7.5, 4), new THREE.MeshStandardMaterial({color: 0x3b82f6}));
-                        mesh.position.y = 3.75;
-                    } else {
-                        let h = 0.5 + Math.random() * 3;
-                        mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({color: 0x334155}));
-                        mesh.scale.set(1, h, 1);
-                        mesh.position.y = h / 2;
+            // Atmospheric Particle Field
+            generateAtmosphericParticles();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('mousemove', onMouseMove, false);
+            window.addEventListener('click', onCanvasClick, false);
+        }
+
+        /* Procedural Architectural Variations & Landmark Generator */
+        function generateProceduralCity() {
+            const GRID = 24;
+            const SPACING = 2.0;
+            const centerOffset = (GRID * SPACING) / 2;
+
+            // Shared Material Palette
+            const baseMaterials = [
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.1 }),
+                new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.2 }),
+                new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5, metalness: 0.3 }),
+                new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.1 })
+            ];
+
+            const glassMat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                roughness: 0.1,
+                metalness: 0.9,
+                transparent: true,
+                opacity: 0.65
+            });
+
+            const wireframeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 });
+
+            // Landmark positions on the 24x24 grid
+            const artPos = { x: 7, z: 7 };
+            const sciPos = { x: 17, z: 7 };
+            const spiritPos = { x: 12, z: 17 };
+
+            for (let x = 0; x < GRID; x++) {
+                for (let z = 0; z < GRID; z++) {
+                    const posX = x * SPACING - centerOffset;
+                    const posZ = z * SPACING - centerOffset;
+
+                    // 1. FACULTY OF ART (Red / Monolithic Cantilever Sculpture)
+                    if (x === artPos.x && z === artPos.z) {
+                        const artGroup = new THREE.Group();
+                        
+                        const baseGeo = new THREE.BoxGeometry(3.6, 1.2, 3.6);
+                        const baseMesh = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.4 }));
+                        baseMesh.position.y = 0.6;
+                        baseMesh.castShadow = true;
+                        baseMesh.receiveShadow = true;
+                        artGroup.add(baseMesh);
+
+                        // Main cantilever red tower
+                        const towerGeo = new THREE.BoxGeometry(2.4, 8.5, 2.4);
+                        const towerMat = new THREE.MeshStandardMaterial({ 
+                            color: 0xff3322, 
+                            emissive: 0x881100, 
+                            emissiveIntensity: 0.4, 
+                            roughness: 0.25, 
+                            metalness: 0.4 
+                        });
+                        const towerMesh = new THREE.Mesh(towerGeo, towerMat);
+                        towerMesh.position.set(0, 4.85, 0);
+                        towerMesh.castShadow = true;
+                        artGroup.add(towerMesh);
+
+                        // Sculptural interlocking glass cube
+                        const glassCube = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 2.8), glassMat);
+                        glassCube.position.set(0.4, 6.2, 0.4);
+                        glassCube.rotation.y = Math.PI / 4;
+                        artGroup.add(glassCube);
+
+                        // Glowing beacon on top
+                        const beacon = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.5, 16, 16),
+                            new THREE.MeshBasicMaterial({ color: 0xff5533 })
+                        );
+                        beacon.position.set(0, 9.5, 0);
+                        artGroup.add(beacon);
+
+                        artGroup.position.set(posX, 0, posZ);
+                        artGroup.userData = { type: 'art', label: 'FACULTY OF ART', category: 'Body · Art · Senses' };
+                        scene.add(artGroup);
+                        specialBlocks.push(artGroup);
+
+                        // Monument Point Light
+                        const pLight = new THREE.PointLight(0xff3322, 2.5, 18);
+                        pLight.position.set(posX, 8.5, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+
+                        // Sprite Label & Leader Line
+                        const labelSprite = createTextSprite("FACULTY OF ART", "#ff4433", "BODY · LITERATURE · MUSIC");
+                        labelSprite.position.set(posX, 12.0, posZ);
+                        scene.add(labelSprite);
+
+                        addLeaderLine(posX, 9.5, posZ, posX, 11.2, posZ, 0xff3322);
+                        continue;
                     }
-                    mesh.position.x = x * spacing - offset;
-                    mesh.position.z = z * spacing - offset;
-                    mesh.userData = { type, label: label || type };
-                    scene.add(mesh);
-                    if(type !== "campus") specialBlocks.push(mesh);
+
+                    // 2. FACULTY OF SCIENCE (Gold / Tiered Cybernetic Observatory)
+                    if (x === sciPos.x && z === sciPos.z) {
+                        const sciGroup = new THREE.Group();
+
+                        // Tiered hexagonal / cylindrical base
+                        const cyl1 = new THREE.Mesh(
+                            new THREE.CylinderGeometry(2.2, 2.6, 3.0, 8),
+                            new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.3 })
+                        );
+                        cyl1.position.y = 1.5;
+                        cyl1.castShadow = true;
+                        sciGroup.add(cyl1);
+
+                        // Core golden cylinder
+                        const cyl2 = new THREE.Mesh(
+                            new THREE.CylinderGeometry(1.6, 1.8, 5.5, 8),
+                            new THREE.MeshStandardMaterial({ 
+                                color: 0xffbb00, 
+                                emissive: 0x775500, 
+                                emissiveIntensity: 0.45, 
+                                roughness: 0.2, 
+                                metalness: 0.6 
+                            })
+                        );
+                        cyl2.position.y = 5.2;
+                        cyl2.castShadow = true;
+                        sciGroup.add(cyl2);
+
+                        // Golden Geodesic Observatory Dome
+                        const dome = new THREE.Mesh(
+                            new THREE.IcosahedronGeometry(1.3, 2),
+                            new THREE.MeshStandardMaterial({ color: 0xffe066, metalness: 0.8, roughness: 0.15 })
+                        );
+                        dome.position.y = 8.6;
+                        sciGroup.add(dome);
+
+                        // Glowing energy ring
+                        const ring = new THREE.Mesh(
+                            new THREE.TorusGeometry(2.2, 0.08, 12, 32),
+                            new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+                        );
+                        ring.rotation.x = Math.PI / 2;
+                        ring.position.y = 4.5;
+                        sciGroup.add(ring);
+
+                        sciGroup.position.set(posX, 0, posZ);
+                        sciGroup.userData = { type: 'science', label: 'FACULTY OF SCIENCE', category: 'Mind · Science · Reason' };
+                        scene.add(sciGroup);
+                        specialBlocks.push(sciGroup);
+
+                        const pLight = new THREE.PointLight(0xffbb00, 2.5, 18);
+                        pLight.position.set(posX, 8.5, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+
+                        const labelSprite = createTextSprite("FACULTY OF SCIENCE", "#ffbb00", "MIND · PHYSICS · MATHS");
+                        labelSprite.position.set(posX, 12.0, posZ);
+                        scene.add(labelSprite);
+
+                        addLeaderLine(posX, 9.5, posZ, posX, 11.2, posZ, 0xffbb00);
+                        continue;
+                    }
+
+                    // 3. FACULTY OF RELIGION (Blue / Soaring Spire & Halo Cathedral)
+                    if (x === spiritPos.x && z === spiritPos.z) {
+                        const spiritGroup = new THREE.Group();
+
+                        // Stepped Foundation
+                        const bGeo = new THREE.BoxGeometry(3.6, 1.4, 3.6);
+                        const bMesh = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 }));
+                        bMesh.position.y = 0.7;
+                        bMesh.castShadow = true;
+                        spiritGroup.add(bMesh);
+
+                        // Soaring Pyramid Spire
+                        const spireGeo = new THREE.ConeGeometry(1.8, 9.5, 4);
+                        const spireMat = new THREE.MeshStandardMaterial({ 
+                            color: 0x3b82f6, 
+                            emissive: 0x1d4ed8, 
+                            emissiveIntensity: 0.5, 
+                            roughness: 0.2, 
+                            metalness: 0.5 
+                        });
+                        const spireMesh = new THREE.Mesh(spireGeo, spireMat);
+                        spireMesh.position.y = 5.8;
+                        spireMesh.rotation.y = Math.PI / 4;
+                        spireMesh.castShadow = true;
+                        spiritGroup.add(spireMesh);
+
+                        // Sapphire Crystal Halo Ring
+                        const halo = new THREE.Mesh(
+                            new THREE.TorusGeometry(1.7, 0.08, 12, 32),
+                            new THREE.MeshBasicMaterial({ color: 0x60a5fa })
+                        );
+                        halo.rotation.x = Math.PI / 2;
+                        halo.position.y = 7.5;
+                        spiritGroup.add(halo);
+
+                        // Apex Beacon
+                        const apex = new THREE.Mesh(
+                            new THREE.OctahedronGeometry(0.5, 0),
+                            new THREE.MeshBasicMaterial({ color: 0x93c5fd })
+                        );
+                        apex.position.y = 10.8;
+                        spiritGroup.add(apex);
+
+                        spiritGroup.position.set(posX, 0, posZ);
+                        spiritGroup.userData = { type: 'spirit', label: 'FACULTY OF RELIGION', category: 'Soul · Faith · Meaning' };
+                        scene.add(spiritGroup);
+                        specialBlocks.push(spiritGroup);
+
+                        const pLight = new THREE.PointLight(0x3b82f6, 2.8, 18);
+                        pLight.position.set(posX, 8.5, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+
+                        const labelSprite = createTextSprite("FACULTY OF RELIGION", "#60a5fa", "SOUL · FAITH · SOLACE");
+                        labelSprite.position.set(posX, 13.0, posZ);
+                        scene.add(labelSprite);
+
+                        addLeaderLine(posX, 10.8, posZ, posX, 12.2, posZ, 0x60a5fa);
+                        continue;
+                    }
+
+                    // 4. PROCEDURAL CAMPUS BUILDING VARIETIES
+                    const buildingGroup = new THREE.Group();
+                    const archetype = Math.floor(Math.random() * 6);
+                    const mat = baseMaterials[Math.floor(Math.random() * baseMaterials.length)];
+                    let totalHeight = 1;
+
+                    if (archetype === 0) {
+                        // Variation A: Stepped Setback Terraces
+                        const h1 = 0.8 + Math.random() * 1.5;
+                        const h2 = 0.8 + Math.random() * 1.8;
+                        const b1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, h1, 1.4), mat);
+                        b1.position.y = h1 / 2;
+                        b1.castShadow = true; b1.receiveShadow = true;
+                        const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, h2, 0.9), mat);
+                        b2.position.y = h1 + h2 / 2;
+                        b2.castShadow = true;
+                        buildingGroup.add(b1);
+                        buildingGroup.add(b2);
+                        totalHeight = h1 + h2;
+
+                        if (Math.random() > 0.4) {
+                            const roofGlass = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.6), glassMat);
+                            roofGlass.position.y = totalHeight + 0.2;
+                            buildingGroup.add(roofGlass);
+                            totalHeight += 0.4;
+                        }
+                    } else if (archetype === 1) {
+                        // Variation B: Cylindrical Tower with Crown
+                        const h = 1.8 + Math.random() * 3.5;
+                        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, h, 12), mat);
+                        cyl.position.y = h / 2;
+                        cyl.castShadow = true; cyl.receiveShadow = true;
+                        buildingGroup.add(cyl);
+                        totalHeight = h;
+
+                        // Glowing crown ring
+                        const ring = new THREE.Mesh(
+                            new THREE.TorusGeometry(0.65, 0.04, 8, 24),
+                            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 })
+                        );
+                        ring.rotation.x = Math.PI / 2;
+                        ring.position.y = h;
+                        buildingGroup.add(ring);
+                    } else if (archetype === 2) {
+                        // Variation C: Wireframe Glass Atrium Pavilion
+                        const h = 1.0 + Math.random() * 2.2;
+                        const glassBlock = new THREE.Mesh(new THREE.BoxGeometry(1.3, h, 1.3), glassMat);
+                        glassBlock.position.y = h / 2;
+                        glassBlock.castShadow = true;
+                        buildingGroup.add(glassBlock);
+
+                        // Illuminated wireframe edges
+                        const edges = new THREE.EdgesGeometry(glassBlock.geometry);
+                        const edgeLines = new THREE.LineSegments(edges, wireframeMat);
+                        edgeLines.position.y = h / 2;
+                        buildingGroup.add(edgeLines);
+                        totalHeight = h;
+                    } else if (archetype === 3) {
+                        // Variation D: Spire & Communication Antenna Tower
+                        const h = 2.0 + Math.random() * 3.8;
+                        const baseBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 1.2), mat);
+                        baseBox.position.y = h / 2;
+                        baseBox.castShadow = true; baseBox.receiveShadow = true;
+                        buildingGroup.add(baseBox);
+
+                        const antGeo = new THREE.CylinderGeometry(0.04, 0.08, 1.8, 6);
+                        const antMesh = new THREE.Mesh(antGeo, new THREE.MeshBasicMaterial({ color: 0x94a3b8 }));
+                        antMesh.position.y = h + 0.9;
+                        buildingGroup.add(antMesh);
+
+                        // Red/Cyan signal beacon
+                        const beacon = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.12, 8, 8),
+                            new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3366 : 0x00f0ff })
+                        );
+                        beacon.position.y = h + 1.8;
+                        buildingGroup.add(beacon);
+                        totalHeight = h + 1.8;
+                    } else if (archetype === 4) {
+                        // Variation E: Multi-Wing Offset Block
+                        const h = 0.8 + Math.random() * 2.5;
+                        const w1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, h, 0.6), mat);
+                        w1.position.set(0, h / 2, 0.3);
+                        w1.castShadow = true;
+                        const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, h * 0.7, 1.3), mat);
+                        w2.position.set(0.3, (h * 0.7) / 2, 0);
+                        w2.castShadow = true;
+                        buildingGroup.add(w1);
+                        buildingGroup.add(w2);
+                        totalHeight = h;
+                    } else {
+                        // Variation F: Classic Monolith Block with Window Grids
+                        const h = 0.6 + Math.random() * 2.8;
+                        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 1.2), mat);
+                        box.position.y = h / 2;
+                        box.castShadow = true; box.receiveShadow = true;
+                        buildingGroup.add(box);
+                        totalHeight = h;
+                    }
+
+                    buildingGroup.position.set(posX, 0, posZ);
+                    buildingGroup.userData = { type: 'campus', label: `Campus Block [${x},${z}]`, height: totalHeight };
+                    scene.add(buildingGroup);
                 }
             }
 
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), new THREE.MeshStandardMaterial({color: 0x1e293b}));
+            // Campus Metropolis Foundation Floor
+            const floorGeo = new THREE.PlaneGeometry(160, 160);
+            const floorMat = new THREE.MeshStandardMaterial({ 
+                color: 0x0c1322, 
+                roughness: 0.9, 
+                metalness: 0.1 
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
             scene.add(floor);
 
-            window.addEventListener('resize', () => {
-                const asp = container.clientWidth / container.clientHeight;
-                camera.left = -16 * asp; camera.right = 16 * asp;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
+            // Subtle Grid Conduit Lines on Ground
+            const gridHelper = new THREE.GridHelper(GRID * SPACING, GRID, 0x1e293b, 0x0f172a);
+            gridHelper.position.y = 0.02;
+            scene.add(gridHelper);
+
+            // Ground Luminous Philosophical Triad Circuit
+            const triPoints = specialBlocks.map(b => new THREE.Vector3(b.position.x, 0.12, b.position.z));
+            triPoints.push(triPoints[0].clone());
+            const triGeom = new THREE.BufferGeometry().setFromPoints(triPoints);
+            const triMat = new THREE.LineDashedMaterial({
+                color: 0xffffff,
+                dashSize: 0.8,
+                gapSize: 0.4,
+                transparent: true,
+                opacity: 0.55
+            });
+            groundTriangle = new THREE.Line(triGeom, triMat);
+            groundTriangle.computeLineDistances();
+            scene.add(groundTriangle);
+        }
+
+        /* Helper for Dashed Leader Lines */
+        function addLeaderLine(x1, y1, z1, x2, y2, z2, color = 0xffffff) {
+            const points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineDashedMaterial({
+                color: color,
+                dashSize: 0.25,
+                gapSize: 0.25,
+                transparent: true,
+                opacity: 0.7
+            });
+            const line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            scene.add(line);
+        }
+
+        /* Atmospheric Stardust Particle Field */
+        function generateAtmosphericParticles() {
+            const particleCount = 1400;
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            const colorArt = new THREE.Color(0xff4433);
+            const colorSci = new THREE.Color(0xffbb00);
+            const colorSoul = new THREE.Color(0x60a5fa);
+            const colorWhite = new THREE.Color(0xe2e8f0);
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 80;
+                positions[i3 + 1] = 0.5 + Math.random() * 24;
+                positions[i3 + 2] = (Math.random() - 0.5) * 80;
+
+                const r = Math.random();
+                let c = colorWhite;
+                if (r < 0.25) c = colorArt;
+                else if (r < 0.5) c = colorSci;
+                else if (r < 0.75) c = colorSoul;
+
+                colors[i3] = c.r;
+                colors[i3 + 1] = c.g;
+                colors[i3 + 2] = c.b;
+            }
+
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const mat = new THREE.PointsMaterial({
+                size: 0.28,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.65,
+                blending: THREE.AdditiveBlending
+            });
+
+            particlesSystem = new THREE.Points(geo, mat);
+            scene.add(particlesSystem);
+        }
+
+        /* ==========================================================================
+           3. INTERACTION, CAMERA CINEMATICS & HUD FEEDS
+           ========================================================================== */
+        function focusBuilding(type) {
+            const target = specialBlocks.find(b => b.userData.type === type);
+            if (target) {
+                cinematicTarget = target;
+                lastAutoTourTime = Date.now();
+                lastQuoteCycleTime = Date.now();
+                updateFacultyScreen(type);
+                facultyScreen.classList.add('active');
+            }
+        }
+
+        function resetOverview() {
+            cinematicTarget = null;
+            facultyScreen.classList.remove('active');
+            lastAutoTourTime = Date.now();
+        }
+
+        function updateFacultyScreen(type) {
+            const data = facultyData[type];
+            if (!data) return;
+
+            screenContent.className = 'neon-text ' + data.class;
+            screenFacultyName.innerText = data.name;
+            screenFacultyName.style.color = (type === 'art' ? 'var(--art)' : type === 'science' ? 'var(--science)' : '#60a5fa');
+            screenCategory.innerText = data.category;
+
+            const randomQuote = data.quotes[Math.floor(Math.random() * data.quotes.length)];
+            screenContent.innerText = randomQuote;
+
+            // Display high vs low field manifestations
+            const randomHigh = data.highFields[Math.floor(Math.random() * data.highFields.length)];
+            const randomLow = data.lowFields[Math.floor(Math.random() * data.lowFields.length)];
+            const randomPurpose = data.purposes[Math.floor(Math.random() * data.purposes.length)];
+            screenSubfield.innerHTML = `HIGH: <b>${randomHigh}</b> &bull; CULTURAL: <b>${randomLow}</b><br><span style="color:#93c5fd">PURPOSE: ${randomPurpose}</span>`;
+        }
+
+        function onMouseMove(event) {
+            if (introActive) return;
+            mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while (target.parent && !target.userData.type) target = target.parent;
+                tooltip.style.display = 'block';
+                tooltip.style.left = event.clientX + 'px';
+                tooltip.style.top = event.clientY + 'px';
+                tooltip.innerHTML = `<span style="color:#38bdf8">${target.userData.label}</span><br><span style="font-size:9px;color:#cbd5e1">${target.userData.category || 'Monolithic Landmark'}</span>`;
+                container.style.cursor = 'pointer';
+            } else {
+                tooltip.style.display = 'none';
+                container.style.cursor = 'grab';
+            }
+        }
+
+        function onCanvasClick(event) {
+            if (introActive) return;
+            mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while (target.parent && !target.userData.type) target = target.parent;
+                focusBuilding(target.userData.type);
+            }
+        }
+
+        function onWindowResize() {
+            const aspect = container.clientWidth / container.clientHeight;
+            const d = 26;
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        /* ==========================================================================
+           4. GENERATIVE AMBIENT AUDIO SYNTHESIS (Web Audio API)
+           ========================================================================== */
+        let audioCtx = null;
+        let isAudioPlaying = false;
+        let synthGain = null;
+        let oscillators = [];
+
+        function toggleAudio() {
+            if (!audioCtx) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                    setupAmbientDrone();
+                } catch(e) {
+                    console.warn("Web Audio not supported", e);
+                    return;
+                }
+            }
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            isAudioPlaying = !isAudioPlaying;
+            const iconOn = document.getElementById('sound-icon-on');
+            const iconOff = document.getElementById('sound-icon-off');
+
+            if (isAudioPlaying) {
+                synthGain.gain.setTargetAtTime(0.08, audioCtx.currentTime, 1.2);
+                iconOn.style.display = 'block';
+                iconOff.style.display = 'none';
+            } else {
+                synthGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.8);
+                iconOn.style.display = 'none';
+                iconOff.style.display = 'block';
+            }
+        }
+
+        function setupAmbientDrone() {
+            // Harmonic chord: D Minor 9 (D2, A2, F3, C4, E4)
+            const freqs = [73.42, 110.00, 174.61, 261.63, 329.63];
+            
+            synthGain = audioCtx.createGain();
+            synthGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(650, audioCtx.currentTime);
+
+            synthGain.connect(filter);
+            filter.connect(audioCtx.destination);
+
+            freqs.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                // Subtle detune LFO
+                const detuneLFO = audioCtx.createOscillator();
+                detuneLFO.frequency.value = 0.08 + idx * 0.03;
+                const detuneGain = audioCtx.createGain();
+                detuneGain.gain.value = 3.5;
+                detuneLFO.connect(detuneGain);
+                detuneGain.connect(osc.detune);
+                detuneLFO.start();
+
+                osc.connect(synthGain);
+                osc.start();
+                oscillators.push(osc);
             });
         }
 
+        /* ==========================================================================
+           5. MAIN ANIMATION LOOP & RENDER ENGINE
+           ========================================================================== */
+        let clock = new THREE.Clock();
+
         function animate() {
             requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
             const now = Date.now();
-            if(!introActive && now - lastZoomTime > 12000) {
-                cinematicTarget = cinematicTarget ? null : specialBlocks[Math.floor(Math.random() * specialBlocks.length)];
-                lastZoomTime = now;
-                const screen = document.getElementById('faculty-screen');
-                if(cinematicTarget) {
-                    const content = document.getElementById('screen-content');
-                    const t = cinematicTarget.userData.type;
-                    content.className = "neon-text " + facultyData[t].class;
-                    content.innerText = facultyData[t].quotes[Math.floor(Math.random()*facultyData[t].quotes.length)];
-                    screen.classList.add('active');
-                } else {
-                    screen.classList.remove('active');
+
+            // Animate Atmospheric Dust Particles
+            if (particlesSystem) {
+                const positions = particlesSystem.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] -= 0.015;
+                    positions[i] += Math.sin(elapsedTime * 0.4 + i) * 0.008;
+                    if (positions[i + 1] < 0.2) positions[i + 1] = 24.0;
                 }
+                particlesSystem.geometry.attributes.position.needsUpdate = true;
             }
-            if(cinematicTarget) {
-                controls.target.lerp(cinematicTarget.position.clone(), 0.08);
-                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.2, 0.04);
-                const vector = cinematicTarget.position.clone();
-                vector.y += 3.5; vector.project(camera);
-                const cont = document.getElementById('canvas-container');
-                const screen = document.getElementById('faculty-screen');
-                screen.style.left = ((vector.x * .5 + .5) * cont.clientWidth) + 'px';
-                screen.style.top = ((vector.y * -.5 + .5) * cont.clientHeight) + 'px';
+
+            // Animate Landmark Point Lights Subtle Pulsing
+            landmarkLights.forEach((light, idx) => {
+                light.intensity = 2.2 + Math.sin(elapsedTime * 2.0 + idx * 1.5) * 0.6;
+            });
+
+            // Auto-Tour Rotation & Periodic Camera Focus Cycling
+            if (controls.autoRotate && !introActive) {
+                controls.autoRotateSpeed = 0.45;
+            }
+
+            if (!introActive && (now - lastAutoTourTime > AUTO_TOUR_INTERVAL)) {
+                if (cinematicTarget) {
+                    cinematicTarget = null;
+                    facultyScreen.classList.remove('active');
+                } else {
+                    cinematicTarget = specialBlocks[Math.floor(Math.random() * specialBlocks.length)];
+                    updateFacultyScreen(cinematicTarget.userData.type);
+                    facultyScreen.classList.add('active');
+                }
+                lastAutoTourTime = now;
+                lastQuoteCycleTime = now;
+            }
+
+            // Camera Lerping to Target Landmark
+            if (cinematicTarget) {
+                const targetPos = cinematicTarget.position.clone();
+                targetPos.y += 2.0;
+                controls.target.lerp(targetPos, 0.06);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
+
+                if (now - lastQuoteCycleTime > QUOTE_CYCLE_INTERVAL) {
+                    updateFacultyScreen(cinematicTarget.userData.type);
+                    lastQuoteCycleTime = now;
+                }
+
+                // Project 3D coordinate of monument to Screen HUD
+                const screenVec = cinematicTarget.position.clone();
+                screenVec.y += 7.5;
+                screenVec.project(camera);
+                facultyScreen.style.left = ((screenVec.x * 0.5 + 0.5) * container.clientWidth) + 'px';
+                facultyScreen.style.top = ((screenVec.y * -0.5 + 0.5) * container.clientHeight) + 'px';
             } else {
-                controls.target.lerp(new THREE.Vector3(0,0,0), 0.03);
+                controls.target.lerp(new THREE.Vector3(0, 0, 0), 0.03);
                 camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.0, 0.03);
             }
+
             camera.updateProjectionMatrix();
             controls.update();
             renderer.render(scene, camera);
