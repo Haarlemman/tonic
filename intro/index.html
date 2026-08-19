@@ -725,6 +725,76 @@
             /* Above intro-overlay (z-index 100) */
         }
 
+        /* --- TRI-TRUTHS BADGE (many things come in threes) --- */
+        #tri-truth-badge {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.92;
+        }
+
+        #tri-truth-badge svg {
+            width: 18px;
+            height: 16px;
+            opacity: 0.85;
+        }
+
+        #tri-words {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.6rem;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            padding: 5px 12px;
+            white-space: nowrap;
+            transition: opacity 0.6s ease;
+        }
+
+        .tri-w-red {
+            color: #ff6b5b;
+        }
+
+        .tri-w-blue {
+            color: #60a5fa;
+        }
+
+        .tri-w-yellow {
+            color: #facc15;
+        }
+
+        .tri-sep {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            #tri-truth-badge {
+                top: 12px;
+            }
+
+            #tri-words {
+                font-size: 0.5rem;
+                letter-spacing: 1px;
+                padding: 4px 9px;
+                gap: 5px;
+            }
+
+            #tri-truth-badge svg {
+                width: 14px;
+                height: 13px;
+            }
+        }
+
         /* Enter BUTTON ANIMATION */
         #skip-btn {
             opacity: 0;
@@ -758,6 +828,16 @@
     </div>
 
     <div id="hud-layer">
+
+        <div id="tri-truth-badge">
+            <svg viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="10,1 19,17 1,17" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1" />
+                <circle cx="10" cy="1" r="1.8" fill="#facc15" />
+                <circle cx="1" cy="17" r="1.8" fill="#ff6b5b" />
+                <circle cx="19" cy="17" r="1.8" fill="#60a5fa" />
+            </svg>
+            <div id="tri-words"></div>
+        </div>
 
         <div class="top-right-controls">
             <button class="icon-btn" onclick="toggleMusic()" id="music-btn" title="Toggle Audio">
@@ -805,6 +885,7 @@
         let specialBlocks = [];
         let leaderLines = [];
         let atomGroup, spiritBeam, spiritGlowVolume;
+        let triTriangleLine, triFillMesh;
 
         let audioCtx, analyser, dataArray;
         let audioInitialized = false;
@@ -830,24 +911,55 @@
 
         const facultyData = {
             art: {
-                quotes: ["UNUSUAL IS BEAUTY", "TO CREATE IS TO LIVE", "ESTHETICS OF THE SOUL", "FORM FOLLOWS FREEDOM", "THE CANVAS BLEEDS", "THE MIND IS THE BRUSH"],
+                quotes: ["UNUSUAL IS BEAUTY", "TO CREATE IS TO LIVE", "ESTHETICS OF THE SOUL", "FORM FOLLOWS FREEDOM", "THE CANVAS BLEEDS", "THE MIND IS THE BRUSH", "BEAUTY IS SUBJECTIVE TRUTH", "BLISS NEEDS NO PROOF", "EVERY ENDING IS A BIRTH"],
                 class: "neon-art",
                 quoteIndex: 0
             },
             science: {
-                quotes: ["FREE WILL IS A PARADOX", "THE ANSWER IS WHERE YOU ARE NOT LOOKING", "THE MORE YOU KNOW, THE LESS YOU UNDERSTAND", "REALITY IS RELATIVE", "ENTROPY IS A BEGINNING"],
+                quotes: ["FREE WILL IS A PARADOX", "THE ANSWER IS WHERE YOU ARE NOT LOOKING", "THE MORE YOU KNOW, THE LESS YOU UNDERSTAND", "REALITY IS RELATIVE", "ENTROPY IS A BEGINNING", "TRUTH IS OBJECTIVE, FOR NOW", "REASON WAS BORN IN A BIG BANG", "KNOWLEDGE BUILDS ITS OWN CAGE"],
                 class: "neon-science",
                 quoteIndex: 0
             },
             spirit: {
-                quotes: ["ADVERSITY IS YOUR TEACHER", "LETTING GO IS POWER", "SILENCE SPEAKS VOLUMES", "WISDOM THROUGH SURRENDER", "THE VOID STARES BACK", "EGOS ARE NULL"],
+                quotes: ["ADVERSITY IS YOUR TEACHER", "LETTING GO IS POWER", "SILENCE SPEAKS VOLUMES", "WISDOM THROUGH SURRENDER", "THE VOID STARES BACK", "EGOS ARE NULL", "MEANING IS UNIVERSAL, NOT PROVEN", "CREATION NEEDS NO EVIDENCE", "ENLIGHTENMENT HAS NO EDGE"],
                 class: "neon-spirit",
                 quoteIndex: 0
             }
         };
 
+        // MANY THINGS COME IN THREES —
+        // each triad kept in [Body/Art · Mind/Science · Soul/Spirit] order
+        // to match the campus color coding (red · blue · yellow)
+        const triTruths = [
+            ["ART", "SCIENCE", "RELIGION"],
+            ["THE BODY", "THE MIND", "THE SOUL"],
+            ["BEAUTY", "REASON", "AWARENESS"],
+            ["HAPPINESS", "ORDER", "MEANING"],
+            ["THE FOUND", "THE GIVEN", "THE CHOSEN"],
+            ["FEELING", "KNOWING", "BEING"],
+            ["SUBJECTIVE", "OBJECTIVE", "UNIVERSAL"],
+            ["BIRTH", "BIG BANG", "CREATION"]
+        ];
+        let triTruthIndex = 0;
+        const triWordsEl = document.getElementById('tri-words');
+
+        function cycleTriTruth() {
+            if (!triWordsEl) return;
+            triWordsEl.style.opacity = 0;
+            setTimeout(() => {
+                const t = triTruths[triTruthIndex];
+                triWordsEl.innerHTML =
+                    `<span class="tri-w-red">${t[0]}</span><span class="tri-sep">&middot;</span>` +
+                    `<span class="tri-w-blue">${t[1]}</span><span class="tri-sep">&middot;</span>` +
+                    `<span class="tri-w-yellow">${t[2]}</span>`;
+                triWordsEl.style.opacity = 1;
+                triTruthIndex = (triTruthIndex + 1) % triTruths.length;
+            }, 500);
+        }
+
         const introQuotes = [
             "Welcome to the University of Free Will.",
+            "Where many things come in threes.",
             "A place of knowledge, wisdom and beauty.",
             "Where letting go of control equals freedom.",
             "And where adversity becomes your teacher."
@@ -859,6 +971,8 @@
             init();
             animate();
             runIntroSequence();
+            cycleTriTruth();
+            setInterval(cycleTriTruth, 5000);
             skipBtn.onclick = (e) => { e.stopPropagation(); startExperience(); };
 
             // Fade in Enter button after delay
@@ -1088,6 +1202,30 @@
             }
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
             floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+            // TRI-TRUTH GROUND MARK — the three faculties always form a triangle.
+            // Beauty (art), Knowledge (science) and Wisdom (spirit) are quietly
+            // bound together, echoing "many things come in threes".
+            if (specialBlocks.length === 3) {
+                const triPts = specialBlocks.map(b => new THREE.Vector3(b.position.x, 0.06, b.position.z));
+                triPts.push(triPts[0].clone());
+                const triGeom = new THREE.BufferGeometry().setFromPoints(triPts);
+                const triMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.5, gapSize: 0.35, transparent: true, opacity: 0.28 });
+                triTriangleLine = new THREE.Line(triGeom, triMat);
+                triTriangleLine.computeLineDistances();
+                scene.add(triTriangleLine);
+
+                const fillVerts = new Float32Array([
+                    specialBlocks[0].position.x, 0.03, specialBlocks[0].position.z,
+                    specialBlocks[1].position.x, 0.03, specialBlocks[1].position.z,
+                    specialBlocks[2].position.x, 0.03, specialBlocks[2].position.z
+                ]);
+                const fillGeom = new THREE.BufferGeometry();
+                fillGeom.setAttribute('position', new THREE.BufferAttribute(fillVerts, 3));
+                const fillMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false });
+                triFillMesh = new THREE.Mesh(fillGeom, fillMat);
+                scene.add(triFillMesh);
+            }
         }
 
         function onMouseMove(event) {
@@ -1144,6 +1282,13 @@
                 l.material.dashOffset -= 0.02 + beatLevel * 0.1;
                 l.material.opacity = 0.2 + beatLevel * 0.8;
             });
+            if (triTriangleLine) {
+                triTriangleLine.material.dashOffset -= 0.012 + beatLevel * 0.05;
+                triTriangleLine.material.opacity = 0.15 + beatLevel * 0.45;
+            }
+            if (triFillMesh) {
+                triFillMesh.material.opacity = 0.03 + beatLevel * 0.05;
+            }
             if (!introActive && now - lastZoomTime > ZOOM_INTERVAL) {
                 if (cinematicTarget) { cinematicTarget = null; facultyScreen.classList.remove('active'); }
                 else { cinematicTarget = specialBlocks[Math.floor(Math.random() * specialBlocks.length)]; facultyScreen.classList.add('active'); }
