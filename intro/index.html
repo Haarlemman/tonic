@@ -9,7 +9,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anta&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +18,7 @@
             theme: {
                 extend: {
                     fontFamily: {
+                        anta: ['Anta', 'sans-serif'],
                         sans: ['Inter', 'system-ui', 'sans-serif'],
                         mono: ['"Courier New"', 'monospace'],
                         display: ['"Space Grotesk"', 'sans-serif']
@@ -141,12 +142,54 @@
         .hud-interactive { pointer-events: auto; }
 
         /* ==========================================================================
+           TOP-LEFT: THE UNIVERSITY OF FREE WILL (ANTA FONT + SPECTRAL GRADIENT)
+           ========================================================================== */
+        .top-left {
+            position: absolute;
+            top: 1.75rem;
+            left: 2.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .university-banner {
+            font-family: 'Anta', sans-serif;
+            font-size: clamp(1.25rem, 2.3vw, 1.85rem);
+            letter-spacing: 0.05em;
+            margin: 0;
+            line-height: 1.15;
+            background: linear-gradient(90deg,
+                #ffffff 0%,
+                #00FCFF 25%,
+                #FFD700 50%,
+                #FF00CC 75%,
+                #ffffff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: spectral-shift 8s linear infinite;
+            filter: drop-shadow(0 0 18px rgba(0, 252, 255, 0.4));
+        }
+        @keyframes spectral-shift {
+            to { background-position: 200% center; }
+        }
+        .university-sub {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        /* ==========================================================================
            LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX TRIANGLE
            ========================================================================== */
         #tri-matrix-left {
             position: fixed;
             left: 2.25rem;
-            top: 50%;
+            top: 52%;
             transform: translateY(-50%);
             z-index: 600;
             display: flex;
@@ -161,8 +204,8 @@
         }
         .tri-matrix-wrapper {
             position: relative;
-            width: 250px;
-            height: 250px;
+            width: 260px;
+            height: 260px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -179,56 +222,48 @@
             transform-origin: center center;
             will-change: transform;
         }
-        .tri-rotor.fast-spin {
-            transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
         .tri-svg {
             width: 100%;
             height: 100%;
             filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.25));
         }
         
-        /* Dynamic Vertices around Triangle */
+        /* Vertices around Triangle (Always Upright & Horizontal) */
         .tri-vertex-badge {
             position: absolute;
             padding: 0.35rem 0.75rem;
-            background: rgba(10, 15, 29, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(10, 15, 29, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.22);
             border-radius: 20px;
             font-family: 'Space Grotesk', monospace;
             font-size: 0.7rem;
             font-weight: 700;
             letter-spacing: 0.15em;
             text-transform: uppercase;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.45rem;
             white-space: nowrap;
-            transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            pointer-events: none;
         }
         .badge-art {
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
             color: #ff5544;
-            border-color: rgba(255, 51, 34, 0.45);
-            box-shadow: 0 0 18px var(--art-glow);
+            border-color: rgba(255, 51, 34, 0.55);
+            box-shadow: 0 0 20px var(--art-glow);
         }
         .badge-sci {
-            bottom: 4px;
-            right: -14px;
             color: #ffbb00;
-            border-color: rgba(255, 187, 0, 0.45);
-            box-shadow: 0 0 18px var(--science-glow);
+            border-color: rgba(255, 187, 0, 0.55);
+            box-shadow: 0 0 20px var(--science-glow);
         }
         .badge-spirit {
-            bottom: 4px;
-            left: -14px;
             color: #38bdf8;
-            border-color: rgba(56, 189, 248, 0.45);
-            box-shadow: 0 0 18px var(--soul-glow);
+            border-color: rgba(56, 189, 248, 0.55);
+            box-shadow: 0 0 20px var(--soul-glow);
         }
         .v-dot {
             width: 6px;
@@ -571,6 +606,9 @@
 </head>
 <body>
 
+    <!-- Ambient Audio Track (neon-static.mp3) -->
+    <audio id="ambient-audio" src="neon-static.mp3" loop preload="auto"></audio>
+
     <!-- Cinematic Intro Sequence Overlay -->
     <div id="intro-overlay">
         <div id="intro-kicker">The University of Free Will</div>
@@ -581,25 +619,37 @@
     <!-- Heads-Up Display Frame -->
     <div id="hud-layer">
         
+        <!-- TOP-LEFT: THE UNIVERSITY OF FREE WILL HEADER -->
+        <div class="top-left hud-interactive">
+            <h1 class="university-banner">The University of Free Will</h1>
+            <div class="university-sub">CITY OF LIFE // PROCEDURAL METROPOLIS</div>
+        </div>
+
         <!-- LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX -->
         <div id="tri-matrix-left">
             <div class="tri-matrix-wrapper">
                 <div class="tri-rotor" id="tri-rotor">
                     <svg class="tri-svg" viewBox="0 0 260 260">
                         <defs>
-                            <linearGradient id="lineArtSci" x1="50%" y1="0%" x2="85%" y2="80%">
-                                <stop offset="0%" stop-color="#ff3322" stop-opacity="0.9"/>
-                                <stop offset="100%" stop-color="#ffbb00" stop-opacity="0.9"/>
+                            <!-- Leg 1: Top (Art - Red) to Bottom-Right (Science - Yellow) -->
+                            <linearGradient id="gradArtSci" gradientUnits="userSpaceOnUse" x1="130" y1="40" x2="208" y2="175">
+                                <stop offset="0%" stop-color="#ff3322"/>
+                                <stop offset="100%" stop-color="#ffbb00"/>
                             </linearGradient>
-                            <linearGradient id="lineSciSpirit" x1="85%" y1="80%" x2="15%" y2="80%">
-                                <stop offset="0%" stop-color="#ffbb00" stop-opacity="0.9"/>
-                                <stop offset="100%" stop-color="#00b4d8" stop-opacity="0.9"/>
+                            
+                            <!-- Leg 2: Bottom-Right (Science - Yellow) to Bottom-Left (Spirituality - Cyan) -->
+                            <linearGradient id="gradSciSpirit" gradientUnits="userSpaceOnUse" x1="208" y1="175" x2="52" y2="175">
+                                <stop offset="0%" stop-color="#ffbb00"/>
+                                <stop offset="100%" stop-color="#00b4d8"/>
                             </linearGradient>
-                            <linearGradient id="lineSpiritArt" x1="15%" y1="80%" x2="50%" y2="0%">
-                                <stop offset="0%" stop-color="#00b4d8" stop-opacity="0.9"/>
-                                <stop offset="100%" stop-color="#ff3322" stop-opacity="0.9"/>
+                            
+                            <!-- Leg 3: Bottom-Left (Spirituality - Cyan) to Top (Art - Red) -->
+                            <linearGradient id="gradSpiritArt" gradientUnits="userSpaceOnUse" x1="52" y1="175" x2="130" y2="40">
+                                <stop offset="0%" stop-color="#00b4d8"/>
+                                <stop offset="100%" stop-color="#ff3322"/>
                             </linearGradient>
-                            <filter id="svgGlow" x="-20%" y="-20%" width="140%" height="140%">
+
+                            <filter id="svgGlow" x="-30%" y="-30%" width="160%" height="160%">
                                 <feGaussianBlur stdDeviation="4" result="blur"/>
                                 <feMerge>
                                     <feMergeNode in="blur"/>
@@ -609,41 +659,41 @@
                         </defs>
                         
                         <!-- Outer Orbit & Grid Rings -->
-                        <circle cx="130" cy="130" r="120" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3 5"/>
-                        <circle cx="130" cy="130" r="60" fill="none" stroke="rgba(56,189,248,0.12)" stroke-width="1"/>
+                        <circle cx="130" cy="130" r="115" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3 5"/>
+                        <circle cx="130" cy="130" r="55" fill="none" stroke="rgba(56,189,248,0.12)" stroke-width="1"/>
                         
                         <!-- Equilateral Triangle Body -->
-                        <polygon points="130,28 220,184 40,184" fill="rgba(10,15,29,0.75)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" filter="url(#svgGlow)"/>
+                        <polygon points="130,40 208,175 52,175" fill="rgba(10,15,29,0.75)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" filter="url(#svgGlow)"/>
                         
-                        <!-- Glowing Colored Matrix Perimeter Edges -->
-                        <line x1="130" y1="28" x2="220" y2="184" stroke="url(#lineArtSci)" stroke-width="3" filter="url(#svgGlow)"/>
-                        <line x1="220" y1="184" x2="40" y2="184" stroke="url(#lineSciSpirit)" stroke-width="3" filter="url(#svgGlow)"/>
-                        <line x1="40" y1="184" x2="130" y2="28" stroke="url(#lineSpiritArt)" stroke-width="3" filter="url(#svgGlow)"/>
+                        <!-- All 3 Glowing Colored Matrix Perimeter Edges -->
+                        <line x1="130" y1="40" x2="208" y2="175" stroke="url(#gradArtSci)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                        <line x1="208" y1="175" x2="52" y2="175" stroke="url(#gradSciSpirit)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                        <line x1="52" y1="175" x2="130" y2="40" stroke="url(#gradSpiritArt)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
                         
                         <!-- Center Radial Ray Conduits -->
-                        <line x1="130" y1="130" x2="130" y2="28" stroke="rgba(255,51,34,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
-                        <line x1="130" y1="130" x2="220" y2="184" stroke="rgba(255,187,0,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
-                        <line x1="130" y1="130" x2="40" y2="184" stroke="rgba(0,180,216,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                        <line x1="130" y1="130" x2="130" y2="40" stroke="rgba(255,51,34,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                        <line x1="130" y1="130" x2="208" y2="175" stroke="rgba(255,187,0,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                        <line x1="130" y1="130" x2="52" y2="175" stroke="rgba(0,180,216,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
                         
                         <!-- Vertex Nodes -->
-                        <circle cx="130" cy="28" r="6" fill="#ff3322" filter="url(#svgGlow)"/>
-                        <circle cx="220" cy="184" r="6" fill="#ffbb00" filter="url(#svgGlow)"/>
-                        <circle cx="40" cy="184" r="6" fill="#00b4d8" filter="url(#svgGlow)"/>
+                        <circle cx="130" cy="40" r="6" fill="#ff3322" filter="url(#svgGlow)"/>
+                        <circle cx="208" cy="175" r="6" fill="#ffbb00" filter="url(#svgGlow)"/>
+                        <circle cx="52" cy="175" r="6" fill="#00b4d8" filter="url(#svgGlow)"/>
                     </svg>
+                </div>
 
-                    <!-- Dynamic Words on Triangle Vertices -->
-                    <div class="tri-vertex-badge badge-art" id="tri-node-1">
-                        <span class="v-dot dot-art"></span>
-                        <span id="tri-w1">ART</span>
-                    </div>
-                    <div class="tri-vertex-badge badge-sci" id="tri-node-2">
-                        <span class="v-dot dot-sci"></span>
-                        <span id="tri-w2">SCIENCE</span>
-                    </div>
-                    <div class="tri-vertex-badge badge-spirit" id="tri-node-3">
-                        <span class="v-dot dot-spirit"></span>
-                        <span id="tri-w3">SPIRITUALITY</span>
-                    </div>
+                <!-- Dynamic Words on Vertices (Positioned outside rotor to stay strictly upright and legible) -->
+                <div class="tri-vertex-badge badge-art" id="tri-node-1">
+                    <span class="v-dot dot-art"></span>
+                    <span id="tri-w1">ART</span>
+                </div>
+                <div class="tri-vertex-badge badge-sci" id="tri-node-2">
+                    <span class="v-dot dot-sci"></span>
+                    <span id="tri-w2">SCIENCE</span>
+                </div>
+                <div class="tri-vertex-badge badge-spirit" id="tri-node-3">
+                    <span class="v-dot dot-spirit"></span>
+                    <span id="tri-w3">SPIRITUALITY</span>
                 </div>
 
                 <!-- Central Hub -->
@@ -851,6 +901,7 @@
         const introOverlay = document.getElementById('intro-overlay');
         const skipBtn = document.getElementById('skip-btn');
         const hudLayer = document.getElementById('hud-layer');
+        const ambientAudio = document.getElementById('ambient-audio');
         
         // Right Faculty Panel elements
         const facultyPanel = document.getElementById('faculty-panel-right');
@@ -876,6 +927,7 @@
             animate();
             runIntroSequence();
             updateFacultyPanel('art');
+            updateTriBadgePositions();
             setInterval(cycleTriadBadge, 5200);
             skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
             setInterval(updateTicker, 1000);
@@ -887,42 +939,82 @@
             if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
         }
 
-        /* Fast Spin Triangle Transition Function */
+        /* Dynamically update badge positions on triangle vertices to guarantee upright horizontal text */
+        function updateTriBadgePositions() {
+            const cx = 130, cy = 130, r = 102;
+            const degToRad = Math.PI / 180;
+            
+            const a1 = (triangleAngle - 90) * degToRad;
+            const a2 = (triangleAngle + 30) * degToRad;
+            const a3 = (triangleAngle + 150) * degToRad;
+            
+            if (triNode1) {
+                triNode1.style.left = `${cx + r * Math.cos(a1)}px`;
+                triNode1.style.top = `${cy + r * Math.sin(a1)}px`;
+            }
+            if (triNode2) {
+                triNode2.style.left = `${cx + r * Math.cos(a2)}px`;
+                triNode2.style.top = `${cy + r * Math.sin(a2)}px`;
+            }
+            if (triNode3) {
+                triNode3.style.left = `${cx + r * Math.cos(a3)}px`;
+                triNode3.style.top = `${cy + r * Math.sin(a3)}px`;
+            }
+        }
+
+        /* Fast Spin Triangle Transition Function (Smooth Super-Spin) */
         function cycleTriadBadge() {
-            if (!triRotor) return;
+            if (!triRotor || isSuperSpinning) return;
             isSuperSpinning = true;
 
-            // Hyper-speed spin animation (+720 deg boost)
-            const targetSpinAngle = triangleAngle + 720;
-            triRotor.classList.add('fast-spin');
-            triRotor.style.transform = `rotate(${targetSpinAngle}deg)`;
+            const startAngle = triangleAngle;
+            const targetAngle = startAngle + 720;
+            const duration = 650;
+            const startTime = performance.now();
 
-            // Fade text mid-spin and replace
-            setTimeout(() => {
-                currentTriadIndex = (currentTriadIndex + 1) % triTruthTriads.length;
-                const triad = triTruthTriads[currentTriadIndex];
+            // Fade out badges before mid-spin
+            [triNode1, triNode2, triNode3].forEach(node => {
+                if (node) node.style.opacity = '0';
+            });
+
+            let textUpdated = false;
+
+            function stepSpin(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
                 
-                [triNode1, triNode2, triNode3].forEach(node => {
-                    if (node) node.style.opacity = '0';
-                });
+                // Cubic easing (easeOutCubic / easeInOutQuad)
+                const ease = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-                setTimeout(() => {
+                triangleAngle = startAngle + (targetAngle - startAngle) * ease;
+                if (triRotor) triRotor.style.transform = `rotate(${triangleAngle}deg)`;
+                updateTriBadgePositions();
+
+                // Swap text mid-spin
+                if (progress >= 0.45 && !textUpdated) {
+                    textUpdated = true;
+                    currentTriadIndex = (currentTriadIndex + 1) % triTruthTriads.length;
+                    const triad = triTruthTriads[currentTriadIndex];
                     triW1.innerText = triad[0];
                     triW2.innerText = triad[1];
                     triW3.innerText = triad[2];
+                    
                     [triNode1, triNode2, triNode3].forEach(node => {
                         if (node) node.style.opacity = '1';
                     });
-                }, 150);
-            }, 250);
+                }
 
-            // Settle smoothly back into continuous rotation
-            setTimeout(() => {
-                triRotor.classList.remove('fast-spin');
-                triangleAngle = targetSpinAngle % 360;
-                triRotor.style.transform = `rotate(${triangleAngle}deg)`;
-                isSuperSpinning = false;
-            }, 680);
+                if (progress < 1) {
+                    requestAnimationFrame(stepSpin);
+                } else {
+                    triangleAngle = targetAngle % 360;
+                    isSuperSpinning = false;
+                }
+            }
+
+            requestAnimationFrame(stepSpin);
         }
 
         async function runIntroSequence() {
@@ -945,6 +1037,40 @@
                 hudLayer.style.opacity = 1;
                 lastAutoTourTime = Date.now();
             }, 1000);
+
+            // Automatically start playing ambient audio (neon-static.mp3) on user interaction
+            startAmbientAudio();
+        }
+
+        function startAmbientAudio() {
+            if (!ambientAudio) return;
+            ambientAudio.volume = 0.5;
+            ambientAudio.play().then(() => {
+                updateAudioIcon(true);
+            }).catch(err => {
+                console.warn("Audio autoplay blocked or interacting needed:", err);
+            });
+        }
+
+        function toggleAudio() {
+            if (!ambientAudio) return;
+            if (ambientAudio.paused) {
+                ambientAudio.play().then(() => {
+                    updateAudioIcon(true);
+                }).catch(err => console.warn("Audio play error:", err));
+            } else {
+                ambientAudio.pause();
+                updateAudioIcon(false);
+            }
+        }
+
+        function updateAudioIcon(playing) {
+            const iconOn = document.getElementById('sound-icon-on');
+            const iconOff = document.getElementById('sound-icon-off');
+            if (iconOn && iconOff) {
+                iconOn.style.display = playing ? 'block' : 'none';
+                iconOff.style.display = playing ? 'none' : 'block';
+            }
         }
 
         /* Helper to create clean in-scene billboard beacon labels */
@@ -1584,78 +1710,6 @@
         }
 
         /* ==========================================================================
-           4. GENERATIVE AMBIENT AUDIO SYNTHESIS (Web Audio API)
-           ========================================================================== */
-        let audioCtx = null;
-        let isAudioPlaying = false;
-        let synthGain = null;
-        let oscillators = [];
-
-        function toggleAudio() {
-            if (!audioCtx) {
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
-                    setupAmbientDrone();
-                } catch(e) {
-                    console.warn("Web Audio not supported", e);
-                    return;
-                }
-            }
-
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-
-            isAudioPlaying = !isAudioPlaying;
-            const iconOn = document.getElementById('sound-icon-on');
-            const iconOff = document.getElementById('sound-icon-off');
-
-            if (isAudioPlaying) {
-                synthGain.gain.setTargetAtTime(0.08, audioCtx.currentTime, 1.2);
-                iconOn.style.display = 'block';
-                iconOff.style.display = 'none';
-            } else {
-                synthGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.8);
-                iconOn.style.display = 'none';
-                iconOff.style.display = 'block';
-            }
-        }
-
-        function setupAmbientDrone() {
-            // Harmonic chord: D Minor 9 (D2, A2, F3, C4, E4)
-            const freqs = [73.42, 110.00, 174.61, 261.63, 329.63];
-            
-            synthGain = audioCtx.createGain();
-            synthGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
-
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(650, audioCtx.currentTime);
-
-            synthGain.connect(filter);
-            filter.connect(audioCtx.destination);
-
-            freqs.forEach((freq, idx) => {
-                const osc = audioCtx.createOscillator();
-                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-                const detuneLFO = audioCtx.createOscillator();
-                detuneLFO.frequency.value = 0.08 + idx * 0.03;
-                const detuneGain = audioCtx.createGain();
-                detuneGain.gain.value = 3.5;
-                detuneLFO.connect(detuneGain);
-                detuneGain.connect(osc.detune);
-                detuneLFO.start();
-
-                osc.connect(synthGain);
-                osc.start();
-                oscillators.push(osc);
-            });
-        }
-
-        /* ==========================================================================
            5. MAIN ANIMATION LOOP & RENDER ENGINE
            ========================================================================== */
         let clock = new THREE.Clock();
@@ -1665,10 +1719,11 @@
             const elapsedTime = clock.getElapsedTime();
             const now = Date.now();
 
-            // Smooth Continuous Rotation of the Left Tri-Truth Triangle
+            // Smooth Continuous Rotation of the Left Tri-Truth Triangle & Upright Badges
             if (!isSuperSpinning && triRotor) {
                 triangleAngle = (triangleAngle + 0.12) % 360;
                 triRotor.style.transform = `rotate(${triangleAngle}deg)`;
+                updateTriBadgePositions();
             }
 
             // Animate Atmospheric Dust Particles
