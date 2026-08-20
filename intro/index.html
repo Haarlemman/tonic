@@ -1067,113 +1067,6 @@
             }
         }
 
-        /* Solid Glowing 3D Landmark Beacon Symbols */
-        function createAlphaSymbolMesh() {
-            const group = new THREE.Group();
-            const points = [
-                new THREE.Vector3(0.72, 0.85, 0),
-                new THREE.Vector3(0.38, 0.42, 0.05),
-                new THREE.Vector3(0.0, 0.0, 0.05),
-                new THREE.Vector3(-0.45, -0.45, 0.02),
-                new THREE.Vector3(-0.85, -0.3, 0),
-                new THREE.Vector3(-0.95, 0.15, 0),
-                new THREE.Vector3(-0.65, 0.65, 0),
-                new THREE.Vector3(-0.25, 0.45, -0.02),
-                new THREE.Vector3(0.0, 0.0, -0.05),
-                new THREE.Vector3(0.45, -0.45, -0.05),
-                new THREE.Vector3(0.85, -0.85, 0)
-            ];
-            const curve = new THREE.CatmullRomCurve3(points);
-            const geo = new THREE.TubeGeometry(curve, 64, 0.16, 16, false);
-            const mat = new THREE.MeshStandardMaterial({
-                color: 0xff3322,
-                emissive: 0xff1100,
-                emissiveIntensity: 3.2,
-                roughness: 0.1,
-                metalness: 0.8,
-                toneMapped: false
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.castShadow = true;
-            group.add(mesh);
-
-            // Core radiant glow light
-            const innerGlow = new THREE.PointLight(0xff2200, 3.0, 10);
-            group.add(innerGlow);
-
-            return group;
-        }
-
-        function createBetaSymbolMesh() {
-            const group = new THREE.Group();
-            const points = [
-                new THREE.Vector3(-0.5, -0.95, 0),
-                new THREE.Vector3(-0.5, 0.0, 0),
-                new THREE.Vector3(-0.5, 0.85, 0),
-                new THREE.Vector3(-0.1, 0.95, 0.04),
-                new THREE.Vector3(0.38, 0.65, 0.04),
-                new THREE.Vector3(0.18, 0.2, 0.02),
-                new THREE.Vector3(-0.45, 0.12, 0.01),
-                new THREE.Vector3(0.22, 0.05, -0.02),
-                new THREE.Vector3(0.52, -0.32, -0.04),
-                new THREE.Vector3(0.12, -0.78, -0.04),
-                new THREE.Vector3(-0.5, -0.75, 0)
-            ];
-            const curve = new THREE.CatmullRomCurve3(points);
-            const geo = new THREE.TubeGeometry(curve, 72, 0.15, 16, false);
-            const mat = new THREE.MeshStandardMaterial({
-                color: 0xffcc00,
-                emissive: 0xff9900,
-                emissiveIntensity: 3.2,
-                roughness: 0.1,
-                metalness: 0.8,
-                toneMapped: false
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.castShadow = true;
-            group.add(mesh);
-
-            // Core radiant glow light
-            const innerGlow = new THREE.PointLight(0xffaa00, 3.0, 10);
-            group.add(innerGlow);
-
-            return group;
-        }
-
-        function createInfinitySymbolMesh() {
-            const group = new THREE.Group();
-            const points = [];
-            const N = 80;
-            const a = 1.25;
-            for (let i = 0; i <= N; i++) {
-                const t = (i / N) * Math.PI * 2;
-                const denom = 1 + Math.sin(t) * Math.sin(t);
-                const x = (a * Math.cos(t)) / denom;
-                const y = (a * Math.sin(t) * Math.cos(t) * 1.5) / denom;
-                const z = Math.sin(t * 2) * 0.08;
-                points.push(new THREE.Vector3(x, y, z));
-            }
-            const curve = new THREE.CatmullRomCurve3(points, true);
-            const geo = new THREE.TubeGeometry(curve, 80, 0.15, 16, true);
-            const mat = new THREE.MeshStandardMaterial({
-                color: 0x38bdf8,
-                emissive: 0x00d4ff,
-                emissiveIntensity: 3.4,
-                roughness: 0.1,
-                metalness: 0.8,
-                toneMapped: false
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.castShadow = true;
-            group.add(mesh);
-
-            // Core radiant glow light
-            const innerGlow = new THREE.PointLight(0x00d4ff, 3.5, 10);
-            group.add(innerGlow);
-
-            return group;
-        }
-
         /* 3D Scene Initialization */
         function initScene() {
             scene = new THREE.Scene();
@@ -1306,12 +1199,13 @@
                         glassCube.rotation.y = Math.PI / 4;
                         artGroup.add(glassCube);
 
-                        // 3D Solid Alpha Beacon Symbol (Body - Floating, 75% size)
-                        const alphaSymbol = createAlphaSymbolMesh();
-                        alphaSymbol.position.set(0, 12.2, 0);
-                        alphaSymbol.scale.set(1.05, 1.05, 1.05);
-                        alphaSymbol.rotation.y = Math.PI / 4;
-                        artGroup.add(alphaSymbol);
+                        // Radiant Beacon on top
+                        const beacon = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.55, 16, 16),
+                            new THREE.MeshBasicMaterial({ color: 0xff4422 })
+                        );
+                        beacon.position.set(0, 9.8, 0);
+                        artGroup.add(beacon);
 
                         artGroup.position.set(posX, 0, posZ);
                         artGroup.userData = { type: 'art', label: 'THE FACULTY OF THE BODY', category: 'Body · Senses · Subjective' };
@@ -1319,8 +1213,8 @@
                         specialBlocks.push(artGroup);
 
                         // Monument Point Light
-                        const pLight = new THREE.PointLight(0xff2200, 5.0, 28);
-                        pLight.position.set(posX, 12.2, posZ);
+                        const pLight = new THREE.PointLight(0xff2200, 5.0, 25);
+                        pLight.position.set(posX, 9.8, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
                         continue;
@@ -1371,20 +1265,13 @@
                         ring.position.y = 4.6;
                         sciGroup.add(ring);
 
-                        // 3D Solid Beta Beacon Symbol (Mind - Floating, 75% size)
-                        const betaSymbol = createBetaSymbolMesh();
-                        betaSymbol.position.set(0, 12.4, 0);
-                        betaSymbol.scale.set(1.0, 1.0, 1.0);
-                        betaSymbol.rotation.y = Math.PI / 4;
-                        sciGroup.add(betaSymbol);
-
                         sciGroup.position.set(posX, 0, posZ);
                         sciGroup.userData = { type: 'science', label: 'THE FACULTY OF THE MIND', category: 'Mind · Reason · Objective' };
                         scene.add(sciGroup);
                         specialBlocks.push(sciGroup);
 
-                        const pLight = new THREE.PointLight(0xffbb00, 5.0, 28);
-                        pLight.position.set(posX, 12.4, posZ);
+                        const pLight = new THREE.PointLight(0xffbb00, 5.0, 25);
+                        pLight.position.set(posX, 9.2, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
                         continue;
@@ -1425,20 +1312,21 @@
                         halo.position.y = 7.6;
                         spiritGroup.add(halo);
 
-                        // 3D Solid Infinity Beacon Symbol (Soul - Floating, 75% size)
-                        const infinitySymbol = createInfinitySymbolMesh();
-                        infinitySymbol.position.set(0, 12.6, 0);
-                        infinitySymbol.scale.set(0.98, 0.98, 0.98);
-                        infinitySymbol.rotation.y = Math.PI / 4;
-                        spiritGroup.add(infinitySymbol);
+                        // Apex Crystal Beacon
+                        const apex = new THREE.Mesh(
+                            new THREE.OctahedronGeometry(0.55, 0),
+                            new THREE.MeshBasicMaterial({ color: 0xbbf7d0 })
+                        );
+                        apex.position.y = 11.0;
+                        spiritGroup.add(apex);
 
                         spiritGroup.position.set(posX, 0, posZ);
                         spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Soul · Transcendence · Universal' };
                         scene.add(spiritGroup);
                         specialBlocks.push(spiritGroup);
 
-                        const pLight = new THREE.PointLight(0x00b4d8, 5.5, 28);
-                        pLight.position.set(posX, 12.6, posZ);
+                        const pLight = new THREE.PointLight(0x00b4d8, 5.5, 25);
+                        pLight.position.set(posX, 11.0, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
                         continue;
