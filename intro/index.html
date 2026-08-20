@@ -1015,6 +1015,57 @@
             }
         }
 
+        const landmarkLabels = {};
+
+        /* Glowing Neon Landmark Label Badges */
+        function createNeonLabelSprite(text, colorHex, glowColor) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 180;
+
+            // Semi-transparent glass capsule pill
+            ctx.fillStyle = 'rgba(8, 13, 26, 0.92)';
+            ctx.strokeStyle = colorHex;
+            ctx.lineWidth = 4;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 18;
+            ctx.beginPath();
+            ctx.roundRect(40, 25, 432, 130, 65);
+            ctx.fill();
+            ctx.stroke();
+
+            // Radiant Neon Indicator Dot
+            ctx.fillStyle = colorHex;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 16;
+            ctx.beginPath();
+            ctx.arc(115, 90, 11, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glowing Neon Text
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '800 58px "Space Grotesk", Inter, sans-serif';
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 22;
+            ctx.fillText(text, 150, 92);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ 
+                map: texture, 
+                transparent: true, 
+                opacity: 0,
+                depthTest: false,
+                toneMapped: false
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(4.8, 1.68, 1);
+            sprite.visible = false;
+            return sprite;
+        }
+
         /* 3D Scene Initialization */
         function initScene() {
             scene = new THREE.Scene();
@@ -1160,6 +1211,13 @@
                         scene.add(artGroup);
                         specialBlocks.push(artGroup);
 
+                        // Floating Neon Label for Body
+                        const bodyLabel = createNeonLabelSprite("BODY", "#ff3322", "rgba(255, 51, 34, 0.95)");
+                        bodyLabel.position.set(posX, 11.6, posZ);
+                        bodyLabel.userData = { baseY: 11.6 };
+                        scene.add(bodyLabel);
+                        landmarkLabels['art'] = bodyLabel;
+
                         // Monument Point Light
                         const pLight = new THREE.PointLight(0xff2200, 5.0, 25);
                         pLight.position.set(posX, 9.8, posZ);
@@ -1218,6 +1276,13 @@
                         scene.add(sciGroup);
                         specialBlocks.push(sciGroup);
 
+                        // Floating Neon Label for Mind
+                        const mindLabel = createNeonLabelSprite("MIND", "#ffbb00", "rgba(255, 187, 0, 0.95)");
+                        mindLabel.position.set(posX, 11.6, posZ);
+                        mindLabel.userData = { baseY: 11.6 };
+                        scene.add(mindLabel);
+                        landmarkLabels['science'] = mindLabel;
+
                         const pLight = new THREE.PointLight(0xffbb00, 5.0, 25);
                         pLight.position.set(posX, 9.2, posZ);
                         scene.add(pLight);
@@ -1272,6 +1337,13 @@
                         spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Soul · Transcendence · Universal' };
                         scene.add(spiritGroup);
                         specialBlocks.push(spiritGroup);
+
+                        // Floating Neon Label for Soul
+                        const soulLabel = createNeonLabelSprite("SOUL", "#38bdf8", "rgba(56, 189, 248, 0.95)");
+                        soulLabel.position.set(posX, 12.6, posZ);
+                        soulLabel.userData = { baseY: 12.6 };
+                        scene.add(soulLabel);
+                        landmarkLabels['spirit'] = soulLabel;
 
                         const pLight = new THREE.PointLight(0x00b4d8, 5.5, 25);
                         pLight.position.set(posX, 11.0, posZ);
@@ -1509,12 +1581,30 @@
                 lastAutoTourTime = Date.now();
                 lastQuoteCycleTime = Date.now();
                 updateFacultyPanel(type);
+
+                // Show only active neon label on click / focus
+                Object.keys(landmarkLabels).forEach(key => {
+                    const sprite = landmarkLabels[key];
+                    if (key === type) {
+                        sprite.visible = true;
+                        sprite.material.opacity = 1.0;
+                    } else {
+                        sprite.material.opacity = 0.0;
+                        sprite.visible = false;
+                    }
+                });
             }
         }
 
         function resetOverview() {
             cinematicTarget = null;
             lastAutoTourTime = Date.now();
+            currentFacultyType = null;
+            // Hide all labels on overview
+            Object.keys(landmarkLabels).forEach(key => {
+                landmarkLabels[key].visible = false;
+                landmarkLabels[key].material.opacity = 0.0;
+            });
         }
 
         function updateFacultyPanel(type) {
@@ -1637,6 +1727,12 @@
                 light.intensity = 4.2 + Math.sin(elapsedTime * 2.2 + idx * 1.5) * 0.8;
             });
 
+            // Gentle floating bobbing animation for active neon label
+            if (currentFacultyType && landmarkLabels[currentFacultyType] && landmarkLabels[currentFacultyType].visible) {
+                const activeSprite = landmarkLabels[currentFacultyType];
+                activeSprite.position.y = activeSprite.userData.baseY + Math.sin(elapsedTime * 2.8) * 0.16;
+            }
+
             // Auto-Tour Rotation & Periodic Camera Focus Cycling
             if (controls.autoRotate && !introActive) {
                 controls.autoRotateSpeed = 0.45;
@@ -1646,13 +1742,11 @@
                 if (cinematicTarget) {
                     cinematicTarget = null;
                 } else {
-                    const nextTarget = specialBlocks[Math.floor(Math.random() * specialBlocks.length)];
-                    cinematicTarget = nextTarget;
-                    currentFacultyType = nextTarget.userData.type;
-                    updateFacultyPanel(currentFacultyType);
+                    const keys = ['art', 'science', 'spirit'];
+                    const nextKey = keys[Math.floor(Math.random() * keys.length)];
+                    focusBuilding(nextKey);
                 }
                 lastAutoTourTime = now;
-                lastQuoteCycleTime = now;
             }
 
             // Camera Lerping to Target Landmark
