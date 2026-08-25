@@ -1,4 +1,4 @@
-﻿/**
+/**
  * layout.js
  * Centralized layout management for TONIC ONLINE.
  * Injects Tailwind Config, Fonts, Header, and Footer.
@@ -43,7 +43,7 @@
     // 3. Define HTML Templates
     const HEADER_HTML = `
 		<header class="sticky top-0 z-50 flex flex-col font-sans">
-            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-0 border-black overflow-hidden house-style-force">
+            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px; background-color: #fbbf24;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-0 border-black overflow-hidden house-style-force">
                 <div class="flex flex-row items-center gap-2">
                     <a href="https://www.tonicforthebones.com/" class="bg-black text-white px-2 py-0 text-base uppercase border-2 border-black hover:bg-white hover:text-black transition-colors z-10 relative" style="font-family: 'Share Tech Mono', monospace;">TONIC</a>
                     <span class="text-[14px] md:text-xs tracking-wide text-black" style="font-family: 'Share Tech Mono', monospace;">multi media defiance</span>
@@ -51,8 +51,9 @@
                 <nav class="relative">
                     <div class="md:hidden group relative">
                          <button id="mobile-menu-btn" class="p-0.5 bg-tonicRed text-white border border-black hover:bg-tonicDarkRed transition-colors focus:outline-none"><i data-lucide="menu" class="w-4 h-4"></i></button>
-                        <div id="mobile-menu" class="absolute right-0 mt-0 w-32 bg-white border border-black py-0 hidden shadow-xl z-50">
-                            <a href="/tftb/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">BOOK</a>
+                        <div id="mobile-menu" class="absolute right-0 mt-0 w-56 bg-white border border-black py-0 hidden shadow-xl z-50">
+                            <a href="/tftb/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">TONIC FOR THE BONES</a>
+                            <a href="/phantomparents/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">PHANTOM PARENTS</a>
                             <a href="/folio/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">DIGITAL</a>
                             <a href="/photos/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">PHOTOS</a>
                             <a href="/music/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-black hover:text-pink-400 border-b border-black">MUSIC</a>
@@ -62,8 +63,9 @@
                     <ul class="hidden md:flex space-x-4 items-center text-[10px] font-bold tracking-widest uppercase text-stone-600">
                         <li class="relative dropdown group h-full cursor-pointer">
                             <span class="bg-tonicRed text-white border border-black px-2 py-0.5 hover:bg-tonicDarkRed transition-colors flex items-center gap-1">Menu <i data-lucide="chevron-down" class="w-3 h-3"></i></span>
-                            <div class="dropdown-menu absolute right-0 top-full mt-0 w-32 bg-white border border-black py-0 hidden group-hover:block z-50 shadow-xl">
-                                <a href="/tftb/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">BOOK</a>
+                            <div class="dropdown-menu absolute right-0 top-full mt-0 w-56 bg-white border border-black py-0 hidden group-hover:block z-50 shadow-xl">
+                                <a href="/tftb/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">TONIC FOR THE BONES</a>
+                                <a href="/phantomparents/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">PHANTOM PARENTS</a>
                                 <a href="/folio/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">DIGITAL</a>
                                 <a href="/photos/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">PHOTOS</a>
                                 <a href="/music/" class="block px-3 py-2 text-black hover:bg-black hover:text-pink-400 transition-colors border-b border-black">MUSIC</a>
