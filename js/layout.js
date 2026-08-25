@@ -52,7 +52,7 @@
                     <div class="md:hidden group relative">
                          <button id="mobile-menu-btn" class="p-0.5 bg-tonicRed text-white border border-black hover:bg-tonicDarkRed transition-colors focus:outline-none"><i data-lucide="menu" class="w-4 h-4"></i></button>
                         <div id="mobile-menu" class="absolute right-0 mt-0 w-32 bg-white border border-black py-0 hidden shadow-xl z-50">
-                            <a href="/tftb/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">BOOKS</a>
+                            <a href="/books/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicRed hover:text-white border-b border-black">BOOKS</a>
                             <a href="/folio/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">DIGITAL</a>
                             <a href="/photos/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-tonicYellow hover:text-black border-b border-black">PHOTOS</a>
                             <a href="/music/" class="block px-3 py-3 text-sm text-stone-900 hover:bg-black hover:text-pink-400 border-b border-black">MUSIC</a>
@@ -63,7 +63,7 @@
                         <li class="relative dropdown group h-full cursor-pointer">
                             <span class="bg-tonicRed text-white border border-black px-2 py-0.5 hover:bg-tonicDarkRed transition-colors flex items-center gap-1">Menu <i data-lucide="chevron-down" class="w-3 h-3"></i></span>
                             <div class="dropdown-menu absolute right-0 top-full mt-0 w-32 bg-white border border-black py-0 hidden group-hover:block z-50 shadow-xl">
-                                <a href="/tftb/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">BOOKS</a>
+                                <a href="/books/" class="block px-3 py-2 text-black hover:bg-tonicRed hover:text-white transition-colors border-b border-black">BOOKS</a>
                                 <a href="/folio/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">DIGITAL</a>
                                 <a href="/photos/" class="block px-3 py-2 text-black hover:bg-tonicYellow hover:text-black transition-colors border-b border-black">PHOTOS</a>
                                 <a href="/music/" class="block px-3 py-2 text-black hover:bg-black hover:text-pink-400 transition-colors border-b border-black">MUSIC</a>
