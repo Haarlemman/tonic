@@ -218,6 +218,7 @@
             text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
             word-break: break-word;
@@ -470,6 +471,7 @@
             { id: 'ai',       name: 'AI',            color: '#b44af7', glow: 'rgba(180,74,247,0.7)' },
             { id: 'search',   name: 'Search & Nav',  color: '#ff9f1c', glow: 'rgba(255,159,28,0.7)' },
             { id: 'news',     name: 'News',           color: '#ff3355', glow: 'rgba(255,51,85,0.7)' },
+            { id: 'travel',   name: 'Travel',         color: '#00c49f', glow: 'rgba(0,196,159,0.7)' },
             { id: 'creative', name: 'Creative',       color: '#ff6ec7', glow: 'rgba(255,110,199,0.7)' },
             { id: 'av',       name: 'A/V',            color: '#00d4ff', glow: 'rgba(0,212,255,0.7)' },
             { id: 'social',   name: 'Social',         color: '#ff7a00', glow: 'rgba(255,122,0,0.7)' },
@@ -482,11 +484,11 @@
         const DEFAULT_SHORTCUTS = [
             // Office
             { label: 'Gmail', url: 'https://mail.google.com', category: 'office' },
-            { label: 'Sheets', url: 'https://sheets.google.com', category: 'office' },
+            { label: 'Contacts', url: 'https://contacts.google.com', category: 'office' },
+            { label: 'Calendar', url: 'https://calendar.google.com', category: 'office' },
             { label: 'Drive', url: 'https://drive.google.com', category: 'office' },
             { label: 'Notes', url: 'https://keep.google.com', category: 'office' },
-            { label: 'Calendar', url: 'https://calendar.google.com', category: 'office' },
-            { label: 'Contacts', url: 'https://contacts.google.com', category: 'office' },
+            { label: 'Sheets', url: 'https://sheets.google.com', category: 'office' },
             { label: 'Photos', url: 'https://photos.google.com', category: 'office' },
 
             // AI
@@ -517,6 +519,11 @@
             { label: 'Ynet', url: 'https://www.ynetnews.com', category: 'news' },
             { label: 'AT5', url: 'https://www.at5.nl', category: 'news' },
             { label: 'Buienradar', url: 'https://buienradar.nl', category: 'news' },
+
+            // Travel
+            { label: '9292', url: 'https://9292.nl', category: 'travel' },
+            { label: 'NS', url: 'https://www.ns.nl', category: 'travel' },
+            { label: 'Greenwheels', url: 'https://www.greenwheels.com', category: 'travel' },
 
             // Creative
             { label: 'Firefly', url: 'https://firefly.adobe.com', category: 'creative' },
@@ -550,7 +557,6 @@
 
             // Work
             { label: 'LinkedIn', url: 'https://www.linkedin.com', category: 'work' },
-            { label: 'Folio', url: 'https://www.tonicforthebones.com/folio/', category: 'work' },
             { label: 'Upwork', url: 'https://upwork.com', category: 'work' },
             { label: 'Fiverr', url: 'https://www.fiverr.com', category: 'work' },
             { label: 'Reedsy', url: 'https://www.reedsy.com', category: 'work' },
@@ -577,7 +583,27 @@
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (raw) {
                     const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) return ensureIds(parsed);
+                    if (Array.isArray(parsed)) {
+                        const items = ensureIds(parsed);
+                        const existingUrls = new Set(items.map(it => it.url));
+                        let added = false;
+                        DEFAULT_SHORTCUTS.forEach(def => {
+                            if (!existingUrls.has(def.url)) {
+                                items.push({
+                                    id: uid(),
+                                    label: def.label,
+                                    url: def.url,
+                                    category: def.category
+                                });
+                                existingUrls.add(def.url);
+                                added = true;
+                            }
+                        });
+                        if (added) {
+                            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {}
+                        }
+                        return items;
+                    }
                 }
 
                 // Fallback / Migration from legacy folder-based navdash.v1
@@ -676,6 +702,11 @@
             [/tonicforthebones\.com\/standingstudio/, 'images/favicon-studio.svg'],
             [/tonicforthebones\.com\/folio\//, 'images/davilov.svg'],
             [/tonicforthebones\.com$/, 'images/t.png'],
+
+            // Travel
+            [/9292\.nl/, 'images/9292.svg'],
+            [/ns\.nl/, 'images/ns.svg'],
+            [/greenwheels\.com/, 'images/greenwheels.svg'],
 
             // Search, News & Media
             [/wikipedia\.org/, 'images/wikipedia-logo-black.svg'],
