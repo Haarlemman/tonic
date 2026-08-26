@@ -572,8 +572,7 @@
             { label: 'Awe', url: 'https://house-of-awe.web.app', category: 'mystuff' },
         ];
 
-        const STORAGE_KEY = 'navdash.desktop.v2';
-        const LEGACY_STORAGE_KEY = 'navdash.v1';
+        const STORAGE_KEY = 'navdash.desktop.v3';
         const uid = () => 'id' + Math.random().toString(36).slice(2, 9);
 
         let shortcuts = loadData();
@@ -582,54 +581,11 @@
         // ---------- Data Load & Migration ----------
         function loadData() {
             try {
-                // Try modern desktop storage key first
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (raw) {
                     const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) {
-                        const items = ensureIds(parsed);
-                        const existingUrls = new Set(items.map(it => it.url));
-                        let added = false;
-                        DEFAULT_SHORTCUTS.forEach(def => {
-                            if (!existingUrls.has(def.url)) {
-                                items.push({
-                                    id: uid(),
-                                    label: def.label,
-                                    url: def.url,
-                                    category: def.category
-                                });
-                                existingUrls.add(def.url);
-                                added = true;
-                            }
-                        });
-                        if (added) {
-                            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {}
-                        }
-                        return items;
-                    }
-                }
-
-                // Fallback / Migration from legacy folder-based navdash.v1
-                const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
-                if (legacyRaw) {
-                    const legacyData = JSON.parse(legacyRaw);
-                    if (Array.isArray(legacyData)) {
-                        const migrated = [];
-                        legacyData.forEach(folder => {
-                            const catId = folder.id || 'mystuff';
-                            if (Array.isArray(folder.items)) {
-                                folder.items.forEach(it => {
-                                    migrated.push({
-                                        id: it.id || uid(),
-                                        label: it.label || 'Link',
-                                        url: it.url || '',
-                                        icon: it.icon,
-                                        category: catId
-                                    });
-                                });
-                            }
-                        });
-                        if (migrated.length > 0) return ensureIds(migrated);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return ensureIds(parsed);
                     }
                 }
             } catch (e) {
