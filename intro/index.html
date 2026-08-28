@@ -304,7 +304,7 @@
         }
 
         /* ==========================================================================
-           RIGHT: DOCKED FACULTY DATA SCREEN (HEADER: FACULTY OF... UNDER: CONTENT)
+           RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE WITH ARROW AT TOP-RIGHT)
            ========================================================================== */
         #faculty-panel-right {
             position: fixed;
@@ -315,6 +315,7 @@
             max-width: calc(100vw - 4.5rem);
             background: rgba(10, 15, 29, 0.92);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px;
             padding: 1.5rem;
@@ -326,22 +327,80 @@
             pointer-events: auto;
             transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        .panel-collapse-btn {
+            position: absolute;
+            top: 0.85rem;
+            right: 0.85rem;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            z-index: 10;
+        }
+        .panel-collapse-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            transform: scale(1.08);
+        }
+        .panel-collapse-btn svg {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #faculty-panel-right.collapsed {
+            transform: translateY(-50%) translateX(calc(100% - 44px));
+            opacity: 0.92;
+            cursor: pointer;
+        }
+        #faculty-panel-right.collapsed .panel-collapse-btn {
+            left: 8px;
+            right: auto;
+        }
+        #faculty-panel-right.collapsed .panel-collapse-btn svg {
+            transform: rotate(180deg);
+        }
+        #faculty-panel-right.collapsed .panel-header,
+        #faculty-panel-right.collapsed .panel-divider,
+        #faculty-panel-right.collapsed .panel-quote-box,
+        #faculty-panel-right.collapsed .panel-content-section {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+        }
         @media (max-width: 768px) {
             #faculty-panel-right {
                 right: 50%;
                 top: auto;
-                bottom: 6.5rem;
+                bottom: 5.5rem;
                 transform: translateX(50%);
                 width: calc(100vw - 2rem);
+                max-width: 380px;
                 padding: 1rem;
                 max-height: 48vh;
                 overflow-y: auto;
+            }
+            #faculty-panel-right.collapsed {
+                transform: translateX(50%) translateY(calc(100% - 40px));
+            }
+            #faculty-panel-right.collapsed .panel-collapse-btn {
+                top: 6px;
+                left: auto;
+                right: 10px;
+            }
+            #faculty-panel-right.collapsed .panel-collapse-btn svg {
+                transform: rotate(-90deg);
             }
         }
         .panel-header {
             display: flex;
             flex-direction: column;
             gap: 0.35rem;
+            padding-right: 1.8rem;
         }
         .panel-badge-category {
             font-family: 'Space Grotesk', monospace;
@@ -441,13 +500,15 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Top Controls */
+        /* Top-Right Controls (Vertically Stacked) */
         .top-right {
             position: absolute;
             top: 1.75rem;
             right: 2rem;
             display: flex;
+            flex-direction: column;
             gap: 0.75rem;
+            z-index: 550;
         }
         .icon-btn {
             background: rgba(15, 23, 42, 0.85);
@@ -462,6 +523,7 @@
             justify-content: center;
             transition: all 0.25s ease;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
         .icon-btn:hover {
@@ -471,45 +533,117 @@
         }
         .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
-        /* Bottom Faculty Navigation */
+        @media (max-width: 768px) {
+            .top-right {
+                top: 1rem;
+                right: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .icon-btn {
+                width: 36px;
+                height: 36px;
+            }
+            .icon-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+            .top-left {
+                top: 1rem;
+                left: 1rem;
+                max-width: calc(100vw - 4.5rem);
+            }
+        }
+
+        /* Simplified Bottom Faculty Navigation */
         .bottom-nav {
             position: absolute;
-            bottom: 1.25rem;
+            bottom: 1.5rem;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            flex-wrap: wrap;
+            align-items: center;
             justify-content: center;
-            gap: 1rem;
-            max-width: 90vw;
+            gap: 0.6rem;
+            max-width: 92vw;
+            padding: 0.4rem 0.65rem;
+            background: rgba(10, 15, 29, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 9999px;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.65);
+            z-index: 550;
+            white-space: nowrap;
         }
-        .building-tag {
+        .bottom-nav-label {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            color: #94a3b8;
+            padding: 0 0.5rem;
+            user-select: none;
+        }
+        .nav-faculty-btn {
             cursor: pointer;
-            padding: 0.75rem 1.4rem;
+            padding: 0.55rem 1.25rem;
             background: rgba(15, 23, 42, 0.92);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 9999px;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 0.74rem;
             font-weight: 700;
-            letter-spacing: 0.15em;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(12px);
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.12em;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
             display: flex;
             align-items: center;
-            gap: 0.55rem;
+            justify-content: center;
         }
-        .building-tag:hover {
-            background: #fff;
-            color: #0f172a;
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
+        .nav-faculty-btn:hover {
+            transform: translateY(-2px);
+            color: #ffffff;
         }
-        .tag-red { border-bottom: 4px solid var(--art); }
-        .tag-yellow { border-bottom: 4px solid var(--science); }
-        .tag-blue { border-bottom: 4px solid var(--soul); }
+        .nav-faculty-btn.btn-body:hover,
+        .nav-faculty-btn.btn-body.active {
+            background: rgba(255, 51, 34, 0.22);
+            border-color: var(--art);
+            box-shadow: 0 0 16px var(--art-glow);
+            color: #ff6655;
+        }
+        .nav-faculty-btn.btn-mind:hover,
+        .nav-faculty-btn.btn-mind.active {
+            background: rgba(255, 187, 0, 0.22);
+            border-color: var(--science);
+            box-shadow: 0 0 16px var(--science-glow);
+            color: #ffcc22;
+        }
+        .nav-faculty-btn.btn-soul:hover,
+        .nav-faculty-btn.btn-soul.active {
+            background: rgba(0, 180, 216, 0.22);
+            border-color: var(--soul);
+            box-shadow: 0 0 16px var(--soul-glow);
+            color: #38bdf8;
+        }
+        @media (max-width: 768px) {
+            .bottom-nav {
+                bottom: 1rem;
+                gap: 0.35rem;
+                padding: 0.3rem 0.5rem;
+            }
+            .bottom-nav-label {
+                font-size: 0.62rem;
+                padding: 0 0.3rem;
+                letter-spacing: 0.12em;
+            }
+            .nav-faculty-btn {
+                padding: 0.42rem 0.75rem;
+                font-size: 0.66rem;
+                letter-spacing: 0.08em;
+            }
+        }
         
         .orbit-icon {
             width: 20px;
@@ -660,8 +794,13 @@
             </div>
         </div>
 
-        <!-- RIGHT: DOCKED FACULTY DATA SCREEN -->
-        <div id="faculty-panel-right" class="hud-interactive">
+        <!-- RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE) -->
+        <div id="faculty-panel-right" class="hud-interactive" onclick="handlePanelClick(event)">
+            <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="toggleFacultyPanel(event)" title="Collapse panel" aria-label="Toggle Faculty Panel">
+                <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                </svg>
+            </button>
             <div class="panel-header">
                 <div class="panel-badge-category" id="screen-category">BODY · SENSES · SUBJECTIVE</div>
                 <h2 id="screen-faculty-name" class="panel-faculty-title title-art">THE FACULTY OF THE BODY</h2>
@@ -689,7 +828,7 @@
             </div>
         </div>
 
-        <!-- Top Right Actions -->
+        <!-- Top Right Actions (Vertically Stacked) -->
         <div class="top-right hud-interactive">
             <button id="orbit-btn" class="icon-btn" onclick="resetOverview()" title="Metropolis Orbit (360° Auto)">
                 <svg class="orbit-icon" viewBox="0 0 24 24">
@@ -713,20 +852,12 @@
             </button>
         </div>
 
-        <!-- Navigation Buttons -->
+        <!-- Simplified Bottom Faculty Navigation -->
         <div class="bottom-nav hud-interactive">
-            <div class="building-tag tag-red" onclick="focusBuilding('art')">
-                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--art); box-shadow:0 0 8px var(--art);"></span>
-                Faculty of the Body
-            </div>
-            <div class="building-tag tag-yellow" onclick="focusBuilding('science')">
-                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--science); box-shadow:0 0 8px var(--science);"></span>
-                Faculty of the Mind
-            </div>
-            <div class="building-tag tag-blue" onclick="focusBuilding('spirit')">
-                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--soul); box-shadow:0 0 8px var(--soul);"></span>
-                Faculty of the Soul
-            </div>
+            <span class="bottom-nav-label">FACULTY</span>
+            <button id="btn-body" class="nav-faculty-btn btn-body active" onclick="focusBuilding('art')">BODY</button>
+            <button id="btn-mind" class="nav-faculty-btn btn-mind" onclick="focusBuilding('science')">MIND</button>
+            <button id="btn-soul" class="nav-faculty-btn btn-soul" onclick="focusBuilding('spirit')">SOUL</button>
         </div>
     </div>
 
@@ -1017,40 +1148,40 @@
 
         const landmarkLabels = {};
 
-        /* Glowing Neon Landmark Label Badges */
+        /* Glowing Neon Landmark Word Label (Pure floating neon text without box/pill) */
         function createNeonLabelSprite(text, colorHex, glowColor) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = 512;
-            canvas.height = 180;
+            canvas.height = 256;
 
-            // Semi-transparent glass capsule pill
-            ctx.fillStyle = 'rgba(8, 13, 26, 0.92)';
-            ctx.strokeStyle = colorHex;
-            ctx.lineWidth = 4;
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = '900 84px "Space Grotesk", "Anta", Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Pass 1: Broad soft ambient neon haze
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 42;
+            ctx.fillStyle = colorHex;
+            ctx.fillText(text, cx, cy);
+            ctx.fillText(text, cx, cy);
+
+            // Pass 2: Intense vibrant neon color
             ctx.shadowColor = glowColor;
             ctx.shadowBlur = 18;
-            ctx.beginPath();
-            ctx.roundRect(40, 25, 432, 130, 65);
-            ctx.fill();
-            ctx.stroke();
-
-            // Radiant Neon Indicator Dot
             ctx.fillStyle = colorHex;
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 16;
-            ctx.beginPath();
-            ctx.arc(115, 90, 11, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillText(text, cx, cy);
 
-            // Glowing Neon Text
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
+            // Pass 3: White-hot neon tube core
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 6;
             ctx.fillStyle = '#ffffff';
-            ctx.font = '800 58px "Space Grotesk", Inter, sans-serif';
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 22;
-            ctx.fillText(text, 150, 92);
+            ctx.fillText(text, cx, cy);
 
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMat = new THREE.SpriteMaterial({ 
@@ -1061,9 +1192,27 @@
                 toneMapped: false
             });
             const sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(4.8, 1.68, 1);
+            sprite.scale.set(6.2, 3.1, 1);
             sprite.visible = false;
             return sprite;
+        }
+
+        function toggleFacultyPanel(e) {
+            if (e) e.stopPropagation();
+            const panel = document.getElementById('faculty-panel-right');
+            const btn = document.getElementById('panel-toggle-btn');
+            if (!panel) return;
+            const isCollapsed = panel.classList.toggle('collapsed');
+            if (btn) {
+                btn.title = isCollapsed ? "Expand panel" : "Collapse panel";
+            }
+        }
+
+        function handlePanelClick(e) {
+            const panel = document.getElementById('faculty-panel-right');
+            if (panel && panel.classList.contains('collapsed')) {
+                toggleFacultyPanel(e);
+            }
         }
 
         /* 3D Scene Initialization */
@@ -1213,8 +1362,8 @@
 
                         // Floating Neon Label for Body
                         const bodyLabel = createNeonLabelSprite("BODY", "#ff3322", "rgba(255, 51, 34, 0.95)");
-                        bodyLabel.position.set(posX, 11.6, posZ);
-                        bodyLabel.userData = { baseY: 11.6 };
+                        bodyLabel.position.set(posX, 11.8, posZ);
+                        bodyLabel.userData = { baseY: 11.8 };
                         scene.add(bodyLabel);
                         landmarkLabels['art'] = bodyLabel;
 
@@ -1278,8 +1427,8 @@
 
                         // Floating Neon Label for Mind
                         const mindLabel = createNeonLabelSprite("MIND", "#ffbb00", "rgba(255, 187, 0, 0.95)");
-                        mindLabel.position.set(posX, 11.6, posZ);
-                        mindLabel.userData = { baseY: 11.6 };
+                        mindLabel.position.set(posX, 11.4, posZ);
+                        mindLabel.userData = { baseY: 11.4 };
                         scene.add(mindLabel);
                         landmarkLabels['science'] = mindLabel;
 
@@ -1340,8 +1489,8 @@
 
                         // Floating Neon Label for Soul
                         const soulLabel = createNeonLabelSprite("SOUL", "#38bdf8", "rgba(56, 189, 248, 0.95)");
-                        soulLabel.position.set(posX, 12.6, posZ);
-                        soulLabel.userData = { baseY: 12.6 };
+                        soulLabel.position.set(posX, 13.2, posZ);
+                        soulLabel.userData = { baseY: 13.2 };
                         scene.add(soulLabel);
                         landmarkLabels['spirit'] = soulLabel;
 
@@ -1582,6 +1731,12 @@
                 lastQuoteCycleTime = Date.now();
                 updateFacultyPanel(type);
 
+                // Update active state on navigation buttons
+                document.querySelectorAll('.nav-faculty-btn').forEach(btn => btn.classList.remove('active'));
+                const btnId = `btn-${type === 'art' ? 'body' : (type === 'science' ? 'mind' : 'soul')}`;
+                const activeBtn = document.getElementById(btnId);
+                if (activeBtn) activeBtn.classList.add('active');
+
                 // Show only active neon label on click / focus
                 Object.keys(landmarkLabels).forEach(key => {
                     const sprite = landmarkLabels[key];
@@ -1600,6 +1755,7 @@
             cinematicTarget = null;
             lastAutoTourTime = Date.now();
             currentFacultyType = null;
+            document.querySelectorAll('.nav-faculty-btn').forEach(btn => btn.classList.remove('active'));
             // Hide all labels on overview
             Object.keys(landmarkLabels).forEach(key => {
                 landmarkLabels[key].visible = false;
