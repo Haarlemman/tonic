@@ -36,8 +36,8 @@
             --art-glow: rgba(255, 51, 34, 0.65);
             --science: #ffbb00;
             --science-glow: rgba(255, 187, 0, 0.65);
-            --soul: #00b4d8;
-            --soul-glow: rgba(0, 180, 216, 0.65);
+            --soul: #a855f7;
+            --soul-glow: rgba(168, 85, 247, 0.65);
         }
         
         * { box-sizing: border-box; }
@@ -304,7 +304,7 @@
         }
 
         /* ==========================================================================
-           RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE WITH ARROW AT TOP-RIGHT)
+           RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE & DRAGGABLE)
            ========================================================================== */
         #faculty-panel-right {
             position: fixed;
@@ -312,28 +312,59 @@
             top: 50%;
             transform: translateY(-50%);
             width: 360px;
-            max-width: calc(100vw - 4.5rem);
-            background: rgba(10, 15, 29, 0.92);
+            max-width: calc(100vw - 2.5rem);
+            background: rgba(10, 15, 29, 0.94);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 14px;
+            box-shadow: 0 20px 55px rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
-            gap: 1.1rem;
             z-index: 600;
             pointer-events: auto;
-            transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, border-radius 0.3s ease;
+            touch-action: none;
         }
+        #faculty-panel-right.is-dragging {
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.95), 0 0 24px rgba(56, 189, 248, 0.35);
+            border-color: rgba(56, 189, 248, 0.45);
+            cursor: grabbing !important;
+            user-select: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 1.1rem 1.25rem;
+            cursor: grab;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s ease;
+        }
+        .panel-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        #faculty-panel-right.is-dragging .panel-header {
+            cursor: grabbing;
+        }
+
+        .panel-header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 0;
+            flex: 1;
+        }
+
         .panel-collapse-btn {
-            position: absolute;
-            top: 0.85rem;
-            right: 0.85rem;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #cbd5e1;
@@ -342,7 +373,6 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.25s ease;
-            z-index: 10;
         }
         .panel-collapse-btn:hover {
             background: rgba(255, 255, 255, 0.22);
@@ -351,56 +381,58 @@
         }
         .panel-collapse-btn svg {
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: rotate(0deg); /* When open: points LEFT */
         }
-        #faculty-panel-right.collapsed {
-            transform: translateY(-50%) translateX(calc(100% - 44px));
-            opacity: 0.92;
-            cursor: pointer;
-        }
-        #faculty-panel-right.collapsed .panel-collapse-btn {
-            left: 8px;
-            right: auto;
-        }
-        #faculty-panel-right.collapsed .panel-collapse-btn svg {
-            transform: rotate(180deg);
-        }
-        #faculty-panel-right.collapsed .panel-header,
-        #faculty-panel-right.collapsed .panel-divider,
-        #faculty-panel-right.collapsed .panel-quote-box,
-        #faculty-panel-right.collapsed .panel-content-section {
-            opacity: 0;
-            pointer-events: none;
-            visibility: hidden;
-        }
-        @media (max-width: 768px) {
-            #faculty-panel-right {
-                right: 50%;
-                top: auto;
-                bottom: 5.5rem;
-                transform: translateX(50%);
-                width: calc(100vw - 2rem);
-                max-width: 380px;
-                padding: 1rem;
-                max-height: 48vh;
-                overflow-y: auto;
-            }
-            #faculty-panel-right.collapsed {
-                transform: translateX(50%) translateY(calc(100% - 40px));
-            }
-            #faculty-panel-right.collapsed .panel-collapse-btn {
-                top: 6px;
-                left: auto;
-                right: 10px;
-            }
-            #faculty-panel-right.collapsed .panel-collapse-btn svg {
-                transform: rotate(-90deg);
-            }
-        }
-        .panel-header {
+
+        /* Body Section with smooth accordion folding */
+        .panel-body-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 0.35rem;
-            padding-right: 1.8rem;
+            gap: 1.1rem;
+            padding: 0 1.25rem 1.35rem 1.25rem;
+            max-height: 520px;
+            opacity: 1;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.35s ease;
+        }
+
+        /* Collapsed State: Content folded up into headerbar, arrow rotates to point DOWN */
+        #faculty-panel-right.collapsed {
+            border-radius: 12px;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        #faculty-panel-right.collapsed .panel-body-wrapper {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            pointer-events: none;
+        }
+        #faculty-panel-right.collapsed .panel-collapse-btn svg {
+            transform: rotate(-90deg); /* Smoothly animates to point DOWN */
+        }
+
+        @media (max-width: 768px) {
+            #faculty-panel-right {
+                right: auto;
+                left: 50%;
+                top: auto;
+                bottom: 4.8rem;
+                transform: translateX(-50%);
+                width: calc(100vw - 1.5rem);
+                max-width: 380px;
+            }
+            .panel-header {
+                padding: 0.85rem 1rem;
+            }
+            .panel-body-wrapper {
+                padding: 0 1rem 1rem 1rem;
+                max-height: 42vh;
+                overflow-y: auto;
+            }
+            .panel-faculty-title {
+                font-size: 1.15rem;
+            }
         }
         .panel-badge-category {
             font-family: 'Space Grotesk', monospace;
@@ -433,7 +465,7 @@
         }
         .title-art { color: #ff4433; text-shadow: 0 0 16px var(--art-glow); }
         .title-science { color: #ffbb00; text-shadow: 0 0 16px var(--science-glow); }
-        .title-spirit { color: #38bdf8; text-shadow: 0 0 16px var(--soul-glow); }
+        .title-spirit { color: #c084fc; text-shadow: 0 0 16px var(--soul-glow); }
 
         .panel-divider {
             height: 1px;
@@ -465,7 +497,7 @@
         }
         .neon-art { color: #ff4433; }
         .neon-science { color: #ffbb00; }
-        .neon-spirit { color: #67e8f9; }
+        .neon-spirit { color: #d8b4fe; }
 
         .panel-content-section {
             display: flex;
@@ -622,10 +654,10 @@
         }
         .nav-faculty-btn.btn-soul:hover,
         .nav-faculty-btn.btn-soul.active {
-            background: rgba(0, 180, 216, 0.22);
+            background: rgba(168, 85, 247, 0.22);
             border-color: var(--soul);
             box-shadow: 0 0 16px var(--soul-glow);
-            color: #38bdf8;
+            color: #c084fc;
         }
         @media (max-width: 768px) {
             .bottom-nav {
@@ -794,36 +826,40 @@
             </div>
         </div>
 
-        <!-- RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE) -->
-        <div id="faculty-panel-right" class="hud-interactive" onclick="handlePanelClick(event)">
-            <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="toggleFacultyPanel(event)" title="Collapse panel" aria-label="Toggle Faculty Panel">
-                <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
-                </svg>
-            </button>
-            <div class="panel-header">
-                <div class="panel-badge-category" id="screen-category">BODY · SENSES · SUBJECTIVE</div>
-                <h2 id="screen-faculty-name" class="panel-faculty-title title-art">THE FACULTY OF THE BODY</h2>
+        <!-- RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE & DRAGGABLE) -->
+        <div id="faculty-panel-right" class="hud-interactive">
+            <div class="panel-header" id="panel-header-drag" title="Drag to reposition panel">
+                <div class="panel-header-info">
+                    <div class="panel-badge-category" id="screen-category">BODY · SENSES · SUBJECTIVE</div>
+                    <h2 id="screen-faculty-name" class="panel-faculty-title title-art">THE FACULTY OF THE BODY</h2>
+                </div>
+                <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="toggleFacultyPanel(event)" title="Collapse into header" aria-label="Toggle Faculty Panel">
+                    <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    </svg>
+                </button>
             </div>
             
-            <div class="panel-divider"></div>
-            
-            <div class="panel-quote-box border-art" id="panel-quote-box">
-                <div id="screen-content" class="neon-text neon-art">"BEAUTY IS SUBJECTIVE TRUTH"</div>
-            </div>
+            <div class="panel-body-wrapper" id="panel-body-wrapper">
+                <div class="panel-divider"></div>
+                
+                <div class="panel-quote-box border-art" id="panel-quote-box">
+                    <div id="screen-content" class="neon-text neon-art">"BEAUTY IS SUBJECTIVE TRUTH"</div>
+                </div>
 
-            <div class="panel-content-section">
-                <div class="detail-row">
-                    <span class="detail-label">HIGH DISCIPLINES</span>
-                    <span class="detail-value" id="detail-high">Literature, Painting, Sculpture, Music, Poetry</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">CULTURAL EXPRESSION</span>
-                    <span class="detail-value" id="detail-low">Games, Street Art, Pop Culture, Cinema, Fashion</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">PRIMARY PURPOSE</span>
-                    <span class="detail-value purpose-highlight" id="detail-purpose">Aesthetic Bliss & Emotional Resonance</span>
+                <div class="panel-content-section">
+                    <div class="detail-row">
+                        <span class="detail-label">HIGH DISCIPLINES</span>
+                        <span class="detail-value" id="detail-high">Literature, Painting, Sculpture, Music, Poetry</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">CULTURAL EXPRESSION</span>
+                        <span class="detail-value" id="detail-low">Games, Street Art, Pop Culture, Cinema, Fashion</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">PRIMARY PURPOSE</span>
+                        <span class="detail-value purpose-highlight" id="detail-purpose">Aesthetic Bliss & Emotional Resonance</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -876,7 +912,7 @@
         const facultyData = {
             art: {
                 name: "THE FACULTY OF THE BODY",
-                category: "BODY · SENSES · SUBJECTIVE",
+                category: "SENSES · SUBJECTIVE",
                 color: 0xff3322,
                 class: "neon-art",
                 titleClass: "title-art",
@@ -895,7 +931,7 @@
             },
             science: {
                 name: "THE FACULTY OF THE MIND",
-                category: "MIND · REASON · OBJECTIVE",
+                category: "REASON · OBJECTIVE",
                 color: 0xffbb00,
                 class: "neon-science",
                 titleClass: "title-science",
@@ -914,8 +950,8 @@
             },
             spirit: {
                 name: "THE FACULTY OF THE SOUL",
-                category: "SOUL · TRANSCENDENCE · UNIVERSAL",
-                color: 0x00b4d8,
+                category: "TRANSCENDENCE · UNIVERSAL",
+                color: 0x8b5cf6,
                 class: "neon-spirit",
                 titleClass: "title-spirit",
                 borderClass: "border-spirit",
@@ -962,6 +998,7 @@
         let landmarkLights = [];
         let particlesSystem;
         let groundTriangle;
+        let purpleBeamGroup;
 
         let introActive = true;
         let cinematicTarget = null;
@@ -1008,6 +1045,7 @@
             runIntroSequence();
             updateFacultyPanel('art');
             updateTriBadgePositions();
+            initDraggablePanel();
             setInterval(cycleTriadBadge, 5200);
             skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
             setInterval(updateTicker, 1000);
@@ -1148,71 +1186,269 @@
 
         const landmarkLabels = {};
 
-        /* Glowing Neon Landmark Word Label (Pure floating neon text without box/pill) */
-        function createNeonLabelSprite(text, colorHex, glowColor) {
+        /* Black Lightbox with Bold Rounded Glowing Neon Letters (Mounted Directly on Building Facade) */
+        function createBuildingLightbox(text, colorHex, glowColor, width = 3.6, height = 1.25, isPurplishBlue = false) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 512;
-            canvas.height = 256;
+            canvas.width = 1024;
+            canvas.height = 360;
 
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.font = '900 84px "Space Grotesk", "Anta", Inter, sans-serif';
+            // Sleek Dark Acrylic/Metal Faceplate
+            ctx.fillStyle = '#050914';
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(16, 16, canvas.width - 32, canvas.height - 32, 28);
+                ctx.fill();
+            } else {
+                ctx.fillRect(16, 16, canvas.width - 32, canvas.height - 32);
+            }
+
+            // Glowing Lightbox Perimeter Trim
+            ctx.strokeStyle = glowColor;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 24;
+            ctx.lineWidth = 9;
+            ctx.stroke();
+
+            // Bold Rounded Neon Typography
+            ctx.font = '900 132px "Space Grotesk", "Anta", "Inter", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
 
             // Pass 1: Broad soft ambient neon haze
             ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 42;
+            ctx.shadowBlur = 55;
             ctx.fillStyle = colorHex;
             ctx.fillText(text, cx, cy);
             ctx.fillText(text, cx, cy);
 
             // Pass 2: Intense vibrant neon color
             ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 18;
+            ctx.shadowBlur = 22;
             ctx.fillStyle = colorHex;
             ctx.fillText(text, cx, cy);
 
-            // Pass 3: White-hot neon tube core
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 6;
-            ctx.fillStyle = '#ffffff';
+            // Pass 3: White-hot / luminous violet tube core
+            ctx.shadowColor = isPurplishBlue ? '#f5f3ff' : '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = isPurplishBlue ? '#f5f3ff' : '#ffffff';
             ctx.fillText(text, cx, cy);
 
             const texture = new THREE.CanvasTexture(canvas);
-            const spriteMat = new THREE.SpriteMaterial({ 
+            texture.needsUpdate = true;
+
+            const lightboxGroup = new THREE.Group();
+
+            // 3D Black Box Housing (Matt dark casing mounted on facade)
+            const boxGeo = new THREE.BoxGeometry(width, height, 0.28);
+            const boxMat = new THREE.MeshStandardMaterial({ 
+                color: 0x060912, 
+                roughness: 0.85, 
+                metalness: 0.35 
+            });
+            const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+            boxMesh.position.z = -0.14;
+            boxMesh.castShadow = true;
+            lightboxGroup.add(boxMesh);
+
+            // Glowing Neon Front Face
+            const faceGeo = new THREE.PlaneGeometry(width - 0.04, height - 0.04);
+            const faceMat = new THREE.MeshBasicMaterial({ 
                 map: texture, 
                 transparent: true, 
-                opacity: 0,
-                depthTest: false,
-                toneMapped: false
+                opacity: 0.98,
+                side: THREE.DoubleSide
             });
-            const sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(6.2, 3.1, 1);
-            sprite.visible = false;
-            return sprite;
+            const faceMesh = new THREE.Mesh(faceGeo, faceMat);
+            faceMesh.position.z = 0.01;
+            lightboxGroup.add(faceMesh);
+
+            // Subtle localized point light casting glow onto the facade
+            const pLight = new THREE.PointLight(new THREE.Color(colorHex), 2.2, 5.0);
+            pLight.position.set(0, 0, 0.45);
+            lightboxGroup.add(pLight);
+
+            lightboxGroup.userData = {
+                faceMesh: faceMesh,
+                faceMat: faceMat,
+                pointLight: pLight,
+                colorHex: colorHex
+            };
+
+            return lightboxGroup;
+        }
+
+        /* Volumetric Infinite Purple Lightbeam for Spirit Building */
+        function createInfiniteLightbeam() {
+            const beamGroup = new THREE.Group();
+
+            // 1. Core White-Violet Laser Beam
+            const coreGeo = new THREE.CylinderGeometry(0.12, 0.25, 160, 16, 1, true);
+            coreGeo.translate(0, 80, 0); // Base at y=0
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0xf5f3ff,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            beamGroup.add(coreMesh);
+
+            // 2. Volumetric Glowing Purple Atmospheric Column
+            const beamGeo = new THREE.CylinderGeometry(0.65, 2.5, 160, 24, 1, true);
+            beamGeo.translate(0, 80, 0);
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: 0x9333ea,
+                transparent: true,
+                opacity: 0.48,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+            beamGroup.add(beamMesh);
+
+            // 3. Outer Mystical Violet Flare Halo
+            const haloGeo = new THREE.CylinderGeometry(1.4, 5.2, 160, 24, 1, true);
+            haloGeo.translate(0, 80, 0);
+            const haloMat = new THREE.MeshBasicMaterial({
+                color: 0x7c3aed,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+            beamGroup.add(haloMesh);
+
+            // 4. Apex Radiant Energy Flare Sphere
+            const flareGeo = new THREE.SphereGeometry(0.85, 16, 16);
+            const flareMat = new THREE.MeshBasicMaterial({
+                color: 0xc084fc,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending
+            });
+            const flareMesh = new THREE.Mesh(flareGeo, flareMat);
+            flareMesh.position.y = 0.2;
+            beamGroup.add(flareMesh);
+
+            beamGroup.userData = {
+                coreMat: coreMat,
+                beamMat: beamMat,
+                haloMat: haloMat,
+                flareMesh: flareMesh
+            };
+
+            return beamGroup;
         }
 
         function toggleFacultyPanel(e) {
-            if (e) e.stopPropagation();
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
             const panel = document.getElementById('faculty-panel-right');
             const btn = document.getElementById('panel-toggle-btn');
             if (!panel) return;
             const isCollapsed = panel.classList.toggle('collapsed');
             if (btn) {
-                btn.title = isCollapsed ? "Expand panel" : "Collapse panel";
+                btn.title = isCollapsed ? "Expand content" : "Collapse into header";
+                btn.setAttribute('aria-expanded', !isCollapsed);
             }
         }
 
-        function handlePanelClick(e) {
+        /* Draggable Faculty Data Screen across the screen */
+        function initDraggablePanel() {
             const panel = document.getElementById('faculty-panel-right');
-            if (panel && panel.classList.contains('collapsed')) {
-                toggleFacultyPanel(e);
-            }
+            const header = document.getElementById('panel-header-drag');
+            if (!panel || !header) return;
+
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let initialLeft = 0;
+            let initialTop = 0;
+            let hasMoved = false;
+
+            header.addEventListener('pointerdown', (e) => {
+                // Ignore if clicked directly on the toggle button
+                if (e.target.closest('#panel-toggle-btn')) return;
+
+                isDragging = true;
+                hasMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = panel.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                panel.style.left = `${initialLeft}px`;
+                panel.style.top = `${initialTop}px`;
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+                panel.style.transform = 'none';
+
+                header.setPointerCapture(e.pointerId);
+                panel.classList.add('is-dragging');
+            });
+
+            header.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (Math.hypot(dx, dy) > 5) {
+                    hasMoved = true;
+                }
+
+                if (hasMoved) {
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+
+                    const margin = 8;
+                    const maxLeft = window.innerWidth - panel.offsetWidth - margin;
+                    const maxTop = window.innerHeight - panel.offsetHeight - margin;
+
+                    newLeft = Math.max(margin, Math.min(newLeft, maxLeft));
+                    newTop = Math.max(margin, Math.min(newTop, maxTop));
+
+                    panel.style.left = `${newLeft}px`;
+                    panel.style.top = `${newTop}px`;
+                }
+            });
+
+            const stopDrag = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                panel.classList.remove('is-dragging');
+
+                if (header.hasPointerCapture && header.hasPointerCapture(e.pointerId)) {
+                    header.releasePointerCapture(e.pointerId);
+                }
+
+                // If user just tapped/clicked the header without dragging, and panel is collapsed, expand it!
+                if (!hasMoved && !e.target.closest('#panel-toggle-btn')) {
+                    if (panel.classList.contains('collapsed')) {
+                        toggleFacultyPanel(e);
+                    }
+                }
+            };
+
+            header.addEventListener('pointerup', stopDrag);
+            header.addEventListener('pointercancel', stopDrag);
         }
 
         /* 3D Scene Initialization */
@@ -1355,17 +1591,16 @@
                         beacon.position.set(0, 9.8, 0);
                         artGroup.add(beacon);
 
+                        // Black Lightbox with bold rounded neon letters on Art building facade at 2/3 height
+                        const artLightbox = createBuildingLightbox("ART", "#ff3322", "rgba(255, 51, 34, 1.0)", 2.3, 0.92);
+                        artLightbox.position.set(0, 6.2, 1.39);
+                        artGroup.add(artLightbox);
+                        landmarkLabels['art'] = artLightbox;
+
                         artGroup.position.set(posX, 0, posZ);
-                        artGroup.userData = { type: 'art', label: 'THE FACULTY OF THE BODY', category: 'Body · Senses · Subjective' };
+                        artGroup.userData = { type: 'art', label: 'THE FACULTY OF THE BODY', category: 'Senses · Subjective' };
                         scene.add(artGroup);
                         specialBlocks.push(artGroup);
-
-                        // Floating Neon Label for Body
-                        const bodyLabel = createNeonLabelSprite("BODY", "#ff3322", "rgba(255, 51, 34, 0.95)");
-                        bodyLabel.position.set(posX, 11.8, posZ);
-                        bodyLabel.userData = { baseY: 11.8 };
-                        scene.add(bodyLabel);
-                        landmarkLabels['art'] = bodyLabel;
 
                         // Monument Point Light
                         const pLight = new THREE.PointLight(0xff2200, 5.0, 25);
@@ -1420,17 +1655,16 @@
                         ring.position.y = 4.6;
                         sciGroup.add(ring);
 
+                        // Black Lightbox with bold rounded neon letters on Science building facade at 2/3 height
+                        const sciLightbox = createBuildingLightbox("SCIENCE", "#ffbb00", "rgba(255, 187, 0, 1.0)", 3.2, 0.92);
+                        sciLightbox.position.set(0, 5.8, 1.95);
+                        sciGroup.add(sciLightbox);
+                        landmarkLabels['science'] = sciLightbox;
+
                         sciGroup.position.set(posX, 0, posZ);
-                        sciGroup.userData = { type: 'science', label: 'THE FACULTY OF THE MIND', category: 'Mind · Reason · Objective' };
+                        sciGroup.userData = { type: 'science', label: 'THE FACULTY OF THE MIND', category: 'Reason · Objective' };
                         scene.add(sciGroup);
                         specialBlocks.push(sciGroup);
-
-                        // Floating Neon Label for Mind
-                        const mindLabel = createNeonLabelSprite("MIND", "#ffbb00", "rgba(255, 187, 0, 0.95)");
-                        mindLabel.position.set(posX, 11.4, posZ);
-                        mindLabel.userData = { baseY: 11.4 };
-                        scene.add(mindLabel);
-                        landmarkLabels['science'] = mindLabel;
 
                         const pLight = new THREE.PointLight(0xffbb00, 5.0, 25);
                         pLight.position.set(posX, 9.2, posZ);
@@ -1453,8 +1687,8 @@
                         // Soaring Pyramid Spire
                         const spireGeo = new THREE.ConeGeometry(1.85, 9.8, 4);
                         const spireMat = new THREE.MeshStandardMaterial({ 
-                            color: 0x00a8ff, 
-                            emissive: 0x0066ff, 
+                            color: 0x7c3aed, 
+                            emissive: 0x5b21b6, 
                             emissiveIntensity: 1.05, 
                             roughness: 0.15, 
                             metalness: 0.45 
@@ -1468,7 +1702,7 @@
                         // Sapphire Crystal Halo Ring
                         const halo = new THREE.Mesh(
                             new THREE.TorusGeometry(1.75, 0.1, 12, 32),
-                            new THREE.MeshBasicMaterial({ color: 0x67e8f9 })
+                            new THREE.MeshBasicMaterial({ color: 0xc084fc })
                         );
                         halo.rotation.x = Math.PI / 2;
                         halo.position.y = 7.6;
@@ -1477,24 +1711,29 @@
                         // Apex Crystal Beacon
                         const apex = new THREE.Mesh(
                             new THREE.OctahedronGeometry(0.55, 0),
-                            new THREE.MeshBasicMaterial({ color: 0xbbf7d0 })
+                            new THREE.MeshBasicMaterial({ color: 0xe9d5ff })
                         );
                         apex.position.y = 11.0;
                         spiritGroup.add(apex);
 
+                        // Black Lightbox with "SPIRIT" in bold rounded purplish-blue neon attached to facade at 2/3 height
+                        const spiritLightbox = createBuildingLightbox("SPIRIT", "#8b5cf6", "rgba(139, 92, 246, 1.0)", 2.8, 0.92, true);
+                        spiritLightbox.position.set(0, 7.0, 0.88);
+                        spiritGroup.add(spiritLightbox);
+                        landmarkLabels['spirit'] = spiritLightbox;
+
+                        // Volumetric Infinite Purple Lightbeam shooting up into infinity from apex
+                        const purpleBeam = createInfiniteLightbeam();
+                        purpleBeam.position.set(0, 11.0, 0);
+                        spiritGroup.add(purpleBeam);
+                        purpleBeamGroup = purpleBeam;
+
                         spiritGroup.position.set(posX, 0, posZ);
-                        spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Soul · Transcendence · Universal' };
+                        spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Transcendence · Universal' };
                         scene.add(spiritGroup);
                         specialBlocks.push(spiritGroup);
 
-                        // Floating Neon Label for Soul
-                        const soulLabel = createNeonLabelSprite("SOUL", "#38bdf8", "rgba(56, 189, 248, 0.95)");
-                        soulLabel.position.set(posX, 13.2, posZ);
-                        soulLabel.userData = { baseY: 13.2 };
-                        scene.add(soulLabel);
-                        landmarkLabels['spirit'] = soulLabel;
-
-                        const pLight = new THREE.PointLight(0x00b4d8, 5.5, 25);
+                        const pLight = new THREE.PointLight(0x8b5cf6, 5.5, 25);
                         pLight.position.set(posX, 11.0, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
@@ -1737,15 +1976,14 @@
                 const activeBtn = document.getElementById(btnId);
                 if (activeBtn) activeBtn.classList.add('active');
 
-                // Show only active neon label on click / focus
+                // Highlight focused building lightbox
                 Object.keys(landmarkLabels).forEach(key => {
-                    const sprite = landmarkLabels[key];
-                    if (key === type) {
-                        sprite.visible = true;
-                        sprite.material.opacity = 1.0;
-                    } else {
-                        sprite.material.opacity = 0.0;
-                        sprite.visible = false;
+                    const sign = landmarkLabels[key];
+                    if (sign && sign.userData && sign.userData.faceMat) {
+                        sign.userData.faceMat.opacity = (key === type) ? 1.0 : 0.75;
+                        if (sign.userData.pointLight) {
+                            sign.userData.pointLight.intensity = (key === type) ? 3.0 : 1.8;
+                        }
                     }
                 });
             }
@@ -1756,10 +1994,15 @@
             lastAutoTourTime = Date.now();
             currentFacultyType = null;
             document.querySelectorAll('.nav-faculty-btn').forEach(btn => btn.classList.remove('active'));
-            // Hide all labels on overview
+            // Restore all building lightboxes to standard vibrant glow
             Object.keys(landmarkLabels).forEach(key => {
-                landmarkLabels[key].visible = false;
-                landmarkLabels[key].material.opacity = 0.0;
+                const sign = landmarkLabels[key];
+                if (sign && sign.userData && sign.userData.faceMat) {
+                    sign.userData.faceMat.opacity = 0.95;
+                    if (sign.userData.pointLight) {
+                        sign.userData.pointLight.intensity = 2.2;
+                    }
+                }
             });
         }
 
@@ -1799,8 +2042,8 @@
                 while (target.parent && !target.userData.type) target = target.parent;
                 const bType = target.userData.type;
                 const fData = facultyData[bType];
-                const colorHex = bType === 'art' ? '#ff4433' : (bType === 'science' ? '#ffbb00' : '#38bdf8');
-                const glowHex = bType === 'art' ? 'rgba(255, 51, 34, 0.45)' : (bType === 'science' ? 'rgba(255, 187, 0, 0.45)' : 'rgba(56, 189, 248, 0.45)');
+                const colorHex = bType === 'art' ? '#ff4433' : (bType === 'science' ? '#ffbb00' : '#8b5cf6');
+                const glowHex = bType === 'art' ? 'rgba(255, 51, 34, 0.45)' : (bType === 'science' ? 'rgba(255, 187, 0, 0.45)' : 'rgba(139, 92, 246, 0.45)');
                 tooltip.style.display = 'block';
                 tooltip.style.left = event.clientX + 'px';
                 tooltip.style.top = event.clientY + 'px';
@@ -1883,10 +2126,25 @@
                 light.intensity = 4.2 + Math.sin(elapsedTime * 2.2 + idx * 1.5) * 0.8;
             });
 
-            // Gentle floating bobbing animation for active neon label
-            if (currentFacultyType && landmarkLabels[currentFacultyType] && landmarkLabels[currentFacultyType].visible) {
-                const activeSprite = landmarkLabels[currentFacultyType];
-                activeSprite.position.y = activeSprite.userData.baseY + Math.sin(elapsedTime * 2.8) * 0.16;
+            // Animate Building Lightboxes (Neon luminescence breathing & authentic micro-flicker)
+            Object.keys(landmarkLabels).forEach((key, idx) => {
+                const sign = landmarkLabels[key];
+                if (sign && sign.userData && sign.userData.faceMat) {
+                    const isFocused = (currentFacultyType === key && !introActive && cinematicTarget);
+                    const baseOpacity = isFocused ? 1.0 : (currentFacultyType ? 0.72 : 0.95);
+                    
+                    let flicker = baseOpacity + Math.sin(elapsedTime * 3.6 + idx * 2.2) * 0.04;
+                    if (Math.random() > 0.993) flicker *= 0.85; // Subtle neon tube flicker
+                    sign.userData.faceMat.opacity = Math.max(0.5, Math.min(1.0, flicker));
+                }
+            });
+
+            // Animate Infinite Purple Lightbeam from Spirit Building Apex
+            if (purpleBeamGroup) {
+                const beamPulse = 0.48 + Math.sin(elapsedTime * 2.6) * 0.12;
+                purpleBeamGroup.userData.beamMat.opacity = beamPulse;
+                purpleBeamGroup.userData.haloMat.opacity = beamPulse * 0.55;
+                purpleBeamGroup.rotation.y += 0.006;
             }
 
             // Auto-Tour Rotation & Periodic Camera Focus Cycling
