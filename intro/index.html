@@ -1186,7 +1186,7 @@
 
         const landmarkLabels = {};
 
-        /* Black Lightbox with Bold Rounded Glowing Neon Letters (Mounted Directly on Building Facade) */
+        /* Flat Building Lightbox with Bold Rounded Glowing Neon Letters */
         function createBuildingLightbox(text, colorHex, glowColor, width = 3.6, height = 1.25, isPurplishBlue = false) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -1198,7 +1198,7 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Sleek Dark Acrylic/Metal Faceplate
+            // Sleek Dark Acrylic Faceplate
             ctx.fillStyle = '#050914';
             if (ctx.roundRect) {
                 ctx.beginPath();
@@ -1215,8 +1215,11 @@
             ctx.lineWidth = 9;
             ctx.stroke();
 
-            // Bold Rounded Neon Typography
-            ctx.font = '900 132px "Space Grotesk", "Anta", "Inter", sans-serif';
+            // Bold Rounded Neon Typography with distinct letter spacing for crisp legibility
+            if ('letterSpacing' in ctx) {
+                ctx.letterSpacing = '16px';
+            }
+            ctx.font = '800 120px "Space Grotesk", "Outfit", "Inter", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.lineJoin = 'round';
@@ -1224,20 +1227,20 @@
 
             // Pass 1: Broad soft ambient neon haze
             ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 55;
+            ctx.shadowBlur = 48;
             ctx.fillStyle = colorHex;
             ctx.fillText(text, cx, cy);
             ctx.fillText(text, cx, cy);
 
             // Pass 2: Intense vibrant neon color
             ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 22;
+            ctx.shadowBlur = 20;
             ctx.fillStyle = colorHex;
             ctx.fillText(text, cx, cy);
 
-            // Pass 3: White-hot / luminous violet tube core
+            // Pass 3: White-hot / luminous core tube
             ctx.shadowColor = isPurplishBlue ? '#f5f3ff' : '#ffffff';
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 7;
             ctx.fillStyle = isPurplishBlue ? '#f5f3ff' : '#ffffff';
             ctx.fillText(text, cx, cy);
 
@@ -1246,7 +1249,7 @@
 
             const lightboxGroup = new THREE.Group();
 
-            // 3D Black Box Housing (Matt dark casing mounted on facade)
+            // 3D Dark Box Housing
             const boxGeo = new THREE.BoxGeometry(width, height, 0.28);
             const boxMat = new THREE.MeshStandardMaterial({ 
                 color: 0x060912, 
@@ -1270,7 +1273,7 @@
             faceMesh.position.z = 0.01;
             lightboxGroup.add(faceMesh);
 
-            // Subtle localized point light casting glow onto the facade
+            // Localized point light casting glow onto the facade
             const pLight = new THREE.PointLight(new THREE.Color(colorHex), 2.2, 5.0);
             pLight.position.set(0, 0, 0.45);
             lightboxGroup.add(pLight);
@@ -1285,17 +1288,149 @@
             return lightboxGroup;
         }
 
-        /* Volumetric Infinite Purple Lightbeam for Spirit Building */
+        /* Curved Building Lightbox (Mounted on Cylindrical/Curved Building Facades) */
+        function createCurvedBuildingLightbox(text, colorHex, glowColor, radius = 1.72, height = 0.92, arcDeg = 75, isPurplishBlue = false) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024;
+            canvas.height = 360;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Sleek Dark Acrylic Faceplate
+            ctx.fillStyle = '#050914';
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(16, 16, canvas.width - 32, canvas.height - 32, 28);
+                ctx.fill();
+            } else {
+                ctx.fillRect(16, 16, canvas.width - 32, canvas.height - 32);
+            }
+
+            // Glowing Lightbox Perimeter Trim
+            ctx.strokeStyle = glowColor;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 24;
+            ctx.lineWidth = 9;
+            ctx.stroke();
+
+            // Bold Rounded Neon Typography with letter spacing
+            if ('letterSpacing' in ctx) {
+                ctx.letterSpacing = '14px';
+            }
+            ctx.font = '800 116px "Space Grotesk", "Outfit", "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // Pass 1: Soft broad neon haze
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 48;
+            ctx.fillStyle = colorHex;
+            ctx.fillText(text, cx, cy);
+            ctx.fillText(text, cx, cy);
+
+            // Pass 2: Intense vibrant neon color
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = colorHex;
+            ctx.fillText(text, cx, cy);
+
+            // Pass 3: White-hot core
+            ctx.shadowColor = isPurplishBlue ? '#f5f3ff' : '#ffffff';
+            ctx.shadowBlur = 7;
+            ctx.fillStyle = isPurplishBlue ? '#f5f3ff' : '#ffffff';
+            ctx.fillText(text, cx, cy);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const curvedGroup = new THREE.Group();
+            const arcRad = THREE.MathUtils.degToRad(arcDeg);
+            // Center the arc facing the front (+Z axis, where angle = PI/2)
+            const thetaStart = Math.PI / 2 - arcRad / 2;
+
+            // 1. Curved Dark Backing Casing
+            const backGeo = new THREE.CylinderGeometry(radius + 0.03, radius + 0.03, height + 0.08, 36, 1, true, thetaStart - 0.03, arcRad + 0.06);
+            const backMat = new THREE.MeshStandardMaterial({ 
+                color: 0x060912, 
+                roughness: 0.85, 
+                metalness: 0.35,
+                side: THREE.DoubleSide 
+            });
+            const backMesh = new THREE.Mesh(backGeo, backMat);
+            curvedGroup.add(backMesh);
+
+            // 2. Curved Glowing Neon Front Face
+            const faceGeo = new THREE.CylinderGeometry(radius + 0.1, radius + 0.1, height, 36, 1, true, thetaStart, arcRad);
+            const faceMat = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true, 
+                opacity: 0.98,
+                side: THREE.DoubleSide
+            });
+            const faceMesh = new THREE.Mesh(faceGeo, faceMat);
+            curvedGroup.add(faceMesh);
+
+            // 3. Point Light positioned in front of curved sign for facade illumination
+            const pLight = new THREE.PointLight(new THREE.Color(colorHex), 2.2, 5.0);
+            pLight.position.set(0, 0, radius + 0.4);
+            curvedGroup.add(pLight);
+
+            curvedGroup.userData = {
+                faceMesh: faceMesh,
+                faceMat: faceMat,
+                pointLight: pLight,
+                colorHex: colorHex
+            };
+
+            return curvedGroup;
+        }
+
+        /* Volumetric Infinite Purple Lightbeam with Concave Upward Flare & Multi-Layer Glow */
         function createInfiniteLightbeam() {
             const beamGroup = new THREE.Group();
 
-            // 1. Core White-Violet Laser Beam
-            const coreGeo = new THREE.CylinderGeometry(0.12, 0.25, 160, 16, 1, true);
-            coreGeo.translate(0, 80, 0); // Base at y=0
+            const H = 220;
+            const steps = 48;
+            const pointsCore = [];
+            const pointsBeam = [];
+            const pointsGlow = [];
+            const pointsOuterGlow = [];
+
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps; // 0 (apex) to 1 (high sky)
+                const y = t * H;
+                // Concave curve function (smooth parabolic/exponential upward expansion high in the air)
+                const concaveFlare = Math.pow(t, 2.3);
+
+                // 1. Slender White-Violet Laser Core
+                const rCore = 0.08 + 0.28 * concaveFlare;
+                pointsCore.push(new THREE.Vector2(rCore, y));
+
+                // 2. Main Radiant Violet-Purple Beam
+                const rBeam = 0.26 + 1.2 * concaveFlare;
+                pointsBeam.push(new THREE.Vector2(rBeam, y));
+
+                // 3. Primary Atmospheric Purple Glow
+                const rGlow = 0.6 + 2.4 * concaveFlare;
+                pointsGlow.push(new THREE.Vector2(rGlow, y));
+
+                // 4. Secondary Outer Violet Nebula Glow ("glow of the glow")
+                const rOuter = 1.3 + 4.8 * concaveFlare;
+                pointsOuterGlow.push(new THREE.Vector2(rOuter, y));
+            }
+
+            // 1. Core Laser Filament
+            const coreGeo = new THREE.LatheGeometry(pointsCore, 24);
             const coreMat = new THREE.MeshBasicMaterial({
                 color: 0xf5f3ff,
                 transparent: true,
-                opacity: 0.9,
+                opacity: 0.95,
                 side: THREE.DoubleSide,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
@@ -1303,13 +1438,12 @@
             const coreMesh = new THREE.Mesh(coreGeo, coreMat);
             beamGroup.add(coreMesh);
 
-            // 2. Volumetric Glowing Purple Atmospheric Column
-            const beamGeo = new THREE.CylinderGeometry(0.65, 2.5, 160, 24, 1, true);
-            beamGeo.translate(0, 80, 0);
+            // 2. Primary Radiant Purple Beam
+            const beamGeo = new THREE.LatheGeometry(pointsBeam, 28);
             const beamMat = new THREE.MeshBasicMaterial({
-                color: 0x9333ea,
+                color: 0xc084fc,
                 transparent: true,
-                opacity: 0.48,
+                opacity: 0.58,
                 side: THREE.DoubleSide,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
@@ -1317,24 +1451,36 @@
             const beamMesh = new THREE.Mesh(beamGeo, beamMat);
             beamGroup.add(beamMesh);
 
-            // 3. Outer Mystical Violet Flare Halo
-            const haloGeo = new THREE.CylinderGeometry(1.4, 5.2, 160, 24, 1, true);
-            haloGeo.translate(0, 80, 0);
-            const haloMat = new THREE.MeshBasicMaterial({
-                color: 0x7c3aed,
+            // 3. Mid Atmospheric Electric Violet Glow
+            const glowGeo = new THREE.LatheGeometry(pointsGlow, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0x9333ea,
                 transparent: true,
-                opacity: 0.25,
+                opacity: 0.32,
                 side: THREE.DoubleSide,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
-            const haloMesh = new THREE.Mesh(haloGeo, haloMat);
-            beamGroup.add(haloMesh);
+            const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+            beamGroup.add(glowMesh);
 
-            // 4. Apex Radiant Energy Flare Sphere
-            const flareGeo = new THREE.SphereGeometry(0.85, 16, 16);
+            // 4. Outer Soft Indigo-Violet Aura ("glow of the glow")
+            const outerGlowGeo = new THREE.LatheGeometry(pointsOuterGlow, 36);
+            const outerGlowMat = new THREE.MeshBasicMaterial({
+                color: 0x6366f1,
+                transparent: true,
+                opacity: 0.16,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const outerGlowMesh = new THREE.Mesh(outerGlowGeo, outerGlowMat);
+            beamGroup.add(outerGlowMesh);
+
+            // 5. Apex Radiant Energy Flare Sphere
+            const flareGeo = new THREE.SphereGeometry(0.75, 16, 16);
             const flareMat = new THREE.MeshBasicMaterial({
-                color: 0xc084fc,
+                color: 0xe9d5ff,
                 transparent: true,
                 opacity: 0.95,
                 blending: THREE.AdditiveBlending
@@ -1346,7 +1492,8 @@
             beamGroup.userData = {
                 coreMat: coreMat,
                 beamMat: beamMat,
-                haloMat: haloMat,
+                glowMat: glowMat,
+                outerGlowMat: outerGlowMat,
                 flareMesh: flareMesh
             };
 
@@ -1655,9 +1802,9 @@
                         ring.position.y = 4.6;
                         sciGroup.add(ring);
 
-                        // Black Lightbox with bold rounded neon letters on Science building facade at 2/3 height
-                        const sciLightbox = createBuildingLightbox("SCIENCE", "#ffbb00", "rgba(255, 187, 0, 1.0)", 3.2, 0.92);
-                        sciLightbox.position.set(0, 5.8, 1.95);
+                        // Curved Black Lightbox with bold rounded neon letters wrapping around the cylindrical Science facade
+                        const sciLightbox = createCurvedBuildingLightbox("SCIENCE", "#ffbb00", "rgba(255, 187, 0, 1.0)", 1.70, 0.92, 80);
+                        sciLightbox.position.set(0, 5.8, 0);
                         sciGroup.add(sciLightbox);
                         landmarkLabels['science'] = sciLightbox;
 
@@ -2141,10 +2288,11 @@
 
             // Animate Infinite Purple Lightbeam from Spirit Building Apex
             if (purpleBeamGroup) {
-                const beamPulse = 0.48 + Math.sin(elapsedTime * 2.6) * 0.12;
+                const beamPulse = 0.52 + Math.sin(elapsedTime * 2.6) * 0.12;
                 purpleBeamGroup.userData.beamMat.opacity = beamPulse;
-                purpleBeamGroup.userData.haloMat.opacity = beamPulse * 0.55;
-                purpleBeamGroup.rotation.y += 0.006;
+                purpleBeamGroup.userData.glowMat.opacity = beamPulse * 0.55;
+                purpleBeamGroup.userData.outerGlowMat.opacity = beamPulse * 0.32;
+                purpleBeamGroup.rotation.y += 0.005;
             }
 
             // Auto-Tour Rotation & Periodic Camera Focus Cycling
