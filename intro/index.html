@@ -36,8 +36,8 @@
             --art-glow: rgba(255, 51, 34, 0.65);
             --science: #ffbb00;
             --science-glow: rgba(255, 187, 0, 0.65);
-            --soul: #a855f7;
-            --soul-glow: rgba(168, 85, 247, 0.65);
+            --soul: #38bdf8;
+            --soul-glow: rgba(56, 189, 248, 0.65);
         }
         
         * { box-sizing: border-box; }
@@ -98,6 +98,9 @@
             -webkit-text-fill-color: transparent;
             animation: spectral-shift 8s linear infinite;
             filter: drop-shadow(0 0 24px rgba(0, 252, 255, 0.45));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         #intro-text {
             font-size: clamp(1.15rem, 2.6vw, 1.65rem);
@@ -109,8 +112,22 @@
             line-height: 1.6;
             text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 0.35rem;
+        }
+        .intro-sub-line1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.92em;
+            color: #cbd5e1;
+        }
+        .intro-sub-line2 {
+            font-weight: 500;
+            color: #f8fafc;
         }
         .action-btn {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -195,7 +212,7 @@
         }
 
         /* ==========================================================================
-           LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX TRIANGLE
+           LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX TRIANGLE (DRAGGABLE & MOBILE)
            ========================================================================== */
         #tri-matrix-left {
             position: fixed;
@@ -207,11 +224,12 @@
             flex-direction: column;
             align-items: center;
             pointer-events: auto;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
         }
-        @media (max-width: 900px) {
-            #tri-matrix-left {
-                display: none;
-            }
+        #tri-matrix-left.is-dragging {
+            cursor: grabbing !important;
         }
         .tri-matrix-wrapper {
             position: relative;
@@ -365,7 +383,7 @@
         .panel-header-info {
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            justify-content: center;
             min-width: 0;
             flex: 1;
         }
@@ -422,60 +440,36 @@
             transform: rotate(-90deg); /* Smoothly animates to point DOWN */
         }
 
-        @media (max-width: 768px) {
-            #faculty-panel-right {
-                right: auto;
-                left: 50%;
-                top: auto;
-                bottom: 4.8rem;
-                transform: translateX(-50%);
-                width: calc(100vw - 1.5rem);
-                max-width: 380px;
-            }
-            .panel-header {
-                padding: 0.85rem 1rem;
-            }
-            .panel-body-wrapper {
-                padding: 0 1rem 1rem 1rem;
-                max-height: 42vh;
-                overflow-y: auto;
-            }
-            .panel-faculty-title {
-                font-size: 1.15rem;
-            }
-        }
-        .panel-badge-category {
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #94a3b8;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-        .panel-badge-category::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #38bdf8;
-            box-shadow: 0 0 8px #38bdf8;
-        }
         .panel-faculty-title {
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 800;
-            font-size: 1.45rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            line-height: 1.2;
+            display: inline-flex;
+            align-items: flex-start;
+            gap: 0.42rem;
+            margin: 0;
+            line-height: 1;
             transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+        .faculty-title-the {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            line-height: 1;
+            padding-top: 0.18rem;
+            user-select: none;
+        }
+        .faculty-title-main {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            line-height: 0.95;
         }
         .title-art { color: #ff4433; text-shadow: 0 0 16px var(--art-glow); }
         .title-science { color: #ffbb00; text-shadow: 0 0 16px var(--science-glow); }
-        .title-spirit { color: #c084fc; text-shadow: 0 0 16px var(--soul-glow); }
+        .title-spirit { color: #38bdf8; text-shadow: 0 0 16px var(--soul-glow); }
 
         .panel-divider {
             height: 1px;
@@ -507,7 +501,24 @@
         }
         .neon-art { color: #ff4433; }
         .neon-science { color: #ffbb00; }
-        .neon-spirit { color: #d8b4fe; }
+        .neon-spirit { color: #38bdf8; }
+
+        /* Highlight classes for LOVE (red), TRUTH (yellow), TRANSCENDENCE (blue) */
+        .highlight-love {
+            color: #ff3322 !important;
+            text-shadow: 0 0 12px rgba(255, 51, 34, 0.85);
+            font-weight: 800;
+        }
+        .highlight-truth {
+            color: #ffbb00 !important;
+            text-shadow: 0 0 12px rgba(255, 187, 0, 0.85);
+            font-weight: 800;
+        }
+        .highlight-transcendence {
+            color: #38bdf8 !important;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.85);
+            font-weight: 800;
+        }
 
         .panel-content-section {
             display: flex;
@@ -575,6 +586,95 @@
         }
         .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
+        /* Searching For Bottom Navigation */
+        .bottom-nav {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            max-width: 95vw;
+            padding: 0.45rem 0.85rem;
+            background: rgba(10, 15, 29, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 9999px;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.65);
+            z-index: 550;
+            white-space: nowrap;
+        }
+        .bottom-nav-label {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            color: #94a3b8;
+            padding: 0 0.35rem 0 0.15rem;
+            user-select: none;
+        }
+        .nav-semicolon {
+            color: #64748b;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            user-select: none;
+            padding: 0 0.1rem;
+        }
+        .nav-faculty-btn {
+            cursor: pointer;
+            padding: 0.52rem 1.15rem;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 9999px;
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-faculty-btn:hover {
+            transform: translateY(-2px);
+        }
+        .nav-faculty-btn.btn-body {
+            color: #ff8877;
+        }
+        .nav-faculty-btn.btn-body:hover,
+        .nav-faculty-btn.btn-body.active {
+            background: rgba(255, 51, 34, 0.22);
+            border-color: var(--art);
+            box-shadow: 0 0 16px var(--art-glow);
+            color: #ff4433;
+        }
+        .nav-faculty-btn.btn-mind {
+            color: #ffe066;
+        }
+        .nav-faculty-btn.btn-mind:hover,
+        .nav-faculty-btn.btn-mind.active {
+            background: rgba(255, 187, 0, 0.22);
+            border-color: var(--science);
+            box-shadow: 0 0 16px var(--science-glow);
+            color: #ffbb00;
+        }
+        .nav-faculty-btn.btn-soul {
+            color: #7dd3fc;
+        }
+        .nav-faculty-btn.btn-soul:hover,
+        .nav-faculty-btn.btn-soul.active {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: #38bdf8;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.65);
+            color: #38bdf8;
+        }
+
+        /* Mobile Specific Layout Adjustments */
         @media (max-width: 768px) {
             .top-right {
                 top: 1rem;
@@ -595,95 +695,68 @@
                 left: 1rem;
                 max-width: calc(100vw - 4.5rem);
             }
-        }
+            .university-banner {
+                font-size: 1.15rem;
+                display: flex;
+                flex-direction: column;
+            }
+            .university-sub {
+                font-size: 0.52rem;
+                letter-spacing: 0.16em;
+            }
 
-        /* Simplified Bottom Faculty Navigation */
-        .bottom-nav {
-            position: absolute;
-            bottom: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.6rem;
-            max-width: 92vw;
-            padding: 0.4rem 0.65rem;
-            background: rgba(10, 15, 29, 0.88);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 9999px;
-            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.65);
-            z-index: 550;
-            white-space: nowrap;
-        }
-        .bottom-nav-label {
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.72rem;
-            font-weight: 800;
-            letter-spacing: 0.18em;
-            color: #94a3b8;
-            padding: 0 0.5rem;
-            user-select: none;
-        }
-        .nav-faculty-btn {
-            cursor: pointer;
-            padding: 0.55rem 1.25rem;
-            background: rgba(15, 23, 42, 0.92);
-            color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 9999px;
-            text-transform: uppercase;
-            font-size: 0.74rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            outline: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .nav-faculty-btn:hover {
-            transform: translateY(-2px);
-            color: #ffffff;
-        }
-        .nav-faculty-btn.btn-body:hover,
-        .nav-faculty-btn.btn-body.active {
-            background: rgba(255, 51, 34, 0.22);
-            border-color: var(--art);
-            box-shadow: 0 0 16px var(--art-glow);
-            color: #ff6655;
-        }
-        .nav-faculty-btn.btn-mind:hover,
-        .nav-faculty-btn.btn-mind.active {
-            background: rgba(255, 187, 0, 0.22);
-            border-color: var(--science);
-            box-shadow: 0 0 16px var(--science-glow);
-            color: #ffcc22;
-        }
-        .nav-faculty-btn.btn-soul:hover,
-        .nav-faculty-btn.btn-soul.active {
-            background: rgba(168, 85, 247, 0.22);
-            border-color: var(--soul);
-            box-shadow: 0 0 16px var(--soul-glow);
-            color: #c084fc;
-        }
-        @media (max-width: 768px) {
+            /* Draggable Tri-Truth Matrix on Mobile */
+            #tri-matrix-left {
+                display: flex;
+                left: 0.75rem;
+                top: 22%;
+                transform: scale(0.68);
+                transform-origin: top left;
+            }
+
+            #faculty-panel-right {
+                right: auto;
+                left: 50%;
+                top: auto;
+                bottom: 4.6rem;
+                transform: translateX(-50%);
+                width: calc(100vw - 1.5rem);
+                max-width: 380px;
+            }
+            .panel-header {
+                padding: 0.85rem 1rem;
+            }
+            .panel-body-wrapper {
+                padding: 0 1rem 1rem 1rem;
+                max-height: 38vh;
+                overflow-y: auto;
+            }
+            .faculty-title-the {
+                font-size: 0.68rem;
+                padding-top: 0.14rem;
+            }
+            .faculty-title-main {
+                font-size: 1.85rem;
+            }
+
             .bottom-nav {
                 bottom: 1rem;
-                gap: 0.35rem;
-                padding: 0.3rem 0.5rem;
+                gap: 0.25rem;
+                padding: 0.35rem 0.5rem;
             }
             .bottom-nav-label {
-                font-size: 0.62rem;
-                padding: 0 0.3rem;
-                letter-spacing: 0.12em;
+                font-size: 0.58rem;
+                padding: 0 0.15rem;
+                letter-spacing: 0.08em;
+            }
+            .nav-semicolon {
+                font-size: 0.7rem;
+                padding: 0;
             }
             .nav-faculty-btn {
-                padding: 0.42rem 0.75rem;
-                font-size: 0.66rem;
-                letter-spacing: 0.08em;
+                padding: 0.38rem 0.62rem;
+                font-size: 0.62rem;
+                letter-spacing: 0.06em;
             }
         }
         
@@ -743,8 +816,14 @@
 
     <!-- Cinematic Intro Sequence Overlay -->
     <div id="intro-overlay">
-        <h1 class="intro-title">The University of Free Will</h1>
-        <div id="intro-text">Faculties for the Mind, the Body and the Soul</div>
+        <h1 class="intro-title">
+            <span>The University</span>
+            <span>of Free Will</span>
+        </h1>
+        <div id="intro-text">
+            <span class="intro-sub-line1">Faculties for</span>
+            <span class="intro-sub-line2">The Mind The Body and The Soul</span>
+        </div>
         <button id="skip-btn" class="action-btn">ENROLL</button>
     </div>
 
@@ -753,12 +832,15 @@
         
         <!-- TOP-LEFT: THE UNIVERSITY OF FREE WILL HEADER -->
         <div class="top-left hud-interactive">
-            <h1 class="university-banner">The University of Free Will</h1>
+            <h1 class="university-banner">
+                <span>The University</span>
+                <span>of Free Will</span>
+            </h1>
             <div class="university-sub">CITY OF LIFE // PROCEDURAL METROPOLIS</div>
         </div>
 
-        <!-- LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX -->
-        <div id="tri-matrix-left">
+        <!-- LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX (DRAGGABLE & MOBILE) -->
+        <div id="tri-matrix-left" title="Drag to reposition matrix">
             <div class="tri-matrix-wrapper">
                 <div class="tri-rotor" id="tri-rotor">
                     <svg class="tri-svg" viewBox="0 0 260 260">
@@ -840,8 +922,10 @@
         <div id="faculty-panel-right" class="hud-interactive">
             <div class="panel-header" id="panel-header-drag" title="Drag to reposition panel">
                 <div class="panel-header-info">
-                    <div class="panel-badge-category" id="screen-category">BODY · SENSES · SUBJECTIVE</div>
-                    <h2 id="screen-faculty-name" class="panel-faculty-title title-art">THE FACULTY OF THE BODY</h2>
+                    <h2 id="screen-faculty-name" class="panel-faculty-title title-art">
+                        <span class="faculty-title-the">THE</span>
+                        <span class="faculty-title-main">BODY</span>
+                    </h2>
                 </div>
                 <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="toggleFacultyPanel(event)" title="Collapse into header" aria-label="Toggle Faculty Panel">
                     <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -854,13 +938,13 @@
                 <div class="panel-divider"></div>
                 
                 <div class="panel-quote-box border-art" id="panel-quote-box">
-                    <div id="screen-content" class="neon-text neon-art">"BEAUTY IS SUBJECTIVE TRUTH"</div>
+                    <div id="screen-content" class="neon-text neon-art">"LOVE &amp; BEAUTY AS SUBJECTIVE TRUTH"</div>
                 </div>
 
                 <div class="panel-content-section">
                     <div class="detail-row">
                         <span class="detail-label">HIGH DISCIPLINES</span>
-                        <span class="detail-value" id="detail-high">Literature, Painting, Sculpture, Music, Poetry</span>
+                        <span class="detail-value" id="detail-high">Literature, Painting, Sculpture, Music, Poetry, Theater</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">CULTURAL EXPRESSION</span>
@@ -868,7 +952,7 @@
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">PRIMARY PURPOSE</span>
-                        <span class="detail-value purpose-highlight" id="detail-purpose">Aesthetic Bliss & Emotional Resonance</span>
+                        <span class="detail-value purpose-highlight" id="detail-purpose"><span class="highlight-love">LOVE</span> · Aesthetic Bliss &amp; Emotional Resonance</span>
                     </div>
                 </div>
             </div>
@@ -898,12 +982,14 @@
             </button>
         </div>
 
-        <!-- Simplified Bottom Faculty Navigation -->
+        <!-- Searching For Bottom Faculty Navigation -->
         <div class="bottom-nav hud-interactive">
-            <span class="bottom-nav-label">FACULTY</span>
-            <button id="btn-body" class="nav-faculty-btn btn-body active" onclick="focusBuilding('art')">BODY</button>
-            <button id="btn-mind" class="nav-faculty-btn btn-mind" onclick="focusBuilding('science')">MIND</button>
-            <button id="btn-soul" class="nav-faculty-btn btn-soul" onclick="focusBuilding('spirit')">SOUL</button>
+            <span class="bottom-nav-label">Searching for:</span>
+            <button id="btn-body" class="nav-faculty-btn btn-body active" onclick="focusBuilding('art')">BEAUTY</button>
+            <span class="nav-semicolon">;</span>
+            <button id="btn-mind" class="nav-faculty-btn btn-mind" onclick="focusBuilding('science')">KNOWLEDGE</button>
+            <span class="nav-semicolon">;</span>
+            <button id="btn-soul" class="nav-faculty-btn btn-soul" onclick="focusBuilding('spirit')">'WISDOM'</button>
         </div>
     </div>
 
@@ -921,61 +1007,61 @@
            ========================================================================== */
         const facultyData = {
             art: {
-                name: "THE FACULTY OF THE BODY",
-                category: "SENSES · SUBJECTIVE",
+                name: "THE BODY",
+                mainName: "BODY",
                 color: 0xff3322,
                 class: "neon-art",
                 titleClass: "title-art",
                 borderClass: "border-art",
                 quotes: [
-                    "LITERATURE, PAINTING & MUSIC",
-                    "BEAUTY IS SUBJECTIVE TRUTH",
-                    "THE SENSES & SOMATIC EXPERIENCE",
-                    "THE CANVAS OF HUMAN EMOTION",
-                    "PHYSICALITY, DANCE & VITALITY",
-                    "POETRY, CINEMA & ARCHITECTURE"
+                    'LOVE &amp; BEAUTY AS SUBJECTIVE TRUTH',
+                    'LOVE, SENSATION &amp; SOMATIC EXPERIENCE',
+                    'THE CANVAS OF HUMAN EMOTION &amp; LOVE',
+                    'AESTHETIC BLISS, VITALITY &amp; LOVE',
+                    'PHYSICALITY, DANCE &amp; LOVE FOR LIFE',
+                    'LITERATURE, MUSIC, CINEMA &amp; LOVE'
                 ],
-                highFields: ["Literature", "Painting", "Sculpture", "Music", "Poetry", "Theater", "Haute Cuisine", "Cinema"],
-                lowFields: ["Games", "Pulp Fiction", "Pop Music", "Street Art", "Fashion", "Sensory Thrills"],
-                purposes: ["Aesthetic Bliss", "Emotional Resonance", "Sensory Vitality", "Joy of Living"]
+                highFields: ["Literature", "Painting", "Sculpture", "Music", "Poetry", "Theater", "Cinema"],
+                lowFields: ["Games", "Street Art", "Pop Music", "Cinema", "Fashion", "Sensory Thrills"],
+                purposes: ["LOVE", "Aesthetic Bliss", "Emotional Resonance", "Joy of Living"]
             },
             science: {
-                name: "THE FACULTY OF THE MIND",
-                category: "REASON · OBJECTIVE",
+                name: "THE MIND",
+                mainName: "MIND",
                 color: 0xffbb00,
                 class: "neon-science",
                 titleClass: "title-science",
                 borderClass: "border-sci",
                 quotes: [
-                    "PHYSICS, MATHS & ASTRONOMY",
-                    "EMPIRICAL REASON & SYSTEMIC ORDER",
-                    "OBJECTIVE TRUTH & NATURAL LAW",
-                    "THE NEURAL ARCHITECTURE OF THOUGHT",
-                    "COMPUTATION & CYBERNETICS",
-                    "DISCOVERING THE COSMIC BLUEPRINT"
+                    'TRUTH THROUGH EMPIRICAL REASON',
+                    'OBJECTIVE TRUTH &amp; NATURAL LAW',
+                    'SYSTEMIC ORDER &amp; SCIENTIFIC TRUTH',
+                    'THE NEURAL ARCHITECTURE OF TRUTH',
+                    'COMPUTATION, MATHEMATICS &amp; TRUTH',
+                    'DISCOVERING THE COSMIC TRUTH'
                 ],
-                highFields: ["Physics", "Mathematics", "Astronomy", "Chemistry", "Neuroscience", "Computer Science", "Economics"],
+                highFields: ["Physics", "Mathematics", "Astronomy", "Chemistry", "Neuroscience", "Computer Science"],
                 lowFields: ["Puzzles", "Sci-Fi Lore", "Tech Gadgets", "System Optimization", "Trivia", "Chess"],
-                purposes: ["Objective Truth", "Intellectual Clarity", "Empirical Mastery", "Universal Order"]
+                purposes: ["TRUTH", "Objective Clarity", "Empirical Mastery", "Universal Order"]
             },
             spirit: {
-                name: "THE FACULTY OF THE SOUL",
-                category: "TRANSCENDENCE · UNIVERSAL",
-                color: 0x8b5cf6,
+                name: "THE SOUL",
+                mainName: "SOUL",
+                color: 0x38bdf8,
                 class: "neon-spirit",
                 titleClass: "title-spirit",
                 borderClass: "border-spirit",
                 quotes: [
-                    "TRANSCENDENCE & INNER MYSTERY",
-                    "INTUITION, MEANING & INNER PEACE",
-                    "THE UNIVERSAL HORIZON OF BEING",
-                    "ENLIGHTENMENT THROUGH TRANSCENDENCE",
-                    "CONSCIOUSNESS, ETHICS & MINDFULNESS",
-                    "COMMUNION WITH THE INFINITE COSMOS"
+                    'TRANSCENDENCE &amp; INNER WISDOM',
+                    'TRANSCENDENCE OF THE BOUNDED SELF',
+                    'UNIVERSAL CONSCIOUSNESS &amp; TRANSCENDENCE',
+                    'ENLIGHTENMENT THROUGH TRANSCENDENCE',
+                    'INTUITION, MEANING &amp; TRANSCENDENCE',
+                    'TRANSCENDENCE &amp; THE INFINITE COSMOS'
                 ],
-                highFields: ["Transcendence", "Philosophy of Mind", "Mysticism", "Consciousness", "Ethics", "Contemplation", "Metaphysics"],
+                highFields: ["Transcendence", "Philosophy of Mind", "Mysticism", "Consciousness", "Ethics", "Metaphysics"],
                 lowFields: ["Mindfulness", "Meditation", "Holistic Wellness", "Breathwork", "Inner Solace", "Sound Healing"],
-                purposes: ["Spiritual Transcendence", "Inner Peace", "Consciousness Expansion", "Universal Harmony"]
+                purposes: ["TRANSCENDENCE", "Spiritual Wisdom", "Inner Peace", "Universal Harmony"]
             }
         };
 
@@ -1058,6 +1144,7 @@
             updateFacultyPanel('art');
             updateTriBadgePositions();
             initDraggablePanel();
+            initDraggableTriMatrix();
             setInterval(cycleTriadBadge, 5200);
             skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
             setInterval(updateTicker, 1000);
@@ -1717,6 +1804,86 @@
             header.addEventListener('pointercancel', stopDrag);
         }
 
+        /* Draggable Tri-Truth Matrix (Mobile Touch & Desktop Mouse Support) */
+        function initDraggableTriMatrix() {
+            const matrix = document.getElementById('tri-matrix-left');
+            if (!matrix) return;
+
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let initialLeft = 0;
+            let initialTop = 0;
+            let hasMoved = false;
+
+            matrix.addEventListener('pointerdown', (e) => {
+                isDragging = true;
+                hasMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = matrix.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                matrix.style.left = `${initialLeft}px`;
+                matrix.style.top = `${initialTop}px`;
+                matrix.style.right = 'auto';
+                matrix.style.bottom = 'auto';
+                matrix.style.transform = window.innerWidth <= 768 ? 'scale(0.68)' : 'none';
+
+                matrix.setPointerCapture(e.pointerId);
+                matrix.classList.add('is-dragging');
+            });
+
+            matrix.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (Math.hypot(dx, dy) > 4) {
+                    hasMoved = true;
+                }
+
+                if (hasMoved) {
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+
+                    const scale = window.innerWidth <= 768 ? 0.68 : 1;
+                    const margin = 4;
+                    const w = matrix.offsetWidth * scale;
+                    const h = matrix.offsetHeight * scale;
+                    const maxLeft = window.innerWidth - w - margin;
+                    const maxTop = window.innerHeight - h - margin;
+
+                    newLeft = Math.max(margin, Math.min(newLeft, maxLeft));
+                    newTop = Math.max(margin, Math.min(newTop, maxTop));
+
+                    matrix.style.left = `${newLeft}px`;
+                    matrix.style.top = `${newTop}px`;
+                }
+            });
+
+            const stopDrag = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                matrix.classList.remove('is-dragging');
+
+                if (matrix.hasPointerCapture && matrix.hasPointerCapture(e.pointerId)) {
+                    matrix.releasePointerCapture(e.pointerId);
+                }
+
+                // If tapped without dragging, trigger triad badge spin
+                if (!hasMoved) {
+                    cycleTriadBadge();
+                }
+            };
+
+            matrix.addEventListener('pointerup', stopDrag);
+            matrix.addEventListener('pointercancel', stopDrag);
+        }
+
         /* 3D Scene Initialization */
         function initScene() {
             scene = new THREE.Scene();
@@ -2282,21 +2449,42 @@
             const data = facultyData[type];
             if (!data) return;
 
-            // Update Header & Category
-            screenFacultyName.className = 'panel-faculty-title ' + data.titleClass;
-            screenFacultyName.innerText = data.name;
-            screenCategory.innerText = data.category;
+            // Update Header
+            if (screenFacultyName) {
+                screenFacultyName.className = 'panel-faculty-title ' + data.titleClass;
+                screenFacultyName.innerHTML = `<span class="faculty-title-the">THE</span> <span class="faculty-title-main">${data.mainName || data.name}</span>`;
+            }
+            if (screenCategory) {
+                screenCategory.innerText = data.category || '';
+            }
 
             // Update Quote & Glow Border
-            panelQuoteBox.className = 'panel-quote-box ' + data.borderClass;
-            screenContent.className = 'neon-text ' + data.class;
-            const randomQuote = data.quotes[Math.floor(Math.random() * data.quotes.length)];
-            screenContent.innerText = `"${randomQuote}"`;
+            if (panelQuoteBox) panelQuoteBox.className = 'panel-quote-box ' + data.borderClass;
+            if (screenContent) {
+                screenContent.className = 'neon-text ' + data.class;
+                const randomQuote = data.quotes[Math.floor(Math.random() * data.quotes.length)];
+                
+                // Highlight keywords with distinct neon colors
+                let formattedQuote = randomQuote
+                    .replace(/\bLOVE\b/g, '<span class="highlight-love">LOVE</span>')
+                    .replace(/\bTRUTH\b/g, '<span class="highlight-truth">TRUTH</span>')
+                    .replace(/\bTRANSCENDENCE\b/g, '<span class="highlight-transcendence">TRANSCENDENCE</span>');
+
+                screenContent.innerHTML = `"${formattedQuote}"`;
+            }
 
             // Update Content Details (Under the header)
-            detailHigh.innerText = data.highFields.join(', ');
-            detailLow.innerText = data.lowFields.join(', ');
-            detailPurpose.innerText = data.purposes.join(' · ');
+            if (detailHigh) detailHigh.innerText = data.highFields.join(', ');
+            if (detailLow) detailLow.innerText = data.lowFields.join(', ');
+            if (detailPurpose) {
+                let formattedPurposes = data.purposes.map(p => {
+                    if (p === 'LOVE') return '<span class="highlight-love">LOVE</span>';
+                    if (p === 'TRUTH') return '<span class="highlight-truth">TRUTH</span>';
+                    if (p === 'TRANSCENDENCE') return '<span class="highlight-transcendence">TRANSCENDENCE</span>';
+                    return p;
+                }).join(' · ');
+                detailPurpose.innerHTML = formattedPurposes;
+            }
         }
 
         function onMouseMove(event) {
