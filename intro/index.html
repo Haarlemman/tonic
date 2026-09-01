@@ -212,7 +212,7 @@
         }
 
         /* ==========================================================================
-           LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX TRIANGLE (DRAGGABLE & MOBILE)
+           LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX TRIANGLE (3D & DRAGGABLE)
            ========================================================================== */
         #tri-matrix-left {
             position: fixed;
@@ -227,9 +227,15 @@
             cursor: grab;
             touch-action: none;
             user-select: none;
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #tri-matrix-left.is-dragging {
             cursor: grabbing !important;
+        }
+        #tri-matrix-left.matrix-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(-50%) scale(0.65) !important;
         }
         .tri-matrix-wrapper {
             position: relative;
@@ -238,6 +244,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            perspective: 800px;
+            perspective-origin: 50% 50%;
+            transform-style: preserve-3d;
         }
         .tri-rotor {
             position: absolute;
@@ -249,6 +258,7 @@
             align-items: center;
             justify-content: center;
             transform-origin: center center;
+            transform-style: preserve-3d;
             will-change: transform;
         }
         .tri-svg {
@@ -760,13 +770,46 @@
             }
         }
         
-        .orbit-icon {
+        /* Rotating Outline Triangle Matrix Toggle Button */
+        .tri-toggle-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #38bdf8;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 14px rgba(56, 189, 248, 0.25);
+        }
+        .tri-toggle-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+            transform: scale(1.08);
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.45);
+        }
+        .tri-toggle-icon {
             width: 20px;
             height: 20px;
-            animation: spinOrbit 12s linear infinite;
+            animation: spinTriOutline 9s linear infinite;
+            transform-origin: center center;
         }
-        @keyframes spinOrbit {
+        @keyframes spinTriOutline {
             100% { transform: rotate(360deg); }
+        }
+        .tri-toggle-btn.matrix-off {
+            opacity: 0.45;
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #64748b;
+            box-shadow: none;
+        }
+        .tri-toggle-btn.matrix-off .tri-toggle-icon {
+            animation-play-state: paused;
         }
 
         /* Tooltip */
@@ -960,11 +1003,9 @@
 
         <!-- Top Right Actions (Vertically Stacked) -->
         <div class="top-right hud-interactive">
-            <button id="orbit-btn" class="icon-btn" onclick="resetOverview()" title="Metropolis Orbit (360° Auto)">
-                <svg class="orbit-icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/>
-                    <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(-30 12 12)"/>
-                    <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+            <button id="matrix-toggle-btn" class="tri-toggle-btn" onclick="toggleTriMatrix()" title="Toggle Tri-Truth Matrix (On/Off)" aria-label="Toggle Tri-Truth Matrix">
+                <svg class="tri-toggle-icon" viewBox="0 0 24 24">
+                    <polygon points="12,3 21,19 3,19" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                 </svg>
             </button>
             <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
@@ -1156,30 +1197,56 @@
             if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
         }
 
-        /* Dynamically update badge positions on triangle vertices to guarantee upright horizontal text */
-        function updateTriBadgePositions() {
+        /* Dynamically update badge positions on triangle vertices with 3D perspective projection */
+        function updateTriBadgePositions(tiltX = 0, tiltY = 0) {
             const cx = 130, cy = 130, r = 102;
             const degToRad = Math.PI / 180;
-            
-            const a1 = (triangleAngle - 90) * degToRad;
-            const a2 = (triangleAngle + 30) * degToRad;
-            const a3 = (triangleAngle + 150) * degToRad;
-            
-            if (triNode1) {
-                triNode1.style.left = `${cx + r * Math.cos(a1)}px`;
-                triNode1.style.top = `${cy + r * Math.sin(a1)}px`;
-            }
-            if (triNode2) {
-                triNode2.style.left = `${cx + r * Math.cos(a2)}px`;
-                triNode2.style.top = `${cy + r * Math.sin(a2)}px`;
-            }
-            if (triNode3) {
-                triNode3.style.left = `${cx + r * Math.cos(a3)}px`;
-                triNode3.style.top = `${cy + r * Math.sin(a3)}px`;
-            }
+            const D = 800; // perspective distance matching CSS perspective: 800px
+
+            const radX = tiltX * degToRad;
+            const radY = tiltY * degToRad;
+            const cosX = Math.cos(radX), sinX = Math.sin(radX);
+            const cosY = Math.cos(radY), sinY = Math.sin(radY);
+
+            const baseAngles = [
+                (triangleAngle - 90) * degToRad,
+                (triangleAngle + 30) * degToRad,
+                (triangleAngle + 150) * degToRad
+            ];
+            const nodes = [triNode1, triNode2, triNode3];
+
+            baseAngles.forEach((angle, i) => {
+                const node = nodes[i];
+                if (!node) return;
+
+                // 1. Position on flat rotor plane (Z = 0)
+                const x1 = r * Math.cos(angle);
+                const y1 = r * Math.sin(angle);
+
+                // 2. Rotate around Y-axis (yaw)
+                const x2 = x1 * cosY;
+                const y2 = y1;
+                const z2 = -x1 * sinY;
+
+                // 3. Rotate around X-axis (pitch)
+                const x3 = x2;
+                const y3 = y2 * cosX - z2 * sinX;
+                const z3 = y2 * sinX + z2 * cosX;
+
+                // 4. Perspective projection
+                const pScale = D / (D - z3);
+                const screenX = cx + x3 * pScale;
+                const screenY = cy + y3 * pScale;
+
+                // 5. Apply smooth screen positioning and 3D depth scale
+                node.style.left = `${screenX.toFixed(2)}px`;
+                node.style.top = `${screenY.toFixed(2)}px`;
+                node.style.transform = `translate(-50%, -50%) scale(${(pScale * 0.96).toFixed(3)})`;
+                node.style.zIndex = Math.round(100 + z3);
+            });
         }
 
-        /* Fast Spin Triangle Transition Function (Smooth Super-Spin) */
+        /* Fast Spin Triangle Transition Function (Smooth Super-Spin in 3D) */
         function cycleTriadBadge() {
             if (!triRotor || isSuperSpinning) return;
             isSuperSpinning = true;
@@ -1200,14 +1267,21 @@
                 const elapsed = time - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
-                // Cubic easing (easeOutCubic / easeInOutQuad)
+                // Cubic easing (easeInOutQuad)
                 const ease = progress < 0.5 
                     ? 2 * progress * progress 
                     : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
                 triangleAngle = startAngle + (targetAngle - startAngle) * ease;
-                if (triRotor) triRotor.style.transform = `rotate(${triangleAngle}deg)`;
-                updateTriBadgePositions();
+                
+                const timeSec = time * 0.001;
+                const tiltX = Math.sin(timeSec * 0.7) * 20;
+                const tiltY = Math.cos(timeSec * 0.55) * 24;
+
+                if (triRotor) {
+                    triRotor.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) rotateZ(${triangleAngle.toFixed(2)}deg)`;
+                }
+                updateTriBadgePositions(tiltX, tiltY);
 
                 // Swap text mid-spin
                 if (progress >= 0.45 && !textUpdated) {
@@ -1882,6 +1956,22 @@
 
             matrix.addEventListener('pointerup', stopDrag);
             matrix.addEventListener('pointercancel', stopDrag);
+        }
+
+        /* Toggle Tri-Truth Matrix visibility on/off */
+        let isMatrixVisible = true;
+        function toggleTriMatrix() {
+            const matrix = document.getElementById('tri-matrix-left');
+            const btn = document.getElementById('matrix-toggle-btn');
+            if (!matrix) return;
+            isMatrixVisible = !isMatrixVisible;
+            if (isMatrixVisible) {
+                matrix.classList.remove('matrix-hidden');
+                if (btn) btn.classList.remove('matrix-off');
+            } else {
+                matrix.classList.add('matrix-hidden');
+                if (btn) btn.classList.add('matrix-off');
+            }
         }
 
         /* 3D Scene Initialization */
@@ -2563,11 +2653,13 @@
             const elapsedTime = clock.getElapsedTime();
             const now = Date.now();
 
-            // Smooth Continuous Rotation of the Left Tri-Truth Triangle & Upright Badges
+            // Smooth Continuous 3D Gyroscopic Rotation of the Left Tri-Truth Triangle & Upright Badges
             if (!isSuperSpinning && triRotor) {
-                triangleAngle = (triangleAngle + 0.12) % 360;
-                triRotor.style.transform = `rotate(${triangleAngle}deg)`;
-                updateTriBadgePositions();
+                triangleAngle = (triangleAngle + 0.14) % 360;
+                const tiltX = Math.sin(elapsedTime * 0.7) * 20;
+                const tiltY = Math.cos(elapsedTime * 0.55) * 24;
+                triRotor.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) rotateZ(${triangleAngle.toFixed(2)}deg)`;
+                updateTriBadgePositions(tiltX, tiltY);
             }
 
             // Animate Atmospheric Dust Particles
