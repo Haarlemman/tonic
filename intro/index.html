@@ -1009,6 +1009,7 @@
         let particlesSystem;
         let groundTriangle;
         let purpleBeamGroup;
+        let scienceAtomGroup, scienceAtomNucleus;
 
         let introActive = true;
         let cinematicTarget = null;
@@ -1196,6 +1197,39 @@
 
         const landmarkLabels = {};
 
+        /* Helper to draw distinct, evenly spaced neon characters preventing glyph collision/blur */
+        function drawSpacedNeonText(ctx, text, cx, cy, colorHex, glowColor, isPurplishBlue, spacing = 36) {
+            const chars = text.split('');
+            const charWidths = chars.map(ch => ctx.measureText(ch).width);
+            const totalW = charWidths.reduce((a, b) => a + b, 0) + (chars.length - 1) * spacing;
+            let currX = cx - totalW / 2;
+
+            chars.forEach((ch, idx) => {
+                const charCenterX = currX + charWidths[idx] / 2;
+
+                // Pass 1: Broad soft ambient neon haze
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = 48;
+                ctx.fillStyle = colorHex;
+                ctx.fillText(ch, charCenterX, cy);
+                ctx.fillText(ch, charCenterX, cy);
+
+                // Pass 2: Intense vibrant neon color
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = 18;
+                ctx.fillStyle = colorHex;
+                ctx.fillText(ch, charCenterX, cy);
+
+                // Pass 3: Crisp luminous core
+                ctx.shadowColor = isPurplishBlue ? '#f5f3ff' : '#ffffff';
+                ctx.shadowBlur = 6;
+                ctx.fillStyle = isPurplishBlue ? '#f5f3ff' : '#ffffff';
+                ctx.fillText(ch, charCenterX, cy);
+
+                currX += charWidths[idx] + spacing;
+            });
+        }
+
         /* Flat Building Lightbox with Bold Rounded Glowing Neon Letters */
         function createBuildingLightbox(text, colorHex, glowColor, width = 3.6, height = 1.25, isPurplishBlue = false) {
             const canvas = document.createElement('canvas');
@@ -1225,34 +1259,15 @@
             ctx.lineWidth = 9;
             ctx.stroke();
 
-            // Bold Rounded Neon Typography with distinct letter spacing for crisp legibility
-            if ('letterSpacing' in ctx) {
-                ctx.letterSpacing = '16px';
-            }
+            // Bold Rounded Neon Typography
             ctx.font = '800 120px "Space Grotesk", "Outfit", "Inter", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
 
-            // Pass 1: Broad soft ambient neon haze
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 48;
-            ctx.fillStyle = colorHex;
-            ctx.fillText(text, cx, cy);
-            ctx.fillText(text, cx, cy);
-
-            // Pass 2: Intense vibrant neon color
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 20;
-            ctx.fillStyle = colorHex;
-            ctx.fillText(text, cx, cy);
-
-            // Pass 3: White-hot / luminous core tube
-            ctx.shadowColor = isPurplishBlue ? '#f5f3ff' : '#ffffff';
-            ctx.shadowBlur = 7;
-            ctx.fillStyle = isPurplishBlue ? '#f5f3ff' : '#ffffff';
-            ctx.fillText(text, cx, cy);
+            // Draw individual spaced characters ensuring wide, crystal-clear glyph separation
+            drawSpacedNeonText(ctx, text, cx, cy, colorHex, glowColor, isPurplishBlue, 44);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.needsUpdate = true;
@@ -1327,34 +1342,15 @@
             ctx.lineWidth = 9;
             ctx.stroke();
 
-            // Bold Rounded Neon Typography with letter spacing
-            if ('letterSpacing' in ctx) {
-                ctx.letterSpacing = '14px';
-            }
-            ctx.font = '800 116px "Space Grotesk", "Outfit", "Inter", sans-serif';
+            // Bold Rounded Neon Typography
+            ctx.font = '800 114px "Space Grotesk", "Outfit", "Inter", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
 
-            // Pass 1: Soft broad neon haze
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 48;
-            ctx.fillStyle = colorHex;
-            ctx.fillText(text, cx, cy);
-            ctx.fillText(text, cx, cy);
-
-            // Pass 2: Intense vibrant neon color
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 20;
-            ctx.fillStyle = colorHex;
-            ctx.fillText(text, cx, cy);
-
-            // Pass 3: White-hot core
-            ctx.shadowColor = isPurplishBlue ? '#f5f3ff' : '#ffffff';
-            ctx.shadowBlur = 7;
-            ctx.fillStyle = isPurplishBlue ? '#f5f3ff' : '#ffffff';
-            ctx.fillText(text, cx, cy);
+            // Draw spaced neon text along curved facade
+            drawSpacedNeonText(ctx, text, cx, cy, colorHex, glowColor, isPurplishBlue, 22);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.needsUpdate = true;
@@ -1749,8 +1745,8 @@
                         artGroup.add(beacon);
 
                         // Black Lightbox with bold rounded neon letters on Art building facade at 2/3 height
-                        const artLightbox = createBuildingLightbox("ART", "#ff3322", "rgba(255, 51, 34, 1.0)", 2.3, 0.92);
-                        artLightbox.position.set(0, 6.2, 1.39);
+                        const artLightbox = createBuildingLightbox("ART", "#ff3322", "rgba(255, 51, 34, 1.0)", 2.65, 0.95);
+                        artLightbox.position.set(0, 6.2, 1.4);
                         artGroup.add(artLightbox);
                         landmarkLabels['art'] = artLightbox;
 
@@ -1767,7 +1763,7 @@
                         continue;
                     }
 
-                    // 2. FACULTY OF THE MIND (Gold / Tiered Cybernetic Observatory)
+                    // 2. FACULTY OF THE MIND (Gold / Tiered Cybernetic Observatory with Animated Knowledge Atom)
                     if (x === sciPos.x && z === sciPos.z) {
                         const sciGroup = new THREE.Group();
 
@@ -1795,22 +1791,45 @@
                         cyl2.castShadow = true;
                         sciGroup.add(cyl2);
 
-                        // Golden Geodesic Observatory Dome
-                        const dome = new THREE.Mesh(
-                            new THREE.IcosahedronGeometry(1.35, 2),
-                            new THREE.MeshStandardMaterial({ color: 0xffe680, metalness: 0.85, roughness: 0.1, emissive: 0xffaa00, emissiveIntensity: 0.5 })
+                        // Dark sleek pedestal for the Knowledge Atom
+                        const ped = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.35, 0.88, 1.4, 8),
+                            new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.4 })
                         );
-                        dome.position.y = 8.8;
-                        sciGroup.add(dome);
+                        ped.position.y = 8.5;
+                        ped.castShadow = true;
+                        sciGroup.add(ped);
 
-                        // Glowing energy ring
-                        const ring = new THREE.Mesh(
-                            new THREE.TorusGeometry(2.2, 0.1, 12, 32),
-                            new THREE.MeshBasicMaterial({ color: 0xffdd00 })
+                        // Animated 3D Knowledge Atom (Matching tonic homepage)
+                        const atomCluster = new THREE.Group();
+                        atomCluster.position.y = 9.8;
+
+                        // Glowing Round Spherical Nucleus
+                        const atomNucleus = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.55, 32, 32),
+                            new THREE.MeshStandardMaterial({
+                                color: 0x3b82f6,
+                                emissive: 0x1d4ed8,
+                                emissiveIntensity: 0.95,
+                                roughness: 0.2
+                            })
                         );
-                        ring.rotation.x = Math.PI / 2;
-                        ring.position.y = 4.6;
-                        sciGroup.add(ring);
+                        atomCluster.add(atomNucleus);
+
+                        // 3 Dynamic Orbital Rings
+                        const rGeom = new THREE.TorusGeometry(1.35, 0.05, 16, 64);
+                        const rMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.9 });
+
+                        [0, Math.PI / 2, Math.PI / 4].forEach((rot, i) => {
+                            const r = new THREE.Mesh(rGeom, rMat);
+                            if (i === 1) r.rotation.x = rot;
+                            if (i === 2) r.rotation.y = rot;
+                            atomCluster.add(r);
+                        });
+
+                        sciGroup.add(atomCluster);
+                        scienceAtomGroup = atomCluster;
+                        scienceAtomNucleus = atomNucleus;
 
                         // Curved Black Lightbox with bold rounded neon letters wrapping around the cylindrical Science facade
                         const sciLightbox = createCurvedBuildingLightbox("SCIENCE", "#ffbb00", "rgba(255, 187, 0, 1.0)", 1.70, 0.92, 80);
@@ -1823,8 +1842,8 @@
                         scene.add(sciGroup);
                         specialBlocks.push(sciGroup);
 
-                        const pLight = new THREE.PointLight(0xffbb00, 5.0, 25);
-                        pLight.position.set(posX, 9.2, posZ);
+                        const pLight = new THREE.PointLight(0x3b82f6, 5.5, 25);
+                        pLight.position.set(posX, 9.8, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
                         continue;
@@ -1855,15 +1874,6 @@
                         spireMesh.rotation.y = Math.PI / 4;
                         spireMesh.castShadow = true;
                         spiritGroup.add(spireMesh);
-
-                        // Sapphire Crystal Halo Ring
-                        const halo = new THREE.Mesh(
-                            new THREE.TorusGeometry(1.75, 0.1, 12, 32),
-                            new THREE.MeshBasicMaterial({ color: 0xc084fc })
-                        );
-                        halo.rotation.x = Math.PI / 2;
-                        halo.position.y = 7.6;
-                        spiritGroup.add(halo);
 
                         // Apex Crystal Beacon
                         const apex = new THREE.Mesh(
@@ -2303,6 +2313,17 @@
                 purpleBeamGroup.userData.glowMat.opacity = beamPulse * 0.55;
                 purpleBeamGroup.userData.outerGlowMat.opacity = beamPulse * 0.32;
                 purpleBeamGroup.rotation.y += 0.005;
+            }
+
+            // Animate Knowledge Atom on Science Building (Matching homepage)
+            if (scienceAtomGroup) {
+                scienceAtomGroup.rotation.y += 0.032;
+                scienceAtomGroup.rotation.z += 0.022;
+                scienceAtomGroup.position.y = 9.8 + Math.sin(elapsedTime * 2.4) * 0.08;
+            }
+            if (scienceAtomNucleus) {
+                const s = 1.0 + Math.sin(elapsedTime * 4.0) * 0.08;
+                scienceAtomNucleus.scale.set(s, s, s);
             }
 
             // Auto-Tour Rotation & Periodic Camera Focus Cycling
