@@ -751,6 +751,13 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
 
+        
+        .icon-btn.sound-active {
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.6) !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+        }
+
         .icon-btn:hover {
             background: #fff;
             color: #0f172a;
@@ -763,33 +770,69 @@
             fill: currentColor;
         }
 
-        /* Navigation Mode Toggle Button (Auto Tour vs Manual Control) */
+        
+        /* Navigation Mode Pill Button (Auto Tour vs Manual Roam) */
         .nav-mode-btn {
-            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.42rem 0.85rem;
+            border-radius: 9999px;
+            background: rgba(10, 15, 29, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #f1f5f9;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            width: fit-content;
+        }
+
+        .nav-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.45);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
         }
 
         .nav-mode-btn.manual-active {
             background: rgba(14, 165, 233, 0.2);
             border-color: #38bdf8;
             color: #38bdf8;
-            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55), 0 8px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.45), 0 8px 22px rgba(0, 0, 0, 0.5);
         }
 
         .nav-mode-btn.manual-active:hover {
+            background: rgba(14, 165, 233, 0.32);
+            box-shadow: 0 0 24px rgba(56, 189, 248, 0.65), 0 10px 28px rgba(0, 0, 0, 0.6);
+        }
+
+        .nav-mode-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .nav-mode-btn.manual-active .nav-mode-dot {
             background: #38bdf8;
-            color: #0f172a;
-            box-shadow: 0 0 22px rgba(56, 189, 248, 0.75), 0 10px 25px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 8px #38bdf8;
         }
 
-        .nav-mode-btn svg {
-            transition: transform 0.25s ease;
+        .nav-mode-label {
+            line-height: 1;
         }
 
-        .nav-mode-btn:hover svg {
-            transform: scale(1.1);
-        }
-
-        /* Navigation Mode HUD Toast */
+/* Navigation Mode HUD Toast */
         .nav-mode-toast {
             position: fixed;
             top: 2rem;
@@ -933,26 +976,8 @@
             }
         }
 
-        /* Tooltip */
-        #tooltip {
-            position: absolute;
-            padding: 0.5rem 0.9rem;
-            background: rgba(10, 15, 29, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            color: #fff;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            display: none;
-            z-index: 900;
-            transform: translate(-50%, -135%);
-            pointer-events: none;
-            border-radius: 6px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-        }
-
-        /* Live Matrix Status Ticker in Bottom Left */
+        /* Tooltip removed */
+/* Live Matrix Status Ticker in Bottom Left */
         .hud-ticker {
             position: absolute;
             bottom: 2rem;
@@ -1087,9 +1112,6 @@
 
 <body>
 
-    <!-- Ambient Audio Track (neon-static.mp3) -->
-    <audio id="ambient-audio" src="neon-static.mp3" loop preload="auto"></audio>
-
     <!-- Cinematic Intro Sequence Overlay -->
     <div id="intro-overlay">
         <h1 class="intro-title">
@@ -1165,41 +1187,30 @@
             </div>
         </div>
 
-        <!-- Top Right Actions (Vertically Stacked) -->
+                <!-- Top Right Actions (Vertically Stacked) -->
         <div class="top-right hud-interactive">
-            <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
-                <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
-                    <path
-                        d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-                </svg>
-                <svg id="sound-icon-off" viewBox="0 0 24 24">
-                    <path
-                        d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-                </svg>
+            <button id="nav-mode-btn" class="nav-mode-btn" onclick="toggleNavMode()"
+                title="Navigation Mode: Click to switch between Auto Tour and Manual Free Roam" aria-label="Toggle Navigation Mode">
+                <span class="nav-mode-dot"></span>
+                <span id="nav-mode-label" class="nav-mode-label">AUTO TOUR</span>
             </button>
-            <button class="icon-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
-                <svg viewBox="0 0 24 24">
-                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
-                </svg>
-            </button>
-            <button id="nav-mode-btn" class="icon-btn nav-mode-btn" onclick="toggleNavMode()"
-                title="Navigation Mode: Auto Tour (Click for Manual Free Roam)" aria-label="Toggle Navigation Mode">
-                <!-- Auto Tour Icon: Camera with orbital path -->
-                <svg id="nav-icon-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 10l4.55-2.28A1 1 0 0 1 21 8.62v6.76a1 1 0 0 1-1.45.89L15 14v-4z" fill="currentColor"
-                        stroke="none" />
-                    <rect x="2" y="8" width="13" height="8" rx="2" fill="currentColor" stroke="none" />
-                    <path d="M4 5a9 9 0 0 1 14 0" stroke="currentColor" stroke-width="2" fill="none" />
-                    <polyline points="15 2 18 5 15 8" stroke="currentColor" stroke-width="2" fill="none" />
-                </svg>
-                <!-- Manual Control Icon: 4-Way Directional Navigation Pad (Pan / Roam) -->
-                <svg id="nav-icon-manual" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
-                    <path
-                        d="M12 2l3.5 3.5h-2.5v3.5h-2V5.5H8.5L12 2zm0 20l-3.5-3.5h2.5v-3.5h2v3.5h2.5L12 22zm-10-10l3.5-3.5v2.5h3.5v2H5.5v2.5L2 12zm20 0l-3.5 3.5v-2.5h-3.5v-2h3.5V8.5L22 12z" />
-                    <circle cx="12" cy="12" r="1.6" />
-                </svg>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
+                    <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
+                        <path
+                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                    </svg>
+                    <svg id="sound-icon-off" viewBox="0 0 24 24">
+                        <path
+                            d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Navigation Mode HUD Toast Notification -->
@@ -1293,7 +1304,6 @@
     </div>
 
     <!-- Tooltip & 3D Canvas -->
-    <div id="tooltip"></div>
     <div id="canvas-container"></div>
 
     <!-- Three.js + OrbitControls -->
@@ -1316,7 +1326,18 @@
         let artRayGroup;
 
         let introActive = true;
-        let isManualControl = false;
+                let isManualControl = false;
+        let userInteracting = false;
+        let lastUserInteractionTime = 0;
+        let isTransitioningCamera = false;
+        let transitionStartTime = 0;
+        const TRANSITION_DURATION = 1200; // ms
+        let transitionFromPos = new THREE.Vector3();
+        let transitionToPos = new THREE.Vector3();
+        let transitionFromTarget = new THREE.Vector3();
+        let transitionToTarget = new THREE.Vector3();
+        let transitionFromZoom = 1.0;
+        let transitionToZoom = 1.0;
         let cinematicTarget = null;
         let currentFacultyType = 'art';
         let lastAutoTourTime = 0;
@@ -1332,7 +1353,6 @@
         let isSuperSpinning = false;
 
         const container = document.getElementById('canvas-container');
-        const tooltip = document.getElementById('tooltip');
         const introTextEl = document.getElementById('intro-text');
         const introOverlay = document.getElementById('intro-overlay');
         const skipBtn = document.getElementById('skip-btn');
@@ -1777,7 +1797,7 @@
             }
         }
 
-        function toggleAudio() {
+                function toggleAudio() {
             initRealityAudio();
             if (!audioCtx) return;
             if (audioCtx.state === 'suspended') {
@@ -1786,7 +1806,7 @@
 
             isAudioMuted = !isAudioMuted;
             if (masterGain) {
-                masterGain.gain.linearRampToValueAtTime(isAudioMuted ? 0 : 0.65, audioCtx.currentTime + 0.2);
+                masterGain.gain.linearRampToValueAtTime(isAudioMuted ? 0 : 0.65, audioCtx.currentTime + 0.15);
             }
             updateAudioIcon(!isAudioMuted);
         }
@@ -1794,9 +1814,18 @@
         function updateAudioIcon(playing) {
             const iconOn = document.getElementById('sound-icon-on');
             const iconOff = document.getElementById('sound-icon-off');
+            const btn = document.getElementById('sound-btn');
             if (iconOn && iconOff) {
                 iconOn.style.display = playing ? 'block' : 'none';
                 iconOff.style.display = playing ? 'none' : 'block';
+            }
+            if (btn) {
+                btn.title = playing ? "Audio: Active (Click to Mute)" : "Audio: Muted (Click to Unmute)";
+                if (playing) {
+                    btn.classList.add('sound-active');
+                } else {
+                    btn.classList.remove('sound-active');
+                }
             }
         }
 
@@ -1837,6 +1866,18 @@
         }
 
         /* Reality Mutation Engine */
+        
+        function startCameraTransition(toPos, toTarget, toZoom) {
+            transitionFromPos.copy(camera.position);
+            transitionToPos.copy(toPos);
+            transitionFromTarget.copy(controls.target);
+            transitionToTarget.copy(toTarget);
+            transitionFromZoom = camera.zoom || 1.0;
+            transitionToZoom = toZoom;
+            transitionStartTime = Date.now();
+            isTransitioningCamera = true;
+        }
+
         function switchReality(targetState, instant = false) {
             if (!['body', 'mind', 'soul'].includes(targetState)) return;
             currentRealityState = targetState;
@@ -1904,9 +1945,9 @@
                         groundGlowLight.groundColor.setHex(0x1e0b08);
                     }
 
-                    controls.dampingFactor = 0.028;
                     targetCameraZoom = 2.1;
                     targetCameraPos.set(46, 30, 46);
+                    startCameraTransition(targetCameraPos, targetCameraLookAt, targetCameraZoom);
                 } else if (targetState === 'mind') {
                     scene.background = new THREE.Color(0x020713);
                     scene.fog = null;
@@ -1930,13 +1971,14 @@
                         groundGlowLight.groundColor.setHex(0x082f49);
                     }
 
-                    controls.dampingFactor = 0.15;
                     targetCameraZoom = 1.35;
                     targetCameraPos.set(54, 54, 54);
-
+                    startCameraTransition(targetCameraPos, targetCameraLookAt, targetCameraZoom);
                     if (instant) {
                         camera.position.copy(targetCameraPos);
+                        controls.target.copy(targetCameraLookAt);
                         camera.zoom = targetCameraZoom;
+                        isTransitioningCamera = false;
                     }
                 } else if (targetState === 'soul') {
                     scene.background = new THREE.Color(0x03071e);
@@ -1961,9 +2003,9 @@
                         groundGlowLight.groundColor.setHex(0x030712);
                     }
 
-                    controls.dampingFactor = 0.04;
                     targetCameraZoom = 0.92;
                     targetCameraPos.set(58, 72, 58);
+                    startCameraTransition(targetCameraPos, targetCameraLookAt, targetCameraZoom);
                 }
             }
 
@@ -1987,68 +2029,32 @@
             if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
         }
 
+        
+        function runIntroSequence() {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.45;
+        }
+
         function enterCampus() {
             introActive = false;
-            introOverlay.style.opacity = 0;
-            setTimeout(() => {
-                introOverlay.style.visibility = 'hidden';
-                hudLayer.style.opacity = 1;
-                lastAutoTourTime = Date.now();
-            }, 1000);
+            if (introOverlay) {
+                introOverlay.style.opacity = 0;
+                setTimeout(() => {
+                    introOverlay.style.visibility = 'hidden';
+                    if (hudLayer) hudLayer.style.opacity = 1;
+                    lastAutoTourTime = Date.now();
+                }, 1000);
+            }
 
-            // Initialize and start generative soundscape on interaction
+            // Initialize and start generative soundscape on user entrance
             initRealityAudio();
+            isAudioMuted = false;
+            if (masterGain && audioCtx) {
+                masterGain.gain.setValueAtTime(0.65, audioCtx.currentTime);
+            }
             updateAudioIcon(true);
         }
 
-        function runIntroSequence() {
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.65;
-        }
-
-        function enterCampus() {
-            introActive = false;
-            introOverlay.style.opacity = 0;
-            setTimeout(() => {
-                introOverlay.style.visibility = 'hidden';
-                hudLayer.style.opacity = 1;
-                lastAutoTourTime = Date.now();
-            }, 1000);
-
-            // Automatically start playing ambient audio (neon-static.mp3) on user interaction
-            startAmbientAudio();
-        }
-
-        function startAmbientAudio() {
-            if (!ambientAudio) return;
-            ambientAudio.volume = 0.5;
-            ambientAudio.play().then(() => {
-                updateAudioIcon(true);
-            }).catch(err => {
-                console.warn("Audio autoplay blocked or interacting needed:", err);
-            });
-        }
-
-        function toggleAudio() {
-            if (!ambientAudio) return;
-            if (ambientAudio.paused) {
-                ambientAudio.play().then(() => {
-                    updateAudioIcon(true);
-                }).catch(err => console.warn("Audio play error:", err));
-            } else {
-                ambientAudio.pause();
-                updateAudioIcon(false);
-            }
-        }
-
-        function updateAudioIcon(playing) {
-            const iconOn = document.getElementById('sound-icon-on');
-            const iconOff = document.getElementById('sound-icon-off');
-            if (iconOn && iconOff) {
-                iconOn.style.display = playing ? 'block' : 'none';
-                iconOff.style.display = playing ? 'none' : 'block';
-            }
-        }
         const landmarkLabels = {};
 
         const LIGHTBOX_CONFIGS = {
@@ -2725,18 +2731,30 @@
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.appendChild(renderer.domElement);
 
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
+                        controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2.1;
+            controls.dampingFactor = 0.06;
+            controls.maxPolarAngle = Math.PI / 2.05;
             controls.minZoom = 0.5;
             controls.maxZoom = 4.0;
             controls.screenSpacePanning = true;
             controls.panSpeed = 1.2;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.45;
+
             controls.addEventListener('start', () => {
-                if (isManualControl) {
-                    cinematicTarget = null;
+                userInteracting = true;
+                lastUserInteractionTime = Date.now();
+                cinematicTarget = null;
+                isTransitioningCamera = false;
+                if (!isManualControl) {
+                    controls.autoRotate = false;
                 }
+            });
+
+            controls.addEventListener('end', () => {
+                userInteracting = false;
+                lastUserInteractionTime = Date.now();
             });
 
             // Environmental Lighting & Upward Streetlevel Glow
@@ -3485,21 +3503,8 @@
 
             const intersects = raycaster.intersectObjects(specialBlocks, true);
             if (intersects.length > 0) {
-                let target = intersects[0].object;
-                while (target.parent && !target.userData.type) target = target.parent;
-                const bType = target.userData.type;
-                const fData = facultyData[bType];
-                const colorHex = bType === 'art' ? '#ff4433' : (bType === 'science' ? '#ffbb00' : '#8b5cf6');
-                const glowHex = bType === 'art' ? 'rgba(255, 51, 34, 0.45)' : (bType === 'science' ? 'rgba(255, 187, 0, 0.45)' : 'rgba(139, 92, 246, 0.45)');
-                tooltip.style.display = 'block';
-                tooltip.style.left = event.clientX + 'px';
-                tooltip.style.top = event.clientY + 'px';
-                tooltip.style.borderColor = colorHex;
-                tooltip.style.boxShadow = `0 10px 25px rgba(0, 0, 0, 0.75), 0 0 16px ${glowHex}`;
-                tooltip.innerHTML = `<span style="color:${colorHex}; font-weight:800; letter-spacing:0.06em;">${target.userData.label}</span><br><span style="font-size:9.5px; color:#cbd5e1; letter-spacing:0.04em;">${target.userData.category || (fData ? fData.category : '')}</span>`;
                 container.style.cursor = 'pointer';
             } else {
-                tooltip.style.display = 'none';
                 container.style.cursor = 'grab';
             }
         }
@@ -3573,34 +3578,33 @@
             }
         }
 
-        function toggleNavMode() {
+                function toggleNavMode() {
             isManualControl = !isManualControl;
             const btn = document.getElementById('nav-mode-btn');
-            const autoIcon = document.getElementById('nav-icon-auto');
-            const manualIcon = document.getElementById('nav-icon-manual');
+            const label = document.getElementById('nav-mode-label');
 
             if (isManualControl) {
                 controls.autoRotate = false;
                 cinematicTarget = null;
+                isTransitioningCamera = false;
                 if (btn) {
                     btn.classList.add('manual-active');
-                    btn.title = "Navigation Mode: Manual Control (Click for Auto Tour)";
+                    btn.title = "Current: Manual Roam (Click to activate Auto Tour)";
                 }
-                if (autoIcon) autoIcon.style.display = 'none';
-                if (manualIcon) manualIcon.style.display = 'block';
-                showNavToast("MANUAL CONTROL ENABLED", "WASD / Arrows or Right-Click to Pan • Left Drag to Rotate • Scroll to Zoom");
+                if (label) label.textContent = "MANUAL ROAM";
+                showNavToast("MANUAL ROAM ENABLED", "Left Drag: Rotate • Right Drag / WASD: Pan • Scroll: Zoom");
             } else {
                 controls.autoRotate = true;
-                controls.autoRotateSpeed = 0.45;
-                lastAutoTourTime = Date.now();
+                controls.autoRotateSpeed = (currentRealityState === 'body') ? 0.35 : ((currentRealityState === 'mind') ? 0.55 : 0.40);
                 cinematicTarget = null;
+                lastUserInteractionTime = 0;
+                userInteracting = false;
                 if (btn) {
                     btn.classList.remove('manual-active');
-                    btn.title = "Navigation Mode: Auto Tour (Click for Manual Free Roam)";
+                    btn.title = "Current: Auto Tour (Click to activate Manual Roam)";
                 }
-                if (autoIcon) autoIcon.style.display = 'block';
-                if (manualIcon) manualIcon.style.display = 'none';
-                showNavToast("AUTO TOUR ACTIVATED", "Autonomous camera rotation & landmark tour resumed");
+                if (label) label.textContent = "AUTO TOUR";
+                showNavToast("AUTO TOUR RESUMED", "Serene 360° orbital camera rotation active");
             }
         }
 
@@ -3712,9 +3716,26 @@
                 artRayGroup.scale.set(rayPulse, rayPulse, rayPulse);
             }
 
-            // Navigation Mode: Free Roam vs Auto-Tour
-            if (isManualControl) {
-                // Free keyboard navigation across landscape
+                        // Navigation & Camera Kinematics
+            if (isTransitioningCamera) {
+                const elapsed = Date.now() - transitionStartTime;
+                const progress = Math.min(1.0, elapsed / TRANSITION_DURATION);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(transitionFromPos, transitionToPos, ease);
+                controls.target.lerpVectors(transitionFromTarget, transitionToTarget, ease);
+                camera.zoom = THREE.MathUtils.lerp(transitionFromZoom, transitionToZoom, ease);
+
+                if (progress >= 1.0) {
+                    isTransitioningCamera = false;
+                }
+            } else if (cinematicTarget) {
+                const targetPos = cinematicTarget.position.clone();
+                targetPos.y += 2.0;
+                controls.target.lerp(targetPos, 0.06);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
+            } else if (isManualControl) {
+                // Free keyboard WASD flight across landscape
                 const forward = new THREE.Vector3();
                 camera.getWorldDirection(forward);
                 forward.y = 0;
@@ -3722,92 +3743,35 @@
                 const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
                 const keySpeed = 0.55 * Math.max(0.6, 2.0 / (camera.zoom || 1));
-                let keyMoved = false;
-
                 if (activeNavKeys['KeyW'] || activeNavKeys['ArrowUp']) {
                     controls.target.addScaledVector(forward, keySpeed);
                     camera.position.addScaledVector(forward, keySpeed);
-                    keyMoved = true;
                 }
                 if (activeNavKeys['KeyS'] || activeNavKeys['ArrowDown']) {
                     controls.target.addScaledVector(forward, -keySpeed);
                     camera.position.addScaledVector(forward, -keySpeed);
-                    keyMoved = true;
                 }
                 if (activeNavKeys['KeyA'] || activeNavKeys['ArrowLeft']) {
                     controls.target.addScaledVector(right, -keySpeed);
                     camera.position.addScaledVector(right, -keySpeed);
-                    keyMoved = true;
                 }
                 if (activeNavKeys['KeyD'] || activeNavKeys['ArrowRight']) {
                     controls.target.addScaledVector(right, keySpeed);
                     camera.position.addScaledVector(right, keySpeed);
-                    keyMoved = true;
-                }
-                if (keyMoved) {
-                    cinematicTarget = null;
-                }
-
-                // Smooth focus if a specific landmark was clicked while in manual mode
-                if (cinematicTarget) {
-                    const targetPos = cinematicTarget.position.clone();
-                    targetPos.y += 2.0;
-                    controls.target.lerp(targetPos, 0.06);
-                    camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
-
-                    if (now - lastQuoteCycleTime > QUOTE_CYCLE_INTERVAL) {
-                        updateFacultyPanel(currentFacultyType);
-                        lastQuoteCycleTime = now;
-                    }
                 }
             } else {
-                // Auto-Tour Rotation & Periodic Camera Focus Cycling
-                if (controls.autoRotate && !introActive) {
-                    controls.autoRotateSpeed = (currentRealityState === 'body') ? 0.30 : ((currentRealityState === 'mind') ? 0.60 : 0.40);
-                }
-
-                if (!introActive && (now - lastAutoTourTime > AUTO_TOUR_INTERVAL)) {
-                    if (cinematicTarget) {
-                        cinematicTarget = null;
-                    } else {
-                        const keys = ['art', 'science', 'spirit'];
-                        const nextKey = keys[Math.floor(Math.random() * keys.length)];
-                        focusBuilding(nextKey);
-                    }
-                    lastAutoTourTime = now;
-                }
-
-                // Camera Kinematics adapted to active Reality State
-                if (cinematicTarget) {
-                    const targetPos = cinematicTarget.position.clone();
-                    targetPos.y += 2.0;
-                    controls.target.lerp(targetPos, 0.06);
-                    camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
-
-                    if (now - lastQuoteCycleTime > QUOTE_CYCLE_INTERVAL) {
-                        updateFacultyPanel(currentFacultyType);
-                        lastQuoteCycleTime = now;
-                    }
+                // Auto Tour Mode: Smoothly auto-rotate around center when user is idle
+                if (!userInteracting && (Date.now() - lastUserInteractionTime > 2200)) {
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = (currentRealityState === 'body') ? 0.35 : ((currentRealityState === 'mind') ? 0.55 : 0.40);
                 } else {
-                    if (currentRealityState === 'mind') {
-                        // Crisp isometric snap
-                        camera.position.lerp(targetCameraPos, 0.10);
-                        camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetCameraZoom, 0.10);
-                        controls.target.lerp(targetCameraLookAt, 0.10);
-                    } else if (currentRealityState === 'body') {
-                        // Grounded deliberate drift
-                        camera.position.lerp(targetCameraPos, 0.025);
-                        camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetCameraZoom, 0.025);
-                        controls.target.lerp(targetCameraLookAt, 0.025);
-                    } else if (currentRealityState === 'soul') {
-                        // Expansive celestial zoom-out with gentle tidal swell
-                        const swell = Math.sin(elapsedTime * 0.75) * 1.5;
-                        const swellPos = targetCameraPos.clone();
-                        swellPos.y += swell;
-                        camera.position.lerp(swellPos, 0.035);
-                        camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetCameraZoom, 0.035);
-                        controls.target.lerp(targetCameraLookAt, 0.035);
-                    }
+                    controls.autoRotate = false;
+                }
+
+                // Gentle celestial breath swell in Soul state without disrupting orbit
+                if (currentRealityState === 'soul') {
+                    const swellDelta = Math.sin(elapsedTime * 0.8) * 0.015;
+                    camera.position.y += swellDelta;
                 }
             }
 
