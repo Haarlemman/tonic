@@ -772,65 +772,66 @@
         }
 
         
-        /* Navigation Mode Pill Button (Auto Tour vs Manual Roam) */
-        .nav-mode-btn {
+        
+        /* Segmented Navigation Mode Control (AUTO TOUR vs MANUAL) */
+        .nav-mode-segment {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            background: rgba(10, 15, 29, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 9999px;
+            padding: 3px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            user-select: none;
+        }
+
+        .nav-segment-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
             padding: 0.42rem 0.85rem;
             border-radius: 9999px;
-            background: rgba(10, 15, 29, 0.88);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            color: #f1f5f9;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
             font-family: 'Space Grotesk', monospace;
             font-size: 0.68rem;
             font-weight: 700;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.1em;
             cursor: pointer;
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
-            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-            user-select: none;
-            width: fit-content;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .nav-mode-btn:hover {
-            background: rgba(255, 255, 255, 0.14);
-            border-color: rgba(255, 255, 255, 0.45);
-            transform: translateY(-1px);
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+        .nav-segment-btn:hover {
+            color: #ffffff;
         }
 
-        .nav-mode-btn.manual-active {
-            background: rgba(14, 165, 233, 0.2);
-            border-color: #38bdf8;
-            color: #38bdf8;
-            box-shadow: 0 0 18px rgba(56, 189, 248, 0.45), 0 8px 22px rgba(0, 0, 0, 0.5);
+        .nav-segment-btn.active#btn-mode-auto {
+            background: #22c55e;
+            color: #052e16;
+            box-shadow: 0 0 16px rgba(34, 197, 94, 0.55);
         }
 
-        .nav-mode-btn.manual-active:hover {
-            background: rgba(14, 165, 233, 0.32);
-            box-shadow: 0 0 24px rgba(56, 189, 248, 0.65), 0 10px 28px rgba(0, 0, 0, 0.6);
+        .nav-segment-btn.active#btn-mode-manual {
+            background: #38bdf8;
+            color: #082f49;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55);
         }
 
-        .nav-mode-dot {
+        .segment-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 8px #22c55e;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
+            background: currentColor;
+            display: inline-block;
         }
 
-        .nav-mode-btn.manual-active .nav-mode-dot {
-            background: #38bdf8;
-            box-shadow: 0 0 8px #38bdf8;
-        }
-
-        .nav-mode-label {
-            line-height: 1;
+        .segment-icon {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
         }
 
 /* Navigation Mode HUD Toast */
@@ -1188,13 +1189,20 @@
             </div>
         </div>
 
-                <!-- Top Right Actions (Vertically Stacked) -->
+                        <!-- Top Right Actions -->
         <div class="top-right hud-interactive">
-            <button id="nav-mode-btn" class="nav-mode-btn" onclick="toggleNavMode()"
-                title="Navigation Mode: Click to switch between Auto Tour and Manual Free Roam" aria-label="Toggle Navigation Mode">
-                <span class="nav-mode-dot"></span>
-                <span id="nav-mode-label" class="nav-mode-label">AUTO TOUR</span>
-            </button>
+            <div class="nav-mode-segment" id="nav-mode-segment" role="group" aria-label="Navigation Mode">
+                <button id="btn-mode-auto" class="nav-segment-btn active" onclick="setNavMode('auto')" title="Activate Auto Tour">
+                    <span class="segment-dot"></span>
+                    <span>AUTO TOUR</span>
+                </button>
+                <button id="btn-mode-manual" class="nav-segment-btn" onclick="setNavMode('manual')" title="Activate Manual Roam">
+                    <svg viewBox="0 0 24 24" class="segment-icon">
+                        <path d="M12 2l3 3h-2v3h-2V5H9l3-3zm0 20l-3-3h2v-3h2v3h2l-3 3zm-10-10l3-3v2h3v2H5v2l-3-3zm20 0l-3 3v-2h-3v-2h3V8l3 3z" fill="currentColor"/>
+                    </svg>
+                    <span>MANUAL</span>
+                </button>
+            </div>
             <div style="display: flex; gap: 0.5rem;">
                 <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
                     <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
@@ -1327,7 +1335,7 @@
         let artRayGroup;
 
         let introActive = true;
-                let isManualControl = false;
+        let isManualControl = false;
         let userInteracting = false;
         let lastUserInteractionTime = 0;
         let isTransitioningCamera = false;
@@ -1343,13 +1351,13 @@
         let currentFacultyType = 'art';
         let lastAutoTourTime = 0;
         let lastQuoteCycleTime = 0;
-        const AUTO_TOUR_INTERVAL = 14000;
+        const AUTO_TOUR_INTERVAL = 11000;
+        let autoTourIndex = 0;
+        const autoTourLandmarks = ['art', 'overview', 'science', 'overview', 'spirit', 'overview'];
         const QUOTE_CYCLE_INTERVAL = 3800;
         let toastTimeout = null;
         let pointerDownPos = { x: 0, y: 0 };
         const activeNavKeys = {};
-
-        // Triangle continuous rotation state
         let triangleAngle = 0;
         let isSuperSpinning = false;
 
@@ -2033,7 +2041,7 @@
         
         function runIntroSequence() {
             controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.45;
+            controls.autoRotateSpeed = 1.6;
         }
 
         function enterCampus() {
@@ -2741,7 +2749,7 @@
             controls.screenSpacePanning = true;
             controls.panSpeed = 1.2;
             controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.45;
+            controls.autoRotateSpeed = 1.6;
 
             controls.addEventListener('start', () => {
                 userInteracting = true;
@@ -3579,34 +3587,35 @@
             }
         }
 
-                function toggleNavMode() {
-            isManualControl = !isManualControl;
-            const btn = document.getElementById('nav-mode-btn');
-            const label = document.getElementById('nav-mode-label');
+        function setNavMode(mode) {
+            isManualControl = (mode === 'manual');
+            const autoBtn = document.getElementById('btn-mode-auto');
+            const manualBtn = document.getElementById('btn-mode-manual');
 
             if (isManualControl) {
                 controls.autoRotate = false;
                 cinematicTarget = null;
                 isTransitioningCamera = false;
-                if (btn) {
-                    btn.classList.add('manual-active');
-                    btn.title = "Current: Manual Roam (Click to activate Auto Tour)";
-                }
-                if (label) label.textContent = "MANUAL ROAM";
+                if (autoBtn) autoBtn.classList.remove('active');
+                if (manualBtn) manualBtn.classList.add('active');
                 showNavToast("MANUAL ROAM ENABLED", "Left Drag: Rotate • Right Drag / WASD: Pan • Scroll: Zoom");
             } else {
                 controls.autoRotate = true;
-                controls.autoRotateSpeed = (currentRealityState === 'body') ? 0.35 : ((currentRealityState === 'mind') ? 0.55 : 0.40);
+                controls.autoRotateSpeed = 1.6;
                 cinematicTarget = null;
                 lastUserInteractionTime = 0;
                 userInteracting = false;
-                if (btn) {
-                    btn.classList.remove('manual-active');
-                    btn.title = "Current: Auto Tour (Click to activate Manual Roam)";
-                }
-                if (label) label.textContent = "AUTO TOUR";
-                showNavToast("AUTO TOUR RESUMED", "Serene 360° orbital camera rotation active");
+                lastAutoTourTime = Date.now();
+                if (autoBtn) autoBtn.classList.add('active');
+                if (manualBtn) manualBtn.classList.remove('active');
+                startCameraTransition(camera.position, new THREE.Vector3(0, 0, 0), camera.zoom);
+                showNavToast("AUTO TOUR ACTIVATED", "Cinematic 360° orbital rotation & landmark tour");
             }
+        }
+
+        // Backward compatibility
+        function toggleNavMode() {
+            setNavMode(isManualControl ? 'auto' : 'manual');
         }
 
         function showNavToast(title, subtitle) {
@@ -3717,7 +3726,7 @@
                 artRayGroup.scale.set(rayPulse, rayPulse, rayPulse);
             }
 
-                        // Navigation & Camera Kinematics
+                                    // Navigation & Camera Kinematics
             if (isTransitioningCamera) {
                 const elapsed = Date.now() - transitionStartTime;
                 const progress = Math.min(1.0, elapsed / TRANSITION_DURATION);
@@ -3730,12 +3739,9 @@
                 if (progress >= 1.0) {
                     isTransitioningCamera = false;
                 }
-            } else if (cinematicTarget) {
-                const targetPos = cinematicTarget.position.clone();
-                targetPos.y += 2.0;
-                controls.target.lerp(targetPos, 0.06);
-                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
             } else if (isManualControl) {
+                controls.autoRotate = false;
+
                 // Free keyboard WASD flight across landscape
                 const forward = new THREE.Vector3();
                 camera.getWorldDirection(forward);
@@ -3760,16 +3766,48 @@
                     controls.target.addScaledVector(right, keySpeed);
                     camera.position.addScaledVector(right, keySpeed);
                 }
+
+                if (cinematicTarget) {
+                    const targetPos = cinematicTarget.position.clone();
+                    targetPos.y += 2.0;
+                    controls.target.lerp(targetPos, 0.06);
+                    camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.3, 0.04);
+                }
             } else {
-                // Auto Tour Mode: Smoothly auto-rotate around center when user is idle
-                if (!userInteracting && (Date.now() - lastUserInteractionTime > 2200)) {
+                // Auto Tour Mode:
+                // Smoothly auto-rotate around center when user is idle
+                if (!userInteracting && (Date.now() - lastUserInteractionTime > 2000)) {
                     controls.autoRotate = true;
-                    controls.autoRotateSpeed = (currentRealityState === 'body') ? 0.35 : ((currentRealityState === 'mind') ? 0.55 : 0.40);
+                    controls.autoRotateSpeed = (currentRealityState === 'body') ? 1.4 : ((currentRealityState === 'mind') ? 1.8 : 1.5);
                 } else {
                     controls.autoRotate = false;
                 }
 
-                // Gentle celestial breath swell in Soul state without disrupting orbit
+                // Cinematic Tour Showcase: cycle landmarks periodically without changing reality
+                if (!introActive && !userInteracting && (Date.now() - lastAutoTourTime > AUTO_TOUR_INTERVAL)) {
+                    lastAutoTourTime = Date.now();
+                    autoTourIndex = (autoTourIndex + 1) % autoTourLandmarks.length;
+                    const step = autoTourLandmarks[autoTourIndex];
+                    if (step === 'overview') {
+                        cinematicTarget = null;
+                        const defaultZoom = (currentRealityState === 'body') ? 2.1 : ((currentRealityState === 'mind') ? 1.35 : 0.92);
+                        startCameraTransition(camera.position, new THREE.Vector3(0, 0, 0), defaultZoom);
+                    } else if (specialBlocks && specialBlocks.length > 0) {
+                        const targetBlock = specialBlocks.find(b => b.userData.type === step);
+                        if (targetBlock) {
+                            cinematicTarget = targetBlock;
+                        }
+                    }
+                }
+
+                if (cinematicTarget) {
+                    const targetPos = cinematicTarget.position.clone();
+                    targetPos.y += 2.0;
+                    controls.target.lerp(targetPos, 0.05);
+                    camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.3, 0.04);
+                }
+
+                // Gentle celestial breath swell in Soul state
                 if (currentRealityState === 'soul') {
                     const swellDelta = Math.sin(elapsedTime * 0.8) * 0.015;
                     camera.position.y += swellDelta;
