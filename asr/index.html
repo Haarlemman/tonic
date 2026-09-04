@@ -1091,23 +1091,20 @@
         <!-- User's Intro Text Card (Smaller Allcaps Font) -->
         <div id="intro-text-card" style="max-width:760px; width:92%; margin:0 auto 1.3rem; text-align:left; background:rgba(10, 15, 29, 0.85); border:1px solid rgba(56, 189, 248, 0.28); border-radius:12px; padding:1.25rem 1.65rem; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 12px 36px rgba(0,0,0,0.65); max-height:46vh; overflow-y:auto; font-family:'Space Grotesk', monospace; text-transform:uppercase; letter-spacing:0.08em;">
             <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:400; line-height:1.75; color:#f1f5f9; margin:0 0 0.85rem;">
-                Reality is a matter of perspective. Human history, culture and consciousness has developed into 3 realms, with most humans choosing just one of those as a way of looking at the world and into one's self. Science for example. Someone becomes a scientist, and choses he scientific model to view and make decisions. Some people choose a creative hobby, say painting. That's a second realm. A third one would be for example if you meditate. Rare do people incorporate all three realms at the same time.
-            </p>
-            <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:600; line-height:1.75; color:#38bdf8; margin:0 0 0.85rem;">
-                Here you can explore and learn.
+                Reality is a matter of perspective. Over time, human consciousness has split into three main realms&mdash;the empirical, the creative, and the contemplative&mdash;yet few people ever integrate all three.
             </p>
             <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:400; line-height:1.75; color:#cbd5e1; margin:0 0 0.85rem;">
-                I've created a city as a metaphore for the world, let's call it Mondrianopolis. You can go there and start exploring visually (and with sound) by clicking on 'ENTER MONDRIANOPOLIS'.
+                To explore this, enter Mondrianopolis: a city designed as an interactive metaphor for the world. Here, an &ldquo;objective&rdquo; reality serves as your baseline.
             </p>
-            <p style="font-size:clamp(0.66rem, 1.0vw, 0.74rem); font-weight:400; line-height:1.7; color:#94a3b8; margin:0;">
-                In that city, you can see an 'objective' view of reality. At the bottom, you can select 1 of 3 possible 'perspectives' as experiences: through the body, the mind or the soul. Each is represented by a building, but also a 'vision' of that 'reality'.
+            <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:400; line-height:1.75; color:#cbd5e1; margin:0 0 0.85rem;">
+                At the bottom of the screen, select one of three distinct perspectives to experience this world through: body, mind, or soul. Each realm is embodied by a unique building and its own altered vision of reality.
+            </p>
+            <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:600; line-height:1.75; color:#38bdf8; margin:0;">
+                Click ENTER MONDRIANOPOLIS to explore beauty, knowledge, and wisdom through sight and sound.
             </p>
         </div>
 
-        <div style="font-family:'Space Grotesk',monospace; font-size:clamp(0.75rem,1.25vw,0.88rem); letter-spacing:0.18em; color:#ffbb00; text-transform:uppercase; margin-bottom:0.75rem; text-shadow:0 0 12px rgba(255,187,0,0.5);">
-            Explore Beauty, knowledge and wisdom
-        </div>
-        <button id="skip-btn" class="action-btn" onclick="enterCampus()" style="letter-spacing:0.2em; font-family:'Anta',sans-serif;">ENTER MONDRIANOPOLIS</button>
+        <button id="skip-btn" class="action-btn" onclick="enterCampus()" style="letter-spacing:0.2em; font-family:'Anta',sans-serif; margin-top:0.4rem;">ENTER MONDRIANOPOLIS</button>
     </div>
 
     <!-- LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX (ONLY IN INTRO SCENE, HOVERING LIKE A DRONE) -->
@@ -1264,7 +1261,7 @@
                 </svg>
             </button>
             <!-- Info Button placed under the 3 icons (small "i" with circle) -->
-            <button id="info-btn" class="icon-btn info-circle-btn" onclick="openTriptych()" title="Text / Info (Triptych)" aria-label="Text and Info">
+            <button id="info-btn" class="icon-btn info-circle-btn" onclick="openTriptych(event)" title="Text / Info (Triptych)" aria-label="Text and Info">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="9.5"></circle>
                     <line x1="12" y1="11" x2="12" y2="16.5"></line>
@@ -3795,12 +3792,20 @@
         /* ==========================================================================
            3. INTERACTION, CAMERA CINEMATICS & PERSPECTIVES
            ========================================================================== */
-        function openTriptych() {
+        function openTriptych(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
             const modal = document.getElementById('triptych-modal');
             if (modal) modal.style.display = 'flex';
         }
 
-        function closeTriptych() {
+        function closeTriptych(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
             const modal = document.getElementById('triptych-modal');
             if (modal) modal.style.display = 'none';
         }
@@ -4025,6 +4030,12 @@
 
         function onCanvasClick(event) {
             if (introActive) return;
+
+            // Ignore click if targeted on interactive HUD, buttons, or modal content
+            if (event.target && event.target.closest && (event.target.closest('#info-btn') || event.target.closest('#triptych-modal') || event.target.closest('.hud-interactive'))) {
+                return;
+            }
+
             // Prevent accidental building focus if user was dragging / panning
             const dragDist = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
             if (dragDist > 6) return;
@@ -4032,7 +4043,7 @@
             // If triptych modal is open and user clicks canvas, close it
             const modal = document.getElementById('triptych-modal');
             if (modal && modal.style.display === 'flex') {
-                closeTriptych();
+                closeTriptych(event);
                 return;
             }
 
