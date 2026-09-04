@@ -1235,14 +1235,16 @@
 
         <!-- TOP-LEFT: THE UNIVERSITY OF FREE WILL HEADER -->
         <div class="top-left hud-interactive">
-            <h1 class="university-banner" style="cursor:pointer;" onclick="returnToIntro()"><span style="color:#38bdf8;">Visions of Reality</span> // MONDRIANOPOLIS</h1>
-            <div style="display:flex; align-items:center; gap:0.6rem; margin-top:0.3rem;">
-                <div class="university-sub" style="margin:0;">PERSPECTIVE IS RELATIVE</div>
-                <button id="triptych-btn" onclick="openTriptych()" title="View all 3 reality perspectives" style="font-family:'Courier New',monospace;font-size:0.65rem;letter-spacing:0.1em;color:#38bdf8;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.35);border-radius:4px;padding:2px 7px;cursor:pointer;transition:all 0.2s;">⊞ TRIPTYCH</button>
-            </div>
+            <h1 class="university-banner" style="cursor:pointer;" onclick="returnToIntro()">Visions of Reality</h1>
+            <div class="university-sub">/ Perspective is relative</div>
         </div>
 
-                <!-- RIGHT: FACULTY DATA SCREEN - hidden by default -->
+        <!-- TOP-CENTER: Text/Info Triptych Button -->
+        <div style="position:absolute; top:1.1rem; left:50%; transform:translateX(-50%); z-index:100;">
+            <button onclick="openTriptych()" style="font-family:'Anta',sans-serif; font-size:0.78rem; letter-spacing:0.16em; color:#94a3b8; background:rgba(10,15,30,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; padding:5px 16px; cursor:pointer; transition:all 0.2s; backdrop-filter:blur(6px);" onmouseover="this.style.color='#e2e8f0'; this.style.borderColor='rgba(148,163,184,0.5)'" onmouseout="this.style.color='#94a3b8'; this.style.borderColor='rgba(148,163,184,0.2)'">TEXT / INFO</button>
+        </div>
+
+                <!-- INFO PANEL - hidden by default, shows on tower click -->
         <div id="faculty-panel-right" class="hud-interactive" style="display:none;">
             <div class="panel-header" id="panel-header-drag" title="Drag to reposition panel">
                 <div class="panel-header-info">
@@ -1250,7 +1252,7 @@
                         <span class="faculty-title-the">THE</span>
                         <span class="faculty-title-main">BODY</span>
                     </h2>
-                    <div id="screen-concept-sub" class="panel-concept-sub">FACULTY OF ART &amp; EMBODIED EXPERIENCE</div>
+                    <div id="screen-concept-sub" class="panel-concept-sub">ART &amp; EMBODIED EXPERIENCE</div>
                 </div>
                 <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="document.getElementById('faculty-panel-right').style.display='none';"
                     title="Close" aria-label="Close Panel">
@@ -2014,11 +2016,28 @@
                 if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
             });
 
-            // 4. Mutate Landmarks
+            // 4. Mutate Landmarks — in body mode, show body sub; mind/soul show as subtle ghost
             specialBlocks.forEach(b => {
                 if (b.userData.bodySub) b.userData.bodySub.visible = (targetState === 'body');
-                if (b.userData.mindSub) b.userData.mindSub.visible = (targetState === 'mind');
-                if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
+                if (b.userData.mindSub) {
+                    b.userData.mindSub.visible = true; // always visible
+                    // In body mode, fade mind to subtle yellow ghost; in mind mode, full opacity
+                    b.userData.mindSub.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            child.material.opacity = (targetState === 'mind') ? 1.0 : (targetState === 'body' ? 0.18 : 0.08);
+                            child.material.transparent = true;
+                        }
+                    });
+                }
+                if (b.userData.soulSub) {
+                    b.userData.soulSub.visible = true; // always visible
+                    b.userData.soulSub.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            child.material.opacity = (targetState === 'soul') ? 1.0 : (targetState === 'body' ? 0.15 : 0.08);
+                            child.material.transparent = true;
+                        }
+                    });
+                }
             });
 
             // 5. Mutate Ground Systems
@@ -2033,26 +2052,26 @@
             // 7. Mutate Atmosphere, Fog & Lighting
             if (scene) {
                 if (targetState === 'body') {
-                    scene.background = new THREE.Color(0x160706);
-                    scene.fog = new THREE.FogExp2(0x1a0807, 0.020);
+                    scene.background = new THREE.Color(0x1a0a06);
+                    scene.fog = new THREE.FogExp2(0x1a0807, 0.008); // lighter fog so buildings stay visible
 
                     if (sunLight) {
-                        sunLight.color.setHex(0xff3f20);
-                        sunLight.intensity = 1.45;
+                        sunLight.color.setHex(0xff6030);
+                        sunLight.intensity = 2.2;
                         sunLight.position.set(38, 42, 26);
                         sunLight.castShadow = true;
                     }
                     if (ambientLight) {
-                        ambientLight.color.setHex(0x451610);
-                        ambientLight.intensity = 0.85;
+                        ambientLight.color.setHex(0x6b2a14);
+                        ambientLight.intensity = 1.4;
                     }
                     if (streetUpLight) {
-                        streetUpLight.color.setHex(0xb91c1c);
-                        streetUpLight.intensity = 1.1;
+                        streetUpLight.color.setHex(0xff3300);
+                        streetUpLight.intensity = 1.8;
                     }
                     if (groundGlowLight) {
-                        groundGlowLight.color.setHex(0x7f1d1d);
-                        groundGlowLight.groundColor.setHex(0x1e0b08);
+                        groundGlowLight.color.setHex(0x991b1b);
+                        groundGlowLight.groundColor.setHex(0x2d0f08);
                     }
 
                     targetCameraZoom = 2.1;
@@ -3929,76 +3948,79 @@
     </script>
 
     <!-- Triptych Modal: All 3 panels side-by-side -->
-    <div id="triptych-modal" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(5,8,20,0.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); padding:1.5rem; box-sizing:border-box; overflow-y:auto;">
+    <div id="triptych-modal" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(5,8,20,0.93); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:1.5rem; box-sizing:border-box; overflow-y:auto;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
-            <div style="font-family:'Anta',sans-serif; font-size:1.1rem; letter-spacing:0.1em; color:#38bdf8;">THREE VISIONS OF REALITY</div>
+            <div style="font-family:'Anta',sans-serif; font-size:1.1rem; letter-spacing:0.12em; color:#f1f5f9;">VISIONS OF REALITY <span style="color:#475569; font-size:0.85em;">/ THREE PERSPECTIVES</span></div>
             <button onclick="document.getElementById('triptych-modal').style.display='none';" style="background:none; border:1px solid rgba(148,163,184,0.3); border-radius:6px; color:#94a3b8; padding:4px 12px; cursor:pointer; font-family:'Courier New',monospace; font-size:0.75rem; letter-spacing:0.1em;">✕ CLOSE</button>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; height:calc(100% - 70px);">
 
-            <!-- BODY PANEL -->
-            <div style="background:rgba(23,7,5,0.85); border:1px solid rgba(255,30,50,0.4); border-radius:12px; padding:1.4rem; display:flex; flex-direction:column; gap:0.6rem;">
-                <div style="font-family:'Courier New',monospace; font-size:0.7rem; letter-spacing:0.18em; color:rgba(255,80,60,0.7);">01 — BODY</div>
-                <div style="font-family:'Anta',sans-serif; font-size:1.8rem; color:#ff4433; text-shadow:0 0 18px rgba(255,50,30,0.7); line-height:1;">THE BODY</div>
-                <div style="font-size:0.75rem; color:rgba(255,160,140,0.8); letter-spacing:0.12em; font-family:'Space Grotesk',sans-serif;">FACULTY OF ART &amp; EMBODIED EXPERIENCE</div>
-                <div style="border:1px solid rgba(255,30,50,0.3); border-radius:6px; padding:0.7rem; font-family:'Courier New',monospace; font-size:0.8rem; color:#fca5a5; font-style:italic;">"LOVE &amp; BEAUTY AS SUBJECTIVE EXPERIENCE"</div>
-                <div style="font-size:0.7rem; color:#64748b; letter-spacing:0.1em;">ANCHOR CONCEPTS</div>
-                <div style="font-size:0.82rem; color:#fca5a5;">Flesh · Tectonics · Silt</div>
-                <div style="margin-top:0.4rem;">
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">HIGH DISCIPLINES</div>
-                    <div style="font-size:0.78rem; color:#e2e8f0;">Literature, Painting, Sculpture, Architecture, Music, Cinema</div>
+            <!-- 01 SENSUAL -->
+            <div style="background:rgba(23,7,5,0.88); border:1px solid rgba(255,30,50,0.4); border-radius:12px; padding:1.4rem; display:flex; flex-direction:column; gap:0.55rem;">
+                <div style="font-family:'Courier New',monospace; font-size:0.68rem; letter-spacing:0.22em; color:rgba(255,80,60,0.65);">01 — SENSUAL</div>
+                <div style="font-family:'Anta',sans-serif; font-size:1.75rem; color:#ff4433; text-shadow:0 0 18px rgba(255,50,30,0.6); line-height:1;">THE BODY</div>
+                <div style="font-family:'Courier New',monospace; font-size:0.72rem; letter-spacing:0.14em; color:#ff8070;">BEAUTY</div>
+                <div style="font-size:0.7rem; letter-spacing:0.1em; color:#64748b; font-family:'Courier New',monospace;">REALM: ART</div>
+                <div style="border:1px solid rgba(255,30,50,0.25); border-radius:6px; padding:0.65rem; font-family:'Courier New',monospace; font-size:0.78rem; color:#fca5a5; font-style:italic;">&ldquo;LOVE &amp; BEAUTY AS SUBJECTIVE EXPERIENCE&rdquo;</div>
+                <div style="font-size:0.68rem; color:#475569; letter-spacing:0.1em;">ANCHOR CONCEPTS</div>
+                <div style="font-size:0.8rem; color:#fca5a5;">Flesh &middot; Tectonics &middot; Silt</div>
+                <div style="margin-top:0.3rem;">
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">DISCIPLINES</div>
+                    <div style="font-size:0.77rem; color:#e2e8f0;">Literature, Painting, Sculpture, Architecture, Music, Cinema</div>
                 </div>
                 <div>
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">CULTURAL EXPRESSION</div>
-                    <div style="font-size:0.78rem; color:#e2e8f0;">Physicality, Material Craft, Earthworks, Vital Form, Dance</div>
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">CULTURAL EXPRESSION</div>
+                    <div style="font-size:0.77rem; color:#e2e8f0;">Physicality, Material Craft, Earthworks, Vital Form, Dance</div>
                 </div>
                 <div style="margin-top:auto; padding-top:0.6rem; border-top:1px solid rgba(255,30,50,0.2);">
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">PURPOSE</div>
-                    <div style="font-size:0.78rem; color:#ff8070; font-weight:600;">Aesthetic Bliss, Emotional Resonance &amp; Joy of Living</div>
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">PURPOSE</div>
+                    <div style="font-size:0.77rem; color:#ff8070; font-weight:600;">Aesthetic Bliss, Emotional Resonance &amp; Joy of Living</div>
                 </div>
             </div>
 
-            <!-- MIND PANEL -->
-            <div style="background:rgba(2,7,19,0.85); border:1px solid rgba(255,200,0,0.4); border-radius:12px; padding:1.4rem; display:flex; flex-direction:column; gap:0.6rem;">
-                <div style="font-family:'Courier New',monospace; font-size:0.7rem; letter-spacing:0.18em; color:rgba(255,200,0,0.7);">02 — MIND</div>
-                <div style="font-family:'Anta',sans-serif; font-size:1.8rem; color:#ffbb00; text-shadow:0 0 18px rgba(255,180,0,0.7); line-height:1;">THE MIND</div>
-                <div style="font-size:0.75rem; color:rgba(255,220,120,0.8); letter-spacing:0.12em; font-family:'Space Grotesk',sans-serif;">FACULTY OF SCIENCE &amp; OBJECTIVE REASON</div>
-                <div style="border:1px solid rgba(255,200,0,0.3); border-radius:6px; padding:0.7rem; font-family:'Courier New',monospace; font-size:0.8rem; color:#fde68a; font-style:italic;">"TRUTH THROUGH EMPIRICAL REASON"</div>
-                <div style="font-size:0.7rem; color:#64748b; letter-spacing:0.1em;">ANCHOR CONCEPTS</div>
-                <div style="font-size:0.82rem; color:#fde68a;">Grid · Circuit · Blueprint</div>
-                <div style="margin-top:0.4rem;">
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">HIGH DISCIPLINES</div>
-                    <div style="font-size:0.78rem; color:#e2e8f0;">Physics, Mathematics, Astronomy, Chemistry, Neuroscience, Computer Science</div>
+            <!-- 02 FACTUAL -->
+            <div style="background:rgba(2,7,19,0.88); border:1px solid rgba(255,200,0,0.4); border-radius:12px; padding:1.4rem; display:flex; flex-direction:column; gap:0.55rem;">
+                <div style="font-family:'Courier New',monospace; font-size:0.68rem; letter-spacing:0.22em; color:rgba(255,200,0,0.65);">02 — FACTUAL</div>
+                <div style="font-family:'Anta',sans-serif; font-size:1.75rem; color:#ffbb00; text-shadow:0 0 18px rgba(255,180,0,0.6); line-height:1;">THE MIND</div>
+                <div style="font-family:'Courier New',monospace; font-size:0.72rem; letter-spacing:0.14em; color:#fde68a;">KNOWLEDGE</div>
+                <div style="font-size:0.7rem; letter-spacing:0.1em; color:#64748b; font-family:'Courier New',monospace;">REALM: SCIENCE</div>
+                <div style="border:1px solid rgba(255,200,0,0.25); border-radius:6px; padding:0.65rem; font-family:'Courier New',monospace; font-size:0.78rem; color:#fde68a; font-style:italic;">&ldquo;TRUTH THROUGH EMPIRICAL REASON&rdquo;</div>
+                <div style="font-size:0.68rem; color:#475569; letter-spacing:0.1em;">ANCHOR CONCEPTS</div>
+                <div style="font-size:0.8rem; color:#fde68a;">Grid &middot; Circuit &middot; Blueprint</div>
+                <div style="margin-top:0.3rem;">
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">DISCIPLINES</div>
+                    <div style="font-size:0.77rem; color:#e2e8f0;">Physics, Mathematics, Astronomy, Chemistry, Neuroscience, Computer Science</div>
                 </div>
                 <div>
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">CULTURAL EXPRESSION</div>
-                    <div style="font-size:0.78rem; color:#e2e8f0;">Data Architecture, Puzzles, Sci-Fi Lore, Tech Gadgets, System Optimization, Chess</div>
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">CULTURAL EXPRESSION</div>
+                    <div style="font-size:0.77rem; color:#e2e8f0;">Data Architecture, Sci-Fi, Tech, System Design, Chess, Logic</div>
                 </div>
                 <div style="margin-top:auto; padding-top:0.6rem; border-top:1px solid rgba(255,200,0,0.2);">
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">PURPOSE</div>
-                    <div style="font-size:0.78rem; color:#ffbb00; font-weight:600;">Objective Clarity, Empirical Mastery &amp; Universal Order</div>
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">PURPOSE</div>
+                    <div style="font-size:0.77rem; color:#ffbb00; font-weight:600;">Objective Clarity, Empirical Mastery &amp; Universal Order</div>
                 </div>
             </div>
 
-            <!-- SOUL PANEL -->
-            <div style="background:rgba(3,7,30,0.85); border:1px solid rgba(139,92,246,0.4); border-radius:12px; padding:1.4rem; display:flex; flex-direction:column; gap:0.6rem;">
-                <div style="font-family:'Courier New',monospace; font-size:0.7rem; letter-spacing:0.18em; color:rgba(139,92,246,0.7);">03 — SOUL</div>
-                <div style="font-family:'Anta',sans-serif; font-size:1.8rem; color:#a78bfa; text-shadow:0 0 18px rgba(139,92,246,0.7); line-height:1;">THE SOUL</div>
-                <div style="font-size:0.75rem; color:rgba(196,181,253,0.8); letter-spacing:0.12em; font-family:'Space Grotesk',sans-serif;">FACULTY OF RELIGION &amp; SPIRITUALITY</div>
-                <div style="border:1px solid rgba(139,92,246,0.3); border-radius:6px; padding:0.7rem; font-family:'Courier New',monospace; font-size:0.8rem; color:#c4b5fd; font-style:italic;">"TRANSCENDENCE &amp; INNER WISDOM"</div>
-                <div style="font-size:0.7rem; color:#64748b; letter-spacing:0.1em;">ANCHOR CONCEPTS</div>
-                <div style="font-size:0.82rem; color:#c4b5fd;">Aperture · Radiance · Dissolution</div>
-                <div style="margin-top:0.4rem;">
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">HIGH DISCIPLINES</div>
-                    <div style="font-size:0.78rem; color:#e2e8f0;">Transcendence, Philosophy of Mind, Mysticism, Consciousness, Ethics, Metaphysics</div>
+            <!-- 03 SPIRITUAL -->
+            <div style="background:rgba(3,7,30,0.88); border:1px solid rgba(139,92,246,0.4); border-radius:12px; padding:1.4rem; display:flex; flex-direction:column; gap:0.55rem;">
+                <div style="font-family:'Courier New',monospace; font-size:0.68rem; letter-spacing:0.22em; color:rgba(139,92,246,0.65);">03 — SPIRITUAL</div>
+                <div style="font-family:'Anta',sans-serif; font-size:1.75rem; color:#a78bfa; text-shadow:0 0 18px rgba(139,92,246,0.6); line-height:1;">THE SOUL</div>
+                <div style="font-family:'Courier New',monospace; font-size:0.72rem; letter-spacing:0.14em; color:#c4b5fd;">WISDOM</div>
+                <div style="font-size:0.7rem; letter-spacing:0.1em; color:#64748b; font-family:'Courier New',monospace;">REALM: RELIGION &amp; SPIRITUALITY</div>
+                <div style="border:1px solid rgba(139,92,246,0.25); border-radius:6px; padding:0.65rem; font-family:'Courier New',monospace; font-size:0.78rem; color:#c4b5fd; font-style:italic;">&ldquo;TRANSCENDENCE &amp; INNER WISDOM&rdquo;</div>
+                <div style="font-size:0.68rem; color:#475569; letter-spacing:0.1em;">ANCHOR CONCEPTS</div>
+                <div style="font-size:0.8rem; color:#c4b5fd;">Aperture &middot; Radiance &middot; Dissolution</div>
+                <div style="margin-top:0.3rem;">
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">DISCIPLINES</div>
+                    <div style="font-size:0.77rem; color:#e2e8f0;">Philosophy of Mind, Mysticism, Consciousness, Ethics, Metaphysics</div>
                 </div>
                 <div>
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">CULTURAL EXPRESSION</div>
-                    <div style="font-size:0.78rem; color:#e2e8f0;">Mindfulness, Meditation, Holistic Wellness, Breathwork, Sacred Rituals, Sound Healing</div>
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">CULTURAL EXPRESSION</div>
+                    <div style="font-size:0.77rem; color:#e2e8f0;">Mindfulness, Meditation, Holistic Wellness, Breathwork, Sacred Ritual</div>
                 </div>
                 <div style="margin-top:auto; padding-top:0.6rem; border-top:1px solid rgba(139,92,246,0.2);">
-                    <div style="font-size:0.68rem; color:#64748b; letter-spacing:0.1em; margin-bottom:0.2rem;">PURPOSE</div>
-                    <div style="font-size:0.78rem; color:#a78bfa; font-weight:600;">Spiritual Wisdom, Inner Peace &amp; Universal Harmony</div>
+                    <div style="font-size:0.66rem; color:#475569; letter-spacing:0.1em; margin-bottom:0.2rem;">PURPOSE</div>
+                    <div style="font-size:0.77rem; color:#a78bfa; font-weight:600;">Spiritual Wisdom, Inner Peace &amp; Universal Harmony</div>
                 </div>
             </div>
 
@@ -4009,6 +4031,23 @@
         function openTriptych() {
             document.getElementById('triptych-modal').style.display = 'block';
         }
+
+        // Key 0 = return to default overview
+        document.addEventListener('keydown', function(e) {
+            if ((e.code === 'Digit0' || e.code === 'Numpad0') && !introActive) {
+                // Close triptych if open
+                const tri = document.getElementById('triptych-modal');
+                if (tri) tri.style.display = 'none';
+                // Close info panel
+                const panel = document.getElementById('faculty-panel-right');
+                if (panel) panel.style.display = 'none';
+                // Return to cinematic overview
+                cinematicTarget = null;
+                currentFacultyType = null;
+                lastAutoTourTime = Date.now();
+                if (typeof switchReality === 'function') switchReality('body', true);
+            }
+        });
     </script>
 
 </body>
