@@ -213,7 +213,7 @@
             left: 2.25rem;
             top: 52%;
             transform: translateY(-50%);
-            z-index: 600;
+            z-index: 1200;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -225,6 +225,16 @@
         }
         #tri-matrix-left.is-dragging {
             cursor: grabbing !important;
+            animation: none !important;
+        }
+        #tri-matrix-left.drone-hovering {
+            animation: droneBob 16s ease-in-out infinite;
+        }
+        @keyframes droneBob {
+            0%, 100% { transform: translateY(-50%) translate(0, 0); }
+            25% { transform: translateY(-50%) translate(12px, -16px); }
+            50% { transform: translateY(-50%) translate(22px, 10px); }
+            75% { transform: translateY(-50%) translate(-10px, -12px); }
         }
         #tri-matrix-left.matrix-hidden {
             opacity: 0 !important;
@@ -232,7 +242,99 @@
             transform: translateY(-50%) scale(0.65) !important;
         }
 
-        /* Attached Tri-Matrix Controls Bar (Drag Me & Close X) */
+        /* Tooltips for Minimise / Maximise */
+        .tri-tooltip-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tri-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 15, 29, 0.95);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #f1f5f9;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 0.05em;
+            padding: 4px 9px;
+            border-radius: 5px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+            z-index: 200;
+        }
+        .tri-tooltip-wrap:hover .tri-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .tri-min-btn, .tri-max-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            outline: none;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .tri-min-btn:hover, .tri-max-btn:hover {
+            background: rgba(56, 189, 248, 0.85);
+            border-color: #38bdf8;
+            color: #080d1a;
+            transform: scale(1.12);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+        }
+
+        .tri-minimized-view {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.85rem;
+            background: rgba(10, 15, 29, 0.92);
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            border-radius: 9999px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.25);
+            backdrop-filter: blur(12px);
+            cursor: grab;
+            user-select: none;
+        }
+
+        /* Encircled i button */
+        .info-circle-btn {
+            border-color: rgba(56, 189, 248, 0.45) !important;
+            color: #38bdf8 !important;
+        }
+        .info-circle-btn:hover {
+            background: #38bdf8 !important;
+            color: #080d1a !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.6) !important;
+        }
+        .info-circle-btn svg {
+            fill: none !important;
+            stroke: currentColor !important;
+        }
+        .info-circle-btn svg circle[fill="currentColor"] {
+            fill: currentColor !important;
+            stroke: none !important;
+        }
+
+        /* Attached Tri-Matrix Controls Bar (Drag Me & Minimise -) */
         .tri-matrix-bar {
             display: flex;
             align-items: center;
@@ -980,15 +1082,145 @@
 
     <!-- Cinematic Intro Sequence Overlay -->
     <div id="intro-overlay">
-        <div style="font-family:'Courier New',monospace; font-size:0.78rem; letter-spacing:0.28em; color:#38bdf8; margin-bottom:0.75rem; text-shadow:0 0 12px rgba(56,189,248,0.6);">MONDRIANOPOLIS</div>
         <h1 class="intro-title">
             <span>Visions</span>
             <span>of Reality</span>
         </h1>
-        <div id="intro-text">
-            <span class="intro-sub-holistic">/ Perspective is relative</span>
+        <div class="intro-sub-holistic" style="font-family:'Space Grotesk',monospace; font-size:clamp(0.85rem,1.8vw,1.1rem); letter-spacing:0.22em; color:#38bdf8; text-transform:uppercase; margin-bottom:1.1rem; text-shadow:0 0 16px rgba(56,189,248,0.5);">Perspective is relative</div>
+        
+        <!-- User's Intro Text Card (Smaller Allcaps Font) -->
+        <div id="intro-text-card" style="max-width:760px; width:92%; margin:0 auto 1.3rem; text-align:left; background:rgba(10, 15, 29, 0.85); border:1px solid rgba(56, 189, 248, 0.28); border-radius:12px; padding:1.25rem 1.65rem; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 12px 36px rgba(0,0,0,0.65); max-height:46vh; overflow-y:auto; font-family:'Space Grotesk', monospace; text-transform:uppercase; letter-spacing:0.08em;">
+            <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:400; line-height:1.75; color:#f1f5f9; margin:0 0 0.85rem;">
+                Reality is a matter of perspective. Human history, culture and consciousness has developed into 3 realms, with most humans choosing just one of those as a way of looking at the world and into one's self. Science for example. Someone becomes a scientist, and choses he scientific model to view and make decisions. Some people choose a creative hobby, say painting. That's a second realm. A third one would be for example if you meditate. Rare do people incorporate all three realms at the same time.
+            </p>
+            <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:600; line-height:1.75; color:#38bdf8; margin:0 0 0.85rem;">
+                Here you can explore and learn.
+            </p>
+            <p style="font-size:clamp(0.68rem, 1.05vw, 0.76rem); font-weight:400; line-height:1.75; color:#cbd5e1; margin:0 0 0.85rem;">
+                I've created a city as a metaphore for the world, let's call it Mondrianopolis. You can go there and start exploring visually (and with sound) by clicking on 'ENTER MONDRIANOPOLIS'.
+            </p>
+            <p style="font-size:clamp(0.66rem, 1.0vw, 0.74rem); font-weight:400; line-height:1.7; color:#94a3b8; margin:0;">
+                In that city, you can see an 'objective' view of reality. At the bottom, you can select 1 of 3 possible 'perspectives' as experiences: through the body, the mind or the soul. Each is represented by a building, but also a 'vision' of that 'reality'.
+            </p>
         </div>
-        <button id="skip-btn" class="action-btn" style="margin-top:1.5rem; letter-spacing:0.2em; font-family:'Anta',sans-serif;">ENTER MONDRIANOPOLIS</button>
+
+        <div style="font-family:'Space Grotesk',monospace; font-size:clamp(0.75rem,1.25vw,0.88rem); letter-spacing:0.18em; color:#ffbb00; text-transform:uppercase; margin-bottom:0.75rem; text-shadow:0 0 12px rgba(255,187,0,0.5);">
+            Explore Beauty, knowledge and wisdom
+        </div>
+        <button id="skip-btn" class="action-btn" onclick="enterCampus()" style="letter-spacing:0.2em; font-family:'Anta',sans-serif;">ENTER MONDRIANOPOLIS</button>
+    </div>
+
+    <!-- LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX (ONLY IN INTRO SCENE, HOVERING LIKE A DRONE) -->
+    <div id="tri-matrix-left" class="drone-hovering" title="Drag to reposition matrix">
+        <!-- Attached Top Control Bar: Drag Symbol & Minimise (-) -->
+        <div class="tri-matrix-bar">
+            <div class="tri-drag-handle" title="Drag to reposition matrix">
+                <svg class="tri-drag-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/>
+                </svg>
+                <span class="tri-drag-text">DRAG ME</span>
+            </div>
+            <div class="tri-tooltip-wrap">
+                <button id="tri-min-btn" class="tri-min-btn" onclick="minimizeTriMatrix(event)" aria-label="Minimise me">
+                    <span>&minus;</span>
+                </button>
+                <div class="tri-tooltip">minimise me</div>
+            </div>
+        </div>
+
+        <!-- Minimized Floating State: Little Draggable Triangle with (+) button -->
+        <div id="tri-minimized-view" class="tri-minimized-view" style="display:none;" title="Drag me">
+            <div class="tri-mini-badge">
+                <svg viewBox="0 0 64 64" width="40" height="40">
+                    <polygon points="32,8 56,54 8,54" fill="none" stroke="#38bdf8" stroke-width="2.5" filter="drop-shadow(0 0 8px rgba(56,189,248,0.8))"/>
+                    <circle cx="32" cy="8" r="4" fill="#ff3322"/>
+                    <circle cx="56" cy="54" r="4" fill="#ffbb00"/>
+                    <circle cx="8" cy="54" r="4" fill="#38bdf8"/>
+                </svg>
+            </div>
+            <div class="tri-tooltip-wrap">
+                <button id="tri-max-btn" class="tri-max-btn" onclick="maximizeTriMatrix(event)" aria-label="Maximise me">
+                    <span>+</span>
+                </button>
+                <div class="tri-tooltip">maximise me</div>
+            </div>
+        </div>
+
+        <div class="tri-matrix-wrapper">
+            <div class="tri-rotor" id="tri-rotor">
+                <svg class="tri-svg" viewBox="0 0 260 260">
+                    <defs>
+                        <!-- Leg 1: Top (Art - Red) to Bottom-Right (Science - Yellow) -->
+                        <linearGradient id="gradArtSci" gradientUnits="userSpaceOnUse" x1="130" y1="40" x2="208" y2="175">
+                            <stop offset="0%" stop-color="#ff3322"/>
+                            <stop offset="100%" stop-color="#ffbb00"/>
+                        </linearGradient>
+                        
+                        <!-- Leg 2: Bottom-Right (Science - Yellow) to Bottom-Left (Spirituality - Cyan) -->
+                        <linearGradient id="gradSciSpirit" gradientUnits="userSpaceOnUse" x1="208" y1="175" x2="52" y2="175">
+                            <stop offset="0%" stop-color="#ffbb00"/>
+                            <stop offset="100%" stop-color="#00b4d8"/>
+                        </linearGradient>
+                        
+                        <!-- Leg 3: Bottom-Left (Spirituality - Cyan) to Top (Art - Red) -->
+                        <linearGradient id="gradSpiritArt" gradientUnits="userSpaceOnUse" x1="52" y1="175" x2="130" y2="40">
+                            <stop offset="0%" stop-color="#00b4d8"/>
+                            <stop offset="100%" stop-color="#ff3322"/>
+                        </linearGradient>
+
+                        <filter id="svgGlow" x="-30%" y="-30%" width="160%" height="160%">
+                            <feGaussianBlur stdDeviation="4" result="blur"/>
+                            <feMerge>
+                                <feMergeNode in="blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Outer Orbit & Grid Rings -->
+                    <circle cx="130" cy="130" r="115" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3 5"/>
+                    <circle cx="130" cy="130" r="55" fill="none" stroke="rgba(56,189,248,0.12)" stroke-width="1"/>
+                    
+                    <!-- Equilateral Triangle Body (Transparent Wireframe) -->
+                    <polygon points="130,40 208,175 52,175" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" filter="url(#svgGlow)"/>
+                    
+                    <!-- All 3 Glowing Colored Matrix Perimeter Edges -->
+                    <line x1="130" y1="40" x2="208" y2="175" stroke="url(#gradArtSci)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                    <line x1="208" y1="175" x2="52" y2="175" stroke="url(#gradSciSpirit)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                    <line x1="52" y1="175" x2="130" y2="40" stroke="url(#gradSpiritArt)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                    
+                    <!-- Center Radial Ray Conduits -->
+                    <line x1="130" y1="130" x2="130" y2="40" stroke="rgba(255,51,34,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                    <line x1="130" y1="130" x2="208" y2="175" stroke="rgba(255,187,0,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                    <line x1="130" y1="130" x2="52" y2="175" stroke="rgba(0,180,216,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                    
+                    <!-- Vertex Nodes -->
+                    <circle cx="130" cy="40" r="6" fill="#ff3322" filter="url(#svgGlow)"/>
+                    <circle cx="208" cy="175" r="6" fill="#ffbb00" filter="url(#svgGlow)"/>
+                    <circle cx="52" cy="175" r="6" fill="#00b4d8" filter="url(#svgGlow)"/>
+                </svg>
+            </div>
+
+            <!-- Dynamic Words on Vertices (Positioned outside rotor to stay strictly upright and legible) -->
+            <div class="tri-vertex-badge badge-art" id="tri-node-1">
+                <span class="v-dot dot-art"></span>
+                <span id="tri-w1">ART</span>
+            </div>
+            <div class="tri-vertex-badge badge-sci" id="tri-node-2">
+                <span class="v-dot dot-sci"></span>
+                <span id="tri-w2">SCIENCE</span>
+            </div>
+            <div class="tri-vertex-badge badge-spirit" id="tri-node-3">
+                <span class="v-dot dot-spirit"></span>
+                <span id="tri-w3">SPIRITUALITY</span>
+            </div>
+
+            <!-- Central Hub -->
+            <div class="tri-matrix-hub">
+                <div class="hub-title">TRI-TRUTH</div>
+                <div class="hub-subtitle">MATRIX</div>
+            </div>
+        </div>
     </div>
 
     <!-- Heads-Up Display Frame -->
@@ -999,57 +1231,10 @@
             <h1 class="university-banner" style="cursor:pointer;" onclick="resetOverview()" title="Return to Default View (Key 0)">
                 <span>Visions of Reality</span>
             </h1>
-            <div class="university-sub">/ PERSPECTIVE IS RELATIVE</div>
+            <div class="university-sub">PERSPECTIVE IS RELATIVE</div>
         </div>
 
-        <!-- TOP-CENTER: TEXT / INFO BUTTON -->
-        <div class="hud-interactive" style="position:fixed; top:1.2rem; left:50%; transform:translateX(-50%); z-index:1000; pointer-events:auto;">
-            <button id="text-info-btn" class="hud-interactive" onclick="openTriptych()" style="font-family:'Anta',sans-serif;font-size:0.82rem;letter-spacing:0.18em;color:#f1f5f9;background:rgba(15,23,42,0.85);border:1px solid rgba(148,163,184,0.4);border-radius:20px;padding:8px 24px;cursor:pointer;transition:all 0.25s;backdrop-filter:blur(10px);box-shadow:0 4px 18px rgba(0,0,0,0.5);pointer-events:auto;" onmouseover="this.style.background='rgba(30,41,59,0.95)';this.style.borderColor='rgba(255,255,255,0.7)';this.style.transform='scale(1.04)'" onmouseout="this.style.background='rgba(15,23,42,0.85)';this.style.borderColor='rgba(148,163,184,0.4)';this.style.transform='scale(1.0)'">
-                TEXT / INFO
-            </button>
-        </div>
-
-        <!-- RIGHT: DOCKED FACULTY DATA SCREEN (HIDDEN) -->
-        <div id="faculty-panel-right" class="hud-interactive" style="display:none !important;">
-            <div class="panel-header" id="panel-header-drag" title="Drag to reposition panel">
-                <div class="panel-header-info">
-                    <h2 id="screen-faculty-name" class="panel-faculty-title title-art">
-                        <span class="faculty-title-the">THE</span>
-                        <span class="faculty-title-main">BODY</span>
-                    </h2>
-                </div>
-                <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="toggleFacultyPanel(event)" title="Collapse into header" aria-label="Toggle Faculty Panel">
-                    <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="panel-body-wrapper" id="panel-body-wrapper">
-                <div class="panel-divider"></div>
-                
-                <div class="panel-quote-box border-art" id="panel-quote-box">
-                    <div id="screen-content" class="neon-text neon-art">"LOVE &amp; BEAUTY AS SUBJECTIVE TRUTH"</div>
-                </div>
-
-                <div class="panel-content-section">
-                    <div class="detail-row">
-                        <span class="detail-label">HIGH DISCIPLINES</span>
-                        <span class="detail-value" id="detail-high">Literature, Painting, Sculpture, Music, Poetry, Theater</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">CULTURAL EXPRESSION</span>
-                        <span class="detail-value" id="detail-low">Games, Street Art, Pop Culture, Cinema, Fashion</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">PRIMARY PURPOSE</span>
-                        <span class="detail-value purpose-highlight" id="detail-purpose"><span class="highlight-love">LOVE</span> · Aesthetic Bliss &amp; Emotional Resonance</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Right Actions (Vertically Stacked) -->
+        <!-- Top Right Actions: 3 Icons with Info Button Underneath -->
         <div class="top-right hud-interactive">
             <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
                 <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
@@ -1078,6 +1263,14 @@
                     <circle cx="12" cy="12" r="1.6"/>
                 </svg>
             </button>
+            <!-- Info Button placed under the 3 icons (small "i" with circle) -->
+            <button id="info-btn" class="icon-btn info-circle-btn" onclick="openTriptych()" title="Text / Info (Triptych)" aria-label="Text and Info">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9.5"></circle>
+                    <line x1="12" y1="11" x2="12" y2="16.5"></line>
+                    <circle cx="12" cy="7.5" r="1" fill="currentColor"></circle>
+                </svg>
+            </button>
         </div>
 
         <!-- Navigation Mode HUD Toast Notification -->
@@ -1087,12 +1280,7 @@
             </div>
             <div class="nav-toast-sub" id="toast-sub-text">WASD / Arrow Keys or Right-Click Drag to Pan • Left Drag to Rotate • Scroll to Zoom</div>
         </div>
-
-        <!-- Bottom menu removed: user clicks towers directly -->
     </div>
-
-    <!-- Tooltip & 3D Canvas -->
-    <div id="tooltip"></div>
     <div id="canvas-container"></div>
 
     <!-- Three.js + OrbitControls -->
@@ -1178,11 +1366,21 @@
         let currentTriadIndex = 0;
 
         const introSequenceQuotes = [
-            "Welcome to the City of Life.",
-            "The University of Hope and the Faculties of Free Will.",
+            "Where Art, Science, and Spirituality structure our universe.",
             "Where Body, Mind, and Soul converge in architectural harmony.",
-            "Where Art, Science, and Spirituality structure our universe."
+            "01 The Body: Sensual Beauty, Somatic Form & Aesthetic Bliss.",
+            "02 The Mind: Factual Knowledge, Empirical Reason & Order.",
+            "03 The Soul: Spiritual Wisdom, Transcendence & Universal Harmony."
         ];
+        let introQuoteIdx = 0;
+
+        // Tri-Truth Matrix 3D gyroscopic rotation and DOM state
+        let triangleAngle = 0;
+        let isSuperSpinning = false;
+        let isMatrixVisible = true;
+        let triRotor = null;
+        let triNode1 = null, triNode2 = null, triNode3 = null;
+        let triW1 = null, triW2 = null, triW3 = null;
 
         /* ==========================================================================
            2. THREE.JS CAMPUS SIMULATION & PROCEDURAL METROPOLIS GENERATOR
@@ -1190,70 +1388,399 @@
         let scene, camera, renderer, controls, raycaster, mouse;
         let specialBlocks = [];
         let landmarkLights = [];
-        let particlesSystem;
-        let groundTriangle;
         let purpleBeamGroup;
         let scienceAtomGroup, scienceAtomNucleus;
         let artRayGroup;
-        let ambient, sun, streetUpLight, groundGlowLight;
+        let ambientLight, sunLight, streetUpLight, groundGlowLight;
         let mindGhost, soulGhost;
+
+        let allProceduralBuildings = [];
+        let avenuePackets = [];
+        let causticRings = [];
+        let groundDefaultGroup, groundBodyGroup, groundMindGroup, groundSoulGroup;
+        let particlesDefault, particlesBody, particlesSoul;
+
+        let currentRealityState = 'default'; // 'default' | 'body' | 'mind' | 'soul'
+        let targetCameraZoom = 1.0;
+        let targetCameraPos = new THREE.Vector3(58, 62, 58);
+        let targetCameraLookAt = new THREE.Vector3(0, 0, 0);
+        let isTransitioningCamera = false;
+        let transitionStartTime = 0;
+        const TRANSITION_DURATION = 1200;
+        let transitionFromPos = new THREE.Vector3();
+        let transitionToPos = new THREE.Vector3();
+        let transitionFromTarget = new THREE.Vector3();
+        let transitionToTarget = new THREE.Vector3();
+        let transitionFromZoom = 1.0;
+        let transitionToZoom = 1.0;
 
         let introActive = true;
         let isManualControl = false;
         let cinematicTarget = null;
-        let currentFacultyType = 'art';
-        let lastAutoTourTime = 0;
-        let lastQuoteCycleTime = 0;
-        const AUTO_TOUR_INTERVAL = 14000;
-        const QUOTE_CYCLE_INTERVAL = 3800;
-        let toastTimeout = null;
+        let currentFacultyType = null;
         let pointerDownPos = { x: 0, y: 0 };
         const activeNavKeys = {};
 
-        // Triangle continuous rotation state
-        let triangleAngle = 0;
-        let isSuperSpinning = false;
-
         const container = document.getElementById('canvas-container');
-        const tooltip = document.getElementById('tooltip');
         const introTextEl = document.getElementById('intro-text');
         const introOverlay = document.getElementById('intro-overlay');
         const skipBtn = document.getElementById('skip-btn');
         const hudLayer = document.getElementById('hud-layer');
         const ambientAudio = document.getElementById('ambient-audio');
-        
-        // Right Faculty Panel elements
-        const facultyPanel = document.getElementById('faculty-panel-right');
-        const screenContent = document.getElementById('screen-content');
-        const screenFacultyName = document.getElementById('screen-faculty-name');
-        const screenCategory = document.getElementById('screen-category');
-        const panelQuoteBox = document.getElementById('panel-quote-box');
-        const detailHigh = document.getElementById('detail-high');
-        const detailLow = document.getElementById('detail-low');
-        const detailPurpose = document.getElementById('detail-purpose');
 
-        // Left Tri-Matrix elements
-        const triRotor = document.getElementById('tri-rotor');
-        const triW1 = document.getElementById('tri-w1');
-        const triW2 = document.getElementById('tri-w2');
-        const triW3 = document.getElementById('tri-w3');
-        const triNode1 = document.getElementById('tri-node-1');
-        const triNode2 = document.getElementById('tri-node-2');
-        const triNode3 = document.getElementById('tri-node-3');
+        /* ==========================================================================
+           ADVANCED GENERATIVE REALITY SOUNDSCAPE ENGINE
+           1. BODY: Nature Sounds (Silt Wind Rustle, 44Hz Earth Drone, Heartbeat Pulse)
+           2. MIND: Digital Bleep Bleep Noises (Modular Arpeggiator & Data Packets)
+           3. SOUL: Subtle Distant Acapella Voices (Vocal Formant Choral Synthesis)
+           ========================================================================== */
+        let audioCtx = null;
+        let isAudioMuted = false;
+        let soundscapeRunning = false;
+
+        let masterGain = null;
+        let bodyBus = null;
+        let mindBus = null;
+        let soulBus = null;
+
+        let mindArpTimer = null;
+        let bodyHeartbeatTimer = null;
+
+        function initRealityAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) {
+                    audioCtx = new AudioClass();
+                    setupSoundscapeNodes();
+                }
+            } catch (e) {
+                console.warn("AudioContext init error:", e);
+            }
+        }
+
+        function setupSoundscapeNodes() {
+            if (!audioCtx) return;
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(isAudioMuted ? 0 : 0.65, audioCtx.currentTime);
+            masterGain.connect(audioCtx.destination);
+
+            // 1. Body Bus (Nature / Wind in Silt / Earthy Drone)
+            bodyBus = audioCtx.createGain();
+            bodyBus.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            bodyBus.connect(masterGain);
+            setupBodySoundscape();
+
+            // 2. Mind Bus (Digital Bleeps / Mainframe Packets)
+            mindBus = audioCtx.createGain();
+            mindBus.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            mindBus.connect(masterGain);
+            setupMindSoundscape();
+
+            // 3. Soul Bus (Acapella Vocal Formant Choir)
+            soulBus = audioCtx.createGain();
+            soulBus.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            soulBus.connect(masterGain);
+            setupSoulSoundscape();
+
+            soundscapeRunning = true;
+            fadeToSoundscape(currentRealityState);
+        }
+
+        /* 1. THE BODY: Earthy Silt Wind, Subterranean Drone, and Biological Heartbeat */
+        function setupBodySoundscape() {
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                b6 = white * 0.115926;
+            }
+
+            const noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = noiseBuffer;
+            noiseSource.loop = true;
+
+            const windFilter = audioCtx.createBiquadFilter();
+            windFilter.type = 'bandpass';
+            windFilter.frequency.setValueAtTime(360, audioCtx.currentTime);
+            windFilter.Q.setValueAtTime(1.8, audioCtx.currentTime);
+
+            const windLfo = audioCtx.createOscillator();
+            const windLfoGain = audioCtx.createGain();
+            windLfo.frequency.setValueAtTime(0.12, audioCtx.currentTime);
+            windLfoGain.gain.setValueAtTime(220, audioCtx.currentTime);
+            windLfo.connect(windLfoGain);
+            windLfoGain.connect(windFilter.frequency);
+            windLfo.start();
+
+            const windGain = audioCtx.createGain();
+            windGain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+
+            noiseSource.connect(windFilter);
+            windFilter.connect(windGain);
+            windGain.connect(bodyBus);
+            noiseSource.start();
+
+            // Subterranean drone (44Hz Earth resonance)
+            const subOsc = audioCtx.createOscillator();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(44, audioCtx.currentTime);
+            const subGain = audioCtx.createGain();
+            subGain.gain.setValueAtTime(0.26, audioCtx.currentTime);
+            subOsc.connect(subGain);
+            subGain.connect(bodyBus);
+            subOsc.start();
+
+            startBodyHeartbeat();
+        }
+
+        function startBodyHeartbeat() {
+            if (bodyHeartbeatTimer) clearInterval(bodyHeartbeatTimer);
+            bodyHeartbeatTimer = setInterval(() => {
+                if (!audioCtx || currentRealityState !== 'body' || isAudioMuted) return;
+                const t = audioCtx.currentTime;
+                playHeartThump(t, 55, 36, 0.22);
+                playHeartThump(t + 0.18, 50, 32, 0.16);
+            }, 1500);
+        }
+
+        function playHeartThump(time, startFreq, endFreq, vol) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(startFreq, time);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, time + 0.12);
+                gain.gain.setValueAtTime(vol, time);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.16);
+                osc.connect(gain);
+                gain.connect(bodyBus);
+                osc.start(time);
+                osc.stop(time + 0.17);
+            } catch(e) {}
+        }
+
+        /* 2. THE MIND: Digital Bleep Bleep Noises & Modular Computer Arpeggiator */
+        function setupMindSoundscape() {
+            const clockOsc = audioCtx.createOscillator();
+            clockOsc.type = 'sine';
+            clockOsc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            const clockGain = audioCtx.createGain();
+            clockGain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            clockOsc.connect(clockGain);
+            clockGain.connect(mindBus);
+            clockOsc.start();
+
+            startMindBleeps();
+        }
+
+        function startMindBleeps() {
+            if (mindArpTimer) clearInterval(mindArpTimer);
+            const freqs = [1046.5, 1174.7, 1318.5, 1568.0, 1760.0, 2093.0, 2637.0, 3136.0];
+            let step = 0;
+
+            mindArpTimer = setInterval(() => {
+                if (!audioCtx || currentRealityState !== 'mind' || isAudioMuted) return;
+                const t = audioCtx.currentTime;
+
+                const f = freqs[step % freqs.length];
+                playDigitalBleep(t, f, 0.04, Math.random() > 0.5 ? 'square' : 'triangle');
+
+                if (Math.random() > 0.6) {
+                    const harmonic = freqs[(step + 3) % freqs.length];
+                    playDigitalBleep(t + 0.045, harmonic, 0.03, 'sine');
+                }
+
+                step = (step + 1 + (Math.random() > 0.75 ? 2 : 0)) % freqs.length;
+            }, 140);
+        }
+
+        function playDigitalBleep(time, freq, dur, type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+
+                const pan = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+                if (pan) {
+                    pan.pan.setValueAtTime((Math.random() * 1.6) - 0.8, time);
+                    osc.connect(gain);
+                    gain.connect(pan);
+                    pan.connect(mindBus);
+                } else {
+                    osc.connect(gain);
+                    gain.connect(mindBus);
+                }
+
+                gain.gain.setValueAtTime(0.07, time);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+                osc.start(time);
+                osc.stop(time + dur + 0.01);
+            } catch(e) {}
+        }
+
+        /* 3. THE SOUL: Subtle Distant Acapella Choir (Vocal Formant Filter Synthesis) */
+        function setupSoulSoundscape() {
+            const choirPitches = [146.83, 220.00, 349.23, 523.25, 659.25];
+
+            const formants = [
+                { f: 750, q: 4.5, gain: 0.35 },
+                { f: 1250, q: 5.0, gain: 0.25 },
+                { f: 2450, q: 6.0, gain: 0.18 }
+            ];
+
+            const choirMaster = audioCtx.createGain();
+            choirMaster.gain.setValueAtTime(0.38, audioCtx.currentTime);
+
+            const breathLfo = audioCtx.createOscillator();
+            const breathGain = audioCtx.createGain();
+            breathLfo.frequency.setValueAtTime(0.16, audioCtx.currentTime);
+            breathGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            breathLfo.connect(breathGain);
+            breathGain.connect(choirMaster.gain);
+            breathLfo.start();
+
+            const vibratoLfo = audioCtx.createOscillator();
+            const vibratoGain = audioCtx.createGain();
+            vibratoLfo.frequency.setValueAtTime(4.8, audioCtx.currentTime);
+            vibratoGain.gain.setValueAtTime(1.8, audioCtx.currentTime);
+            vibratoLfo.start();
+
+            choirPitches.forEach((pitch, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = (idx % 2 === 0) ? 'sawtooth' : 'triangle';
+                osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+                vibratoGain.connect(osc.frequency);
+
+                const softenFilter = audioCtx.createBiquadFilter();
+                softenFilter.type = 'lowpass';
+                softenFilter.frequency.setValueAtTime(3200, audioCtx.currentTime);
+                osc.connect(softenFilter);
+
+                formants.forEach(form => {
+                    const bFilter = audioCtx.createBiquadFilter();
+                    bFilter.type = 'bandpass';
+                    bFilter.frequency.setValueAtTime(form.f, audioCtx.currentTime);
+                    bFilter.Q.setValueAtTime(form.q, audioCtx.currentTime);
+
+                    const fGain = audioCtx.createGain();
+                    fGain.gain.setValueAtTime(form.gain * (0.18 / (idx + 1)), audioCtx.currentTime);
+
+                    softenFilter.connect(bFilter);
+                    bFilter.connect(fGain);
+                    fGain.connect(choirMaster);
+                });
+
+                osc.start();
+            });
+
+            choirMaster.connect(soulBus);
+        }
+
+        /* Morph / Crossfade between soundscape layers */
+        function fadeToSoundscape(targetState) {
+            if (!audioCtx || !bodyBus || !mindBus || !soulBus) return;
+            const t = audioCtx.currentTime;
+            const rampTime = 0.75;
+
+            bodyBus.gain.linearRampToValueAtTime(targetState === 'body' ? 0.75 : 0.0001, t + rampTime);
+            mindBus.gain.linearRampToValueAtTime(targetState === 'mind' ? 0.65 : 0.0001, t + rampTime);
+            soulBus.gain.linearRampToValueAtTime(targetState === 'soul' ? 0.85 : 0.0001, t + rampTime);
+        }
+
+        function playRealityImpactSound(state) {
+            initRealityAudio();
+            if (!audioCtx || isAudioMuted) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const t = audioCtx.currentTime;
+
+            if (state === 'body') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(85, t);
+                osc.frequency.exponentialRampToValueAtTime(30, t + 0.65);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(180, t);
+                filter.frequency.exponentialRampToValueAtTime(38, t + 0.65);
+
+                gain.gain.setValueAtTime(0.75, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGain || audioCtx.destination);
+                osc.start(t);
+                osc.stop(t + 0.75);
+            } else if (state === 'mind') {
+                [0, 0.04, 0.08].forEach((delay, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    const freq = 1950 + idx * 420;
+                    osc.frequency.setValueAtTime(freq, t + delay);
+
+                    gain.gain.setValueAtTime(0.12, t + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.035);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain || audioCtx.destination);
+                    osc.start(t + delay);
+                    osc.stop(t + delay + 0.04);
+                });
+            } else if (state === 'soul') {
+                const chord = [261.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                chord.forEach((f, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, t);
+
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.linearRampToValueAtTime(0.055 / (idx + 1), t + 0.4 + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain || audioCtx.destination);
+                    osc.start(t);
+                    osc.stop(t + 3.3);
+                });
+            }
+        }
 
         window.onload = function() {
+            triRotor = document.getElementById('tri-rotor');
+            triW1 = document.getElementById('tri-w1');
+            triW2 = document.getElementById('tri-w2');
+            triW3 = document.getElementById('tri-w3');
+            triNode1 = document.getElementById('tri-node-1');
+            triNode2 = document.getElementById('tri-node-2');
+            triNode3 = document.getElementById('tri-node-3');
+
             initScene();
             animate();
             runIntroSequence();
+            updateTriBadgePositions();
+            initDraggableTriMatrix();
+            setInterval(cycleTriadBadge, 5200);
+            setInterval(cycleIntroQuote, 4200);
             if (skipBtn) skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
-            setInterval(updateTicker, 1000);
         };
-
-        function updateTicker() {
-            const d = new Date();
-            const el = document.getElementById('ticker-time');
-            if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
-        }
 
         /* Dynamically update badge positions on triangle vertices with 3D perspective projection */
         function updateTriBadgePositions(tiltX = 0, tiltY = 0) {
@@ -1346,9 +1873,9 @@
                     textUpdated = true;
                     currentTriadIndex = (currentTriadIndex + 1) % triTruthTriads.length;
                     const triad = triTruthTriads[currentTriadIndex];
-                    triW1.innerText = triad[0];
-                    triW2.innerText = triad[1];
-                    triW3.innerText = triad[2];
+                    if (triW1) triW1.innerText = triad[0];
+                    if (triW2) triW2.innerText = triad[1];
+                    if (triW3) triW3.innerText = triad[2];
                     
                     [triNode1, triNode2, triNode3].forEach(node => {
                         if (node) node.style.opacity = '1';
@@ -1366,6 +1893,134 @@
             requestAnimationFrame(stepSpin);
         }
 
+        /* Draggable Tri-Truth Matrix (Mobile Touch & Desktop Mouse Support) */
+        function initDraggableTriMatrix() {
+            const matrix = document.getElementById('tri-matrix-left');
+            if (!matrix) return;
+
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let initialLeft = 0;
+            let initialTop = 0;
+            let hasMoved = false;
+
+            matrix.addEventListener('pointerdown', (e) => {
+                // Prevent drag start if clicking on the close button
+                if (e.target.closest('#tri-matrix-close-btn')) return;
+
+                isDragging = true;
+                hasMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = matrix.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                matrix.style.left = `${initialLeft}px`;
+                matrix.style.top = `${initialTop}px`;
+                matrix.style.right = 'auto';
+                matrix.style.bottom = 'auto';
+                matrix.style.transform = window.innerWidth <= 768 ? 'scale(0.68)' : 'none';
+
+                matrix.setPointerCapture(e.pointerId);
+                matrix.classList.add('is-dragging');
+            });
+
+            matrix.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (Math.hypot(dx, dy) > 4) {
+                    hasMoved = true;
+                }
+
+                if (hasMoved) {
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+
+                    const scale = window.innerWidth <= 768 ? 0.68 : 1;
+                    const margin = 4;
+                    const w = matrix.offsetWidth * scale;
+                    const h = matrix.offsetHeight * scale;
+                    const maxLeft = window.innerWidth - w - margin;
+                    const maxTop = window.innerHeight - h - margin;
+
+                    newLeft = Math.max(margin, Math.min(newLeft, maxLeft));
+                    newTop = Math.max(margin, Math.min(newTop, maxTop));
+
+                    matrix.style.left = `${newLeft}px`;
+                    matrix.style.top = `${newTop}px`;
+                }
+            });
+
+            const stopDrag = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                matrix.classList.remove('is-dragging');
+
+                if (matrix.hasPointerCapture && matrix.hasPointerCapture(e.pointerId)) {
+                    matrix.releasePointerCapture(e.pointerId);
+                }
+
+                // If tapped without dragging, trigger triad badge spin (unless clicking control bar)
+                if (!hasMoved && !e.target.closest('#tri-matrix-close-btn') && !e.target.closest('.tri-matrix-bar')) {
+                    cycleTriadBadge();
+                }
+            };
+
+            matrix.addEventListener('pointerup', stopDrag);
+            matrix.addEventListener('pointercancel', stopDrag);
+        }
+
+        /* Toggle & Close Tri-Truth Matrix visibility */
+        function toggleTriMatrix(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            const matrix = document.getElementById('tri-matrix-left');
+            const btn = document.getElementById('matrix-toggle-btn');
+            if (!matrix) return;
+            isMatrixVisible = !isMatrixVisible;
+            if (isMatrixVisible) {
+                matrix.classList.remove('matrix-hidden');
+                if (btn) btn.classList.remove('matrix-off');
+            } else {
+                matrix.classList.add('matrix-hidden');
+                if (btn) btn.classList.add('matrix-off');
+            }
+        }
+
+        function closeTriMatrix(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            const matrix = document.getElementById('tri-matrix-left');
+            const btn = document.getElementById('matrix-toggle-btn');
+            if (!matrix) return;
+            isMatrixVisible = false;
+            matrix.classList.add('matrix-hidden');
+            if (btn) btn.classList.add('matrix-off');
+        }
+
+        /* Cycle Intro Text Quotes on Intro Screen */
+        function cycleIntroQuote() {
+            if (!introActive) return;
+            const el = document.getElementById('intro-dynamic-quote');
+            if (!el) return;
+            el.style.opacity = '0';
+            setTimeout(() => {
+                introQuoteIdx = (introQuoteIdx + 1) % introSequenceQuotes.length;
+                el.textContent = introSequenceQuotes[introQuoteIdx];
+                el.style.opacity = '1';
+            }, 600);
+        }
+
         function runIntroSequence() {
             controls.autoRotate = true;
             controls.autoRotateSpeed = 0.65;
@@ -1374,13 +2029,23 @@
         function enterCampus() {
             introActive = false;
             introOverlay.style.opacity = 0;
+            
+            // The tri-truth matrix ONLY appears in the intro scene
+            const triMatrix = document.getElementById('tri-matrix-left');
+            if (triMatrix) {
+                triMatrix.style.opacity = '0';
+                setTimeout(() => {
+                    triMatrix.style.display = 'none';
+                }, 1000);
+            }
+
             setTimeout(() => {
                 introOverlay.style.visibility = 'hidden';
                 hudLayer.style.opacity = 1;
-                lastAutoTourTime = Date.now();
             }, 1000);
 
-            // Automatically start playing ambient audio (neon-static.mp3) on user interaction
+            initRealityAudio();
+            switchReality('default', true);
             startAmbientAudio();
         }
 
@@ -1395,23 +2060,32 @@
         }
 
         function toggleAudio() {
-            if (!ambientAudio) return;
-            if (ambientAudio.paused) {
-                ambientAudio.play().then(() => {
-                    updateAudioIcon(true);
-                }).catch(err => console.warn("Audio play error:", err));
-            } else {
-                ambientAudio.pause();
-                updateAudioIcon(false);
+            isAudioMuted = !isAudioMuted;
+            if (ambientAudio) {
+                if (isAudioMuted) {
+                    ambientAudio.pause();
+                } else if (currentRealityState === 'default') {
+                    ambientAudio.play().catch(err => console.warn("Audio play error:", err));
+                }
             }
+            if (audioCtx && masterGain) {
+                masterGain.gain.setValueAtTime(isAudioMuted ? 0 : 0.65, audioCtx.currentTime);
+            }
+            updateAudioIcon(!isAudioMuted);
         }
 
         function updateAudioIcon(playing) {
             const iconOn = document.getElementById('sound-icon-on');
             const iconOff = document.getElementById('sound-icon-off');
+            const btn = document.getElementById('sound-btn');
             if (iconOn && iconOff) {
                 iconOn.style.display = playing ? 'block' : 'none';
                 iconOff.style.display = playing ? 'none' : 'block';
+            }
+            if (btn) {
+                btn.title = playing ? "Audio: Active (Click to Mute)" : "Audio: Muted (Click to Unmute)";
+                if (playing) btn.classList.add('sound-active');
+                else btn.classList.remove('sound-active');
             }
         }
         const landmarkLabels = {};
@@ -2153,8 +2827,39 @@
             matrix.addEventListener('pointercancel', stopDrag);
         }
 
+        /* Minimise & Maximise Tri-Truth Matrix (Only in Intro Scene) */
+        function minimizeTriMatrix(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            const bar = document.querySelector('.tri-matrix-bar');
+            const wrap = document.querySelector('.tri-matrix-wrapper');
+            const mini = document.getElementById('tri-minimized-view');
+            const matrix = document.getElementById('tri-matrix-left');
+            if (bar) bar.style.display = 'none';
+            if (wrap) wrap.style.display = 'none';
+            if (mini) mini.style.display = 'flex';
+            if (matrix) matrix.classList.add('is-minimized');
+        }
+
+        function maximizeTriMatrix(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            const bar = document.querySelector('.tri-matrix-bar');
+            const wrap = document.querySelector('.tri-matrix-wrapper');
+            const mini = document.getElementById('tri-minimized-view');
+            const matrix = document.getElementById('tri-matrix-left');
+            if (bar) bar.style.display = 'flex';
+            if (wrap) wrap.style.display = 'block';
+            if (mini) mini.style.display = 'none';
+            if (matrix) matrix.classList.remove('is-minimized');
+        }
+
         /* Toggle & Close Tri-Truth Matrix visibility */
-        let isMatrixVisible = true;
+        isMatrixVisible = true;
         function toggleTriMatrix(e) {
             if (e) {
                 e.stopPropagation();
@@ -2219,8 +2924,8 @@
             });
 
             // Environmental Lighting & Upward Streetlevel Glow
-            ambient = new THREE.AmbientLight(0xffffff, 0.85);
-            scene.add(ambient);
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
 
             // Upward light emanating from street level (Ground Lift Light)
             streetUpLight = new THREE.DirectionalLight(0x38bdf8, 1.25);
@@ -2234,25 +2939,28 @@
             scene.add(groundGlowLight);
 
             // Main Sunlight for clean architectural shadows
-            sun = new THREE.DirectionalLight(0xffffff, 1.25);
-            sun.position.set(45, 80, 35);
-            sun.castShadow = true;
-            sun.shadow.mapSize.width = 2048;
-            sun.shadow.mapSize.height = 2048;
-            sun.shadow.camera.near = 10;
-            sun.shadow.camera.far = 200;
-            sun.shadow.camera.left = -50;
-            sun.shadow.camera.right = 50;
-            sun.shadow.camera.top = 50;
-            sun.shadow.camera.bottom = -50;
-            sun.shadow.bias = -0.0005;
-            scene.add(sun);
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.25);
+            sunLight.position.set(45, 80, 35);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 10;
+            sunLight.shadow.camera.far = 200;
+            sunLight.shadow.camera.left = -50;
+            sunLight.shadow.camera.right = 50;
+            sunLight.shadow.camera.top = 50;
+            sunLight.shadow.camera.bottom = -50;
+            sunLight.shadow.bias = -0.0005;
+            scene.add(sunLight);
 
             // Procedural City & Landmarks
             generateProceduralCity();
 
             // Atmospheric Particle Field
             generateAtmosphericParticles();
+
+            // Initialize default reality view
+            switchReality('default', true);
 
             // Event Listeners
             window.addEventListener('resize', onWindowResize, false);
@@ -2265,20 +2973,26 @@
             window.addEventListener('keyup', onKeyUp, false);
         }
 
-        /* Procedural Architectural Variations & Landmark Generator */
+        /* Procedural Architectural Variations & Landmark Generator across 4 Realities */
         function generateProceduralCity() {
             const GRID = 24;
             const SPACING = 2.0;
             const centerOffset = (GRID * SPACING) / 2;
 
-            // Shared Material Palette
+            allProceduralBuildings = [];
+            specialBlocks = [];
+            landmarkLights = [];
+            avenuePackets = [];
+            causticRings = [];
+
+            // 1. Shared Material Palettes
+            // Default Palette (from intro.html)
             const baseMaterials = [
                 new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.15 }),
                 new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.55, metalness: 0.25 }),
                 new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.45, metalness: 0.35 }),
                 new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.75, metalness: 0.15 })
             ];
-
             const glassMat = new THREE.MeshStandardMaterial({
                 color: 0x38bdf8,
                 roughness: 0.1,
@@ -2286,10 +3000,34 @@
                 transparent: true,
                 opacity: 0.7
             });
-
             const wireframeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
 
-            // Landmark positions on the 24x24 grid
+            // Body Palette (from reality.html)
+            const bodyMatPalette = [
+                new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.94, metalness: 0.05 }),
+                new THREE.MeshStandardMaterial({ color: 0x580d13, roughness: 0.95, metalness: 0.04 }),
+                new THREE.MeshStandardMaterial({ color: 0x8b221a, roughness: 0.92, metalness: 0.06 }),
+                new THREE.MeshStandardMaterial({ color: 0xbf4d2e, roughness: 0.90, metalness: 0.08 }),
+                new THREE.MeshStandardMaterial({ color: 0x361b15, roughness: 0.96, metalness: 0.03 }),
+                new THREE.MeshStandardMaterial({ color: 0x161010, roughness: 0.98, metalness: 0.02 })
+            ];
+            const bodyFootingMat = new THREE.MeshStandardMaterial({ color: 0x221310, roughness: 0.96, metalness: 0.04 });
+            const bodyStrataMat = new THREE.MeshStandardMaterial({ color: 0x0c0606, roughness: 0.98, metalness: 0.02 });
+            const bodyIvoryMat = new THREE.MeshStandardMaterial({ color: 0xded6c8, roughness: 0.88, metalness: 0.08 });
+
+            // Mind Palette (from reality.html)
+            const mindShellMat = new THREE.MeshBasicMaterial({
+                color: 0x052640,
+                transparent: true,
+                opacity: 0.16,
+                depthWrite: false
+            });
+            const mindWireYellow = new THREE.LineBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.9 });
+            const mindWireCyan = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.85 });
+            const mindShaftMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.65 });
+            const mindNodeMat = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+
+            // Landmark positions on 24x24 grid
             const artPos = { x: 7, z: 7 };
             const sciPos = { x: 17, z: 7 };
             const spiritPos = { x: 12, z: 17 };
@@ -2298,144 +3036,211 @@
                 for (let z = 0; z < GRID; z++) {
                     const posX = x * SPACING - centerOffset;
                     const posZ = z * SPACING - centerOffset;
+                    const distFromCenter = Math.sqrt(posX * posX + posZ * posZ);
 
-                    // 1. FACULTY OF ART (Red / Monolithic Cantilever Sculpture)
+                    // ==========================================
+                    // 1. LANDMARK: THE BODY (Art Faculty)
+                    // ==========================================
                     if (x === artPos.x && z === artPos.z) {
                         const artGroup = new THREE.Group();
-                        
-                        const baseGeo = new THREE.BoxGeometry(3.6, 1.2, 3.6);
-                        const baseMesh = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.35 }));
-                        baseMesh.position.y = 0.6;
-                        baseMesh.castShadow = true;
-                        baseMesh.receiveShadow = true;
-                        artGroup.add(baseMesh);
+                        artGroup.position.set(posX, 0, posZ);
 
-                        // Main cantilever radiant red tower
-                        const towerGeo = new THREE.BoxGeometry(2.5, 8.8, 2.5);
-                        const towerMat = new THREE.MeshStandardMaterial({ 
-                            color: 0xff1e1e, 
-                            emissive: 0xff0a00, 
-                            emissiveIntensity: 0.9, 
-                            roughness: 0.15, 
-                            metalness: 0.4 
-                        });
-                        const towerMesh = new THREE.Mesh(towerGeo, towerMat);
-                        towerMesh.position.set(0, 5.0, 0);
-                        towerMesh.castShadow = true;
-                        artGroup.add(towerMesh);
+                        const defaultSub = new THREE.Group();
+                        const bodySub = new THREE.Group();
+                        const mindSub = new THREE.Group();
+                        const soulSub = new THREE.Group();
 
-                        // Black Sphere emitting bright yellow rays of light (short & long lines fading outward)
-                        const raySphere = createRayEmittingBlackSphere();
-                        raySphere.position.set(0, 9.8, 0);
-                        artGroup.add(raySphere);
-                        artRayGroup = raySphere.userData.rayGroup;
+                        // -- DEFAULT LAYER --
+                        const defBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.2, 3.6), new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.35 }));
+                        defBase.position.y = 0.6;
+                        defBase.castShadow = true; defBase.receiveShadow = true;
+                        defaultSub.add(defBase);
 
-                        // Double-Sized Black Lightboxes with bright shiny glowing red neon letters on all 4 Art building facades
+                        const defTower = new THREE.Mesh(
+                            new THREE.BoxGeometry(2.5, 8.8, 2.5),
+                            new THREE.MeshStandardMaterial({ color: 0xff1e1e, emissive: 0xff0a00, emissiveIntensity: 0.9, roughness: 0.15, metalness: 0.4 })
+                        );
+                        defTower.position.set(0, 5.0, 0);
+                        defTower.castShadow = true;
+                        defaultSub.add(defTower);
+
+                        const defRaySphere = createRayEmittingBlackSphere();
+                        defRaySphere.position.set(0, 9.8, 0);
+                        defaultSub.add(defRaySphere);
+                        artRayGroup = defRaySphere.userData.rayGroup;
+
+                        // -- BODY LAYER --
+                        const bBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.4, 4.2), bodyFootingMat);
+                        bBase.position.y = 0.7;
+                        bBase.castShadow = true; bBase.receiveShadow = true;
+                        bodySub.add(bBase);
+
+                        const bTower = new THREE.Mesh(
+                            new THREE.BoxGeometry(2.6, 9.2, 2.6),
+                            new THREE.MeshStandardMaterial({ color: 0xb91c1c, emissive: 0x500d11, emissiveIntensity: 0.85, roughness: 0.88, metalness: 0.12 })
+                        );
+                        bTower.position.set(0, 5.2, 0);
+                        bTower.castShadow = true;
+                        bodySub.add(bTower);
+
+                        for (let sY = 2.0; sY <= 8.5; sY += 1.4) {
+                            const rib = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 2.7), bodyStrataMat);
+                            rib.position.y = sY;
+                            bodySub.add(rib);
+                        }
+                        const bRaySphere = createRayEmittingBlackSphere();
+                        bRaySphere.position.set(0, 10.2, 0);
+                        bodySub.add(bRaySphere);
+
+                        // -- MIND LAYER --
+                        const mBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.4, 4.2), mindShellMat);
+                        mBase.position.y = 0.7;
+                        mindSub.add(mBase);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(mBase.geometry), mindWireYellow));
+
+                        const mTower = new THREE.Mesh(new THREE.BoxGeometry(2.6, 9.2, 2.6), mindShellMat);
+                        mTower.position.set(0, 5.2, 0);
+                        mindSub.add(mTower);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(mTower.geometry), mindWireYellow));
+
+                        const mShaft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 9.2, 0.5), mindShaftMat);
+                        mShaft.position.set(0, 5.2, 0);
+                        mindSub.add(mShaft);
+
+                        // -- SOUL LAYER --
+                        const sMesh = new THREE.Mesh(
+                            new THREE.BoxGeometry(2.8, 9.6, 2.8),
+                            new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 0.85, transparent: true, opacity: 0.45, roughness: 0.1 })
+                        );
+                        sMesh.position.set(0, 5.4, 0);
+                        soulSub.add(sMesh);
+
+                        const conduit = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.1, 0.4, 12, 16),
+                            new THREE.MeshBasicMaterial({ color: 0xfca5a5, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending })
+                        );
+                        conduit.position.set(0, 11, 0);
+                        soulSub.add(conduit);
+
+                        // Lightboxes on all 4 facades (shared across views)
                         const artLightbox = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightbox.position.set(0, 6.2, 1.30);
+                        artLightbox.position.set(0, 6.2, 1.32);
                         artGroup.add(artLightbox);
                         landmarkLabels['art'] = artLightbox;
 
                         const artLightboxX = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightboxX.position.set(1.30, 6.2, 0);
+                        artLightboxX.position.set(1.32, 6.2, 0);
                         artLightboxX.rotation.y = Math.PI / 2;
                         artGroup.add(artLightboxX);
 
                         const artLightboxBack = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightboxBack.position.set(0, 6.2, -1.30);
+                        artLightboxBack.position.set(0, 6.2, -1.32);
                         artLightboxBack.rotation.y = Math.PI;
                         artGroup.add(artLightboxBack);
 
                         const artLightboxLeft = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightboxLeft.position.set(-1.30, 6.2, 0);
+                        artLightboxLeft.position.set(-1.32, 6.2, 0);
                         artLightboxLeft.rotation.y = -Math.PI / 2;
                         artGroup.add(artLightboxLeft);
 
-                        artGroup.position.set(posX, 0, posZ);
-                        artGroup.userData = { type: 'art', label: 'THE FACULTY OF THE BODY', category: 'Senses · Subjective' };
+                        artGroup.add(defaultSub);
+                        artGroup.add(bodySub);
+                        artGroup.add(mindSub);
+                        artGroup.add(soulSub);
+
+                        artGroup.userData = { type: 'art', label: 'THE BODY', category: 'Senses · Subjective', defaultSub, bodySub, mindSub, soulSub };
                         scene.add(artGroup);
                         specialBlocks.push(artGroup);
 
-                        // Monument Point Light
                         const pLight = new THREE.PointLight(0xff2200, 5.0, 25);
-                        pLight.position.set(posX, 9.8, posZ);
+                        pLight.position.set(posX, 10.0, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
                         continue;
                     }
 
-                    // 2. FACULTY OF THE MIND (Gold / Tiered Cybernetic Observatory with Animated Knowledge Atom)
+                    // ==========================================
+                    // 2. LANDMARK: THE MIND (Science Faculty)
+                    // ==========================================
                     if (x === sciPos.x && z === sciPos.z) {
                         const sciGroup = new THREE.Group();
+                        sciGroup.position.set(posX, 0, posZ);
 
-                        // Tiered hexagonal base
-                        const cyl1 = new THREE.Mesh(
-                            new THREE.CylinderGeometry(2.2, 2.6, 3.0, 8),
-                            new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.3 })
-                        );
-                        cyl1.position.y = 1.5;
-                        cyl1.castShadow = true;
-                        sciGroup.add(cyl1);
+                        const defaultSub = new THREE.Group();
+                        const bodySub = new THREE.Group();
+                        const mindSub = new THREE.Group();
+                        const soulSub = new THREE.Group();
 
-                        // Core glowing golden cylinder
-                        const cyl2 = new THREE.Mesh(
+                        // -- DEFAULT LAYER --
+                        const defCyl1 = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 3.0, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.3 }));
+                        defCyl1.position.y = 1.5;
+                        defCyl1.castShadow = true;
+                        defaultSub.add(defCyl1);
+
+                        const defCyl2 = new THREE.Mesh(
                             new THREE.CylinderGeometry(1.6, 1.8, 5.6, 8),
-                            new THREE.MeshStandardMaterial({ 
-                                color: 0xffc400, 
-                                emissive: 0xff9900, 
-                                emissiveIntensity: 0.9, 
-                                roughness: 0.15, 
-                                metalness: 0.65 
-                            })
+                            new THREE.MeshStandardMaterial({ color: 0xffc400, emissive: 0xff9900, emissiveIntensity: 0.9, roughness: 0.15, metalness: 0.65 })
                         );
-                        cyl2.position.y = 5.3;
-                        cyl2.castShadow = true;
-                        sciGroup.add(cyl2);
+                        defCyl2.position.y = 5.3;
+                        defCyl2.castShadow = true;
+                        defaultSub.add(defCyl2);
 
-                        // Dark sleek pedestal for the Knowledge Atom
-                        const ped = new THREE.Mesh(
-                            new THREE.CylinderGeometry(0.35, 0.88, 1.4, 8),
-                            new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.4 })
-                        );
-                        ped.position.y = 8.5;
-                        ped.castShadow = true;
-                        sciGroup.add(ped);
+                        const defPed = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.88, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.4 }));
+                        defPed.position.y = 8.5;
+                        defPed.castShadow = true;
+                        defaultSub.add(defPed);
 
-                        // Animated 3D Knowledge Atom (Matching tonic homepage)
-                        const atomCluster = new THREE.Group();
-                        atomCluster.position.y = 9.8;
-
-                        // Glowing Round Spherical Nucleus
-                        const atomNucleus = new THREE.Mesh(
-                            new THREE.SphereGeometry(0.55, 32, 32),
-                            new THREE.MeshStandardMaterial({
-                                color: 0x3b82f6,
-                                emissive: 0x1d4ed8,
-                                emissiveIntensity: 0.95,
-                                roughness: 0.2
-                            })
-                        );
-                        atomCluster.add(atomNucleus);
-
-                        // 3 Dynamic Orbital Rings
+                        const defAtom = new THREE.Group();
+                        defAtom.position.y = 9.8;
+                        const defAtomNucleus = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x1d4ed8, emissiveIntensity: 0.95, roughness: 0.2 }));
+                        defAtom.add(defAtomNucleus);
                         const rGeom = new THREE.TorusGeometry(1.35, 0.05, 16, 64);
                         const rMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.9 });
-
                         [0, Math.PI / 2, Math.PI / 4].forEach((rot, i) => {
                             const r = new THREE.Mesh(rGeom, rMat);
                             if (i === 1) r.rotation.x = rot;
                             if (i === 2) r.rotation.y = rot;
-                            atomCluster.add(r);
+                            defAtom.add(r);
                         });
+                        defaultSub.add(defAtom);
+                        scienceAtomGroup = defAtom;
+                        scienceAtomNucleus = defAtomNucleus;
 
-                        sciGroup.add(atomCluster);
-                        scienceAtomGroup = atomCluster;
-                        scienceAtomNucleus = atomNucleus;
+                        // -- BODY LAYER --
+                        const z1 = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.9, 3.2, 8), bodyMatPalette[3]);
+                        z1.position.y = 1.6;
+                        z1.castShadow = true;
+                        bodySub.add(z1);
 
-                        // Curved Black Lightboxes with bright shiny glowing yellow neon letters wrapping around all 4 quadrants of Science/Mind facade
+                        const z2 = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 2.1, 5.6, 8), bodyMatPalette[0]);
+                        z2.position.y = 5.4;
+                        z2.castShadow = true;
+                        bodySub.add(z2);
+
+                        // -- MIND LAYER --
+                        const cyl1 = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 3.0, 8), mindShellMat);
+                        cyl1.position.y = 1.5;
+                        mindSub.add(cyl1);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(cyl1.geometry), mindWireCyan));
+
+                        const cyl2 = new THREE.Mesh(
+                            new THREE.CylinderGeometry(1.6, 1.8, 5.6, 8),
+                            new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0xfacc15, emissiveIntensity: 0.9, roughness: 0.15, metalness: 0.65 })
+                        );
+                        cyl2.position.y = 5.3;
+                        mindSub.add(cyl2);
+
+                        // -- SOUL LAYER --
+                        const sCyl = new THREE.Mesh(
+                            new THREE.CylinderGeometry(1.8, 2.2, 8.5, 16),
+                            new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.75, transparent: true, opacity: 0.42 })
+                        );
+                        sCyl.position.y = 4.8;
+                        soulSub.add(sCyl);
+
+                        // Curved Lightboxes around all 4 quadrants
                         const sciLightbox = createCurvedBuildingLightbox("MIND", "yellow", 1.70, 0.88, 70);
                         sciLightbox.position.set(0, 5.8, 0);
-                        sciLightbox.rotation.y = 0;
                         sciGroup.add(sciLightbox);
                         landmarkLabels['science'] = sciLightbox;
 
@@ -2464,53 +3269,100 @@
                         sciGroup.add(sciGhostWire);
                         mindGhost = sciGhostWire;
 
-                        sciGroup.position.set(posX, 0, posZ);
-                        sciGroup.userData = { type: 'science', label: 'THE FACULTY OF THE MIND', category: 'Reason · Objective' };
+                        sciGroup.add(defaultSub);
+                        sciGroup.add(bodySub);
+                        sciGroup.add(mindSub);
+                        sciGroup.add(soulSub);
+
+                        sciGroup.userData = { type: 'science', label: 'THE MIND', category: 'Reason · Objective', defaultSub, bodySub, mindSub, soulSub };
                         scene.add(sciGroup);
                         specialBlocks.push(sciGroup);
 
-                        const pLight = new THREE.PointLight(0x3b82f6, 5.5, 25);
+                        const pLight = new THREE.PointLight(0xffea00, 5.5, 25);
                         pLight.position.set(posX, 9.8, posZ);
                         scene.add(pLight);
                         landmarkLights.push(pLight);
                         continue;
                     }
 
-                    // 3. FACULTY OF THE SOUL (Cyan / Sapphire Soaring Spire & Halo Cathedral)
+                    // ==========================================
+                    // 3. LANDMARK: THE SOUL (Spirit Faculty)
+                    // ==========================================
                     if (x === spiritPos.x && z === spiritPos.z) {
                         const spiritGroup = new THREE.Group();
+                        spiritGroup.position.set(posX, 0, posZ);
 
-                        // Stepped Foundation
-                        const bGeo = new THREE.BoxGeometry(3.6, 1.4, 3.6);
-                        const bMesh = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.45 }));
-                        bMesh.position.y = 0.7;
-                        bMesh.castShadow = true;
-                        spiritGroup.add(bMesh);
+                        const defaultSub = new THREE.Group();
+                        const bodySub = new THREE.Group();
+                        const mindSub = new THREE.Group();
+                        const soulSub = new THREE.Group();
 
-                        // Soaring Pyramid Spire
-                        const spireGeo = new THREE.ConeGeometry(1.85, 9.8, 4);
-                        const spireMat = new THREE.MeshStandardMaterial({ 
-                            color: 0x7c3aed, 
-                            emissive: 0x5b21b6, 
-                            emissiveIntensity: 1.05, 
-                            roughness: 0.15, 
-                            metalness: 0.45 
+                        // -- DEFAULT LAYER (Exact material and color matching intro.html) --
+                        const defBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.4, 3.6), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.45 }));
+                        defBase.position.y = 0.7;
+                        defBase.castShadow = true;
+                        defaultSub.add(defBase);
+
+                        const defSpireMat = new THREE.MeshStandardMaterial({
+                            color: 0x7c3aed,
+                            emissive: 0x5b21b6,
+                            emissiveIntensity: 1.05,
+                            roughness: 0.15,
+                            metalness: 0.45
                         });
-                        const spireMesh = new THREE.Mesh(spireGeo, spireMat);
-                        spireMesh.position.y = 6.0;
-                        spireMesh.rotation.y = Math.PI / 4;
-                        spireMesh.castShadow = true;
-                        spiritGroup.add(spireMesh);
+                        const defSpire = new THREE.Mesh(new THREE.ConeGeometry(1.85, 9.8, 4), defSpireMat);
+                        defSpire.position.y = 6.0;
+                        defSpire.rotation.y = Math.PI / 4;
+                        defSpire.castShadow = true;
+                        defaultSub.add(defSpire);
 
-                        // Apex Crystal Beacon
-                        const apex = new THREE.Mesh(
-                            new THREE.OctahedronGeometry(0.55, 0),
-                            new THREE.MeshBasicMaterial({ color: 0xe9d5ff })
-                        );
-                        apex.position.y = 11.0;
-                        spiritGroup.add(apex);
+                        const defApex = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), new THREE.MeshBasicMaterial({ color: 0xe9d5ff }));
+                        defApex.position.y = 11.0;
+                        defaultSub.add(defApex);
 
-                        // Black Lightboxes with "SOUL" in bright shiny glowing blacklight blue/purple neon attached to all 4 facades
+                        const defBeam = createInfiniteLightbeam();
+                        defBeam.position.set(0, 11.0, 0);
+                        defaultSub.add(defBeam);
+                        purpleBeamGroup = defBeam;
+
+                        // -- BODY LAYER --
+                        const bMesh = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.8, 4.0), bodyFootingMat);
+                        bMesh.position.y = 0.9;
+                        bMesh.castShadow = true;
+                        bodySub.add(bMesh);
+
+                        const obelisk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 9.6, 2.4), bodyMatPalette[5]);
+                        obelisk.position.y = 5.8;
+                        obelisk.castShadow = true;
+                        bodySub.add(obelisk);
+
+                        const ivoryCap = new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.4, 4), bodyIvoryMat);
+                        ivoryCap.position.y = 11.2;
+                        ivoryCap.rotation.y = Math.PI / 4;
+                        bodySub.add(ivoryCap);
+
+                        // -- MIND LAYER --
+                        const mSpire = new THREE.Mesh(new THREE.ConeGeometry(1.85, 9.8, 4), mindShellMat);
+                        mSpire.position.y = 6.0;
+                        mSpire.rotation.y = Math.PI / 4;
+                        mindSub.add(mSpire);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(mSpire.geometry), mindWireYellow));
+
+                        // -- SOUL LAYER (Radiant purple-violet spire & infinite lightbeam) --
+                        const sSpire = new THREE.Mesh(new THREE.ConeGeometry(1.85, 9.8, 4), defSpireMat);
+                        sSpire.position.y = 6.0;
+                        sSpire.rotation.y = Math.PI / 4;
+                        soulSub.add(sSpire);
+
+                        const sApex = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), new THREE.MeshBasicMaterial({ color: 0xe9d5ff }));
+                        sApex.position.y = 11.0;
+                        soulSub.add(sApex);
+
+                        const sBeam = createInfiniteLightbeam();
+                        sBeam.position.set(0, 11.0, 0);
+                        soulSub.add(sBeam);
+
+                        // Black Lightboxes on all 4 facades
                         const spiritLightbox = createBuildingLightbox("SOUL", "blacklight", 1.5, 0.72);
                         spiritLightbox.position.set(0, 6.6, 0.75);
                         spiritGroup.add(spiritLightbox);
@@ -2531,12 +3383,6 @@
                         spiritLightboxLeft.rotation.y = -Math.PI / 2;
                         spiritGroup.add(spiritLightboxLeft);
 
-                        // Volumetric Infinite Purple Lightbeam shooting up into infinity from apex
-                        const purpleBeam = createInfiniteLightbeam();
-                        purpleBeam.position.set(0, 11.0, 0);
-                        spiritGroup.add(purpleBeam);
-                        purpleBeamGroup = purpleBeam;
-
                         // Subtle blue ghost wireframe for Body view
                         const spiritGhostSpire = new THREE.LineSegments(
                             new THREE.EdgesGeometry(new THREE.ConeGeometry(1.88, 10.0, 4)),
@@ -2548,8 +3394,12 @@
                         spiritGroup.add(spiritGhostSpire);
                         soulGhost = spiritGhostSpire;
 
-                        spiritGroup.position.set(posX, 0, posZ);
-                        spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Transcendence · Universal' };
+                        spiritGroup.add(defaultSub);
+                        spiritGroup.add(bodySub);
+                        spiritGroup.add(mindSub);
+                        spiritGroup.add(soulSub);
+
+                        spiritGroup.userData = { type: 'spirit', label: 'THE SOUL', category: 'Transcendence · Universal', defaultSub, bodySub, mindSub, soulSub };
                         scene.add(spiritGroup);
                         specialBlocks.push(spiritGroup);
 
@@ -2560,12 +3410,37 @@
                         continue;
                     }
 
-                    // 4. PROCEDURAL CAMPUS BUILDING VARIETIES
-                    const buildingGroup = new THREE.Group();
+                    // ==========================================
+                    // 4. PROCEDURAL CAMPUS BUILDINGS (4 SUB-LAYERS)
+                    // ==========================================
+                    const bGroup = new THREE.Group();
+                    bGroup.position.set(posX, 0, posZ);
+
+                    const defaultSub = new THREE.Group();
+                    const bodySub = new THREE.Group();
+                    const mindSub = new THREE.Group();
+                    const soulSub = new THREE.Group();
+
                     const archetype = Math.floor(Math.random() * 6);
                     const mat = baseMaterials[Math.floor(Math.random() * baseMaterials.length)];
-                    let totalHeight = 1;
+                    const bodyMat = bodyMatPalette[Math.floor(Math.random() * bodyMatPalette.length)];
 
+                    let bW = 1.3, bD = 1.3, bH = 1.8;
+                    if (archetype === 0) {
+                        bW = 1.4; bD = 1.4; bH = 1.6 + Math.random() * 2.8;
+                    } else if (archetype === 1) {
+                        bW = 1.2; bD = 1.2; bH = 2.2 + Math.random() * 3.4;
+                    } else if (archetype === 2) {
+                        bW = 1.3; bD = 1.3; bH = 1.4 + Math.random() * 2.2;
+                    } else if (archetype === 3) {
+                        bW = 1.2; bD = 1.2; bH = 2.4 + Math.random() * 4.0;
+                    } else if (archetype === 4) {
+                        bW = 1.3; bD = 1.3; bH = 1.5 + Math.random() * 2.6;
+                    } else {
+                        bW = 1.2; bD = 1.2; bH = 1.2 + Math.random() * 3.0;
+                    }
+
+                    // (A) DEFAULT LAYER (Rich 6 Archetypes from intro.html)
                     if (archetype === 0) {
                         const h1 = 0.8 + Math.random() * 1.5;
                         const h2 = 0.8 + Math.random() * 1.8;
@@ -2575,89 +3450,144 @@
                         const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, h2, 0.9), mat);
                         b2.position.y = h1 + h2 / 2;
                         b2.castShadow = true;
-                        buildingGroup.add(b1);
-                        buildingGroup.add(b2);
-                        totalHeight = h1 + h2;
-
+                        defaultSub.add(b1);
+                        defaultSub.add(b2);
                         if (Math.random() > 0.4) {
                             const roofGlass = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.6), glassMat);
-                            roofGlass.position.y = totalHeight + 0.2;
-                            buildingGroup.add(roofGlass);
-                            totalHeight += 0.4;
+                            roofGlass.position.y = h1 + h2 + 0.2;
+                            defaultSub.add(roofGlass);
                         }
                     } else if (archetype === 1) {
-                        const h = 1.8 + Math.random() * 3.5;
-                        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, h, 12), mat);
-                        cyl.position.y = h / 2;
+                        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, bH, 12), mat);
+                        cyl.position.y = bH / 2;
                         cyl.castShadow = true; cyl.receiveShadow = true;
-                        buildingGroup.add(cyl);
-                        totalHeight = h;
-
-                        const ring = new THREE.Mesh(
-                            new THREE.TorusGeometry(0.65, 0.04, 8, 24),
-                            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 })
-                        );
+                        defaultSub.add(cyl);
+                        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.04, 8, 24), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 }));
                         ring.rotation.x = Math.PI / 2;
-                        ring.position.y = h;
-                        buildingGroup.add(ring);
+                        ring.position.y = bH;
+                        defaultSub.add(ring);
                     } else if (archetype === 2) {
-                        const h = 1.0 + Math.random() * 2.2;
-                        const glassBlock = new THREE.Mesh(new THREE.BoxGeometry(1.3, h, 1.3), glassMat);
-                        glassBlock.position.y = h / 2;
+                        const glassBlock = new THREE.Mesh(new THREE.BoxGeometry(1.3, bH, 1.3), glassMat);
+                        glassBlock.position.y = bH / 2;
                         glassBlock.castShadow = true;
-                        buildingGroup.add(glassBlock);
-
+                        defaultSub.add(glassBlock);
                         const edges = new THREE.EdgesGeometry(glassBlock.geometry);
                         const edgeLines = new THREE.LineSegments(edges, wireframeMat);
-                        edgeLines.position.y = h / 2;
-                        buildingGroup.add(edgeLines);
-                        totalHeight = h;
+                        edgeLines.position.y = bH / 2;
+                        defaultSub.add(edgeLines);
                     } else if (archetype === 3) {
-                        const h = 2.0 + Math.random() * 3.8;
-                        const baseBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 1.2), mat);
-                        baseBox.position.y = h / 2;
+                        const baseBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, bH, 1.2), mat);
+                        baseBox.position.y = bH / 2;
                         baseBox.castShadow = true; baseBox.receiveShadow = true;
-                        buildingGroup.add(baseBox);
-
+                        defaultSub.add(baseBox);
                         const antGeo = new THREE.CylinderGeometry(0.04, 0.08, 1.8, 6);
                         const antMesh = new THREE.Mesh(antGeo, new THREE.MeshBasicMaterial({ color: 0x94a3b8 }));
-                        antMesh.position.y = h + 0.9;
-                        buildingGroup.add(antMesh);
-
-                        const beacon = new THREE.Mesh(
-                            new THREE.SphereGeometry(0.12, 8, 8),
-                            new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3366 : 0x00f0ff })
-                        );
-                        beacon.position.y = h + 1.8;
-                        buildingGroup.add(beacon);
-                        totalHeight = h + 1.8;
+                        antMesh.position.y = bH + 0.9;
+                        defaultSub.add(antMesh);
+                        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3366 : 0x00f0ff }));
+                        beacon.position.y = bH + 1.8;
+                        defaultSub.add(beacon);
                     } else if (archetype === 4) {
-                        const h = 0.8 + Math.random() * 2.5;
-                        const w1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, h, 0.6), mat);
-                        w1.position.set(0, h / 2, 0.3);
+                        const w1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, bH, 0.6), mat);
+                        w1.position.set(0, bH / 2, 0.3);
                         w1.castShadow = true;
-                        const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, h * 0.7, 1.3), mat);
-                        w2.position.set(0.3, (h * 0.7) / 2, 0);
+                        const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, bH * 0.7, 1.3), mat);
+                        w2.position.set(0.3, (bH * 0.7) / 2, 0);
                         w2.castShadow = true;
-                        buildingGroup.add(w1);
-                        buildingGroup.add(w2);
-                        totalHeight = h;
+                        defaultSub.add(w1);
+                        defaultSub.add(w2);
                     } else {
-                        const h = 0.6 + Math.random() * 2.8;
-                        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 1.2), mat);
-                        box.position.y = h / 2;
+                        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, bH, 1.2), mat);
+                        box.position.y = bH / 2;
                         box.castShadow = true; box.receiveShadow = true;
-                        buildingGroup.add(box);
-                        totalHeight = h;
+                        defaultSub.add(box);
                     }
 
-                    buildingGroup.position.set(posX, 0, posZ);
-                    buildingGroup.userData = { type: 'campus', label: `Campus Block [${x},${z}]`, height: totalHeight };
-                    scene.add(buildingGroup);
+                    // (B) BODY LAYER (Brutalist Monolith with Silt Footing & Strata Ribs)
+                    const footingH = 0.45;
+                    const footing = new THREE.Mesh(new THREE.BoxGeometry(bW * 1.35, footingH, bD * 1.35), bodyFootingMat);
+                    footing.position.y = footingH / 2;
+                    footing.castShadow = true; footing.receiveShadow = true;
+                    bodySub.add(footing);
+
+                    const monolith = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), bodyMat);
+                    monolith.position.y = footingH + bH / 2;
+                    monolith.castShadow = true; monolith.receiveShadow = true;
+                    bodySub.add(monolith);
+
+                    const numStrata = Math.max(1, Math.floor(bH / 1.2));
+                    for (let s = 1; s <= numStrata; s++) {
+                        const slotY = footingH + (s / (numStrata + 1)) * bH;
+                        const strataMesh = new THREE.Mesh(new THREE.BoxGeometry(bW * 1.02, 0.12, bD * 1.02), bodyStrataMat);
+                        strataMesh.position.y = slotY;
+                        bodySub.add(strataMesh);
+                    }
+
+                    // (C) MIND LAYER (X-Ray Wireframe, Internal Elevator Shaft, Corner Structural Nodes)
+                    const mBox = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), mindShellMat);
+                    mBox.position.y = bH / 2;
+                    mindSub.add(mBox);
+
+                    const wireMat = Math.random() > 0.4 ? mindWireYellow : mindWireCyan;
+                    const mEdges = new THREE.LineSegments(new THREE.EdgesGeometry(mBox.geometry), wireMat);
+                    mEdges.position.y = bH / 2;
+                    mindSub.add(mEdges);
+
+                    const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.25, bH, 0.25), mindShaftMat);
+                    shaft.position.y = bH / 2;
+                    mindSub.add(shaft);
+
+                    [[-bW/2, -bD/2], [bW/2, -bD/2], [-bW/2, bD/2], [bW/2, bD/2]].forEach(pt => {
+                        const node = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mindNodeMat);
+                        node.position.set(pt[0], bH, pt[1]);
+                        mindSub.add(node);
+                    });
+
+                    // (D) SOUL LAYER (Illuminated Sapphire Field with Upward Apertures)
+                    const fadeFactor = Math.max(0.02, 1.0 - (distFromCenter / 28.0));
+                    const soulAlpha = 0.08 + 0.38 * fadeFactor;
+                    const soulEmissive = 0.35 + 0.65 * fadeFactor;
+
+                    const sMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x1d4ed8,
+                        emissive: 0x2563eb,
+                        emissiveIntensity: soulEmissive,
+                        roughness: 0.15,
+                        metalness: 0.75,
+                        transparent: true,
+                        opacity: soulAlpha,
+                        depthWrite: false
+                    });
+                    const soulMesh = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), sMaterial);
+                    soulMesh.position.y = bH / 2;
+                    soulSub.add(soulMesh);
+
+                    if (fadeFactor > 0.15) {
+                        const spireH = bH * 0.6;
+                        const spire = new THREE.Mesh(
+                            new THREE.ConeGeometry(0.15, spireH, 4),
+                            new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.4 * fadeFactor, blending: THREE.AdditiveBlending })
+                        );
+                        spire.position.y = bH + spireH / 2;
+                        soulSub.add(spire);
+                    }
+
+                    bGroup.add(defaultSub);
+                    bGroup.add(bodySub);
+                    bGroup.add(mindSub);
+                    bGroup.add(soulSub);
+
+                    bGroup.userData = { type: 'campus', defaultSub, bodySub, mindSub, soulSub };
+                    allProceduralBuildings.push(bGroup);
+                    scene.add(bGroup);
                 }
             }
 
-            // Campus Metropolis Foundation Floor (Slightly illuminated)
+            // ==========================================
+            // 5. GROUND SYSTEMS (4 GROUPS)
+            // ==========================================
+            // (A) Ground Default: Foundation floor + grid lines + avenue ribbons + triad triangle
+            groundDefaultGroup = new THREE.Group();
             const floorGeo = new THREE.PlaneGeometry(160, 160);
             const floorMat = new THREE.MeshStandardMaterial({ 
                 color: 0x0e172e, 
@@ -2669,73 +3599,118 @@
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
-            scene.add(floor);
+            groundDefaultGroup.add(floor);
 
-            // Subtle Grid Conduit Lines on Ground
-            const gridHelper = new THREE.GridHelper(GRID * SPACING, GRID, 0x2563eb, 0x1e3a8a);
-            gridHelper.position.y = 0.03;
-            scene.add(gridHelper);
+            const gridHelperDef = new THREE.GridHelper(GRID * SPACING, GRID, 0x2563eb, 0x1e3a8a);
+            gridHelperDef.position.y = 0.03;
+            groundDefaultGroup.add(gridHelperDef);
 
-            // Street Avenue Glow Conduits (Upward Street Lighting Ribbons)
             const aveMatCyan = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 });
             const aveMatBlue = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45 });
 
             const aveH = new THREE.Mesh(new THREE.PlaneGeometry(GRID * SPACING * 1.1, 0.4), aveMatCyan);
             aveH.rotation.x = -Math.PI / 2;
             aveH.position.set(0, 0.03, 0);
-            scene.add(aveH);
+            groundDefaultGroup.add(aveH);
 
             const aveV = new THREE.Mesh(new THREE.PlaneGeometry(0.4, GRID * SPACING * 1.1), aveMatCyan);
             aveV.rotation.x = -Math.PI / 2;
             aveV.position.set(0, 0.03, 0);
-            scene.add(aveV);
+            groundDefaultGroup.add(aveV);
 
             [-10, 10].forEach(offset => {
                 const lineX = new THREE.Mesh(new THREE.PlaneGeometry(GRID * SPACING * 0.9, 0.2), aveMatBlue);
                 lineX.rotation.x = -Math.PI / 2;
                 lineX.position.set(0, 0.03, offset);
-                scene.add(lineX);
+                groundDefaultGroup.add(lineX);
 
                 const lineZ = new THREE.Mesh(new THREE.PlaneGeometry(0.2, GRID * SPACING * 0.9), aveMatBlue);
                 lineZ.rotation.x = -Math.PI / 2;
                 lineZ.position.set(offset, 0.03, 0);
-                scene.add(lineZ);
+                groundDefaultGroup.add(lineZ);
             });
 
-            // Ground Luminous Philosophical Triad Circuit
             const triPoints = specialBlocks.map(b => new THREE.Vector3(b.position.x, 0.12, b.position.z));
             triPoints.push(triPoints[0].clone());
             const triGeom = new THREE.BufferGeometry().setFromPoints(triPoints);
-            const triMat = new THREE.LineDashedMaterial({
-                color: 0x38bdf8,
-                dashSize: 0.8,
-                gapSize: 0.4,
-                transparent: true,
-                opacity: 0.65
+            const triMat = new THREE.LineDashedMaterial({ color: 0x38bdf8, dashSize: 0.8, gapSize: 0.4, transparent: true, opacity: 0.65 });
+            const gTri = new THREE.Line(triGeom, triMat);
+            gTri.computeLineDistances();
+            groundDefaultGroup.add(gTri);
+            scene.add(groundDefaultGroup);
+
+            // (B) Ground Body: Silt plane + tectonic earth fissure slabs
+            groundBodyGroup = new THREE.Group();
+            const siltPlane = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ color: 0x140a08, roughness: 0.98, metalness: 0.02 }));
+            siltPlane.rotation.x = -Math.PI / 2;
+            siltPlane.receiveShadow = true;
+            groundBodyGroup.add(siltPlane);
+
+            for (let i = -6; i <= 6; i++) {
+                const slab = new THREE.Mesh(new THREE.PlaneGeometry(GRID * SPACING * 1.1, 0.4), new THREE.MeshBasicMaterial({ color: 0x2d1410 }));
+                slab.rotation.x = -Math.PI / 2;
+                slab.position.set(0, 0.02, i * 4.0);
+                groundBodyGroup.add(slab);
+            }
+            scene.add(groundBodyGroup);
+
+            // (C) Ground Mind: Yellow/blue grid helper + bus lines + moving data packets
+            groundMindGroup = new THREE.Group();
+            const gridHelperMind = new THREE.GridHelper(GRID * SPACING, GRID, 0xffea00, 0x0369a1);
+            gridHelperMind.position.y = 0.03;
+            groundMindGroup.add(gridHelperMind);
+
+            [-10, 0, 10].forEach(offset => {
+                const traceX = new THREE.Mesh(new THREE.PlaneGeometry(GRID * SPACING * 1.05, 0.25), new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7 }));
+                traceX.rotation.x = -Math.PI / 2;
+                traceX.position.set(0, 0.04, offset);
+                groundMindGroup.add(traceX);
+
+                const traceZ = new THREE.Mesh(new THREE.PlaneGeometry(0.25, GRID * SPACING * 1.05), new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.7 }));
+                traceZ.rotation.x = -Math.PI / 2;
+                traceZ.position.set(offset, 0.04, 0);
+                groundMindGroup.add(traceZ);
             });
-            groundTriangle = new THREE.Line(triGeom, triMat);
-            groundTriangle.computeLineDistances();
-            scene.add(groundTriangle);
+
+            for (let p = 0; p < 24; p++) {
+                const isX = Math.random() > 0.5;
+                const offset = [-10, -6, -2, 2, 6, 10][Math.floor(Math.random() * 6)];
+                const pktMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.12, 0.2), new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xffea00 : 0x00f0ff }));
+                pktMesh.position.set(isX ? (Math.random() - 0.5) * 40 : offset, 0.08, isX ? offset : (Math.random() - 0.5) * 40);
+                groundMindGroup.add(pktMesh);
+
+                avenuePackets.push({
+                    mesh: pktMesh,
+                    dir: isX ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1),
+                    speed: 0.12 + Math.random() * 0.18,
+                    spawnX: isX ? -24 : offset,
+                    spawnZ: isX ? offset : -24
+                });
+            }
+            scene.add(groundMindGroup);
+
+            // (D) Ground Soul: Oceanic indigo plane + caustic interference wave rings
+            groundSoulGroup = new THREE.Group();
+            const oceanPlane = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshBasicMaterial({ color: 0x03071e }));
+            oceanPlane.rotation.x = -Math.PI / 2;
+            groundSoulGroup.add(oceanPlane);
+
+            for (let r = 1; r <= 8; r++) {
+                const radius = r * 3.4;
+                const ringGeo = new THREE.RingGeometry(radius, radius + 0.35, 64);
+                const ringMat = new THREE.MeshBasicMaterial({ color: r % 2 === 0 ? 0x38bdf8 : 0x4338ca, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+                const cRing = new THREE.Mesh(ringGeo, ringMat);
+                cRing.rotation.x = -Math.PI / 2;
+                cRing.position.y = 0.05;
+                groundSoulGroup.add(cRing);
+                causticRings.push(cRing);
+            }
+            scene.add(groundSoulGroup);
         }
 
-        /* Helper for Dashed Leader Lines */
-        function addLeaderLine(x1, y1, z1, x2, y2, z2, color = 0xffffff) {
-            const points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
-            const geo = new THREE.BufferGeometry().setFromPoints(points);
-            const mat = new THREE.LineDashedMaterial({
-                color: color,
-                dashSize: 0.25,
-                gapSize: 0.25,
-                transparent: true,
-                opacity: 0.7
-            });
-            const line = new THREE.Line(geo, mat);
-            line.computeLineDistances();
-            scene.add(line);
-        }
-
-        /* Atmospheric Particle Field */
+        /* Atmospheric Particle Fields (Default, Body, Soul) */
         function generateAtmosphericParticles() {
+            // (A) Default particles
             const particleCount = 1400;
             const geo = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
@@ -2766,16 +3741,55 @@
             geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            const mat = new THREE.PointsMaterial({
-                size: 0.28,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.7,
-                blending: THREE.AdditiveBlending
-            });
+            const mat = new THREE.PointsMaterial({ size: 0.28, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending });
+            particlesDefault = new THREE.Points(geo, mat);
+            scene.add(particlesDefault);
 
-            particlesSystem = new THREE.Points(geo, mat);
-            scene.add(particlesSystem);
+            // (B) Body soot embers
+            const countBody = 700;
+            const geoBody = new THREE.BufferGeometry();
+            const posBody = new Float32Array(countBody * 3);
+            const colBody = new Float32Array(countBody * 3);
+            const cSoot = new THREE.Color(0x2a1512);
+            const cEmber = new THREE.Color(0xff3f20);
+
+            for (let i = 0; i < countBody; i++) {
+                const i3 = i * 3;
+                posBody[i3] = (Math.random() - 0.5) * 70;
+                posBody[i3 + 1] = 0.5 + Math.random() * 22;
+                posBody[i3 + 2] = (Math.random() - 0.5) * 70;
+                const c = Math.random() > 0.35 ? cSoot : cEmber;
+                colBody[i3] = c.r; colBody[i3 + 1] = c.g; colBody[i3 + 2] = c.b;
+            }
+            geoBody.setAttribute('position', new THREE.BufferAttribute(posBody, 3));
+            geoBody.setAttribute('color', new THREE.BufferAttribute(colBody, 3));
+            particlesBody = new THREE.Points(geoBody, new THREE.PointsMaterial({ size: 0.32, vertexColors: true, transparent: true, opacity: 0.65 }));
+            particlesBody.visible = false;
+            scene.add(particlesBody);
+
+            // (C) Soul starlight motes
+            const countSoul = 900;
+            const geoSoul = new THREE.BufferGeometry();
+            const posSoul = new Float32Array(countSoul * 3);
+            const colSoul = new Float32Array(countSoul * 3);
+            const cStar1 = new THREE.Color(0x38bdf8);
+            const cStar2 = new THREE.Color(0xa5b4fc);
+            const cStar3 = new THREE.Color(0xffffff);
+
+            for (let i = 0; i < countSoul; i++) {
+                const i3 = i * 3;
+                posSoul[i3] = (Math.random() - 0.5) * 80;
+                posSoul[i3 + 1] = 0.5 + Math.random() * 26;
+                posSoul[i3 + 2] = (Math.random() - 0.5) * 80;
+                const r = Math.random();
+                const c = r < 0.4 ? cStar1 : (r < 0.75 ? cStar2 : cStar3);
+                colSoul[i3] = c.r; colSoul[i3 + 1] = c.g; colSoul[i3 + 2] = c.b;
+            }
+            geoSoul.setAttribute('position', new THREE.BufferAttribute(posSoul, 3));
+            geoSoul.setAttribute('color', new THREE.BufferAttribute(colSoul, 3));
+            particlesSoul = new THREE.Points(geoSoul, new THREE.PointsMaterial({ size: 0.26, vertexColors: true, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending }));
+            particlesSoul.visible = false;
+            scene.add(particlesSoul);
         }
 
         /* ==========================================================================
@@ -2793,66 +3807,38 @@
 
         function focusBuilding(type) {
             const target = specialBlocks.find(b => b.userData.type === type);
-            if (target) {
-                cinematicTarget = target;
-                currentFacultyType = type;
-                lastAutoTourTime = Date.now();
-                lastQuoteCycleTime = Date.now();
+            if (!target) return;
 
-                // Mutate atmospheric mood based on chosen perspective
-                if (type === 'art') {
-                    // ART / BODY VIEW: Crimson dusk, fog visible, Mind subtly yellow, Soul subtly blue
-                    scene.background = new THREE.Color(0x1a0808);
-                    scene.fog = new THREE.FogExp2(0x1f0a09, 0.007);
-                    if (sun) { sun.color.setHex(0xff6644); sun.intensity = 2.2; }
-                    if (ambient) { ambient.color.setHex(0x602018); ambient.intensity = 1.4; }
-                    if (mindGhost) mindGhost.visible = true; // Subtly yellow
-                    if (soulGhost) soulGhost.visible = true; // Subtly blue
-                } else if (type === 'science') {
-                    // MIND / SCIENCE VIEW: Cyber cobalt, precision golden illumination
-                    scene.background = new THREE.Color(0x020a1a);
-                    scene.fog = new THREE.FogExp2(0x031028, 0.009);
-                    if (sun) { sun.color.setHex(0xffea00); sun.intensity = 1.8; }
-                    if (ambient) { ambient.color.setHex(0x1e3a8a); ambient.intensity = 1.35; }
-                    if (mindGhost) mindGhost.visible = false;
-                    if (soulGhost) soulGhost.visible = false;
-                } else if (type === 'spirit') {
-                    // SOUL / SPIRIT VIEW: Celestial sapphire
-                    scene.background = new THREE.Color(0x04081c);
-                    scene.fog = new THREE.FogExp2(0x050c26, 0.0075);
-                    if (sun) { sun.color.setHex(0x60a5fa); sun.intensity = 1.8; }
-                    if (ambient) { ambient.color.setHex(0x818cf8); ambient.intensity = 1.3; }
-                    if (mindGhost) mindGhost.visible = false;
-                    if (soulGhost) soulGhost.visible = false;
-                }
+            cinematicTarget = target;
+            currentFacultyType = type;
 
-                // Highlight focused building lightbox
-                Object.keys(landmarkLabels).forEach(key => {
-                    const sign = landmarkLabels[key];
-                    if (sign && sign.userData && sign.userData.faceMat) {
-                        sign.userData.faceMat.opacity = 1.0;
-                        if (sign.userData.pointLight && sign.userData.config) {
-                            const baseInt = sign.userData.config.lightIntensity || 6.0;
-                            sign.userData.pointLight.intensity = (key === type) ? baseInt * 1.35 : baseInt;
-                        }
-                    }
-                });
+            // Mutate to the corresponding reality view!
+            if (type === 'art') {
+                switchReality('body');
+            } else if (type === 'science') {
+                switchReality('mind');
+            } else if (type === 'spirit') {
+                switchReality('soul');
             }
+
+            // Highlight focused building lightbox
+            Object.keys(landmarkLabels).forEach(key => {
+                const sign = landmarkLabels[key];
+                if (sign && sign.userData && sign.userData.faceMat) {
+                    sign.userData.faceMat.opacity = 1.0;
+                    if (sign.userData.pointLight && sign.userData.config) {
+                        const baseInt = sign.userData.config.lightIntensity || 6.0;
+                        sign.userData.pointLight.intensity = (key === type) ? baseInt * 1.35 : baseInt;
+                    }
+                }
+            });
         }
 
         function resetOverview() {
             cinematicTarget = null;
-            lastAutoTourTime = Date.now();
             currentFacultyType = null;
             closeTriptych();
-
-            // Return to Default Metropolis View
-            scene.background = new THREE.Color(0x080d1a);
-            scene.fog = new THREE.FogExp2(0x080d1a, 0.011);
-            if (sun) { sun.color.setHex(0xffffff); sun.intensity = 1.25; }
-            if (ambient) { ambient.color.setHex(0xffffff); ambient.intensity = 0.85; }
-            if (mindGhost) mindGhost.visible = false;
-            if (soulGhost) soulGhost.visible = false;
+            switchReality('default');
 
             // Restore all building lightboxes to standard vibrant glow
             Object.keys(landmarkLabels).forEach(key => {
@@ -2866,45 +3852,157 @@
             });
         }
 
-        function updateFacultyPanel(type) {
-            const data = facultyData[type];
-            if (!data) return;
+        /* Reality Mutation Engine (Default, Body, Mind, Soul) */
+        function switchReality(targetState, instant = false) {
+            if (!['default', 'body', 'mind', 'soul'].includes(targetState)) return;
+            currentRealityState = targetState;
 
-            // Update Header
-            if (screenFacultyName) {
-                screenFacultyName.className = 'panel-faculty-title ' + data.titleClass;
-                screenFacultyName.innerHTML = `<span class="faculty-title-the">THE</span> <span class="faculty-title-main">${data.mainName || data.name}</span>`;
-            }
-            if (screenCategory) {
-                screenCategory.innerText = data.category || '';
-            }
-
-            // Update Quote & Glow Border
-            if (panelQuoteBox) panelQuoteBox.className = 'panel-quote-box ' + data.borderClass;
-            if (screenContent) {
-                screenContent.className = 'neon-text ' + data.class;
-                const randomQuote = data.quotes[Math.floor(Math.random() * data.quotes.length)];
-                
-                // Highlight keywords with distinct neon colors
-                let formattedQuote = randomQuote
-                    .replace(/\bLOVE\b/g, '<span class="highlight-love">LOVE</span>')
-                    .replace(/\bTRUTH\b/g, '<span class="highlight-truth">TRUTH</span>')
-                    .replace(/\bTRANSCENDENCE\b/g, '<span class="highlight-transcendence">TRANSCENDENCE</span>');
-
-                screenContent.innerHTML = `"${formattedQuote}"`;
+            // 1. Audio Soundscape Crossfade & Impact Sound (Only when inside the city, after ENTER)
+            if (targetState === 'default') {
+                if (!introActive) {
+                    fadeToSoundscape('default');
+                    if (!isAudioMuted && ambientAudio) {
+                        ambientAudio.play().catch(e => {});
+                    }
+                }
+            } else {
+                if (ambientAudio) {
+                    ambientAudio.pause();
+                }
+                if (!instant) {
+                    playRealityImpactSound(targetState);
+                }
+                if (!introActive) {
+                    fadeToSoundscape(targetState);
+                }
             }
 
-            // Update Content Details (Under the header)
-            if (detailHigh) detailHigh.innerText = data.highFields.join(', ');
-            if (detailLow) detailLow.innerText = data.lowFields.join(', ');
-            if (detailPurpose) {
-                let formattedPurposes = data.purposes.map(p => {
-                    if (p === 'LOVE') return '<span class="highlight-love">LOVE</span>';
-                    if (p === 'TRUTH') return '<span class="highlight-truth">TRUTH</span>';
-                    if (p === 'TRANSCENDENCE') return '<span class="highlight-transcendence">TRANSCENDENCE</span>';
-                    return p;
-                }).join(' · ');
-                detailPurpose.innerHTML = formattedPurposes;
+            // 2. Mutate Procedural City Buildings (Sub-Layers)
+            allProceduralBuildings.forEach(b => {
+                if (b.userData.defaultSub) b.userData.defaultSub.visible = (targetState === 'default');
+                if (b.userData.bodySub) b.userData.bodySub.visible = (targetState === 'body');
+                if (b.userData.mindSub) b.userData.mindSub.visible = (targetState === 'mind');
+                if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
+            });
+
+            // 3. Mutate Landmarks (Sub-Layers)
+            specialBlocks.forEach(b => {
+                if (b.userData.defaultSub) b.userData.defaultSub.visible = (targetState === 'default');
+                if (b.userData.bodySub) b.userData.bodySub.visible = (targetState === 'body');
+                if (b.userData.mindSub) b.userData.mindSub.visible = (targetState === 'mind');
+                if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
+            });
+
+            // 4. Mutate Ground Systems
+            if (groundDefaultGroup) groundDefaultGroup.visible = (targetState === 'default');
+            if (groundBodyGroup) groundBodyGroup.visible = (targetState === 'body');
+            if (groundMindGroup) groundMindGroup.visible = (targetState === 'mind');
+            if (groundSoulGroup) groundSoulGroup.visible = (targetState === 'soul');
+
+            // 5. Mutate Atmospheric Particles
+            if (particlesDefault) particlesDefault.visible = (targetState === 'default');
+            if (particlesBody) particlesBody.visible = (targetState === 'body');
+            if (particlesSoul) particlesSoul.visible = (targetState === 'soul');
+
+            // 6. Mutate Ghosts (in Body view, Mind is subtly yellow and Soul is subtly blue)
+            if (mindGhost) mindGhost.visible = (targetState === 'body');
+            if (soulGhost) soulGhost.visible = (targetState === 'body');
+
+            // 7. Mutate Atmosphere, Fog & Lighting
+            if (scene) {
+                if (targetState === 'default') {
+                    scene.background = new THREE.Color(0x080d1a);
+                    scene.fog = new THREE.FogExp2(0x080d1a, 0.011);
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0xffffff);
+                        sunLight.intensity = 1.25;
+                        sunLight.position.set(45, 80, 35);
+                        sunLight.castShadow = true;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0xffffff);
+                        ambientLight.intensity = 0.85;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0x38bdf8);
+                        streetUpLight.intensity = 1.25;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0x38bdf8);
+                        groundGlowLight.groundColor.setHex(0x0f274a);
+                        groundGlowLight.intensity = 1.15;
+                    }
+                } else if (targetState === 'body') {
+                    scene.background = new THREE.Color(0x160706);
+                    scene.fog = new THREE.FogExp2(0x1a0807, 0.008);
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0xff3f20);
+                        sunLight.intensity = 1.45;
+                        sunLight.position.set(38, 42, 26);
+                        sunLight.castShadow = true;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0x451610);
+                        ambientLight.intensity = 0.85;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0xb91c1c);
+                        streetUpLight.intensity = 1.1;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0x7f1d1d);
+                        groundGlowLight.groundColor.setHex(0x1e0b08);
+                        groundGlowLight.intensity = 1.15;
+                    }
+                } else if (targetState === 'mind') {
+                    scene.background = new THREE.Color(0x020713);
+                    scene.fog = null;
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0xfffbeb);
+                        sunLight.intensity = 1.15;
+                        sunLight.position.set(52, 75, 52);
+                        sunLight.castShadow = false;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0x1e3a8a);
+                        ambientLight.intensity = 1.25;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0x0284c7);
+                        streetUpLight.intensity = 1.2;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0xfacc15);
+                        groundGlowLight.groundColor.setHex(0x082f49);
+                        groundGlowLight.intensity = 1.15;
+                    }
+                } else if (targetState === 'soul') {
+                    scene.background = new THREE.Color(0x03071e);
+                    scene.fog = new THREE.FogExp2(0x050c26, 0.0075);
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0x60a5fa);
+                        sunLight.intensity = 1.35;
+                        sunLight.position.set(42, 90, 42);
+                        sunLight.castShadow = true;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0x818cf8);
+                        ambientLight.intensity = 1.3;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0x38bdf8);
+                        streetUpLight.intensity = 1.5;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0x3b82f6);
+                        groundGlowLight.groundColor.setHex(0x030712);
+                        groundGlowLight.intensity = 1.15;
+                    }
+                }
             }
         }
 
@@ -2919,28 +4017,10 @@
 
             const intersects = raycaster.intersectObjects(specialBlocks, true);
             if (intersects.length > 0) {
-                let target = intersects[0].object;
-                while (target.parent && !target.userData.type && target.parent !== scene) {
-                    target = target.parent;
-                }
-                if (target.userData && target.userData.type) {
-                    const bType = target.userData.type;
-                    const colorHex = bType === 'art' ? '#ff4433' : (bType === 'science' ? '#ffea00' : '#38bdf8');
-                    const glowHex = bType === 'art' ? 'rgba(255, 51, 34, 0.45)' : (bType === 'science' ? 'rgba(255, 234, 0, 0.45)' : 'rgba(56, 189, 248, 0.45)');
-                    const titleText = bType === 'art' ? 'THE BODY' : (bType === 'science' ? 'THE MIND' : 'THE SOUL');
-                    const realmText = bType === 'art' ? 'REALM: ART · BEAUTY' : (bType === 'science' ? 'REALM: SCIENCE · KNOWLEDGE' : 'REALM: SPIRITUALITY · WISDOM');
-                    tooltip.style.display = 'block';
-                    tooltip.style.left = event.clientX + 'px';
-                    tooltip.style.top = event.clientY + 'px';
-                    tooltip.style.borderColor = colorHex;
-                    tooltip.style.boxShadow = `0 10px 25px rgba(0, 0, 0, 0.75), 0 0 16px ${glowHex}`;
-                    tooltip.innerHTML = `<span style="color:${colorHex}; font-weight:800; letter-spacing:0.08em;">${titleText}</span><br><span style="font-size:9.5px; color:#cbd5e1; letter-spacing:0.04em;">${realmText}</span>`;
-                    container.style.cursor = 'pointer';
-                    return;
-                }
+                container.style.cursor = 'pointer';
+            } else {
+                container.style.cursor = 'grab';
             }
-            tooltip.style.display = 'none';
-            container.style.cursor = 'grab';
         }
 
         function onCanvasClick(event) {
@@ -3098,7 +4178,6 @@
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
-            const now = Date.now();
 
             // Smooth Continuous 3D Gyroscopic Rotation of the Left Tri-Truth Triangle & Upright Badges
             if (!isSuperSpinning && triRotor) {
@@ -3109,15 +4188,49 @@
                 updateTriBadgePositions(tiltX, tiltY);
             }
 
-            // Animate Atmospheric Dust Particles
-            if (particlesSystem) {
-                const positions = particlesSystem.geometry.attributes.position.array;
+            // Animate Particles across Active Reality
+            if (currentRealityState === 'default' && particlesDefault) {
+                const positions = particlesDefault.geometry.attributes.position.array;
                 for (let i = 0; i < positions.length; i += 3) {
                     positions[i + 1] -= 0.015;
                     positions[i] += Math.sin(elapsedTime * 0.4 + i) * 0.008;
                     if (positions[i + 1] < 0.2) positions[i + 1] = 24.0;
                 }
-                particlesSystem.geometry.attributes.position.needsUpdate = true;
+                particlesDefault.geometry.attributes.position.needsUpdate = true;
+            } else if (currentRealityState === 'body' && particlesBody) {
+                const positions = particlesBody.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] -= 0.024;
+                    positions[i] += Math.sin(elapsedTime * 0.5 + i) * 0.006;
+                    if (positions[i + 1] < 0.2) positions[i + 1] = 22.0;
+                }
+                particlesBody.geometry.attributes.position.needsUpdate = true;
+            } else if (currentRealityState === 'soul' && particlesSoul) {
+                const positions = particlesSoul.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] += 0.018;
+                    positions[i] += Math.cos(elapsedTime * 0.4 + i) * 0.008;
+                    if (positions[i + 1] > 26.0) positions[i + 1] = 0.5;
+                }
+                particlesSoul.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Animate Data Packets in Mind View
+            if (currentRealityState === 'mind' && avenuePackets.length > 0) {
+                avenuePackets.forEach(pkt => {
+                    pkt.mesh.position.addScaledVector(pkt.dir, pkt.speed);
+                    if (pkt.dir.x !== 0 && pkt.mesh.position.x > 24) pkt.mesh.position.x = pkt.spawnX;
+                    if (pkt.dir.z !== 0 && pkt.mesh.position.z > 24) pkt.mesh.position.z = pkt.spawnZ;
+                });
+            }
+
+            // Animate Caustic Interference Wave Rings in Soul View
+            if (currentRealityState === 'soul' && causticRings.length > 0) {
+                causticRings.forEach((ring, idx) => {
+                    const scale = 1.0 + Math.sin(elapsedTime * 1.8 + idx * 0.7) * 0.12;
+                    ring.scale.set(scale, scale, 1);
+                    ring.material.opacity = 0.22 + Math.sin(elapsedTime * 2.2 + idx * 0.8) * 0.14;
+                });
             }
 
             // Animate Landmark Point Lights Subtle Pulsing
@@ -3137,9 +4250,9 @@
             // Animate Infinite Purple Lightbeam from Spirit Building Apex
             if (purpleBeamGroup) {
                 const beamPulse = 0.52 + Math.sin(elapsedTime * 2.6) * 0.12;
-                purpleBeamGroup.userData.beamMat.opacity = beamPulse;
-                purpleBeamGroup.userData.glowMat.opacity = beamPulse * 0.55;
-                purpleBeamGroup.userData.outerGlowMat.opacity = beamPulse * 0.32;
+                if (purpleBeamGroup.userData.beamMat) purpleBeamGroup.userData.beamMat.opacity = beamPulse;
+                if (purpleBeamGroup.userData.glowMat) purpleBeamGroup.userData.glowMat.opacity = beamPulse * 0.55;
+                if (purpleBeamGroup.userData.outerGlowMat) purpleBeamGroup.userData.outerGlowMat.opacity = beamPulse * 0.32;
                 purpleBeamGroup.rotation.y += 0.005;
             }
 
@@ -3164,7 +4277,6 @@
 
             // Navigation Mode: Free Roam vs Auto-Tour
             if (isManualControl) {
-                // Free keyboard navigation across landscape
                 const forward = new THREE.Vector3();
                 camera.getWorldDirection(forward);
                 forward.y = 0;
@@ -3198,19 +4310,12 @@
                     cinematicTarget = null;
                 }
 
-                // Smooth focus if a specific landmark was clicked while in manual mode
                 if (cinematicTarget) {
                     const targetPos = cinematicTarget.position.clone();
                     targetPos.y += 2.0;
                     controls.target.lerp(targetPos, 0.06);
                     camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
-
-                    if (now - lastQuoteCycleTime > QUOTE_CYCLE_INTERVAL) {
-                        updateFacultyPanel(currentFacultyType);
-                        lastQuoteCycleTime = now;
-                    }
                 }
-                // When cinematicTarget is null in manual mode, controls.target & zoom are fully user-controlled!
             } else {
                 // Ambient Slow Orbit in Overview (Matching intro.html aesthetic)
                 if (controls.autoRotate && !introActive) {
