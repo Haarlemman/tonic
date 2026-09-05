@@ -164,7 +164,9 @@
 
 <div class="legend">
   <div class="item"><span class="swatch" style="background:#ffc94d;"></span>Sun (center)</div>
-  <div class="item"><span class="swatch" style="background:#5b9eff;"></span>Earth orbit</div>
+  <div class="item"><span class="swatch" style="background:#c89e74;"></span>Mercury</div>
+  <div class="item"><span class="swatch" style="background:#e8c37d;"></span>Venus</div>
+  <div class="item"><span class="swatch" style="background:#5b9eff;"></span>Earth</div>
   <div class="item"><span class="swatch" style="background:#ffffff;"></span>Moon orbit</div>
 </div>
 
@@ -180,8 +182,8 @@
     <button class="textbtn" id="viewBtn" title="Toggle between solar system view and Earth closeup">Follow Earth</button>
   </div>
   <div class="row">
-    <label for="speed">Speed <span id="speedVal" style="color:var(--gold);font-weight:600;">2×</span></label>
-    <input type="range" id="speed" min="0.5" max="15" step="0.5" value="2">
+    <label for="speed">Speed <span id="speedVal" style="color:var(--gold);font-weight:600;">1.5×</span></label>
+    <input type="range" id="speed" min="0.1" max="8" step="0.1" value="1.5">
   </div>
 </div>
 
@@ -282,6 +284,64 @@
       ctx.beginPath();
       ctx.fillStyle = 'rgba(235,232,228,0.35)';
       ctx.arc(x-r*0.25,y-r*0.25,r*0.5,0,Math.PI*2); ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  function makeMercuryTexture(){
+    const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,0,256);
+    grad.addColorStop(0,'#7d756d'); grad.addColorStop(0.5,'#948b82'); grad.addColorStop(1,'#6e6760');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,512,256);
+
+    // subtle dark basalt basins
+    ctx.fillStyle = 'rgba(70,64,58,0.45)';
+    function patch(x,y,r){
+      ctx.beginPath(); ctx.ellipse(x,y,r,r*0.8,0,0,Math.PI*2); ctx.fill();
+    }
+    patch(120,90,55); patch(260,160,45); patch(380,85,60); patch(460,180,35); patch(70,190,40);
+
+    // rugged impact craters with bright rims
+    for(let i=0;i<85;i++){
+      const x = Math.random()*512, y = Math.random()*256, r = 2+Math.random()*8;
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(50,45,40,0.45)';
+      ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(215,205,190,0.45)';
+      ctx.arc(x-r*0.25,y-r*0.25,r*0.55,0,Math.PI*2); ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  function makeVenusTexture(){
+    const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,0,512);
+    grad.addColorStop(0,'#edd8a6'); grad.addColorStop(0.5,'#dfbe82'); grad.addColorStop(1,'#eedcb0');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,1024,512);
+
+    // swirling sulfuric atmospheric bands and soft wave turbulence
+    for(let i=0;i<24;i++){
+      const y = (i/24)*512;
+      const h = 18 + Math.sin(i*0.8)*12;
+      const isBright = (i%3===0);
+      ctx.fillStyle = isBright ? 'rgba(255,248,225,0.22)' : 'rgba(195,145,75,0.18)';
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for(let x=0;x<=1024;x+=64){
+        const wave = Math.sin((x/1024)*Math.PI*4 + i*0.7)*9;
+        ctx.lineTo(x, y + wave);
+      }
+      ctx.lineTo(1024, y+h);
+      ctx.lineTo(0, y+h);
+      ctx.closePath();
+      ctx.fill();
     }
     const tex = new THREE.CanvasTexture(c);
     tex.encoding = THREE.sRGBEncoding;
@@ -471,18 +531,18 @@
 
   sunGroup.add(rayGroup);
 
-  // Omni point light from the Sun
-  const sunPointLight = new THREE.PointLight(0xfff5dd, 1.8, 800);
+  // Omni point light from the Sun (illuminates inner solar system up to Venus)
+  const sunPointLight = new THREE.PointLight(0xfff5dd, 1.6, 135);
   sunGroup.add(sunPointLight);
 
   scene.add(sunGroup);
 
   // ---------- lighting for shadow casting ----------
-  const hemi = new THREE.HemisphereLight(0x27406b, 0x05070d, 0.38);
+  const hemi = new THREE.HemisphereLight(0x1a2e4c, 0x030508, 0.22);
   scene.add(hemi);
 
   // Directional shadow-casting light tracking from Sun toward Earth
-  const sunLight = new THREE.DirectionalLight(0xfff6e4, 2.2);
+  const sunLight = new THREE.DirectionalLight(0xfff6e4, 2.6);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(2048,2048);
   sunLight.shadow.camera.near = 10;
@@ -491,7 +551,7 @@
   sunLight.shadow.camera.right = 22;
   sunLight.shadow.camera.top = 22;
   sunLight.shadow.camera.bottom = -22;
-  sunLight.shadow.bias = -0.0012;
+  sunLight.shadow.bias = -0.0001;
   scene.add(sunLight);
   scene.add(sunLight.target);
 
@@ -511,6 +571,79 @@
     geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
     const mat = new THREE.PointsMaterial({color:0xffffff, size:1.3, sizeAttenuation:true, transparent:true, opacity:0.85});
     scene.add(new THREE.Points(geo,mat));
+  })();
+
+  // ---------- mercury (rocky inner planet) ----------
+  const MERCURY_ORBIT_R = 58;
+  const MERCURY_R = 2.9;
+  const mercuryGroup = new THREE.Group();
+  scene.add(mercuryGroup);
+
+  const mercuryMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(MERCURY_R, 48, 48),
+    new THREE.MeshStandardMaterial({map: makeMercuryTexture(), roughness:0.92, metalness:0.04})
+  );
+  mercuryGroup.add(mercuryMesh);
+
+  // Mercury orbit path (copper-tan dotted line)
+  (function mercuryOrbitPath(){
+    const pts = [];
+    const segs = 160;
+    for(let i=0;i<=segs;i++){
+      const a = (i/segs)*Math.PI*2;
+      pts.push(new THREE.Vector3(MERCURY_ORBIT_R * Math.cos(a), 0, MERCURY_ORBIT_R * Math.sin(a)));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineDashedMaterial({
+      color: 0xc89e74,
+      dashSize: 3.2,
+      gapSize: 2.2,
+      transparent: true,
+      opacity: 0.55
+    });
+    const line = new THREE.Line(geo, mat);
+    line.computeLineDistances();
+    scene.add(line);
+  })();
+
+  // ---------- venus (dense cloud-covered planet) ----------
+  const VENUS_ORBIT_R = 108;
+  const VENUS_R = 7.1;
+  const venusGroup = new THREE.Group();
+  scene.add(venusGroup);
+
+  const venusMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(VENUS_R, 64, 64),
+    new THREE.MeshStandardMaterial({map: makeVenusTexture(), roughness:0.55, metalness:0.02})
+  );
+  venusGroup.add(venusMesh);
+
+  // Soft atmospheric rim shell for Venus
+  const venusAtmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(VENUS_R * 1.03, 48, 48),
+    new THREE.MeshBasicMaterial({color: 0xffe6a8, transparent: true, opacity: 0.16, side: THREE.BackSide})
+  );
+  venusGroup.add(venusAtmosphere);
+
+  // Venus orbit path (golden straw dotted line)
+  (function venusOrbitPath(){
+    const pts = [];
+    const segs = 200;
+    for(let i=0;i<=segs;i++){
+      const a = (i/segs)*Math.PI*2;
+      pts.push(new THREE.Vector3(VENUS_ORBIT_R * Math.cos(a), 0, VENUS_ORBIT_R * Math.sin(a)));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineDashedMaterial({
+      color: 0xe8c37d,
+      dashSize: 3.8,
+      gapSize: 2.4,
+      transparent: true,
+      opacity: 0.55
+    });
+    const line = new THREE.Line(geo, mat);
+    line.computeLineDistances();
+    scene.add(line);
   })();
 
   // ---------- earth's orbit around the sun (dotted line) ----------
@@ -567,7 +700,7 @@
   // ---------- moon & bright orbit path around earth ----------
   const MOON_R = 2.0;
   const MOON_ORBIT_R = 25;
-  const INCLINATION = THREE.MathUtils.degToRad(6.5);
+  const INCLINATION = THREE.MathUtils.degToRad(17.5); // Clear visual inclination demonstrating why eclipses happen only at nodes
   const TILT_AMPLITUDE = MOON_ORBIT_R * Math.sin(INCLINATION);
 
   const moon = new THREE.Mesh(
@@ -579,6 +712,7 @@
   scene.add(moon);
 
   // Much brighter dotted line indicating the path of the moon around Earth
+  // Uses exact 3D planar tilted circle equations matching the Moon's orbital motion
   const moonOrbitPts = [];
   const moonOrbitSegs = 128;
   for(let i=0;i<=moonOrbitSegs;i++){
@@ -586,7 +720,7 @@
     moonOrbitPts.push(new THREE.Vector3(
       MOON_ORBIT_R * Math.cos(t),
       TILT_AMPLITUDE * Math.sin(t),
-      MOON_ORBIT_R * Math.sin(t)
+      MOON_ORBIT_R * Math.cos(INCLINATION) * Math.sin(t)
     ));
   }
   const moonOrbitGeo = new THREE.BufferGeometry().setFromPoints(moonOrbitPts);
@@ -645,11 +779,12 @@
   const captionText = document.getElementById('captionText');
 
   const storyCards = [
-    { tag: "Fixed Sun at the Center", text: "The Sun sits stationary at the center of the solar system. Earth journeys around it on its yearly orbital path." },
+    { tag: "Fixed Sun at the Center", text: "The Sun sits stationary at the center of the solar system. All planets journey around it on their orbital paths." },
+    { tag: "The Inner Planets", text: "Mercury and Venus orbit closer to the Sun at faster speeds, completing their years in 88 and 225 Earth days." },
     { tag: "Earth's Rotation & Axis", text: "Earth rotates continuously around its 23.4° tilted axis, bringing day and night across every continent." },
-    { tag: "The Moon's Orbit", text: "The Moon circles Earth roughly once a month along its bright, tilted white orbital path." },
-    { tag: "What Makes a Solar Eclipse?", text: "When the Moon slips directly between the Sun and Earth, its round dark shadow sweeps across Earth in a solar eclipse!" },
-    { tag: "Lunar Eclipse", text: "When Earth passes between the Sun and the Moon, Earth's own shadow falls upon the Moon." }
+    { tag: "The Moon's Tilted Orbit", text: "The Moon circles Earth along its white dotted path. Because its orbit is tilted, its shadow usually misses Earth above or below." },
+    { tag: "What Makes a Solar Eclipse?", text: "When the Moon crosses Earth's orbital plane directly between Sun and Earth, its round dark shadow sweeps across Earth!" },
+    { tag: "Lunar Eclipse", text: "When Earth passes directly between the Sun and the Moon, Earth's own shadow falls upon the Moon." }
   ];
 
   let cardIndex = 0;
@@ -685,10 +820,15 @@
 
   // ---------- play/pause, view toggle & fast speed control ----------
   let playing = true;
-  let earthAngle = 0.40;
-  let moonRelAngle = -0.30; // 0 = exactly between Sun and Earth
-  const baseEarthSpeed = 0.16; // rad/s at 1x
-  const baseMoonSpeed = 1.60;  // rad/s at 1x (relative synodic rotation)
+  let earthAngle = 0.0;
+  let moonAngle = Math.PI - 0.28; // positioned just before eclipse transit
+  let mercuryAngle = 1.9;
+  let venusAngle = 3.7;
+
+  const baseEarthSpeed = 0.12;                     // rad/s at 1x (~52s orbit)
+  const baseVenusSpeed = baseEarthSpeed * 1.625;   // ~225 Earth days per orbit
+  const baseMercurySpeed = baseEarthSpeed * 4.15;   // ~88 Earth days per orbit
+  const baseMoonSpeed = 1.45;                      // ~12.1 lunar orbits per Earth year
 
   const speedSlider = document.getElementById('speed');
   const speedVal = document.getElementById('speedVal');
@@ -702,8 +842,17 @@
   });
 
   jumpBtn.addEventListener('click', ()=>{
-    moonRelAngle = -0.25;
-    showCard(3); // "What Makes a Solar Eclipse?"
+    earthAngle = 0.0; // Align Earth with orbital node
+    moonAngle = Math.PI - 0.16; // Moon positioned just entering eclipse transit
+    playing = true;
+    playBtn.textContent = '⏸';
+    if(viewMode === 'earth'){
+      camRadius = 65;
+      camTheta = 2.55; // View from daylight hemisphere to watch the shadow
+      camPhi = 1.15;
+      updateCamera();
+    }
+    showCard(4); // "What Makes a Solar Eclipse?"
     cardTimer = 0;
     forceHoldUntil = performance.now() + 10000; // Hold eclipse card for 10s
   });
@@ -713,7 +862,7 @@
     viewBtn.textContent = (viewMode === 'sun') ? 'Follow Earth' : 'Sun System';
     if(viewMode === 'earth'){
       camRadius = 65;
-      camTheta = 0.9;
+      camTheta = 2.55; // Daylight side with sun rays entering from side/rear
       camPhi = 1.15;
     } else {
       camRadius = 240;
@@ -732,17 +881,32 @@
     lastT = now;
 
     const speed = parseFloat(speedSlider.value);
-    if(speedVal) speedVal.textContent = speed + '×';
+    if(speedVal) {
+      speedVal.textContent = (speed < 1 ? speed.toFixed(1) : (speed % 1 === 0 ? speed.toFixed(0) : speed.toFixed(1))) + '×';
+    }
 
     if(playing){
       earthAngle += baseEarthSpeed * speed * dt;
       if(earthAngle > Math.PI * 2) earthAngle -= Math.PI * 2;
 
-      moonRelAngle += baseMoonSpeed * speed * dt;
-      if(moonRelAngle > Math.PI * 2) moonRelAngle -= Math.PI * 2;
+      mercuryAngle += baseMercurySpeed * speed * dt;
+      if(mercuryAngle > Math.PI * 2) mercuryAngle -= Math.PI * 2;
+
+      venusAngle += baseVenusSpeed * speed * dt;
+      if(venusAngle > Math.PI * 2) venusAngle -= Math.PI * 2;
+
+      moonAngle += baseMoonSpeed * speed * dt;
+      if(moonAngle > Math.PI * 2) moonAngle -= Math.PI * 2;
     }
 
-    // 1. Earth orbits around the fixed Sun at (0, 0, 0)
+    // 1. Mercury and Venus orbit around the Sun
+    mercuryGroup.position.set(MERCURY_ORBIT_R * Math.cos(mercuryAngle), 0, MERCURY_ORBIT_R * Math.sin(mercuryAngle));
+    mercuryMesh.rotation.y += 0.5 * dt;
+
+    venusGroup.position.set(VENUS_ORBIT_R * Math.cos(venusAngle), 0, VENUS_ORBIT_R * Math.sin(venusAngle));
+    venusMesh.rotation.y -= 0.25 * dt; // Venus retrograde rotation
+
+    // 2. Earth orbits around the fixed Sun at (0, 0, 0)
     const ex = EARTH_ORBIT_R * Math.cos(earthAngle);
     const ez = EARTH_ORBIT_R * Math.sin(earthAngle);
     earthGroup.position.set(ex, 0, ez);
@@ -751,18 +915,17 @@
     const spinSpeed = (reducedMotion ? 0.3 : 1.4) * (1 + speed * 0.2);
     earth.rotation.y += spinSpeed * dt;
 
-    // 2. Bright Moon orbit ring follows Earth
+    // 3. Bright Moon orbit ring follows Earth
     moonOrbitLine.position.copy(earthGroup.position);
 
-    // 3. Moon orbits Earth; moonRelAngle=0 lines up directly between Sun and Earth
-    const mAngle = earthAngle + Math.PI + moonRelAngle;
-    const mx = ex + MOON_ORBIT_R * Math.cos(mAngle);
-    const mz = ez + MOON_ORBIT_R * Math.sin(mAngle);
-    const my = TILT_AMPLITUDE * Math.sin(moonRelAngle);
-    moon.position.set(mx, my, mz);
-    moon.rotation.y = mAngle + Math.PI;
+    // 4. Moon orbits Earth along the exact 3D dotted line
+    const mx_rel = MOON_ORBIT_R * Math.cos(moonAngle);
+    const my_rel = TILT_AMPLITUDE * Math.sin(moonAngle);
+    const mz_rel = MOON_ORBIT_R * Math.cos(INCLINATION) * Math.sin(moonAngle);
+    moon.position.set(ex + mx_rel, my_rel, ez + mz_rel);
+    moon.rotation.y = moonAngle + Math.PI;
 
-    // 4. Directional sunlight: shines from Sun (0,0,0) directly toward Earth
+    // 5. Directional sunlight: shines from Sun (0,0,0) directly toward Earth
     const sunToEarth = earthGroup.position.clone().normalize();
     sunLight.position.copy(earthGroup.position).sub(sunToEarth.clone().multiplyScalar(45));
     sunLight.target.position.copy(earthGroup.position);
