@@ -1,0 +1,3824 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 Versions of Reality | A Matter of Perspective</title>
+    <meta name="description"
+        content="Explore the City of Life: A procedural 3D campus where Body, Mind, and Soul converge across the Faculties of Art, Science, and Spirituality.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Anta&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        anta: ['Anta', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['"Courier New"', 'monospace'],
+                        display: ['"Space Grotesk"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --ink: #0a0f1d;
+            --surface: #111827;
+            --art: #ff3322;
+            --art-glow: rgba(255, 51, 34, 0.65);
+            --science: #ffbb00;
+            --science-glow: rgba(255, 187, 0, 0.65);
+            --soul: #38bdf8;
+            --soul-glow: rgba(56, 189, 248, 0.65);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #080d1a;
+            font-family: 'Inter', sans-serif;
+            color: #f8fafc;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            cursor: grab;
+        }
+
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* Intro Overlay */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(10, 15, 29, 0.22) 0%, rgba(8, 13, 26, 0.48) 100%);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 1.6s;
+        }
+
+        .intro-title {
+            font-family: 'Anta', sans-serif;
+            font-size: clamp(2.2rem, 5vw, 3.6rem);
+            letter-spacing: 0.03em;
+            margin: 0 0 1.25rem 0;
+            line-height: 1.2;
+            background: linear-gradient(90deg,
+                    #ffffff 0%,
+                    #00FCFF 25%,
+                    #FFD700 50%,
+                    #FF00CC 75%,
+                    #ffffff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: spectral-shift 8s linear infinite;
+            filter: drop-shadow(0 0 24px rgba(0, 252, 255, 0.45));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #intro-text {
+            font-size: clamp(1.2rem, 2.6vw, 1.75rem);
+            font-weight: 500;
+            font-style: normal;
+            max-width: 820px;
+            margin-bottom: 2.75rem;
+            color: #f1f5f9;
+            line-height: 1.5;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .intro-sub-holistic {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            color: #e2e8f0;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.95), 0 0 12px rgba(255, 255, 255, 0.25);
+        }
+
+        .action-btn {
+            background: #000000;
+            border: 1px solid #ffffff;
+            color: #ffffff;
+            padding: 1.1rem 3.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.28em;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .action-btn:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.35);
+        }
+
+        /* Heads-Up Display Frame */
+        #hud-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+            box-sizing: border-box;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        .hud-interactive {
+            pointer-events: auto;
+        }
+
+        /* ==========================================================================
+           TOP-LEFT: THE UNIVERSITY OF FREE WILL (ANTA FONT + SPECTRAL GRADIENT)
+           ========================================================================== */
+        .top-left {
+            position: absolute;
+            top: 1.75rem;
+            left: 2.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .university-banner {
+            font-family: 'Anta', sans-serif;
+            font-size: clamp(1.25rem, 2.3vw, 1.85rem);
+            letter-spacing: 0.05em;
+            margin: 0;
+            line-height: 1.15;
+            background: linear-gradient(90deg,
+                    #ffffff 0%,
+                    #00FCFF 25%,
+                    #FFD700 50%,
+                    #FF00CC 75%,
+                    #ffffff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: spectral-shift 8s linear infinite;
+            filter: drop-shadow(0 0 18px rgba(0, 252, 255, 0.4));
+        }
+
+        @keyframes spectral-shift {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        .university-sub {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        /* ==========================================================================
+           METROPOLIS 3 REALITY STATES - BOTTOM DOCK & MUTATOR STYLES
+           ========================================================================== */
+        .reality-dock {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.45rem;
+            max-width: 96vw;
+            padding: 0.65rem 1.1rem;
+            background: rgba(9, 13, 24, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 18px;
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 550;
+            user-select: none;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reality-dock-glow-aura {
+            position: absolute;
+            inset: -2px;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.7;
+            transition: all 0.6s ease;
+            filter: blur(14px);
+        }
+
+        .reality-dock.state-body .reality-dock-glow-aura {
+            background: radial-gradient(circle at 50% 120%, rgba(220, 38, 38, 0.5), transparent 70%);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
+        .reality-dock.state-mind .reality-dock-glow-aura {
+            background: radial-gradient(circle at 50% 120%, rgba(250, 204, 21, 0.45), transparent 70%);
+            border: 1px solid rgba(250, 204, 21, 0.5);
+        }
+
+        .reality-dock.state-soul .reality-dock-glow-aura {
+            background: radial-gradient(circle at 50% 120%, rgba(59, 130, 246, 0.55), transparent 70%);
+            border: 1px solid rgba(96, 165, 250, 0.55);
+        }
+
+        .reality-dock-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.62rem;
+            letter-spacing: 0.22em;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .dock-tag {
+            color: #cbd5e1;
+            font-weight: 800;
+        }
+
+        .dock-sep {
+            color: #475569;
+        }
+
+        .dock-label {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .dock-hotkey-hint {
+            color: #64748b;
+            font-size: 0.55rem;
+            letter-spacing: 0.12em;
+            padding-left: 0.4rem;
+        }
+
+        .reality-dock-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .reality-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.62rem 1.15rem;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            outline: none;
+            color: #cbd5e1;
+            text-align: left;
+        }
+
+        .reality-btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 1. Body Button: Dense rectangular block, terracotta/red accent */
+        .reality-btn.btn-reality-body {
+            border-radius: 8px; /* dense rectangular block */
+        }
+
+        .reality-btn.btn-reality-body:hover,
+        .reality-btn.btn-reality-body.active {
+            background: linear-gradient(135deg, rgba(88, 15, 19, 0.95) 0%, rgba(43, 24, 16, 0.95) 100%);
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.55), inset 0 0 12px rgba(220, 38, 38, 0.35);
+            color: #fef2f2;
+        }
+
+        .reality-btn.btn-reality-body .reality-num {
+            color: #f87171;
+        }
+
+        .reality-btn.btn-reality-body.active .reality-title {
+            color: #fca5a5;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+        }
+
+        /* 2. Mind Button: Precise technical crosshair, sharp yellow line */
+        .reality-btn.btn-reality-mind {
+            border-radius: 6px;
+            border-left-width: 3px; /* sharp line accent */
+        }
+
+        .reality-btn.btn-reality-mind:hover,
+        .reality-btn.btn-reality-mind.active {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border-color: #facc15;
+            border-left-color: #facc15;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.5), inset 0 0 10px rgba(250, 204, 21, 0.2);
+            color: #fefce8;
+        }
+
+        .reality-btn.btn-reality-mind .reality-num {
+            color: #fde047;
+        }
+
+        .reality-btn.btn-reality-mind.active .reality-title {
+            color: #fef08a;
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.8);
+        }
+
+        /* 3. Soul Button: Soft ring / blurred circle, ultramarine glow */
+        .reality-btn.btn-reality-soul {
+            border-radius: 9999px; /* soft ring / oval */
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
+
+        .reality-btn.btn-reality-soul:hover,
+        .reality-btn.btn-reality-soul.active {
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.92) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border-color: #3b82f6;
+            box-shadow: 0 0 26px rgba(59, 130, 246, 0.65), 0 0 12px rgba(147, 197, 253, 0.4);
+            color: #eff6ff;
+        }
+
+        .reality-btn.btn-reality-soul .reality-num {
+            color: #60a5fa;
+        }
+
+        .reality-btn.btn-reality-soul.active .reality-title {
+            color: #93c5fd;
+            text-shadow: 0 0 12px rgba(96, 165, 250, 0.9);
+        }
+
+        .reality-icon-box {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .reality-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .reality-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.12rem;
+        }
+
+        .reality-primary-row {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .reality-num {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+        }
+
+        .reality-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .reality-sub {
+            font-size: 0.62rem;
+            letter-spacing: 0.04em;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .reality-keyhint {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.58rem;
+            font-weight: 700;
+            color: #64748b;
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-left: 0.35rem;
+        }
+
+        /* ==========================================================================
+           RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE & DRAGGABLE)
+           ========================================================================== */
+        #faculty-panel-right {
+            position: fixed;
+            right: 2.25rem;
+            top: calc(50% + 24px);
+            transform: translateY(-50%);
+            width: 360px;
+            max-width: calc(100vw - 2.5rem);
+            background: rgba(10, 15, 29, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 14px;
+            box-shadow: 0 20px 55px rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            z-index: 600;
+            pointer-events: auto;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, border-radius 0.3s ease;
+            touch-action: none;
+        }
+
+        #faculty-panel-right.is-dragging {
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.95), 0 0 24px rgba(56, 189, 248, 0.35);
+            border-color: rgba(56, 189, 248, 0.45);
+            cursor: grabbing !important;
+            user-select: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 1.1rem 1.25rem;
+            cursor: grab;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s ease;
+        }
+
+        .panel-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        #faculty-panel-right.is-dragging .panel-header {
+            cursor: grabbing;
+        }
+
+        .panel-header-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .panel-collapse-btn {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .panel-collapse-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            transform: scale(1.08);
+        }
+
+        .panel-collapse-btn svg {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: rotate(0deg);
+            /* When open: points LEFT */
+        }
+
+        /* Body Section with smooth accordion folding */
+        .panel-body-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            padding: 0 1.25rem 1.35rem 1.25rem;
+            max-height: 520px;
+            opacity: 1;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.35s ease;
+        }
+
+        /* Collapsed State: Content folded up into headerbar, arrow rotates to point DOWN */
+        #faculty-panel-right.collapsed {
+            border-radius: 12px;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #faculty-panel-right.collapsed .panel-body-wrapper {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            pointer-events: none;
+        }
+
+        #faculty-panel-right.collapsed .panel-collapse-btn svg {
+            transform: rotate(-90deg);
+            /* Smoothly animates to point DOWN */
+        }
+
+        .panel-faculty-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: flex-start;
+            gap: 0.42rem;
+            margin: 0;
+            line-height: 1;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+
+        .faculty-title-the {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            line-height: 1;
+            padding-top: 0.18rem;
+            user-select: none;
+        }
+
+        .faculty-title-main {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            line-height: 0.95;
+        }
+
+        .title-art {
+            color: #ff4433;
+            text-shadow: 0 0 16px var(--art-glow);
+        }
+
+        .title-science {
+            color: #ffbb00;
+            text-shadow: 0 0 16px var(--science-glow);
+        }
+
+        .title-spirit {
+            color: #38bdf8;
+            text-shadow: 0 0 16px var(--soul-glow);
+        }
+
+        .panel-divider {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.04) 100%);
+        }
+
+        .panel-quote-box {
+            background: rgba(15, 23, 42, 0.6);
+            border-left: 3px solid #38bdf8;
+            border-radius: 0 8px 8px 0;
+            padding: 0.85rem 1rem;
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            transition: border-color 0.4s ease;
+        }
+
+        .panel-quote-box.border-art {
+            border-left-color: var(--art);
+        }
+
+        .panel-quote-box.border-sci {
+            border-left-color: var(--science);
+        }
+
+        .panel-quote-box.border-spirit {
+            border-left-color: var(--soul);
+        }
+
+        .neon-text {
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            line-height: 1.4;
+            transition: opacity 0.3s ease;
+        }
+
+        .neon-art {
+            color: #ff4433;
+        }
+
+        .neon-science {
+            color: #ffbb00;
+        }
+
+        .neon-spirit {
+            color: #38bdf8;
+        }
+
+        
+
+        .panel-content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            font-size: 0.72rem;
+        }
+
+        .detail-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .detail-label {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            color: #cbd5e1;
+            font-weight: 500;
+            line-height: 1.35;
+        }
+
+        .purpose-highlight {
+            color: #f1f5f9;
+            font-weight: 600;
+            padding: 0.45rem 0.75rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Top-Right Controls (Vertically Stacked) */
+        .top-right {
+            position: absolute;
+            top: 1.75rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 700;
+        }
+
+        .icon-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        
+        .icon-btn.sound-active {
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.6) !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .icon-btn:hover {
+            background: #fff;
+            color: #0f172a;
+            transform: scale(1.08);
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        
+        
+        /* Segmented Navigation Mode Control (AUTO TOUR vs MANUAL) */
+        .nav-mode-segment {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(10, 15, 29, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 9999px;
+            padding: 3px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            user-select: none;
+        }
+
+        .nav-segment-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.85rem;
+            border-radius: 9999px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .nav-segment-btn:hover {
+            color: #ffffff;
+        }
+
+        .nav-segment-btn.active#btn-mode-auto {
+            background: #22c55e;
+            color: #052e16;
+            box-shadow: 0 0 16px rgba(34, 197, 94, 0.55);
+        }
+
+        .nav-segment-btn.active#btn-mode-manual {
+            background: #38bdf8;
+            color: #082f49;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55);
+        }
+
+        .segment-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            display: inline-block;
+        }
+
+        .segment-icon {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+        }
+
+/* Navigation Mode HUD Toast */
+        .nav-mode-toast {
+            position: fixed;
+            top: 2rem;
+            right: 5.5rem;
+            background: rgba(10, 15, 29, 0.94);
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.22);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 8px;
+            padding: 0.65rem 1rem;
+            color: #f8fafc;
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0;
+            transform: translateX(12px);
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            max-width: 320px;
+        }
+
+        .nav-mode-toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .nav-toast-title {
+            font-weight: 700;
+            color: #38bdf8;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: 0.68rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nav-toast-sub {
+            color: #94a3b8;
+            font-size: 0.66rem;
+            letter-spacing: 0.02em;
+            line-height: 1.35;
+        }
+
+
+
+        /* Mobile Specific Layout Adjustments */
+        @media (max-width: 768px) {
+            .top-right {
+                top: 1rem;
+                right: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .icon-btn {
+                width: 36px;
+                height: 36px;
+            }
+
+            .icon-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .nav-mode-toast {
+                top: 1rem;
+                right: 3.8rem;
+                max-width: calc(100vw - 5rem);
+                padding: 0.5rem 0.75rem;
+            }
+
+            .top-left {
+                top: 1rem;
+                left: 1rem;
+                max-width: calc(100vw - 4.5rem);
+            }
+
+            .university-banner {
+                font-size: 1.15rem;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .university-sub {
+                font-size: 0.52rem;
+                letter-spacing: 0.16em;
+            }
+
+            .reality-dock {
+                bottom: 0.75rem;
+                padding: 0.45rem 0.65rem;
+                max-width: 98vw;
+                gap: 0.25rem;
+            }
+
+            .reality-dock-header {
+                font-size: 0.52rem;
+            }
+
+            .dock-hotkey-hint {
+                display: none;
+            }
+
+            .reality-dock-buttons {
+                gap: 0.35rem;
+            }
+
+            .reality-btn {
+                padding: 0.4rem 0.6rem;
+                gap: 0.4rem;
+            }
+
+            .reality-icon-box {
+                width: 24px;
+                height: 24px;
+            }
+
+            .reality-icon {
+                width: 14px;
+                height: 14px;
+            }
+
+            .reality-title {
+                font-size: 0.64rem;
+            }
+
+            .reality-num {
+                font-size: 0.58rem;
+            }
+
+            .reality-sub {
+                display: none;
+            }
+
+            .reality-keyhint {
+                display: none;
+            }
+        }
+
+        /* Tooltip removed */
+/* Live Matrix Status Ticker in Bottom Left */
+        .hud-ticker {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: #64748b;
+            background: rgba(10, 15, 29, 0.82);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .hud-ticker {
+                display: block;
+            }
+        }
+    
+        /* Realm Badge & Anchor Concepts Box in Right Info Panel */
+        
+
+        .panel-anchor-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.22rem;
+            padding: 0.75rem 0.95rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px dashed rgba(255, 255, 255, 0.18);
+            transition: border-color 0.35s ease, background 0.35s ease;
+        }
+
+        .anchor-label {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.56rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .anchor-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.86rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #f8fafc;
+            transition: color 0.35s ease;
+        }
+
+    
+        .panel-concept-sub {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-top: 0.35rem;
+            line-height: 1.25;
+            transition: color 0.35s ease;
+        }
+
+    
+        /* Domain and Highlight Colors for Art (Red), Science (Yellow), Religion & Spirituality (Cyan/Blue) */
+        .highlight-art,
+        .highlight-love {
+            color: #ff3322 !important;
+            text-shadow: 0 0 14px rgba(255, 51, 34, 0.85);
+            font-weight: 800;
+        }
+
+        .highlight-sci,
+        .highlight-science,
+        .highlight-truth {
+            color: #ffea00 !important;
+            text-shadow: 0 0 14px rgba(255, 234, 0, 0.85);
+            font-weight: 800;
+        }
+
+        .highlight-spirit,
+        .highlight-soul,
+        .highlight-transcendence {
+            color: #38bdf8 !important;
+            text-shadow: 0 0 14px rgba(56, 189, 248, 0.85);
+            font-weight: 800;
+        }
+
+        .domain-tag {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.28rem 0.65rem;
+            border-radius: 6px;
+            display: inline-block;
+            width: fit-content;
+            transition: all 0.35s ease;
+        }
+
+        .domain-art {
+            color: #ff4433 !important;
+            background: rgba(255, 51, 34, 0.16);
+            border: 1px solid rgba(255, 51, 34, 0.45);
+            box-shadow: 0 0 16px rgba(255, 51, 34, 0.3);
+            text-shadow: 0 0 12px rgba(255, 51, 34, 0.9);
+        }
+
+        .domain-sci {
+            color: #ffea00 !important;
+            background: rgba(255, 234, 0, 0.16);
+            border: 1px solid rgba(255, 234, 0, 0.45);
+            box-shadow: 0 0 16px rgba(255, 234, 0, 0.3);
+            text-shadow: 0 0 12px rgba(255, 234, 0, 0.9);
+        }
+
+        .domain-spirit {
+            color: #38bdf8 !important;
+            background: rgba(56, 189, 248, 0.16);
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- Cinematic Intro Sequence Overlay -->
+    <div id="intro-overlay">
+        <h1 class="intro-title">
+            <span>3 Versions</span>
+            <span>of Reality</span>
+        </h1>
+        <div id="intro-text">
+            <span class="intro-sub-holistic">A Matter of Perspective</span>
+        </div>
+        <button id="skip-btn" class="action-btn">ENTER</button>
+    </div>
+
+    <!-- Heads-Up Display Frame -->
+    <div id="hud-layer">
+
+        <!-- TOP-LEFT: THE UNIVERSITY OF FREE WILL HEADER -->
+        <div class="top-left hud-interactive">
+            <h1 class="university-banner">
+                <span>3 Versions of Reality</span>
+            </h1>
+            <div class="university-sub">/ A MATTER OF PERSPECTIVE</div>
+        </div>
+
+                <!-- RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE & DRAGGABLE) -->
+        <div id="faculty-panel-right" class="hud-interactive">
+            <div class="panel-header" id="panel-header-drag" title="Drag to reposition panel">
+                <div class="panel-header-info">
+                    <h2 id="screen-faculty-name" class="panel-faculty-title title-art">
+                        <span class="faculty-title-the">THE</span>
+                        <span class="faculty-title-main">BODY</span>
+                    </h2>
+                    <div id="screen-concept-sub" class="panel-concept-sub">FACULTY OF ART &amp; EMBODIED EXPERIENCE</div>
+                </div>
+                <button id="panel-toggle-btn" class="panel-collapse-btn" onclick="toggleFacultyPanel(event)"
+                    title="Collapse into header" aria-label="Toggle Faculty Panel">
+                    <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="panel-body-wrapper" id="panel-body-wrapper">
+                <div class="panel-divider"></div>
+
+                <!-- ANCHOR CONCEPTS BOX -->
+                <div class="panel-anchor-box" id="panel-anchor-box">
+                    <span class="anchor-label">ANCHOR CONCEPTS</span>
+                    <span class="anchor-value" id="panel-anchor-value">Flesh · Tectonics · Silt</span>
+                </div>
+
+                <div class="panel-quote-box border-art" id="panel-quote-box">
+                    <div id="screen-content" class="neon-text neon-art">"LOVE &amp; BEAUTY AS SUBJECTIVE EXPERIENCE"</div>
+                </div>
+
+                <div class="panel-content-section">
+                    <div class="detail-row">
+                        <span class="detail-label">HIGH DISCIPLINES</span>
+                        <span class="detail-value" id="detail-high">Painting, Sculpture, Literature, Architecture, Music, Cinema</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">CULTURAL EXPRESSION</span>
+                        <span class="detail-value" id="detail-low">Physicality, Material Craft, Earthworks, Vital Form, Dance</span>
+                    </div>
+                                        <div class="detail-row">
+                        <span class="detail-label">PRIMARY REALM PURPOSE</span>
+                        <span class="detail-value purpose-highlight" id="detail-purpose">Aesthetic Bliss, Emotional Resonance &amp; Joy of Living</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">DOMAIN</span>
+                        <span class="detail-value" id="detail-domain"><span class="domain-tag domain-art">ART</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                        <!-- Top Right Actions -->
+        <div class="top-right hud-interactive">
+            <div class="nav-mode-segment" id="nav-mode-segment" role="group" aria-label="Navigation Mode">
+                <button id="btn-mode-auto" class="nav-segment-btn active" onclick="setNavMode('auto')" title="Activate Auto Tour">
+                    <span class="segment-dot"></span>
+                    <span>AUTO TOUR</span>
+                </button>
+                <button id="btn-mode-manual" class="nav-segment-btn" onclick="setNavMode('manual')" title="Activate Manual Roam">
+                    <svg viewBox="0 0 24 24" class="segment-icon">
+                        <path d="M12 2l3 3h-2v3h-2V5H9l3-3zm0 20l-3-3h2v-3h2v3h2l-3 3zm-10-10l3-3v2h3v2H5v2l-3-3zm20 0l-3 3v-2h-3v-2h3V8l3 3z" fill="currentColor"/>
+                    </svg>
+                    <span>MANUAL</span>
+                </button>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
+                    <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
+                        <path
+                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                    </svg>
+                    <svg id="sound-icon-off" viewBox="0 0 24 24">
+                        <path
+                            d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Mode HUD Toast Notification -->
+        <div id="nav-mode-toast" class="nav-mode-toast">
+            <div class="nav-toast-title">
+                <span id="toast-title-text">MANUAL CONTROL ENABLED</span>
+            </div>
+            <div class="nav-toast-sub" id="toast-sub-text">WASD / Arrow Keys or Right-Click Drag to Pan • Left Drag to
+                Rotate • Scroll to Zoom</div>
+        </div>
+
+        <!-- Metropolis Reality Mutator Bottom Dock -->
+        <div id="reality-dock" class="reality-dock hud-interactive state-body">
+            <div class="reality-dock-glow-aura" id="dock-glow-aura"></div>
+            <div class="reality-dock-header">
+                <span class="dock-tag">PERSPECTIVE SELECTOR</span>
+                <span class="dock-sep">///</span>
+                <span class="dock-hotkey-hint">KEYS [1] · [2] · [3]</span>
+            </div>
+            <div class="reality-dock-buttons">
+                <!-- 1. The Body -->
+                <button id="btn-reality-body" class="reality-btn btn-reality-body active" onclick="switchReality('body')" title="Activate Reality: The Body (Key 1)">
+                    <div class="reality-btn-indicator"></div>
+                    <div class="reality-icon-box icon-box-body">
+                        <!-- Dense rectangular block with tectonic strata lines -->
+                        <svg viewBox="0 0 24 24" class="reality-icon">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5" fill="rgba(185, 28, 28, 0.25)" stroke="currentColor" stroke-width="2" />
+                            <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="1.8" />
+                            <line x1="3" y1="14" x2="21" y2="14" stroke="currentColor" stroke-width="1.8" />
+                            <rect x="7" y="6" width="3" height="12" fill="currentColor" opacity="0.4" />
+                            <rect x="14" y="6" width="3" height="12" fill="currentColor" opacity="0.4" />
+                        </svg>
+                    </div>
+                    <div class="reality-meta">
+                        <div class="reality-primary-row">
+                            <span class="reality-num">01</span>
+                            <span class="reality-title">THE BODY</span>
+                        </div>
+                        <span class="reality-sub">SENSUAL</span>
+                    </div>
+                    <span class="reality-keyhint">[1]</span>
+                </button>
+
+                <!-- 2. The Mind -->
+                <button id="btn-reality-mind" class="reality-btn btn-reality-mind" onclick="switchReality('mind')" title="Activate Reality: The Mind (Key 2)">
+                    <div class="reality-btn-indicator"></div>
+                    <div class="reality-icon-box icon-box-mind">
+                        <!-- Precise technical crosshair and schematic grid -->
+                        <svg viewBox="0 0 24 24" class="reality-icon">
+                            <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2" />
+                            <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" stroke-width="1.6" />
+                            <line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.6" />
+                            <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+                            <rect x="4" y="4" width="2" height="2" fill="currentColor" />
+                            <rect x="18" y="18" width="2" height="2" fill="currentColor" />
+                        </svg>
+                    </div>
+                    <div class="reality-meta">
+                        <div class="reality-primary-row">
+                            <span class="reality-num">02</span>
+                            <span class="reality-title">THE MIND</span>
+                        </div>
+                        <span class="reality-sub">FACTUAL</span>
+                    </div>
+                    <span class="reality-keyhint">[2]</span>
+                </button>
+
+                <!-- 3. The Soul -->
+                <button id="btn-reality-soul" class="reality-btn btn-reality-soul" onclick="switchReality('soul')" title="Activate Reality: The Soul (Key 3)">
+                    <div class="reality-btn-indicator"></div>
+                    <div class="reality-icon-box icon-box-soul">
+                        <!-- Soft ring / blurred circle / radiating aperture -->
+                        <svg viewBox="0 0 24 24" class="reality-icon">
+                            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4" />
+                            <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+                            <circle cx="12" cy="12" r="2.5" fill="currentColor" opacity="0.85" />
+                            <path d="M12 1v3M12 20v3M1 12h3M20 12h3" stroke="currentColor" stroke-width="1.2" opacity="0.6" />
+                        </svg>
+                    </div>
+                    <div class="reality-meta">
+                        <div class="reality-primary-row">
+                            <span class="reality-num">03</span>
+                            <span class="reality-title">THE SOUL</span>
+                        </div>
+                        <span class="reality-sub">SPIRITUAL</span>
+                    </div>
+                    <span class="reality-keyhint">[3]</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip & 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Three.js + OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        
+
+        /* ==========================================================================
+           2. THREE.JS CAMPUS SIMULATION & PROCEDURAL METROPOLIS GENERATOR
+           ========================================================================== */
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let specialBlocks = [];
+        let landmarkLights = [];
+        let particlesSystem;
+        let groundTriangle;
+        let purpleBeamGroup;
+        let scienceAtomGroup, scienceAtomNucleus;
+        let artRayGroup;
+
+        let introActive = true;
+        let isManualControl = false;
+        let userInteracting = false;
+        let lastUserInteractionTime = 0;
+        let isTransitioningCamera = false;
+        let transitionStartTime = 0;
+        const TRANSITION_DURATION = 1200; // ms
+        let transitionFromPos = new THREE.Vector3();
+        let transitionToPos = new THREE.Vector3();
+        let transitionFromTarget = new THREE.Vector3();
+        let transitionToTarget = new THREE.Vector3();
+        let transitionFromZoom = 1.0;
+        let transitionToZoom = 1.0;
+        let cinematicTarget = null;
+        let currentFacultyType = 'art';
+        let lastAutoTourTime = 0;
+        let lastQuoteCycleTime = 0;
+        const AUTO_TOUR_INTERVAL = 11000;
+        let autoTourIndex = 0;
+        const autoTourLandmarks = ['art', 'overview', 'science', 'overview', 'spirit', 'overview'];
+        const QUOTE_CYCLE_INTERVAL = 3800;
+        let toastTimeout = null;
+        let pointerDownPos = { x: 0, y: 0 };
+        const activeNavKeys = {};
+        let triangleAngle = 0;
+        let isSuperSpinning = false;
+
+        const container = document.getElementById('canvas-container');
+        const introTextEl = document.getElementById('intro-text');
+        const introOverlay = document.getElementById('intro-overlay');
+        const skipBtn = document.getElementById('skip-btn');
+        const hudLayer = document.getElementById('hud-layer');
+        const ambientAudio = document.getElementById('ambient-audio');
+
+        // Right Faculty Panel elements
+        const facultyPanel = document.getElementById('faculty-panel-right');
+        const screenContent = document.getElementById('screen-content');
+        const screenFacultyName = document.getElementById('screen-faculty-name');
+        const screenCategory = document.getElementById('screen-category');
+        const panelQuoteBox = document.getElementById('panel-quote-box');
+        const detailHigh = document.getElementById('detail-high');
+        const detailLow = document.getElementById('detail-low');
+        const detailPurpose = document.getElementById('detail-purpose');
+
+                        /* ==========================================================================
+           METROPOLIS 3 REALITY STATES DATA (INCORPORATING ART, SCIENCE, RELIGION/SPIRITUALITY)
+           ========================================================================== */
+        const realityData = {
+            body: {
+                id: 'body',
+                name: 'BODY',
+                titleHtml: '<span class="faculty-title-the">THE</span><span class="faculty-title-main">BODY</span>',
+                facultySub: 'FACULTY OF ART &amp; EMBODIED EXPERIENCE',
+                titleClass: 'title-art',
+                borderClass: 'border-art',
+                neonClass: 'neon-art',
+                anchors: 'Flesh · Tectonics · Silt',
+                quotes: [
+                    'LOVE &amp; BEAUTY AS SUBJECTIVE EXPERIENCE',
+                    'ART &amp; SENSATION: THE FLESH OF LIVING FORM',
+                    'THE CANVAS OF HUMAN EMOTION &amp; SOMATICS',
+                    'AESTHETIC BLISS, VITALITY &amp; EMBODIED JOY',
+                    'PHYSICALITY, DANCE &amp; LOVE FOR LIFE',
+                    'LITERATURE, MUSIC, CINEMA &amp; EMBODIED TRUTH'
+                ],
+                highFields: 'Literature, Painting, Sculpture, Architecture, Music, Poetry, Cinema',
+                lowFields: 'Games, Street Art, Pop Music, Fashion, Sensory Thrills, Dance',
+                purpose: 'Aesthetic Bliss, Emotional Resonance &amp; Joy of Living',
+                domainHtml: '<span class="domain-tag domain-art">ART</span>'
+            },
+            mind: {
+                id: 'mind',
+                name: 'MIND',
+                titleHtml: '<span class="faculty-title-the">THE</span><span class="faculty-title-main">MIND</span>',
+                facultySub: 'FACULTY OF SCIENCE &amp; OBJECTIVE REASON',
+                titleClass: 'title-science',
+                borderClass: 'border-sci',
+                neonClass: 'neon-science',
+                anchors: 'Grid · Circuit · Blueprint',
+                quotes: [
+                    'TRUTH THROUGH EMPIRICAL REASON',
+                    'SCIENCE: THE NEURAL ARCHITECTURE OF REALITY',
+                    'OBJECTIVE STRUCTURE &amp; SYSTEMIC ORDER',
+                    'THE MEASURED UNIVERSE: MATHEMATICS &amp; LOGIC',
+                    'EMPIRICAL MASTERY &amp; COMPUTATIONAL ORDER',
+                    'DISCOVERING THE SYSTEMIC TRUTH OF NATURE'
+                ],
+                highFields: 'Physics, Mathematics, Astronomy, Chemistry, Neuroscience, Computer Science',
+                lowFields: 'Data Architecture, Puzzles, Sci-Fi Lore, Tech Gadgets, System Optimization, Chess',
+                purpose: 'Objective Clarity, Empirical Mastery &amp; Universal Order',
+                domainHtml: '<span class="domain-tag domain-sci">SCIENCE</span>'
+            },
+            soul: {
+                id: 'soul',
+                name: 'SOUL',
+                titleHtml: '<span class="faculty-title-the">THE</span><span class="faculty-title-main">SOUL</span>',
+                facultySub: 'FACULTY OF RELIGION &amp; SPIRITUALITY',
+                titleClass: 'title-spirit',
+                borderClass: 'border-spirit',
+                neonClass: 'neon-spirit',
+                anchors: 'Aperture · Radiance · Dissolution',
+                quotes: [
+                    'TRANSCENDENCE &amp; INNER WISDOM',
+                    'RELIGION &amp; SPIRITUALITY: THE BOUNDLESS APERTURE',
+                    'UNIVERSAL CONSCIOUSNESS &amp; VOID DISSOLUTION',
+                    'ENLIGHTENMENT BEYOND THE BOUNDED SELF',
+                    'INTUITION, MEANING &amp; ETERNAL HARMONY',
+                    'TRANSCENDENCE &amp; THE RADIANCE OF BEING'
+                ],
+                highFields: 'Transcendence, Philosophy of Mind, Mysticism, Consciousness, Ethics, Metaphysics',
+                lowFields: 'Mindfulness, Meditation, Holistic Wellness, Breathwork, Sacred Rituals, Sound Healing',
+                purpose: 'Spiritual Wisdom, Inner Peace &amp; Universal Harmony',
+                domainHtml: '<span class="domain-tag domain-spirit">RELIGION &amp; SPIRITUALITY</span>'
+            }
+        };
+        // Map alias keys for Art, Science, Spirit
+        realityData['art'] = realityData['body'];
+        realityData['science'] = realityData['mind'];
+        realityData['spirit'] = realityData['soul'];
+        const facultyData = realityData;
+
+        let currentRealityState = 'body'; // 'body' | 'mind' | 'soul'
+        let targetCameraZoom = 2.1;
+        let targetCameraPos = new THREE.Vector3(46, 30, 46);
+        let targetCameraLookAt = new THREE.Vector3(0, 0, 0);
+        let allProceduralBuildings = [];
+        let avenuePackets = [];
+        let causticRings = [];
+        let ambientLight, sunLight, streetUpLight, groundGlowLight;
+        let groundBodyGroup, groundMindGroup, groundSoulGroup;
+        let particlesBody, particlesSoul;
+
+        /* ==========================================================================
+           ADVANCED GENERATIVE REALITY SOUNDSCAPE ENGINE
+           1. BODY: Nature Sounds (Silt Wind Rustle, 44Hz Earth Drone, Heartbeat Pulse)
+           2. MIND: Digital Bleep Bleep Noises (Modular Arpeggiator & Data Packets)
+           3. SOUL: Subtle Distant Acapella Voices (Vocal Formant Choral Synthesis)
+           ========================================================================== */
+        let audioCtx = null;
+        let isAudioMuted = false;
+        let soundscapeRunning = false;
+
+        let masterGain = null;
+        let bodyBus = null;
+        let mindBus = null;
+        let soulBus = null;
+
+        let mindArpTimer = null;
+        let bodyHeartbeatTimer = null;
+
+        function initRealityAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) {
+                    audioCtx = new AudioClass();
+                    setupSoundscapeNodes();
+                }
+            } catch (e) {
+                console.warn("AudioContext init error:", e);
+            }
+        }
+
+        function setupSoundscapeNodes() {
+            if (!audioCtx) return;
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(isAudioMuted ? 0 : 0.65, audioCtx.currentTime);
+            masterGain.connect(audioCtx.destination);
+
+            // 1. Body Bus (Nature / Wind in Silt / Earthy Drone)
+            bodyBus = audioCtx.createGain();
+            bodyBus.gain.setValueAtTime(0, audioCtx.currentTime);
+            bodyBus.connect(masterGain);
+            setupBodySoundscape();
+
+            // 2. Mind Bus (Digital Bleeps / Mainframe Packets)
+            mindBus = audioCtx.createGain();
+            mindBus.gain.setValueAtTime(0, audioCtx.currentTime);
+            mindBus.connect(masterGain);
+            setupMindSoundscape();
+
+            // 3. Soul Bus (Acapella Vocal Formant Choir)
+            soulBus = audioCtx.createGain();
+            soulBus.gain.setValueAtTime(0, audioCtx.currentTime);
+            soulBus.connect(masterGain);
+            setupSoulSoundscape();
+
+            soundscapeRunning = true;
+            fadeToSoundscape(currentRealityState);
+        }
+
+        /* 1. THE BODY: Earthy Silt Wind, Subterranean Drone, and Biological Heartbeat */
+        function setupBodySoundscape() {
+            // (A) Pink Noise generator for Silt Wind
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                b6 = white * 0.115926;
+            }
+
+            const noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = noiseBuffer;
+            noiseSource.loop = true;
+
+            const windFilter = audioCtx.createBiquadFilter();
+            windFilter.type = 'bandpass';
+            windFilter.frequency.setValueAtTime(360, audioCtx.currentTime);
+            windFilter.Q.setValueAtTime(1.8, audioCtx.currentTime);
+
+            // Wind modulation LFO (slow breathing gusts)
+            const windLfo = audioCtx.createOscillator();
+            const windLfoGain = audioCtx.createGain();
+            windLfo.frequency.setValueAtTime(0.12, audioCtx.currentTime);
+            windLfoGain.gain.setValueAtTime(220, audioCtx.currentTime);
+            windLfo.connect(windLfoGain);
+            windLfoGain.connect(windFilter.frequency);
+            windLfo.start();
+
+            const windGain = audioCtx.createGain();
+            windGain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+
+            noiseSource.connect(windFilter);
+            windFilter.connect(windGain);
+            windGain.connect(bodyBus);
+            noiseSource.start();
+
+            // (B) Deep subterranean drone (44Hz Earth resonance)
+            const subOsc = audioCtx.createOscillator();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(44, audioCtx.currentTime);
+            const subGain = audioCtx.createGain();
+            subGain.gain.setValueAtTime(0.26, audioCtx.currentTime);
+            subOsc.connect(subGain);
+            subGain.connect(bodyBus);
+            subOsc.start();
+
+            // (C) Biological Heartbeat (Soft thump-thump every 1.5s)
+            startBodyHeartbeat();
+        }
+
+        function startBodyHeartbeat() {
+            if (bodyHeartbeatTimer) clearInterval(bodyHeartbeatTimer);
+            bodyHeartbeatTimer = setInterval(() => {
+                if (!audioCtx || currentRealityState !== 'body' || isAudioMuted) return;
+                const t = audioCtx.currentTime;
+                playHeartThump(t, 55, 36, 0.22);
+                playHeartThump(t + 0.18, 50, 32, 0.16);
+            }, 1500);
+        }
+
+        function playHeartThump(time, startFreq, endFreq, vol) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(startFreq, time);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, time + 0.12);
+                gain.gain.setValueAtTime(vol, time);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.16);
+                osc.connect(gain);
+                gain.connect(bodyBus);
+                osc.start(time);
+                osc.stop(time + 0.17);
+            } catch(e) {}
+        }
+
+        /* 2. THE MIND: Digital Bleep Bleep Noises & Modular Computer Arpeggiator */
+        function setupMindSoundscape() {
+            const clockOsc = audioCtx.createOscillator();
+            clockOsc.type = 'sine';
+            clockOsc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            const clockGain = audioCtx.createGain();
+            clockGain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            clockOsc.connect(clockGain);
+            clockGain.connect(mindBus);
+            clockOsc.start();
+
+            startMindBleeps();
+        }
+
+        function startMindBleeps() {
+            if (mindArpTimer) clearInterval(mindArpTimer);
+            const freqs = [1046.5, 1174.7, 1318.5, 1568.0, 1760.0, 2093.0, 2637.0, 3136.0];
+            let step = 0;
+
+            mindArpTimer = setInterval(() => {
+                if (!audioCtx || currentRealityState !== 'mind' || isAudioMuted) return;
+                const t = audioCtx.currentTime;
+
+                const f = freqs[step % freqs.length];
+                playDigitalBleep(t, f, 0.04, Math.random() > 0.5 ? 'square' : 'triangle');
+
+                if (Math.random() > 0.6) {
+                    const harmonic = freqs[(step + 3) % freqs.length];
+                    playDigitalBleep(t + 0.045, harmonic, 0.03, 'sine');
+                }
+
+                step = (step + 1 + (Math.random() > 0.75 ? 2 : 0)) % freqs.length;
+            }, 140);
+        }
+
+        function playDigitalBleep(time, freq, dur, type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+
+                const pan = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+                if (pan) {
+                    pan.pan.setValueAtTime((Math.random() * 1.6) - 0.8, time);
+                    osc.connect(gain);
+                    gain.connect(pan);
+                    pan.connect(mindBus);
+                } else {
+                    osc.connect(gain);
+                    gain.connect(mindBus);
+                }
+
+                gain.gain.setValueAtTime(0.07, time);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+                osc.start(time);
+                osc.stop(time + dur + 0.01);
+            } catch(e) {}
+        }
+
+        /* 3. THE SOUL: Subtle Distant Acapella Choir (Vocal Formant Filter Synthesis) */
+        function setupSoulSoundscape() {
+            const choirPitches = [146.83, 220.00, 349.23, 523.25, 659.25];
+
+            const formants = [
+                { f: 750, q: 4.5, gain: 0.35 },  // F1 throat resonance
+                { f: 1250, q: 5.0, gain: 0.25 }, // F2 mouth cavity
+                { f: 2450, q: 6.0, gain: 0.18 }  // F3 singer's formant brilliance
+            ];
+
+            const choirMaster = audioCtx.createGain();
+            choirMaster.gain.setValueAtTime(0.38, audioCtx.currentTime);
+
+            // Breath modulation LFO
+            const breathLfo = audioCtx.createOscillator();
+            const breathGain = audioCtx.createGain();
+            breathLfo.frequency.setValueAtTime(0.16, audioCtx.currentTime);
+            breathGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            breathLfo.connect(breathGain);
+            breathGain.connect(choirMaster.gain);
+            breathLfo.start();
+
+            // Choral vibrato LFO
+            const vibratoLfo = audioCtx.createOscillator();
+            const vibratoGain = audioCtx.createGain();
+            vibratoLfo.frequency.setValueAtTime(4.8, audioCtx.currentTime);
+            vibratoGain.gain.setValueAtTime(1.8, audioCtx.currentTime);
+            vibratoLfo.start();
+
+            choirPitches.forEach((pitch, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = (idx % 2 === 0) ? 'sawtooth' : 'triangle';
+                osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+                vibratoGain.connect(osc.frequency);
+
+                const softenFilter = audioCtx.createBiquadFilter();
+                softenFilter.type = 'lowpass';
+                softenFilter.frequency.setValueAtTime(3200, audioCtx.currentTime);
+                osc.connect(softenFilter);
+
+                formants.forEach(form => {
+                    const bFilter = audioCtx.createBiquadFilter();
+                    bFilter.type = 'bandpass';
+                    bFilter.frequency.setValueAtTime(form.f, audioCtx.currentTime);
+                    bFilter.Q.setValueAtTime(form.q, audioCtx.currentTime);
+
+                    const fGain = audioCtx.createGain();
+                    fGain.gain.setValueAtTime(form.gain * (0.18 / (idx + 1)), audioCtx.currentTime);
+
+                    softenFilter.connect(bFilter);
+                    bFilter.connect(fGain);
+                    fGain.connect(choirMaster);
+                });
+
+                osc.start();
+            });
+
+            choirMaster.connect(soulBus);
+        }
+
+        /* Morph / Crossfade between the 3 soundscape layers */
+        function fadeToSoundscape(targetState) {
+            if (!audioCtx || !bodyBus || !mindBus || !soulBus) return;
+            const t = audioCtx.currentTime;
+            const rampTime = 0.75;
+
+            bodyBus.gain.linearRampToValueAtTime(targetState === 'body' ? 0.75 : 0.0001, t + rampTime);
+            mindBus.gain.linearRampToValueAtTime(targetState === 'mind' ? 0.65 : 0.0001, t + rampTime);
+            soulBus.gain.linearRampToValueAtTime(targetState === 'soul' ? 0.85 : 0.0001, t + rampTime);
+        }
+
+        function playRealityImpactSound(state) {
+            initRealityAudio();
+            if (!audioCtx || isAudioMuted) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const t = audioCtx.currentTime;
+
+            if (state === 'body') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(85, t);
+                osc.frequency.exponentialRampToValueAtTime(30, t + 0.65);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(180, t);
+                filter.frequency.exponentialRampToValueAtTime(38, t + 0.65);
+
+                gain.gain.setValueAtTime(0.75, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGain || audioCtx.destination);
+                osc.start(t);
+                osc.stop(t + 0.75);
+            } else if (state === 'mind') {
+                [0, 0.04, 0.08].forEach((delay, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    const freq = 1950 + idx * 420;
+                    osc.frequency.setValueAtTime(freq, t + delay);
+
+                    gain.gain.setValueAtTime(0.12, t + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.035);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain || audioCtx.destination);
+                    osc.start(t + delay);
+                    osc.stop(t + delay + 0.04);
+                });
+            } else if (state === 'soul') {
+                const chord = [261.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                chord.forEach((f, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, t);
+
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.linearRampToValueAtTime(0.055 / (idx + 1), t + 0.4 + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain || audioCtx.destination);
+                    osc.start(t);
+                    osc.stop(t + 3.4);
+                });
+            }
+        }
+
+                function toggleAudio() {
+            initRealityAudio();
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            isAudioMuted = !isAudioMuted;
+            if (masterGain) {
+                masterGain.gain.linearRampToValueAtTime(isAudioMuted ? 0 : 0.65, audioCtx.currentTime + 0.15);
+            }
+            updateAudioIcon(!isAudioMuted);
+        }
+
+        function updateAudioIcon(playing) {
+            const iconOn = document.getElementById('sound-icon-on');
+            const iconOff = document.getElementById('sound-icon-off');
+            const btn = document.getElementById('sound-btn');
+            if (iconOn && iconOff) {
+                iconOn.style.display = playing ? 'block' : 'none';
+                iconOff.style.display = playing ? 'none' : 'block';
+            }
+            if (btn) {
+                btn.title = playing ? "Audio: Active (Click to Mute)" : "Audio: Muted (Click to Unmute)";
+                if (playing) {
+                    btn.classList.add('sound-active');
+                } else {
+                    btn.classList.remove('sound-active');
+                }
+            }
+        }
+
+                function updateFacultyPanel(key) {
+            const data = realityData[key] || realityData['body'];
+            if (!data) return;
+
+            if (screenFacultyName) {
+                screenFacultyName.className = `panel-faculty-title ${data.titleClass}`;
+                screenFacultyName.innerHTML = data.titleHtml;
+            }
+
+            const conceptSub = document.getElementById('screen-concept-sub');
+            if (conceptSub) {
+                conceptSub.innerHTML = data.facultySub;
+            }
+
+            const anchorValue = document.getElementById('panel-anchor-value');
+            if (anchorValue) {
+                anchorValue.textContent = data.anchors;
+            }
+
+            if (panelQuoteBox) {
+                panelQuoteBox.className = `panel-quote-box ${data.borderClass}`;
+            }
+
+            if (screenContent) {
+                screenContent.className = `neon-text ${data.neonClass}`;
+                const randQuote = data.quotes[Math.floor(Math.random() * data.quotes.length)];
+                screenContent.innerHTML = `"${randQuote}"`;
+            }
+
+            if (detailHigh) detailHigh.textContent = data.highFields;
+            if (detailLow) detailLow.textContent = data.lowFields;
+            if (detailPurpose) detailPurpose.innerHTML = data.purpose;
+            const detailDomain = document.getElementById('detail-domain');
+            if (detailDomain && data.domainHtml) detailDomain.innerHTML = data.domainHtml;
+        }
+
+        /* Reality Mutation Engine */
+        
+        function startCameraTransition(toPos, toTarget, toZoom) {
+            transitionFromPos.copy(camera.position);
+            transitionToPos.copy(toPos);
+            transitionFromTarget.copy(controls.target);
+            transitionToTarget.copy(toTarget);
+            transitionFromZoom = camera.zoom || 1.0;
+            transitionToZoom = toZoom;
+            transitionStartTime = Date.now();
+            isTransitioningCamera = true;
+        }
+
+        function switchReality(targetState, instant = false) {
+            if (!['body', 'mind', 'soul'].includes(targetState)) return;
+            currentRealityState = targetState;
+
+            // 1. Audio Soundscape Crossfade & Impact Sound
+            if (!instant) {
+                playRealityImpactSound(targetState);
+            }
+            fadeToSoundscape(targetState);
+
+            // 2. Update Dock Trigger UI
+            const dock = document.getElementById('reality-dock');
+            if (dock) {
+                dock.className = `reality-dock hud-interactive state-${targetState}`;
+            }
+            document.querySelectorAll('.reality-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-reality-${targetState}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // 3. Mutate Procedural City Buildings
+            allProceduralBuildings.forEach(b => {
+                if (b.userData.bodySub) b.userData.bodySub.visible = (targetState === 'body');
+                if (b.userData.mindSub) b.userData.mindSub.visible = (targetState === 'mind');
+                if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
+            });
+
+            // 4. Mutate Landmarks
+            specialBlocks.forEach(b => {
+                if (b.userData.bodySub) b.userData.bodySub.visible = (targetState === 'body');
+                if (b.userData.mindSub) b.userData.mindSub.visible = (targetState === 'mind');
+                if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
+            });
+
+            // 5. Mutate Ground Systems
+            if (groundBodyGroup) groundBodyGroup.visible = (targetState === 'body');
+            if (groundMindGroup) groundMindGroup.visible = (targetState === 'mind');
+            if (groundSoulGroup) groundSoulGroup.visible = (targetState === 'soul');
+
+            // 6. Mutate Atmospheric Particles
+            if (particlesBody) particlesBody.visible = (targetState === 'body');
+            if (particlesSoul) particlesSoul.visible = (targetState === 'soul');
+
+            // 7. Mutate Atmosphere, Fog & Lighting
+            if (scene) {
+                if (targetState === 'body') {
+                    scene.background = new THREE.Color(0x160706);
+                    scene.fog = new THREE.FogExp2(0x1a0807, 0.020);
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0xff3f20);
+                        sunLight.intensity = 1.45;
+                        sunLight.position.set(38, 42, 26);
+                        sunLight.castShadow = true;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0x451610);
+                        ambientLight.intensity = 0.85;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0xb91c1c);
+                        streetUpLight.intensity = 1.1;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0x7f1d1d);
+                        groundGlowLight.groundColor.setHex(0x1e0b08);
+                    }
+
+                    targetCameraZoom = 2.1;
+                    targetCameraPos.set(46, 30, 46);
+                    startCameraTransition(targetCameraPos, targetCameraLookAt, targetCameraZoom);
+                } else if (targetState === 'mind') {
+                    scene.background = new THREE.Color(0x020713);
+                    scene.fog = null;
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0xfffbeb);
+                        sunLight.intensity = 1.15;
+                        sunLight.position.set(52, 75, 52);
+                        sunLight.castShadow = false;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0x1e3a8a);
+                        ambientLight.intensity = 1.25;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0x0284c7);
+                        streetUpLight.intensity = 1.2;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0xfacc15);
+                        groundGlowLight.groundColor.setHex(0x082f49);
+                    }
+
+                    targetCameraZoom = 1.35;
+                    targetCameraPos.set(54, 54, 54);
+                    startCameraTransition(targetCameraPos, targetCameraLookAt, targetCameraZoom);
+                    if (instant) {
+                        camera.position.copy(targetCameraPos);
+                        controls.target.copy(targetCameraLookAt);
+                        camera.zoom = targetCameraZoom;
+                        isTransitioningCamera = false;
+                    }
+                } else if (targetState === 'soul') {
+                    scene.background = new THREE.Color(0x03071e);
+                    scene.fog = new THREE.FogExp2(0x050c26, 0.0075);
+
+                    if (sunLight) {
+                        sunLight.color.setHex(0x60a5fa);
+                        sunLight.intensity = 1.35;
+                        sunLight.position.set(42, 90, 42);
+                        sunLight.castShadow = true;
+                    }
+                    if (ambientLight) {
+                        ambientLight.color.setHex(0x818cf8);
+                        ambientLight.intensity = 1.3;
+                    }
+                    if (streetUpLight) {
+                        streetUpLight.color.setHex(0x38bdf8);
+                        streetUpLight.intensity = 1.5;
+                    }
+                    if (groundGlowLight) {
+                        groundGlowLight.color.setHex(0x3b82f6);
+                        groundGlowLight.groundColor.setHex(0x030712);
+                    }
+
+                    targetCameraZoom = 0.92;
+                    targetCameraPos.set(58, 72, 58);
+                    startCameraTransition(targetCameraPos, targetCameraLookAt, targetCameraZoom);
+                }
+            }
+
+            // 8. Update Right Info Rectangle to match active reality
+            updateFacultyPanel(targetState);
+        }
+
+        window.onload = function () {
+            initScene();
+            animate();
+            runIntroSequence();
+            initDraggablePanel();
+            switchReality('body', true);
+            skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
+            setInterval(updateTicker, 1000);
+        };
+
+        function updateTicker() {
+            const d = new Date();
+            const el = document.getElementById('ticker-time');
+            if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
+        }
+
+        
+        function runIntroSequence() {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 1.6;
+        }
+
+        function enterCampus() {
+            introActive = false;
+            if (introOverlay) {
+                introOverlay.style.opacity = 0;
+                setTimeout(() => {
+                    introOverlay.style.visibility = 'hidden';
+                    if (hudLayer) hudLayer.style.opacity = 1;
+                    lastAutoTourTime = Date.now();
+                }, 1000);
+            }
+
+            // Initialize and start generative soundscape on user entrance
+            initRealityAudio();
+            isAudioMuted = false;
+            if (masterGain && audioCtx) {
+                masterGain.gain.setValueAtTime(0.65, audioCtx.currentTime);
+            }
+            updateAudioIcon(true);
+        }
+
+        const landmarkLabels = {};
+
+        const LIGHTBOX_CONFIGS = {
+            red: {
+                glowColor: 'rgba(255, 30, 60, 1.0)',
+                innerGlow: 'rgba(255, 20, 50, 0.42)',
+                outerGlow: 'rgba(255, 10, 40, 0.10)',
+                lightColor: 0xff1133,
+                lightIntensity: 6.0,
+                lightDistance: 9.0
+            },
+            yellow: {
+                glowColor: 'rgba(255, 230, 0, 1.0)',
+                innerGlow: 'rgba(255, 230, 0, 0.40)',
+                outerGlow: 'rgba(255, 200, 0, 0.10)',
+                lightColor: 0xffea00,
+                lightIntensity: 6.0,
+                lightDistance: 9.0
+            },
+            blacklight: {
+                glowColor: 'rgba(168, 85, 247, 1.0)',
+                innerGlow: 'rgba(147, 51, 234, 0.45)',
+                outerGlow: 'rgba(99, 102, 241, 0.15)',
+                lightColor: 0x9333ea,
+                lightIntensity: 6.5,
+                lightDistance: 9.5
+            }
+        };
+
+        function getLightboxConfig(mode) {
+            if (LIGHTBOX_CONFIGS[mode]) return LIGHTBOX_CONFIGS[mode];
+            if (mode === '#ffbb00' || mode === 'yellow') return LIGHTBOX_CONFIGS.yellow;
+            if (mode === '#8b5cf6' || mode === 'blacklight' || mode === 'spirit') return LIGHTBOX_CONFIGS.blacklight;
+            return LIGHTBOX_CONFIGS.red;
+        }
+
+        /* Helper to draw distinct, evenly spaced shiny glowing neon characters */
+        function drawSpacedNeonText(ctx, text, cx, cy, styleMode = 'red', spacing = 32) {
+            const chars = text.split('');
+            const charWidths = chars.map(ch => ctx.measureText(ch).width);
+            const totalW = charWidths.reduce((a, b) => a + b, 0) + (chars.length - 1) * spacing;
+            let currX = cx - totalW / 2;
+
+            chars.forEach((ch, idx) => {
+                const charCenterX = currX + charWidths[idx] / 2;
+
+                if (styleMode === 'red') {
+                    // --- BRIGHT SHINY GLOWING RED ---
+                    ctx.save();
+                    // 1. Broad soft ambient scarlet halo
+                    ctx.shadowColor = 'rgba(255, 0, 40, 1.0)';
+                    ctx.shadowBlur = 54;
+                    ctx.fillStyle = '#ff0033';
+                    ctx.fillText(ch, charCenterX, cy);
+                    ctx.fillText(ch, charCenterX, cy);
+
+                    // 2. High-intensity radiant red bloom
+                    ctx.shadowColor = '#ff1144';
+                    ctx.shadowBlur = 24;
+                    ctx.strokeStyle = '#ff0033';
+                    ctx.lineWidth = 16;
+                    ctx.strokeText(ch, charCenterX, cy);
+
+                    // 3. Vibrant saturated red core body
+                    ctx.fillStyle = '#ff1a40';
+                    ctx.fillText(ch, charCenterX, cy);
+
+                    // 4. Shiny white-hot specular center filament (makes it pop and shine brilliantly)
+                    ctx.shadowColor = '#ffffff';
+                    ctx.shadowBlur = 10;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 5;
+                    ctx.strokeText(ch, charCenterX, cy);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(ch, charCenterX, cy);
+                    ctx.restore();
+
+                } else if (styleMode === 'yellow') {
+                    // --- BRIGHT SHINY GLOWING YELLOW ---
+                    ctx.save();
+                    // 1. Broad soft ambient golden solar halo
+                    ctx.shadowColor = 'rgba(255, 220, 0, 1.0)';
+                    ctx.shadowBlur = 54;
+                    ctx.fillStyle = '#ffee00';
+                    ctx.fillText(ch, charCenterX, cy);
+                    ctx.fillText(ch, charCenterX, cy);
+
+                    // 2. High-intensity radiant electric yellow bloom
+                    ctx.shadowColor = '#ffea00';
+                    ctx.shadowBlur = 24;
+                    ctx.strokeStyle = '#ffea00';
+                    ctx.lineWidth = 16;
+                    ctx.strokeText(ch, charCenterX, cy);
+
+                    // 3. Vibrant saturated yellow core body
+                    ctx.fillStyle = '#fff033';
+                    ctx.fillText(ch, charCenterX, cy);
+
+                    // 4. Shiny crystalline white-hot center filament
+                    ctx.shadowColor = '#ffffff';
+                    ctx.shadowBlur = 10;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 5;
+                    ctx.strokeText(ch, charCenterX, cy);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(ch, charCenterX, cy);
+                    ctx.restore();
+
+                } else {
+                    // --- "BLACKLIGHT" BLUE/PURPLE SHINING GLOWING ---
+                    ctx.save();
+                    // 1. Broad mystical blacklight ultraviolet aura
+                    ctx.shadowColor = 'rgba(147, 51, 234, 1.0)';
+                    ctx.shadowBlur = 58;
+                    ctx.fillStyle = '#9333ea';
+                    ctx.fillText(ch, charCenterX, cy);
+                    ctx.fillText(ch, charCenterX, cy);
+
+                    // 2. Fluorescent electric indigo-blue neon bloom
+                    ctx.shadowColor = '#6366f1';
+                    ctx.shadowBlur = 26;
+                    ctx.strokeStyle = '#818cf8';
+                    ctx.lineWidth = 16;
+                    ctx.strokeText(ch, charCenterX, cy);
+
+                    // 3. Electric violet-blue core body
+                    ctx.fillStyle = '#c084fc';
+                    ctx.fillText(ch, charCenterX, cy);
+
+                    // 4. White-violet fluorescent filament
+                    ctx.shadowColor = '#e0e7ff';
+                    ctx.shadowBlur = 12;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 5;
+                    ctx.strokeText(ch, charCenterX, cy);
+
+                    ctx.fillStyle = '#f5f3ff';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(ch, charCenterX, cy);
+                    ctx.restore();
+                }
+
+                currX += charWidths[idx] + spacing;
+            });
+        }
+
+        /* Flat Building Lightbox with Bold Glowing Shiny Neon Letters */
+        function createBuildingLightbox(text, styleMode = 'red', width = 3.6, height = 1.25) {
+            const config = getLightboxConfig(styleMode);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024;
+            canvas.height = 512;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Sleek Dark Acrylic Faceplate
+            ctx.fillStyle = '#060a16';
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(16, 16, canvas.width - 32, canvas.height - 32, 28);
+                ctx.fill();
+            } else {
+                ctx.fillRect(16, 16, canvas.width - 32, canvas.height - 32);
+            }
+
+            // Radial Backlight Glow behind the letters
+            const bgGlow = ctx.createRadialGradient(cx, cy, 10, cx, cy, canvas.width * 0.45);
+            bgGlow.addColorStop(0.0, config.innerGlow);
+            bgGlow.addColorStop(0.65, config.outerGlow);
+            bgGlow.addColorStop(1.0, 'rgba(6, 10, 22, 0)');
+            ctx.fillStyle = bgGlow;
+            ctx.fillRect(16, 16, canvas.width - 32, canvas.height - 32);
+
+            // Glowing Lightbox Perimeter Trim
+            ctx.strokeStyle = config.glowColor;
+            ctx.shadowColor = config.glowColor;
+            ctx.shadowBlur = 28;
+            ctx.lineWidth = 14;
+            ctx.stroke();
+
+            // Bold Double-Sized Neon Typography (Crisp & Massive)
+            ctx.font = '900 240px "Space Grotesk", "Outfit", "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // Draw individual spaced characters with wide, massive glyph separation
+            drawSpacedNeonText(ctx, text, cx, cy, styleMode, 54);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const lightboxGroup = new THREE.Group();
+
+            // 3D Dark Box Housing
+            const boxGeo = new THREE.BoxGeometry(width, height, 0.28);
+            const boxMat = new THREE.MeshStandardMaterial({
+                color: 0x060912,
+                roughness: 0.85,
+                metalness: 0.35
+            });
+            const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+            boxMesh.position.z = -0.14;
+            boxMesh.castShadow = true;
+            lightboxGroup.add(boxMesh);
+
+            // Glowing Neon Front Face
+            const faceGeo = new THREE.PlaneGeometry(width - 0.04, height - 0.04);
+            const faceMat = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 1.0,
+                fog: false,
+                side: THREE.DoubleSide
+            });
+            const faceMesh = new THREE.Mesh(faceGeo, faceMat);
+            faceMesh.position.z = 0.03;
+            lightboxGroup.add(faceMesh);
+
+            // Localized point light casting intense glow onto the facade
+            const pLight = new THREE.PointLight(config.lightColor, config.lightIntensity, config.lightDistance);
+            pLight.position.set(0, 0, 0.45);
+            lightboxGroup.add(pLight);
+
+            lightboxGroup.userData = {
+                faceMesh: faceMesh,
+                faceMat: faceMat,
+                pointLight: pLight,
+                config: config
+            };
+
+            return lightboxGroup;
+        }
+
+        /* Curved Building Lightbox (Mounted on Cylindrical/Curved Building Facades) */
+        function createCurvedBuildingLightbox(text, styleMode = 'yellow', radius = 1.72, height = 1.1, arcDeg = 82) {
+            const config = getLightboxConfig(styleMode);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024;
+            canvas.height = 512;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Sleek Dark Acrylic Faceplate
+            ctx.fillStyle = '#060a16';
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(16, 16, canvas.width - 32, canvas.height - 32, 28);
+                ctx.fill();
+            } else {
+                ctx.fillRect(16, 16, canvas.width - 32, canvas.height - 32);
+            }
+
+            // Radial Backlight Glow behind the letters
+            const bgGlow = ctx.createRadialGradient(cx, cy, 10, cx, cy, canvas.width * 0.45);
+            bgGlow.addColorStop(0.0, config.innerGlow);
+            bgGlow.addColorStop(0.65, config.outerGlow);
+            bgGlow.addColorStop(1.0, 'rgba(6, 10, 22, 0)');
+            ctx.fillStyle = bgGlow;
+            ctx.fillRect(16, 16, canvas.width - 32, canvas.height - 32);
+
+            // Glowing Lightbox Perimeter Trim
+            ctx.strokeStyle = config.glowColor;
+            ctx.shadowColor = config.glowColor;
+            ctx.shadowBlur = 28;
+            ctx.lineWidth = 14;
+            ctx.stroke();
+
+            // Bold Double-Sized Neon Typography
+            ctx.font = '900 180px "Space Grotesk", "Outfit", "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // Draw spaced neon text along curved facade
+            drawSpacedNeonText(ctx, text, cx, cy, styleMode, 28);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const curvedGroup = new THREE.Group();
+            const arcRad = THREE.MathUtils.degToRad(arcDeg);
+            // Center the arc facing the front (+Z axis, where angle = PI/2)
+            const thetaStart = Math.PI / 2 - arcRad / 2;
+
+            // 1. Curved Dark Backing Casing
+            const backGeo = new THREE.CylinderGeometry(radius + 0.03, radius + 0.03, height + 0.08, 36, 1, true, thetaStart - 0.03, arcRad + 0.06);
+            const backMat = new THREE.MeshStandardMaterial({
+                color: 0x060912,
+                roughness: 0.85,
+                metalness: 0.35,
+                side: THREE.DoubleSide
+            });
+            const backMesh = new THREE.Mesh(backGeo, backMat);
+            curvedGroup.add(backMesh);
+
+            // 2. Curved Glowing Neon Front Face
+            const faceGeo = new THREE.CylinderGeometry(radius + 0.1, radius + 0.1, height, 36, 1, true, thetaStart, arcRad);
+            const faceMat = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 1.0,
+                fog: false,
+                side: THREE.DoubleSide
+            });
+            const faceMesh = new THREE.Mesh(faceGeo, faceMat);
+            curvedGroup.add(faceMesh);
+
+            // 3. Point Light positioned in front of curved sign for facade illumination
+            const pLight = new THREE.PointLight(config.lightColor, config.lightIntensity, config.lightDistance);
+            pLight.position.set(0, 0, radius + 0.4);
+            curvedGroup.add(pLight);
+
+            curvedGroup.userData = {
+                faceMesh: faceMesh,
+                faceMat: faceMat,
+                pointLight: pLight,
+                config: config
+            };
+
+            return curvedGroup;
+        }
+
+        /* Radiant Black Sphere with Fading Yellow Rays of Light */
+        function createRayEmittingBlackSphere() {
+            const raySphereGroup = new THREE.Group();
+
+            // 1. Sleek Deep Obsidian / Black Metallic Sphere
+            const sphereGeo = new THREE.SphereGeometry(0.68, 32, 32);
+            const sphereMat = new THREE.MeshStandardMaterial({
+                color: 0x050508,
+                roughness: 0.2,
+                metalness: 0.85
+            });
+            const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            sphereMesh.castShadow = true;
+            raySphereGroup.add(sphereMesh);
+
+            // 2. Multitude of Radial Yellow Rays of Light (Short and Long Lines Fading Outward)
+            const rayCount = 130;
+            const positions = [];
+            const colors = [];
+
+            const rayGroup = new THREE.Group();
+
+            // Golden core and tip colors
+            const colorStart = new THREE.Color(0xfff044); // Bright intense yellow at base
+            const colorMid = new THREE.Color(0xffb700);   // Warm amber mid-ray
+            const colorEnd = new THREE.Color(0x000000);   // Fading away to black/transparent
+
+            for (let i = 0; i < rayCount; i++) {
+                // Uniform Fibonacci / spherical distribution with jitter
+                const phi = Math.acos(1 - 2 * (i + 0.5) / rayCount);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+
+                // Base direction vector
+                const dir = new THREE.Vector3(
+                    Math.sin(phi) * Math.cos(theta),
+                    Math.sin(phi) * Math.sin(theta),
+                    Math.cos(phi)
+                ).normalize();
+
+                // Vary ray length: mix of short (1.1 to 1.8) and long dramatic rays (2.4 to 4.2)
+                const isLongRay = (i % 3 === 0);
+                const rayLen = isLongRay ? (2.4 + Math.random() * 1.8) : (1.1 + Math.random() * 0.9);
+
+                // Segment 1: Base to mid (bright yellow to warm gold)
+                const p0 = dir.clone().multiplyScalar(0.68);
+                const pMid = dir.clone().multiplyScalar(0.68 + rayLen * 0.45);
+                const p1 = dir.clone().multiplyScalar(0.68 + rayLen);
+
+                // Line 1 (Base -> Mid)
+                positions.push(p0.x, p0.y, p0.z, pMid.x, pMid.y, pMid.z);
+                colors.push(colorStart.r, colorStart.g, colorStart.b, colorMid.r, colorMid.g, colorMid.b);
+
+                // Line 2 (Mid -> Tip, fading to zero)
+                positions.push(pMid.x, pMid.y, pMid.z, p1.x, p1.y, p1.z);
+                colors.push(colorMid.r, colorMid.g, colorMid.b, colorEnd.r, colorEnd.g, colorEnd.b);
+            }
+
+            const linesGeo = new THREE.BufferGeometry();
+            linesGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            linesGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const linesMat = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const linesMesh = new THREE.LineSegments(linesGeo, linesMat);
+            rayGroup.add(linesMesh);
+
+            // 3. Additional volumetric needle flares for hero rays
+            const heroNeedleCount = 24;
+            for (let i = 0; i < heroNeedleCount; i++) {
+                const phi = Math.acos(1 - 2 * (i + 0.5) / heroNeedleCount);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * i + 0.4;
+                const dir = new THREE.Vector3(
+                    Math.sin(phi) * Math.cos(theta),
+                    Math.sin(phi) * Math.sin(theta),
+                    Math.cos(phi)
+                ).normalize();
+                const len = 2.6 + Math.random() * 1.5;
+
+                const needleGeo = new THREE.ConeGeometry(0.045, len, 6);
+                needleGeo.translate(0, len / 2 + 0.68, 0);
+                const needleMat = new THREE.MeshBasicMaterial({
+                    color: 0xffea00,
+                    transparent: true,
+                    opacity: 0.4,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                const needleMesh = new THREE.Mesh(needleGeo, needleMat);
+                needleMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+                rayGroup.add(needleMesh);
+            }
+
+            raySphereGroup.add(rayGroup);
+
+            // Local radiant golden point light
+            const rayLight = new THREE.PointLight(0xffea00, 5.5, 20);
+            rayLight.position.set(0, 0, 0);
+            raySphereGroup.add(rayLight);
+
+            raySphereGroup.userData = {
+                rayGroup: rayGroup,
+                linesMat: linesMat
+            };
+
+            return raySphereGroup;
+        }
+
+        /* Volumetric Infinite Purple Lightbeam with Concave Upward Flare & Multi-Layer Glow */
+        function createInfiniteLightbeam() {
+            const beamGroup = new THREE.Group();
+
+            const H = 220;
+            const steps = 48;
+            const pointsCore = [];
+            const pointsBeam = [];
+            const pointsGlow = [];
+            const pointsOuterGlow = [];
+
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps; // 0 (apex) to 1 (high sky)
+                const y = t * H;
+                // Concave curve function (smooth parabolic/exponential upward expansion high in the air)
+                const concaveFlare = Math.pow(t, 2.3);
+
+                // 1. Slender White-Violet Laser Core
+                const rCore = 0.08 + 0.28 * concaveFlare;
+                pointsCore.push(new THREE.Vector2(rCore, y));
+
+                // 2. Main Radiant Violet-Purple Beam
+                const rBeam = 0.26 + 1.2 * concaveFlare;
+                pointsBeam.push(new THREE.Vector2(rBeam, y));
+
+                // 3. Primary Atmospheric Purple Glow
+                const rGlow = 0.6 + 2.4 * concaveFlare;
+                pointsGlow.push(new THREE.Vector2(rGlow, y));
+
+                // 4. Secondary Outer Violet Nebula Glow ("glow of the glow")
+                const rOuter = 1.3 + 4.8 * concaveFlare;
+                pointsOuterGlow.push(new THREE.Vector2(rOuter, y));
+            }
+
+            // 1. Core Laser Filament
+            const coreGeo = new THREE.LatheGeometry(pointsCore, 24);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0xf5f3ff,
+                transparent: true,
+                opacity: 0.95,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            beamGroup.add(coreMesh);
+
+            // 2. Primary Radiant Purple Beam
+            const beamGeo = new THREE.LatheGeometry(pointsBeam, 28);
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: 0xc084fc,
+                transparent: true,
+                opacity: 0.58,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+            beamGroup.add(beamMesh);
+
+            // 3. Mid Atmospheric Electric Violet Glow
+            const glowGeo = new THREE.LatheGeometry(pointsGlow, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0x9333ea,
+                transparent: true,
+                opacity: 0.32,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+            beamGroup.add(glowMesh);
+
+            // 4. Outer Soft Indigo-Violet Aura ("glow of the glow")
+            const outerGlowGeo = new THREE.LatheGeometry(pointsOuterGlow, 36);
+            const outerGlowMat = new THREE.MeshBasicMaterial({
+                color: 0x6366f1,
+                transparent: true,
+                opacity: 0.16,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const outerGlowMesh = new THREE.Mesh(outerGlowGeo, outerGlowMat);
+            beamGroup.add(outerGlowMesh);
+
+            // 5. Apex Radiant Energy Flare Sphere
+            const flareGeo = new THREE.SphereGeometry(0.75, 16, 16);
+            const flareMat = new THREE.MeshBasicMaterial({
+                color: 0xe9d5ff,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending
+            });
+            const flareMesh = new THREE.Mesh(flareGeo, flareMat);
+            flareMesh.position.y = 0.2;
+            beamGroup.add(flareMesh);
+
+            beamGroup.userData = {
+                coreMat: coreMat,
+                beamMat: beamMat,
+                glowMat: glowMat,
+                outerGlowMat: outerGlowMat,
+                flareMesh: flareMesh
+            };
+
+            return beamGroup;
+        }
+
+        function toggleFacultyPanel(e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            const panel = document.getElementById('faculty-panel-right');
+            const btn = document.getElementById('panel-toggle-btn');
+            if (!panel) return;
+            const isCollapsed = panel.classList.toggle('collapsed');
+            if (btn) {
+                btn.title = isCollapsed ? "Expand content" : "Collapse into header";
+                btn.setAttribute('aria-expanded', !isCollapsed);
+            }
+        }
+
+        /* Draggable Faculty Data Screen across the screen */
+        function initDraggablePanel() {
+            const panel = document.getElementById('faculty-panel-right');
+            const header = document.getElementById('panel-header-drag');
+            if (!panel || !header) return;
+
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let initialLeft = 0;
+            let initialTop = 0;
+            let hasMoved = false;
+
+            header.addEventListener('pointerdown', (e) => {
+                // Ignore if clicked directly on the toggle button
+                if (e.target.closest('#panel-toggle-btn')) return;
+
+                isDragging = true;
+                hasMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = panel.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                panel.style.left = `${initialLeft}px`;
+                panel.style.top = `${initialTop}px`;
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+                panel.style.transform = 'none';
+
+                header.setPointerCapture(e.pointerId);
+                panel.classList.add('is-dragging');
+            });
+
+            header.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (Math.hypot(dx, dy) > 5) {
+                    hasMoved = true;
+                }
+
+                if (hasMoved) {
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+
+                    const margin = 8;
+                    const maxLeft = window.innerWidth - panel.offsetWidth - margin;
+                    const maxTop = window.innerHeight - panel.offsetHeight - margin;
+
+                    newLeft = Math.max(margin, Math.min(newLeft, maxLeft));
+                    newTop = Math.max(margin, Math.min(newTop, maxTop));
+
+                    panel.style.left = `${newLeft}px`;
+                    panel.style.top = `${newTop}px`;
+                }
+            });
+
+            const stopDrag = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                panel.classList.remove('is-dragging');
+
+                if (header.hasPointerCapture && header.hasPointerCapture(e.pointerId)) {
+                    header.releasePointerCapture(e.pointerId);
+                }
+
+                // If user just tapped/clicked the header without dragging, and panel is collapsed, expand it!
+                if (!hasMoved && !e.target.closest('#panel-toggle-btn')) {
+                    if (panel.classList.contains('collapsed')) {
+                        toggleFacultyPanel(e);
+                    }
+                }
+            };
+
+            header.addEventListener('pointerup', stopDrag);
+            header.addEventListener('pointercancel', stopDrag);
+        }
+
+
+
+        /* 3D Scene Initialization */
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x080d1a);
+            scene.fog = new THREE.FogExp2(0x080d1a, 0.011);
+
+            const aspect = container.clientWidth / container.clientHeight;
+            const d = 26;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(58, 62, 58);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+                        controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.maxPolarAngle = Math.PI / 2.05;
+            controls.minZoom = 0.5;
+            controls.maxZoom = 4.0;
+            controls.screenSpacePanning = true;
+            controls.panSpeed = 1.2;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 1.6;
+
+            controls.addEventListener('start', () => {
+                userInteracting = true;
+                lastUserInteractionTime = Date.now();
+                cinematicTarget = null;
+                isTransitioningCamera = false;
+                if (!isManualControl) {
+                    controls.autoRotate = false;
+                }
+            });
+
+            controls.addEventListener('end', () => {
+                userInteracting = false;
+                lastUserInteractionTime = Date.now();
+            });
+
+            // Environmental Lighting & Upward Streetlevel Glow
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
+
+            // Upward light emanating from street level (Ground Lift Light)
+            streetUpLight = new THREE.DirectionalLight(0x38bdf8, 1.25);
+            streetUpLight.position.set(0, -15, 0);
+            streetUpLight.target.position.set(0, 10, 0);
+            scene.add(streetUpLight);
+            scene.add(streetUpLight.target);
+
+            // Ground plane upward bounce illumination
+            groundGlowLight = new THREE.HemisphereLight(0x38bdf8, 0x0f274a, 1.15);
+            scene.add(groundGlowLight);
+
+            // Main Sunlight for clean architectural shadows
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.25);
+            sunLight.position.set(45, 80, 35);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 10;
+            sunLight.shadow.camera.far = 200;
+            sunLight.shadow.camera.left = -50;
+            sunLight.shadow.camera.right = 50;
+            sunLight.shadow.camera.top = 50;
+            sunLight.shadow.camera.bottom = -50;
+            sunLight.shadow.bias = -0.0005;
+            scene.add(sunLight);
+
+            // Procedural City & Landmarks across 3 Realities
+            generateProceduralCity();
+
+            // Atmospheric Particle Fields (Body soot & Soul starlight)
+            generateAtmosphericParticles();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('mousemove', onMouseMove, false);
+            window.addEventListener('pointerdown', (e) => {
+                pointerDownPos = { x: e.clientX, y: e.clientY };
+            }, false);
+            window.addEventListener('click', onCanvasClick, false);
+            window.addEventListener('keydown', onKeyDown, false);
+            window.addEventListener('keyup', onKeyUp, false);
+        }
+
+        /* Procedural Architectural Variations & Landmark Generator (3 Reality States) */
+        function generateProceduralCity() {
+            const GRID = 24;
+            const SPACING = 2.0;
+            const centerOffset = (GRID * SPACING) / 2;
+
+            allProceduralBuildings = [];
+            specialBlocks = [];
+            avenuePackets = [];
+            causticRings = [];
+
+            // 1. Palettes
+            // Body: Cadmium red, oxblood, terra-cotta, soot black, bone ivory
+            const bodyMatPalette = [
+                new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.94, metalness: 0.05 }), // cadmium red
+                new THREE.MeshStandardMaterial({ color: 0x580d13, roughness: 0.95, metalness: 0.04 }), // oxblood
+                new THREE.MeshStandardMaterial({ color: 0x8b221a, roughness: 0.92, metalness: 0.06 }), // rust brick
+                new THREE.MeshStandardMaterial({ color: 0xbf4d2e, roughness: 0.90, metalness: 0.08 }), // terra-cotta
+                new THREE.MeshStandardMaterial({ color: 0x361b15, roughness: 0.96, metalness: 0.03 }), // compressed earth
+                new THREE.MeshStandardMaterial({ color: 0x161010, roughness: 0.98, metalness: 0.02 })  // soot black
+            ];
+            const bodyFootingMat = new THREE.MeshStandardMaterial({ color: 0x221310, roughness: 0.96, metalness: 0.04 });
+            const bodyStrataMat = new THREE.MeshStandardMaterial({ color: 0x0c0606, roughness: 0.98, metalness: 0.02 });
+            const bodyIvoryMat = new THREE.MeshStandardMaterial({ color: 0xded6c8, roughness: 0.88, metalness: 0.08 });
+
+            // Mind: Hairline wireframe, X-ray transparency, acid yellow, cadmium lemon, blueprint cyan
+            const mindShellMat = new THREE.MeshBasicMaterial({
+                color: 0x052640,
+                transparent: true,
+                opacity: 0.16,
+                depthWrite: false
+            });
+            const mindWireYellow = new THREE.LineBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.9 });
+            const mindWireCyan = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.85 });
+            const mindShaftMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.65 });
+            const mindNodeMat = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+
+            // Landmark positions on 24x24 grid
+            const artPos = { x: 7, z: 7 };
+            const sciPos = { x: 17, z: 7 };
+            const spiritPos = { x: 12, z: 17 };
+
+            for (let x = 0; x < GRID; x++) {
+                for (let z = 0; z < GRID; z++) {
+                    const posX = x * SPACING - centerOffset;
+                    const posZ = z * SPACING - centerOffset;
+                    const distFromCenter = Math.sqrt(posX * posX + posZ * posZ);
+
+                    // ==========================================
+                    // 1. LANDMARK: THE BODY (Art Faculty)
+                    // ==========================================
+                    if (x === artPos.x && z === artPos.z) {
+                        const artGroup = new THREE.Group();
+                        artGroup.position.set(posX, 0, posZ);
+
+                        const bodySub = new THREE.Group();
+                        const mindSub = new THREE.Group();
+                        const soulSub = new THREE.Group();
+
+                        // -- Body Layer --
+                        const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.4, 4.2), bodyFootingMat);
+                        baseMesh.position.y = 0.7;
+                        baseMesh.castShadow = true; baseMesh.receiveShadow = true;
+                        bodySub.add(baseMesh);
+
+                        const towerMat = new THREE.MeshStandardMaterial({
+                            color: 0xb91c1c,
+                            emissive: 0x500d11,
+                            emissiveIntensity: 0.85,
+                            roughness: 0.88,
+                            metalness: 0.12
+                        });
+                        const towerMesh = new THREE.Mesh(new THREE.BoxGeometry(2.6, 9.2, 2.6), towerMat);
+                        towerMesh.position.set(0, 5.2, 0);
+                        towerMesh.castShadow = true;
+                        bodySub.add(towerMesh);
+
+                        // Horizontal carved tectonic strata rib slots
+                        for (let sY = 2.0; sY <= 8.5; sY += 1.4) {
+                            const rib = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 2.7), bodyStrataMat);
+                            rib.position.y = sY;
+                            bodySub.add(rib);
+                        }
+
+                        const raySphere = createRayEmittingBlackSphere();
+                        raySphere.position.set(0, 10.2, 0);
+                        bodySub.add(raySphere);
+                        artRayGroup = raySphere.userData.rayGroup;
+
+                        // -- Mind Layer (X-Ray schematic) --
+                        const mBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.4, 4.2), mindShellMat);
+                        mBase.position.y = 0.7;
+                        mindSub.add(mBase);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(mBase.geometry), mindWireYellow));
+
+                        const mTower = new THREE.Mesh(new THREE.BoxGeometry(2.6, 9.2, 2.6), mindShellMat);
+                        mTower.position.set(0, 5.2, 0);
+                        mindSub.add(mTower);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(mTower.geometry), mindWireYellow));
+
+                        const mShaft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 9.2, 0.5), mindShaftMat);
+                        mShaft.position.set(0, 5.2, 0);
+                        mindSub.add(mShaft);
+
+                        // -- Soul Layer (Radiant ruby mirage) --
+                        const sMesh = new THREE.Mesh(
+                            new THREE.BoxGeometry(2.8, 9.6, 2.8),
+                            new THREE.MeshStandardMaterial({
+                                color: 0xef4444,
+                                emissive: 0xb91c1c,
+                                emissiveIntensity: 0.85,
+                                transparent: true,
+                                opacity: 0.45,
+                                roughness: 0.1
+                            })
+                        );
+                        sMesh.position.set(0, 5.4, 0);
+                        soulSub.add(sMesh);
+
+                        const conduit = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.1, 0.4, 12, 16),
+                            new THREE.MeshBasicMaterial({ color: 0xfca5a5, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending })
+                        );
+                        conduit.position.set(0, 11, 0);
+                        soulSub.add(conduit);
+
+                        artGroup.add(bodySub);
+                        artGroup.add(mindSub);
+                        artGroup.add(soulSub);
+                        artGroup.userData = { type: 'art', label: 'THE FACULTY OF THE BODY', category: 'Flesh · Tectonics · Silt', bodySub, mindSub, soulSub };
+
+                        // Lightboxes
+                        const artLightbox = createBuildingLightbox("BODY", "red", 2.4, 1.15);
+                        artLightbox.position.set(0, 6.2, 1.32);
+                        artGroup.add(artLightbox);
+                        landmarkLabels['art'] = artLightbox;
+
+                        scene.add(artGroup);
+                        specialBlocks.push(artGroup);
+
+                        const pLight = new THREE.PointLight(0xff2200, 5.0, 25);
+                        pLight.position.set(posX, 10.2, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+                        continue;
+                    }
+
+                    // ==========================================
+                    // 2. LANDMARK: THE MIND (Science Faculty)
+                    // ==========================================
+                    if (x === sciPos.x && z === sciPos.z) {
+                        const sciGroup = new THREE.Group();
+                        sciGroup.position.set(posX, 0, posZ);
+
+                        const bodySub = new THREE.Group();
+                        const mindSub = new THREE.Group();
+                        const soulSub = new THREE.Group();
+
+                        // -- Body Layer (Stepped brutalist ziggurat monolith) --
+                        const z1 = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.9, 3.2, 8), bodyMatPalette[3]);
+                        z1.position.y = 1.6;
+                        z1.castShadow = true;
+                        bodySub.add(z1);
+
+                        const z2 = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 2.1, 5.6, 8), bodyMatPalette[0]);
+                        z2.position.y = 5.4;
+                        z2.castShadow = true;
+                        bodySub.add(z2);
+
+                        // -- Mind Layer (Cybernetic Mainframe & Knowledge Atom) --
+                        const cyl1 = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 3.0, 8), mindShellMat);
+                        cyl1.position.y = 1.5;
+                        mindSub.add(cyl1);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(cyl1.geometry), mindWireCyan));
+
+                        const cyl2 = new THREE.Mesh(
+                            new THREE.CylinderGeometry(1.6, 1.8, 5.6, 8),
+                            new THREE.MeshStandardMaterial({
+                                color: 0xffea00,
+                                emissive: 0xfacc15,
+                                emissiveIntensity: 0.9,
+                                roughness: 0.15,
+                                metalness: 0.65
+                            })
+                        );
+                        cyl2.position.y = 5.3;
+                        mindSub.add(cyl2);
+
+                        // Knowledge Atom with Orbital Rings
+                        const atomCluster = new THREE.Group();
+                        atomCluster.position.y = 9.8;
+                        const atomNucleus = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.55, 32, 32),
+                            new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xffea00, emissiveIntensity: 0.95 })
+                        );
+                        atomCluster.add(atomNucleus);
+
+                        const rGeom = new THREE.TorusGeometry(1.35, 0.05, 16, 64);
+                        const rMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.9 });
+                        [0, Math.PI / 2, Math.PI / 4].forEach((rot, i) => {
+                            const r = new THREE.Mesh(rGeom, rMat);
+                            if (i === 1) r.rotation.x = rot;
+                            if (i === 2) r.rotation.y = rot;
+                            atomCluster.add(r);
+                        });
+                        mindSub.add(atomCluster);
+                        scienceAtomGroup = atomCluster;
+                        scienceAtomNucleus = atomNucleus;
+
+                        // -- Soul Layer (Golden sapphire halo cathedral) --
+                        const sCyl = new THREE.Mesh(
+                            new THREE.CylinderGeometry(1.8, 2.2, 8.5, 16),
+                            new THREE.MeshStandardMaterial({
+                                color: 0xfacc15,
+                                emissive: 0xd97706,
+                                emissiveIntensity: 0.75,
+                                transparent: true,
+                                opacity: 0.42
+                            })
+                        );
+                        sCyl.position.y = 4.8;
+                        soulSub.add(sCyl);
+
+                        sciGroup.add(bodySub);
+                        sciGroup.add(mindSub);
+                        sciGroup.add(soulSub);
+                        sciGroup.userData = { type: 'science', label: 'THE FACULTY OF THE MIND', category: 'Grid · Circuit · Blueprint', bodySub, mindSub, soulSub };
+
+                        const sciLightbox = createCurvedBuildingLightbox("MIND", "yellow", 1.70, 0.88, 70);
+                        sciLightbox.position.set(0, 5.8, 0);
+                        sciGroup.add(sciLightbox);
+                        landmarkLabels['science'] = sciLightbox;
+
+                        scene.add(sciGroup);
+                        specialBlocks.push(sciGroup);
+
+                        const pLight = new THREE.PointLight(0xffea00, 5.5, 25);
+                        pLight.position.set(posX, 9.8, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+                        continue;
+                    }
+
+                    // ==========================================
+                    // 3. LANDMARK: THE SOUL (Spirit Faculty)
+                    // ==========================================
+                    if (x === spiritPos.x && z === spiritPos.z) {
+                        const spiritGroup = new THREE.Group();
+                        spiritGroup.position.set(posX, 0, posZ);
+
+                        const bodySub = new THREE.Group();
+                        const mindSub = new THREE.Group();
+                        const soulSub = new THREE.Group();
+
+                        // -- Body Layer (Massive dark basalt & bone ivory obelisk) --
+                        const bMesh = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.8, 4.0), bodyFootingMat);
+                        bMesh.position.y = 0.9;
+                        bMesh.castShadow = true;
+                        bodySub.add(bMesh);
+
+                        const obelisk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 9.6, 2.4), bodyMatPalette[5]);
+                        obelisk.position.y = 5.8;
+                        obelisk.castShadow = true;
+                        bodySub.add(obelisk);
+
+                        const ivoryCap = new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.4, 4), bodyIvoryMat);
+                        ivoryCap.position.y = 11.2;
+                        ivoryCap.rotation.y = Math.PI / 4;
+                        bodySub.add(ivoryCap);
+
+                        // -- Mind Layer (Laser-ruled elevation pyramid) --
+                        const mSpire = new THREE.Mesh(new THREE.ConeGeometry(1.85, 9.8, 4), mindShellMat);
+                        mSpire.position.y = 6.0;
+                        mSpire.rotation.y = Math.PI / 4;
+                        mindSub.add(mSpire);
+                        mindSub.add(new THREE.LineSegments(new THREE.EdgesGeometry(mSpire.geometry), mindWireYellow));
+
+                        // -- Soul Layer (Soaring aperture spire & infinite lightbeam) --
+                        const sSpire = new THREE.Mesh(
+                            new THREE.ConeGeometry(1.85, 9.8, 4),
+                            new THREE.MeshStandardMaterial({
+                                color: 0x3b82f6,
+                                emissive: 0x1d4ed8,
+                                emissiveIntensity: 0.95,
+                                transparent: true,
+                                opacity: 0.5,
+                                roughness: 0.1
+                            })
+                        );
+                        sSpire.position.y = 6.0;
+                        sSpire.rotation.y = Math.PI / 4;
+                        soulSub.add(sSpire);
+
+                        const apex = new THREE.Mesh(new THREE.OctahedronGeometry(0.6, 0), new THREE.MeshBasicMaterial({ color: 0xe0e7ff }));
+                        apex.position.y = 11.2;
+                        soulSub.add(apex);
+
+                        const purpleBeam = createInfiniteLightbeam();
+                        purpleBeam.position.set(0, 11.2, 0);
+                        soulSub.add(purpleBeam);
+                        purpleBeamGroup = purpleBeam;
+
+                        spiritGroup.add(bodySub);
+                        spiritGroup.add(mindSub);
+                        spiritGroup.add(soulSub);
+                        spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Aperture · Radiance · Dissolution', bodySub, mindSub, soulSub };
+
+                        const spiritLightbox = createBuildingLightbox("SOUL", "blacklight", 1.5, 0.72);
+                        spiritLightbox.position.set(0, 6.6, 0.75);
+                        spiritGroup.add(spiritLightbox);
+                        landmarkLabels['spirit'] = spiritLightbox;
+
+                        scene.add(spiritGroup);
+                        specialBlocks.push(spiritGroup);
+
+                        const pLight = new THREE.PointLight(0x38bdf8, 5.5, 25);
+                        pLight.position.set(posX, 11.2, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+                        continue;
+                    }
+
+                    // ==========================================
+                    // 4. PROCEDURAL CAMPUS BUILDING BLOCKS
+                    // ==========================================
+                    const bGroup = new THREE.Group();
+                    bGroup.position.set(posX, 0, posZ);
+
+                    const bodySub = new THREE.Group();
+                    const mindSub = new THREE.Group();
+                    const soulSub = new THREE.Group();
+
+                    const archetype = Math.floor(Math.random() * 6);
+                    const bodyMat = bodyMatPalette[Math.floor(Math.random() * bodyMatPalette.length)];
+                    let totalHeight = 1;
+
+                    // Building Dimensions
+                    let bW = 1.3, bD = 1.3, bH = 1.8;
+                    if (archetype === 0) {
+                        bW = 1.4; bD = 1.4; bH = 1.6 + Math.random() * 2.8;
+                    } else if (archetype === 1) {
+                        bW = 1.2; bD = 1.2; bH = 2.2 + Math.random() * 3.4;
+                    } else if (archetype === 2) {
+                        bW = 1.3; bD = 1.3; bH = 1.4 + Math.random() * 2.2;
+                    } else if (archetype === 3) {
+                        bW = 1.2; bD = 1.2; bH = 2.4 + Math.random() * 4.0;
+                    } else if (archetype === 4) {
+                        bW = 1.3; bD = 1.3; bH = 1.5 + Math.random() * 2.6;
+                    } else {
+                        bW = 1.2; bD = 1.2; bH = 1.2 + Math.random() * 3.0;
+                    }
+                    totalHeight = bH;
+
+                    // --- LAYER 1: THE BODY (Brutal Monolith, Weighted Footing, Horizontal Strata) ---
+                    // Footing wider at base, rooted into dark silt
+                    const footingH = 0.45;
+                    const footing = new THREE.Mesh(new THREE.BoxGeometry(bW * 1.35, footingH, bD * 1.35), bodyFootingMat);
+                    footing.position.y = footingH / 2;
+                    footing.castShadow = true; footing.receiveShadow = true;
+                    bodySub.add(footing);
+
+                    // Monolith Main Mass
+                    const monolith = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), bodyMat);
+                    monolith.position.y = footingH + bH / 2;
+                    monolith.castShadow = true; monolith.receiveShadow = true;
+                    bodySub.add(monolith);
+
+                    // Horizontal strata window slots / rib-cage bands
+                    const numStrata = Math.max(1, Math.floor(bH / 1.2));
+                    for (let s = 1; s <= numStrata; s++) {
+                        const slotY = footingH + (s / (numStrata + 1)) * bH;
+                        const strataMesh = new THREE.Mesh(new THREE.BoxGeometry(bW * 1.02, 0.12, bD * 1.02), bodyStrataMat);
+                        strataMesh.position.y = slotY;
+                        bodySub.add(strataMesh);
+                    }
+
+                    // --- LAYER 2: THE MIND (X-Ray Wireframe, Internal Staircase, Structural Nodes) ---
+                    const mBox = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), mindShellMat);
+                    mBox.position.y = bH / 2;
+                    mindSub.add(mBox);
+
+                    const wireMat = Math.random() > 0.4 ? mindWireYellow : mindWireCyan;
+                    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mBox.geometry), wireMat);
+                    edges.position.y = bH / 2;
+                    mindSub.add(edges);
+
+                    // Central internal elevator/stair conduit
+                    const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.25, bH, 0.25), mindShaftMat);
+                    shaft.position.y = bH / 2;
+                    mindSub.add(shaft);
+
+                    // Corner structural nodes
+                    [[-bW/2, -bD/2], [bW/2, -bD/2], [-bW/2, bD/2], [bW/2, bD/2]].forEach(pt => {
+                        const node = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mindNodeMat);
+                        node.position.set(pt[0], bH, pt[1]);
+                        mindSub.add(node);
+                    });
+
+                    // Apex Crosshair
+                    const crosshairLine = new THREE.LineSegments(
+                        new THREE.BufferGeometry().setFromPoints([
+                            new THREE.Vector3(-0.25, 0, 0), new THREE.Vector3(0.25, 0, 0),
+                            new THREE.Vector3(0, 0, -0.25), new THREE.Vector3(0, 0, 0.25)
+                        ]),
+                        wireMat
+                    );
+                    crosshairLine.position.y = bH + 0.05;
+                    mindSub.add(crosshairLine);
+
+                    // --- LAYER 3: THE SOUL (Illuminated Field, Dissolving Void, Upward Apertures) ---
+                    // Archipelago dissolution factor: center is radiant, perimeter dissolves into void
+                    const fadeFactor = Math.max(0.02, 1.0 - (distFromCenter / 28.0));
+                    const soulAlpha = 0.08 + 0.38 * fadeFactor;
+                    const soulEmissive = 0.35 + 0.65 * fadeFactor;
+
+                    const sMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x1d4ed8,
+                        emissive: 0x2563eb,
+                        emissiveIntensity: soulEmissive,
+                        roughness: 0.15,
+                        metalness: 0.75,
+                        transparent: true,
+                        opacity: soulAlpha,
+                        depthWrite: false
+                    });
+
+                    const soulMesh = new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), sMaterial);
+                    soulMesh.position.y = bH / 2;
+                    soulSub.add(soulMesh);
+
+                    // Upward Light Aperture Spire
+                    if (fadeFactor > 0.15) {
+                        const spireH = bH * 0.6;
+                        const spire = new THREE.Mesh(
+                            new THREE.ConeGeometry(0.15, spireH, 4),
+                            new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.4 * fadeFactor, blending: THREE.AdditiveBlending })
+                        );
+                        spire.position.y = bH + spireH / 2;
+                        soulSub.add(spire);
+                    }
+
+                    bGroup.add(bodySub);
+                    bGroup.add(mindSub);
+                    bGroup.add(soulSub);
+
+                    bGroup.userData = {
+                        type: 'campus',
+                        label: `Metropolis Sector [${x},${z}]`,
+                        height: totalHeight,
+                        bodySub,
+                        mindSub,
+                        soulSub,
+                        distFromCenter
+                    };
+
+                    allProceduralBuildings.push(bGroup);
+                    scene.add(bGroup);
+                }
+            }
+
+            // ==========================================
+            // 5. GROUND SYSTEMS MUTATION
+            // ==========================================
+            // (A) Ground Body: Muddy silt foundation plane & tectonic fissures
+            groundBodyGroup = new THREE.Group();
+            const siltPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(160, 160),
+                new THREE.MeshStandardMaterial({
+                    color: 0x140a08,
+                    roughness: 0.98,
+                    metalness: 0.02
+                })
+            );
+            siltPlane.rotation.x = -Math.PI / 2;
+            siltPlane.receiveShadow = true;
+            groundBodyGroup.add(siltPlane);
+
+            // Heavy tectonic earth fissure slabs
+            for (let i = -6; i <= 6; i++) {
+                const slab = new THREE.Mesh(
+                    new THREE.PlaneGeometry(GRID * SPACING * 1.1, 0.4),
+                    new THREE.MeshBasicMaterial({ color: 0x2d1410 })
+                );
+                slab.rotation.x = -Math.PI / 2;
+                slab.position.set(0, 0.02, i * 4.0);
+                groundBodyGroup.add(slab);
+            }
+            scene.add(groundBodyGroup);
+
+            // (B) Ground Mind: Precision blueprint coordinate grid, vector bus lines, moving data packets
+            groundMindGroup = new THREE.Group();
+            const gridHelper = new THREE.GridHelper(GRID * SPACING, GRID, 0xffea00, 0x0369a1);
+            gridHelper.position.y = 0.03;
+            groundMindGroup.add(gridHelper);
+
+            // Precision ruled bus lines
+            [-10, 0, 10].forEach(offset => {
+                const traceX = new THREE.Mesh(
+                    new THREE.PlaneGeometry(GRID * SPACING * 1.05, 0.25),
+                    new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7 })
+                );
+                traceX.rotation.x = -Math.PI / 2;
+                traceX.position.set(0, 0.04, offset);
+                groundMindGroup.add(traceX);
+
+                const traceZ = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.25, GRID * SPACING * 1.05),
+                    new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.7 })
+                );
+                traceZ.rotation.x = -Math.PI / 2;
+                traceZ.position.set(offset, 0.04, 0);
+                groundMindGroup.add(traceZ);
+            });
+
+            // 24 Moving Data Packets along Grid Avenues
+            for (let p = 0; p < 24; p++) {
+                const isX = Math.random() > 0.5;
+                const offset = [-10, -6, -2, 2, 6, 10][Math.floor(Math.random() * 6)];
+                const pktMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.35, 0.12, 0.2),
+                    new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xffea00 : 0x00f0ff })
+                );
+                pktMesh.position.set(isX ? (Math.random() - 0.5) * 40 : offset, 0.08, isX ? offset : (Math.random() - 0.5) * 40);
+                groundMindGroup.add(pktMesh);
+
+                avenuePackets.push({
+                    mesh: pktMesh,
+                    dir: isX ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1),
+                    speed: 0.12 + Math.random() * 0.18,
+                    spawnX: isX ? -24 : offset,
+                    spawnZ: isX ? offset : -24
+                });
+            }
+            scene.add(groundMindGroup);
+
+            // (C) Ground Soul: Oceanic indigo mirage & animated caustic interference wave rings
+            groundSoulGroup = new THREE.Group();
+            const oceanPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(160, 160),
+                new THREE.MeshBasicMaterial({ color: 0x03071e })
+            );
+            oceanPlane.rotation.x = -Math.PI / 2;
+            groundSoulGroup.add(oceanPlane);
+
+            // Caustic interference concentric rings
+            for (let r = 1; r <= 8; r++) {
+                const radius = r * 3.4;
+                const ringGeo = new THREE.RingGeometry(radius, radius + 0.35, 64);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: r % 2 === 0 ? 0x38bdf8 : 0x4338ca,
+                    transparent: true,
+                    opacity: 0.35,
+                    side: THREE.DoubleSide
+                });
+                const cRing = new THREE.Mesh(ringGeo, ringMat);
+                cRing.rotation.x = -Math.PI / 2;
+                cRing.position.y = 0.05;
+                groundSoulGroup.add(cRing);
+                causticRings.push(cRing);
+            }
+            scene.add(groundSoulGroup);
+
+            // Initial visibility default to 'body'
+            groundBodyGroup.visible = true;
+            groundMindGroup.visible = false;
+            groundSoulGroup.visible = false;
+        }
+
+        /* Atmospheric Particle Fields (Body soot embers & Soul weightless starlight) */
+        function generateAtmosphericParticles() {
+            // 1. Body: Dark soot flakes and burning cadmium embers drifting downward
+            const countBody = 700;
+            const geoBody = new THREE.BufferGeometry();
+            const posBody = new Float32Array(countBody * 3);
+            const colBody = new Float32Array(countBody * 3);
+
+            const cSoot = new THREE.Color(0x2a1512);
+            const cEmber = new THREE.Color(0xff3f20);
+
+            for (let i = 0; i < countBody; i++) {
+                const i3 = i * 3;
+                posBody[i3] = (Math.random() - 0.5) * 70;
+                posBody[i3 + 1] = 0.5 + Math.random() * 22;
+                posBody[i3 + 2] = (Math.random() - 0.5) * 70;
+
+                const c = Math.random() > 0.4 ? cEmber : cSoot;
+                colBody[i3] = c.r;
+                colBody[i3 + 1] = c.g;
+                colBody[i3 + 2] = c.b;
+            }
+            geoBody.setAttribute('position', new THREE.BufferAttribute(posBody, 3));
+            geoBody.setAttribute('color', new THREE.BufferAttribute(colBody, 3));
+
+            particlesBody = new THREE.Points(geoBody, new THREE.PointsMaterial({
+                size: 0.32,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.75,
+                blending: THREE.AdditiveBlending
+            }));
+            scene.add(particlesBody);
+
+            // 2. Soul: Weightless iridescent starlight motes rising upward
+            const countSoul = 700;
+            const geoSoul = new THREE.BufferGeometry();
+            const posSoul = new Float32Array(countSoul * 3);
+            const colSoul = new Float32Array(countSoul * 3);
+
+            const cStar = new THREE.Color(0xffffff);
+            const cCobalt = new THREE.Color(0x60a5fa);
+
+            for (let i = 0; i < countSoul; i++) {
+                const i3 = i * 3;
+                posSoul[i3] = (Math.random() - 0.5) * 80;
+                posSoul[i3 + 1] = 0.5 + Math.random() * 32;
+                posSoul[i3 + 2] = (Math.random() - 0.5) * 80;
+
+                const c = Math.random() > 0.5 ? cStar : cCobalt;
+                colSoul[i3] = c.r;
+                colSoul[i3 + 1] = c.g;
+                colSoul[i3 + 2] = c.b;
+            }
+            geoSoul.setAttribute('position', new THREE.BufferAttribute(posSoul, 3));
+            geoSoul.setAttribute('color', new THREE.BufferAttribute(colSoul, 3));
+
+            particlesSoul = new THREE.Points(geoSoul, new THREE.PointsMaterial({
+                size: 0.38,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+            }));
+            particlesSoul.visible = false;
+            scene.add(particlesSoul);
+        }
+
+        /* ==========================================================================
+           3. INTERACTION, CAMERA CINEMATICS & HUD FEEDS
+           ========================================================================== */
+        function focusBuilding(type) {
+            const target = specialBlocks.find(b => b.userData.type === type);
+            if (target) {
+                cinematicTarget = target;
+                currentFacultyType = type;
+                lastAutoTourTime = Date.now();
+                lastQuoteCycleTime = Date.now();
+                const realityState = type === 'art' ? 'body' : (type === 'science' ? 'mind' : 'soul');
+                switchReality(realityState);
+                updateFacultyPanel(realityState);
+
+                // Update active state on dock buttons
+                document.querySelectorAll('.reality-btn').forEach(btn => btn.classList.remove('active'));
+                const activeBtn = document.getElementById(`btn-reality-${realityState}`);
+                if (activeBtn) activeBtn.classList.add('active');
+
+                // Highlight focused building lightbox
+                Object.keys(landmarkLabels).forEach(key => {
+                    const sign = landmarkLabels[key];
+                    if (sign && sign.userData && sign.userData.faceMat) {
+                        sign.userData.faceMat.opacity = 1.0;
+                        if (sign.userData.pointLight && sign.userData.config) {
+                            const baseInt = sign.userData.config.lightIntensity || 6.0;
+                            sign.userData.pointLight.intensity = (key === type) ? baseInt * 1.25 : baseInt;
+                        }
+                    }
+                });
+            }
+        }
+
+        function resetOverview() {
+            cinematicTarget = null;
+            lastAutoTourTime = Date.now();
+            currentFacultyType = null;
+            document.querySelectorAll('.nav-faculty-btn').forEach(btn => btn.classList.remove('active'));
+            // Restore all building lightboxes to standard vibrant glow
+            Object.keys(landmarkLabels).forEach(key => {
+                const sign = landmarkLabels[key];
+                if (sign && sign.userData && sign.userData.faceMat) {
+                    sign.userData.faceMat.opacity = 1.0;
+                    if (sign.userData.pointLight && sign.userData.config) {
+                        sign.userData.pointLight.intensity = sign.userData.config.lightIntensity || 6.0;
+                    }
+                }
+            });
+        }
+
+        // Duplicate updateFacultyPanel removed
+
+        function onMouseMove(event) {
+            if (introActive) return;
+            mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                container.style.cursor = 'pointer';
+            } else {
+                container.style.cursor = 'grab';
+            }
+        }
+
+        function onCanvasClick(event) {
+            if (introActive) return;
+            // Prevent accidental building focus if user was dragging / panning
+            const dragDist = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
+            if (dragDist > 6) return;
+
+            mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while (target.parent && !target.userData.type) target = target.parent;
+                focusBuilding(target.userData.type);
+            }
+        }
+
+        function onKeyDown(e) {
+            if (introActive) return;
+            // Hotkeys [1], [2], [3] for rapid Metropolis reality mutation
+            if (e.code === 'Digit1' || e.code === 'Numpad1') {
+                switchReality('body');
+                return;
+            }
+            if (e.code === 'Digit2' || e.code === 'Numpad2') {
+                switchReality('mind');
+                return;
+            }
+            if (e.code === 'Digit3' || e.code === 'Numpad3') {
+                switchReality('soul');
+                return;
+            }
+            if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                activeNavKeys[e.code] = true;
+                if (isManualControl) {
+                    cinematicTarget = null;
+                }
+            }
+        }
+
+        function onKeyUp(e) {
+            if (activeNavKeys[e.code]) {
+                delete activeNavKeys[e.code];
+            }
+        }
+
+        function onWindowResize() {
+            const aspect = container.clientWidth / container.clientHeight;
+            const d = 26;
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        function setNavMode(mode) {
+            isManualControl = (mode === 'manual');
+            const autoBtn = document.getElementById('btn-mode-auto');
+            const manualBtn = document.getElementById('btn-mode-manual');
+
+            if (isManualControl) {
+                controls.autoRotate = false;
+                cinematicTarget = null;
+                isTransitioningCamera = false;
+                if (autoBtn) autoBtn.classList.remove('active');
+                if (manualBtn) manualBtn.classList.add('active');
+                showNavToast("MANUAL ROAM ENABLED", "Left Drag: Rotate • Right Drag / WASD: Pan • Scroll: Zoom");
+            } else {
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = 1.6;
+                cinematicTarget = null;
+                lastUserInteractionTime = 0;
+                userInteracting = false;
+                lastAutoTourTime = Date.now();
+                if (autoBtn) autoBtn.classList.add('active');
+                if (manualBtn) manualBtn.classList.remove('active');
+                startCameraTransition(camera.position, new THREE.Vector3(0, 0, 0), camera.zoom);
+                showNavToast("AUTO TOUR ACTIVATED", "Cinematic 360° orbital rotation & landmark tour");
+            }
+        }
+
+        // Backward compatibility
+        function toggleNavMode() {
+            setNavMode(isManualControl ? 'auto' : 'manual');
+        }
+
+        function showNavToast(title, subtitle) {
+            const toast = document.getElementById('nav-mode-toast');
+            const titleEl = document.getElementById('toast-title-text');
+            const subEl = document.getElementById('toast-sub-text');
+            if (!toast) return;
+            if (titleEl) titleEl.textContent = title;
+            if (subEl) subEl.textContent = subtitle;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3800);
+        }
+
+        /* ==========================================================================
+           5. MAIN ANIMATION LOOP & RENDER ENGINE
+           ========================================================================== */
+        let clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            const now = Date.now();
+
+            // 1. Animate Moving Data Packets in Mind State
+            if (currentRealityState === 'mind' && avenuePackets.length > 0) {
+                avenuePackets.forEach(pkt => {
+                    pkt.mesh.position.addScaledVector(pkt.dir, pkt.speed);
+                    if (pkt.mesh.position.length() > 26) {
+                        pkt.mesh.position.set(pkt.spawnX, 0.08, pkt.spawnZ);
+                    }
+                });
+            }
+
+            // 2. Animate Caustic Interference Bands in Soul State
+            if (currentRealityState === 'soul' && causticRings.length > 0) {
+                causticRings.forEach((ring, idx) => {
+                    const s = 1.0 + Math.sin(elapsedTime * 1.4 + idx * 0.65) * 0.08;
+                    ring.scale.set(s, s, 1);
+                    ring.material.opacity = 0.20 + Math.sin(elapsedTime * 2.0 + idx * 0.8) * 0.15;
+                });
+            }
+
+            // 3. Animate Body Soot & Burning Embers (Heavy downward drift)
+            if (particlesBody && currentRealityState === 'body') {
+                const pos = particlesBody.geometry.attributes.position.array;
+                for (let i = 0; i < pos.length; i += 3) {
+                    pos[i + 1] -= 0.025;
+                    pos[i] += Math.sin(elapsedTime * 0.5 + i) * 0.006;
+                    if (pos[i + 1] < 0.1) pos[i + 1] = 22.0;
+                }
+                particlesBody.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // 4. Animate Soul Weightless Starlight (Zero-gravity ascending motes)
+            if (particlesSoul && currentRealityState === 'soul') {
+                const pos = particlesSoul.geometry.attributes.position.array;
+                for (let i = 0; i < pos.length; i += 3) {
+                    pos[i + 1] += 0.018;
+                    pos[i] += Math.sin(elapsedTime * 0.6 + i) * 0.008;
+                    pos[i + 2] += Math.cos(elapsedTime * 0.6 + i) * 0.008;
+                    if (pos[i + 1] > 32.0) pos[i + 1] = 0.5;
+                }
+                particlesSoul.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Animate Landmark Point Lights Subtle Pulsing
+            landmarkLights.forEach((light, idx) => {
+                light.intensity = 4.2 + Math.sin(elapsedTime * 2.2 + idx * 1.5) * 0.8;
+            });
+
+            // Animate Building Lightboxes (Neon luminescence breathing & authentic micro-flicker)
+            Object.keys(landmarkLabels).forEach((key, idx) => {
+                const sign = landmarkLabels[key];
+                if (sign && sign.userData && sign.userData.faceMat) {
+                    let flicker = 0.98 + Math.sin(elapsedTime * 3.6 + idx * 2.2) * 0.02;
+                    sign.userData.faceMat.opacity = Math.max(0.92, Math.min(1.0, flicker));
+                }
+            });
+
+            // Animate Infinite Purple Lightbeam from Spirit Building Apex
+            if (purpleBeamGroup) {
+                const beamPulse = 0.52 + Math.sin(elapsedTime * 2.6) * 0.12;
+                purpleBeamGroup.userData.beamMat.opacity = beamPulse;
+                purpleBeamGroup.userData.glowMat.opacity = beamPulse * 0.55;
+                purpleBeamGroup.userData.outerGlowMat.opacity = beamPulse * 0.32;
+                purpleBeamGroup.rotation.y += 0.005;
+            }
+
+            // Animate Knowledge Atom on Science Building (Matching homepage)
+            if (scienceAtomGroup) {
+                scienceAtomGroup.rotation.y += 0.032;
+                scienceAtomGroup.rotation.z += 0.022;
+                scienceAtomGroup.position.y = 9.8 + Math.sin(elapsedTime * 2.4) * 0.08;
+            }
+            if (scienceAtomNucleus) {
+                const s = 1.0 + Math.sin(elapsedTime * 4.0) * 0.08;
+                scienceAtomNucleus.scale.set(s, s, s);
+            }
+
+            // Animate Yellow Rays of Light on Art Building Black Sphere
+            if (artRayGroup) {
+                artRayGroup.rotation.y += 0.012;
+                artRayGroup.rotation.x += 0.007;
+                const rayPulse = 0.94 + Math.sin(elapsedTime * 3.2) * 0.08;
+                artRayGroup.scale.set(rayPulse, rayPulse, rayPulse);
+            }
+
+                                    // Navigation & Camera Kinematics
+            if (isTransitioningCamera) {
+                const elapsed = Date.now() - transitionStartTime;
+                const progress = Math.min(1.0, elapsed / TRANSITION_DURATION);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(transitionFromPos, transitionToPos, ease);
+                controls.target.lerpVectors(transitionFromTarget, transitionToTarget, ease);
+                camera.zoom = THREE.MathUtils.lerp(transitionFromZoom, transitionToZoom, ease);
+
+                if (progress >= 1.0) {
+                    isTransitioningCamera = false;
+                }
+            } else if (isManualControl) {
+                controls.autoRotate = false;
+
+                // Free keyboard WASD flight across landscape
+                const forward = new THREE.Vector3();
+                camera.getWorldDirection(forward);
+                forward.y = 0;
+                forward.normalize();
+                const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+                const keySpeed = 0.55 * Math.max(0.6, 2.0 / (camera.zoom || 1));
+                if (activeNavKeys['KeyW'] || activeNavKeys['ArrowUp']) {
+                    controls.target.addScaledVector(forward, keySpeed);
+                    camera.position.addScaledVector(forward, keySpeed);
+                }
+                if (activeNavKeys['KeyS'] || activeNavKeys['ArrowDown']) {
+                    controls.target.addScaledVector(forward, -keySpeed);
+                    camera.position.addScaledVector(forward, -keySpeed);
+                }
+                if (activeNavKeys['KeyA'] || activeNavKeys['ArrowLeft']) {
+                    controls.target.addScaledVector(right, -keySpeed);
+                    camera.position.addScaledVector(right, -keySpeed);
+                }
+                if (activeNavKeys['KeyD'] || activeNavKeys['ArrowRight']) {
+                    controls.target.addScaledVector(right, keySpeed);
+                    camera.position.addScaledVector(right, keySpeed);
+                }
+
+                if (cinematicTarget) {
+                    const targetPos = cinematicTarget.position.clone();
+                    targetPos.y += 2.0;
+                    controls.target.lerp(targetPos, 0.06);
+                    camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.3, 0.04);
+                }
+            } else {
+                // Auto Tour Mode:
+                // Smoothly auto-rotate around center when user is idle
+                if (!userInteracting && (Date.now() - lastUserInteractionTime > 2000)) {
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = (currentRealityState === 'body') ? 1.4 : ((currentRealityState === 'mind') ? 1.8 : 1.5);
+                } else {
+                    controls.autoRotate = false;
+                }
+
+                // Cinematic Tour Showcase: cycle landmarks periodically without changing reality
+                if (!introActive && !userInteracting && (Date.now() - lastAutoTourTime > AUTO_TOUR_INTERVAL)) {
+                    lastAutoTourTime = Date.now();
+                    autoTourIndex = (autoTourIndex + 1) % autoTourLandmarks.length;
+                    const step = autoTourLandmarks[autoTourIndex];
+                    if (step === 'overview') {
+                        cinematicTarget = null;
+                        const defaultZoom = (currentRealityState === 'body') ? 2.1 : ((currentRealityState === 'mind') ? 1.35 : 0.92);
+                        startCameraTransition(camera.position, new THREE.Vector3(0, 0, 0), defaultZoom);
+                    } else if (specialBlocks && specialBlocks.length > 0) {
+                        const targetBlock = specialBlocks.find(b => b.userData.type === step);
+                        if (targetBlock) {
+                            cinematicTarget = targetBlock;
+                        }
+                    }
+                }
+
+                if (cinematicTarget) {
+                    const targetPos = cinematicTarget.position.clone();
+                    targetPos.y += 2.0;
+                    controls.target.lerp(targetPos, 0.05);
+                    camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.3, 0.04);
+                }
+
+                // Gentle celestial breath swell in Soul state
+                if (currentRealityState === 'soul') {
+                    const swellDelta = Math.sin(elapsedTime * 0.8) * 0.015;
+                    camera.position.y += swellDelta;
+                }
+            }
+
+            camera.updateProjectionMatrix();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>

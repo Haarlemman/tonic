@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fast Procedural AI-Style Streamer</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #0a0a0a; 
+            color: #fff;
+            font-family: sans-serif;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        canvas {
+            border: 2px solid #333;
+            background: #000;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="text-align: center;">
+        <canvas id="frameCanvas" width="512" height="512"></canvas>
+        <div id="status">Streaming at 5 FPS</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("frameCanvas");
+        const ctx = canvas.getContext("2d");
+        const fps = 5; // Change this to 1, 5, 10, etc.
+        const intervalMs = 1000 / fps;
+
+        // Generates cool abstract generative art frames instantly on the spot
+        function drawNextFrame() {
+            const time = Date.now();
+            
+            // Clear background with a subtle trail effect
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw dynamic geometric / vector shapes based on randomized math (mimicking AI abstract output)
+            const numShapes = 15;
+            for (let i = 0; i < numShapes; i++) {
+                const x = (Math.sin(time * 0.001 + i) * 200) + 256;
+                const y = (Math.cos(time * 0.002 * i) * 200) + 256;
+                const radius = (Math.sin(i + time * 0.003) * 50) + 60;
+
+                ctx.beginPath();
+                ctx.arc(x, y, Math.abs(radius), 0, Math.PI * 2);
+                
+                // Neon cyber-art color palette
+                ctx.fillStyle = `hsla(${(time * 0.1 + i * 25) % 360}, 80%, 60%, 0.5)`;
+                ctx.fill();
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            // Add some glitch lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            for(let j = 0; j < 5; j++) {
+                ctx.beginPath();
+                ctx.moveTo(0, Math.random() * 512);
+                ctx.lineTo(512, Math.random() * 512);
+                ctx.stroke();
+            }
+        }
+
+        // Immediate start with zero network delay
+        drawNextFrame();
+        setInterval(drawNextFrame, intervalMs);
+    </script>
+</body>
+</html>

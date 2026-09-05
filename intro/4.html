@@ -1,0 +1,2055 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The University of Free Will | City of Life</title>
+    <meta name="description" content="Explore the City of Life: A procedural 3D campus where Body, Mind, and Soul converge across the Faculties of Art, Science, and Spirituality.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anta&family=Baloo+2:wght@700;800&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        anta: ['Anta', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['"Courier New"', 'monospace'],
+                        display: ['"Space Grotesk"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --ink: #0a0f1d;
+            --surface: #111827;
+            --art: #ff3322;
+            --art-glow: rgba(255, 51, 34, 0.65);
+            --science: #ffbb00;
+            --science-glow: rgba(255, 187, 0, 0.65);
+            --soul: #00b4d8;
+            --soul-glow: rgba(0, 180, 216, 0.65);
+        }
+        
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #080d1a;
+            font-family: 'Inter', sans-serif;
+            color: #f8fafc;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            cursor: grab;
+        }
+        #canvas-container:active { cursor: grabbing; }
+
+        /* Intro Overlay */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(10, 15, 29, 0.45) 0%, rgba(8, 13, 26, 0.72) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 1.6s;
+        }
+        .intro-title {
+            font-family: 'Anta', sans-serif;
+            font-size: clamp(2.2rem, 5vw, 3.6rem);
+            letter-spacing: 0.015em;
+            color: #ffffff;
+            margin: 0 0 1.25rem 0;
+            line-height: 1.2;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.4), 0 4px 24px rgba(0, 0, 0, 0.9);
+        }
+        #intro-text {
+            font-size: clamp(1.15rem, 2.6vw, 1.65rem);
+            font-weight: 300;
+            font-style: italic;
+            max-width: 820px;
+            margin-bottom: 2.75rem;
+            color: #f1f5f9;
+            line-height: 1.6;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 1.1rem 3.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .action-btn:hover {
+            background: #ffffff;
+            color: #0f172a;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.25);
+        }
+
+        /* Heads-Up Display Frame */
+        #hud-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+            box-sizing: border-box;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+        .hud-interactive { pointer-events: auto; }
+
+        /* ==========================================================================
+           TOP-LEFT: THE UNIVERSITY OF FREE WILL (ANTA FONT + SPECTRAL GRADIENT)
+           ========================================================================== */
+        .top-left {
+            position: absolute;
+            top: 1.75rem;
+            left: 2.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .university-banner {
+            font-family: 'Anta', sans-serif;
+            font-size: clamp(1.25rem, 2.3vw, 1.85rem);
+            letter-spacing: 0.05em;
+            margin: 0;
+            line-height: 1.15;
+            background: linear-gradient(90deg,
+                #ffffff 0%,
+                #00FCFF 25%,
+                #FFD700 50%,
+                #FF00CC 75%,
+                #ffffff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: spectral-shift 8s linear infinite;
+            filter: drop-shadow(0 0 18px rgba(0, 252, 255, 0.4));
+        }
+        @keyframes spectral-shift {
+            to { background-position: 200% center; }
+        }
+        .university-sub {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        /* ==========================================================================
+           LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX TRIANGLE
+           ========================================================================== */
+        #tri-matrix-left {
+            position: fixed;
+            left: 2.25rem;
+            top: 52%;
+            transform: translateY(-50%);
+            z-index: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: auto;
+        }
+        @media (max-width: 900px) {
+            #tri-matrix-left {
+                display: none;
+            }
+        }
+        .tri-matrix-wrapper {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tri-rotor {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+            will-change: transform;
+        }
+        .tri-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.25));
+        }
+        
+        /* Vertices around Triangle (Always Upright & Horizontal) */
+        .tri-vertex-badge {
+            position: absolute;
+            padding: 0.35rem 0.75rem;
+            background: rgba(10, 15, 29, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 20px;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            pointer-events: none;
+        }
+        .badge-art {
+            color: #ff5544;
+            border-color: rgba(255, 51, 34, 0.55);
+            box-shadow: 0 0 20px var(--art-glow);
+        }
+        .badge-sci {
+            color: #ffbb00;
+            border-color: rgba(255, 187, 0, 0.55);
+            box-shadow: 0 0 20px var(--science-glow);
+        }
+        .badge-spirit {
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.55);
+            box-shadow: 0 0 20px var(--soul-glow);
+        }
+        .v-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .dot-art { background: #ff3322; box-shadow: 0 0 8px #ff3322; }
+        .dot-sci { background: #ffbb00; box-shadow: 0 0 8px #ffbb00; }
+        .dot-spirit { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+
+        /* Central Hub Label */
+        .tri-matrix-hub {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(15, 23, 42, 0.95) 0%, rgba(10, 15, 29, 0.8) 70%, transparent 100%);
+            padding: 1.2rem;
+            border-radius: 50%;
+        }
+        .hub-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .hub-subtitle {
+            font-size: 0.55rem;
+            letter-spacing: 0.18em;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ==========================================================================
+           RIGHT: DOCKED FACULTY DATA SCREEN (COLLAPSIBLE WITH ARROW AT TOP-RIGHT)
+           ========================================================================== */
+        #faculty-panel-right {
+            position: fixed;
+            right: 2.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 360px;
+            max-width: calc(100vw - 4.5rem);
+            background: rgba(10, 15, 29, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+            z-index: 600;
+            pointer-events: auto;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        #faculty-panel-right.dragging {
+            transition: none;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.95);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        /* Header bar: always visible, doubles as the drag handle */
+        .panel-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1rem 1.1rem;
+            cursor: grab;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .panel-header-bar:active {
+            cursor: grabbing;
+        }
+        .panel-header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            min-width: 0;
+        }
+        .panel-header-info .panel-faculty-title {
+            font-size: 1.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .panel-collapse-btn {
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .panel-collapse-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            transform: scale(1.08);
+        }
+        .panel-collapse-btn svg {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Rest state points LEFT: the panel is closed, tap to open downward */
+            transform: rotate(180deg);
+        }
+        #faculty-panel-right.expanded .panel-collapse-btn svg {
+            /* Open state: arrow points DOWN, showing the content folds out below */
+            transform: rotate(90deg);
+        }
+        /* Body: folded up inside the header bar until expanded */
+        .panel-body {
+            display: grid;
+            grid-template-rows: 0fr;
+            opacity: 0;
+            transition: grid-template-rows 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+        #faculty-panel-right.expanded .panel-body {
+            grid-template-rows: 1fr;
+            opacity: 1;
+        }
+        .panel-body-inner {
+            overflow: hidden;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            padding: 0 1.1rem 1.25rem 1.1rem;
+        }
+        @media (max-width: 768px) {
+            /* Default position moved up and away from the bottom faculty nav,
+               so the collapsed (or dragged) bar never blocks BODY / MIND / SOUL */
+            #faculty-panel-right {
+                right: 1rem;
+                left: 1rem;
+                top: 5.75rem;
+                bottom: auto;
+                transform: none;
+                width: auto;
+                max-width: none;
+            }
+            .panel-body-inner {
+                max-height: 42vh;
+                overflow-y: auto;
+            }
+        }
+        .panel-badge-category {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .panel-badge-category::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+        .panel-faculty-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 1.45rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            line-height: 1.2;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+        .title-art { color: #ff4433; text-shadow: 0 0 16px var(--art-glow); }
+        .title-science { color: #ffbb00; text-shadow: 0 0 16px var(--science-glow); }
+        .title-spirit { color: #38bdf8; text-shadow: 0 0 16px var(--soul-glow); }
+
+        .panel-divider {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.04) 100%);
+        }
+
+        .panel-quote-box {
+            background: rgba(15, 23, 42, 0.6);
+            border-left: 3px solid #38bdf8;
+            border-radius: 0 8px 8px 0;
+            padding: 0.85rem 1rem;
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            transition: border-color 0.4s ease;
+        }
+        .panel-quote-box.border-art { border-left-color: var(--art); }
+        .panel-quote-box.border-sci { border-left-color: var(--science); }
+        .panel-quote-box.border-spirit { border-left-color: var(--soul); }
+
+        .neon-text {
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            line-height: 1.4;
+            transition: opacity 0.3s ease;
+        }
+        .neon-art { color: #ff4433; }
+        .neon-science { color: #ffbb00; }
+        .neon-spirit { color: #67e8f9; }
+
+        .panel-content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            font-size: 0.72rem;
+        }
+        .detail-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .detail-label {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .detail-value {
+            color: #cbd5e1;
+            font-weight: 500;
+            line-height: 1.35;
+        }
+        .purpose-highlight {
+            color: #f1f5f9;
+            font-weight: 600;
+            padding: 0.45rem 0.75rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Top-Right Controls (Vertically Stacked) */
+        .top-right {
+            position: absolute;
+            top: 1.75rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 550;
+        }
+        .icon-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        .icon-btn:hover {
+            background: #fff;
+            color: #0f172a;
+            transform: scale(1.08);
+        }
+        .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+        @media (max-width: 768px) {
+            .top-right {
+                top: 1rem;
+                right: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .icon-btn {
+                width: 36px;
+                height: 36px;
+            }
+            .icon-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+            .top-left {
+                top: 1rem;
+                left: 1rem;
+                max-width: calc(100vw - 4.5rem);
+            }
+        }
+
+        /* Simplified Bottom Faculty Navigation */
+        .bottom-nav {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            max-width: 92vw;
+            padding: 0.4rem 0.65rem;
+            background: rgba(10, 15, 29, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 9999px;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.65);
+            z-index: 550;
+            white-space: nowrap;
+        }
+        .bottom-nav-label {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            color: #94a3b8;
+            padding: 0 0.5rem;
+            user-select: none;
+        }
+        .nav-faculty-btn {
+            cursor: pointer;
+            padding: 0.55rem 1.25rem;
+            background: rgba(15, 23, 42, 0.92);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 9999px;
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-faculty-btn:hover {
+            transform: translateY(-2px);
+            color: #ffffff;
+        }
+        .nav-faculty-btn.btn-body:hover,
+        .nav-faculty-btn.btn-body.active {
+            background: rgba(255, 51, 34, 0.22);
+            border-color: var(--art);
+            box-shadow: 0 0 16px var(--art-glow);
+            color: #ff6655;
+        }
+        .nav-faculty-btn.btn-mind:hover,
+        .nav-faculty-btn.btn-mind.active {
+            background: rgba(255, 187, 0, 0.22);
+            border-color: var(--science);
+            box-shadow: 0 0 16px var(--science-glow);
+            color: #ffcc22;
+        }
+        .nav-faculty-btn.btn-soul:hover,
+        .nav-faculty-btn.btn-soul.active {
+            background: rgba(0, 180, 216, 0.22);
+            border-color: var(--soul);
+            box-shadow: 0 0 16px var(--soul-glow);
+            color: #38bdf8;
+        }
+        @media (max-width: 768px) {
+            .bottom-nav {
+                bottom: 1rem;
+                gap: 0.35rem;
+                padding: 0.3rem 0.5rem;
+            }
+            .bottom-nav-label {
+                font-size: 0.62rem;
+                padding: 0 0.3rem;
+                letter-spacing: 0.12em;
+            }
+            .nav-faculty-btn {
+                padding: 0.42rem 0.75rem;
+                font-size: 0.66rem;
+                letter-spacing: 0.08em;
+            }
+        }
+        
+        .orbit-icon {
+            width: 20px;
+            height: 20px;
+            animation: spinOrbit 12s linear infinite;
+        }
+        @keyframes spinOrbit {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            padding: 0.5rem 0.9rem;
+            background: rgba(10, 15, 29, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            display: none;
+            z-index: 900;
+            transform: translate(-50%, -135%);
+            pointer-events: none;
+            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Live Matrix Status Ticker in Bottom Left */
+        .hud-ticker {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: #64748b;
+            background: rgba(10, 15, 29, 0.82);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            display: none;
+        }
+        @media (min-width: 1024px) {
+            .hud-ticker { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Audio Track (neon-static.mp3) -->
+    <audio id="ambient-audio" src="neon-static.mp3" loop preload="auto"></audio>
+
+    <!-- Cinematic Intro Sequence Overlay -->
+    <div id="intro-overlay">
+        <h1 class="intro-title">The University of Free Will</h1>
+        <div id="intro-text">Faculty of the Body, The Mind and The Soul.</div>
+        <button id="skip-btn" class="action-btn">Enter Metropolis</button>
+    </div>
+
+    <!-- Heads-Up Display Frame -->
+    <div id="hud-layer">
+        
+        <!-- TOP-LEFT: THE UNIVERSITY OF FREE WILL HEADER -->
+        <div class="top-left hud-interactive">
+            <h1 class="university-banner">The University of Free Will</h1>
+            <div class="university-sub">CITY OF LIFE // PROCEDURAL METROPOLIS</div>
+        </div>
+
+        <!-- LEFT: ROTATING TRI-TRUTH PHILOSOPHICAL MATRIX -->
+        <div id="tri-matrix-left">
+            <div class="tri-matrix-wrapper">
+                <div class="tri-rotor" id="tri-rotor">
+                    <svg class="tri-svg" viewBox="0 0 260 260">
+                        <defs>
+                            <!-- Leg 1: Top (Art - Red) to Bottom-Right (Science - Yellow) -->
+                            <linearGradient id="gradArtSci" gradientUnits="userSpaceOnUse" x1="130" y1="40" x2="208" y2="175">
+                                <stop offset="0%" stop-color="#ff3322"/>
+                                <stop offset="100%" stop-color="#ffbb00"/>
+                            </linearGradient>
+                            
+                            <!-- Leg 2: Bottom-Right (Science - Yellow) to Bottom-Left (Spirituality - Cyan) -->
+                            <linearGradient id="gradSciSpirit" gradientUnits="userSpaceOnUse" x1="208" y1="175" x2="52" y2="175">
+                                <stop offset="0%" stop-color="#ffbb00"/>
+                                <stop offset="100%" stop-color="#00b4d8"/>
+                            </linearGradient>
+                            
+                            <!-- Leg 3: Bottom-Left (Spirituality - Cyan) to Top (Art - Red) -->
+                            <linearGradient id="gradSpiritArt" gradientUnits="userSpaceOnUse" x1="52" y1="175" x2="130" y2="40">
+                                <stop offset="0%" stop-color="#00b4d8"/>
+                                <stop offset="100%" stop-color="#ff3322"/>
+                            </linearGradient>
+
+                            <filter id="svgGlow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feGaussianBlur stdDeviation="4" result="blur"/>
+                                <feMerge>
+                                    <feMergeNode in="blur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- Outer Orbit & Grid Rings -->
+                        <circle cx="130" cy="130" r="115" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3 5"/>
+                        <circle cx="130" cy="130" r="55" fill="none" stroke="rgba(56,189,248,0.12)" stroke-width="1"/>
+                        
+                        <!-- Equilateral Triangle Body -->
+                        <polygon points="130,40 208,175 52,175" fill="rgba(10,15,29,0.75)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" filter="url(#svgGlow)"/>
+                        
+                        <!-- All 3 Glowing Colored Matrix Perimeter Edges -->
+                        <line x1="130" y1="40" x2="208" y2="175" stroke="url(#gradArtSci)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                        <line x1="208" y1="175" x2="52" y2="175" stroke="url(#gradSciSpirit)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                        <line x1="52" y1="175" x2="130" y2="40" stroke="url(#gradSpiritArt)" stroke-width="3.5" stroke-linecap="round" filter="url(#svgGlow)"/>
+                        
+                        <!-- Center Radial Ray Conduits -->
+                        <line x1="130" y1="130" x2="130" y2="40" stroke="rgba(255,51,34,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                        <line x1="130" y1="130" x2="208" y2="175" stroke="rgba(255,187,0,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                        <line x1="130" y1="130" x2="52" y2="175" stroke="rgba(0,180,216,0.4)" stroke-width="1.2" stroke-dasharray="2 3"/>
+                        
+                        <!-- Vertex Nodes -->
+                        <circle cx="130" cy="40" r="6" fill="#ff3322" filter="url(#svgGlow)"/>
+                        <circle cx="208" cy="175" r="6" fill="#ffbb00" filter="url(#svgGlow)"/>
+                        <circle cx="52" cy="175" r="6" fill="#00b4d8" filter="url(#svgGlow)"/>
+                    </svg>
+                </div>
+
+                <!-- Dynamic Words on Vertices (Positioned outside rotor to stay strictly upright and legible) -->
+                <div class="tri-vertex-badge badge-art" id="tri-node-1">
+                    <span class="v-dot dot-art"></span>
+                    <span id="tri-w1">ART</span>
+                </div>
+                <div class="tri-vertex-badge badge-sci" id="tri-node-2">
+                    <span class="v-dot dot-sci"></span>
+                    <span id="tri-w2">SCIENCE</span>
+                </div>
+                <div class="tri-vertex-badge badge-spirit" id="tri-node-3">
+                    <span class="v-dot dot-spirit"></span>
+                    <span id="tri-w3">SPIRITUALITY</span>
+                </div>
+
+                <!-- Central Hub -->
+                <div class="tri-matrix-hub">
+                    <div class="hub-title">TRI-TRUTH</div>
+                    <div class="hub-subtitle">MATRIX</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: DOCKED FACULTY DATA SCREEN (draggable header bar, collapses content into it) -->
+        <div id="faculty-panel-right" class="hud-interactive">
+            <div id="panel-header-bar" class="panel-header-bar">
+                <div class="panel-header-info">
+                    <div class="panel-badge-category" id="screen-category">BODY · SENSES · SUBJECTIVE</div>
+                    <h2 id="screen-faculty-name" class="panel-faculty-title title-art">THE FACULTY OF THE BODY</h2>
+                </div>
+                <button id="panel-toggle-btn" class="panel-collapse-btn" title="Expand panel" aria-label="Toggle Faculty Panel">
+                    <svg id="panel-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="panel-body" id="panel-body">
+                <div class="panel-body-inner">
+                    <div class="panel-divider"></div>
+
+                    <div class="panel-quote-box border-art" id="panel-quote-box">
+                        <div id="screen-content" class="neon-text neon-art">"BEAUTY IS SUBJECTIVE TRUTH"</div>
+                    </div>
+
+                    <div class="panel-content-section">
+                        <div class="detail-row">
+                            <span class="detail-label">HIGH DISCIPLINES</span>
+                            <span class="detail-value" id="detail-high">Literature, Painting, Sculpture, Music, Poetry</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">CULTURAL EXPRESSION</span>
+                            <span class="detail-value" id="detail-low">Games, Street Art, Pop Culture, Cinema, Fashion</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">PRIMARY PURPOSE</span>
+                            <span class="detail-value purpose-highlight" id="detail-purpose">Aesthetic Bliss & Emotional Resonance</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Right Actions (Vertically Stacked) -->
+        <div class="top-right hud-interactive">
+            <button id="orbit-btn" class="icon-btn" onclick="resetOverview()" title="Metropolis Orbit (360° Auto)">
+                <svg class="orbit-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(-30 12 12)"/>
+                    <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+                </svg>
+            </button>
+            <button id="sound-btn" class="icon-btn" onclick="toggleAudio()" title="Toggle Ambient Synth">
+                <svg id="sound-icon-on" viewBox="0 0 24 24" style="display:none;">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+                <svg id="sound-icon-off" viewBox="0 0 24 24">
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                </svg>
+            </button>
+            <button class="icon-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Simplified Bottom Faculty Navigation -->
+        <div class="bottom-nav hud-interactive">
+            <span class="bottom-nav-label">FACULTY</span>
+            <button id="btn-body" class="nav-faculty-btn btn-body active" onclick="focusBuilding('art')">BODY</button>
+            <button id="btn-mind" class="nav-faculty-btn btn-mind" onclick="focusBuilding('science')">MIND</button>
+            <button id="btn-soul" class="nav-faculty-btn btn-soul" onclick="focusBuilding('spirit')">SOUL</button>
+        </div>
+    </div>
+
+    <!-- Tooltip & 3D Canvas -->
+    <div id="tooltip"></div>
+    <div id="canvas-container"></div>
+
+    <!-- Three.js + OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        /* ==========================================================================
+           1. DEEP TRI-TRUTH PHILOSOPHICAL MATRICES & DATA ARRAYS
+           ========================================================================== */
+        const facultyData = {
+            art: {
+                name: "THE FACULTY OF THE BODY",
+                category: "BODY · SENSES · SUBJECTIVE",
+                color: 0xff3322,
+                class: "neon-art",
+                titleClass: "title-art",
+                borderClass: "border-art",
+                quotes: [
+                    "LITERATURE, PAINTING & MUSIC",
+                    "BEAUTY IS SUBJECTIVE TRUTH",
+                    "THE SENSES & SOMATIC EXPERIENCE",
+                    "THE CANVAS OF HUMAN EMOTION",
+                    "PHYSICALITY, DANCE & VITALITY",
+                    "POETRY, CINEMA & ARCHITECTURE"
+                ],
+                highFields: ["Literature", "Painting", "Sculpture", "Music", "Poetry", "Theater", "Haute Cuisine", "Cinema"],
+                lowFields: ["Games", "Pulp Fiction", "Pop Music", "Street Art", "Fashion", "Sensory Thrills"],
+                purposes: ["Aesthetic Bliss", "Emotional Resonance", "Sensory Vitality", "Joy of Living"]
+            },
+            science: {
+                name: "THE FACULTY OF THE MIND",
+                category: "MIND · REASON · OBJECTIVE",
+                color: 0xffbb00,
+                class: "neon-science",
+                titleClass: "title-science",
+                borderClass: "border-sci",
+                quotes: [
+                    "PHYSICS, MATHS & ASTRONOMY",
+                    "EMPIRICAL REASON & SYSTEMIC ORDER",
+                    "OBJECTIVE TRUTH & NATURAL LAW",
+                    "THE NEURAL ARCHITECTURE OF THOUGHT",
+                    "COMPUTATION & CYBERNETICS",
+                    "DISCOVERING THE COSMIC BLUEPRINT"
+                ],
+                highFields: ["Physics", "Mathematics", "Astronomy", "Chemistry", "Neuroscience", "Computer Science", "Economics"],
+                lowFields: ["Puzzles", "Sci-Fi Lore", "Tech Gadgets", "System Optimization", "Trivia", "Chess"],
+                purposes: ["Objective Truth", "Intellectual Clarity", "Empirical Mastery", "Universal Order"]
+            },
+            spirit: {
+                name: "THE FACULTY OF THE SOUL",
+                category: "SOUL · TRANSCENDENCE · UNIVERSAL",
+                color: 0x00b4d8,
+                class: "neon-spirit",
+                titleClass: "title-spirit",
+                borderClass: "border-spirit",
+                quotes: [
+                    "TRANSCENDENCE & INNER MYSTERY",
+                    "INTUITION, MEANING & INNER PEACE",
+                    "THE UNIVERSAL HORIZON OF BEING",
+                    "ENLIGHTENMENT THROUGH TRANSCENDENCE",
+                    "CONSCIOUSNESS, ETHICS & MINDFULNESS",
+                    "COMMUNION WITH THE INFINITE COSMOS"
+                ],
+                highFields: ["Transcendence", "Philosophy of Mind", "Mysticism", "Consciousness", "Ethics", "Contemplation", "Metaphysics"],
+                lowFields: ["Mindfulness", "Meditation", "Holistic Wellness", "Breathwork", "Inner Solace", "Sound Healing"],
+                purposes: ["Spiritual Transcendence", "Inner Peace", "Consciousness Expansion", "Universal Harmony"]
+            }
+        };
+
+        const triTruthTriads = [
+            ["ART", "SCIENCE", "SPIRITUALITY"],
+            ["BODY", "MIND", "SOUL"],
+            ["BEAUTY", "REASON", "WISDOM"],
+            ["SUBJECTIVE", "OBJECTIVE", "UNIVERSAL"],
+            ["SENSATION", "LOGIC", "TRANSCENDENCE"],
+            ["BLISS", "TRUTH", "MEANING"],
+            ["LITERATURE", "PHYSICS", "TRANSCENDENCE"],
+            ["AESTHETICS", "SYSTEMS", "CONSCIOUSNESS"],
+            ["GAMES & POP", "SCI-FI & TECH", "MINDFULNESS & ZEN"],
+            ["JOY", "ORDER", "ENLIGHTENMENT"]
+        ];
+        let currentTriadIndex = 0;
+
+        const introSequenceQuotes = [
+            "Welcome to the City of Life.",
+            "The University of Hope and the Faculties of Free Will.",
+            "Where Body, Mind, and Soul converge in architectural harmony.",
+            "Where Art, Science, and Spirituality structure our universe."
+        ];
+
+        /* ==========================================================================
+           2. THREE.JS CAMPUS SIMULATION & PROCEDURAL METROPOLIS GENERATOR
+           ========================================================================== */
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let specialBlocks = [];
+        let landmarkLights = [];
+        let particlesSystem;
+        let groundTriangle;
+
+        let introActive = true;
+        let cinematicTarget = null;
+        let currentFacultyType = 'art';
+        let lastAutoTourTime = 0;
+        let lastQuoteCycleTime = 0;
+        const AUTO_TOUR_INTERVAL = 14000;
+        const QUOTE_CYCLE_INTERVAL = 3800;
+
+        // Triangle continuous rotation state
+        let triangleAngle = 0;
+        let isSuperSpinning = false;
+
+        const container = document.getElementById('canvas-container');
+        const tooltip = document.getElementById('tooltip');
+        const introTextEl = document.getElementById('intro-text');
+        const introOverlay = document.getElementById('intro-overlay');
+        const skipBtn = document.getElementById('skip-btn');
+        const hudLayer = document.getElementById('hud-layer');
+        const ambientAudio = document.getElementById('ambient-audio');
+        
+        // Right Faculty Panel elements
+        const facultyPanel = document.getElementById('faculty-panel-right');
+        const screenContent = document.getElementById('screen-content');
+        const screenFacultyName = document.getElementById('screen-faculty-name');
+        const screenCategory = document.getElementById('screen-category');
+        const panelQuoteBox = document.getElementById('panel-quote-box');
+        const detailHigh = document.getElementById('detail-high');
+        const detailLow = document.getElementById('detail-low');
+        const detailPurpose = document.getElementById('detail-purpose');
+
+        // Left Tri-Matrix elements
+        const triRotor = document.getElementById('tri-rotor');
+        const triW1 = document.getElementById('tri-w1');
+        const triW2 = document.getElementById('tri-w2');
+        const triW3 = document.getElementById('tri-w3');
+        const triNode1 = document.getElementById('tri-node-1');
+        const triNode2 = document.getElementById('tri-node-2');
+        const triNode3 = document.getElementById('tri-node-3');
+
+        window.onload = function() {
+            // Make sure the neon-sign webfont is actually loaded before the
+            // canvas textures are drawn — otherwise the first paint silently
+            // falls back to a system font. Falls back to a short timeout if
+            // the Font Loading API isn't available.
+            const boot = () => {
+                initScene();
+                animate();
+                runIntroSequence();
+                updateFacultyPanel('art');
+                updateTriBadgePositions();
+                initPanelDrag();
+                document.getElementById('panel-toggle-btn').addEventListener('click', toggleFacultyPanel);
+                setInterval(cycleTriadBadge, 5200);
+                skipBtn.onclick = (e) => { e.stopPropagation(); enterCampus(); };
+                setInterval(updateTicker, 1000);
+            };
+
+            if (document.fonts && document.fonts.load) {
+                Promise.all([
+                    document.fonts.load('800 96px "Baloo 2"'),
+                    document.fonts.load('700 96px "Baloo 2"')
+                ]).catch(() => {}).finally(boot);
+            } else {
+                setTimeout(boot, 300);
+            }
+        };
+
+        function updateTicker() {
+            const d = new Date();
+            const el = document.getElementById('ticker-time');
+            if (el) el.innerText = d.toTimeString().split(' ')[0] + ' UTC';
+        }
+
+        /* Dynamically update badge positions on triangle vertices to guarantee upright horizontal text */
+        function updateTriBadgePositions() {
+            const cx = 130, cy = 130, r = 102;
+            const degToRad = Math.PI / 180;
+            
+            const a1 = (triangleAngle - 90) * degToRad;
+            const a2 = (triangleAngle + 30) * degToRad;
+            const a3 = (triangleAngle + 150) * degToRad;
+            
+            if (triNode1) {
+                triNode1.style.left = `${cx + r * Math.cos(a1)}px`;
+                triNode1.style.top = `${cy + r * Math.sin(a1)}px`;
+            }
+            if (triNode2) {
+                triNode2.style.left = `${cx + r * Math.cos(a2)}px`;
+                triNode2.style.top = `${cy + r * Math.sin(a2)}px`;
+            }
+            if (triNode3) {
+                triNode3.style.left = `${cx + r * Math.cos(a3)}px`;
+                triNode3.style.top = `${cy + r * Math.sin(a3)}px`;
+            }
+        }
+
+        /* Fast Spin Triangle Transition Function (Smooth Super-Spin) */
+        function cycleTriadBadge() {
+            if (!triRotor || isSuperSpinning) return;
+            isSuperSpinning = true;
+
+            const startAngle = triangleAngle;
+            const targetAngle = startAngle + 720;
+            const duration = 650;
+            const startTime = performance.now();
+
+            // Fade out badges before mid-spin
+            [triNode1, triNode2, triNode3].forEach(node => {
+                if (node) node.style.opacity = '0';
+            });
+
+            let textUpdated = false;
+
+            function stepSpin(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Cubic easing (easeOutCubic / easeInOutQuad)
+                const ease = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                triangleAngle = startAngle + (targetAngle - startAngle) * ease;
+                if (triRotor) triRotor.style.transform = `rotate(${triangleAngle}deg)`;
+                updateTriBadgePositions();
+
+                // Swap text mid-spin
+                if (progress >= 0.45 && !textUpdated) {
+                    textUpdated = true;
+                    currentTriadIndex = (currentTriadIndex + 1) % triTruthTriads.length;
+                    const triad = triTruthTriads[currentTriadIndex];
+                    triW1.innerText = triad[0];
+                    triW2.innerText = triad[1];
+                    triW3.innerText = triad[2];
+                    
+                    [triNode1, triNode2, triNode3].forEach(node => {
+                        if (node) node.style.opacity = '1';
+                    });
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(stepSpin);
+                } else {
+                    triangleAngle = targetAngle % 360;
+                    isSuperSpinning = false;
+                }
+            }
+
+            requestAnimationFrame(stepSpin);
+        }
+
+        function runIntroSequence() {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.65;
+        }
+
+        function enterCampus() {
+            introActive = false;
+            introOverlay.style.opacity = 0;
+            setTimeout(() => {
+                introOverlay.style.visibility = 'hidden';
+                hudLayer.style.opacity = 1;
+                lastAutoTourTime = Date.now();
+            }, 1000);
+
+            // Automatically start playing ambient audio (neon-static.mp3) on user interaction
+            startAmbientAudio();
+        }
+
+        function startAmbientAudio() {
+            if (!ambientAudio) return;
+            ambientAudio.volume = 0.5;
+            ambientAudio.play().then(() => {
+                updateAudioIcon(true);
+            }).catch(err => {
+                console.warn("Audio autoplay blocked or interacting needed:", err);
+            });
+        }
+
+        function toggleAudio() {
+            if (!ambientAudio) return;
+            if (ambientAudio.paused) {
+                ambientAudio.play().then(() => {
+                    updateAudioIcon(true);
+                }).catch(err => console.warn("Audio play error:", err));
+            } else {
+                ambientAudio.pause();
+                updateAudioIcon(false);
+            }
+        }
+
+        function updateAudioIcon(playing) {
+            const iconOn = document.getElementById('sound-icon-on');
+            const iconOff = document.getElementById('sound-icon-off');
+            if (iconOn && iconOff) {
+                iconOn.style.display = playing ? 'block' : 'none';
+                iconOff.style.display = playing ? 'none' : 'block';
+            }
+        }
+
+        const landmarkLabels = {};
+
+        /* Mixes a hex color toward white by `amount` (0-1) — used for the neon
+           tube's bright core, so the core stays tinted with the sign's own
+           color instead of washing out to plain white. */
+        function tintToward(hex, amount, target = [255, 255, 255]) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            const mix = (c, t) => Math.round(c + (t - c) * amount);
+            return `rgb(${mix(r, target[0])}, ${mix(g, target[1])}, ${mix(b, target[2])})`;
+        }
+
+        /* Glowing Neon Landmark Word Sign. Unlike a THREE.Sprite (which always
+           billboards to face the camera), this is a real plane Mesh with a fixed
+           rotation, so it reads as a sign bolted to the building — it turns away
+           from view like any other geometry as the camera orbits. */
+        function createNeonLabelMesh(text, colorHex, glowColor) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 256;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Bold + rounded neon-tube lettering (Baloo 2). Auto-shrink so longer
+            // words (e.g. "SCIENCE") still fit the plate.
+            let fontSize = 96;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const maxTextWidth = canvas.width * 0.88;
+            do {
+                ctx.font = `800 ${fontSize}px "Baloo 2", "Space Grotesk", sans-serif`;
+                fontSize -= 2;
+            } while (ctx.measureText(text).width > maxTextWidth && fontSize > 32);
+
+            // Pass 1: Broad soft ambient neon haze, in the sign's own color
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 46;
+            ctx.fillStyle = colorHex;
+            ctx.fillText(text, cx, cy);
+            ctx.fillText(text, cx, cy);
+            ctx.fillText(text, cx, cy);
+
+            // Pass 2: Intense vibrant neon color — the main tube body
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = colorHex;
+            ctx.fillText(text, cx, cy);
+            ctx.fillText(text, cx, cy);
+
+            // Pass 3: Bright core, tinted with the sign's own hue (not stark
+            // white) so each sign keeps its glass-tube color at close range
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = tintToward(colorHex, 0.55);
+            ctx.fillText(text, cx, cy);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const signMat = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 1,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                toneMapped: false
+            });
+            const sign = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 3.1), signMat);
+            sign.visible = true;
+            return sign;
+        }
+
+        function toggleFacultyPanel(e) {
+            if (e) e.stopPropagation();
+            const panel = document.getElementById('faculty-panel-right');
+            const btn = document.getElementById('panel-toggle-btn');
+            if (!panel) return;
+            const isExpanded = panel.classList.toggle('expanded');
+            if (btn) {
+                btn.title = isExpanded ? "Collapse panel" : "Expand panel";
+                btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            }
+        }
+
+        /* Drag the faculty panel by its header bar. Uses Pointer Events so mouse
+           and touch both work with one code path. A small movement threshold
+           distinguishes a drag from a tap-to-expand/collapse. */
+        const panelDrag = { active: false, moved: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
+
+        function initPanelDrag() {
+            const panel = document.getElementById('faculty-panel-right');
+            const handle = document.getElementById('panel-header-bar');
+            const toggleBtn = document.getElementById('panel-toggle-btn');
+            if (!panel || !handle) return;
+
+            handle.addEventListener('pointerdown', (e) => {
+                if (toggleBtn && (e.target === toggleBtn || toggleBtn.contains(e.target))) return;
+                panelDrag.active = true;
+                panelDrag.moved = false;
+                panelDrag.startX = e.clientX;
+                panelDrag.startY = e.clientY;
+                const rect = panel.getBoundingClientRect();
+                panelDrag.origLeft = rect.left;
+                panelDrag.origTop = rect.top;
+                try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+            });
+
+            handle.addEventListener('pointermove', (e) => {
+                if (!panelDrag.active) return;
+                const dx = e.clientX - panelDrag.startX;
+                const dy = e.clientY - panelDrag.startY;
+                if (!panelDrag.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+                    panelDrag.moved = true;
+                    panel.classList.add('dragging');
+                }
+                if (!panelDrag.moved) return;
+
+                const margin = 8;
+                const maxLeft = Math.max(margin, window.innerWidth - panel.offsetWidth - margin);
+                const maxTop = Math.max(margin, window.innerHeight - panel.offsetHeight - margin);
+                const newLeft = Math.min(Math.max(margin, panelDrag.origLeft + dx), maxLeft);
+                const newTop = Math.min(Math.max(margin, panelDrag.origTop + dy), maxTop);
+
+                panel.style.left = newLeft + 'px';
+                panel.style.top = newTop + 'px';
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+                panel.style.transform = 'none';
+            });
+
+            function endDrag(e) {
+                if (!panelDrag.active) return;
+                panelDrag.active = false;
+                panel.classList.remove('dragging');
+                try { handle.releasePointerCapture(e.pointerId); } catch (err) {}
+            }
+            handle.addEventListener('pointerup', endDrag);
+            handle.addEventListener('pointercancel', endDrag);
+
+            handle.addEventListener('click', (e) => {
+                if (toggleBtn && (e.target === toggleBtn || toggleBtn.contains(e.target))) return;
+                if (panelDrag.moved) {
+                    panelDrag.moved = false;
+                    return;
+                }
+                toggleFacultyPanel(e);
+            });
+
+            // Keep a dragged panel on-screen if the window is resized/rotated.
+            window.addEventListener('resize', () => {
+                if (panel.style.left === '') return;
+                const margin = 8;
+                const maxLeft = Math.max(margin, window.innerWidth - panel.offsetWidth - margin);
+                const maxTop = Math.max(margin, window.innerHeight - panel.offsetHeight - margin);
+                panel.style.left = Math.min(parseFloat(panel.style.left) || 0, maxLeft) + 'px';
+                panel.style.top = Math.min(parseFloat(panel.style.top) || 0, maxTop) + 'px';
+            });
+        }
+
+        /* 3D Scene Initialization */
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x080d1a);
+            scene.fog = new THREE.FogExp2(0x080d1a, 0.011);
+
+            const aspect = container.clientWidth / container.clientHeight;
+            const d = 26;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(58, 62, 58);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2.1;
+            controls.minZoom = 0.5;
+            controls.maxZoom = 4.0;
+
+            // Environmental Lighting & Upward Streetlevel Glow
+            const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambient);
+
+            // Upward light emanating from street level (Ground Lift Light)
+            const streetUpLight = new THREE.DirectionalLight(0x38bdf8, 1.25);
+            streetUpLight.position.set(0, -15, 0);
+            streetUpLight.target.position.set(0, 10, 0);
+            scene.add(streetUpLight);
+            scene.add(streetUpLight.target);
+
+            // Ground plane upward bounce illumination
+            const groundGlowLight = new THREE.HemisphereLight(0x38bdf8, 0x0f274a, 1.15);
+            scene.add(groundGlowLight);
+
+            // Main Sunlight for clean architectural shadows
+            const sun = new THREE.DirectionalLight(0xffffff, 1.25);
+            sun.position.set(45, 80, 35);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            sun.shadow.camera.near = 10;
+            sun.shadow.camera.far = 200;
+            sun.shadow.camera.left = -50;
+            sun.shadow.camera.right = 50;
+            sun.shadow.camera.top = 50;
+            sun.shadow.camera.bottom = -50;
+            sun.shadow.bias = -0.0005;
+            scene.add(sun);
+
+            // Procedural City & Landmarks
+            generateProceduralCity();
+
+            // Atmospheric Particle Field
+            generateAtmosphericParticles();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('mousemove', onMouseMove, false);
+            window.addEventListener('click', onCanvasClick, false);
+        }
+
+        /* Procedural Architectural Variations & Landmark Generator */
+        function generateProceduralCity() {
+            const GRID = 24;
+            const SPACING = 2.0;
+            const centerOffset = (GRID * SPACING) / 2;
+
+            // Shared Material Palette
+            const baseMaterials = [
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.15 }),
+                new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.55, metalness: 0.25 }),
+                new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.45, metalness: 0.35 }),
+                new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.75, metalness: 0.15 })
+            ];
+
+            const glassMat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                roughness: 0.1,
+                metalness: 0.9,
+                transparent: true,
+                opacity: 0.7
+            });
+
+            const wireframeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
+
+            // Landmark positions on the 24x24 grid
+            const artPos = { x: 7, z: 7 };
+            const sciPos = { x: 17, z: 7 };
+            const spiritPos = { x: 12, z: 17 };
+
+            for (let x = 0; x < GRID; x++) {
+                for (let z = 0; z < GRID; z++) {
+                    const posX = x * SPACING - centerOffset;
+                    const posZ = z * SPACING - centerOffset;
+
+                    // 1. FACULTY OF ART (Red / Monolithic Cantilever Sculpture)
+                    if (x === artPos.x && z === artPos.z) {
+                        const artGroup = new THREE.Group();
+                        
+                        const baseGeo = new THREE.BoxGeometry(3.6, 1.2, 3.6);
+                        const baseMesh = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.35 }));
+                        baseMesh.position.y = 0.6;
+                        baseMesh.castShadow = true;
+                        baseMesh.receiveShadow = true;
+                        artGroup.add(baseMesh);
+
+                        // Main cantilever radiant red tower
+                        const towerGeo = new THREE.BoxGeometry(2.5, 8.8, 2.5);
+                        const towerMat = new THREE.MeshStandardMaterial({ 
+                            color: 0xff1e1e, 
+                            emissive: 0xff0a00, 
+                            emissiveIntensity: 0.9, 
+                            roughness: 0.15, 
+                            metalness: 0.4 
+                        });
+                        const towerMesh = new THREE.Mesh(towerGeo, towerMat);
+                        towerMesh.position.set(0, 5.0, 0);
+                        towerMesh.castShadow = true;
+                        artGroup.add(towerMesh);
+
+                        // Sculptural interlocking glass cube
+                        const glassCube = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 2.8), glassMat);
+                        glassCube.position.set(0.4, 6.2, 0.4);
+                        glassCube.rotation.y = Math.PI / 4;
+                        artGroup.add(glassCube);
+
+                        // Radiant Beacon on top
+                        const beacon = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.55, 16, 16),
+                            new THREE.MeshBasicMaterial({ color: 0xff4422 })
+                        );
+                        beacon.position.set(0, 9.8, 0);
+                        artGroup.add(beacon);
+
+                        artGroup.position.set(posX, 0, posZ);
+                        artGroup.userData = { type: 'art', label: 'THE FACULTY OF THE BODY', category: 'Body · Senses · Subjective' };
+                        scene.add(artGroup);
+                        specialBlocks.push(artGroup);
+
+                        // Neon Sign for the Art campus — fixed rotation, reads as bolted to the building
+                        const artLabel = createNeonLabelMesh("ART", "#ff3322", "rgba(255, 51, 34, 0.95)");
+                        artLabel.position.set(posX, 11.8, posZ);
+                        artLabel.rotation.y = Math.PI / 4;
+                        artLabel.userData = { baseY: 11.8 };
+                        scene.add(artLabel);
+                        landmarkLabels['art'] = artLabel;
+
+                        // Monument Point Light
+                        const pLight = new THREE.PointLight(0xff2200, 5.0, 25);
+                        pLight.position.set(posX, 9.8, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+                        continue;
+                    }
+
+                    // 2. FACULTY OF THE MIND (Gold / Tiered Cybernetic Observatory)
+                    if (x === sciPos.x && z === sciPos.z) {
+                        const sciGroup = new THREE.Group();
+
+                        // Tiered hexagonal base
+                        const cyl1 = new THREE.Mesh(
+                            new THREE.CylinderGeometry(2.2, 2.6, 3.0, 8),
+                            new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.3 })
+                        );
+                        cyl1.position.y = 1.5;
+                        cyl1.castShadow = true;
+                        sciGroup.add(cyl1);
+
+                        // Core glowing golden cylinder
+                        const cyl2 = new THREE.Mesh(
+                            new THREE.CylinderGeometry(1.6, 1.8, 5.6, 8),
+                            new THREE.MeshStandardMaterial({ 
+                                color: 0xffc400, 
+                                emissive: 0xff9900, 
+                                emissiveIntensity: 0.9, 
+                                roughness: 0.15, 
+                                metalness: 0.65 
+                            })
+                        );
+                        cyl2.position.y = 5.3;
+                        cyl2.castShadow = true;
+                        sciGroup.add(cyl2);
+
+                        // Golden Geodesic Observatory Dome
+                        const dome = new THREE.Mesh(
+                            new THREE.IcosahedronGeometry(1.35, 2),
+                            new THREE.MeshStandardMaterial({ color: 0xffe680, metalness: 0.85, roughness: 0.1, emissive: 0xffaa00, emissiveIntensity: 0.5 })
+                        );
+                        dome.position.y = 8.8;
+                        sciGroup.add(dome);
+
+                        // Glowing energy ring
+                        const ring = new THREE.Mesh(
+                            new THREE.TorusGeometry(2.2, 0.1, 12, 32),
+                            new THREE.MeshBasicMaterial({ color: 0xffdd00 })
+                        );
+                        ring.rotation.x = Math.PI / 2;
+                        ring.position.y = 4.6;
+                        sciGroup.add(ring);
+
+                        sciGroup.position.set(posX, 0, posZ);
+                        sciGroup.userData = { type: 'science', label: 'THE FACULTY OF THE MIND', category: 'Mind · Reason · Objective' };
+                        scene.add(sciGroup);
+                        specialBlocks.push(sciGroup);
+
+                        // Neon Sign for the Science campus — fixed rotation, reads as bolted to the building
+                        const scienceLabel = createNeonLabelMesh("SCIENCE", "#ffbb00", "rgba(255, 187, 0, 0.95)");
+                        scienceLabel.position.set(posX, 11.4, posZ);
+                        scienceLabel.rotation.y = Math.PI / 4;
+                        scienceLabel.userData = { baseY: 11.4 };
+                        scene.add(scienceLabel);
+                        landmarkLabels['science'] = scienceLabel;
+
+                        const pLight = new THREE.PointLight(0xffbb00, 5.0, 25);
+                        pLight.position.set(posX, 9.2, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+                        continue;
+                    }
+
+                    // 3. FACULTY OF THE SOUL (Cyan / Sapphire Soaring Spire & Halo Cathedral)
+                    if (x === spiritPos.x && z === spiritPos.z) {
+                        const spiritGroup = new THREE.Group();
+
+                        // Stepped Foundation
+                        const bGeo = new THREE.BoxGeometry(3.6, 1.4, 3.6);
+                        const bMesh = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.45 }));
+                        bMesh.position.y = 0.7;
+                        bMesh.castShadow = true;
+                        spiritGroup.add(bMesh);
+
+                        // Soaring Pyramid Spire
+                        const spireGeo = new THREE.ConeGeometry(1.85, 9.8, 4);
+                        const spireMat = new THREE.MeshStandardMaterial({ 
+                            color: 0x00a8ff, 
+                            emissive: 0x0066ff, 
+                            emissiveIntensity: 1.05, 
+                            roughness: 0.15, 
+                            metalness: 0.45 
+                        });
+                        const spireMesh = new THREE.Mesh(spireGeo, spireMat);
+                        spireMesh.position.y = 6.0;
+                        spireMesh.rotation.y = Math.PI / 4;
+                        spireMesh.castShadow = true;
+                        spiritGroup.add(spireMesh);
+
+                        // Sapphire Crystal Halo Ring
+                        const halo = new THREE.Mesh(
+                            new THREE.TorusGeometry(1.75, 0.1, 12, 32),
+                            new THREE.MeshBasicMaterial({ color: 0x67e8f9 })
+                        );
+                        halo.rotation.x = Math.PI / 2;
+                        halo.position.y = 7.6;
+                        spiritGroup.add(halo);
+
+                        // Apex Crystal Beacon
+                        const apex = new THREE.Mesh(
+                            new THREE.OctahedronGeometry(0.55, 0),
+                            new THREE.MeshBasicMaterial({ color: 0xbbf7d0 })
+                        );
+                        apex.position.y = 11.0;
+                        spiritGroup.add(apex);
+
+                        spiritGroup.position.set(posX, 0, posZ);
+                        spiritGroup.userData = { type: 'spirit', label: 'THE FACULTY OF THE SOUL', category: 'Soul · Transcendence · Universal' };
+                        scene.add(spiritGroup);
+                        specialBlocks.push(spiritGroup);
+
+                        // Neon Sign for the Soul campus — fixed rotation, reads as bolted to the building
+                        const soulLabel = createNeonLabelMesh("SOUL", "#38bdf8", "rgba(56, 189, 248, 0.95)");
+                        soulLabel.position.set(posX, 13.2, posZ);
+                        soulLabel.rotation.y = Math.PI / 4;
+                        soulLabel.userData = { baseY: 13.2 };
+                        scene.add(soulLabel);
+                        landmarkLabels['spirit'] = soulLabel;
+
+                        const pLight = new THREE.PointLight(0x00b4d8, 5.5, 25);
+                        pLight.position.set(posX, 11.0, posZ);
+                        scene.add(pLight);
+                        landmarkLights.push(pLight);
+                        continue;
+                    }
+
+                    // 4. PROCEDURAL CAMPUS BUILDING VARIETIES
+                    const buildingGroup = new THREE.Group();
+                    const archetype = Math.floor(Math.random() * 6);
+                    const mat = baseMaterials[Math.floor(Math.random() * baseMaterials.length)];
+                    let totalHeight = 1;
+
+                    if (archetype === 0) {
+                        const h1 = 0.8 + Math.random() * 1.5;
+                        const h2 = 0.8 + Math.random() * 1.8;
+                        const b1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, h1, 1.4), mat);
+                        b1.position.y = h1 / 2;
+                        b1.castShadow = true; b1.receiveShadow = true;
+                        const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, h2, 0.9), mat);
+                        b2.position.y = h1 + h2 / 2;
+                        b2.castShadow = true;
+                        buildingGroup.add(b1);
+                        buildingGroup.add(b2);
+                        totalHeight = h1 + h2;
+
+                        if (Math.random() > 0.4) {
+                            const roofGlass = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.6), glassMat);
+                            roofGlass.position.y = totalHeight + 0.2;
+                            buildingGroup.add(roofGlass);
+                            totalHeight += 0.4;
+                        }
+                    } else if (archetype === 1) {
+                        const h = 1.8 + Math.random() * 3.5;
+                        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, h, 12), mat);
+                        cyl.position.y = h / 2;
+                        cyl.castShadow = true; cyl.receiveShadow = true;
+                        buildingGroup.add(cyl);
+                        totalHeight = h;
+
+                        const ring = new THREE.Mesh(
+                            new THREE.TorusGeometry(0.65, 0.04, 8, 24),
+                            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 })
+                        );
+                        ring.rotation.x = Math.PI / 2;
+                        ring.position.y = h;
+                        buildingGroup.add(ring);
+                    } else if (archetype === 2) {
+                        const h = 1.0 + Math.random() * 2.2;
+                        const glassBlock = new THREE.Mesh(new THREE.BoxGeometry(1.3, h, 1.3), glassMat);
+                        glassBlock.position.y = h / 2;
+                        glassBlock.castShadow = true;
+                        buildingGroup.add(glassBlock);
+
+                        const edges = new THREE.EdgesGeometry(glassBlock.geometry);
+                        const edgeLines = new THREE.LineSegments(edges, wireframeMat);
+                        edgeLines.position.y = h / 2;
+                        buildingGroup.add(edgeLines);
+                        totalHeight = h;
+                    } else if (archetype === 3) {
+                        const h = 2.0 + Math.random() * 3.8;
+                        const baseBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 1.2), mat);
+                        baseBox.position.y = h / 2;
+                        baseBox.castShadow = true; baseBox.receiveShadow = true;
+                        buildingGroup.add(baseBox);
+
+                        const antGeo = new THREE.CylinderGeometry(0.04, 0.08, 1.8, 6);
+                        const antMesh = new THREE.Mesh(antGeo, new THREE.MeshBasicMaterial({ color: 0x94a3b8 }));
+                        antMesh.position.y = h + 0.9;
+                        buildingGroup.add(antMesh);
+
+                        const beacon = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.12, 8, 8),
+                            new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3366 : 0x00f0ff })
+                        );
+                        beacon.position.y = h + 1.8;
+                        buildingGroup.add(beacon);
+                        totalHeight = h + 1.8;
+                    } else if (archetype === 4) {
+                        const h = 0.8 + Math.random() * 2.5;
+                        const w1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, h, 0.6), mat);
+                        w1.position.set(0, h / 2, 0.3);
+                        w1.castShadow = true;
+                        const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, h * 0.7, 1.3), mat);
+                        w2.position.set(0.3, (h * 0.7) / 2, 0);
+                        w2.castShadow = true;
+                        buildingGroup.add(w1);
+                        buildingGroup.add(w2);
+                        totalHeight = h;
+                    } else {
+                        const h = 0.6 + Math.random() * 2.8;
+                        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 1.2), mat);
+                        box.position.y = h / 2;
+                        box.castShadow = true; box.receiveShadow = true;
+                        buildingGroup.add(box);
+                        totalHeight = h;
+                    }
+
+                    buildingGroup.position.set(posX, 0, posZ);
+                    buildingGroup.userData = { type: 'campus', label: `Campus Block [${x},${z}]`, height: totalHeight };
+                    scene.add(buildingGroup);
+                }
+            }
+
+            // Campus Metropolis Foundation Floor (Slightly illuminated)
+            const floorGeo = new THREE.PlaneGeometry(160, 160);
+            const floorMat = new THREE.MeshStandardMaterial({ 
+                color: 0x0e172e, 
+                emissive: 0x061122,
+                emissiveIntensity: 0.5,
+                roughness: 0.65, 
+                metalness: 0.35 
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Subtle Grid Conduit Lines on Ground
+            const gridHelper = new THREE.GridHelper(GRID * SPACING, GRID, 0x2563eb, 0x1e3a8a);
+            gridHelper.position.y = 0.03;
+            scene.add(gridHelper);
+
+            // Street Avenue Glow Conduits (Upward Street Lighting Ribbons)
+            const aveMatCyan = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 });
+            const aveMatBlue = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45 });
+
+            const aveH = new THREE.Mesh(new THREE.PlaneGeometry(GRID * SPACING * 1.1, 0.4), aveMatCyan);
+            aveH.rotation.x = -Math.PI / 2;
+            aveH.position.set(0, 0.03, 0);
+            scene.add(aveH);
+
+            const aveV = new THREE.Mesh(new THREE.PlaneGeometry(0.4, GRID * SPACING * 1.1), aveMatCyan);
+            aveV.rotation.x = -Math.PI / 2;
+            aveV.position.set(0, 0.03, 0);
+            scene.add(aveV);
+
+            [-10, 10].forEach(offset => {
+                const lineX = new THREE.Mesh(new THREE.PlaneGeometry(GRID * SPACING * 0.9, 0.2), aveMatBlue);
+                lineX.rotation.x = -Math.PI / 2;
+                lineX.position.set(0, 0.03, offset);
+                scene.add(lineX);
+
+                const lineZ = new THREE.Mesh(new THREE.PlaneGeometry(0.2, GRID * SPACING * 0.9), aveMatBlue);
+                lineZ.rotation.x = -Math.PI / 2;
+                lineZ.position.set(offset, 0.03, 0);
+                scene.add(lineZ);
+            });
+
+            // Ground Luminous Philosophical Triad Circuit
+            const triPoints = specialBlocks.map(b => new THREE.Vector3(b.position.x, 0.12, b.position.z));
+            triPoints.push(triPoints[0].clone());
+            const triGeom = new THREE.BufferGeometry().setFromPoints(triPoints);
+            const triMat = new THREE.LineDashedMaterial({
+                color: 0x38bdf8,
+                dashSize: 0.8,
+                gapSize: 0.4,
+                transparent: true,
+                opacity: 0.65
+            });
+            groundTriangle = new THREE.Line(triGeom, triMat);
+            groundTriangle.computeLineDistances();
+            scene.add(groundTriangle);
+        }
+
+        /* Helper for Dashed Leader Lines */
+        function addLeaderLine(x1, y1, z1, x2, y2, z2, color = 0xffffff) {
+            const points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineDashedMaterial({
+                color: color,
+                dashSize: 0.25,
+                gapSize: 0.25,
+                transparent: true,
+                opacity: 0.7
+            });
+            const line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            scene.add(line);
+        }
+
+        /* Atmospheric Particle Field */
+        function generateAtmosphericParticles() {
+            const particleCount = 1400;
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            const colorArt = new THREE.Color(0xff4433);
+            const colorSci = new THREE.Color(0xffbb00);
+            const colorSoul = new THREE.Color(0x38bdf8);
+            const colorWhite = new THREE.Color(0xe2e8f0);
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 80;
+                positions[i3 + 1] = 0.5 + Math.random() * 24;
+                positions[i3 + 2] = (Math.random() - 0.5) * 80;
+
+                const r = Math.random();
+                let c = colorWhite;
+                if (r < 0.25) c = colorArt;
+                else if (r < 0.5) c = colorSci;
+                else if (r < 0.75) c = colorSoul;
+
+                colors[i3] = c.r;
+                colors[i3 + 1] = c.g;
+                colors[i3 + 2] = c.b;
+            }
+
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const mat = new THREE.PointsMaterial({
+                size: 0.28,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+
+            particlesSystem = new THREE.Points(geo, mat);
+            scene.add(particlesSystem);
+        }
+
+        /* ==========================================================================
+           3. INTERACTION, CAMERA CINEMATICS & HUD FEEDS
+           ========================================================================== */
+        function focusBuilding(type) {
+            const target = specialBlocks.find(b => b.userData.type === type);
+            if (target) {
+                cinematicTarget = target;
+                currentFacultyType = type;
+                lastAutoTourTime = Date.now();
+                lastQuoteCycleTime = Date.now();
+                updateFacultyPanel(type);
+
+                // Update active state on navigation buttons
+                document.querySelectorAll('.nav-faculty-btn').forEach(btn => btn.classList.remove('active'));
+                const btnId = `btn-${type === 'art' ? 'body' : (type === 'science' ? 'mind' : 'soul')}`;
+                const activeBtn = document.getElementById(btnId);
+                if (activeBtn) activeBtn.classList.add('active');
+                // Neon signs stay lit above all three buildings at all times, so
+                // there's nothing to show/hide here on focus.
+            }
+        }
+
+        function resetOverview() {
+            cinematicTarget = null;
+            lastAutoTourTime = Date.now();
+            currentFacultyType = null;
+            document.querySelectorAll('.nav-faculty-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        function updateFacultyPanel(type) {
+            const data = facultyData[type];
+            if (!data) return;
+
+            // Update Header & Category
+            screenFacultyName.className = 'panel-faculty-title ' + data.titleClass;
+            screenFacultyName.innerText = data.name;
+            screenCategory.innerText = data.category;
+
+            // Update Quote & Glow Border
+            panelQuoteBox.className = 'panel-quote-box ' + data.borderClass;
+            screenContent.className = 'neon-text ' + data.class;
+            const randomQuote = data.quotes[Math.floor(Math.random() * data.quotes.length)];
+            screenContent.innerText = `"${randomQuote}"`;
+
+            // Update Content Details (Under the header)
+            detailHigh.innerText = data.highFields.join(', ');
+            detailLow.innerText = data.lowFields.join(', ');
+            detailPurpose.innerText = data.purposes.join(' · ');
+        }
+
+        function onMouseMove(event) {
+            if (introActive) return;
+            mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while (target.parent && !target.userData.type) target = target.parent;
+                const bType = target.userData.type;
+                const fData = facultyData[bType];
+                const colorHex = bType === 'art' ? '#ff4433' : (bType === 'science' ? '#ffbb00' : '#38bdf8');
+                const glowHex = bType === 'art' ? 'rgba(255, 51, 34, 0.45)' : (bType === 'science' ? 'rgba(255, 187, 0, 0.45)' : 'rgba(56, 189, 248, 0.45)');
+                tooltip.style.display = 'block';
+                tooltip.style.left = event.clientX + 'px';
+                tooltip.style.top = event.clientY + 'px';
+                tooltip.style.borderColor = colorHex;
+                tooltip.style.boxShadow = `0 10px 25px rgba(0, 0, 0, 0.75), 0 0 16px ${glowHex}`;
+                tooltip.innerHTML = `<span style="color:${colorHex}; font-weight:800; letter-spacing:0.06em;">${target.userData.label}</span><br><span style="font-size:9.5px; color:#cbd5e1; letter-spacing:0.04em;">${target.userData.category || (fData ? fData.category : '')}</span>`;
+                container.style.cursor = 'pointer';
+            } else {
+                tooltip.style.display = 'none';
+                container.style.cursor = 'grab';
+            }
+        }
+
+        function onCanvasClick(event) {
+            if (introActive) return;
+            mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(specialBlocks, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while (target.parent && !target.userData.type) target = target.parent;
+                focusBuilding(target.userData.type);
+            }
+        }
+
+        function onWindowResize() {
+            const aspect = container.clientWidth / container.clientHeight;
+            const d = 26;
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        /* ==========================================================================
+           5. MAIN ANIMATION LOOP & RENDER ENGINE
+           ========================================================================== */
+        let clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            const now = Date.now();
+
+            // Smooth Continuous Rotation of the Left Tri-Truth Triangle & Upright Badges
+            if (!isSuperSpinning && triRotor) {
+                triangleAngle = (triangleAngle + 0.12) % 360;
+                triRotor.style.transform = `rotate(${triangleAngle}deg)`;
+                updateTriBadgePositions();
+            }
+
+            // Animate Atmospheric Dust Particles
+            if (particlesSystem) {
+                const positions = particlesSystem.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] -= 0.015;
+                    positions[i] += Math.sin(elapsedTime * 0.4 + i) * 0.008;
+                    if (positions[i + 1] < 0.2) positions[i + 1] = 24.0;
+                }
+                particlesSystem.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Animate Landmark Point Lights Subtle Pulsing
+            landmarkLights.forEach((light, idx) => {
+                light.intensity = 4.2 + Math.sin(elapsedTime * 2.2 + idx * 1.5) * 0.8;
+            });
+
+            // Gentle floating bob + faint neon buzz for every sign, each on its own phase
+            Object.keys(landmarkLabels).forEach((key, idx) => {
+                const sign = landmarkLabels[key];
+                if (!sign) return;
+                const phase = elapsedTime * 2.8 + idx * 2.1;
+                sign.position.y = sign.userData.baseY + Math.sin(phase) * 0.16;
+                sign.material.opacity = 0.9 + Math.sin(phase * 3.7) * 0.1;
+            });
+
+            // Auto-Tour Rotation & Periodic Camera Focus Cycling
+            if (controls.autoRotate && !introActive) {
+                controls.autoRotateSpeed = 0.45;
+            }
+
+            if (!introActive && (now - lastAutoTourTime > AUTO_TOUR_INTERVAL)) {
+                if (cinematicTarget) {
+                    cinematicTarget = null;
+                } else {
+                    const keys = ['art', 'science', 'spirit'];
+                    const nextKey = keys[Math.floor(Math.random() * keys.length)];
+                    focusBuilding(nextKey);
+                }
+                lastAutoTourTime = now;
+            }
+
+            // Camera Lerping to Target Landmark
+            if (cinematicTarget) {
+                const targetPos = cinematicTarget.position.clone();
+                targetPos.y += 2.0;
+                controls.target.lerp(targetPos, 0.06);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 2.4, 0.04);
+
+                if (now - lastQuoteCycleTime > QUOTE_CYCLE_INTERVAL) {
+                    updateFacultyPanel(currentFacultyType);
+                    lastQuoteCycleTime = now;
+                }
+            } else {
+                controls.target.lerp(new THREE.Vector3(0, 0, 0), 0.03);
+                camera.zoom = THREE.MathUtils.lerp(camera.zoom, 1.0, 0.03);
+            }
+
+            camera.updateProjectionMatrix();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
