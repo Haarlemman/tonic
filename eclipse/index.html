@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>What Makes a Solar Eclipse? — an 3D explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#060a18;
+    --bg-accent:#10163a;
+    --gold:#ffc94d;
+    --gold-dim:#ffc94d55;
+    --ember:#ff8a34;
+    --ocean:#1c6fa5;
+    --panel:rgba(10,14,28,0.74);
+    --text-main:#f5f3ee;
+    --text-sub:#b9c0d4;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background: radial-gradient(ellipse at 30% 20%, var(--bg-accent) 0%, var(--bg-deep) 60%);
+    overflow:hidden;
+    font-family:'Inter',sans-serif;
+    color:var(--text-main);
+    touch-action:none;
+  }
+  #scene{position:absolute; inset:0; display:block; cursor:grab;}
+  #scene:active{cursor:grabbing;}
+
+  .top{
+    position:absolute; top:0; left:0; right:0;
+    padding:22px 26px 0 26px;
+    pointer-events:none;
+    z-index:5;
+  }
+  .top h1{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:clamp(20px, 3.2vw, 32px);
+    margin:0 0 4px 0;
+    color:var(--text-main);
+    text-shadow:0 2px 18px rgba(0,0,0,0.55);
+  }
+  .top p{
+    margin:0;
+    font-size:clamp(12px,1.6vw,15px);
+    color:var(--text-sub);
+    max-width:520px;
+    line-height:1.4;
+  }
+
+  .caption{
+    position:absolute; left:22px; bottom:22px;
+    max-width:min(420px, 86vw);
+    background:var(--panel);
+    border:1px solid var(--gold-dim);
+    border-radius:16px;
+    padding:16px 18px;
+    backdrop-filter:blur(6px);
+    z-index:6;
+    transition:opacity .35s ease;
+  }
+  .caption .tag{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    color:var(--gold);
+    margin:0 0 6px 0;
+    display:flex; align-items:center; gap:8px;
+  }
+  .caption .tag .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 8px 2px var(--gold-dim);
+    flex:none;
+  }
+  .caption p{
+    margin:0;
+    font-size:14px;
+    line-height:1.5;
+    color:var(--text-main);
+  }
+
+  .controls{
+    position:absolute; right:22px; bottom:22px;
+    background:var(--panel);
+    border:1px solid var(--gold-dim);
+    border-radius:16px;
+    padding:12px 16px;
+    display:flex; flex-direction:column; gap:10px;
+    z-index:6;
+    backdrop-filter:blur(6px);
+    min-width:190px;
+  }
+  .row{display:flex; align-items:center; gap:10px;}
+  .row label{font-size:12px; color:var(--text-sub); flex:1;}
+  button.iconbtn{
+    background:transparent;
+    border:1px solid var(--gold-dim);
+    color:var(--text-main);
+    border-radius:10px;
+    width:40px; height:40px;
+    font-size:16px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .2s;
+  }
+  button.iconbtn:hover{background:rgba(255,201,77,0.12);}
+  button.textbtn{
+    background:transparent;
+    border:1px solid var(--gold-dim);
+    color:var(--text-main);
+    border-radius:10px;
+    padding:8px 12px;
+    font-size:12px;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    flex:1;
+    transition:background .2s;
+  }
+  button.textbtn:hover{background:rgba(255,201,77,0.12);}
+  input[type=range]{
+    flex:2;
+    accent-color:var(--gold);
+  }
+
+  .legend{
+    position:absolute; top:22px; right:22px;
+    display:flex; flex-direction:column; gap:6px;
+    z-index:6;
+    font-size:12px;
+    color:var(--text-sub);
+    background:var(--panel);
+    border:1px solid var(--gold-dim);
+    border-radius:14px;
+    padding:10px 14px;
+  }
+  .legend .item{display:flex; align-items:center; gap:8px;}
+  .legend .swatch{width:10px; height:10px; border-radius:50%; flex:none;}
+
+  @media (max-width:640px){
+    .legend{display:none;}
+    .top{padding:16px 16px 0 16px;}
+    .caption{left:12px; right:12px; bottom:150px; max-width:none;}
+    .controls{left:12px; right:12px; bottom:12px; min-width:0;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #scene{cursor:default;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div class="top">
+  <h1>What makes a solar eclipse?</h1>
+  <p>Drag to look around. Watch the Moon's round shadow travel across the Earth.</p>
+</div>
+
+<div class="legend">
+  <div class="item"><span class="swatch" style="background:#ffc94d;"></span>Sun (center)</div>
+  <div class="item"><span class="swatch" style="background:#5b9eff;"></span>Earth orbit</div>
+  <div class="item"><span class="swatch" style="background:#ffffff;"></span>Moon orbit</div>
+</div>
+
+<div class="caption" id="caption">
+  <p class="tag"><span class="dot"></span><span id="captionTag">Meet the neighbourhood</span></p>
+  <p id="captionText">The Sun is huge and fixed in space. The Earth circles it, and the Moon circles the Earth.</p>
+</div>
+
+<div class="controls">
+  <div class="row">
+    <button class="iconbtn" id="playBtn" title="Play or pause">⏸</button>
+    <button class="textbtn" id="jumpBtn">Jump to eclipse</button>
+    <button class="textbtn" id="viewBtn" title="Toggle between solar system view and Earth closeup">Follow Earth</button>
+  </div>
+  <div class="row">
+    <label for="speed">Speed <span id="speedVal" style="color:var(--gold);font-weight:600;">2×</span></label>
+    <input type="range" id="speed" min="0.5" max="15" step="0.5" value="2">
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------- basic setup ----------
+  const canvas = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(46, window.innerWidth/window.innerHeight, 0.5, 3000);
+
+  function resize(){
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w,h);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- procedural textures ----------
+  function makeEarthTexture(){
+    const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,0,512);
+    grad.addColorStop(0,'#2477ad'); grad.addColorStop(0.5,'#1c6fa5'); grad.addColorStop(1,'#123f6e');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,1024,512);
+
+    function blob(cx,cy,r,seedShift){
+      ctx.beginPath();
+      const pts = 14;
+      for(let i=0;i<=pts;i++){
+        const a = (i/pts)*Math.PI*2;
+        const wob = 0.65 + 0.5*Math.abs(Math.sin(a*3.1+seedShift)) ;
+        const rad = r*wob;
+        const x = cx + Math.cos(a)*rad;
+        const y = cy + Math.sin(a)*rad*0.62;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+
+    ctx.fillStyle = '#3e8e4f';
+    blob(150,190,95,0.4);
+    blob(235,285,66,1.7);
+    blob(470,150,118,2.3);
+    blob(430,320,60,0.9);
+    blob(560,300,85,3.1);
+    blob(700,175,88,1.1);
+    blob(770,330,58,2.9);
+    blob(880,215,74,0.6);
+    blob(955,150,46,1.9);
+    blob(60,330,50,2.1);
+
+    ctx.fillStyle = '#3a7d46';
+    blob(150,190,60,4.2);
+    blob(470,150,70,1.2);
+    blob(700,175,55,2.4);
+
+    // polar caps
+    const ice = ctx.createLinearGradient(0,0,0,60);
+    ice.addColorStop(0,'#f2f8fb'); ice.addColorStop(1,'rgba(242,248,251,0)');
+    ctx.fillStyle = ice; ctx.fillRect(0,0,1024,60);
+    ctx.save(); ctx.translate(0,512); ctx.scale(1,-1);
+    ctx.fillStyle = ice; ctx.fillRect(0,0,1024,60);
+    ctx.restore();
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  function makeMoonTexture(){
+    const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#d8d5d0'; ctx.fillRect(0,0,512,256);
+    // maria (darker patches)
+    ctx.fillStyle = 'rgba(150,145,140,0.55)';
+    function patch(x,y,r){
+      ctx.beginPath(); ctx.ellipse(x,y,r,r*0.75,0,0,Math.PI*2); ctx.fill();
+    }
+    patch(140,110,44); patch(190,150,30); patch(300,90,50); patch(360,140,26); patch(80,60,22);
+    // craters
+    for(let i=0;i<70;i++){
+      const x = Math.random()*512, y = Math.random()*256, r = 2+Math.random()*7;
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(120,115,110,0.35)';
+      ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(235,232,228,0.35)';
+      ctx.arc(x-r*0.25,y-r*0.25,r*0.5,0,Math.PI*2); ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  // Complete, uniform sun texture covering all 360 degrees seamlessly (no crescent artifact)
+  function makeCompleteSunTexture(){
+    const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+    const ctx = c.getContext('2d');
+    
+    // Radiant base golden sun tone
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#ffd868');
+    grad.addColorStop(0.5, '#ffbb2b');
+    grad.addColorStop(1, '#ffd868');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // Uniform solar granulations and subtle flare patches across all longitudes
+    for(let i = 0; i < 360; i++){
+      const x = Math.random() * 1024;
+      const y = Math.random() * 512;
+      const r = 6 + Math.random() * 22;
+      const alpha = 0.14 + Math.random() * 0.18;
+      const isBright = Math.random() > 0.45;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = isBright ? `rgba(255, 252, 215, ${alpha})` : `rgba(255, 140, 25, ${alpha * 0.75})`;
+      ctx.fill();
+    }
+
+    // Soft celestial atmospheric wave bands
+    for(let b = 0; b < 10; b++){
+      const y = Math.random() * 512;
+      const h = 12 + Math.random() * 28;
+      ctx.fillStyle = b % 2 === 0 ? 'rgba(255, 245, 180, 0.07)' : 'rgba(255, 130, 20, 0.05)';
+      ctx.fillRect(0, y, 1024, h);
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  function makeGlowTexture(){
+    const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createRadialGradient(128,128,0,128,128,128);
+    grad.addColorStop(0,'rgba(255,245,190,0.95)');
+    grad.addColorStop(0.35,'rgba(255,195,80,0.38)');
+    grad.addColorStop(1,'rgba(255,150,40,0)');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,256,256);
+    return new THREE.CanvasTexture(c);
+  }
+
+  // ---------- sun: fixed in space at the center (0, 0, 0) ----------
+  const SUN_POS = new THREE.Vector3(0, 0, 0);
+  const SUN_R = 20;
+  const sunGroup = new THREE.Group();
+  sunGroup.position.copy(SUN_POS);
+
+  // 1. Complete solid radiant ball (MeshBasicMaterial: uniform illumination, no crescent)
+  const sunMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(SUN_R, 64, 64),
+    new THREE.MeshBasicMaterial({
+      map: makeCompleteSunTexture(),
+      color: 0xfff2a8
+    })
+  );
+  sunGroup.add(sunMesh);
+
+  // Soft atmospheric limb-glow shell
+  const sunHalo = new THREE.Mesh(
+    new THREE.SphereGeometry(SUN_R * 1.05, 32, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0xffa812,
+      transparent: true,
+      opacity: 0.28,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  sunGroup.add(sunHalo);
+
+  // Soft central corona flare billboard
+  const glowMat = new THREE.SpriteMaterial({
+    map: makeGlowTexture(),
+    transparent: true,
+    opacity: 0.75,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const glow = new THREE.Sprite(glowMat);
+  glow.scale.set(SUN_R * 8.0, SUN_R * 8.0, 1);
+  sunGroup.add(glow);
+
+  // 2. Multitude of Radial Yellow Rays of Light (Short, Long, and Ultra-Hero Lines Fading Outward)
+  // Modeled after the BODY building sphere in VOR, but with much longer rays
+  const rayGroup = new THREE.Group();
+  const rayCount = 240;
+  const rayPositions = [];
+  const rayColors = [];
+
+  const colorStart = new THREE.Color(0xfff455); // Bright intense solar yellow at base
+  const colorMid = new THREE.Color(0xffad00);   // Warm amber mid-ray
+  const colorEnd = new THREE.Color(0x000000);   // Fading away to black/transparent
+
+  for (let i = 0; i < rayCount; i++) {
+    // Uniform Fibonacci spherical distribution
+    const phi = Math.acos(1 - 2 * (i + 0.5) / rayCount);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+
+    const dir = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.sin(phi) * Math.sin(theta),
+      Math.cos(phi)
+    ).normalize();
+
+    let rayLen;
+    if (i % 7 === 0) {
+      // Ultra-hero rays shooting far outward (160 - 260 units)
+      rayLen = 160 + Math.random() * 100;
+    } else if (i % 3 === 0) {
+      // Long dramatic rays (85 - 150 units)
+      rayLen = 85 + Math.random() * 65;
+    } else {
+      // Standard radiant rays (35 - 75 units)
+      rayLen = 35 + Math.random() * 40;
+    }
+
+    const p0 = dir.clone().multiplyScalar(SUN_R);
+    const pMid = dir.clone().multiplyScalar(SUN_R + rayLen * 0.42);
+    const p1 = dir.clone().multiplyScalar(SUN_R + rayLen);
+
+    // Segment 1: Base to mid (bright yellow to warm gold)
+    rayPositions.push(p0.x, p0.y, p0.z, pMid.x, pMid.y, pMid.z);
+    rayColors.push(colorStart.r, colorStart.g, colorStart.b, colorMid.r, colorMid.g, colorMid.b);
+
+    // Line 2: Mid to tip (fading to transparent)
+    rayPositions.push(pMid.x, pMid.y, pMid.z, p1.x, p1.y, p1.z);
+    rayColors.push(colorMid.r, colorMid.g, colorMid.b, colorEnd.r, colorEnd.g, colorEnd.b);
+  }
+
+  const linesGeo = new THREE.BufferGeometry();
+  linesGeo.setAttribute('position', new THREE.Float32BufferAttribute(rayPositions, 3));
+  linesGeo.setAttribute('color', new THREE.Float32BufferAttribute(rayColors, 3));
+
+  const linesMat = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const linesMesh = new THREE.LineSegments(linesGeo, linesMat);
+  rayGroup.add(linesMesh);
+
+  // 3. Volumetric needle flares (slender hero cones)
+  const heroNeedleCount = 36;
+  for (let i = 0; i < heroNeedleCount; i++) {
+    const phi = Math.acos(1 - 2 * (i + 0.5) / heroNeedleCount);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i + 0.35;
+    const dir = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.sin(phi) * Math.sin(theta),
+      Math.cos(phi)
+    ).normalize();
+    const len = 65 + Math.random() * 95;
+
+    const needleGeo = new THREE.ConeGeometry(0.7, len, 6);
+    needleGeo.translate(0, len / 2 + SUN_R, 0);
+    const needleMat = new THREE.MeshBasicMaterial({
+      color: 0xffea00,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const needleMesh = new THREE.Mesh(needleGeo, needleMat);
+    needleMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    rayGroup.add(needleMesh);
+  }
+
+  sunGroup.add(rayGroup);
+
+  // Omni point light from the Sun
+  const sunPointLight = new THREE.PointLight(0xfff5dd, 1.8, 800);
+  sunGroup.add(sunPointLight);
+
+  scene.add(sunGroup);
+
+  // ---------- lighting for shadow casting ----------
+  const hemi = new THREE.HemisphereLight(0x27406b, 0x05070d, 0.38);
+  scene.add(hemi);
+
+  // Directional shadow-casting light tracking from Sun toward Earth
+  const sunLight = new THREE.DirectionalLight(0xfff6e4, 2.2);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048,2048);
+  sunLight.shadow.camera.near = 10;
+  sunLight.shadow.camera.far = 140;
+  sunLight.shadow.camera.left = -22;
+  sunLight.shadow.camera.right = 22;
+  sunLight.shadow.camera.top = 22;
+  sunLight.shadow.camera.bottom = -22;
+  sunLight.shadow.bias = -0.0012;
+  scene.add(sunLight);
+  scene.add(sunLight.target);
+
+  // ---------- stars ----------
+  (function stars(){
+    const N = 1800;
+    const positions = new Float32Array(N*3);
+    for(let i=0;i<N;i++){
+      const r = 600 + Math.random()*600;
+      const theta = Math.random()*Math.PI*2;
+      const phi = Math.acos((Math.random()*2)-1);
+      positions[i*3]   = r*Math.sin(phi)*Math.cos(theta);
+      positions[i*3+1] = r*Math.cos(phi);
+      positions[i*3+2] = r*Math.sin(phi)*Math.sin(theta);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+    const mat = new THREE.PointsMaterial({color:0xffffff, size:1.3, sizeAttenuation:true, transparent:true, opacity:0.85});
+    scene.add(new THREE.Points(geo,mat));
+  })();
+
+  // ---------- earth's orbit around the sun (dotted line) ----------
+  const EARTH_ORBIT_R = 150; // further away from the Sun and Moon
+  (function earthOrbitPath(){
+    const pts = [];
+    const segs = 256;
+    for(let i=0;i<=segs;i++){
+      const a = (i/segs)*Math.PI*2;
+      pts.push(new THREE.Vector3(
+        EARTH_ORBIT_R * Math.cos(a),
+        0,
+        EARTH_ORBIT_R * Math.sin(a)
+      ));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineDashedMaterial({
+      color: 0x5b9eff,
+      dashSize: 4.2,
+      gapSize: 2.8,
+      transparent: true,
+      opacity: 0.65
+    });
+    const line = new THREE.Line(geo, mat);
+    line.computeLineDistances();
+    scene.add(line);
+  })();
+
+  // ---------- earth with true axial tilt rotation ----------
+  const EARTH_R = 7.5;
+  const earthGroup = new THREE.Group();
+  scene.add(earthGroup);
+
+  // Axial tilt container (23.4 degrees)
+  const earthTiltContainer = new THREE.Group();
+  earthTiltContainer.rotation.z = THREE.MathUtils.degToRad(23.4);
+  earthGroup.add(earthTiltContainer);
+
+  const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(EARTH_R, 64, 64),
+    new THREE.MeshStandardMaterial({map: makeEarthTexture(), roughness:0.85, metalness:0.05})
+  );
+  earth.castShadow = true;
+  earth.receiveShadow = true;
+  earthTiltContainer.add(earth);
+
+  // thin atmosphere shell for a soft realistic rim
+  const atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(EARTH_R*1.035, 64, 64),
+    new THREE.MeshBasicMaterial({color:0x6fb3ff, transparent:true, opacity:0.14, side:THREE.BackSide})
+  );
+  earthTiltContainer.add(atmosphere);
+
+  // ---------- moon & bright orbit path around earth ----------
+  const MOON_R = 2.0;
+  const MOON_ORBIT_R = 25;
+  const INCLINATION = THREE.MathUtils.degToRad(6.5);
+  const TILT_AMPLITUDE = MOON_ORBIT_R * Math.sin(INCLINATION);
+
+  const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(MOON_R, 48, 48),
+    new THREE.MeshStandardMaterial({map: makeMoonTexture(), roughness:1.0, metalness:0.0})
+  );
+  moon.castShadow = true;
+  moon.receiveShadow = true;
+  scene.add(moon);
+
+  // Much brighter dotted line indicating the path of the moon around Earth
+  const moonOrbitPts = [];
+  const moonOrbitSegs = 128;
+  for(let i=0;i<=moonOrbitSegs;i++){
+    const t = (i/moonOrbitSegs)*Math.PI*2;
+    moonOrbitPts.push(new THREE.Vector3(
+      MOON_ORBIT_R * Math.cos(t),
+      TILT_AMPLITUDE * Math.sin(t),
+      MOON_ORBIT_R * Math.sin(t)
+    ));
+  }
+  const moonOrbitGeo = new THREE.BufferGeometry().setFromPoints(moonOrbitPts);
+  const moonOrbitMat = new THREE.LineDashedMaterial({
+    color: 0xffffff, // Brilliant bright white
+    dashSize: 1.8,
+    gapSize: 1.0,
+    transparent: true,
+    opacity: 0.95
+  });
+  const moonOrbitLine = new THREE.Line(moonOrbitGeo, moonOrbitMat);
+  moonOrbitLine.computeLineDistances();
+  scene.add(moonOrbitLine);
+
+  // ---------- camera controls (simple drag-to-orbit) ----------
+  let viewMode = 'sun'; // 'sun' = fixed heliocentric, 'earth' = follow earth
+  let camRadius = 240, camTheta = 0.85, camPhi = 1.05;
+  let dragging = false, lastX=0, lastY=0;
+
+  function updateCamera(){
+    const cx = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+    const cy = camRadius * Math.cos(camPhi);
+    const cz = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+
+    if(viewMode === 'earth'){
+      camera.position.set(earthGroup.position.x + cx, earthGroup.position.y + cy, earthGroup.position.z + cz);
+      camera.lookAt(earthGroup.position);
+    } else {
+      camera.position.set(cx, cy, cz);
+      camera.lookAt(0, 0, 0); // Sun is stable and fixed at (0,0,0)
+    }
+  }
+  updateCamera();
+
+  canvas.addEventListener('pointerdown', e=>{
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('pointerup', ()=> dragging=false);
+  window.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    camTheta -= dx*0.006;
+    camPhi = Math.min(Math.max(camPhi - dy*0.006, 0.25), Math.PI-0.25);
+    updateCamera();
+  });
+  canvas.addEventListener('wheel', e=>{
+    const minR = (viewMode === 'earth') ? 35 : 70;
+    const maxR = (viewMode === 'earth') ? 160 : 480;
+    camRadius = Math.min(Math.max(camRadius + e.deltaY*0.12, minR), maxR);
+    updateCamera();
+  }, {passive:true});
+
+  // ---------- caption logic (steady real-time progression, independent of speed) ----------
+  const captionTag = document.getElementById('captionTag');
+  const captionText = document.getElementById('captionText');
+
+  const storyCards = [
+    { tag: "Fixed Sun at the Center", text: "The Sun sits stationary at the center of the solar system. Earth journeys around it on its yearly orbital path." },
+    { tag: "Earth's Rotation & Axis", text: "Earth rotates continuously around its 23.4° tilted axis, bringing day and night across every continent." },
+    { tag: "The Moon's Orbit", text: "The Moon circles Earth roughly once a month along its bright, tilted white orbital path." },
+    { tag: "What Makes a Solar Eclipse?", text: "When the Moon slips directly between the Sun and Earth, its round dark shadow sweeps across Earth in a solar eclipse!" },
+    { tag: "Lunar Eclipse", text: "When Earth passes between the Sun and the Moon, Earth's own shadow falls upon the Moon." }
+  ];
+
+  let cardIndex = 0;
+  let cardTimer = 0;
+  let forceHoldUntil = 0;
+
+  function showCard(idx){
+    cardIndex = ((idx % storyCards.length) + storyCards.length) % storyCards.length;
+    const card = storyCards[cardIndex];
+    captionTag.textContent = card.tag;
+    captionText.textContent = card.text;
+  }
+
+  // Real-time update: changes every 8 seconds, completely independent of simulation speed
+  function updateStoryCaption(realDt, nowMs){
+    if (nowMs < forceHoldUntil) return;
+    cardTimer += realDt;
+    if (cardTimer >= 8.0) {
+      cardTimer = 0;
+      showCard(cardIndex + 1);
+    }
+  }
+
+  // Clicking caption box allows the user to advance manually at their own pace
+  const captionBox = document.getElementById('caption');
+  captionBox.style.cursor = 'pointer';
+  captionBox.title = 'Click to read next card';
+  captionBox.addEventListener('click', ()=>{
+    cardTimer = 0;
+    forceHoldUntil = performance.now() + 6000;
+    showCard(cardIndex + 1);
+  });
+
+  // ---------- play/pause, view toggle & fast speed control ----------
+  let playing = true;
+  let earthAngle = 0.40;
+  let moonRelAngle = -0.30; // 0 = exactly between Sun and Earth
+  const baseEarthSpeed = 0.16; // rad/s at 1x
+  const baseMoonSpeed = 1.60;  // rad/s at 1x (relative synodic rotation)
+
+  const speedSlider = document.getElementById('speed');
+  const speedVal = document.getElementById('speedVal');
+  const playBtn = document.getElementById('playBtn');
+  const jumpBtn = document.getElementById('jumpBtn');
+  const viewBtn = document.getElementById('viewBtn');
+
+  playBtn.addEventListener('click', ()=>{
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸' : '▶';
+  });
+
+  jumpBtn.addEventListener('click', ()=>{
+    moonRelAngle = -0.25;
+    showCard(3); // "What Makes a Solar Eclipse?"
+    cardTimer = 0;
+    forceHoldUntil = performance.now() + 10000; // Hold eclipse card for 10s
+  });
+
+  viewBtn.addEventListener('click', ()=>{
+    viewMode = (viewMode === 'sun') ? 'earth' : 'sun';
+    viewBtn.textContent = (viewMode === 'sun') ? 'Follow Earth' : 'Sun System';
+    if(viewMode === 'earth'){
+      camRadius = 65;
+      camTheta = 0.9;
+      camPhi = 1.15;
+    } else {
+      camRadius = 240;
+      camTheta = 0.85;
+      camPhi = 1.05;
+    }
+    updateCamera();
+  });
+
+  // ---------- animation loop ----------
+  let lastT = performance.now();
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(now){
+    const dt = Math.min((now-lastT)/1000, 0.05);
+    lastT = now;
+
+    const speed = parseFloat(speedSlider.value);
+    if(speedVal) speedVal.textContent = speed + '×';
+
+    if(playing){
+      earthAngle += baseEarthSpeed * speed * dt;
+      if(earthAngle > Math.PI * 2) earthAngle -= Math.PI * 2;
+
+      moonRelAngle += baseMoonSpeed * speed * dt;
+      if(moonRelAngle > Math.PI * 2) moonRelAngle -= Math.PI * 2;
+    }
+
+    // 1. Earth orbits around the fixed Sun at (0, 0, 0)
+    const ex = EARTH_ORBIT_R * Math.cos(earthAngle);
+    const ez = EARTH_ORBIT_R * Math.sin(earthAngle);
+    earthGroup.position.set(ex, 0, ez);
+
+    // Earth rotates around its 23.4° tilted polar axis (day/night spin!)
+    const spinSpeed = (reducedMotion ? 0.3 : 1.4) * (1 + speed * 0.2);
+    earth.rotation.y += spinSpeed * dt;
+
+    // 2. Bright Moon orbit ring follows Earth
+    moonOrbitLine.position.copy(earthGroup.position);
+
+    // 3. Moon orbits Earth; moonRelAngle=0 lines up directly between Sun and Earth
+    const mAngle = earthAngle + Math.PI + moonRelAngle;
+    const mx = ex + MOON_ORBIT_R * Math.cos(mAngle);
+    const mz = ez + MOON_ORBIT_R * Math.sin(mAngle);
+    const my = TILT_AMPLITUDE * Math.sin(moonRelAngle);
+    moon.position.set(mx, my, mz);
+    moon.rotation.y = mAngle + Math.PI;
+
+    // 4. Directional sunlight: shines from Sun (0,0,0) directly toward Earth
+    const sunToEarth = earthGroup.position.clone().normalize();
+    sunLight.position.copy(earthGroup.position).sub(sunToEarth.clone().multiplyScalar(45));
+    sunLight.target.position.copy(earthGroup.position);
+
+    // 5. Stable, majestic Sun rays with gentle, stately rotation
+    const timeScale = dt / 0.016;
+    rayGroup.rotation.y += (reducedMotion ? 0.0004 : 0.0015) * timeScale;
+    rayGroup.rotation.x += (reducedMotion ? 0.0002 : 0.0008) * timeScale;
+    const rayPulse = 0.96 + Math.sin(now * 0.0018) * 0.04;
+    rayGroup.scale.set(rayPulse, rayPulse, rayPulse);
+    sunMesh.rotation.y += 0.001 * timeScale;
+
+    // Real-time caption progression independent of simulation speed
+    updateStoryCaption(dt, now);
+
+    updateCamera();
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  resize();
+  showCard(0);
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
