@@ -1288,22 +1288,21 @@
 
         <!-- Bottom View Shortcuts -->
         <div class="hud-view-shortcuts hud-interactive">
-            <span class="hud-view-label">view</span>
             <button type="button" id="view-btn-default" class="hud-key-item hud-key-btn is-active"
-                onclick="resetOverview()" title="[0] Return to Default View">
-                <span class="hud-key-num">[0]</span> default
+                onclick="resetOverview()" title="[0] Objective View">
+                <span class="hud-key-num">[0]</span> objective
             </button>
             <button type="button" id="view-btn-body" class="hud-key-item hud-key-btn item-body"
-                onclick="focusBuilding('art')" title="[1] Feeling / Body Reality View">
-                <span class="hud-key-num">[1]</span> feeling
+                onclick="focusBuilding('art')" title="[1] Subjective View">
+                <span class="hud-key-num">[1]</span> subjective
             </button>
             <button type="button" id="view-btn-mind" class="hud-key-item hud-key-btn item-mind"
-                onclick="focusBuilding('science')" title="[2] Rational / Mind Reality View">
-                <span class="hud-key-num">[2]</span> rational
+                onclick="focusBuilding('science')" title="[2] Corroborative View">
+                <span class="hud-key-num">[2]</span> corroborative
             </button>
             <button type="button" id="view-btn-soul" class="hud-key-item hud-key-btn item-soul"
-                onclick="focusBuilding('spirit')" title="[3] Spiritual / Soul Reality View">
-                <span class="hud-key-num">[3]</span> spiritual
+                onclick="focusBuilding('spirit')" title="[3] Infinitive View">
+                <span class="hud-key-num">[3]</span> infinitive
             </button>
         </div>
     </div>
@@ -1423,6 +1422,8 @@
         let mindGhost, soulGhost;
 
         let allProceduralBuildings = [];
+        let allBuildingLightboxes = [];
+        let houseSwayBlend = 0;
         let avenuePackets = [];
         let causticRings = [];
         let groundDefaultGroup, groundBodyGroup, groundMindGroup, groundSoulGroup;
@@ -3012,6 +3013,7 @@
             const centerOffset = (GRID * SPACING) / 2;
 
             allProceduralBuildings = [];
+            allBuildingLightboxes = [];
             specialBlocks = [];
             landmarkLights = [];
             artLandmarkLight = sciLandmarkLight = spiritLandmarkLight = null;
@@ -3207,6 +3209,8 @@
                         artLightboxLeft.rotation.y = -Math.PI / 2;
                         artGroup.add(artLightboxLeft);
 
+                        allBuildingLightboxes.push(artLightbox, artLightboxX, artLightboxBack, artLightboxLeft);
+
                         artGroup.add(defaultSub);
                         artGroup.add(bodySub);
                         artGroup.add(mindSub);
@@ -3361,6 +3365,8 @@
                         sciLightbox4.rotation.y = -Math.PI / 2;
                         sciGroup.add(sciLightbox4);
 
+                        allBuildingLightboxes.push(sciLightbox, sciLightbox2, sciLightbox3, sciLightbox4);
+
                         // Subtle yellow ghost wireframe for Body view
                         const sciGhostWire = new THREE.LineSegments(
                             new THREE.EdgesGeometry(new THREE.CylinderGeometry(1.85, 2.15, 5.8, 12)),
@@ -3512,6 +3518,8 @@
                         spiritLightboxLeft.position.set(-0.75, 6.6, 0);
                         spiritLightboxLeft.rotation.y = -Math.PI / 2;
                         spiritGroup.add(spiritLightboxLeft);
+
+                        allBuildingLightboxes.push(spiritLightbox, spiritLightboxX, spiritLightboxBack, spiritLightboxLeft);
 
                         // Subtle blue ghost wireframe for Body view
                         const spiritGhostSpire = new THREE.LineSegments(
@@ -3708,7 +3716,15 @@
                     bGroup.add(mindSub);
                     bGroup.add(soulSub);
 
-                    bGroup.userData = { type: 'campus', defaultSub, bodySub, mindSub, soulSub };
+                    bGroup.userData = { 
+                        type: 'campus', 
+                        defaultSub, 
+                        bodySub, 
+                        mindSub, 
+                        soulSub,
+                        baseX: posX,
+                        baseZ: posZ
+                    };
                     allProceduralBuildings.push(bGroup);
                     scene.add(bGroup);
                 }
@@ -3980,6 +3996,7 @@
                     if (sign.userData.pointLight && sign.userData.config) {
                         const baseInt = sign.userData.config.lightIntensity || 6.0;
                         sign.userData.pointLight.intensity = (key === type) ? baseInt * 1.35 : baseInt;
+                        sign.userData.pointLight.visible = (currentRealityState !== 'soul');
                     }
                 }
             });
@@ -4036,6 +4053,27 @@
                 if (b.userData.mindSub) b.userData.mindSub.visible = (targetState === 'mind');
                 if (b.userData.soulSub) b.userData.soulSub.visible = (targetState === 'soul');
             });
+
+            // Landmark labels / lightboxes: in modus [3] (infinitive / soul), all labels are hidden ("In that modus there are no 'labels'")
+            const showLabels = (targetState !== 'soul');
+            allBuildingLightboxes.forEach(lb => {
+                if (lb) {
+                    lb.visible = showLabels;
+                    if (lb.userData && lb.userData.pointLight) {
+                        lb.userData.pointLight.visible = showLabels;
+                    }
+                }
+            });
+
+            if (targetState !== 'body' && instant) {
+                houseSwayBlend = 0;
+                allProceduralBuildings.forEach(b => {
+                    b.scale.y = 1.0;
+                    b.rotation.set(0, 0, 0);
+                    b.position.y = 0;
+                    b.userData.isSwayed = false;
+                });
+            }
 
             // 3. Mutate Landmarks (Sub-Layers)
             specialBlocks.forEach(b => {
@@ -4453,13 +4491,63 @@
             });
 
             // Animate Building Lightboxes (Neon luminescence breathing & authentic micro-flicker)
-            Object.keys(landmarkLabels).forEach((key, idx) => {
-                const sign = landmarkLabels[key];
-                if (sign && sign.userData && sign.userData.faceMat) {
-                    let flicker = 0.98 + Math.sin(elapsedTime * 3.6 + idx * 2.2) * 0.02;
-                    sign.userData.faceMat.opacity = Math.max(0.92, Math.min(1.0, flicker));
+            if (currentRealityState !== 'soul') {
+                Object.keys(landmarkLabels).forEach((key, idx) => {
+                    const sign = landmarkLabels[key];
+                    if (sign && sign.userData && sign.userData.faceMat && sign.visible) {
+                        let flicker = 0.98 + Math.sin(elapsedTime * 3.6 + idx * 2.2) * 0.02;
+                        sign.userData.faceMat.opacity = Math.max(0.92, Math.min(1.0, flicker));
+                    }
+                });
+            }
+
+            // Animate Procedural Campus Houses Varying in Height like a Sinus Wave in Modus [1] (Subjective / Body)
+            const targetSway = (currentRealityState === 'body') ? 1.0 : 0.0;
+            houseSwayBlend = THREE.MathUtils.lerp(houseSwayBlend, targetSway, 0.06);
+
+            if (houseSwayBlend > 0.0008) {
+                const waveSpeed = 2.0;
+                const t1 = elapsedTime * waveSpeed;
+                const t2 = elapsedTime * (waveSpeed * 0.72);
+                const kx1 = 0.15;
+                const kz1 = 0.12;
+                const kx2 = 0.09;
+                const kz2 = -0.13;
+
+                for (let i = 0; i < allProceduralBuildings.length; i++) {
+                    const b = allProceduralBuildings[i];
+                    const px = b.userData.baseX !== undefined ? b.userData.baseX : b.position.x;
+                    const pz = b.userData.baseZ !== undefined ? b.userData.baseZ : b.position.z;
+
+                    // Primary wave traveling diagonally across grid
+                    const phase1 = px * kx1 + pz * kz1 + t1;
+                    // Secondary harmonic crossing wave for natural wave interference
+                    const phase2 = px * kx2 + pz * kz2 + t2;
+
+                    const sin1 = Math.sin(phase1);
+                    const sin2 = Math.sin(phase2);
+
+                    // Sinusoidal height factor
+                    const sinus = sin1 * 0.75 + sin2 * 0.25;
+
+                    // Scale along Y from ground (subtle sinusoidal variation at ~15% of previous extremity)
+                    b.scale.y = 1.0 + (sinus * 0.0825) * houseSwayBlend;
+                    b.rotation.set(0, 0, 0);
+                    b.position.y = 0;
+                    b.userData.isSwayed = true;
                 }
-            });
+            } else if (houseSwayBlend <= 0.0008) {
+                // When completely back to neutral, reset buildings once
+                if (allProceduralBuildings.length > 0 && allProceduralBuildings[0].userData.isSwayed) {
+                    for (let i = 0; i < allProceduralBuildings.length; i++) {
+                        const b = allProceduralBuildings[i];
+                        b.scale.y = 1.0;
+                        b.rotation.set(0, 0, 0);
+                        b.position.y = 0;
+                        b.userData.isSwayed = false;
+                    }
+                }
+            }
 
             // Animate Infinite Purple Lightbeam from Spirit Building Apex
             if (purpleBeamGroup) {
