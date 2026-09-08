@@ -1457,6 +1457,7 @@
         let landmarkLights = [];
         let artLandmarkLight, sciLandmarkLight, spiritLandmarkLight;
         let purpleBeamGroup;
+        let defSoulSphere = null, defSoulSphereMat = null, defSoulSphereAura = null;
         let scienceAtomGroup, scienceAtomNucleus;
         let mindAtomGroup, mindAtomNucleus;
         let artRayGroup;
@@ -1470,6 +1471,12 @@
         let causticRings = [];
         let groundDefaultGroup, groundBodyGroup, groundMindGroup, groundSoulGroup;
         let particlesDefault, particlesBody, particlesSoul;
+        let carTrafficGroup = null;
+        let carVehicles = [];
+        let carDynamicLights = [];
+        let carUnderglowTexture = null;
+        let carHeadlightTexture = null;
+        let buildingWindowLights = [];
 
         let currentRealityState = 'default'; // 'default' | 'body' | 'mind' | 'soul'
         let targetCameraZoom = 1.0;
@@ -3061,6 +3068,17 @@
             artLandmarkLight = sciLandmarkLight = spiritLandmarkLight = null;
             avenuePackets = [];
             causticRings = [];
+            buildingWindowLights = [];
+
+            // Shared Window Geometries & Materials for Default View (50% transparency)
+            const winBackingGeo = new THREE.BoxGeometry(0.18, 0.22, 0.02);
+            const winBackingMat = new THREE.MeshBasicMaterial({ color: 0x070b14 });
+            const winPaneGeo = new THREE.PlaneGeometry(0.14, 0.18);
+            const winMats = [
+                new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.50 }), // Golden Yellow (50% transparent)
+                new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0.50 }), // Warm Pale Amber (50% transparent)
+                new THREE.MeshBasicMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.50 })  // Cool Office White (50% transparent)
+            ];
 
             // 1. Shared Material Palettes
             // Default Palette (from intro.html)
@@ -3471,10 +3489,35 @@
                         defApex.position.y = 11.0;
                         defaultSub.add(defApex);
 
-                        const defBeam = createInfiniteLightbeam();
-                        defBeam.position.set(0, 11.0, 0);
-                        defaultSub.add(defBeam);
-                        purpleBeamGroup = defBeam;
+                        // In default view: lightbeam is replaced by a glowing sphere that slowly cycles from blacklight blue to purple
+                        defSoulSphereMat = new THREE.MeshStandardMaterial({
+                            color: 0x161338,
+                            emissive: 0x2a38ec,
+                            emissiveIntensity: 1.15,
+                            roughness: 0.2,
+                            metalness: 0.35
+                        });
+                        defSoulSphere = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.72, 32, 32),
+                            defSoulSphereMat
+                        );
+                        defSoulSphere.position.set(0, 11.1, 0);
+                        defSoulSphere.castShadow = true;
+                        defaultSub.add(defSoulSphere);
+
+                        // Pulsing aura halo around the sphere
+                        const defSoulAuraGeo = new THREE.PlaneGeometry(3.2, 3.2);
+                        const defSoulAuraMat = new THREE.MeshBasicMaterial({
+                            map: getCarUnderglowTexture(),
+                            color: 0x2a38ec,
+                            transparent: true,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false,
+                            opacity: 0.75
+                        });
+                        defSoulSphereAura = new THREE.Mesh(defSoulAuraGeo, defSoulAuraMat);
+                        defSoulSphereAura.position.set(0, 11.1, 0);
+                        defaultSub.add(defSoulSphereAura);
 
                         // -- BODY LAYER ([1] Emotional View: SOUL building more purple, signs visible, purple glowing tip) --
                         const bMesh = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 3.2), bodyFootingMat);
@@ -3539,6 +3582,7 @@
                         const sBeam = createInfiniteLightbeam();
                         sBeam.position.set(0, 11.2, 0);
                         soulSub.add(sBeam);
+                        purpleBeamGroup = sBeam;
 
                         // Black Lightboxes on all 4 facades
                         const spiritLightbox = createBuildingLightbox("SOUL", "blacklight", 1.5, 0.72);
@@ -3622,9 +3666,12 @@
                     }
 
                     // (A) DEFAULT LAYER (Rich 6 Archetypes from intro.html)
+                    let arch0Top = 0, arch0Base = 0;
                     if (archetype === 0) {
                         const h1 = 0.8 + Math.random() * 1.5;
                         const h2 = 0.8 + Math.random() * 1.8;
+                        arch0Top = h1 + h2;
+                        arch0Base = h1;
                         const b1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, h1, 1.4), mat);
                         b1.position.y = h1 / 2;
                         b1.castShadow = true; b1.receiveShadow = true;
@@ -3682,6 +3729,64 @@
                         box.position.y = bH / 2;
                         box.castShadow = true; box.receiveShadow = true;
                         defaultSub.add(box);
+                    }
+
+                    // (A.1) Add random 6-12 window lights on houses across upper tiers (Default view)
+                    if (Math.random() > 0.15) {
+                        const targetW = (archetype === 0) ? 0.9 : (archetype === 4 ? 0.6 : bW);
+                        const targetD = (archetype === 0) ? 0.9 : (archetype === 4 ? 0.6 : bD);
+                        const topH = (archetype === 0) ? arch0Top : bH;
+                        const baseH = (archetype === 0) ? arch0Base : 0;
+                        const availH = topH - baseH;
+
+                        if (availH >= 0.8 && topH >= 1.4) {
+                            const numWindows = Math.floor(Math.random() * 7) + 6; // 6 to 12 lights (doubled!)
+                            const faces = [0, 1, 2, 3]; // North, South, East, West
+
+                            for (let wIdx = 0; wIdx < numWindows; wIdx++) {
+                                const face = faces[wIdx % 4]; // Distribute evenly across sides
+                                const winY = baseH + availH * (0.45 + Math.random() * 0.48);
+
+                                const winGroup = new THREE.Group();
+                                const backMesh = new THREE.Mesh(winBackingGeo, winBackingMat);
+                                winGroup.add(backMesh);
+
+                                const rCol = Math.random();
+                                const matIdx = rCol < 0.40 ? 0 : (rCol < 0.75 ? 1 : 2);
+                                const lightMesh = new THREE.Mesh(winPaneGeo, winMats[matIdx]);
+                                lightMesh.position.z = 0.012;
+                                winGroup.add(lightMesh);
+
+                                const xOffset = (Math.random() - 0.5) * (targetW * 0.58);
+                                const zOffset = (Math.random() - 0.5) * (targetD * 0.58);
+
+                                if (face === 0) {
+                                    winGroup.position.set(xOffset, winY, targetD / 2 + 0.01);
+                                    winGroup.rotation.y = 0;
+                                } else if (face === 1) {
+                                    winGroup.position.set(xOffset, winY, -targetD / 2 - 0.01);
+                                    winGroup.rotation.y = Math.PI;
+                                } else if (face === 2) {
+                                    winGroup.position.set(targetW / 2 + 0.01, winY, zOffset);
+                                    winGroup.rotation.y = Math.PI / 2;
+                                } else {
+                                    winGroup.position.set(-targetW / 2 - 0.01, winY, zOffset);
+                                    winGroup.rotation.y = -Math.PI / 2;
+                                }
+
+                                defaultSub.add(winGroup);
+
+                                // Some windows turn off and on again after ~6 seconds
+                                if (Math.random() < 0.38) {
+                                    buildingWindowLights.push({
+                                        lightMesh,
+                                        cycle: 5.2 + Math.random() * 2.4,       // Cycle around 6s
+                                        offDuration: 1.8 + Math.random() * 1.6, // Off for 1.8 - 3.4s
+                                        phase: Math.random() * 20.0
+                                    });
+                                }
+                            }
+                        }
                     }
 
                     // (B) BODY LAYER (Brutalist Monolith with Silt Footing & Strata Ribs)
@@ -3826,6 +3931,10 @@
             const gTri = new THREE.Line(triGeom, triMat);
             gTri.computeLineDistances();
             groundDefaultGroup.add(gTri);
+
+            // (A.1) Ground-Level Autonomous Car Traffic & Street Glow Engine (Default View)
+            initCarTraffic(groundDefaultGroup);
+
             scene.add(groundDefaultGroup);
 
             // (B) Ground Body: Silt plane + tectonic earth fissure slabs
@@ -3982,6 +4091,457 @@
         }
 
         /* ==========================================================================
+           GROUND-LEVEL AUTONOMOUS CAR TRAFFIC & STREET GLOW ENGINE
+           - White, yellow, and red car lights (headlights, taillights, roof beacons)
+           - Active hazard / turn signal & emergency strobe blinking
+           - Smooth ground underglow illumination & forward headlight beams (additive blending)
+           - Dynamic traveling point lights illuminating building facades
+           - Autonomous dual-lane traffic across 34 cross-city street canyons
+           ========================================================================== */
+
+        function getCarUnderglowTexture() {
+            if (carUnderglowTexture) return carUnderglowTexture;
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+            grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+            grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.85)');
+            grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.38)');
+            grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.08)');
+            grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 128, 128);
+            carUnderglowTexture = new THREE.CanvasTexture(canvas);
+            return carUnderglowTexture;
+        }
+
+        function getCarHeadlightTexture() {
+            if (carHeadlightTexture) return carHeadlightTexture;
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(64, 18, 4, 64, 64, 60);
+            grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.95)');
+            grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.60)');
+            grad.addColorStop(0.65, 'rgba(255, 255, 255, 0.20)');
+            grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.ellipse(64, 64, 38, 58, 0, 0, Math.PI * 2);
+            ctx.fill();
+            carHeadlightTexture = new THREE.CanvasTexture(canvas);
+            return carHeadlightTexture;
+        }
+
+        const validStreetsZ = [-21, -19, -17, -15, -13, -7, -5, -3, -1, 1, 3, 5, 7, 13, 15, 17, 19, 21];
+        const validStreetsX = [-21, -19, -17, -15, -13, -7, -5, -3, 3, 5, 7, 13, 15, 17, 19, 21];
+
+        function createCarMesh(typeConfig) {
+            const carGroup = new THREE.Group();
+
+            // 1. Aerodynamic chassis
+            const bodyGeo = new THREE.BoxGeometry(0.26, 0.08, 0.52);
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: typeConfig.bodyColor || 0x090e1a,
+                roughness: 0.35,
+                metalness: 0.75
+            });
+            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.position.y = 0.07;
+            carGroup.add(bodyMesh);
+
+            // Cockpit / roof
+            const cabinGeo = new THREE.BoxGeometry(0.20, 0.06, 0.26);
+            const cabinMat = new THREE.MeshStandardMaterial({
+                color: 0x040710,
+                roughness: 0.1,
+                metalness: 0.9
+            });
+            const cabinMesh = new THREE.Mesh(cabinGeo, cabinMat);
+            cabinMesh.position.set(0, 0.12, -0.02);
+            carGroup.add(cabinMesh);
+
+            // 2. Headlights (Front: +Z) - Twin high-intensity white / yellow lights + glowing halos
+            const headlightGeo = new THREE.BoxGeometry(0.08, 0.05, 0.04);
+            const headlightMat = new THREE.MeshBasicMaterial({ color: typeConfig.headlightColor });
+            const hlLeft = new THREE.Mesh(headlightGeo, headlightMat);
+            hlLeft.position.set(-0.09, 0.07, 0.26);
+            const hlRight = new THREE.Mesh(headlightGeo, headlightMat);
+            hlRight.position.set(0.09, 0.07, 0.26);
+            carGroup.add(hlLeft, hlRight);
+
+            // Forward glowing headlight halo disc on chassis front
+            const hlHaloGeo = new THREE.PlaneGeometry(0.48, 0.24);
+            const hlHaloMat = new THREE.MeshBasicMaterial({
+                map: getCarUnderglowTexture(),
+                color: typeConfig.headlightColor,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.95
+            });
+            const hlHalo = new THREE.Mesh(hlHaloGeo, hlHaloMat);
+            hlHalo.position.set(0, 0.08, 0.28);
+            carGroup.add(hlHalo);
+
+            // Forward ground headlight beam wash projected along asphalt
+            const beamGeo = new THREE.PlaneGeometry(0.95, 2.4);
+            const beamMat = new THREE.MeshBasicMaterial({
+                map: getCarHeadlightTexture(),
+                color: typeConfig.headlightColor,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.78
+            });
+            const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+            beamMesh.rotation.x = -Math.PI / 2;
+            beamMesh.position.set(0, 0.04, 1.35);
+            carGroup.add(beamMesh);
+
+            // 3. Taillights (Rear: -Z) - Ruby red jewel dots + rear red light halo
+            const taillightGeo = new THREE.BoxGeometry(0.08, 0.05, 0.04);
+            const taillightMat = new THREE.MeshBasicMaterial({ color: 0xff0022 });
+            const tlLeft = new THREE.Mesh(taillightGeo, taillightMat);
+            tlLeft.position.set(-0.09, 0.07, -0.26);
+            const tlRight = new THREE.Mesh(taillightGeo, taillightMat);
+            tlRight.position.set(0.09, 0.07, -0.26);
+            carGroup.add(tlLeft, tlRight);
+
+            // Rear light bar / ruby reflector
+            const rearBarGeo = new THREE.BoxGeometry(0.22, 0.03, 0.02);
+            const rearBarMat = new THREE.MeshBasicMaterial({ color: 0xff1133 });
+            const rearBar = new THREE.Mesh(rearBarGeo, rearBarMat);
+            rearBar.position.set(0, 0.07, -0.265);
+            carGroup.add(rearBar);
+
+            // Ruby red tail glow halo
+            const tlHaloGeo = new THREE.PlaneGeometry(0.48, 0.24);
+            const tlHaloMat = new THREE.MeshBasicMaterial({
+                map: getCarUnderglowTexture(),
+                color: 0xff0022,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.95
+            });
+            const tlHalo = new THREE.Mesh(tlHaloGeo, tlHaloMat);
+            tlHalo.position.set(0, 0.08, -0.28);
+            carGroup.add(tlHalo);
+
+            // 4. Ground Underglow Disc (Broad luminous street wash that illuminates street canyon & building bases)
+            const glowGeo = new THREE.PlaneGeometry(2.2, 2.8);
+            const glowMat = new THREE.MeshBasicMaterial({
+                map: getCarUnderglowTexture(),
+                color: typeConfig.underglowColor,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: typeConfig.underglowOpacity || 0.85
+            });
+            const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+            glowMesh.rotation.x = -Math.PI / 2;
+            glowMesh.position.set(0, 0.04, 0);
+            carGroup.add(glowMesh);
+
+            // 5. Blinking Elements (if configured)
+            let blinkerMesh = null;
+            if (typeConfig.hasBlinker) {
+                if (typeConfig.blinkerType === 'roof') {
+                    const bGeo = new THREE.BoxGeometry(0.14, 0.06, 0.09);
+                    const bMat = new THREE.MeshBasicMaterial({
+                        color: typeConfig.blinkerColor,
+                        transparent: true,
+                        opacity: 1.0
+                    });
+                    blinkerMesh = new THREE.Mesh(bGeo, bMat);
+                    blinkerMesh.position.set(0, 0.17, -0.02);
+
+                    // Add roof beacon glow halo
+                    const bHaloGeo = new THREE.PlaneGeometry(0.42, 0.42);
+                    const bHaloMat = new THREE.MeshBasicMaterial({
+                        map: getCarUnderglowTexture(),
+                        color: typeConfig.blinkerColor,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        opacity: 0.95
+                    });
+                    const bHalo = new THREE.Mesh(bHaloGeo, bHaloMat);
+                    bHalo.rotation.x = -Math.PI / 2;
+                    bHalo.position.set(0, 0.18, -0.02);
+                    carGroup.add(bHalo);
+                    blinkerMesh.halo = bHalo;
+
+                    carGroup.add(blinkerMesh);
+                } else if (typeConfig.blinkerType === 'hazard') {
+                    const bGeo = new THREE.BoxGeometry(0.06, 0.04, 0.06);
+                    const bMat = new THREE.MeshBasicMaterial({
+                        color: 0xffaa00,
+                        transparent: true,
+                        opacity: 1.0
+                    });
+                    const bLeft = new THREE.Mesh(bGeo, bMat);
+                    bLeft.position.set(-0.14, 0.07, 0.0);
+                    const bRight = new THREE.Mesh(bGeo, bMat);
+                    bRight.position.set(0.14, 0.07, 0.0);
+
+                    // Hazard halo
+                    const bHaloGeo = new THREE.PlaneGeometry(0.35, 0.35);
+                    const bHaloMat = new THREE.MeshBasicMaterial({
+                        map: getCarUnderglowTexture(),
+                        color: 0xffaa00,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        opacity: 0.9
+                    });
+                    const hLeft = new THREE.Mesh(bHaloGeo, bHaloMat);
+                    hLeft.rotation.x = -Math.PI / 2;
+                    hLeft.position.set(-0.14, 0.08, 0.0);
+                    const hRight = new THREE.Mesh(bHaloGeo, bHaloMat);
+                    hRight.rotation.x = -Math.PI / 2;
+                    hRight.position.set(0.14, 0.08, 0.0);
+
+                    carGroup.add(bLeft, bRight, hLeft, hRight);
+                    blinkerMesh = { left: bLeft, right: bRight, hLeft, hRight, mat: bMat, haloMat: bHaloMat };
+                }
+            }
+
+            return {
+                group: carGroup,
+                glowMesh,
+                beamMesh,
+                blinkerMesh,
+                typeConfig
+            };
+        }
+
+        function initCarTraffic(parentGroup) {
+            carTrafficGroup = new THREE.Group();
+            carVehicles = [];
+            carDynamicLights = [];
+
+            const vehicleTypes = [
+                // 1. Standard Commuter (Bright white headlights + red taillights + warm white underglow)
+                {
+                    headlightColor: 0xffffff,
+                    underglowColor: 0xfff0dd,
+                    underglowOpacity: 0.82,
+                    hasBlinker: false,
+                    bodyColor: 0x0c1322
+                },
+                // 2. Yellow Cab / Metro Shuttle (Golden yellow headlights + red taillights + amber underglow & pulsing roof sign)
+                {
+                    headlightColor: 0xffea00,
+                    underglowColor: 0xffb703,
+                    underglowOpacity: 0.88,
+                    hasBlinker: true,
+                    blinkerType: 'roof',
+                    blinkerColor: 0xffc107,
+                    blinkRate: 2.2,
+                    hasPointLight: true,
+                    bodyColor: 0x14161c
+                },
+                // 3. Service / Delivery Hazard Flasher (White headlights + red taillights + blinking amber hazards at 1.8 Hz)
+                {
+                    headlightColor: 0xffffff,
+                    underglowColor: 0xff9900,
+                    underglowOpacity: 0.85,
+                    hasBlinker: true,
+                    blinkerType: 'hazard',
+                    blinkRate: 1.8,
+                    bodyColor: 0x0f172a
+                },
+                // 4. Emergency / Strobe Cruiser (Electric cool headlights + alternating rapid strobe + dynamic point light)
+                {
+                    headlightColor: 0xe0f2fe,
+                    underglowColor: 0x38bdf8,
+                    underglowOpacity: 0.95,
+                    hasBlinker: true,
+                    blinkerType: 'roof',
+                    blinkerColor: 0xff2244,
+                    isStrobe: true,
+                    blinkRate: 3.5,
+                    hasPointLight: true,
+                    bodyColor: 0x090f1d
+                },
+                // 5. Cyber Red Speedster (Amber headlights + vibrant ruby red light bar & underglow)
+                {
+                    headlightColor: 0xffd166,
+                    underglowColor: 0xff1e27,
+                    underglowOpacity: 0.92,
+                    hasBlinker: false,
+                    hasPointLight: true,
+                    bodyColor: 0x18090a
+                }
+            ];
+
+            const totalCars = 56;
+            let pointLightsCreated = 0;
+
+            for (let i = 0; i < totalCars; i++) {
+                const isAxisX = (i % 2 === 0);
+                const isPositiveDir = (Math.floor(i / 2) % 2 === 0);
+
+                // Weighted vehicle type selection
+                const r = Math.random();
+                let typeIdx = 0;
+                if (r < 0.38) typeIdx = 0;         // 38% Standard white/red
+                else if (r < 0.62) typeIdx = 1;    // 24% Yellow cab / shuttle
+                else if (r < 0.78) typeIdx = 2;    // 16% Blinking amber hazard
+                else if (r < 0.89) typeIdx = 3;    // 11% Blinking emergency strobe
+                else typeIdx = 4;                  // 11% Red speedster
+
+                const config = { ...vehicleTypes[typeIdx] };
+
+                // Attach up to 6 dynamic point lights for rich street lighting & 60fps performance
+                if (config.hasPointLight && pointLightsCreated >= 6) {
+                    config.hasPointLight = false;
+                } else if (config.hasPointLight) {
+                    pointLightsCreated++;
+                }
+
+                const car = createCarMesh(config);
+
+                const dir = isAxisX
+                    ? new THREE.Vector3(isPositiveDir ? 1 : -1, 0, 0)
+                    : new THREE.Vector3(0, 0, isPositiveDir ? 1 : -1);
+
+                // Right-hand traffic lane offset:
+                // +X travels at avenueZ - 0.16; -X travels at avenueZ + 0.16
+                // +Z travels at avenueX + 0.16; -Z travels at avenueX - 0.16
+                let avenue = 0;
+                let startX = 0;
+                let startZ = 0;
+
+                if (isAxisX) {
+                    avenue = validStreetsZ[Math.floor(Math.random() * validStreetsZ.length)];
+                    startX = (Math.random() - 0.5) * 48;
+                    startZ = isPositiveDir ? (avenue - 0.16) : (avenue + 0.16);
+                    car.group.rotation.y = isPositiveDir ? (Math.PI / 2) : (-Math.PI / 2);
+                } else {
+                    avenue = validStreetsX[Math.floor(Math.random() * validStreetsX.length)];
+                    startX = isPositiveDir ? (avenue + 0.16) : (avenue - 0.16);
+                    startZ = (Math.random() - 0.5) * 48;
+                    car.group.rotation.y = isPositiveDir ? 0 : Math.PI;
+                }
+
+                car.group.position.set(startX, 0, startZ);
+
+                // Dynamic point light for lead / strobe vehicles
+                if (config.hasPointLight) {
+                    const pLight = new THREE.PointLight(config.underglowColor || config.headlightColor, 3.2, 8.5, 1.5);
+                    pLight.position.set(0, 0.30, 0.2);
+                    car.group.add(pLight);
+                    carDynamicLights.push(pLight);
+                }
+
+                const baseSpeed = (typeIdx === 3 || typeIdx === 4)
+                    ? 0.065 + Math.random() * 0.025
+                    : 0.038 + Math.random() * 0.022;
+
+                carVehicles.push({
+                    group: car.group,
+                    glowMesh: car.glowMesh,
+                    beamMesh: car.beamMesh,
+                    blinkerMesh: car.blinkerMesh,
+                    typeConfig: config,
+                    dir,
+                    speed: baseSpeed,
+                    isAxisX,
+                    isPositiveDir,
+                    avenue,
+                    blinkPhase: Math.random() * Math.PI * 2
+                });
+
+                carTrafficGroup.add(car.group);
+            }
+
+            if (parentGroup) {
+                parentGroup.add(carTrafficGroup);
+            } else {
+                scene.add(carTrafficGroup);
+            }
+        }
+
+        function updateCarTraffic(elapsedTime) {
+            for (let i = 0; i < carVehicles.length; i++) {
+                const c = carVehicles[i];
+                c.group.position.addScaledVector(c.dir, c.speed);
+
+                // Smooth Boundary Wrapping across the 24x24 metropolis grid
+                if (c.dir.x > 0 && c.group.position.x > 25.0) {
+                    c.group.position.x = -25.0;
+                    c.avenue = validStreetsZ[Math.floor(Math.random() * validStreetsZ.length)];
+                    c.group.position.z = c.avenue - 0.16;
+                } else if (c.dir.x < 0 && c.group.position.x < -25.0) {
+                    c.group.position.x = 25.0;
+                    c.avenue = validStreetsZ[Math.floor(Math.random() * validStreetsZ.length)];
+                    c.group.position.z = c.avenue + 0.16;
+                } else if (c.dir.z > 0 && c.group.position.z > 25.0) {
+                    c.group.position.z = -25.0;
+                    c.avenue = validStreetsX[Math.floor(Math.random() * validStreetsX.length)];
+                    c.group.position.x = c.avenue + 0.16;
+                } else if (c.dir.z < 0 && c.group.position.z < -25.0) {
+                    c.group.position.z = 25.0;
+                    c.avenue = validStreetsX[Math.floor(Math.random() * validStreetsX.length)];
+                    c.group.position.x = c.avenue - 0.16;
+                }
+
+                // Dynamic Blinking Lights (Turn signals, Hazard blinkers, Strobe beacons)
+                if (c.typeConfig.hasBlinker) {
+                    const phase = c.blinkPhase;
+                    const rate = c.typeConfig.blinkRate || 2.0;
+                    let isOn = false;
+
+                    if (c.typeConfig.isStrobe) {
+                        // High-speed emergency double-pulse strobe
+                        const t = ((elapsedTime + phase) * rate) % 1.0;
+                        isOn = (t < 0.25 || (t > 0.38 && t < 0.63));
+                        if (c.blinkerMesh) {
+                            c.blinkerMesh.material.opacity = isOn ? 1.0 : 0.05;
+                            c.blinkerMesh.material.color.setHex((Math.floor((elapsedTime + phase) * rate * 0.5) % 2 === 0) ? 0xff2244 : 0xffffff);
+                        }
+                    } else if (c.typeConfig.blinkerType === 'hazard') {
+                        // Rhythmic hazard flash at ~1.8 Hz
+                        isOn = (Math.floor((elapsedTime + phase) * rate) % 2) === 0;
+                        if (c.blinkerMesh && c.blinkerMesh.mat) {
+                            c.blinkerMesh.mat.opacity = isOn ? 1.0 : 0.06;
+                        }
+                    } else {
+                        // Smooth breathing pulse for taxi / transit beacons
+                        const pulse = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin((elapsedTime + phase) * rate * Math.PI * 2));
+                        if (c.blinkerMesh) {
+                            c.blinkerMesh.material.opacity = pulse;
+                        }
+                        isOn = pulse > 0.65;
+                    }
+
+                    // Dynamic ground underglow pulse synchronized with the blinker
+                    if (c.glowMesh) {
+                        const baseOpacity = c.typeConfig.underglowOpacity || 0.68;
+                        c.glowMesh.material.opacity = isOn ? (baseOpacity * 1.35) : (baseOpacity * 0.75);
+                    }
+                }
+            }
+        }
+
+        function updateBuildingWindows(elapsedTime) {
+            for (let i = 0; i < buildingWindowLights.length; i++) {
+                const w = buildingWindowLights[i];
+                const t = (elapsedTime + w.phase) % w.cycle;
+                const isOn = (t >= w.offDuration);
+                if (w.lightMesh.visible !== isOn) {
+                    w.lightMesh.visible = isOn;
+                }
+            }
+        }
+
+        /* ==========================================================================
            3. INTERACTION, CAMERA CINEMATICS & PERSPECTIVES
            ========================================================================== */
         function openTriptych(e) {
@@ -4127,6 +4687,7 @@
 
             // 4. Mutate Ground Systems
             if (groundDefaultGroup) groundDefaultGroup.visible = (targetState === 'default');
+            if (carTrafficGroup) carTrafficGroup.visible = (targetState === 'default');
             if (groundBodyGroup) groundBodyGroup.visible = (targetState === 'body');
             if (groundMindGroup) groundMindGroup.visible = (targetState === 'mind');
             if (groundSoulGroup) groundSoulGroup.visible = (targetState === 'soul');
@@ -4509,6 +5070,16 @@
                 particlesSoul.geometry.attributes.position.needsUpdate = true;
             }
 
+            // Animate Car Traffic Lights & Ground Glow in Default View
+            if (currentRealityState === 'default' && carVehicles.length > 0) {
+                updateCarTraffic(elapsedTime);
+            }
+
+            // Animate Building Window Lights in Default View (some going off/on around ~6s)
+            if (currentRealityState === 'default' && buildingWindowLights.length > 0) {
+                updateBuildingWindows(elapsedTime);
+            }
+
             // Animate Data Packets in Mind View
             if (currentRealityState === 'mind' && avenuePackets.length > 0) {
                 avenuePackets.forEach(pkt => {
@@ -4591,13 +5162,32 @@
                 }
             }
 
-            // Animate Infinite Purple Lightbeam from Spirit Building Apex
+            // Animate Infinite Purple Lightbeam from Spirit Building Apex (in Soul view)
             if (purpleBeamGroup) {
                 const beamPulse = 0.52 + Math.sin(elapsedTime * 2.6) * 0.12;
                 if (purpleBeamGroup.userData.beamMat) purpleBeamGroup.userData.beamMat.opacity = beamPulse;
                 if (purpleBeamGroup.userData.glowMat) purpleBeamGroup.userData.glowMat.opacity = beamPulse * 0.55;
                 if (purpleBeamGroup.userData.outerGlowMat) purpleBeamGroup.userData.outerGlowMat.opacity = beamPulse * 0.32;
                 purpleBeamGroup.rotation.y += 0.005;
+            }
+
+            // Animate SOUL Tower Color-Changing Sphere in Default View (Blacklight Blue to Purple cycle)
+            if (defSoulSphereMat) {
+                const cycleSpeed = 0.6; // Slow, mesmerizing color transition
+                const blend = 0.5 + 0.5 * Math.sin(elapsedTime * cycleSpeed);
+                const colBlacklightBlue = new THREE.Color(0x2a38ec); // Electric UV blacklight blue
+                const colPurple = new THREE.Color(0xa855f7);         // Radiant rich purple
+                const curCol = colBlacklightBlue.clone().lerp(colPurple, blend);
+
+                defSoulSphereMat.emissive.copy(curCol);
+                if (defSoulSphereAura && defSoulSphereAura.material) {
+                    defSoulSphereAura.material.color.copy(curCol);
+                    const auraPulse = 0.65 + Math.sin(elapsedTime * 1.8) * 0.15;
+                    defSoulSphereAura.material.opacity = auraPulse;
+                }
+                if (currentRealityState === 'default' && spiritLandmarkLight) {
+                    spiritLandmarkLight.color.copy(curCol);
+                }
             }
 
             // Animate Knowledge Atom on Science Building (Matching reality.html for Default and Rational views)
