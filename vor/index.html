@@ -103,6 +103,8 @@
             left: 0;
             z-index: 1;
             cursor: grab;
+            opacity: 0;
+            transition: opacity 2.0s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         #canvas-container:active {
@@ -116,9 +118,9 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at center, rgba(10, 15, 29, 0.22) 0%, rgba(8, 13, 26, 0.48) 100%);
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
+            background: radial-gradient(circle at center, rgba(10, 15, 29, 0.35) 0%, rgba(8, 13, 26, 0.65) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 1000;
             display: flex;
             flex-direction: column;
@@ -126,7 +128,7 @@
             align-items: center;
             text-align: center;
             padding: 2rem;
-            transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 1.6s;
+            transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1), backdrop-filter 1.6s cubic-bezier(0.4, 0, 0.2, 1), -webkit-backdrop-filter 1.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 1.6s;
         }
 
         .intro-title {
@@ -1331,20 +1333,20 @@
         <!-- Bottom View Shortcuts -->
         <div class="hud-view-shortcuts hud-interactive">
             <button type="button" id="view-btn-default" class="hud-key-item hud-key-btn is-active"
-                onclick="resetOverview()" title="[0] Objective View">
-                <span class="hud-key-num">[0]</span> objective
+                onclick="resetOverview()" title="[0] Neutral View">
+                <span class="hud-key-num">[0]</span> neutral
             </button>
             <button type="button" id="view-btn-body" class="hud-key-item hud-key-btn item-body"
-                onclick="focusBuilding('art')" title="[1] Subjective View">
-                <span class="hud-key-num">[1]</span> subjective
+                onclick="focusBuilding('art')" title="[1] Emotional View">
+                <span class="hud-key-num">[1]</span> emotional
             </button>
             <button type="button" id="view-btn-mind" class="hud-key-item hud-key-btn item-mind"
-                onclick="focusBuilding('science')" title="[2] Corroborative View">
-                <span class="hud-key-num">[2]</span> corroborative
+                onclick="focusBuilding('science')" title="[2] Factual View">
+                <span class="hud-key-num">[2]</span> factual
             </button>
             <button type="button" id="view-btn-soul" class="hud-key-item hud-key-btn item-soul"
-                onclick="focusBuilding('spirit')" title="[3] Infinitive View">
-                <span class="hud-key-num">[3]</span> infinitive
+                onclick="focusBuilding('spirit')" title="[3] Spiritual View">
+                <span class="hud-key-num">[3]</span> spiritual
             </button>
         </div>
     </div>
@@ -2106,7 +2108,9 @@
 
         function enterExperience() {
             introActive = false;
-            introOverlay.style.opacity = 0;
+            introOverlay.style.opacity = '0';
+            introOverlay.style.backdropFilter = 'blur(0px)';
+            introOverlay.style.webkitBackdropFilter = 'blur(0px)';
 
             // The tri-truth matrix ONLY appears in the intro scene
             const triMatrix = document.getElementById('tri-matrix-left');
@@ -2988,6 +2992,9 @@
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.appendChild(renderer.domElement);
+            requestAnimationFrame(() => {
+                container.style.opacity = '1';
+            });
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
@@ -3008,14 +3015,14 @@
             scene.add(ambientLight);
 
             // Upward light emanating from street level (Ground Lift Light)
-            streetUpLight = new THREE.DirectionalLight(0x38bdf8, 1.25);
+            streetUpLight = new THREE.DirectionalLight(0x38bdf8, 2.6);
             streetUpLight.position.set(0, -15, 0);
             streetUpLight.target.position.set(0, 10, 0);
             scene.add(streetUpLight);
             scene.add(streetUpLight.target);
 
             // Ground plane upward bounce illumination
-            groundGlowLight = new THREE.HemisphereLight(0x38bdf8, 0x0f274a, 1.15);
+            groundGlowLight = new THREE.HemisphereLight(0x38bdf8, 0x0f274a, 2.2);
             scene.add(groundGlowLight);
 
             // Main Sunlight for clean architectural shadows
@@ -3070,14 +3077,14 @@
             causticRings = [];
             buildingWindowLights = [];
 
-            // Shared Window Geometries & Materials for Default View (50% transparency)
+            // Shared Window Geometries & Materials for Default View (Brighter window lights)
             const winBackingGeo = new THREE.BoxGeometry(0.18, 0.22, 0.02);
             const winBackingMat = new THREE.MeshBasicMaterial({ color: 0x070b14 });
             const winPaneGeo = new THREE.PlaneGeometry(0.14, 0.18);
             const winMats = [
-                new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.50 }), // Golden Yellow (50% transparent)
-                new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0.50 }), // Warm Pale Amber (50% transparent)
-                new THREE.MeshBasicMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.50 })  // Cool Office White (50% transparent)
+                new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.88 }), // Golden Yellow (bright)
+                new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0.88 }), // Warm Pale Amber (bright)
+                new THREE.MeshBasicMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.88 })  // Cool Office White (bright)
             ];
 
             // 1. Shared Material Palettes
@@ -3187,20 +3194,20 @@
                         bodySub.add(bBase);
 
                         const bTower = new THREE.Mesh(
-                            new THREE.BoxGeometry(2.6, 9.2, 2.6),
-                            new THREE.MeshStandardMaterial({ color: 0xb91c1c, emissive: 0x500d11, emissiveIntensity: 0.85, roughness: 0.88, metalness: 0.12 })
+                            new THREE.BoxGeometry(2.6, 10.8, 2.6),
+                            new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x991b1b, emissiveIntensity: 0.95, roughness: 0.82, metalness: 0.15 })
                         );
-                        bTower.position.set(0, 5.2, 0);
+                        bTower.position.set(0, 6.0, 0);
                         bTower.castShadow = true;
                         bodySub.add(bTower);
 
-                        for (let sY = 2.0; sY <= 8.5; sY += 1.4) {
+                        for (let sY = 2.0; sY <= 10.2; sY += 1.4) {
                             const rib = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 2.7), bodyStrataMat);
                             rib.position.y = sY;
                             bodySub.add(rib);
                         }
                         const bRaySphere = createRayEmittingBlackSphere();
-                        bRaySphere.position.set(0, 10.2, 0);
+                        bRaySphere.position.set(0, 11.8, 0);
                         bodySub.add(bRaySphere);
 
                         // -- MIND LAYER --
@@ -3250,22 +3257,22 @@
 
                         // Lightboxes on all 4 facades (shared across views)
                         const artLightbox = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightbox.position.set(0, 6.2, 1.32);
+                        artLightbox.position.set(0, 6.8, 1.32);
                         artGroup.add(artLightbox);
                         landmarkLabels['art'] = artLightbox;
 
                         const artLightboxX = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightboxX.position.set(1.32, 6.2, 0);
+                        artLightboxX.position.set(1.32, 6.8, 0);
                         artLightboxX.rotation.y = Math.PI / 2;
                         artGroup.add(artLightboxX);
 
                         const artLightboxBack = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightboxBack.position.set(0, 6.2, -1.32);
+                        artLightboxBack.position.set(0, 6.8, -1.32);
                         artLightboxBack.rotation.y = Math.PI;
                         artGroup.add(artLightboxBack);
 
                         const artLightboxLeft = createBuildingLightbox("BODY", "red", 2.4, 1.15);
-                        artLightboxLeft.position.set(-1.32, 6.2, 0);
+                        artLightboxLeft.position.set(-1.32, 6.8, 0);
                         artLightboxLeft.rotation.y = -Math.PI / 2;
                         artGroup.add(artLightboxLeft);
 
@@ -3489,35 +3496,41 @@
                         defApex.position.y = 11.0;
                         defaultSub.add(defApex);
 
-                        // In default view: lightbeam is replaced by a glowing sphere that slowly cycles from blacklight blue to purple
+                        // In default view: lightbeam is replaced by a glowing sphere that floats above the spike and alternates between blue and purple
                         defSoulSphereMat = new THREE.MeshStandardMaterial({
-                            color: 0x161338,
-                            emissive: 0x2a38ec,
-                            emissiveIntensity: 1.15,
-                            roughness: 0.2,
+                            color: 0x1d4ed8,
+                            emissive: 0x3b82f6,
+                            emissiveIntensity: 1.85,
+                            roughness: 0.15,
                             metalness: 0.35
                         });
                         defSoulSphere = new THREE.Mesh(
                             new THREE.SphereGeometry(0.72, 32, 32),
                             defSoulSphereMat
                         );
-                        defSoulSphere.position.set(0, 11.1, 0);
+                        defSoulSphere.position.set(0, 12.3, 0);
                         defSoulSphere.castShadow = true;
                         defaultSub.add(defSoulSphere);
 
                         // Pulsing aura halo around the sphere
-                        const defSoulAuraGeo = new THREE.PlaneGeometry(3.2, 3.2);
+                        const defSoulAuraGeo = new THREE.PlaneGeometry(4.6, 4.6);
                         const defSoulAuraMat = new THREE.MeshBasicMaterial({
                             map: getCarUnderglowTexture(),
-                            color: 0x2a38ec,
+                            color: 0x3b82f6,
                             transparent: true,
                             blending: THREE.AdditiveBlending,
                             depthWrite: false,
-                            opacity: 0.75
+                            opacity: 0.9
                         });
                         defSoulSphereAura = new THREE.Mesh(defSoulAuraGeo, defSoulAuraMat);
-                        defSoulSphereAura.position.set(0, 11.1, 0);
+                        defSoulSphereAura.position.set(0, 12.3, 0);
                         defaultSub.add(defSoulSphereAura);
+
+                        // Dynamic point light radiating from the soul sphere
+                        const soulSphereLight = new THREE.PointLight(0x3b82f6, 4.0, 14);
+                        soulSphereLight.position.set(0, 12.3, 0);
+                        defaultSub.add(soulSphereLight);
+                        defSoulSphere.userData.pointLight = soulSphereLight;
 
                         // -- BODY LAYER ([1] Emotional View: SOUL building more purple, signs visible, purple glowing tip) --
                         const bMesh = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 3.2), bodyFootingMat);
@@ -3665,11 +3678,34 @@
                         bW = 1.2; bD = 1.2; bH = 1.2 + Math.random() * 3.0;
                     }
 
+                    // Ensure BODY building (at artPos x=7, z=7) has a clear, unobstructed sightline
+                    // from the camera at (+58, +62, +58) in [1] emotional state as well as neutral view.
+                    const dxArt = x - artPos.x;
+                    const dzArt = z - artPos.z;
+                    const distToArt = Math.hypot(dxArt, dzArt);
+                    const isDirectSightline = (dxArt >= 0 && dzArt >= 0 && (dxArt + dzArt) <= 7 && Math.abs(dxArt - dzArt) <= 2.8);
+                    const isArtPerimeter = (distToArt <= 2.0);
+
+                    if (isArtPerimeter) {
+                        // Immediate ring around BODY building: low terrace/plaza height
+                        bH = Math.min(bH, 0.55 + Math.random() * 0.35);
+                    } else if (isDirectSightline) {
+                        // Sightline corridor directly between BODY building and camera:
+                        // Step heights strictly below the camera's sightline ray (slope ~0.91 per step)
+                        const corridorDist = dxArt + dzArt;
+                        const maxSightH = 0.60 + (corridorDist - 1) * 0.55;
+                        bH = Math.min(bH, maxSightH);
+                    } else if (distToArt <= 3.6 && (dxArt >= -0.5 || dzArt >= -0.5)) {
+                        // Surrounding neighborhood: gentle terracing so the landmark breathes
+                        bH = Math.min(bH, 1.6 + Math.random() * 0.8);
+                    }
+
                     // (A) DEFAULT LAYER (Rich 6 Archetypes from intro.html)
                     let arch0Top = 0, arch0Base = 0;
                     if (archetype === 0) {
-                        const h1 = 0.8 + Math.random() * 1.5;
-                        const h2 = 0.8 + Math.random() * 1.8;
+                        const hRatio = Math.min(1.0, bH / 3.2);
+                        const h1 = (0.8 + Math.random() * 1.5) * hRatio;
+                        const h2 = (0.8 + Math.random() * 1.8) * hRatio;
                         arch0Top = h1 + h2;
                         arch0Base = h1;
                         const b1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, h1, 1.4), mat);
@@ -3708,13 +3744,15 @@
                         baseBox.position.y = bH / 2;
                         baseBox.castShadow = true; baseBox.receiveShadow = true;
                         defaultSub.add(baseBox);
-                        const antGeo = new THREE.CylinderGeometry(0.04, 0.08, 1.8, 6);
-                        const antMesh = new THREE.Mesh(antGeo, new THREE.MeshBasicMaterial({ color: 0x94a3b8 }));
-                        antMesh.position.y = bH + 0.9;
-                        defaultSub.add(antMesh);
-                        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3366 : 0x00f0ff }));
-                        beacon.position.y = bH + 1.8;
-                        defaultSub.add(beacon);
+                        if (!isArtPerimeter && !isDirectSightline) {
+                            const antGeo = new THREE.CylinderGeometry(0.04, 0.08, 1.8, 6);
+                            const antMesh = new THREE.Mesh(antGeo, new THREE.MeshBasicMaterial({ color: 0x94a3b8 }));
+                            antMesh.position.y = bH + 0.9;
+                            defaultSub.add(antMesh);
+                            const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3366 : 0x00f0ff }));
+                            beacon.position.y = bH + 1.8;
+                            defaultSub.add(beacon);
+                        }
                     } else if (archetype === 4) {
                         const w1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, bH, 0.6), mat);
                         w1.position.set(0, bH / 2, 0.3);
@@ -3885,9 +3923,9 @@
             const floorGeo = new THREE.PlaneGeometry(160, 160);
             const floorMat = new THREE.MeshStandardMaterial({
                 color: 0x0e172e,
-                emissive: 0x061122,
-                emissiveIntensity: 0.5,
-                roughness: 0.65,
+                emissive: 0x0f2b48,
+                emissiveIntensity: 0.85,
+                roughness: 0.6,
                 metalness: 0.35
             });
             const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -4188,14 +4226,14 @@
             carGroup.add(hlHalo);
 
             // Forward ground headlight beam wash projected along asphalt
-            const beamGeo = new THREE.PlaneGeometry(0.95, 2.4);
+            const beamGeo = new THREE.PlaneGeometry(1.0, 2.6);
             const beamMat = new THREE.MeshBasicMaterial({
                 map: getCarHeadlightTexture(),
                 color: typeConfig.headlightColor,
                 transparent: true,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
-                opacity: 0.78
+                opacity: 0.90
             });
             const beamMesh = new THREE.Mesh(beamGeo, beamMat);
             beamMesh.rotation.x = -Math.PI / 2;
@@ -4233,7 +4271,7 @@
             carGroup.add(tlHalo);
 
             // 4. Ground Underglow Disc (Broad luminous street wash that illuminates street canyon & building bases)
-            const glowGeo = new THREE.PlaneGeometry(2.2, 2.8);
+            const glowGeo = new THREE.PlaneGeometry(2.6, 3.4);
             const glowMat = new THREE.MeshBasicMaterial({
                 map: getCarUnderglowTexture(),
                 color: typeConfig.underglowColor,
@@ -4380,7 +4418,7 @@
                 }
             ];
 
-            const totalCars = 56;
+            const totalCars = 84;
             let pointLightsCreated = 0;
 
             for (let i = 0; i < totalCars; i++) {
@@ -4719,12 +4757,12 @@
                     }
                     if (streetUpLight) {
                         streetUpLight.color.setHex(0x38bdf8);
-                        streetUpLight.intensity = 1.25;
+                        streetUpLight.intensity = 2.6;
                     }
                     if (groundGlowLight) {
                         groundGlowLight.color.setHex(0x38bdf8);
                         groundGlowLight.groundColor.setHex(0x0f274a);
-                        groundGlowLight.intensity = 1.15;
+                        groundGlowLight.intensity = 2.2;
                     }
                     if (artLandmarkLight) { artLandmarkLight.color.setHex(0xff2200); artLandmarkLight.intensity = 5.0; }
                     if (sciLandmarkLight) { sciLandmarkLight.color.setHex(0xffea00); sciLandmarkLight.intensity = 5.5; }
@@ -5171,19 +5209,29 @@
                 purpleBeamGroup.rotation.y += 0.005;
             }
 
-            // Animate SOUL Tower Color-Changing Sphere in Default View (Blacklight Blue to Purple cycle)
+            // Animate SOUL Tower Floating Color-Changing Sphere in Default View (Alternating between Blue and Purple)
             if (defSoulSphereMat) {
-                const cycleSpeed = 0.6; // Slow, mesmerizing color transition
+                const cycleSpeed = 0.8; // Smooth, clear alternation between blue and purple
                 const blend = 0.5 + 0.5 * Math.sin(elapsedTime * cycleSpeed);
-                const colBlacklightBlue = new THREE.Color(0x2a38ec); // Electric UV blacklight blue
-                const colPurple = new THREE.Color(0xa855f7);         // Radiant rich purple
-                const curCol = colBlacklightBlue.clone().lerp(colPurple, blend);
+                const colBlue = new THREE.Color(0x2563eb);   // Vibrant electric blue
+                const colPurple = new THREE.Color(0xa855f7); // Radiant purple
+                const curCol = colBlue.clone().lerp(colPurple, blend);
 
                 defSoulSphereMat.emissive.copy(curCol);
-                if (defSoulSphereAura && defSoulSphereAura.material) {
-                    defSoulSphereAura.material.color.copy(curCol);
-                    const auraPulse = 0.65 + Math.sin(elapsedTime * 1.8) * 0.15;
-                    defSoulSphereAura.material.opacity = auraPulse;
+                const sphereY = 12.3 + Math.sin(elapsedTime * 2.2) * 0.10;
+                if (defSoulSphere) defSoulSphere.position.y = sphereY;
+                if (defSoulSphereAura) {
+                    defSoulSphereAura.position.y = sphereY;
+                    if (defSoulSphereAura.material) {
+                        defSoulSphereAura.material.color.copy(curCol);
+                        const auraPulse = 0.75 + Math.sin(elapsedTime * 2.0) * 0.20;
+                        defSoulSphereAura.material.opacity = auraPulse;
+                    }
+                }
+                if (defSoulSphere && defSoulSphere.userData.pointLight) {
+                    defSoulSphere.userData.pointLight.position.y = sphereY;
+                    defSoulSphere.userData.pointLight.color.copy(curCol);
+                    defSoulSphere.userData.pointLight.intensity = 3.6 + Math.sin(elapsedTime * 2.2) * 0.8;
                 }
                 if (currentRealityState === 'default' && spiritLandmarkLight) {
                     spiritLandmarkLight.color.copy(curCol);
