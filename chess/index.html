@@ -31,7 +31,9 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 .library{padding:18px}
 .panel-title{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;margin-bottom:15px}
 .panel-title button{border:0;background:none;font:500 10px 'DM Mono',monospace;color:#527a57;cursor:pointer}
-.search{background:#f0eee6;border:1px solid #e2ded2;border-radius:9px;padding:10px 11px;color:#909287;font-size:11px;margin-bottom:17px}
+.search{background:#f0eee6;border:1px solid #e2ded2;border-radius:9px;padding:10px 11px;color:var(--ink);font-size:11px;margin-bottom:17px;width:100%;font-family:inherit;outline:none;transition:border-color .15s}
+.search::placeholder{color:#909287}
+.search:focus{border-color:var(--green)}
 .opening{padding:13px 11px;border-radius:11px;margin:3px -3px;cursor:pointer;transition:.18s}
 .opening:hover{background:#f3f1e9}
 .opening.active{background:#eaf4d4;border:1px solid #d5e7b2}
@@ -46,11 +48,24 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 .bar{height:5px;border-radius:4px;background:#4a6458;overflow:hidden}
 .bar i{display:block;width:64%;height:100%;background:var(--lime)}
 .lesson{overflow:hidden}
-.lesson-head{padding:22px 25px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:start}
+.lesson-head{padding:22px 25px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.lesson-head-row{display:flex;justify-content:space-between;align-items:start;width:100%}
 .crumb{font:500 10px 'DM Mono',monospace;color:#758072;text-transform:uppercase;letter-spacing:.8px}
 .lesson-head h2{font:800 25px/1.1 'Playfair Display',Georgia,serif;margin:7px 0}
 .lesson-head p{font-size:11px;color:var(--muted);margin:0}
 .lesson-num{background:#f0eadc;border-radius:8px;padding:8px 10px;font:500 10px 'DM Mono',monospace;color:#6e746b;white-space:nowrap}
+.mobile-openings{display:none;width:100%}
+.mobile-openings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mobile-openings-label{font:600 10px 'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.mobile-openings-count{font:500 10px 'DM Mono',monospace;color:#527a57}
+.mobile-openings-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mobile-openings-scroll::-webkit-scrollbar{display:none}
+.m-opening-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;background:var(--cream);border:1px solid var(--line);border-radius:20px;padding:8px 13px;font:700 12px/1 Manrope,Arial,sans-serif;color:var(--ink);cursor:pointer;white-space:nowrap;transition:.18s;-webkit-tap-highlight-color:transparent}
+.m-opening-btn:active{transform:scale(.97)}
+.m-opening-btn.active{background:#eaf4d4;border-color:#bada82;color:#234a1a;box-shadow:0 2px 6px #202b1b15}
+.m-piece{font-size:15px;line-height:1}
+.m-tag{font:600 9px 'DM Mono',monospace;padding:2px 5px;border-radius:4px;background:#edeae0;color:var(--muted)}
+.m-opening-btn.active .m-tag{background:#d5eca4;color:#2c521f}
 .lesson-body{padding:24px;display:grid;grid-template-columns:minmax(330px,1fr) 1fr;gap:25px}
 .board-wrap{position:relative}
 .board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));border-radius:9px;overflow:hidden;box-shadow:0 8px 20px #202b1b25;position:relative}
@@ -129,7 +144,22 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 .btn-flip:hover{background:#e3dfd4;color:var(--ink)}
 .btn-flip.active{background:#eaf4d4;border-color:#c8df9e;color:#2c521f}
 @media(max-width:1050px){.layout{grid-template-columns:220px 1fr}.right{display:none}.lesson-body{grid-template-columns:1fr}.board-wrap{max-width:520px}.navlinks{margin-left:20px}}
-@media(max-width:680px){.shell{padding:18px}.navlinks{display:none}.hero{padding:32px 0 22px}.hero h1{font-size:33px}.streak{display:none}.layout{display:block}.library{display:none}.lesson-body{padding:16px}.lesson-head{padding:18px}.lesson-copy h3{font-size:19px}}
+@media(max-width:820px){
+.shell{padding:16px 14px 40px}
+.navlinks{display:none}
+.hero{padding:24px 0 16px}
+.hero h1{font-size:30px;letter-spacing:-1.2px;line-height:1.15}
+.streak{display:none}
+.layout{display:flex;flex-direction:column;gap:18px}
+.lesson{order:1}
+.library{order:2;display:block;margin-top:6px}
+.right{order:3;display:grid}
+.lesson-body{padding:16px 14px;grid-template-columns:1fr;gap:20px}
+.lesson-head{padding:18px 16px 16px}
+.lesson-copy h3{font-size:19px}
+.mobile-openings{display:block}
+.board-bar-actions{width:100%;justify-content:space-between}
+}
 </style>
 </head>
 <body>
@@ -146,7 +176,7 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 <section class="layout">
 <aside class="library panel">
 <div class="panel-title">Your opening library <button>+ ADD</button></div>
-<div class="search">⌕ &nbsp; Search openings</div>
+<input type="search" class="search" id="searchOpenings" placeholder="⌕  Search openings" aria-label="Search openings">
 <div class="group-label">As White</div>
 <div class="opening" data-opening="italian"><div class="opening-top"><span>Italian Game</span><span class="tag">IN PROGRESS</span></div><div class="moves">1. e4 e5 2. Nf3 Nc6 3. Bc4</div></div>
 <div class="opening" data-opening="queens"><div class="opening-top"><span>Queen's Gambit</span><span class="tag">42%</span></div><div class="moves">1. d4 d5 2. c4</div></div>
@@ -157,8 +187,22 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 </aside>
 <section class="lesson panel">
 <header class="lesson-head">
-<div><div class="crumb" id="crumb">Opening Lab</div><h2 id="openingName">Choose an opening</h2><p id="openingSub">Pick a line from your library to watch its moves.</p></div>
-<div class="lesson-num" id="lessonNum">—</div>
+<div class="lesson-head-row">
+ <div><div class="crumb" id="crumb">Opening Lab</div><h2 id="openingName">Choose an opening</h2><p id="openingSub">Pick a line from your library to watch its moves.</p></div>
+ <div class="lesson-num" id="lessonNum">—</div>
+</div>
+<div class="mobile-openings">
+ <div class="mobile-openings-head">
+  <span class="mobile-openings-label">Openings</span>
+  <span class="mobile-openings-count">4 in library</span>
+ </div>
+ <div class="mobile-openings-scroll">
+  <button class="m-opening-btn" data-opening="italian" type="button"><span class="m-piece">♔</span><span>Italian Game</span><span class="m-tag">White</span></button>
+  <button class="m-opening-btn" data-opening="queens" type="button"><span class="m-piece">♔</span><span>Queen's Gambit</span><span class="m-tag">White</span></button>
+  <button class="m-opening-btn" data-opening="sicilian" type="button"><span class="m-piece">♚</span><span>Sicilian Defense</span><span class="m-tag">Black</span></button>
+  <button class="m-opening-btn" data-opening="caro" type="button"><span class="m-piece">♚</span><span>Caro-Kann</span><span class="m-tag">Black</span></button>
+ </div>
+</div>
 </header>
 <div class="lesson-body">
 <div class="board-wrap">
@@ -475,7 +519,7 @@ function settle(){
 }
 function startOpening(key){
  current=key; appliedCount=0; selected=null; animating=false;
- document.querySelectorAll('.opening').forEach(x=>x.classList.toggle('active',x.dataset.opening===key));
+ document.querySelectorAll('[data-opening]').forEach(x=>x.classList.toggle('active',x.dataset.opening===key));
  feedback.className='feedback';
  if(autoRotateBlack && openings[key]){
   isFlipped=(openings[key].side==='b');
@@ -511,7 +555,26 @@ function click(sq){
  }
 }
 
-document.querySelectorAll('.opening').forEach(e=>e.onclick=()=>startOpening(e.dataset.opening));
+document.querySelectorAll('[data-opening]').forEach(e=>{
+ e.onclick=()=>{
+  startOpening(e.dataset.opening);
+  if(window.innerWidth<=820 && e.closest('.library')){
+   const lessonEl=document.querySelector('.lesson');
+   if(lessonEl) lessonEl.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+ };
+});
+
+const searchInput=document.getElementById('searchOpenings');
+if(searchInput){
+ searchInput.addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.library .opening').forEach(el=>{
+   const t=el.textContent.toLowerCase();
+   el.style.display=t.includes(q)?'':'none';
+  });
+ });
+}
 showHint.onclick=()=>{
  if(!current)return;
  const o=openings[current];
