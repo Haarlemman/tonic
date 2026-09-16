@@ -117,6 +117,17 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 .modal-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--line);font-size:12px}
 .modal .btn{margin-top:7px}
 .moving-piece{position:absolute;width:12.5%;height:12.5%;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:clamp(18px,2.8vw,36px);z-index:20;pointer-events:none;transition:transform .42s cubic-bezier(.2,.85,.35,1);filter:drop-shadow(0 3px 3px #0004)}
+.board-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;font-size:11px;flex-wrap:wrap}
+.board-perspective{display:flex;align-items:center;gap:7px;font:600 11px 'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.perspective-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid #73766d;background:#fffdf8;transition:.2s;flex-shrink:0}
+.perspective-dot.black{background:#151916;border-color:#151916;box-shadow:0 0 0 2px #d5e7b2}
+.perspective-dot.white{background:#fffdf8;border-color:#73766d;box-shadow:0 0 0 2px #dcd8cc}
+.board-bar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.auto-flip-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none;font-weight:600}
+.auto-flip-label input{cursor:pointer;accent-color:var(--green);margin:0}
+.btn-flip{background:#eeeae0;border:1px solid #dcd8cc;border-radius:7px;padding:6px 11px;font:700 11px Manrope,Arial,sans-serif;color:#495047;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.18s}
+.btn-flip:hover{background:#e3dfd4;color:var(--ink)}
+.btn-flip.active{background:#eaf4d4;border-color:#c8df9e;color:#2c521f}
 @media(max-width:1050px){.layout{grid-template-columns:220px 1fr}.right{display:none}.lesson-body{grid-template-columns:1fr}.board-wrap{max-width:520px}.navlinks{margin-left:20px}}
 @media(max-width:680px){.shell{padding:18px}.navlinks{display:none}.hero{padding:32px 0 22px}.hero h1{font-size:33px}.streak{display:none}.layout{display:block}.library{display:none}.lesson-body{padding:16px}.lesson-head{padding:18px}.lesson-copy h3{font-size:19px}}
 </style>
@@ -151,6 +162,19 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 </header>
 <div class="lesson-body">
 <div class="board-wrap">
+<div class="board-bar">
+ <div class="board-perspective" id="boardPerspective">
+  <span class="perspective-dot white" id="perspectiveDot"></span>
+  <span id="perspectiveLabel">White view (bottom)</span>
+ </div>
+ <div class="board-bar-actions">
+  <label class="auto-flip-label" title="Automatically rotate the board when playing as Black">
+   <input type="checkbox" id="autoFlipCheck" checked>
+   <span>Auto-rotate for Black</span>
+  </label>
+  <button class="btn-flip" id="flipBoardBtn" title="Rotate board (Flip perspective)">⇄ Rotate board</button>
+ </div>
+</div>
 <div id="board" class="board"></div>
 <div class="turn"><strong id="prompt">Select an opening to begin.</strong><span class="hint">Select a piece, then choose its destination square.</span><div id="feedback" class="feedback"></div></div>
 </div>
@@ -160,7 +184,7 @@ nav{display:flex;align-items:center;justify-content:space-between;border-bottom:
 <p id="description">Choose an opening on the left — its first moves will play automatically, then you take over.</p>
 <div class="move-list" id="moveList"></div>
 <div class="why"><strong>Why this works</strong><span id="why">Every line here plays out in real, sound theory: each of your moves is followed by an explanation of why it works.</span></div>
-<div class="actions"><button class="btn primary" id="playOpening" disabled>Choose an opening</button><button class="btn secondary" id="showHint">Show hint</button><button class="btn secondary" id="reset">Reset board</button></div>
+<div class="actions"><button class="btn primary" id="playOpening" disabled>Choose an opening</button><button class="btn secondary" id="showHint">Show hint</button><button class="btn secondary" id="reset">Reset board</button><button class="btn secondary" id="flipBoardAction" title="Rotate board (Flip perspective)">⇄ Rotate board</button></div>
 </div>
 </div>
 </section>
@@ -267,7 +291,64 @@ const openings={
 };
 
 let current=null, appliedCount=0, selected=null, animating=false;
+let isFlipped=false;
+let autoRotateBlack=true;
+try {
+ const saved=localStorage.getItem('chess_auto_rotate_black');
+ if(saved!==null) autoRotateBlack=(saved==='true');
+}catch(e){}
+
 const board=document.getElementById('board');
+const flipBoardBtn=document.getElementById('flipBoardBtn');
+const flipBoardAction=document.getElementById('flipBoardAction');
+const autoFlipCheck=document.getElementById('autoFlipCheck');
+const perspectiveDot=document.getElementById('perspectiveDot');
+const perspectiveLabel=document.getElementById('perspectiveLabel');
+
+if(autoFlipCheck) autoFlipCheck.checked=autoRotateBlack;
+
+function updateFlipUI(){
+ const isBlack=isFlipped;
+ if(perspectiveDot){
+  perspectiveDot.className='perspective-dot '+(isBlack?'black':'white');
+ }
+ if(perspectiveLabel){
+  perspectiveLabel.textContent=isBlack?'Black view (bottom)':'White view (bottom)';
+ }
+ if(flipBoardBtn){
+  flipBoardBtn.classList.toggle('active',isBlack);
+  flipBoardBtn.textContent=isBlack?'⇄ View as White':'⇄ Rotate board';
+ }
+ if(flipBoardAction){
+  flipBoardAction.textContent=isBlack?'⇄ View as White':'⇄ Rotate board';
+ }
+}
+
+function toggleFlip(){
+ if(animating)return;
+ isFlipped=!isFlipped;
+ selected=null;
+ updateFlipUI();
+ renderBoard();
+}
+
+if(flipBoardBtn) flipBoardBtn.onclick=toggleFlip;
+if(flipBoardAction) flipBoardAction.onclick=toggleFlip;
+
+if(autoFlipCheck){
+ autoFlipCheck.onchange=(e)=>{
+  autoRotateBlack=!!e.target.checked;
+  try{localStorage.setItem('chess_auto_rotate_black',autoRotateBlack?'true':'false')}catch(err){}
+  if(current && openings[current]){
+   if(autoRotateBlack){
+    isFlipped=(openings[current].side==='b');
+   }
+   selected=null;
+   updateFlipUI();
+   renderBoard();
+  }
+ };
+}
 
 function positionAt(line,count){
  const pos=Object.assign({},startingPieces);
@@ -278,13 +359,19 @@ function pieceMarkup(p){return p?'<span class="piece">'+p+'</span>':''}
 function renderBoard(){
  const pieces=current?positionAt(openings[current].line,appliedCount):Object.assign({},startingPieces);
  board.innerHTML='';
- for(let r=8;r>=1;r--)for(let c=0;c<8;c++){
-  const sq=files[c]+r,e=document.createElement('div');
-  e.className='sq '+((r+c)%2?'dark':'light');
-  e.dataset.sq=sq;
-  e.innerHTML=(c===0?'<i class="rank">'+r+'</i>':'')+(r===1?'<i class="file">'+files[c]+'</i>':'')+pieceMarkup(pieces[sq]);
-  e.onclick=()=>click(sq);
-  board.appendChild(e);
+ const ranks=isFlipped?[1,2,3,4,5,6,7,8]:[8,7,6,5,4,3,2,1];
+ const cols=isFlipped?[7,6,5,4,3,2,1,0]:[0,1,2,3,4,5,6,7];
+ for(let rIdx=0;rIdx<8;rIdx++){
+  const r=ranks[rIdx];
+  for(let cIdx=0;cIdx<8;cIdx++){
+   const c=cols[cIdx];
+   const sq=files[c]+r,e=document.createElement('div');
+   e.className='sq '+((r+c)%2?'dark':'light');
+   e.dataset.sq=sq;
+   e.innerHTML=(cIdx===0?'<i class="rank">'+r+'</i>':'')+(rIdx===7?'<i class="file">'+files[c]+'</i>':'')+pieceMarkup(pieces[sq]);
+   e.onclick=()=>click(sq);
+   board.appendChild(e);
+  }
  }
 }
 function buildMoveRows(o,applied,finished){
@@ -390,6 +477,10 @@ function startOpening(key){
  current=key; appliedCount=0; selected=null; animating=false;
  document.querySelectorAll('.opening').forEach(x=>x.classList.toggle('active',x.dataset.opening===key));
  feedback.className='feedback';
+ if(autoRotateBlack && openings[key]){
+  isFlipped=(openings[key].side==='b');
+ }
+ updateFlipUI();
  renderBoard();
  settle();
 }
@@ -454,6 +545,7 @@ document.querySelectorAll('[data-view]').forEach(x=>x.addEventListener('click',(
 document.getElementById('modalClose').onclick=closeModal;
 modalBackdrop.onclick=e=>{if(e.target===modalBackdrop)closeModal()};
 
+updateFlipUI();
 render();
 </script>
 </body>
