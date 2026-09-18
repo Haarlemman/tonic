@@ -357,6 +357,111 @@
             color: var(--green);
         }
 
+        .playback-bar {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #fffdf8;
+            border: 1px solid #e2dfd6;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pb-btn {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 5px 9px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ink);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            min-height: 30px;
+            transition: background .15s, border-color .15s, transform .1s;
+            user-select: none;
+        }
+
+        .pb-btn:hover:not(:disabled) {
+            background: #e8e2d4;
+            border-color: #cac4b3;
+        }
+
+        .pb-btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .pb-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .pb-btn.pb-main {
+            background: var(--green);
+            color: #fff;
+            border-color: var(--green);
+            padding: 5px 12px;
+            min-width: 36px;
+        }
+
+        .pb-btn.pb-main:hover:not(:disabled) {
+            background: #1d523d;
+            border-color: #1d523d;
+        }
+
+        .pb-counter {
+            font: 600 11px 'DM Mono', monospace;
+            color: var(--muted);
+            margin-left: 4px;
+            white-space: nowrap;
+        }
+
+        .playback-speed {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .speed-label {
+            font: 700 11px Manrope, Arial, sans-serif;
+            color: var(--muted);
+            margin-right: 2px;
+        }
+
+        .speed-btn {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font: 600 11px 'DM Mono', monospace;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .speed-btn:hover {
+            color: var(--ink);
+            border-color: #cac4b3;
+        }
+
+        .speed-btn.active {
+            background: var(--ink);
+            color: #fff;
+            border-color: var(--ink);
+        }
+
         .lesson-num {
             background: #f0eadc;
             border-radius: 8px;
@@ -1177,6 +1282,20 @@
                             </div>
                         </div>
                         <div id="board" class="board"></div>
+                        <div class="playback-bar" id="playbackBar" style="display:none">
+                            <div class="playback-controls">
+                                <button type="button" class="pb-btn" id="pbPrev" title="Previous move (Step backward)">⏮</button>
+                                <button type="button" class="pb-btn pb-main" id="pbPlayPause" title="Play or Pause">⏸</button>
+                                <button type="button" class="pb-btn" id="pbNext" title="Next move (Step forward)">⏭</button>
+                                <span class="pb-counter" id="pbCounter">Move 0 / 0</span>
+                            </div>
+                            <div class="playback-speed">
+                                <span class="speed-label" id="speedLabel">Speed:</span>
+                                <button type="button" class="speed-btn" data-speed="0.5" id="speedSlow" title="Slow (0.5x)">0.5x</button>
+                                <button type="button" class="speed-btn active" data-speed="1" id="speedNormal" title="Normal (1x)">1x</button>
+                                <button type="button" class="speed-btn" data-speed="2" id="speedFast" title="Fast (2x)">2x</button>
+                            </div>
+                        </div>
                         <div class="turn"><strong id="turnPrompt">Select an opening to begin.</strong><span
                                 class="hint" id="boardHint">Select a piece, then choose its destination square.</span>
                             <div id="feedback" class="feedback"></div>
@@ -1266,7 +1385,7 @@
                 classicLine: [
                     mv('e2', 'e4', 'w', 'e4'), mv('e7', 'e5', 'b', 'e5'), mv('g1', 'f3', 'w', 'Nf3'), mv('b8', 'c6', 'b', 'Nc6'), mv('f1', 'c4', 'w', 'Bc4'), mv('f8', 'c5', 'b', 'Bc5'), mv('b2', 'b4', 'w', 'b4'), mv('c5', 'b4', 'b', 'Bxb4'), mv('c2', 'c3', 'w', 'c3'), mv('b4', 'a5', 'b', 'Ba5'), mv('d2', 'd4', 'w', 'd4'), mv('e5', 'd4', 'b', 'exd4'), mv('e1', 'g1', 'w', 'O-O'), mv('d7', 'd3', 'b', 'd3'), mv('d1', 'b3', 'w', 'Qb3'), mv('d8', 'f6', 'b', 'Qf6'), mv('e4', 'e5', 'w', 'e5'), mv('f6', 'g6', 'b', 'Qg6'), mv('f1', 'e1', 'w', 'Re1'), mv('g8', 'e7', 'b', 'Ne7'), mv('c1', 'a3', 'w', 'Ba3'), mv('b7', 'b5', 'b', 'b5'), mv('b3', 'b5', 'w', 'Qxb5'), mv('a8', 'b8', 'b', 'Rb8'), mv('b5', 'a4', 'w', 'Qa4'), mv('c8', 'b7', 'b', 'Bb7'), mv('b1', 'd2', 'w', 'Nbd2'), mv('b7', 'b6', 'b', 'Bb6'), mv('d2', 'e4', 'w', 'Ne4'), mv('g6', 'f5', 'b', 'Qf5'), mv('c4', 'd3', 'w', 'Bxd3'), mv('f5', 'h5', 'b', 'Qh5'), mv('e4', 'f6', 'w', 'Nf6+'), mv('g7', 'f6', 'b', 'gxf6'), mv('e5', 'f6', 'w', 'exf6'), mv('h8', 'g8', 'b', 'Rg8'), mv('a1', 'd1', 'w', 'Rad1'), mv('h5', 'f3', 'b', 'Qxf3'), mv('e1', 'e7', 'w', 'Rxe7+'), mv('c6', 'e7', 'b', 'Nxe7'), mv('a4', 'd7', 'w', 'Qxd7+'), mv('e8', 'd7', 'b', 'Kxd7'), mv('d3', 'f5', 'w', 'Bf5+'), mv('d7', 'e8', 'b', 'Ke8'), mv('f5', 'd7', 'w', 'Bd7+'), mv('e8', 'f8', 'b', 'Kf8'), mv('d7', 'e7', 'w', 'Bxe7#')
                 ],
-                wrap: { concept: 'Line complete — fork lands', desc: "White has navigated every counter-threat with the most active reply, won a pawn, castled to safety, and landed a decisive queen fork on f7. That's the Italian blueprint in seven moves.", why: "Ng5 started the fireworks, Bb5+ fractured the queenside, Be2 + O-O consolidated, and Qxf7+ collected the reward. Develop fast, check often, and pick up the spoils." },
+                wrap: { concept: 'Line complete — solid center & extra pawn', desc: "White has navigated the tricky waters of the Two Knights Defense, kept the extra pawn from 5. exd5, safely retreated, and locked down the center with 11. d4.", why: "Ng5 and Bb5+ won a pawn, Be2 retreated in good order, and Ne5 followed by d4! cemented White's central dominance while leaving Black with chronic queenside weaknesses." },
                 line: [
                     mv('e2', 'e4', 'w', 'e4'),
                     mv('e7', 'e5', 'b', 'e5'),
@@ -1283,13 +1402,12 @@
                     mv('d5', 'c6', 'w', 'dxc6', true, { concept: "Take the material you're owed.", desc: "Black blocked the check with ...c6, but that pawn is defended only once and attacked once.", why: "dxc6 wins a clean pawn and rips open Black's queenside. After ...bxc6, White finishes developing a full tempo ahead with the sounder pawn structure." }),
                     mv('b7', 'c6', 'b', 'bxc6'),
                     mv('b5', 'e2', 'w', 'Be2', true, { concept: 'Retreat the bishop and prepare to castle.', desc: "Your bishop on b5 has done its work — the check fractured Black's queenside. Now bring it back to safety and get your king off the center.", why: "Be2 keeps everything defended and clears the path for O-O. Black's queenside is already split; your job now is to finish development and consolidate the extra pawn." }),
-                    mv('a5', 'c4', 'b', 'Nc4'),
-                    mv('e1', 'g1', 'w', 'O-O', true, { concept: 'Castle and connect the rooks.', desc: "You have developed every piece and have a pawn advantage. Tuck your king away before Black's activity can create any threats.", why: "Castling connects the rooks and makes your king safe. With the queenside already broken, you are simply winning — careful development seals it." }),
-                    mv('c4', 'e3', 'b', 'Ne3'),
-                    mv('d1', 'f3', 'w', 'Qf3', true, { concept: 'Attack the misplaced knight.', desc: "Black's knight on e3 is deep in your territory but pinned against the queen. Aim a piece at it and pick it off.", why: "Qf3 attacks the knight and defends the bishop on e2. After ...Nxc2 (grabbing the rook), you win back material with tempo — Black's knight has no escape." }),
-                    mv('e3', 'c2', 'b', 'Nxc2'),
-                    mv('f3', 'f7', 'w', 'Qxf7+', true, { concept: 'Punish the greedy knight with a fork.', desc: "Black grabbed the rook on c2, thinking it was free. Crash into f7 with check — the king and rook on h8 are both under attack.", why: "Qxf7+ is a royal fork: after the king moves, Qxa7 recovers the lost material with interest. The initiative never left White's hands." }),
-                    mv('e8', 'd7', 'b', 'Kd7')
+                    mv('h7', 'h6', 'b', 'h6'),
+                    mv('g5', 'f3', 'w', 'Nf3', true, { concept: 'Retreat the knight with purpose.', desc: "Black kicked your knight with 8...h6. Don't panic — retreat to f3 where it controls key central squares and prepares counterplay.", why: "Nf3 preserves the knight while eyeing the e5 square. Black will push ...e4 to chase it again, but that overextends Black's pawns." }),
+                    mv('e5', 'e4', 'b', 'e4'),
+                    mv('f3', 'e5', 'w', 'Ne5', true, { concept: 'Anchor the knight on an active outpost.', desc: "Black pushed ...e4 to attack your knight. Jump boldly into e5 — an aggressive central outpost that Black cannot easily dislodge.", why: "Ne5 plants the knight in the heart of the board, exerting maximum pressure. Black must spend a tempo with ...Bd6 to contest it, letting you strike back in the center." }),
+                    mv('f8', 'd6', 'b', 'Bd6'),
+                    mv('d2', 'd4', 'w', 'd4', true, { concept: 'Solidify the center and guard the knight.', desc: "Black's bishop on d6 threatens your knight on e5. Support it with d4, opening lines for your dark-squared bishop.", why: "d4! cements the knight on e5 and frees the c1 bishop. White has held the extra pawn from 5. exd5, kept a rock-solid center, and neutralized Black's gambit." })
                 ]
             },
             queens: {
@@ -1437,6 +1555,9 @@
         };
 
         let current = null, appliedCount = 0, selected = null, animating = false, classicMode = false;
+        let isPaused = false;
+        let playbackSpeed = 1.0;
+        let settleTimer = null;
         let isFlipped = false;
         let autoRotateBlack = true;
         let currentLang = 'en';
@@ -1494,6 +1615,16 @@
                 replayGame: '▶ Replay match',
                 playingClassic: 'Playing famous match…',
                 gameComplete: 'Match complete. Click "Back to lesson" to practice.',
+                pbPlay: 'Play',
+                pbPause: 'Pause',
+                pbPrev: 'Previous move',
+                pbNext: 'Next move',
+                pbReplay: 'Replay match',
+                speedLabel: 'Speed:',
+                slowSpeed: 'Slow (0.5x)',
+                normalSpeed: 'Normal (1x)',
+                fastSpeed: 'Fast (2x)',
+                moveWord: 'Move',
                 reset: 'Reset board',
                 rotate: '⇄ Rotate',
                 rotateBoard: '⇄ Rotate board',
@@ -1570,6 +1701,16 @@
                 replayGame: '▶ Partij herhalen',
                 playingClassic: 'Beroemde partij wordt afgespeeld…',
                 gameComplete: 'Partij voltooid. Klik op "Terug naar les" om te oefenen.',
+                pbPlay: 'Afspelen',
+                pbPause: 'Pauzeren',
+                pbPrev: 'Vorige zet',
+                pbNext: 'Volgende zet',
+                pbReplay: 'Partij herhalen',
+                speedLabel: 'Snelheid:',
+                slowSpeed: 'Langzaam (0.5x)',
+                normalSpeed: 'Normaal (1x)',
+                fastSpeed: 'Snel (2x)',
+                moveWord: 'Zet',
                 reset: 'Bord herstellen',
                 rotate: '⇄ Draaien',
                 rotateBoard: '⇄ Bord draaien',
@@ -1615,9 +1756,9 @@
                         note: 'Deze beroemde partij toont de essentie van de opening: snel ontwikkelen, lijnen openen en elk tempo optimaal benutten.'
                     },
                     wrap: {
-                        concept: 'Variant voltooid — vork op f7',
-                        desc: "Wit heeft elke tegenaanval beantwoord met de meest actieve zet, een pion gewonnen, veilig gerokeerd en een beslissende damevork geplaatst op f7. Dat is het Italiaanse strijdplan in zeven zetten.",
-                        why: "Pg5 begon het vuurwerk, Lb5+ ontwrichtte de damevleugel, Le2 + O-O consolideerde de stelling, en Dxf7+ incasseerde de beloning. Snel ontwikkelen, schaak geven en toeslaan."
+                        concept: 'Variant voltooid — sterk centrum en pluspion',
+                        desc: "Wit heeft de gevaren van het Tweepaardenspel vakkundig omzeild, de pluspion van 5. exd5 behouden, rustig teruggetrokken en het centrum vergrendeld met 11. d4.",
+                        why: "Pg5 en Lb5+ leverden een pion op, Le2 trok ordelijk terug, en Pe5 gevolgd door d4! versterkte Wits centrale overwicht terwijl Zwart met verzwakte damevleugelpionnen achterblijft."
                     },
                     moves: {
                         6: {
@@ -1641,19 +1782,19 @@
                             why: "Le2 houdt alles gedekt en maakt de weg vrij voor O-O. De zwarte damevleugel is al verzwakt; jouw taak is nu ontwikkelen en de pluspion vasthouden."
                         },
                         16: {
-                            concept: "Rokeer en verbind de torens.",
-                            desc: "Je hebt je stukken ontwikkeld en hebt een pion voorsprong. Breng je koning in veiligheid voordat de zwarte stukken dreigingen kunnen creëren.",
-                            why: "De rochade verbindt de torens en beveiligt de koning. Met de damevleugel van de tegenstander al verbroken sta je gewonnen — zorgvuldige ontwikkeling bezegelt het."
+                            concept: "Trek het paard met een plan terug.",
+                            desc: "Zwart verdreef je paard met 8...h6. Geen paniek — trek terug naar f3, waar het belangrijke centrumvelden controleert en tegenspel voorbereidt.",
+                            why: "Pf3 behoudt het paard en houdt het veld e5 in het oog. Zwart zal ...e4 spelen om het opnieuw aan te vallen, maar dat overstrekt de zwarte pionnenstelling."
                         },
                         18: {
-                            concept: "Val het verdwaalde paard aan.",
-                            desc: "Het zwarte paard op e3 staat diep op jouw helft maar staat gepend tegen de dame. Val het aan en ruim het op.",
-                            why: "Df3 valt het paard aan en dekt de loper op e2. Na ...Pxc2 (het slaan van de toren) win je met tempo materiaal terug — het zwarte paard kan niet meer ontsnappen."
+                            concept: "Veranker het paard op een actieve voorpost.",
+                            desc: "Zwart speelde ...e4 om je paard aan te vallen. Spring moedig naar e5 — een krachtige centrale voorpost die Zwart niet eenvoudig kan verdrijven.",
+                            why: "Pe5 plaatst het paard in het hart van het bord met maximale druk. Zwart moet een tempo besteden aan ...Ld6 om het te betwisten, waardoor jij in het centrum kunt toeslaan."
                         },
                         20: {
-                            concept: "Straf het hebzuchtige paard af met een vork.",
-                            desc: "Zwart sloeg de toren op c2, in de veronderstelling dat hij gratis was. Sla toe op f7 met schaak — de koning en de toren op h8 staan beide aangevallen.",
-                            why: "Dxf7+ is een koninklijke vork: nadat de koning wijkt, wint Dxa7 het verloren materiaal met rente terug. Het initiatief is altijd in handen van Wit gebleven."
+                            concept: "Verstevig het centrum en bescherm het paard.",
+                            desc: "De zwarte loper op d6 bedreigt je paard op e5. Ondersteun het met d4, waarmee je tevens lijnen opent voor je witveldige loper.",
+                            why: "d4! verankert het paard op e5 en geeft de loper op c1 de ruimte. Wit behoudt de pluspion van 5. exd5, heeft een ijzersterk centrum en neutraliseert Zwarts gambiet."
                         }
                     }
                 },
@@ -1816,6 +1957,15 @@
         const famousTitle = document.getElementById('famousTitle');
         const famousLink = document.getElementById('famousLink');
         const backToLesson = document.getElementById('backToLesson');
+        const playbackBar = document.getElementById('playbackBar');
+        const pbPrev = document.getElementById('pbPrev');
+        const pbPlayPause = document.getElementById('pbPlayPause');
+        const pbNext = document.getElementById('pbNext');
+        const pbCounter = document.getElementById('pbCounter');
+        const speedLabel = document.getElementById('speedLabel');
+        const speedSlow = document.getElementById('speedSlow');
+        const speedNormal = document.getElementById('speedNormal');
+        const speedFast = document.getElementById('speedFast');
 
         if (openingSelect) {
             openingSelect.addEventListener('change', e => {
@@ -1915,6 +2065,7 @@
                 classicGame.textContent = t.classicGame;
                 if (backToLesson) backToLesson.hidden = true;
                 if (famousBanner) famousBanner.style.display = 'none';
+                if (playbackBar) playbackBar.style.display = 'none';
                 if (openingSelect) openingSelect.value = '';
                 return;
             }
@@ -2006,9 +2157,67 @@
             moveList.innerHTML = buildMoveRows(o, appliedCount, finished).map(r =>
                 '<div class="move ' + (r.isCurrentRow ? 'current' : '') + '"><span>' + r.num + '</span><b>' + r.w + (r.wPending ? ' ←' : '') + '</b><span>' + r.b + (r.bPending ? ' ←' : '') + '</span></div>'
             ).join('');
+            if (playbackBar) playbackBar.style.display = classicMode ? 'flex' : 'none';
+            updatePlaybackUI();
         }
         function render() { renderBoard(); renderPanel() }
         function message(t, k) { feedback.textContent = t; feedback.className = 'feedback ' + k }
+
+        function clearSettleTimer() {
+            if (settleTimer) {
+                clearTimeout(settleTimer);
+                settleTimer = null;
+            }
+        }
+
+        function getMoveDelay() {
+            if (!classicMode) return 100;
+            if (playbackSpeed === 0.5) return 1800;
+            if (playbackSpeed === 2.0) return 380;
+            return 1100;
+        }
+
+        function updatePlaybackUI() {
+            if (!playbackBar) return;
+            playbackBar.style.display = classicMode ? 'flex' : 'none';
+            if (!classicMode || !current) return;
+            const o = openings[current], line = lineFor(o);
+            const t = i18n[currentLang];
+            const isFinished = appliedCount >= line.length;
+
+            if (pbPlayPause) {
+                if (isFinished) {
+                    pbPlayPause.textContent = '↺';
+                    pbPlayPause.title = t.pbReplay || 'Replay match';
+                } else if (isPaused) {
+                    pbPlayPause.textContent = '▶';
+                    pbPlayPause.title = t.pbPlay || 'Play';
+                } else {
+                    pbPlayPause.textContent = '⏸';
+                    pbPlayPause.title = t.pbPause || 'Pause';
+                }
+            }
+            if (pbPrev) {
+                pbPrev.disabled = appliedCount <= 0 || animating;
+                pbPrev.title = t.pbPrev || 'Previous move';
+            }
+            if (pbNext) {
+                pbNext.disabled = isFinished || animating;
+                pbNext.title = t.pbNext || 'Next move';
+            }
+            if (pbCounter) {
+                const curMove = Math.min(Math.floor(appliedCount / 2) + 1, Math.ceil(line.length / 2));
+                const totalMoves = Math.ceil(line.length / 2);
+                const prefix = t.moveWord || 'Move';
+                pbCounter.textContent = isFinished ? t.complete : (prefix + ' ' + curMove + ' / ' + totalMoves);
+            }
+            if (speedLabel) {
+                speedLabel.textContent = t.speedLabel || 'Speed:';
+            }
+            document.querySelectorAll('.speed-btn').forEach(btn => {
+                btn.classList.toggle('active', parseFloat(btn.dataset.speed) === playbackSpeed);
+            });
+        }
 
         function playGhost(m, done) {
             const fromEl = document.querySelector('[data-sq="' + m.from + '"]');
@@ -2026,28 +2235,49 @@
             ghost.style.top = (fromBox.top - boardBox.top) + 'px';
             ghost.style.width = fromBox.width + 'px';
             ghost.style.height = fromBox.height + 'px';
+            const ghostDuration = classicMode ? (playbackSpeed === 0.5 ? 550 : (playbackSpeed === 2 ? 280 : 420)) : 460;
+            ghost.style.transition = 'transform ' + ghostDuration + 'ms ease-in-out';
             board.appendChild(ghost);
             requestAnimationFrame(() => { ghost.style.transform = 'translate(' + (toBox.left - fromBox.left) + 'px,' + (toBox.top - fromBox.top) + 'px)' });
-            setTimeout(() => { ghost.remove(); done() }, 460);
+            setTimeout(() => { ghost.remove(); done() }, ghostDuration);
         }
         function settle() {
+            clearSettleTimer();
             if (!current) return;
             const o = openings[current], line = lineFor(o);
+            updatePlaybackUI();
             if (appliedCount < line.length && !line[appliedCount].quiz) {
-                animating = true;
-                renderBoard();
-                playGhost(line[appliedCount], () => {
-                    appliedCount++;
+                if (classicMode && isPaused) {
                     animating = false;
-                    settle();
-                });
+                    render();
+                    return;
+                }
+                const delay = getMoveDelay();
+                settleTimer = setTimeout(() => {
+                    if (classicMode && isPaused) {
+                        animating = false;
+                        render();
+                        return;
+                    }
+                    animating = true;
+                    renderBoard();
+                    playGhost(line[appliedCount], () => {
+                        appliedCount++;
+                        animating = false;
+                        render();
+                        settle();
+                    });
+                }, delay);
             } else {
                 animating = false;
+                if (classicMode) isPaused = true;
                 render();
+                updatePlaybackUI();
             }
         }
         function startOpening(key) {
-            current = key; appliedCount = 0; selected = null; animating = false; classicMode = false;
+            clearSettleTimer();
+            current = key; appliedCount = 0; selected = null; animating = false; classicMode = false; isPaused = false;
             document.querySelectorAll('.opening').forEach(x => x.classList.toggle('active', x.dataset.opening === key));
             if (openingSelect && openingSelect.value !== key) openingSelect.value = key;
             feedback.className = 'feedback';
@@ -2055,11 +2285,12 @@
                 isFlipped = (openings[key].side === 'b');
             }
             updateFlipUI();
+            updatePlaybackUI();
             renderBoard();
             settle();
         }
         function click(sq) {
-            if (!current || animating) return;
+            if (!current || animating || classicMode) return;
             const o = openings[current], line = lineFor(o);
             if (appliedCount >= line.length) return;
             const m = line[appliedCount];
@@ -2143,14 +2374,26 @@
             const replay = document.getElementById('replayFromPath');
             if (replay) replay.addEventListener('click', () => { closeModal(); classicMode = false; startOpening(current) });
             const classic = document.getElementById('playClassic');
-            if (classic) classic.addEventListener('click', () => { closeModal(); classicMode = true; appliedCount = 0; selected = null; animating = false; render(); settle() });
+            if (classic) classic.addEventListener('click', () => {
+                closeModal();
+                clearSettleTimer();
+                classicMode = true;
+                isPaused = false;
+                appliedCount = 0;
+                selected = null;
+                animating = false;
+                render();
+                settle();
+            });
         }
         if (famousLink) {
             famousLink.onclick = () => showCompletionPath('classic');
         }
         if (backToLesson) {
             backToLesson.onclick = () => {
+                clearSettleTimer();
                 classicMode = false;
+                isPaused = false;
                 startOpening(current);
             };
         }
@@ -2158,20 +2401,83 @@
         classicGame.onclick = () => showCompletionPath('classic');
         reset.onclick = () => {
             if (!current) return;
+            clearSettleTimer();
             if (classicMode) {
-                appliedCount = 0; selected = null; animating = false; render(); settle();
+                appliedCount = 0; selected = null; animating = false; isPaused = false; render(); settle();
             } else {
                 startOpening(current);
             }
         };
         playOpening.onclick = () => {
             if (!current) return;
+            clearSettleTimer();
             if (classicMode) {
-                appliedCount = 0; selected = null; animating = false; render(); settle();
+                appliedCount = 0; selected = null; animating = false; isPaused = false; render(); settle();
             } else {
                 startOpening(current);
             }
         };
+
+        function togglePlayPause() {
+            if (!current || !classicMode) return;
+            const o = openings[current], line = lineFor(o);
+            if (appliedCount >= line.length) {
+                clearSettleTimer();
+                appliedCount = 0;
+                isPaused = false;
+                selected = null;
+                animating = false;
+                render();
+                settle();
+                return;
+            }
+            isPaused = !isPaused;
+            if (!isPaused) {
+                settle();
+            } else {
+                clearSettleTimer();
+                animating = false;
+                render();
+            }
+            updatePlaybackUI();
+        }
+
+        function stepForward() {
+            if (!current || !classicMode) return;
+            const o = openings[current], line = lineFor(o);
+            if (appliedCount >= line.length || animating) return;
+            clearSettleTimer();
+            isPaused = true;
+            appliedCount++;
+            render();
+            updatePlaybackUI();
+        }
+
+        function stepBackward() {
+            if (!current || !classicMode) return;
+            if (appliedCount <= 0 || animating) return;
+            clearSettleTimer();
+            isPaused = true;
+            appliedCount--;
+            render();
+            updatePlaybackUI();
+        }
+
+        function setPlaybackSpeed(speed) {
+            playbackSpeed = speed;
+            updatePlaybackUI();
+            if (classicMode && !isPaused && !animating) {
+                clearSettleTimer();
+                settle();
+            }
+        }
+
+        if (pbPlayPause) pbPlayPause.onclick = togglePlayPause;
+        if (pbPrev) pbPrev.onclick = stepBackward;
+        if (pbNext) pbNext.onclick = stepForward;
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.onclick = () => setPlaybackSpeed(parseFloat(btn.dataset.speed));
+        });
 
         const modalBackdrop = document.getElementById('modalBackdrop'), modalContent = document.getElementById('modalContent');
         const viewsI18n = {
@@ -2329,7 +2635,21 @@
             const coachText = document.getElementById('coachText');
             if (coachText) coachText.textContent = t.coachText;
 
+            const speedLabelEl = document.getElementById('speedLabel');
+            if (speedLabelEl) speedLabelEl.textContent = t.speedLabel;
+            const pbPrevEl = document.getElementById('pbPrev');
+            if (pbPrevEl) pbPrevEl.title = t.pbPrev;
+            const pbNextEl = document.getElementById('pbNext');
+            if (pbNextEl) pbNextEl.title = t.pbNext;
+            const speedSlowEl = document.getElementById('speedSlow');
+            if (speedSlowEl) speedSlowEl.title = t.slowSpeed;
+            const speedNormalEl = document.getElementById('speedNormal');
+            if (speedNormalEl) speedNormalEl.title = t.normalSpeed;
+            const speedFastEl = document.getElementById('speedFast');
+            if (speedFastEl) speedFastEl.title = t.fastSpeed;
+
             updateFlipUI();
+            updatePlaybackUI();
             renderPanel();
         }
 
