@@ -603,7 +603,22 @@
             border-top: 1px solid var(--line);
             border-bottom: 1px solid var(--line);
             padding: 9px 0;
-            margin-bottom: 18px
+            margin-bottom: 18px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .move-list:empty {
+            display: none;
+        }
+
+        .move-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .move-list::-webkit-scrollbar-thumb {
+            background: #d8d3c5;
+            border-radius: 3px;
         }
 
         .move {
@@ -638,7 +653,8 @@
             border-radius: 0 8px 8px 0;
             padding: 11px 12px;
             font-size: 11px;
-            line-height: 1.45
+            line-height: 1.45;
+            margin-bottom: 18px;
         }
 
         .why strong {
@@ -650,7 +666,8 @@
         .actions {
             display: flex;
             gap: 8px;
-            margin-top: 17px;
+            margin-top: 12px;
+            margin-bottom: 20px;
             flex-wrap: wrap
         }
 
@@ -1303,13 +1320,6 @@
                     </div>
                     <div class="lesson-copy">
                         <div class="eyebrow" id="lessonEyebrow">Guided practice</div>
-                        <h3 id="concept">The board is ready.</h3>
-                        <p id="description">Choose an opening on the left — its first moves will play automatically,
-                            then you take over.</p>
-                        <div class="move-list" id="moveList"></div>
-                        <div class="why"><strong id="whyHeading">Why this works</strong><span id="why">Every line here plays out in
-                                real, sound theory: each of your moves is followed by an explanation of why it
-                                works.</span></div>
                         <div class="actions">
                             <button class="btn primary" id="playOpening" disabled>Choose an opening</button>
                             <button class="btn secondary" id="showHint">Show hint</button>
@@ -1319,6 +1329,13 @@
                             <button class="btn secondary" id="reset">Reset board</button>
                             <button class="btn secondary" id="flipBoardAction" title="Rotate board (Flip perspective)">⇄ Rotate board</button>
                         </div>
+                        <h3 id="concept">The board is ready.</h3>
+                        <p id="description">Choose an opening on the left — its first moves will play automatically,
+                            then you take over.</p>
+                        <div class="why"><strong id="whyHeading">Why this works</strong><span id="why">Every line here plays out in
+                                real, sound theory: each of your moves is followed by an explanation of why it
+                                works.</span></div>
+                        <div class="move-list" id="moveList"></div>
                     </div>
                 </div>
             </section>
@@ -2101,6 +2118,8 @@
                 playOpening.disabled = false;
                 playOpening.textContent = t.replayGame;
                 moveList.innerHTML = buildMoveRows({ line: line }, appliedCount, finished).map(r => '<div class="move ' + (r.isCurrentRow ? 'current' : '') + '"><span>' + r.num + '</span><b>' + r.w + '</b><span>' + r.b + '</span></div>').join('');
+                const curClassicEl = moveList.querySelector('.move.current');
+                if (curClassicEl) curClassicEl.scrollIntoView({ block: 'nearest' });
                 return;
             }
             showHint.disabled = false;
@@ -2157,6 +2176,8 @@
             moveList.innerHTML = buildMoveRows(o, appliedCount, finished).map(r =>
                 '<div class="move ' + (r.isCurrentRow ? 'current' : '') + '"><span>' + r.num + '</span><b>' + r.w + (r.wPending ? ' ←' : '') + '</b><span>' + r.b + (r.bPending ? ' ←' : '') + '</span></div>'
             ).join('');
+            const curMoveEl = moveList.querySelector('.move.current');
+            if (curMoveEl) curMoveEl.scrollIntoView({ block: 'nearest' });
             if (playbackBar) playbackBar.style.display = classicMode ? 'flex' : 'none';
             updatePlaybackUI();
         }
