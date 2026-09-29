@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#10130e">
+
+<title>Tranquility Now — Poppy Field</title>
+
+<!-- Open Graph / Meta -->
+<meta property="og:title" content="Tranquility Now — Poppy Field">
+<meta property="og:description" content="An animated mosaic poppy field swaying in a peaceful breeze. Watch in fullscreen on desktop and mobile.">
+<meta property="og:type" content="website">
+
+<style>
+  :root {
+    --bg: #e9e6da;
+    --fg: #2a3324;
+    --card-bg: rgba(243, 240, 230, 0.88);
+    --border: rgba(42, 51, 36, 0.16);
+    --btn-bg: rgba(255, 255, 255, 0.65);
+    --btn-fg: #2a3324;
+    --btn-border: rgba(42, 51, 36, 0.22);
+    --shadow: 0 16px 36px -8px rgba(42, 51, 36, 0.18), 0 0 0 1px rgba(42, 51, 36, 0.08);
+    box-sizing: border-box;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10130e;
+      --fg: #c9d3bd;
+      --card-bg: rgba(22, 27, 19, 0.88);
+      --border: rgba(201, 211, 189, 0.16);
+      --btn-bg: rgba(255, 255, 255, 0.08);
+      --btn-fg: #c9d3bd;
+      --btn-border: rgba(201, 211, 189, 0.25);
+      --shadow: 0 20px 44px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #10130e;
+    --fg: #c9d3bd;
+    --card-bg: rgba(22, 27, 19, 0.88);
+    --border: rgba(201, 211, 189, 0.16);
+    --btn-bg: rgba(255, 255, 255, 0.08);
+    --btn-fg: #c9d3bd;
+    --btn-border: rgba(201, 211, 189, 0.25);
+    --shadow: 0 20px 44px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  *, *::before, *::after {
+    box-sizing: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    height: 100%;
+    height: 100dvh;
+    background: var(--bg);
+  }
+
+  body {
+    height: 100%;
+    height: 100dvh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Iowan Old Style", "Baskerville", "Palatino Linotype", "URW Palladio L", P052, Georgia, "Times New Roman", serif;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+  }
+
+  #stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* =========================================================
+     LANDING VIEW
+     ========================================================= */
+  #landing-view {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: max(20px, env(safe-area-inset-top, 20px))
+             max(20px, env(safe-area-inset-right, 20px))
+             max(20px, env(safe-area-inset-bottom, 20px))
+             max(20px, env(safe-area-inset-left, 20px));
+    pointer-events: auto;
+    background: var(--bg);
+  }
+
+  #landing-view.hidden {
+    opacity: 0;
+    transform: scale(0.96);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .landing-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+    max-width: 90vw;
+  }
+
+  .landing-title {
+    font-size: clamp(1.8rem, 5.5vw, 2.75rem);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    color: var(--fg);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .thumb-frame {
+    width: 120px;
+    height: 120px;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    background: #171d13;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .thumb-frame:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 20px 40px -6px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+
+  #thumb-canvas {
+    width: 120px;
+    height: 120px;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  .btn-go {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--btn-border);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    font-family: inherit;
+    font-size: 1.05rem;
+    letter-spacing: 0.16em;
+    padding: 10px 38px;
+    border-radius: 9999px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-go:hover {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  }
+
+  .btn-go:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .btn-go:focus-visible {
+    box-shadow: 0 0 0 3px rgba(184, 58, 42, 0.4);
+  }
+
+  /* =========================================================
+     FULLSCREEN WATCH VIEW
+     ========================================================= */
+  #watch-view {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    background: #0f130d;
+    overflow: hidden;
+  }
+
+  #watch-view.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  #watch-view.idle {
+    cursor: none;
+  }
+
+  #field-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* Floating Back Button */
+  .btn-back {
+    position: absolute;
+    top: max(22px, env(safe-area-inset-top, 22px));
+    left: max(22px, env(safe-area-inset-left, 22px));
+    z-index: 40;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 22px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    background: rgba(14, 18, 12, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.98rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+
+  .btn-back.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .btn-back:hover {
+    background: rgba(24, 30, 20, 0.95);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: translateY(0) scale(1.03);
+  }
+
+  .btn-back:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .btn-back:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6);
+  }
+
+  .btn-back svg {
+    display: block;
+    flex-shrink: 0;
+    stroke: #ffffff;
+    transition: transform 0.2s ease;
+  }
+
+  .btn-back:hover svg {
+    transform: translateX(-3px);
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <!-- 1. LANDING VIEW -->
+  <main id="landing-view" aria-label="Tranquility landing view">
+    <div class="landing-card">
+      <h1 class="landing-title">tranquility now</h1>
+
+      <div class="thumb-frame" id="thumb-frame" role="button" tabindex="0" aria-label="Enter fullscreen poppy field">
+        <canvas id="thumb-canvas" width="120" height="120" aria-label="Animated miniature poppy field"></canvas>
+      </div>
+
+      <button id="btn-go" class="btn-go" type="button" aria-label="Enter fullscreen">
+        <span>go</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- 2. FULLSCREEN WATCH VIEW -->
+  <section id="watch-view" aria-label="Fullscreen poppy field view">
+    <canvas id="field-canvas" aria-label="Animated mosaic of a poppy field in the breeze"></canvas>
+
+    <button id="btn-back" class="btn-back" type="button" aria-label="Back to landing view">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      <span>back</span>
+    </button>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // =========================================================
+  // SIMULATION GENERATOR ENGINE
+  // =========================================================
+  function createPoppySimulation({ canvas, cellSize, width, height, seed = 1970 }) {
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const CS = cellSize;
+    const W = width;
+    const H = height;
+    canvas.width = W;
+    canvas.height = H;
+    const COLS = Math.floor(W / CS);
+    const ROWS = Math.floor(H / CS);
+
+    // Seeded random
+    function mulberry(a) {
+      return function () {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    const rand = mulberry(seed);
+
+    function hash(x, y) {
+      let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + seed) | 0;
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      h ^= h >>> 16;
+      return (h >>> 0) / 4294967295;
+    }
+    function smooth(t) { return t * t * (3 - 2 * t); }
+    function vnoise(x, y) {
+      const ix = Math.floor(x), iy = Math.floor(y);
+      const fx = smooth(x - ix), fy = smooth(y - iy);
+      const a = hash(ix, iy), b = hash(ix + 1, iy);
+      const c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
+      return (a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy;
+    }
+    function fbm(x, y) {
+      return vnoise(x, y) * 0.55 + vnoise(x * 2.1 + 7.3, y * 2.1 + 3.1) * 0.3 + vnoise(x * 4.3 + 1.7, y * 4.3 + 9.2) * 0.15;
+    }
+    function sstep(a, b, x) {
+      const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    }
+    function hsl(h, s, l) {
+      s /= 100; l /= 100;
+      const k = n => (n + h / 30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return [f(0) * 255, f(8) * 255, f(4) * 255];
+    }
+
+    // Static green field & footpath
+    const N = COLS * ROWS;
+    const baseR = new Float32Array(N), baseG = new Float32Array(N), baseB = new Float32Array(N);
+    const cellPh = new Float32Array(N);
+    const cellR = new Float32Array(N);
+    const dens = new Float32Array(N);
+
+    const yFreq = 5.0 / Math.max(ROWS, 20);
+    function pathX(y) {
+      return (COLS * 0.5) + (COLS * 0.22) * Math.sin(y * yFreq + 0.6) + (COLS * 0.1) * Math.sin(y * yFreq * 2.7 + 1.4);
+    }
+
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const i = y * COLS + x;
+        const n1 = fbm(x * 0.035, y * 0.035);
+        const n2 = fbm(x * 0.14 + 50, y * 0.14 + 20);
+        const r = hash(x, y);
+        cellR[i] = r;
+        cellPh[i] = n1;
+
+        const dist = Math.abs(x - pathX(y)) + (n2 - 0.5) * Math.max(3.5, COLS * 0.065);
+        const pm = sstep(Math.max(1.8, COLS * 0.025), Math.max(5.5, COLS * 0.08), dist);
+        const onPath = 1 - pm;
+
+        let hue = 76 + 48 * n1 + 14 * (n2 - 0.5);
+        let sat = 36 + 30 * n2 + 12 * (r - 0.5);
+        let lig = 19 + 22 * n1 + 12 * n2 + 7 * (r - 0.5);
+
+        hue -= onPath * 16;
+        sat -= onPath * 8;
+        lig += onPath * 11;
+
+        const c = hsl(hue, sat, lig);
+        baseR[i] = c[0]; baseG[i] = c[1]; baseB[i] = c[2];
+
+        const dn = fbm(x * 0.028 + 100, y * 0.028 + 40);
+        dens[i] = (0.04 + Math.max(0, (dn - 0.38) * 1.7)) * pm;
+      }
+    }
+
+    // Poppies distribution
+    const poppies = [];
+    const redPalette = [];
+    for (let k = 0; k < 8; k++) {
+      redPalette.push(hsl(2 + rand() * 12, 82 + rand() * 14, 38 + rand() * 14));
+    }
+    const dark = hsl(350, 55, 16);
+
+    const SHAPES = {
+      1: [[0, 0, 1, 1]],
+      2: [[0, 0, 1, 1], [1, 0, 0.9, 1], [0, 1, 0.8, 1]],
+      3: [[0, 0, 0.9, 0.5], [1, 0, 0.75, 1], [-1, 0, 0.75, 1], [0, 1, 0.75, 1], [0, -1, 0.75, 1]]
+    };
+
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const i = y * COLS + x;
+        const p = Math.min(0.32, dens[i] * 0.22);
+        if (rand() < p) {
+          const q = rand();
+          const size = q < 0.62 ? 1 : (q < 0.93 ? 2 : 3);
+          poppies.push({
+            x: x + 0.5 + (rand() - 0.5) * 0.9,
+            y: y + 0.5 + (rand() - 0.5) * 0.9,
+            size,
+            ph: rand() * 6.283,
+            amp: 0.7 + rand() * 0.6,
+            col: redPalette[(rand() * redPalette.length) | 0]
+          });
+        }
+      }
+    }
+
+    // Offscreen render target
+    const small = document.createElement('canvas');
+    small.width = COLS;
+    small.height = ROWS;
+    const sctx = small.getContext('2d', { willReadFrequently: true });
+    const img = sctx.createImageData(COLS, ROWS);
+    const px = img.data;
+
+    const cov = new Float32Array(N);
+    const cr = new Float32Array(N), cg = new Float32Array(N), cb = new Float32Array(N);
+
+    function wind(x, y, t, ph) {
+      return Math.sin(x * 0.045 + y * 0.018 - t * 0.9 + ph * 3.0) * 0.6 +
+             Math.sin(x * 0.105 - y * 0.055 - t * 1.6 + ph * 6.0) * 0.4;
+    }
+
+    function splat(ix, iy, w, r, g, b) {
+      if (ix < 0 || iy < 0 || ix >= COLS || iy >= ROWS || w <= 0) return;
+      const i = iy * COLS + ix;
+      cov[i] += w; cr[i] += w * r; cg[i] += w * g; cb[i] += w * b;
+    }
+
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const speed = reduce ? 0.3 : 1;
+
+    function render(t) {
+      cov.fill(0); cr.fill(0); cg.fill(0); cb.fill(0);
+
+      // Poppies coverage
+      for (let k = 0; k < poppies.length; k++) {
+        const p = poppies[k];
+        const w = wind(p.x, p.y, t, 0.5);
+        const sx = p.amp * (1.5 * w + 0.5 * Math.sin(t * 1.3 + p.ph));
+        const sy = 0.55 * Math.sin(t * 0.9 + p.ph * 1.7) + 0.35 * w;
+        const flutter = 1 + 0.09 * Math.sin(t * 2.2 + p.ph * 2);
+        const shape = SHAPES[p.size];
+        for (let s = 0; s < shape.length; s++) {
+          const o = shape[s];
+          const fx = p.x + sx + o[0] - 0.5, fy = p.y + sy + o[1] - 0.5;
+          const ix = Math.floor(fx), iy = Math.floor(fy);
+          const ax = fx - ix, ay = fy - iy;
+          const wt = o[2];
+          const c = o[3] === 1 ? p.col : dark;
+          const r = c[0] * flutter, g = c[1] * flutter, b = c[2] * flutter;
+          splat(ix,     iy,     wt * (1 - ax) * (1 - ay), r, g, b);
+          splat(ix + 1, iy,     wt * ax * (1 - ay),       r, g, b);
+          splat(ix,     iy + 1, wt * (1 - ax) * ay,       r, g, b);
+          splat(ix + 1, iy + 1, wt * ax * ay,             r, g, b);
+        }
+      }
+
+      // Base grass + wind shimmer + blend
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const i = y * COLS + x;
+          const w = wind(x, y, t, cellPh[i]);
+          const shimmer = Math.sin(t * 2.0 + cellR[i] * 40) * 0.25;
+          const f = 1 + 0.15 * w + 0.05 * shimmer;
+          let r = baseR[i] * f + w * 5;
+          let g = baseG[i] * f;
+          let b = baseB[i] * f * 0.98;
+
+          const cv = cov[i];
+          if (cv > 0.001) {
+            const a = Math.min(1, cv * 1.25);
+            const inv = 1 / cv;
+            r = r + (cr[i] * inv - r) * a;
+            g = g + (cg[i] * inv - g) * a;
+            b = b + (cb[i] * inv - b) * a;
+          }
+          const o = i * 4;
+          px[o]     = r > 255 ? 255 : (r < 0 ? 0 : r);
+          px[o + 1] = g > 255 ? 255 : (g < 0 ? 0 : g);
+          px[o + 2] = b > 255 ? 255 : (b < 0 ? 0 : b);
+          px[o + 3] = 255;
+        }
+      }
+
+      sctx.putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(small, 0, 0, W, H);
+    }
+
+    let running = false;
+    let animId = null;
+    let last = 0, clock = 0, prev = performance.now();
+
+    function loop(now) {
+      if (!running) return;
+      animId = requestAnimationFrame(loop);
+      if (now - last < 33) return; // Cap at ~30 FPS for gentle motion & high battery efficiency
+      const dt = Math.min(0.1, (now - prev) / 1000);
+      prev = now; last = now;
+      clock += dt * speed;
+      render(clock);
+    }
+
+    return {
+      start() {
+        if (running) return;
+        running = true;
+        prev = performance.now();
+        last = 0;
+        render(clock);
+        animId = requestAnimationFrame(loop);
+      },
+      stop() {
+        running = false;
+        if (animId) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      },
+      renderOnce() {
+        render(clock);
+      }
+    };
+  }
+
+  // =========================================================
+  // APP CONTROLLER & VIEWS
+  // =========================================================
+  const landingView = document.getElementById('landing-view');
+  const watchView = document.getElementById('watch-view');
+  const thumbCanvas = document.getElementById('thumb-canvas');
+  const thumbFrame = document.getElementById('thumb-frame');
+  const fieldCanvas = document.getElementById('field-canvas');
+  const btnGo = document.getElementById('btn-go');
+  const btnBack = document.getElementById('btn-back');
+
+  let isWatching = false;
+  let thumbSim = null;
+  let fieldSim = null;
+  let backHideTimer = null;
+
+  // Initialize Thumbnail Simulation (120x120, cellSize = 6)
+  thumbSim = createPoppySimulation({
+    canvas: thumbCanvas,
+    cellSize: 6,
+    width: 120,
+    height: 120,
+    seed: 1970
+  });
+  thumbSim.start();
+
+  // Helper to determine optimal mosaic cell size for any display
+  function getOptimalCellSize(w, h) {
+    const maxDim = Math.max(w, h);
+    if (maxDim > 2500) return 14;
+    if (maxDim > 1400) return 11;
+    if (maxDim > 800) return 10;
+    return 8;
+  }
+
+  // Build / Re-initialize Fullscreen Simulation
+  function initFullscreenSimulation() {
+    if (fieldSim) {
+      fieldSim.stop();
+      fieldSim = null;
+    }
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cs = getOptimalCellSize(vw, vh);
+    const cols = Math.ceil(vw / cs);
+    const rows = Math.ceil(vh / cs);
+    const width = cols * cs;
+    const height = rows * cs;
+
+    fieldSim = createPoppySimulation({
+      canvas: fieldCanvas,
+      cellSize: cs,
+      width,
+      height,
+      seed: 1970
+    });
+  }
+
+  // Show "back" button temporarily and reveal cursor
+  function showBackButton(duration = 3000) {
+    if (!isWatching) return;
+    watchView.classList.remove('idle');
+    btnBack.classList.add('visible');
+
+    if (backHideTimer) {
+      clearTimeout(backHideTimer);
+      backHideTimer = null;
+    }
+
+    if (duration > 0) {
+      backHideTimer = setTimeout(() => {
+        // If user is currently hovering directly over the back button, keep it visible
+        if (btnBack.matches(':hover')) return;
+        btnBack.classList.remove('visible');
+        watchView.classList.add('idle');
+      }, duration);
+    }
+  }
+
+  // Fullscreen API Helper
+  async function requestNativeFullscreen() {
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        await el.webkitRequestFullscreen();
+      } else if (el.msRequestFullscreen) {
+        await el.msRequestFullscreen();
+      }
+    } catch (e) {
+      // Fullscreen API may be blocked or unsupported on iOS - visual fullscreen still works 100%
+    }
+  }
+
+  async function exitNativeFullscreen() {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        }
+      }
+    } catch (e) {
+      // Ignore exit errors
+    }
+  }
+
+  // ENTER FULLSCREEN WATCH MODE
+  function enterWatchMode(pushHistory = true) {
+    if (isWatching) return;
+    isWatching = true;
+
+    if (pushHistory && window.location.hash !== '#watch') {
+      try {
+        history.pushState({ mode: 'watch' }, '', '#watch');
+      } catch (e) {}
+    }
+
+    // Pause thumbnail simulation
+    thumbSim.stop();
+
+    // Setup and start fullscreen field simulation
+    initFullscreenSimulation();
+    fieldSim.start();
+
+    // Transition views
+    landingView.classList.add('hidden');
+    watchView.classList.add('active');
+
+    // Trigger browser fullscreen if supported
+    requestNativeFullscreen();
+
+    // Show "back" button initially for 3s so the user knows where it is
+    showBackButton(3000);
+  }
+
+  // EXIT WATCH MODE / BACK TO LANDING
+  function exitWatchMode(pushHistory = true) {
+    if (!isWatching) return;
+    isWatching = false;
+
+    if (backHideTimer) {
+      clearTimeout(backHideTimer);
+      backHideTimer = null;
+    }
+
+    if (pushHistory && window.location.hash === '#watch') {
+      try {
+        history.pushState({ mode: 'landing' }, '', window.location.pathname + window.location.search);
+      } catch (e) {}
+    }
+
+    // Exit native fullscreen
+    exitNativeFullscreen();
+
+    // Stop fullscreen field simulation
+    if (fieldSim) {
+      fieldSim.stop();
+    }
+
+    // Transition views
+    watchView.classList.remove('active');
+    watchView.classList.remove('idle');
+    btnBack.classList.remove('visible');
+    landingView.classList.remove('hidden');
+
+    // Resume thumbnail simulation
+    thumbSim.start();
+  }
+
+  // Handle browser back/forward buttons & initial hash
+  window.addEventListener('popstate', () => {
+    if (window.location.hash === '#watch') {
+      if (!isWatching) enterWatchMode(false);
+    } else {
+      if (isWatching) exitWatchMode(false);
+    }
+  });
+
+  if (window.location.hash === '#watch' || new URLSearchParams(window.location.search).has('watch')) {
+    enterWatchMode(false);
+  }
+
+  // Event Listeners: "go"
+  btnGo.addEventListener('click', enterWatchMode);
+  thumbFrame.addEventListener('click', enterWatchMode);
+  thumbFrame.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      enterWatchMode();
+    }
+  });
+
+  // Event Listeners: "back"
+  btnBack.addEventListener('click', (e) => {
+    e.stopPropagation();
+    exitWatchMode();
+  });
+
+  // Keep back button visible while hovering over it
+  btnBack.addEventListener('mouseenter', () => {
+    if (backHideTimer) clearTimeout(backHideTimer);
+    btnBack.classList.add('visible');
+    watchView.classList.remove('idle');
+  });
+  btnBack.addEventListener('mouseleave', () => {
+    showBackButton(2000);
+  });
+
+  // Mouse over / movement on computer
+  window.addEventListener('mousemove', () => {
+    if (isWatching) {
+      showBackButton(2800);
+    }
+  });
+
+  // Tap / touch on phone or tablet
+  window.addEventListener('pointerdown', (e) => {
+    if (!isWatching) return;
+    if (e.target.closest('#btn-back')) return; // Allow back button click
+    showBackButton(3500);
+  });
+
+  // Keyboard shortcut: Escape to go back
+  window.addEventListener('keydown', (e) => {
+    if (isWatching && (e.key === 'Escape' || e.key === 'Esc')) {
+      exitWatchMode();
+    }
+  });
+
+  // Sync state if user exits native fullscreen via browser controls (e.g. Esc)
+  document.addEventListener('fullscreenchange', () => {
+    if (isWatching && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      // User pressed Esc or exited native fullscreen -> return to landing view
+      exitWatchMode();
+    }
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    if (isWatching && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      exitWatchMode();
+    }
+  });
+
+  // Window resize handler (debounced)
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (isWatching) {
+        initFullscreenSimulation();
+        fieldSim.start();
+      }
+    }, 200);
+  });
+
+})();
+</script>
+
+</body>
+</html>
