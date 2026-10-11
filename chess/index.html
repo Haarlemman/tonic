@@ -1067,7 +1067,28 @@
             color: #2c521f
         }
 
+        .turn { min-height: 66px }
+
+        /* The dropdown already shows the opening name, so the title block is redundant. */
+        .lesson-head[hidden] { display: none }
+        .lesson-head { justify-content: flex-end; gap: 12px; padding: 10px 16px; align-items: center }
+        .lesson-head .crumb, .lesson-head h2, .lesson-head p { display: none }
+        .lesson-head > div:first-child:not(:has(.famous-banner[style*="inline-flex"])) { display: none }
+        .lesson-head > div:first-child { margin-right: auto }
+
         @media(max-width:1050px) {
+            .lesson { overflow: clip }
+
+            .board-wrap {
+                align-self: start;
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                background: var(--cream);
+                padding: 6px 0 8px;
+                box-shadow: 0 10px 12px -10px #202b1b30
+            }
+
             .layout {
                 grid-template-columns: 220px 1fr
             }
@@ -1205,6 +1226,20 @@
                 max-width: 100%;
                 margin: 0 auto
             }
+
+            .board-bar {
+                margin-bottom: 6px
+            }
+
+            .turn {
+                margin-top: 8px;
+                padding: 8px 12px;
+                min-height: 54px
+            }
+
+            .hint {
+                display: none
+            }
         }
     </style>
 </head>
@@ -1213,7 +1248,7 @@
     <main class="shell">
         <nav>
             <div class="brand">
-                <div class="mark">♞</div> <span id="brandText">opening lab</span>
+                <div class="mark">♞</div> <span id="brandText">openings</span>
             </div>
             <div class="navlinks"><a class="nav-action active" data-view="learn" id="navLearn">Learn</a><a class="nav-action"
                     data-view="drills" id="navDrills">Drills</a><a class="nav-action" data-view="repertoire" id="navRepertoire">My repertoire</a></div>
@@ -1250,6 +1285,10 @@
                     <div class="opening-top"><span id="libTitleQueens">Queen's Gambit</span><span class="tag">42%</span></div>
                     <div class="moves">1. d4 d5 2. c4</div>
                 </div>
+                <div class="opening" data-opening="scotch">
+                    <div class="opening-top"><span id="libTitleScotch">Scotch Game</span><span class="tag" id="tagScotch">NEW</span></div>
+                    <div class="moves">1. e4 e5 2. Nf3 Nc6 3. d4</div>
+                </div>
                 <div class="group-label" id="groupBlack">As Black</div>
                 <div class="opening" data-opening="sicilian">
                     <div class="opening-top"><span id="libTitleSicilian">Sicilian Defense</span><span class="tag">68%</span></div>
@@ -1259,12 +1298,16 @@
                     <div class="opening-top"><span id="libTitleCaro">Caro-Kann</span><span class="tag" id="tagCaro">NEW</span></div>
                     <div class="moves">1. e4 c6 2. d4 d5</div>
                 </div>
+                <div class="opening" data-opening="dutch">
+                    <div class="opening-top"><span id="libTitleDutch">Dutch Defence</span><span class="tag" id="tagDutch">NEW</span></div>
+                    <div class="moves">1. d4 f5</div>
+                </div>
                 <div class="progress"><small id="repBuiltLabel">REPERTOIRE BUILT</small><strong id="repBuiltVal">8 / 12 openings</strong>
                     <div class="bar"><i></i></div>
                 </div>
             </aside>
             <section class="lesson panel">
-                <header class="lesson-head">
+                <header class="lesson-head" id="lessonHead" hidden>
                     <div>
                         <div class="crumb" id="crumb">Opening Lab</div>
                         <h2 id="openingName">Choose an opening</h2>
@@ -1286,10 +1329,12 @@
                                     <optgroup label="As White" id="optGroupWhite">
                                         <option value="italian" id="optItalian">♔ Italian Game (Two Knights)</option>
                                         <option value="queens" id="optQueens">♔ Queen's Gambit</option>
+                                        <option value="scotch" id="optScotch">♔ Scotch Game</option>
                                     </optgroup>
                                     <optgroup label="As Black" id="optGroupBlack">
                                         <option value="sicilian" id="optSicilian">♚ Sicilian Defense</option>
                                         <option value="caro" id="optCaro">♚ Caro-Kann</option>
+                                        <option value="dutch" id="optDutch">♚ Dutch Defence</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -1471,6 +1516,32 @@
                     mv('e1', 'g1', 'w', 'O-O', true, { concept: 'Castle into safety.', desc: "Both sides have completed development. Get your king off the center before opening lines.", why: 'O-O tucks the king away and connects the rooks. White holds a lasting space edge and pressure on d5 — a tiny plus that endures all game.' })
                 ]
             },
+            scotch: {
+                label: 'Scotch Game',
+                name: 'Strike the center with the Scotch',
+                sub: 'Open the position at once and play for rapid development.',
+                side: 'w',
+                next: { line: '8...Nb6 9. Nc3 Bb4 10. Bd2', note: 'White has the bigger center and open lines; Black has the bishop pair-style activity but a damaged queenside pawn structure. The Scotch Gambit (3...exd4 4. Bc4) is a sharper cousin of this line.' },
+                line: [
+                    mv('e2', 'e4', 'w', 'e4'),
+                    mv('e7', 'e5', 'b', 'e5'),
+                    mv('g1', 'f3', 'w', 'Nf3'),
+                    mv('b8', 'c6', 'b', 'Nc6'),
+                    mv('d2', 'd4', 'w', 'd4', true, { concept: 'Challenge the center immediately.', desc: "Instead of the slow 3.Bb5 or 3.Bc4, strike at e5 straight away and open the game while your pieces are ready.", why: "d4 forces Black to decide about the e5 pawn right now. After ...exd4 you recapture with a knight and gain a lead in development and central space." }),
+                    mv('e5', 'd4', 'b', 'exd4'),
+                    mv('f3', 'd4', 'w', 'Nxd4', true, { concept: 'Recapture with a developing move.', desc: "Black took on d4. Win the pawn back with the knight so your pieces keep coming into play.", why: "Nxd4 centralizes the knight, opens the diagonal for the f1-bishop and keeps the initiative. The knight also eyes c6, the key defender of Black's position." }),
+                    mv('g8', 'f6', 'b', 'Nf6'),
+                    mv('d4', 'c6', 'w', 'Nxc6', true, { concept: 'Remove the defender and wreck the pawns.', desc: "Black developed with Nf6 and now attacks e4. Rather than defend passively, exchange the active knight on c6.", why: "Nxc6 bxc6 gives Black doubled c-pawns and a ruined queenside structure. It also prepares e5, which will kick the knight on f6 with tempo." }),
+                    mv('b7', 'c6', 'b', 'bxc6'),
+                    mv('e4', 'e5', 'w', 'e5', true, { concept: 'Gain space with tempo.', desc: "The knight on f6 is attacking your e4 pawn. Push it forward and hit the knight.", why: "e5 attacks Nf6 and gains space. Black has to move the knight or defend it, so you keep the initiative instead of reacting to the threat on e4." }),
+                    mv('d8', 'e7', 'b', 'Qe7'),
+                    mv('d1', 'e2', 'w', 'Qe2', true, { concept: 'Offer the queen trade on your terms.', desc: "Black's queen attacks e5 and keeps the knight pinned against it. Block the e-file and defend e5 in one move.", why: "Qe2 defends e5 and challenges the queen. If Black plays ...Nd5, you can kick it with c4 and keep a clear space advantage." }),
+                    mv('f6', 'd5', 'b', 'Nd5'),
+                    mv('c2', 'c4', 'w', 'c4', true, { concept: 'Drive the knight back.', desc: "The knight landed on d5 in the middle of the board. Chase it away with a pawn.", why: "c4 attacks the knight and expands your space. After ...Nb6 Black is pushed back while you keep the bigger center and a lasting edge in development." }),
+                    mv('d5', 'b6', 'b', 'Nb6')
+                ],
+                wrap: { concept: 'Line complete — space and structure', desc: "White has the bigger center, the more active pieces and a healthy structure, while Black is left with doubled c-pawns and a retreating knight.", why: "d4 opened the game, Nxd4 and Nxc6 wrecked Black's queenside pawns, and e5 plus c4 gained time and space. Open the center early, then punish the weaknesses." }
+            },
             sicilian: {
                 label: 'Sicilian Defense',
                 name: 'Challenge the Open Sicilian',
@@ -1568,7 +1639,31 @@
                     mv('h2', 'h4', 'w', 'h4'),
                     mv('h7', 'h6', 'b', 'h6', true, { concept: 'Stop the pawn advance cold.', desc: "White pushed h4 to harass your bishop with h5. Prevent it before it becomes a threat.", why: "h6 stops h5 in its tracks. The bishop stays on g6, the kingside is not weakened, and you can continue development with ...Nf6 and ...e6 in peace." })
                 ]
-            }
+            },
+            dutch: {
+                label: 'Dutch Defence',
+                name: 'Build the Dutch Defence',
+                sub: 'Fight for e4 with an early ...f5.',
+                side: 'b',
+                next: { line: '8. d5 Na6 9. Rb1 c5', note: 'In the Classical Dutch Black has a solid kingside setup and aims for ...e5 later. White usually fights for the center with d5 or e4.' },
+                line: [
+                    mv('d2', 'd4', 'w', 'd4'),
+                    mv('f7', 'f5', 'b', 'f5', true, { concept: 'Control e4 right away.', desc: "White opened with 1.d4. Instead of mirroring with ...d5, stake a claim on the e4 square with the f-pawn.", why: "f5 stops White from playing e4 comfortably and gives Black a fighting, unbalanced game. It is the signature move of the Dutch Defence." }),
+                    mv('g2', 'g3', 'w', 'g3'),
+                    mv('g8', 'f6', 'b', 'Nf6', true, { concept: 'Develop and add control of e4.', desc: "White is preparing to fianchetto the bishop. Bring out the king's knight to reinforce your grip on e4.", why: "Nf6 develops with purpose: it guards e4 and d5, and prepares to castle. Natural development matters more than early pawn moves." }),
+                    mv('f1', 'g2', 'w', 'Bg2'),
+                    mv('e7', 'e6', 'b', 'e6', true, { concept: 'Free the bishop and support the center.', desc: "White's bishop now eyes the long diagonal. Open a path for your king's bishop and keep the structure solid.", why: "e6 opens the f8-bishop and supports d5 later. This is the Classical setup, which is more solid than the sharper Leningrad with ...g6." }),
+                    mv('g1', 'f3', 'w', 'Nf3'),
+                    mv('f8', 'e7', 'b', 'Be7', true, { concept: 'Get ready to castle.', desc: "White has developed both minor pieces on the kingside. Mirror that by bringing your bishop out of the way.", why: "Be7 clears f8 so you can castle. The bishop is modest here, but it keeps the position flexible and safe." }),
+                    mv('e1', 'g1', 'w', 'O-O'),
+                    mv('e8', 'g8', 'b', 'O-O', true, { concept: 'Castle before the fight begins.', desc: "White has castled. Tuck your own king away before the center opens.", why: "O-O finishes kingside development and puts the king behind the pawns. The f5 move weakens the king a little, so castling early is important." }),
+                    mv('c2', 'c4', 'w', 'c4'),
+                    mv('d7', 'd6', 'b', 'd6', true, { concept: 'Prepare the ...e5 break.', desc: "White is building a big center with c4. Give your pieces room and prepare a later central break.", why: "d6 supports e5, opens the c8-bishop and keeps the Stonewall-style structure flexible. Black plans queen to e8 and then ...e5 at the right moment." }),
+                    mv('b1', 'c3', 'w', 'Nc3'),
+                    mv('d8', 'e8', 'b', 'Qe8', true, { concept: 'Connect the pieces and eye the kingside.', desc: "White has a standard setup. Put the queen on e8, where it supports ...e5 and can swing to the kingside.", why: "Qe8 is the classical regrouping: the queen protects the center, can go to h5 to attack, and frees d8 for the rook." })
+                ],
+                wrap: { concept: 'Line complete — Classical Dutch setup', desc: "Black has the Classical Dutch setup: pawns on f5, e6 and d6, knight on f6, bishop on e7 and queen on e8, king safely castled.", why: "f5 fought for e4, Nf6 and e6 developed with purpose, O-O secured the king and d6 plus Qe8 prepared ...e5. Solid development first, central break later." }
+            },
         };
 
         let current = null, appliedCount = 0, selected = null, animating = false, classicMode = false;
@@ -1587,7 +1682,7 @@
 
         const i18n = {
             en: {
-                brand: 'opening lab',
+                brand: 'openings',
                 navLearn: 'Learn',
                 navDrills: 'Drills',
                 navRepertoire: 'My repertoire',
@@ -1611,6 +1706,8 @@
                 optQueens: "♔ Queen's Gambit",
                 optSicilian: '♚ Sicilian Defense',
                 optCaro: '♚ Caro-Kann',
+                optScotch: '♔ Scotch Game',
+                optDutch: '♚ Dutch Defence',
                 crumbDefault: 'Opening Lab',
                 openingNameDefault: 'Choose an opening',
                 openingSubDefault: 'Pick a line to watch its moves on the board.',
@@ -1673,7 +1770,7 @@
                 black: 'Black'
             },
             nl: {
-                brand: 'openingslab',
+                brand: 'openingen',
                 navLearn: 'Leren',
                 navDrills: 'Oefeningen',
                 navRepertoire: 'Mijn repertoire',
@@ -1697,6 +1794,8 @@
                 optQueens: '♔ Damegambiet',
                 optSicilian: '♚ Siciliaanse verdediging',
                 optCaro: '♚ Caro-Kann',
+                optScotch: '♔ Schotse opening',
+                optDutch: '♚ Hollandse verdediging',
                 crumbDefault: 'Openingslab',
                 openingNameDefault: 'Kies een opening',
                 openingSubDefault: 'Kies een variant om de zetten op het bord te zien.',
@@ -1863,6 +1962,24 @@
                         }
                     }
                 },
+                scotch: {
+                    label: 'Schotse opening',
+                    name: 'Sla toe in het centrum met de Schotse opening',
+                    sub: 'Open meteen de stelling en speel op snelle ontwikkeling.',
+                    wrap: {
+                        concept: 'Variant voltooid — ruimte en structuur',
+                        desc: "Wit heeft het grotere centrum, actievere stukken en een gezonde structuur, terwijl Zwart achterblijft met dubbele c-pionnen en een terugtrekkend paard.",
+                        why: "d4 opende het spel, Pxd4 en Pxc6 verwoestten Zwarts damevleugelpionnen, en e5 plus c4 wonnen tijd en ruimte. Open het centrum vroeg en straf daarna de zwakke punten."
+                    },
+                    moves: {
+                        4: { concept: "Daag het centrum direct uit.", desc: "In plaats van het trage 3.Lb5 of 3.Lc4 val je meteen e5 aan en open je het spel terwijl je stukken klaarstaan.", why: "d4 dwingt Zwart nu te beslissen over de e5-pion. Na ...exd4 sla je terug met een paard en krijg je een ontwikkelingsvoorsprong en centrale ruimte." },
+                        6: { concept: "Sla terug met een ontwikkelende zet.", desc: "Zwart sloeg op d4. Win de pion terug met het paard zodat je stukken blijven meedoen.", why: "Pxd4 centraliseert het paard, opent de diagonaal voor de loper op f1 en behoudt het initiatief. Het paard richt zich ook op c6, de belangrijkste verdediger van Zwart." },
+                        8: { concept: "Verwijder de verdediger en verbrijzel de pionnen.", desc: "Zwart ontwikkelde met Pf6 en valt nu e4 aan. Verdedig niet passief, maar ruil het actieve paard op c6.", why: "Pxc6 bxc6 geeft Zwart dubbele c-pionnen en een verwoeste damevleugel. Het bereidt ook e5 voor, dat het paard op f6 met tempo wegjaagt." },
+                        10: { concept: "Win ruimte met tempo.", desc: "Het paard op f6 valt je e4-pion aan. Duw hem naar voren en val het paard aan.", why: "e5 valt Pf6 aan en wint ruimte. Zwart moet het paard verplaatsen of dekken, dus jij houdt het initiatief in plaats van op de dreiging tegen e4 te reageren." },
+                        12: { concept: "Bied de damenruil aan op jouw voorwaarden.", desc: "Zwarts dame valt e5 aan en houdt het paard gepend. Blokkeer de e-lijn en verdedig e5 in één zet.", why: "De2 dekt e5 en daagt de dame uit. Speelt Zwart ...Pd5, dan jaag je het weg met c4 en behoud je een duidelijk ruimtevoordeel." },
+                        14: { concept: "Jaag het paard terug.", desc: "Het paard staat op d5 midden op het bord. Verjaag het met een pion.", why: "c4 valt het paard aan en vergroot je ruimte. Na ...Pb6 is Zwart teruggedrongen terwijl jij het grotere centrum en een blijvende ontwikkelingsvoorsprong houdt." }
+                    }
+                },
                 sicilian: {
                     label: 'Siciliaanse verdediging',
                     name: 'Daag het Open Siciliaans uit',
@@ -1958,7 +2075,26 @@
                             why: "h6 stopt h5 direct. De loper blijft op g6, de koningsvleugel raakt niet verzwakt en je kunt in alle rust doorontwikkelen."
                         }
                     }
-                }
+                },
+                dutch: {
+                    label: 'Hollandse verdediging',
+                    name: 'Bouw de Hollandse verdediging',
+                    sub: 'Strijd om e4 met een vroege ...f5.',
+                    wrap: {
+                        concept: 'Variant voltooid — Klassieke Hollandse opstelling',
+                        desc: "Zwart heeft de Klassieke Hollandse opstelling: pionnen op f5, e6 en d6, paard op f6, loper op e7 en dame op e8, met de koning veilig gerokeerd.",
+                        why: "f5 streed om e4, Pf6 en e6 ontwikkelden doelgericht, O-O bracht de koning in veiligheid en d6 plus De8 bereidden ...e5 voor. Eerst solide ontwikkelen, later de centrale doorbraak."
+                    },
+                    moves: {
+                        1: { concept: "Controleer meteen e4.", desc: "Wit opende met 1.d4. Spiegel niet met ...d5, maar claim het veld e4 met de f-pion.", why: "f5 voorkomt dat Wit comfortabel e4 speelt en geeft Zwart een strijdlustig, onevenwichtig spel. Het is de kenmerkende zet van de Hollandse verdediging." },
+                        3: { concept: "Ontwikkel en versterk de controle over e4.", desc: "Wit bereidt de fianchetto van de loper voor. Breng het koningspaard naar buiten om e4 steviger vast te houden.", why: "Pf6 ontwikkelt met een doel: het dekt e4 en d5 en bereidt de rokade voor. Natuurlijke ontwikkeling gaat boven vroege pionzetten." },
+                        5: { concept: "Bevrijd de loper en steun het centrum.", desc: "Witte loper kijkt nu langs de lange diagonaal. Open een pad voor je koningsloper en houd de structuur solide.", why: "e6 opent de loper op f8 en steunt later d5. Dit is de klassieke opstelling, solider dan de scherpere Leningrad met ...g6." },
+                        7: { concept: "Maak je klaar om te rokeren.", desc: "Wit heeft beide lichte stukken op de koningsvleugel ontwikkeld. Doe hetzelfde en haal je loper uit de weg.", why: "Le7 maakt f8 vrij zodat je kunt rokeren. De loper staat bescheiden, maar houdt de stelling flexibel en veilig." },
+                        9: { concept: "Rokeer voordat het gevecht begint.", desc: "Wit heeft gerokeerd. Breng ook je eigen koning in veiligheid voordat het centrum opengaat.", why: "O-O voltooit de ontwikkeling op de koningsvleugel en zet de koning achter de pionnen. Door f5 is de koning iets verzwakt, dus vroeg rokeren is belangrijk." },
+                        11: { concept: "Bereid de doorbraak ...e5 voor.", desc: "Wit bouwt met c4 een groot centrum. Geef je stukken ruimte en bereid een latere centrale doorbraak voor.", why: "d6 steunt e5, opent de loper op c8 en houdt de Stonewall-achtige structuur flexibel. Zwart plant De8 en daarna ...e5 op het juiste moment." },
+                        13: { concept: "Verbind de stukken en richt op de koningsvleugel.", desc: "Wit heeft een standaardopstelling. Zet de dame op e8, waar ze ...e5 steunt en naar de koningsvleugel kan zwaaien.", why: "De8 is de klassieke hergroepering: de dame beschermt het centrum, kan naar h5 voor de aanval en maakt d8 vrij voor de toren." }
+                    }
+                },
             }
         };
 
@@ -2062,7 +2198,16 @@
             }
             return rows;
         }
+        // Scroll only inside the move list; scrollIntoView would scroll the whole page away from the board.
+        function keepRowVisible(el) {
+            if (!el || !moveList) return;
+            const top = el.offsetTop - moveList.offsetTop;
+            const bottom = top + el.offsetHeight;
+            if (top < moveList.scrollTop) moveList.scrollTop = top;
+            else if (bottom > moveList.scrollTop + moveList.clientHeight) moveList.scrollTop = bottom - moveList.clientHeight;
+        }
         function renderPanel() {
+            const lh = document.getElementById('lessonHead'); if (lh) lh.hidden = !current;
             const t = i18n[currentLang];
             const isNl = currentLang === 'nl';
             if (!current) {
@@ -2119,18 +2264,19 @@
                 playOpening.textContent = t.replayGame;
                 moveList.innerHTML = buildMoveRows({ line: line }, appliedCount, finished).map(r => '<div class="move ' + (r.isCurrentRow ? 'current' : '') + '"><span>' + r.num + '</span><b>' + r.w + '</b><span>' + r.b + '</span></div>').join('');
                 const curClassicEl = moveList.querySelector('.move.current');
-                if (curClassicEl) curClassicEl.scrollIntoView({ block: 'nearest' });
+                keepRowVisible(curClassicEl);
                 return;
             }
             showHint.disabled = false;
             playOpening.disabled = false;
             playOpening.textContent = t.playOpeningReplay;
             exploreNext.hidden = !finished;
-            classicGame.hidden = false;
+            classicGame.hidden = !o.classic;
             classicGame.disabled = false;
             classicGame.textContent = t.classicGame;
             if (backToLesson) backToLesson.hidden = true;
-            if (famousBanner) {
+            if (famousBanner && !o.classic) famousBanner.style.display = 'none';
+            else if (famousBanner) {
                 famousBanner.style.display = 'inline-flex';
                 const classicMeta = oi.classic || o.classic || {};
                 famousTag.textContent = t.famousTag;
@@ -2177,7 +2323,7 @@
                 '<div class="move ' + (r.isCurrentRow ? 'current' : '') + '"><span>' + r.num + '</span><b>' + r.w + (r.wPending ? ' ←' : '') + '</b><span>' + r.b + (r.bPending ? ' ←' : '') + '</span></div>'
             ).join('');
             const curMoveEl = moveList.querySelector('.move.current');
-            if (curMoveEl) curMoveEl.scrollIntoView({ block: 'nearest' });
+            keepRowVisible(curMoveEl);
             if (playbackBar) playbackBar.style.display = classicMode ? 'flex' : 'none';
             updatePlaybackUI();
         }
@@ -2308,6 +2454,11 @@
             updateFlipUI();
             updatePlaybackUI();
             renderBoard();
+            const lh0 = document.getElementById('lessonHead'); if (lh0) lh0.hidden = false;
+            if (window.matchMedia('(max-width:1050px)').matches) {
+                const bw = document.querySelector('.board-wrap');
+                if (bw) bw.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            }
             settle();
         }
         function click(sq) {
@@ -2504,12 +2655,12 @@
         const viewsI18n = {
             en: {
                 drills: { eyebrow: 'Quick practice', title: 'Drills for today', text: 'Short, focused repetitions to make your responses automatic.', body: '<div class="modal-cards"><div class="modal-card"><b>12</b>moves to recall</div><div class="modal-card"><b>4 min</b>estimated time</div></div><div class="modal-row"><span>Italian: Two Knights</span><b>Ready</b></div><div class="modal-row"><span>Sicilian: main response</span><b>Next</b></div><button class="btn primary" id="startDrill">Start Italian drill</button>' },
-                repertoire: { eyebrow: 'Your opening map', title: 'My repertoire', text: 'You have built a focused set of positions to meet the moves you see most often.', body: '<div class="modal-cards"><div class="modal-card"><b>8 / 12</b>openings learned</div><div class="modal-card"><b>64%</b>average recall</div></div><div class="modal-row"><span>As White</span><b>Italian · Queen’s Gambit</b></div><div class="modal-row"><span>As Black</span><b>Sicilian · Caro-Kann</b></div><button class="btn primary" id="openItalian">Continue Italian Game</button>' },
+                repertoire: { eyebrow: 'Your opening map', title: 'My repertoire', text: 'You have built a focused set of positions to meet the moves you see most often.', body: '<div class="modal-cards"><div class="modal-card"><b>8 / 12</b>openings learned</div><div class="modal-card"><b>64%</b>average recall</div></div><div class="modal-row"><span>As White</span><b>Italian · Queen’s Gambit · Scotch</b></div><div class="modal-row"><span>As Black</span><b>Sicilian · Caro-Kann · Dutch</b></div><button class="btn primary" id="openItalian">Continue Italian Game</button>' },
                 profile: { eyebrow: 'Training profile', title: "My training", text: 'A calm, consistent routine is already taking shape.', body: '<div class="modal-cards"><div class="modal-card"><b>07 days</b>current streak</div><div class="modal-card"><b>1,240</b>repertoire score</div></div><div class="modal-row"><span>Daily goal</span><b>10 minutes</b></div><div class="modal-row"><span>Level</span><b>Developing player</b></div><button class="btn primary" id="keepTraining">Keep training</button>' }
             },
             nl: {
                 drills: { eyebrow: 'Snelle oefening', title: 'Oefeningen voor vandaag', text: 'Korte, gerichte herhalingen om je reacties automatisch te maken.', body: '<div class="modal-cards"><div class="modal-card"><b>12</b>zetten om te onthouden</div><div class="modal-card"><b>4 min</b>geschatte tijd</div></div><div class="modal-row"><span>Italiaans: Tweepaarden</span><b>Gereed</b></div><div class="modal-row"><span>Siciliaans: hoofdreactie</span><b>Volgende</b></div><button class="btn primary" id="startDrill">Start Italiaanse oefening</button>' },
-                repertoire: { eyebrow: 'Jouw openingskaart', title: 'Mijn repertoire', text: 'Je hebt een gerichte set stellingen opgebouwd voor de zetten die je het vaakst tegenkomt.', body: '<div class="modal-cards"><div class="modal-card"><b>8 / 12</b>openingen geleerd</div><div class="modal-card"><b>64%</b>gemiddelde herinnering</div></div><div class="modal-row"><span>Met Wit</span><b>Italiaans · Damegambiet</b></div><div class="modal-row"><span>Met Zwart</span><b>Siciliaans · Caro-Kann</b></div><button class="btn primary" id="openItalian">Verder met Italiaanse opening</button>' },
+                repertoire: { eyebrow: 'Jouw openingskaart', title: 'Mijn repertoire', text: 'Je hebt een gerichte set stellingen opgebouwd voor de zetten die je het vaakst tegenkomt.', body: '<div class="modal-cards"><div class="modal-card"><b>8 / 12</b>openingen geleerd</div><div class="modal-card"><b>64%</b>gemiddelde herinnering</div></div><div class="modal-row"><span>Met Wit</span><b>Italiaans · Damegambiet · Schots</b></div><div class="modal-row"><span>Met Zwart</span><b>Siciliaans · Caro-Kann · Hollands</b></div><button class="btn primary" id="openItalian">Verder met Italiaanse opening</button>' },
                 profile: { eyebrow: 'Trainingsprofiel', title: "Mijn training", text: 'Een rustige, consistente routine begint vorm te krijgen.', body: '<div class="modal-cards"><div class="modal-card"><b>07 dagen</b>huidige streak</div><div class="modal-card"><b>1.240</b>repertoire score</div></div><div class="modal-row"><span>Dagelijks doel</span><b>10 minuten</b></div><div class="modal-row"><span>Niveau</span><b>Ontwikkelende speler</b></div><button class="btn primary" id="keepTraining">Verder trainen</button>' }
             }
         };
@@ -2583,6 +2734,14 @@
             const libTitleSicilian = document.getElementById('libTitleSicilian');
             if (libTitleSicilian) libTitleSicilian.textContent = currentLang === 'nl' ? 'Siciliaanse verdediging' : 'Sicilian Defense';
 
+            const libTitleScotch = document.getElementById('libTitleScotch');
+            if (libTitleScotch) libTitleScotch.textContent = currentLang === 'nl' ? 'Schotse opening' : 'Scotch Game';
+            const libTitleDutch = document.getElementById('libTitleDutch');
+            if (libTitleDutch) libTitleDutch.textContent = currentLang === 'nl' ? 'Hollandse verdediging' : 'Dutch Defence';
+            const tagScotchEl = document.getElementById('tagScotch');
+            if (tagScotchEl) tagScotchEl.textContent = t.tagNew;
+            const tagDutchEl = document.getElementById('tagDutch');
+            if (tagDutchEl) tagDutchEl.textContent = t.tagNew;
             const libTitleCaro = document.getElementById('libTitleCaro');
             if (libTitleCaro) libTitleCaro.textContent = 'Caro-Kann';
             const tagCaro = document.getElementById('tagCaro');
@@ -2607,6 +2766,10 @@
             if (optSicilian) optSicilian.textContent = t.optSicilian;
             const optCaro = document.getElementById('optCaro');
             if (optCaro) optCaro.textContent = t.optCaro;
+            const optScotch = document.getElementById('optScotch');
+            if (optScotch) optScotch.textContent = t.optScotch;
+            const optDutch = document.getElementById('optDutch');
+            if (optDutch) optDutch.textContent = t.optDutch;
 
             const boardHint = document.getElementById('boardHint');
             if (boardHint) boardHint.textContent = t.boardHint;
