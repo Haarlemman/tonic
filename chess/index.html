@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Opening Lab</title>
+    <title>Chess Openings</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -1250,25 +1250,17 @@
             <div class="brand">
                 <div class="mark">♞</div> <span id="brandText">openings</span>
             </div>
-            <div class="navlinks"><a class="nav-action active" data-view="learn" id="navLearn">Learn</a><a class="nav-action"
-                    data-view="drills" id="navDrills">Drills</a><a class="nav-action" data-view="repertoire" id="navRepertoire">My repertoire</a></div>
             <div style="display:flex;align-items:center;gap:13px">
                 <div class="lang-toggle">
                     <button class="lang-btn active" id="langEn">EN</button>
                     <button class="lang-btn" id="langNl">NL</button>
                 </div>
-                <button class="profile profile-button" data-view="profile"><span id="navTrainingLabel">My training</span>
-                    <div class="avatar">♟</div>
-                </button>
             </div>
         </nav>
         <section class="hero">
             <div>
                 <div class="eyebrow" id="heroEyebrow">Your opening practice</div>
                 <h1 id="heroTitle">Learn the first moves.<br><i>Own the next ones.</i></h1>
-            </div>
-            <div class="streak"><b>07</b>
-                <div><span id="streakDays">day streak</span><br><span id="streakSub">Keep your board warm.</span></div>
             </div>
         </section>
         <section class="layout">
@@ -2386,27 +2378,44 @@
             });
         }
 
-        function playGhost(m, done) {
-            const fromEl = document.querySelector('[data-sq="' + m.from + '"]');
-            const toEl = document.querySelector('[data-sq="' + m.to + '"]');
-            if (!fromEl || !toEl) { done(); return }
+        function castleRook(m) {
+            if (m.san === 'O-O' || m.san === 'O-O+') return m.side === 'w' ? { from: 'h1', to: 'f1' } : { from: 'h8', to: 'f8' };
+            if (m.san === 'O-O-O' || m.san === 'O-O-O+') return m.side === 'w' ? { from: 'a1', to: 'd1' } : { from: 'a8', to: 'd8' };
+            return null;
+        }
+        // Animates a move (or, with reverse=true, its undo) by gliding the piece(s) across the board.
+        // Castling also glides the rook. The board must currently show the position at appliedCount.
+        function playGhost(m, done, reverse) {
+            const segs = [{ from: m.from, to: m.to }];
+            const rk = castleRook(m);
+            if (rk) segs.push(rk);
+            if (reverse) segs.forEach(sg => { const t = sg.from; sg.from = sg.to; sg.to = t; });
+            const pos = positionAt(lineFor(openings[current]), appliedCount);
             const boardBox = board.getBoundingClientRect();
-            const fromBox = fromEl.getBoundingClientRect(), toBox = toEl.getBoundingClientRect();
-            const pieceKey = positionAt(lineFor(openings[current]), appliedCount)[m.from];
-            const srcPiece = fromEl.querySelector('.piece');
-            if (srcPiece) srcPiece.style.visibility = 'hidden';
-            const ghost = document.createElement('div');
-            ghost.className = 'moving-piece';
-            ghost.innerHTML = pieceMarkup(pieceKey);
-            ghost.style.left = (fromBox.left - boardBox.left) + 'px';
-            ghost.style.top = (fromBox.top - boardBox.top) + 'px';
-            ghost.style.width = fromBox.width + 'px';
-            ghost.style.height = fromBox.height + 'px';
             const ghostDuration = classicMode ? (playbackSpeed === 0.5 ? 550 : (playbackSpeed === 2 ? 280 : 420)) : 460;
-            ghost.style.transition = 'transform ' + ghostDuration + 'ms ease-in-out';
-            board.appendChild(ghost);
-            requestAnimationFrame(() => { ghost.style.transform = 'translate(' + (toBox.left - fromBox.left) + 'px,' + (toBox.top - fromBox.top) + 'px)' });
-            setTimeout(() => { ghost.remove(); done() }, ghostDuration);
+            const ghosts = [];
+            segs.forEach(sg => {
+                const fromEl = document.querySelector('[data-sq="' + sg.from + '"]');
+                const toEl = document.querySelector('[data-sq="' + sg.to + '"]');
+                const pieceKey = pos[sg.from];
+                if (!fromEl || !toEl || !pieceKey) return;
+                const fromBox = fromEl.getBoundingClientRect(), toBox = toEl.getBoundingClientRect();
+                const srcPiece = fromEl.querySelector('.piece');
+                if (srcPiece) srcPiece.style.visibility = 'hidden';
+                const ghost = document.createElement('div');
+                ghost.className = 'moving-piece';
+                ghost.innerHTML = pieceMarkup(pieceKey);
+                ghost.style.left = (fromBox.left - boardBox.left) + 'px';
+                ghost.style.top = (fromBox.top - boardBox.top) + 'px';
+                ghost.style.width = fromBox.width + 'px';
+                ghost.style.height = fromBox.height + 'px';
+                ghost.style.transition = 'transform ' + ghostDuration + 'ms ease-in-out';
+                board.appendChild(ghost);
+                ghosts.push({ ghost: ghost, dx: toBox.left - fromBox.left, dy: toBox.top - fromBox.top });
+            });
+            if (!ghosts.length) { done(); return }
+            requestAnimationFrame(() => { ghosts.forEach(g => { g.ghost.style.transform = 'translate(' + g.dx + 'px,' + g.dy + 'px)' }) });
+            setTimeout(() => { ghosts.forEach(g => g.ghost.remove()); done() }, ghostDuration);
         }
         function settle() {
             clearSettleTimer();
@@ -2620,9 +2629,14 @@
             if (appliedCount >= line.length || animating) return;
             clearSettleTimer();
             isPaused = true;
-            appliedCount++;
-            render();
+            animating = true;
             updatePlaybackUI();
+            playGhost(line[appliedCount], () => {
+                appliedCount++;
+                animating = false;
+                render();
+                updatePlaybackUI();
+            });
         }
 
         function stepBackward() {
@@ -2630,9 +2644,15 @@
             if (appliedCount <= 0 || animating) return;
             clearSettleTimer();
             isPaused = true;
-            appliedCount--;
-            render();
+            animating = true;
             updatePlaybackUI();
+            const undo = lineFor(openings[current])[appliedCount - 1];
+            playGhost(undo, () => {
+                appliedCount--;
+                animating = false;
+                render();
+                updatePlaybackUI();
+            }, true);
         }
 
         function setPlaybackSpeed(speed) {
@@ -2652,30 +2672,7 @@
         });
 
         const modalBackdrop = document.getElementById('modalBackdrop'), modalContent = document.getElementById('modalContent');
-        const viewsI18n = {
-            en: {
-                drills: { eyebrow: 'Quick practice', title: 'Drills for today', text: 'Short, focused repetitions to make your responses automatic.', body: '<div class="modal-cards"><div class="modal-card"><b>12</b>moves to recall</div><div class="modal-card"><b>4 min</b>estimated time</div></div><div class="modal-row"><span>Italian: Two Knights</span><b>Ready</b></div><div class="modal-row"><span>Sicilian: main response</span><b>Next</b></div><button class="btn primary" id="startDrill">Start Italian drill</button>' },
-                repertoire: { eyebrow: 'Your opening map', title: 'My repertoire', text: 'You have built a focused set of positions to meet the moves you see most often.', body: '<div class="modal-cards"><div class="modal-card"><b>8 / 12</b>openings learned</div><div class="modal-card"><b>64%</b>average recall</div></div><div class="modal-row"><span>As White</span><b>Italian · Queen’s Gambit · Scotch</b></div><div class="modal-row"><span>As Black</span><b>Sicilian · Caro-Kann · Dutch</b></div><button class="btn primary" id="openItalian">Continue Italian Game</button>' },
-                profile: { eyebrow: 'Training profile', title: "My training", text: 'A calm, consistent routine is already taking shape.', body: '<div class="modal-cards"><div class="modal-card"><b>07 days</b>current streak</div><div class="modal-card"><b>1,240</b>repertoire score</div></div><div class="modal-row"><span>Daily goal</span><b>10 minutes</b></div><div class="modal-row"><span>Level</span><b>Developing player</b></div><button class="btn primary" id="keepTraining">Keep training</button>' }
-            },
-            nl: {
-                drills: { eyebrow: 'Snelle oefening', title: 'Oefeningen voor vandaag', text: 'Korte, gerichte herhalingen om je reacties automatisch te maken.', body: '<div class="modal-cards"><div class="modal-card"><b>12</b>zetten om te onthouden</div><div class="modal-card"><b>4 min</b>geschatte tijd</div></div><div class="modal-row"><span>Italiaans: Tweepaarden</span><b>Gereed</b></div><div class="modal-row"><span>Siciliaans: hoofdreactie</span><b>Volgende</b></div><button class="btn primary" id="startDrill">Start Italiaanse oefening</button>' },
-                repertoire: { eyebrow: 'Jouw openingskaart', title: 'Mijn repertoire', text: 'Je hebt een gerichte set stellingen opgebouwd voor de zetten die je het vaakst tegenkomt.', body: '<div class="modal-cards"><div class="modal-card"><b>8 / 12</b>openingen geleerd</div><div class="modal-card"><b>64%</b>gemiddelde herinnering</div></div><div class="modal-row"><span>Met Wit</span><b>Italiaans · Damegambiet · Schots</b></div><div class="modal-row"><span>Met Zwart</span><b>Siciliaans · Caro-Kann · Hollands</b></div><button class="btn primary" id="openItalian">Verder met Italiaanse opening</button>' },
-                profile: { eyebrow: 'Trainingsprofiel', title: "Mijn training", text: 'Een rustige, consistente routine begint vorm te krijgen.', body: '<div class="modal-cards"><div class="modal-card"><b>07 dagen</b>huidige streak</div><div class="modal-card"><b>1.240</b>repertoire score</div></div><div class="modal-row"><span>Dagelijks doel</span><b>10 minuten</b></div><div class="modal-row"><span>Niveau</span><b>Ontwikkelende speler</b></div><button class="btn primary" id="keepTraining">Verder trainen</button>' }
-            }
-        };
         function closeModal() { modalBackdrop.classList.remove('open') }
-        function openView(name) {
-            if (name === 'learn') { closeModal(); return }
-            const v = (viewsI18n[currentLang] || viewsI18n.en)[name];
-            modalContent.innerHTML = '<div class="eyebrow">' + v.eyebrow + '</div><h2>' + v.title + '</h2><p>' + v.text + '</p>' + v.body;
-            modalBackdrop.classList.add('open');
-            document.querySelectorAll('.nav-action').forEach(x => x.classList.toggle('active', x.dataset.view === name));
-            const sd = document.getElementById('startDrill'); if (sd) sd.addEventListener('click', () => { closeModal(); message(i18n[currentLang].msgDrillStarted, 'good'); document.querySelector('[data-opening="italian"]').click() });
-            const oi = document.getElementById('openItalian'); if (oi) oi.addEventListener('click', () => { closeModal(); document.querySelector('[data-opening="italian"]').click() });
-            const kt = document.getElementById('keepTraining'); if (kt) kt.addEventListener('click', closeModal);
-        }
-        document.querySelectorAll('[data-view]').forEach(x => x.addEventListener('click', () => openView(x.dataset.view)));
         document.getElementById('modalClose').onclick = closeModal;
         modalBackdrop.onclick = e => { if (e.target === modalBackdrop) closeModal() };
 
@@ -2693,24 +2690,10 @@
 
             const brandText = document.getElementById('brandText');
             if (brandText) brandText.textContent = t.brand;
-            const navLearn = document.getElementById('navLearn');
-            if (navLearn) navLearn.textContent = t.navLearn;
-            const navDrills = document.getElementById('navDrills');
-            if (navDrills) navDrills.textContent = t.navDrills;
-            const navRepertoire = document.getElementById('navRepertoire');
-            if (navRepertoire) navRepertoire.textContent = t.navRepertoire;
-            const navTrainingLabel = document.getElementById('navTrainingLabel');
-            if (navTrainingLabel) navTrainingLabel.textContent = t.navTraining;
-
             const heroEyebrow = document.getElementById('heroEyebrow');
             if (heroEyebrow) heroEyebrow.textContent = t.heroEyebrow;
             const heroTitle = document.getElementById('heroTitle');
             if (heroTitle) heroTitle.innerHTML = t.heroTitle;
-            const streakDays = document.getElementById('streakDays');
-            if (streakDays) streakDays.textContent = t.streakDays;
-            const streakSub = document.getElementById('streakSub');
-            if (streakSub) streakSub.textContent = t.streakSub;
-
             const libraryTitle = document.getElementById('libraryTitle');
             if (libraryTitle) libraryTitle.textContent = t.libraryTitle;
             const searchOpenings = document.getElementById('searchOpenings');
