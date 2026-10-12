@@ -109,7 +109,7 @@ window.roomContent = {
         hex: 0x5d4037,
         playlist: [
             { track: "Curiosity", src: "assets/audio/Curiosity.mp3" },
-            { track: "Symbiosis", src: "assets/audio/symbiosis.mp3" }
+            { track: "Symbiosis", src: "assets/audio/Symbiosis.mp3" }
         ]
     },
 

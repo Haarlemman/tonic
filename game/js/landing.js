@@ -34,4 +34,4 @@ spriteSheet.onload = () => {
 spriteSheet.onerror = () => {
     console.error("Error loading sprite sheet!");
 };
-spriteSheet.src = 'assets/images/spritesheet.png'; 
+spriteSheet.src = 'images/spritesheet.png'; 

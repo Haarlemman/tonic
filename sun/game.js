@@ -405,15 +405,15 @@ function resizeCanvas() {
 async function initGame() {
     resizeCanvas();
     await loadImages({
-        dancing: 'assets/images/dancingspritesheet.png',
-        face: 'assets/images/dude.png',
-        faceboom: 'assets/images/faceboom.png',
-        stripe: 'assets/images/stripe.png',
-        monster3: 'assets/images/monster3.png',
-        blob: 'assets/images/blob.png',
-        monster1: 'assets/images/monster1.png',
-        augurk: 'assets/images/augurk.png',
-        monster2: 'assets/images/monster2.png'
+        dancing: '../solar/images/dancingspritesheet.png',
+        face: '../solar/images/dude.png',
+        faceboom: '../solar/images/faceboom.png',
+        stripe: '../solar/images/stripe.png',
+        monster3: '../solar/images/monster3.png',
+        blob: '../solar/images/blob.png',
+        monster1: '../solar/images/monster1.png',
+        augurk: '../solar/images/augurk.png',
+        monster2: '../solar/images/monster2.png'
     });
     // Sounds are already loaded via new Audio(), but we can ensure loop/music starts
     playLevelMusic(1);
