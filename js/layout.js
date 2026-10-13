@@ -42,13 +42,46 @@
 
     // 3. Define HTML Templates
     const HEADER_HTML = `
+        <style>
+            @keyframes headerCloudDrift {
+                0%, 100% {
+                    transform: translateX(10vw);
+                    opacity: 0.5;
+                }
+                50% {
+                    transform: translateX(-40vw);
+                    opacity: 0.85;
+                }
+            }
+            .header-cloud-layer {
+                position: absolute;
+                inset: 0;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 0;
+            }
+            .header-cloud-img {
+                position: absolute;
+                top: -55px;
+                left: -10vw;
+                width: 160vw;
+                max-width: none;
+                height: 150px;
+                object-fit: cover;
+                pointer-events: none;
+                animation: headerCloudDrift 28s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+            }
+        </style>
 		<header class="sticky top-0 z-50 flex flex-col font-sans">
-            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px; background-color: #264252;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-[#264252] border-b-0 border-black overflow-hidden house-style-force">
-                <div class="flex flex-row items-center gap-2">
+            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px; background-color: #264252;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-[#264252] border-b-0 border-black overflow-hidden house-style-force relative">
+                <div class="header-cloud-layer" aria-hidden="true">
+                    <img src="/music/images/cloud.png" alt="" class="header-cloud-img">
+                </div>
+                <div class="flex flex-row items-center gap-2 relative z-10">
                     <a href="https://www.tonicforthebones.com/" class="bg-black text-white px-2 py-0 text-base uppercase border-2 border-black hover:bg-white hover:text-black transition-colors z-10 relative" style="font-family: 'Share Tech Mono', monospace;">TONIC</a>
                     <span class="text-[14px] md:text-xs tracking-wide text-[#FFCC00]" style="font-family: 'Share Tech Mono', monospace;">MULTI MEDIA DEFIANCE</span>
                 </div>
-                <nav class="relative">
+                <nav class="relative z-10">
                     <div class="md:hidden group relative">
                          <button id="mobile-menu-btn" class="p-0.5 bg-tonicRed text-white border border-black hover:bg-tonicDarkRed transition-colors focus:outline-none"><i data-lucide="menu" class="w-4 h-4"></i></button>
                         <div id="mobile-menu" class="absolute right-0 mt-0 w-32 bg-white border border-black py-0 hidden shadow-xl z-50">
