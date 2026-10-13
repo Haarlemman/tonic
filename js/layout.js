@@ -43,10 +43,10 @@
     // 3. Define HTML Templates
     const HEADER_HTML = `
 		<header class="sticky top-0 z-50 flex flex-col font-sans">
-            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px; background-color: #fbbf24;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-tonicYellow border-b-0 border-black overflow-hidden house-style-force">
+            <div id="header-content" style="max-height: 0px; padding-top: 0px; padding-bottom: 0px; overflow: hidden; border-bottom-width: 0px; background-color: #264252;" class="w-full transition-all duration-500 ease-in-out max-h-0 py-0 px-3 md:px-6 flex justify-between items-center bg-[#264252] border-b-0 border-black overflow-hidden house-style-force">
                 <div class="flex flex-row items-center gap-2">
                     <a href="https://www.tonicforthebones.com/" class="bg-black text-white px-2 py-0 text-base uppercase border-2 border-black hover:bg-white hover:text-black transition-colors z-10 relative" style="font-family: 'Share Tech Mono', monospace;">TONIC</a>
-                    <span class="text-[14px] md:text-xs tracking-wide text-black" style="font-family: 'Share Tech Mono', monospace;">multi media defiance</span>
+                    <span class="text-[14px] md:text-xs tracking-wide text-[#FFCC00]" style="font-family: 'Share Tech Mono', monospace;">MULTI MEDIA DEFIANCE</span>
                 </div>
                 <nav class="relative">
                     <div class="md:hidden group relative">
